@@ -544,7 +544,7 @@ public class RubyYaccLexer implements IYaccLexer {
     
     void heredoc_restore() {
         HereDocNode here = (HereDocNode) lex_strterm;
-
+        
         support.setBuffer(here.getLastLine(), here.getPosition());
     }
 
@@ -611,9 +611,10 @@ public class RubyYaccLexer implements IYaccLexer {
                 tokadd('#');
             }
 
-            support.unread();
+            if (c != '\n')
+                support.unread();
+            
             do {
-
                 if ((c = tokadd_string(new StrTermNode(support.getPosition(), func, '\n', 0))) == EOF) {
                     rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
                     heredoc_restore();
@@ -755,7 +756,7 @@ public class RubyYaccLexer implements IYaccLexer {
         // TODO: Adding a newline onto line make assertions in unit/test pass,
         // but then our <<A,<<B test case fails.  For now, make our internal test
         // pass..
-        String line = support.readLine();
+        String line = support.readLine() + "\n";
         String tok = tok();
         lex_strterm = new HereDocNode(support.getPosition(), tok, func, line);
 
