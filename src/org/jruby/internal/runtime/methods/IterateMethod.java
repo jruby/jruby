@@ -28,7 +28,6 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.RubyObject;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
@@ -48,10 +47,6 @@ public class IterateMethod extends AbstractMethod {
         this.data = data;
     }
 
-    /**
-     * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
-	 * @fixme implement it 
-     */
     public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return callback.execute(args[0], new IRubyObject[] { data, receiver });
     }

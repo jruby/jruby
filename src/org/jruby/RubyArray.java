@@ -597,9 +597,6 @@ public class RubyArray extends RubyObject {
     }
 
     /** rb_ary_initialize
-     *
-     * @param args
-     * @return
      */
     public IRubyObject initialize(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 0, 2);
@@ -644,9 +641,6 @@ public class RubyArray extends RubyObject {
     }
 
     /** rb_ary_aref
-     * 
-     * @param args
-     * @return
      */
     public IRubyObject aref(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 1, 2);

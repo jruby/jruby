@@ -2,7 +2,6 @@ package org.jruby.javasupport.test;
 
 public class Room {
     private final String name;
-    private String owner = null;
 	
     public Room(String name) {
         this.name = name;

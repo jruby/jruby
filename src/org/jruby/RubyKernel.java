@@ -504,7 +504,7 @@ public class RubyKernel {
             if (args[0] instanceof RubyException) {
                 throw new RaiseException((RubyException) args[0]);
             } else if (args[0] instanceof RubyClass) {
-            	throw new RaiseException(RubyException.newInstance((RubyClass)args[0], new IRubyObject[0]));
+            	throw new RaiseException(RubyException.newInstance(args[0], new IRubyObject[0]));
             }
             throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
         case 2 :

@@ -40,7 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyErrorHandler implements IRubyErrorHandler {
     private Ruby runtime;
-    private boolean verbose = false;
 
     /**
      * Constructor for RubyErrorHandler.
@@ -49,9 +48,6 @@ public class RubyErrorHandler implements IRubyErrorHandler {
         this.runtime = runtime;
     }
 
-    /**
-     * @see org.ablaf.common.IErrorHandler#handleError(int, SourcePosition, String, Object)
-     */
     public void handleError(int type, SourcePosition position, String message, Object args) {
         if (type != IErrors.WARNING || isVerbose()) {
             if (type == IErrors.WARN || type == IErrors.WARNING) {
@@ -88,9 +84,6 @@ public class RubyErrorHandler implements IRubyErrorHandler {
         errorStream.callMethod("write", runtime.newString(s));
     }
 
-    /**
-     * @see org.ablaf.common.IErrorHandler#handleError(int, SourcePosition, String)
-     */
     public void handleError(int type, SourcePosition position, String message) {
         handleError(type, position, message, null);
     }
@@ -103,16 +96,10 @@ public class RubyErrorHandler implements IRubyErrorHandler {
         return runtime.getVerbose().isTrue();
     }
 
-    /**
-     * @see org.jruby.common.IRubyErrorHandler#warn(String)
-     */
     public void warn(String message) {
         handleError(IErrors.WARN, runtime.getPosition(), message);
     }
 
-    /**
-     * @see org.jruby.common.IRubyErrorHandler#warning(String)
-     */
     public void warning(String message) {
         handleError(IErrors.WARNING, runtime.getPosition(), message);
     }

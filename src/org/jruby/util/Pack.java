@@ -535,8 +535,8 @@ public class Pack {
             RubyString formatString) {
         Ruby runtime = formatString.getRuntime();
         RubyArray result = runtime.newArray();
-        PtrList format = new PtrList(runtime, formatString.getValue());
-        PtrList encode = new PtrList(runtime, encodedString);
+        PtrList format = new PtrList(formatString.getValue());
+        PtrList encode = new PtrList(encodedString);
         char type = format.nextChar(); // Type to be unpacked
         
         while(!format.isAtEnd()) {
@@ -794,12 +794,10 @@ public class Pack {
     }
  
     static class PtrList {
-        private Ruby runtime;
         private char[] buffer; // List to be managed
         private int index; // Pointer location in list
 
-        public PtrList(Ruby runtime, String bufferString) {
-            this.runtime = runtime;
+        public PtrList(String bufferString) {
             buffer = bufferString.toCharArray();
             index = 0;
         }
@@ -1123,7 +1121,7 @@ public class Pack {
      **/
     public static RubyString pack(List list, RubyString formatString) {
         Ruby runtime = formatString.getRuntime();
-        PtrList format = new PtrList(runtime, formatString.getValue());
+        PtrList format = new PtrList(formatString.getValue());
         StringBuffer result = new StringBuffer();
         int listSize = list.size();
         char type = format.nextChar();

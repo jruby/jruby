@@ -158,10 +158,6 @@ public class RubyClass extends RubyModule {
         // Don't do anything, because a class cannot attached to an object.
     }
 
-    /**
-     * @return
-     * 
-     */
     public MetaClass newSingletonClass() {
         MetaClass newClass = new MetaClass(getRuntime(), this);
         newClass.infectBy(this);
