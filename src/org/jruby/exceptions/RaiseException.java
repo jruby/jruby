@@ -34,8 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
 import org.jruby.runtime.Frame;
-
-import java.util.Iterator;
+import org.jruby.runtime.FrameStack;
 
 /**
  *
@@ -67,44 +66,38 @@ public class RaiseException extends JumpException {
         return originalFillInStackTrace();
     }
 
-    /** Create an Array with backtrace information.
-     * 
-     * MRI: eval.c - backtrace
-     * 
+    /** 
+     * Create an Array with backtrace information.
      */
     public static RubyArray createBacktrace(Ruby ruby, int level) {
         RubyArray backtrace = RubyArray.newArray(ruby);
-
-        Iterator frames = ruby.getFrameStack().iterator();
-        while (level-- > 0) {
-            if (!frames.hasNext()) {
-                return RubyArray.nilArray(ruby);
-            }
-            frames.next();
+        FrameStack stack = ruby.getFrameStack();
+        int traceSize = stack.size() - level - 1;
+        
+        if (traceSize <= 0) {
+        	return RubyArray.nilArray(ruby);
         }
-
-        Frame frame = null;
-        if (frames.hasNext()) {
-            frame = (Frame)frames.next();
-        }
-
-        while (frame != null && frame.getFile() != null) {
-            StringBuffer sb = new StringBuffer(100);
-
-            Frame previous = null;
-            if (frames.hasNext() && (previous = (Frame)frames.next()).getLastFunc() != null) {
-                sb.append(frame.getFile()).append(':').append(frame.getLine());
-                sb.append(":in `").append(previous.getLastFunc()).append('\'');
-            } else {
-                sb.append(frame.getFile()).append(':').append(frame.getLine());
-            }
-            backtrace.append(RubyString.newString(ruby, sb.toString()));
-
-            frame = previous;
+        
+        for (int i = traceSize; i > 0; i--) {
+        	addBackTraceElement(backtrace, (Frame) stack.elementAt(i), 
+        			(Frame) stack.elementAt(i-1));
         }
 
         return backtrace;
     }
+
+	private static void addBackTraceElement(RubyArray backtrace, Frame frame, 
+			Frame previousFrame) {
+        StringBuffer sb = new StringBuffer(100);
+
+        sb.append(frame.getFile()).append(':').append(frame.getLine());
+        
+        if (previousFrame != null && previousFrame.getLastFunc() != null) {
+            sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');
+        }
+        
+        backtrace.append(RubyString.newString(backtrace.getRuntime(), sb.toString()));
+	}
 
     /**
      * Gets the exception

@@ -69,7 +69,6 @@ import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
-import org.jruby.util.collections.IStack;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -478,7 +477,7 @@ public final class Ruby {
         return javaSupport;
     }
 
-    public IStack getIterStack() {
+    public Stack getIterStack() {
         return getCurrentContext().getIterStack();
     }
 

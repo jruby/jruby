@@ -1,6 +1,6 @@
 package org.jruby.runtime;
 
-import org.jruby.internal.util.collections.Stack;
+import java.util.Stack;
 
 /**
  *
@@ -14,11 +14,10 @@ public class FrameStack extends Stack {
         this.threadContext = threadContext;
     }
 
-    public Frame getPrevious() {
-        if (isEmpty()) {
-        	return null;	
-        }
-        return (Frame) previous();
+    public synchronized Frame getPrevious() {
+    	int size = size();
+                
+    	return size <= 1 ? null : (Frame) elementAt(size-2); 
     }
 
     public void push() {

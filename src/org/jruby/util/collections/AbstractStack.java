@@ -26,6 +26,8 @@
  */
 package org.jruby.util.collections;
 
+import java.util.EmptyStackException;
+
 /**
  *
  * @author  jpetersen
@@ -52,7 +54,7 @@ public abstract class AbstractStack {
             top = top.getNext();
             return result;
         } else {
-			throw new StackEmptyException("Cannot pop empty Stack.");
+			throw new EmptyStackException();
         }
     }
 

@@ -47,13 +47,12 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.ArrayStack;
-import org.jruby.util.collections.CollectionFactory;
-import org.jruby.util.collections.IStack;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * @author jpetersen
@@ -70,7 +69,7 @@ public class ThreadContext {
     private ArrayStack classStack;
     private ScopeStack scopeStack;
     private FrameStack frameStack;
-    private IStack iterStack;
+    private Stack iterStack;
 
     private RubyModule wrapper;
 
@@ -87,7 +86,7 @@ public class ThreadContext {
         this.classStack = new ArrayStack();
         this.scopeStack = new ScopeStack(runtime);
         this.frameStack = new FrameStack(this);
-        this.iterStack = CollectionFactory.getInstance().newStack();
+        this.iterStack = new Stack();
 
         pushDynamicVars();
     }
@@ -132,7 +131,7 @@ public class ThreadContext {
         return frameStack;
     }
 
-    public IStack getIterStack() {
+    public Stack getIterStack() {
         return iterStack;
     }
 
