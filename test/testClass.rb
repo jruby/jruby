@@ -90,3 +90,36 @@ end
 test_equal("A", E.a)
 test_exception(NoMethodError) { Hash.new.a }
 test_exception(NoMethodError) { Object.new.a }
+
+# test singleton method scoping
+class C
+  VAR1 = 1
+  
+  def C.get_var1
+    VAR1
+  end
+  
+  class << self
+    VAR2 = 2
+    
+    def other_get_var1
+      VAR1
+    end
+    
+    def get_var2
+      VAR2
+    end
+  end
+end
+
+test_equal(1, C.get_var1)
+test_equal(1, C.other_get_var1)
+test_equal(2, C.get_var2)
+
+# ensure scoping of above methods does not change with new singleton class decl
+class << C
+end
+
+test_equal(1, C.get_var1)
+test_equal(1, C.other_get_var1)
+test_equal(2, C.get_var2)
