@@ -60,7 +60,7 @@ test_print_report
 interfaces = JavaLang::JString[].new(0)
 classgen = BCEL::ClassGen.new("CompiledRuby",
                               "java.lang.Object",
-                              "/tmp/CompiledRuby.class",
+                              "cool generated code",
                               BCEL::Constants::ACC_PUBLIC,
                               interfaces)
 
@@ -83,9 +83,8 @@ methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::A
                                 instructions,
                                 classgen.getConstantPool)
 
-
-code = compile("1 + 2")
-code.jvm_compile(instructions, classgen.getConstantPool)
+code = compile("if false; 1 + 2; else; 'hello'; end")
+code.jvm_compile(methodgen)
 
 # Add a return manually
 instructions.append(BCEL::ARETURN.new)

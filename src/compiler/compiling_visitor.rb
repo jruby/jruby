@@ -60,11 +60,12 @@ module JRuby
         @bytecodes[index]
       end
 
-      def jvm_compile(instructionlist, constantpoolgen)
-        @instructionlist = instructionlist
-        @constants = constantpoolgen
-        factory = BCEL::InstructionFactory.new(@constants)
-        @bytecodes.each {|b| b.emit_jvm_bytecode(@instructionlist, factory) }
+      def jvm_compile(methodgen)
+        factory = BCEL::InstructionFactory.new(methodgen.getConstantPool)
+        @bytecodes.each {|b|
+          b.emit_jvm_bytecode(methodgen,
+                              factory)
+        }
       end
     end
 

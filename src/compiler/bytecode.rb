@@ -47,7 +47,9 @@ module JRuby
           @value = value
         end
 
-        def emit_jvm_bytecode(list, factory)
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+
           list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
 
           list.append(BCEL::ICONST.new(@value))
@@ -66,7 +68,8 @@ module JRuby
 
       class PushSelf
 
-        def emit_jvm_bytecode(list, factory)
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
           list.append(BCEL::ALOAD.new(SELF_INDEX))
         end
       end
@@ -79,7 +82,16 @@ module JRuby
           @name, @arity, @type = name, arity, type
         end
 
-        def emit_jvm_bytecode(list, factory)
+        def emit_jvm_bytecode(methodgen, factory)
+
+          args_array_variable =
+            methodgen.addLocalVariable("args_array",
+                                       BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
+                                       nil,
+                                       nil)
+
+          list = methodgen.getInstructionList
+
           # ..., receiver, arg1, arg2
 
           list.append(BCEL::ICONST.new(@arity))
@@ -89,12 +101,15 @@ module JRuby
 
           # WARNING: the following line destroys the 'self' variable!!!!...
 
+
           list.append(BCEL::InstructionFactory.createStore(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                                           SELF_INDEX))
+                                                           args_array_variable.getIndex))
+
+          args_array_variable.setStart(list.getEnd())
 
           for i in 0...arity
             list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                                            SELF_INDEX))
+                                                            args_array_variable.getIndex))
             # ..., receiver, arg1, ..., argN, args_array
             list.append(BCEL::SWAP.new)
             # ..., receiver, arg1, ..., args_array, argN
@@ -108,7 +123,7 @@ module JRuby
 
           # ..., receiver
           list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                                          SELF_INDEX))
+                                                          args_array_variable.getIndex))
           # ..., receiver, args_array
 
           list.append(BCEL::PUSH.new(factory.getConstantPool, @name))
@@ -137,7 +152,8 @@ module JRuby
           @value = value
         end
 
-        def emit_jvm_bytecode(list, factory)
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
           list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
           list.append(BCEL::PUSH.new(factory.getConstantPool, @value))
 
@@ -159,6 +175,22 @@ module JRuby
       class PushBoolean
         def initialize(value)
           @value = value
+        end
+
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+
+          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          if @value
+            methodname = "getTrue"
+          else
+            methodname = "getFalse"
+          end
+          list.append(factory.createInvoke("org.jruby.Ruby",
+                                           methodname,
+                                           BCEL::ObjectType.new("org.jruby.RubyBoolean"),
+                                           BCEL::Type[].new(0),
+                                           BCEL::Constants::INVOKEVIRTUAL))
         end
       end
 
