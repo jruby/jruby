@@ -15,7 +15,6 @@
         <method name="foreach">
             <arity optional="true">1</arity>
         </method>
--->
         <method name="print">
             <arity optional="true">0</arity>
         </method>
@@ -25,7 +24,6 @@
         <method name="puts">
             <arity optional="true">0</arity>
         </method>
-<!--
         <method name="readlines">
             <arity optional="true">0</arity>
         </method>

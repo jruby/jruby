@@ -71,6 +71,9 @@ public class RubyIO extends RubyObject {
 
     public static RubyClass createIOClass(Ruby ruby) {
         RubyClass result = new IODefinition(ruby).getType();
+        result.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
+        result.defineMethod("printf", CallbackFactory.getOptSingletonMethod(RubyIO.class, "printf"));
+        result.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
         result.defineMethod("lineno=", CallbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
         result.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
         result.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", IRubyObject.class));
