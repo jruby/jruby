@@ -77,6 +77,7 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
@@ -566,12 +567,12 @@ public final class Ruby {
     /** Getter for property dynamicVars.
      * @return Value of property dynamicVars.
      */
-    public Map getDynamicVars() {
+    public DynamicVariableSet getDynamicVars() {
         return getCurrentContext().getCurrentDynamicVars();
     }
 
     public IRubyObject getDynamicValue(String name) {
-        IRubyObject result = (IRubyObject)getDynamicVars().get(name);
+        IRubyObject result = getDynamicVars().get(name);
         if (result == null) {
             return getNil();
         }
@@ -763,11 +764,11 @@ public final class Ruby {
     }
 
     public void setDynamicVariable(String name, IRubyObject value) {
-        getDynamicVars().put(name, value);
+        getDynamicVars().set(name, value);
     }
 
     public List getDynamicNames() {
-        return new ArrayList(getDynamicVars().keySet());
+        return getDynamicVars().names();
     }
     /**
      * Returns the factory.

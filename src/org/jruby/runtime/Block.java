@@ -26,14 +26,13 @@
  */
 package org.jruby.runtime;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.ablaf.ast.INode;
-import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.util.collections.StackElement;
+import org.jruby.RubyModule;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
 
 /**
  *
@@ -48,7 +47,7 @@ public class Block implements StackElement {
     private Scope scope;
     private RubyModule klass;
     private Iter iter;
-    private Map dynamicVariables;
+    private DynamicVariableSet dynamicVariables;
 
     private Block next;
 
@@ -65,7 +64,7 @@ public class Block implements StackElement {
         Scope scope,
         RubyModule klass,
         Iter iter,
-        Map dynamicVars) {
+        DynamicVariableSet dynamicVars) {
 
         this.var = var;
         this.method = method;
@@ -100,7 +99,7 @@ public class Block implements StackElement {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, new HashMap(dynamicVariables));
+        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, new DynamicVariableSet(dynamicVariables));
 
         if (getNext() != null) {
             newBlock.setNext(((Block)getNext()));
@@ -128,7 +127,7 @@ public class Block implements StackElement {
      * Gets the dynamicVariables.
      * @return Returns a RubyVarmap
      */
-    public Map getDynamicVariables() {
+    public DynamicVariableSet getDynamicVariables() {
         return dynamicVariables;
     }
 
