@@ -24,7 +24,7 @@ if defined? Java
 
     # Constructors
     r = Random.new
-    test_equal(Random, r.type)
+    test_equal(Random, r.class)
     r = Random.new(1001)
     test_equal(10.0, Double.new(10).doubleValue())
     test_equal(10.0, Double.new("10").doubleValue())
@@ -34,16 +34,16 @@ if defined? Java
 #    Swing::JFrame.new(nil)
 
     # Instance methods
-    test_equal(Random, r.type)
-    test_equal(Fixnum, r.nextInt.type)
-    test_equal(Fixnum, r.nextInt(10).type)
+    test_equal(Random, r.class)
+    test_equal(Fixnum, r.nextInt.class)
+    test_equal(Fixnum, r.nextInt(10).class)
 
     # Instance methods differing only on argument type
     l1 = Long.new(1234)
     l2 = Long.new(1000)
     test_ok(l1.compareTo(l2) > 0)
     s1 = Short.new(1234)
-    test_ok(s1.compareTo(l2) > 0)
+    test_ok(l1.compareTo(s1) == 0)
 
     # Dispatching on nil
     include_package "org.jruby.util"
@@ -63,7 +63,7 @@ if defined? Java
 
     # Class methods
     result = System.currentTimeMillis()
-    test_equal(Fixnum, result.type)
+    test_equal(Fixnum, result.class)
 
     # Class methods differing only on argument type
     test_equal(true, Boolean.valueOf("true"))
@@ -126,7 +126,7 @@ if defined? Java
 
     # Private classes, interfaces and return types
     h = HashMap.new
-    test_equal(HashMap, h.type)
+    test_equal(HashMap, h.class)
     h.put("a", 1)
     iter = h.entrySet.iterator
     test_equal("java.util.Iterator", iter.java_class.name)
@@ -151,4 +151,4 @@ if defined? Java
 
 
 
-end
+en

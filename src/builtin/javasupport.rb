@@ -302,7 +302,10 @@ END
 	      # Lets treat javabean properties like ruby attributes
 	      case name[0,4]
 	      when /get./
-	        define_method(name[3..-1].downcase!) do |*args|
+	        newName = name[3..-1].downcase!
+            next if instance_methods.member?(newName)
+
+	        define_method(newName) do |*args|
               args = convert_arguments(args)
               m = JavaUtilities.matching_method(methods.find_all {|m|
                 m.arity == args.length}, args)
