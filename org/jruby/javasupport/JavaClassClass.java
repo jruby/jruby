@@ -27,9 +27,12 @@ import org.jruby.RubyClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubyBoolean;
 import org.jruby.exceptions.NameError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.reflect.Modifier;
 
 public class JavaClassClass extends RubyObject {
     private Class javaClass;
@@ -48,13 +51,31 @@ public class JavaClassClass extends RubyObject {
                 javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass());
 
         javaClassClass.defineSingletonMethod("for_name", CallbackFactory.getSingletonMethod(JavaClassClass.class, "for_name", IRubyObject.class));
+        javaClassClass.defineMethod("public?", CallbackFactory.getMethod(JavaClassClass.class, "public_p"));
+        javaClassClass.defineMethod("final?", CallbackFactory.getMethod(JavaClassClass.class, "final_p"));
+        javaClassClass.defineMethod("interface?", CallbackFactory.getMethod(JavaClassClass.class, "interface_p"));
+
         javaClassClass.defineMethod("to_s", CallbackFactory.getMethod(JavaClassClass.class, "to_s"));
+
+        javaClassClass.getInternalClass().undefMethod("new");
 
         return javaClassClass;
     }
 
     public static JavaClassClass for_name(IRubyObject recv, IRubyObject name) {
         return new JavaClassClass(recv.getRuntime(), name.toString());
+    }
+
+    public RubyBoolean public_p() {
+        return RubyBoolean.newBoolean(runtime, Modifier.isPublic(javaClass.getModifiers()));
+    }
+
+    public RubyBoolean final_p() {
+        return RubyBoolean.newBoolean(runtime, Modifier.isFinal(javaClass.getModifiers()));
+    }
+
+    public RubyBoolean interface_p() {
+        return RubyBoolean.newBoolean(runtime, javaClass.isInterface());
     }
 
     public RubyString to_s() {

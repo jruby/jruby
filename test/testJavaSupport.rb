@@ -37,7 +37,14 @@ if defined? Java
     test_equal("stuff done", o.doStuff())
   end
 
+  test_exception(NameError) { Java::JavaClass.new }
   string_class = Java::JavaClass.for_name("java.lang.String")
   test_equal("java.lang.String", string_class.to_s)
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
+  test_ok(string_class.public?)
+  test_ok(string_class.final?)
+  runnable_class = Java::JavaClass.for_name("java.lang.Runnable")
+  test_ok(! runnable_class.final?)
+  test_ok(runnable_class.interface?)
+  test_ok(! string_class.interface?)
 end
