@@ -10,6 +10,8 @@ Authors: Jan Arne Petersen <japetersen@web.de>,
          Anders Bengtsson <ndrsbngtssn@yahoo.se>
          Jason Voegele <jason@jvoegele.com>
 
+We also use some code created by Yukihiro Matsumoto <matz@netlab.co.jp>.
+
 JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
 in Java.
 
