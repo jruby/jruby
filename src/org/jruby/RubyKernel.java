@@ -19,6 +19,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -420,9 +421,14 @@ public class RubyKernel {
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         recv.getRuntime().secure(4);
 
-        int status = 0;
+        int status = 1;
         if (args.length > 0) {
-            status = RubyNumeric.fix2int(args[0]);
+            RubyObject argument = (RubyObject)args[0];
+            if (argument instanceof RubyFixnum) {
+                status = RubyNumeric.fix2int(argument);
+            } else {
+                status = argument.isFalse() ? 1 : 0;
+            }
         }
 
         throw new SystemExit(recv.getRuntime(), status);

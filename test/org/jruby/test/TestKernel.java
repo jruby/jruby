@@ -15,6 +15,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,6 +32,9 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyObject;
+import org.jruby.exceptions.SystemExit;
 
 import java.util.ArrayList;
 
@@ -68,6 +72,23 @@ public class TestKernel extends TestRubyBase {
         assertEquals("", eval("printf(\"%s\", nil)"));
     }
 
+    public void testExit() throws Exception {
+        verifyExit(RubyFixnum.zero(runtime),   "true");
+        verifyExit(RubyFixnum.one(runtime),    "false");
+        verifyExit(RubyFixnum.one(runtime),    "");
+        verifyExit(new RubyFixnum(runtime, 7), "7");
+    }
+        
+    private void verifyExit(RubyObject expectedStatus, String argument) throws Exception {
+        try {
+            eval("exit " + argument);
+            fail("Expected a SystemExit to be thrown by calling exit.");
+        } catch (SystemExit e) {
+            RubyObject status = (RubyObject)e.getException().getInstanceVariable("status");
+            assertEquals(expectedStatus, status);
+        }
+    }
+        
     public void tearDown() {
         super.tearDown();
     }
