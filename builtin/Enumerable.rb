@@ -37,11 +37,8 @@ module Enumerable
   end
   alias entries to_a
 
-  def sort
-    #
-    # Maybe block problem
-    #
-    to_a.sort
+  def sort (&proc)
+    to_a.sort &proc
   end
 
   def sort_by
@@ -127,11 +124,7 @@ module Enumerable
   def partition
     result = [[], []]
     each do |item|
-      if yield(item) then
-	result[0] << item
-      else
-	result[1] << item
-      end
+      result[yield(item) ? 0 : 1] << item
     end
     result
   end
@@ -196,9 +189,7 @@ module Enumerable
   def group_by
     result = {}
     each do |item|
-      group = yield(item)
-      result[group] = [] if result[group].nil?
-      result[group] << item
+      (result[yield(item)] ||= []) << item
     end
     result
   end
