@@ -61,3 +61,5 @@ test_equal("HELLO", "HELlo".upcase)
 s = "HeLLo"
 test_equal("HELLO", s.upcase!)
 test_equal(nil, s.upcase!)
+
+test_equal(["cruel", "world"], "cruel world".scan(/\w+/))

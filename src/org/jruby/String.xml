@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 
+<!-- crypt is only missing function -->
+
 <module type="class">
   <name>String</name>
   <superclass>Object</superclass>
@@ -61,14 +63,25 @@
     <method name="~">
       <java>match2</java>
     </method>
+    <method name="split">
+       <arity optional="true">0</arity>
+    </method>
     <method name="succ"/>
     <method name="succ!">
       <java>succ_bang</java>
+    </method>
+    <method name="swapcase"/>
+    <method name="swapcase!">
+      <java>swapcase_bang</java>
     </method>
     <method-alias name="next" original="succ"/>
     <method-alias name="next!" original="succ!"/>
     <method name="upto">
       <arity>1</arity>
+    </method>
+    <method name="include?">
+      <arity>1</arity>
+      <java>include</java>
     </method>
     <method name="index">
       <arity optional="true">0</arity>
@@ -83,8 +96,23 @@
     <method name="inspect"/>
     <method name="dump"/>
     <method name="upcase"/>
+    <method name="upcase!">
+      <java>upcase_bang</java>
+    </method>
     <method name="downcase"/>
+    <method name="downcase!">
+      <java>downcase_bang</java>
+    </method>
+    <method name="reverse"/>
+    <method name="reverse!">
+      <java>reverse_bang</java>
+    </method>
+    <method name="hex"/>
+    <method name="oct"/>
     <method name="capitalize"/>
+    <method name="capitalize!">
+      <java>capitalize_bang</java>
+    </method>
     <method name="concat">
       <arity>1</arity>
     </method>
@@ -94,65 +122,91 @@
     <method name="sum">
       <arity optional="true">0</arity>
     </method>
-
+    <method name="scan">
+      <arity>1</arity>
+    </method>
+    <method name="ljust">
+      <arity>1</arity>
+    </method>
+    <method name="rjust">
+      <arity>1</arity>
+    </method>
+    <method name="center">
+      <arity>1</arity>
+    </method>
+    <method name="chomp">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="chomp!">
+      <java>chomp_bang</java>
+      <arity optional="true">0</arity>
+    </method>
+    <method name="chop"/>
+    <method name="chop!">
+      <java>chop_bang</java>
+    </method>
+    <method name="strip"/>
+    <method name="strip!">
+      <java>strip_bang</java>
+    </method>
+    <method name="squeeze">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="squeeze!">
+      <java>squeeze_bang</java>
+      <arity optional="true">0</arity>
+    </method>
+    <method name="sub">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="sub!">
+      <java>sub_bang</java>
+      <arity optional="true">0</arity>
+    </method>
+    <method name="gsub">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="gsub!">
+      <java>gsub_bang</java>
+      <arity optional="true">0</arity>
+    </method>
+    <method name="tr">
+      <arity>2</arity>
+    </method>
+    <method name="tr!">
+      <java>tr_bang</java>
+      <arity>2</arity>
+    </method>
+    <method name="tr_s">
+      <arity>2</arity>
+    </method>
+    <method name="tr_s!">
+      <java>tr_s_bang</java>
+      <arity>2</arity>
+    </method>
+    <method name="delete">
+      <arity optional="true">1</arity>
+    </method>
+    <method name="delete!">
+      <java>delete_bang</java>
+      <arity optional="true">1</arity>
+    </method>
     <method-alias name="slice" original="[]"/>
-
-
-    <!--
-
-    <method name="swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
-
-    <method name="upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
-    <method name="downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));
-    <method name="capitalize!", CallbackFactory.getMethod(RubyString.class, "capitalize_bang"));
-    <method name="swapcase!", CallbackFactory.getMethod(RubyString.class, "swapcase_bang"));
-
-    <method name="hex", CallbackFactory.getMethod(RubyString.class, "hex"));
-    <method name="oct", CallbackFactory.getMethod(RubyString.class, "oct"));
-    <method name="split", CallbackFactory.getOptMethod(RubyString.class, "split"));
-    <method name="reverse", CallbackFactory.getMethod(RubyString.class, "reverse"));
-    <method name="reverse!", CallbackFactory.getMethod(RubyString.class, "reverse_bang"));
-    <method name="include?", CallbackFactory.getMethod(RubyString.class, "include", IRubyObject.class));
-
-    <method name="scan", CallbackFactory.getMethod(RubyString.class, "scan", IRubyObject.class));
-
-    <method name="ljust", CallbackFactory.getMethod(RubyString.class, "ljust", IRubyObject.class));
-    <method name="rjust", CallbackFactory.getMethod(RubyString.class, "rjust", IRubyObject.class));
-    <method name="center", CallbackFactory.getMethod(RubyString.class, "center", IRubyObject.class));
-
-    <method name="sub", CallbackFactory.getOptMethod(RubyString.class, "sub"));
-    <method name="gsub", CallbackFactory.getOptMethod(RubyString.class, "gsub"));
-    <method name="chop", CallbackFactory.getMethod(RubyString.class, "chop"));
-    <method name="chomp", CallbackFactory.getOptMethod(RubyString.class, "chomp"));
-    <method name="strip", CallbackFactory.getMethod(RubyString.class, "strip"));
-
-    <method name="sub!", CallbackFactory.getOptMethod(RubyString.class, "sub_bang"));
-    <method name="gsub!", CallbackFactory.getOptMethod(RubyString.class, "gsub_bang"));
-    <method name="chop!", CallbackFactory.getMethod(RubyString.class, "chop_bang"));
-    <method name="chomp!", CallbackFactory.getOptMethod(RubyString.class, "chomp_bang"));
-    <method name="strip!", CallbackFactory.getMethod(RubyString.class, "strip_bang"));
-
-    <method name="tr", CallbackFactory.getOptMethod(RubyString.class, "tr"));
-    <method name="tr_s", CallbackFactory.getOptMethod(RubyString.class, "tr_s"));
-    <method name="delete", CallbackFactory.getOptMethod(RubyString.class, "delete"));
-    <method name="squeeze", CallbackFactory.getOptMethod(RubyString.class, "squeeze"));
-    <method name="count", CallbackFactory.getOptMethod(RubyString.class, "count"));
-
-    <method name="tr!", CallbackFactory.getOptMethod(RubyString.class, "tr_bang"));
-    <method name="tr_s!", CallbackFactory.getOptMethod(RubyString.class, "tr_s_bang"));
-    <method name="delete!", CallbackFactory.getOptMethod(RubyString.class, "delete_bang"));
-    <method name="squeeze!", CallbackFactory.getOptMethod(RubyString.class, "squeeze_bang"));
-
-    <method name="each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
-    <method name="each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
-    <method name="each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-    <method name="slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
-
-    <method name="unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
-
-    -->
-
-
+    <method name="slice!">
+      <arity optional="true">1</arity>
+      <java>slice_bang</java>
+    </method>
+    <method name="count">
+      <arity optional="true">1</arity>
+    </method>
+    <method name="each_byte"/>
+    <method name="each_line">
+      <arity optional="true">0</arity>
+    </method>
+    <method-alias name="each" original="each_line"/>
+    <method name="unpack">
+      <arity>1</arity>
+    </method>
   </instance-methods>
 
   <class-methods>

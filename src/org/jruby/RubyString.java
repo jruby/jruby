@@ -2,10 +2,12 @@
  * RubyString.java - No description
  * Created on 04. Juli 2001, 22:53
  *
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
+ *    Thomas E. Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E. Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -115,61 +117,9 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return stringToBytes(value);
 	}
 
-	public static RubyClass createStringClass(Ruby ruby) {
-        RubyClass stringClass = new StringDefinition(ruby).getType();
-
-		stringClass.defineMethod("swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
-		stringClass.defineMethod("upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
-		stringClass.defineMethod("downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));
-		stringClass.defineMethod("capitalize!", CallbackFactory.getMethod(RubyString.class, "capitalize_bang"));
-		stringClass.defineMethod("swapcase!", CallbackFactory.getMethod(RubyString.class, "swapcase_bang"));
-
-		stringClass.defineMethod("hex", CallbackFactory.getMethod(RubyString.class, "hex"));
-		stringClass.defineMethod("oct", CallbackFactory.getMethod(RubyString.class, "oct"));
-		stringClass.defineMethod("split", CallbackFactory.getOptMethod(RubyString.class, "split"));
-		stringClass.defineMethod("reverse", CallbackFactory.getMethod(RubyString.class, "reverse"));
-		stringClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyString.class, "reverse_bang"));
-
-		stringClass.defineMethod("include?", CallbackFactory.getMethod(RubyString.class, "include", IRubyObject.class));
-
-		stringClass.defineMethod("scan", CallbackFactory.getMethod(RubyString.class, "scan", IRubyObject.class));
-
-		stringClass.defineMethod("ljust", CallbackFactory.getMethod(RubyString.class, "ljust", IRubyObject.class));
-		stringClass.defineMethod("rjust", CallbackFactory.getMethod(RubyString.class, "rjust", IRubyObject.class));
-		stringClass.defineMethod("center", CallbackFactory.getMethod(RubyString.class, "center", IRubyObject.class));
-
-		stringClass.defineMethod("sub", CallbackFactory.getOptMethod(RubyString.class, "sub"));
-		stringClass.defineMethod("gsub", CallbackFactory.getOptMethod(RubyString.class, "gsub"));
-		stringClass.defineMethod("chop", CallbackFactory.getMethod(RubyString.class, "chop"));
-		stringClass.defineMethod("chomp", CallbackFactory.getOptMethod(RubyString.class, "chomp"));
-		stringClass.defineMethod("strip", CallbackFactory.getMethod(RubyString.class, "strip"));
-
-		stringClass.defineMethod("sub!", CallbackFactory.getOptMethod(RubyString.class, "sub_bang"));
-		stringClass.defineMethod("gsub!", CallbackFactory.getOptMethod(RubyString.class, "gsub_bang"));
-		stringClass.defineMethod("chop!", CallbackFactory.getMethod(RubyString.class, "chop_bang"));
-		stringClass.defineMethod("chomp!", CallbackFactory.getOptMethod(RubyString.class, "chomp_bang"));
-		stringClass.defineMethod("strip!", CallbackFactory.getMethod(RubyString.class, "strip_bang"));
-
-		stringClass.defineMethod("tr", CallbackFactory.getOptMethod(RubyString.class, "tr"));
-		stringClass.defineMethod("tr_s", CallbackFactory.getOptMethod(RubyString.class, "tr_s"));
-		stringClass.defineMethod("delete", CallbackFactory.getOptMethod(RubyString.class, "delete"));
-		stringClass.defineMethod("squeeze", CallbackFactory.getOptMethod(RubyString.class, "squeeze"));
-		stringClass.defineMethod("count", CallbackFactory.getOptMethod(RubyString.class, "count"));
-
-		stringClass.defineMethod("tr!", CallbackFactory.getOptMethod(RubyString.class, "tr_bang"));
-		stringClass.defineMethod("tr_s!", CallbackFactory.getOptMethod(RubyString.class, "tr_s_bang"));
-		stringClass.defineMethod("delete!", CallbackFactory.getOptMethod(RubyString.class, "delete_bang"));
-		stringClass.defineMethod("squeeze!", CallbackFactory.getOptMethod(RubyString.class, "squeeze_bang"));
-
-		stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
-		stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
-		stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-
-		stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
-
-		stringClass.defineMethod("unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
-		return stringClass;
-	}
+    public static RubyClass createStringClass(Ruby ruby) {
+        return new StringDefinition(ruby).getType();
+    }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
@@ -181,8 +131,8 @@ public class RubyString extends RubyObject implements IndexCallable {
             return op_cmp(args[0]);
         case StringDefinition.EQUAL:
             return equal(args[0]);
-		case StringDefinition.HASH:
-			return hash();
+	case StringDefinition.HASH:
+            return hash();
         case StringDefinition.OP_PLUS:
             return op_plus(args[0]);
         case StringDefinition.OP_MUL:
@@ -197,9 +147,15 @@ public class RubyString extends RubyObject implements IndexCallable {
             return match(args[0]);
         case StringDefinition.MATCH2:
             return match2();
+        case StringDefinition.SPLIT:
+            return split(args);
         case StringDefinition.SUCC:
             return succ();
         case StringDefinition.SUCC_BANG:
+            return succ_bang();
+        case StringDefinition.SWAPCASE:
+            return succ();
+        case StringDefinition.SWAPCASE_BANG:
             return succ_bang();
         case StringDefinition.UPTO:
             return upto(args[0]);
@@ -223,18 +179,88 @@ public class RubyString extends RubyObject implements IndexCallable {
             return dump();
         case StringDefinition.UPCASE:
             return upcase();
+        case StringDefinition.UPCASE_BANG:
+            return upcase_bang();
         case StringDefinition.DOWNCASE:
             return downcase();
+        case StringDefinition.DOWNCASE_BANG:
+            return downcase_bang();
         case StringDefinition.CAPITALIZE:
             return capitalize();
+        case StringDefinition.CAPITALIZE_BANG:
+            return capitalize_bang();
+        case StringDefinition.REVERSE:
+            return reverse();
+        case StringDefinition.REVERSE_BANG:
+            return reverse_bang();
+        case StringDefinition.HEX:
+            return hex();
+        case StringDefinition.OCT:
+            return oct();
+        case StringDefinition.INCLUDE:
+            return include(args[0]);
         case StringDefinition.INDEX:
             return index(args);
         case StringDefinition.RINDEX:
             return rindex(args);
+        case StringDefinition.SCAN:
+            return scan(args[0]);
+        case StringDefinition.LJUST:
+            return ljust(args[0]);
+        case StringDefinition.RJUST:
+            return rjust(args[0]);
         case StringDefinition.AREF:
             return aref(args);
         case StringDefinition.ASET:
             return aset(args);
+        case StringDefinition.CENTER:
+            return center(args[0]);
+        case StringDefinition.CHOMP:
+            return chomp(args);
+        case StringDefinition.CHOMP_BANG:
+            return chomp_bang(args);
+        case StringDefinition.CHOP:
+            return chop();
+        case StringDefinition.CHOP_BANG:
+            return chop_bang();
+        case StringDefinition.STRIP:
+            return strip();
+        case StringDefinition.STRIP_BANG:
+            return strip_bang();
+        case StringDefinition.SQUEEZE:
+            return squeeze(args);
+        case StringDefinition.SQUEEZE_BANG:
+            return squeeze_bang(args);
+        case StringDefinition.SUB:
+            return sub(args);
+        case StringDefinition.SUB_BANG:
+            return sub_bang(args);
+        case StringDefinition.GSUB:
+            return gsub(args);
+        case StringDefinition.GSUB_BANG:
+            return gsub_bang(args);
+        case StringDefinition.TR:
+            return tr(args);
+        case StringDefinition.TR_BANG:
+            return tr_bang(args);
+        case StringDefinition.TR_S:
+            return tr_s(args);
+        case StringDefinition.TR_S_BANG:
+            return tr_s_bang(args);
+        case StringDefinition.DELETE:
+            return delete(args);
+        case StringDefinition.DELETE_BANG:
+            return delete_bang(args);
+        case StringDefinition.COUNT:
+            return count(args);
+        case StringDefinition.EACH_BYTE:
+            return each_byte();
+        case StringDefinition.EACH_LINE:
+            return each_line(args);
+        case StringDefinition.SLICE_BANG:
+            return slice_bang(args);
+        case StringDefinition.UNPACK:
+            return unpack(args[0]);
         }
         return super.callIndexed(index, args);
     }
@@ -1648,7 +1674,7 @@ public class RubyString extends RubyObject implements IndexCallable {
     /**
      * @see org.jruby.util.Pack#unpack
      */
-	public RubyArray unpack(RubyString iFmt) {
-        return Pack.unpack(this.value, iFmt);
+    public RubyArray unpack(IRubyObject obj) {
+        return Pack.unpack(this.value, stringValue(obj));
     }
 }
