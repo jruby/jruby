@@ -29,7 +29,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.IGlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;

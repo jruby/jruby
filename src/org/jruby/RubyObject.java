@@ -231,10 +231,6 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         return getMetaClass().isMethodBound(name, false);
     }
 
-    public static void createObjectClass(RubyModule objectClass) {
-        new ObjectDefinition(objectClass.getRuntime()).getModule();
-    }
-
     // Some helper functions:
 
     public int argCount(IRubyObject[] args, int min, int max) {

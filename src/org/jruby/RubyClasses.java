@@ -42,6 +42,7 @@ import org.jruby.javasupport.*;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.util.BuiltinScript;
+import org.jruby.internal.runtime.builtin.definitions.ObjectDefinition;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -227,7 +228,7 @@ public class RubyClasses {
         objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod(-1));
         classClass.definePrivateMethod("inherited", CallbackFactory.getNilMethod(1));
 
-        RubyObject.createObjectClass(objectClass);
+        new ObjectDefinition(runtime).getModule();
 
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);

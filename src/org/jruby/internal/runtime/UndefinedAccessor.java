@@ -33,9 +33,9 @@ import org.jruby.util.Asserts;
  * @version $Revision$
  */
 public class UndefinedAccessor implements IAccessor {
-    private Ruby runtime;
-    private GlobalVariable globalVariable;
-    private String name;
+    private final Ruby runtime;
+    private final GlobalVariable globalVariable;
+    private final String notInitializedWarning;
 
     /**
      * Constructor for UndefinedAccessor.
@@ -47,15 +47,14 @@ public class UndefinedAccessor implements IAccessor {
 
         this.runtime = runtime;
         this.globalVariable = globalVariable;
-        this.name = name;
+        this.notInitializedWarning = "global variable `" + name + "' not initialized";
     }
 
     /**
      * @see org.jruby.runtime.IAccessor#getValue()
      */
     public IRubyObject getValue() {
-        runtime.getErrorHandler().warning("global variable `" + name + "' not initialized");
-        
+        runtime.getErrorHandler().warning(notInitializedWarning);
         return runtime.getNil();
     }
 
@@ -64,9 +63,7 @@ public class UndefinedAccessor implements IAccessor {
      */
     public IRubyObject setValue(IRubyObject newValue) {
         Asserts.notNull(newValue);
-        
         globalVariable.setAccessor(new ValueAccessor(newValue));
-
         return newValue;
     }
 }

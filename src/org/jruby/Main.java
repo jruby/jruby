@@ -64,6 +64,14 @@ public class Main {
 
 
     public static void main(String args[]) {
+
+//        try {
+//            String.dumpOut = new java.io.BufferedWriter(new java.io.FileWriter("/tmp/string-dump"));
+//        } catch (java.io.IOException e) {
+//            String.dumpOut = null;
+//            throw new RuntimeException(e.toString());
+//        }
+
         commandline = new CommandlineParser(args);
 
         if (commandline.showVersion) {
