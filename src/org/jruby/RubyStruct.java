@@ -3,10 +3,12 @@
  * Created on 18.01.2002, 01:25:39
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -289,7 +291,10 @@ public class RubyStruct extends RubyObject {
 
         clone.values = new IRubyObject[values.length];
         System.arraycopy(values, 0, clone.values, 0, values.length);
-
+        
+        clone.setFrozen(this.isFrozen());
+        clone.setTaint(this.isTaint());
+        
         return clone;
     }
 
