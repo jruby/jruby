@@ -309,26 +309,18 @@ public class RubyBignum extends RubyInteger {
 
         BigInteger absValue = value.abs();
 
-        int bitLength = absValue.bitLength();
-
-        int shortLength = bitLength / 16;
-        if (bitLength % 16 != 0) {
-            shortLength++;
-        }
-
-        output.dumpInt(shortLength);
-
         byte[] digits = absValue.toByteArray();
 
+        int shortLength = digits.length / 2;
+        if (digits.length % 2 != 0) shortLength++;
+        output.dumpInt(shortLength);
+        
+        // TODO: This works now, but make sure it complies with Ruby
         for (int i = digits.length - 1; i >= 0; i--) {
-            if (i == 0 && digits[i] == 0 && (digits.length % 2 != 0)) {
-                // Don't write last byte if the full length
-                // would be odd and the digits end with a zero byte.
-                break;
-            }
             output.write(digits[i]);
         }
-        if (digits[0] != 0 && (digits.length % 2 != 0)) {
+        
+        if ((digits.length % 2 != 0)) {
             // Pad with a 0 if we've written all bytes and have an odd length.
             output.write(0);
         }
