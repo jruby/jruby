@@ -29,6 +29,7 @@ package org.jruby.javasupport.test;
 
 public class Color {
     private String color;
+    private boolean dark;
 
     public Color(String color) {
         this.color = color;
@@ -40,5 +41,14 @@ public class Color {
 
     public String getColor() {
         return color;
+    }
+    public void setColor(long color) {
+        
+    }
+    public boolean isDark() {
+        return dark;
+    }
+    public void setDark(boolean dark) {
+        this.dark = dark;
     }
 }

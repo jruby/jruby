@@ -92,15 +92,23 @@ if defined? Java
   end
   
   module JavaBeans
+    BLUE = "blue"
+    GREEN = "green"
+    
     include_class 'org.jruby.javasupport.test.Color'
       # Java bean convention properties as attributes
-    color = Color.new("green")
+    color = Color.new(GREEN)
 
-    test_ok(color.color == "green")
+    test_ok !color.isDark
+    color.dark = true
+    test_ok color.dark
+    test_ok color.dark?
 
-    color.color = "blue"
 
-    test_ok(color.color == "blue")
+    test_equal GREEN, color.color
+
+    color.color = BLUE
+    test_equal BLUE, color.color
     
   
   end
