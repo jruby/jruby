@@ -72,6 +72,8 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("**", CallbackFactory.getMethod(RubyFixnum.class, "op_pow", RubyObject.class));
 
         fixnumClass.defineMethod("==", CallbackFactory.getMethod(RubyFixnum.class, "op_equal", RubyObject.class));
+        fixnumClass.defineMethod("eql?", CallbackFactory.getMethod(RubyFixnum.class, "op_equal", RubyObject.class));
+        fixnumClass.defineMethod("equal?", CallbackFactory.getMethod(RubyFixnum.class, "op_equal", RubyObject.class));
         fixnumClass.defineMethod("<=>", CallbackFactory.getMethod(RubyFixnum.class, "op_cmp", RubyObject.class));
         fixnumClass.defineMethod(">", CallbackFactory.getMethod(RubyFixnum.class, "op_gt", RubyObject.class));
         fixnumClass.defineMethod(">=", CallbackFactory.getMethod(RubyFixnum.class, "op_ge", RubyObject.class));
