@@ -640,6 +640,11 @@ public class KernelModule {
             while ((c = reader.read()) != -1) {
             	output.append((char)c);
             }
+            
+            aProcess.getErrorStream().close();
+            aProcess.getOutputStream().close();
+            reader.close();
+            
             return aProcess.waitFor();
         } catch (IOException e) {
             throw IOError.fromException(runtime, e);
