@@ -93,7 +93,9 @@ public class JavaUtil {
             return null;
         }
 
-        if (javaClass == Object.class || javaClass == null) {
+        if (rubyObject instanceof RubyJavaObject) {
+          return ((RubyJavaObject)rubyObject).getValue();
+        } else if (javaClass == Object.class || javaClass == null) {
             /* The Java method doesn't care what class it is, but we need to 
                know what to convert it to, so we use the object's own class.
                If that doesn't help, we use String to force a call to the 
@@ -166,7 +168,7 @@ public class JavaUtil {
                 int len = ((RubyArray) rubyObject).getLength();
                 Object javaObject = Array.newInstance(arrayClass, len);
                 for (int i = 0; i < len; i++) {
-                    Object item = convertRubyToJava(ruby, ((RubyArray) rubyObject).entry(i), arrayClass);
+                    Object item = convertRubyToJava(ruby, ((RubyArray) rubyObject).entry(i), getCanonicalJavaClass(arrayClass));
                     Array.set(javaObject, i, item);
                 }
                 return javaObject;
@@ -223,12 +225,14 @@ public class JavaUtil {
         if (object == null) {
             return ruby.getNil();
         }
-        if (object instanceof RubyObject) {
-            // object already RubyObject or subclass
-            return (RubyObject) object;
-        }
 
-        Class javaClass = object.getClass();
+        return convertJavaToRuby(ruby, object, object.getClass());
+    }
+
+    public static RubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {
+        if (object == null) {
+            return ruby.getNil();
+        }
 
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
@@ -278,6 +282,10 @@ public class JavaUtil {
                 items[2 * i + 1] = convertJavaToRuby(ruby, entry.getValue());
             }
             return RubyHash.create(ruby, null, items);
+        } else if (RubyObject.class.isAssignableFrom(javaClass)) {
+            return (RubyObject)object;
+        } else if (object instanceof RubyProxy) {
+              return ((RubyProxy)object).getRubyObject();
         } else {
             // Look if a RubyObject exists which already represents object.
             Iterator iter = ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
@@ -291,5 +299,31 @@ public class JavaUtil {
             }
             return new RubyJavaObject(ruby, (RubyClass)ruby.getJavaSupport().loadClass(javaClass, null), object);
         }
+    }
+
+    protected static Class getCanonicalJavaClass (Class type)
+    {
+        // Replace wrapper classes with the primitive class that each
+        // represents.
+        if (type == Double.class)     return Double.TYPE;
+        if (type == Float.class)      return Float.TYPE;
+        if (type == Integer.class)    return Integer.TYPE;
+        if (type == Long.class)       return Long.TYPE;
+        if (type == Short.class)      return Short.TYPE;
+        if (type == Byte.class)       return Byte.TYPE;
+        if (type == Character.class)  return Character.TYPE;
+        if (type == Void.class)       return Void.TYPE;
+        if (type == Boolean.class)    return Boolean.TYPE;
+
+        // Replace each common interface with a concrete class that
+        // can implement it.
+        if (type == Collection.class) return ArrayList.class;
+        if (type == List.class)       return ArrayList.class;
+        if (type == Map.class)        return HashMap.class;
+        if (type == Set.class)        return HashSet.class;
+        if (type == SortedSet.class)  return TreeSet.class;
+        if (type == SortedMap.class)  return TreeMap.class;
+
+        return type;
     }
 }

@@ -85,6 +85,7 @@ public class RubyFloat extends RubyNumeric {
         floatClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyFloat.class, "induced_from", RubyObject.class));
 
         floatClass.defineMethod("to_i", CallbackFactory.getMethod(RubyFloat.class, "to_i"));
+        floatClass.defineMethod("to_f", CallbackFactory.getMethod(RubyFloat.class, "to_f"));
         floatClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFloat.class, "to_s"));
 
         floatClass.defineMethod("+", CallbackFactory.getMethod(RubyFloat.class, "op_plus", RubyObject.class));
@@ -253,6 +254,10 @@ public class RubyFloat extends RubyNumeric {
     public RubyString to_s() {
         return RubyString.newString(getRuby(), usFormat.format(getValue()));
     }
+
+  public RubyFloat to_f() {
+    return this;
+  }
 
     public RubyInteger to_i() {
         // HACK +++
