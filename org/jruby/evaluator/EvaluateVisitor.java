@@ -838,10 +838,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                 } catch (RetryJump rExcptn) {
                 }
             }
-        } catch (ReturnJump rExcptn) {
-            result = rExcptn.getReturnValue();
+        /* } catch (ReturnJump rExcptn) {
+            result = rExcptn.getReturnValue(); */
         } catch (BreakJump bExcptn) {
-            result = runtime.getNil();
+            // result = runtime.getNil();
+            throw new ReturnJump(runtime.getNil());
         } finally {
             runtime.getIterStack().pop();
             runtime.getBlockStack().pop();
@@ -925,10 +926,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                 } catch (RetryJump rExcptn) {
                 }
             }
-        } catch (ReturnJump rExcptn) {
-            result = rExcptn.getReturnValue();
+        /* } catch (ReturnJump rExcptn) {
+            result = rExcptn.getReturnValue(); */
         } catch (BreakJump bExcptn) {
-            result = runtime.getNil();
+            // result = runtime.getNil();
+            throw new ReturnJump(runtime.getNil());
         } finally {
             threadContext.getIterStack().pop();
             threadContext.getBlockStack().pop();
