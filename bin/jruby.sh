@@ -46,6 +46,10 @@ if [ -z "$JRUBY_HOME" ] ; then
   if [ -d ${JRUBY_HOME_1}/lib ] ; then 
 	JRUBY_HOME=${JRUBY_HOME_1}
   fi
+else
+  if $cygwin; then
+    JRUBY_HOME=`cygpath -u "$JRUBY_HOME"`
+  fi
 fi
 
 if [ -z "$JRUBY_OPTS" ] ; then
@@ -55,12 +59,19 @@ fi
 if [ -z "$JAVA_HOME" ] ; then
   echo You must set JAVA_HOME to point at your Java Development Kit installation
   exit 1
+else
+  if $cygwin; then
+    JAVA_HOME=`cygpath -u "$JAVA_HOME"`
+  fi
 fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 
 if [ "$CLASSPATH" != "" ]; then
   CP="$CLASSPATH"
+  if $cygwin; then
+    CP=`cygpath -p -u "$CP"`
+  fi
 else
   CP=""
 fi
@@ -74,7 +85,6 @@ done
 if [ -z "$JRUBY_BASE" ] ; then
   JRUBY_BASE=$JRUBY_HOME
 fi
-
 
 # ----- Execute The Requested Command -----------------------------------------
 
@@ -95,8 +105,10 @@ else
 fi
 
 if $cygwin; then
-  JAVA_HOME=`cygpath --windows "$JAVA_HOME"`
-  CP=`cygpath --path --windows "$CP"`
+  JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
+  CP=`cygpath --path --mixed "$CP"`
+  JRUBY_BASE=`cygpath --mixed "$JRUBY_BASE"`
+  JRUBY_HOME=`cygpath --mixed "$JRUBY_HOME"`
 fi
 
 EN_US=
@@ -105,10 +117,10 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
-  $JAVA_HOME/bin/java $DEBUG -classpath "$CP" \
-  -Djruby.base=$JRUBY_BASE \
-  -Djruby.home=$JRUBY_HOME \
-  -Djruby.lib=$JRUBY_BASE/lib \
+  $JAVA_HOME/bin/java $DEBUG -ea -classpath "$CP" \
+  "-Djruby.base=$JRUBY_BASE" \
+  "-Djruby.home=$JRUBY_HOME" \
+  "-Djruby.lib=$JRUBY_BASE/lib" \
   -Djruby.script=jruby.sh \
   -Djruby.shell=/bin/sh \
   $EN_US \
