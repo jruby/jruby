@@ -456,7 +456,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitClassNode(ClassNode iVisited) {
         RubyClass superClass =
-                getSuperClass(iVisited.getSuperNode());
+                getSuperClassFromNode(iVisited.getSuperNode());
         RubyClass rubyClass =
                 getOrCreateClass(iVisited.getClassName(), superClass);
         evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
@@ -466,28 +466,21 @@ public final class EvaluateVisitor implements NodeVisitor {
         RubyClass rubyClass;
         if (isConstantDefined(className)) {
             IRubyObject type = getConstant(className);
-
             if (!(type instanceof RubyClass)) {
                 throw new TypeError(runtime, className + " is not a class");
             }
-
             rubyClass = (RubyClass) type;
-
             if (rubyClass.getSuperClass().getRealClass() != superClass) {
-                rubyClass = runtime.defineClass(className, superClass);
-                rubyClass.setClassPath(threadContext.getRubyClass(), className);
-                setConstant(className, rubyClass);
-            } else {
-                if (runtime.getSafeLevel() >= 4) {
-                    throw new SecurityError(runtime, "extending class prohibited");
-                }
+                // Class already exists, but with another superclass.
+                // We re-define it with the right superclass.
+                rubyClass = createClass(className, superClass);
+            }
+            if (runtime.getSafeLevel() >= 4) {
+                throw new SecurityError(runtime, "extending class prohibited");
             }
         } else {
-            rubyClass = runtime.defineClass(className, superClass);
-            setConstant(className, rubyClass);
-            rubyClass.setClassPath(threadContext.getRubyClass(), className);
+            rubyClass = createClass(className, superClass);
         }
-
         if (threadContext.getWrapper() != null) {
             rubyClass.extendObject(threadContext.getWrapper());
             rubyClass.includeModule(threadContext.getWrapper());
@@ -495,7 +488,14 @@ public final class EvaluateVisitor implements NodeVisitor {
         return rubyClass;
     }
 
-    private RubyClass getSuperClass(INode superNode) {
+    private RubyClass createClass(String className, RubyClass superClass) {
+        RubyClass result = runtime.defineClass(className, superClass);
+        result.setClassPath(threadContext.getRubyClass(), className);
+        setConstant(className, result);
+        return result;
+    }
+
+    private RubyClass getSuperClassFromNode(INode superNode) {
         if (superNode == null) {
             return runtime.getClasses().getObjectClass();
         }
