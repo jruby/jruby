@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.ast.types.INameNode;
 
 /**
  * The access to a Constant.
@@ -36,7 +37,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ConstNode extends AbstractNode {
+public class ConstNode extends AbstractNode implements INameNode {
     static final long serialVersionUID = -5190161028130457944L;
 
     private final String name;

@@ -30,13 +30,14 @@ import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.ast.types.INameNode;
 
 /** Represents a '::' constant access or method call.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class Colon2Node extends AbstractNode {
+public class Colon2Node extends AbstractNode implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
 
     private final INode leftNode;

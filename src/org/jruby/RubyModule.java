@@ -287,30 +287,6 @@ public class RubyModule extends RubyObject {
             }
         }
         return result.toString();
-
-
-//        FindClassPathResult arg;
-//        String path = null;
-//        String name = null;
-//
-//        Map instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
-//        if (instanceVariables != null) {
-//            Iterator iter = instanceVariables.entrySet().iterator();
-//            arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
-//            name = arg.name;
-//            path = arg.path;
-//        }
-//        if (name == null) {
-//            Iterator iter = getRuntime().getClasses().getClassMap().entrySet().iterator();
-//            arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
-//            name = arg.name;
-//            path = arg.path;
-//        }
-//        if (name == null) {
-//            return null;
-//        }
-//        classPath = path;
-//        return path;
     }
 
     /** include_class_new

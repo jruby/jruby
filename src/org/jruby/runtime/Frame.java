@@ -45,14 +45,13 @@ public class Frame {
     private ISourcePosition position;
     private Iter iter = Iter.ITER_NOT;
 
-    public Frame(
-        IRubyObject self,
-        IRubyObject[] args,
-        String lastFunc,
-        RubyModule lastClass,
-        ISourcePosition position,
-        Iter iter) {
-
+    public Frame(IRubyObject self,
+                 IRubyObject[] args,
+                 String lastFunc,
+                 RubyModule lastClass,
+                 ISourcePosition position,
+                 Iter iter)
+    {
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
