@@ -146,11 +146,12 @@ public class JavaMethod extends JavaCallable {
     }
 
     public IRubyObject return_type() {
-        String result = method.getReturnType().getName();
-        if (result.equals("void")) {
+        Class klass = method.getReturnType();
+        
+        if (klass.equals(void.class)) {
             return getRuntime().getNil();
         }
-        return getRuntime().newString(result);
+        return JavaClass.get(getRuntime(), klass);
     }
 
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {

@@ -44,12 +44,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaClass extends JavaObject {
 
-    private JavaClass(Ruby runtime, String name) {
-        this(runtime, runtime.getJavaSupport().loadJavaClass(name));
-    }
-
-    public JavaClass(Ruby runtime, Class javaClass) {
+    private JavaClass(Ruby runtime, Class javaClass) {
         super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaClass"), javaClass);
+    }
+    
+    public static JavaClass get(Ruby runtime, Class klass) {
+        JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
+        if (javaClass == null) {
+            javaClass = new JavaClass(runtime, klass);
+            runtime.getJavaSupport().putJavaClassIntoCache(javaClass);
+        }
+        return javaClass;
     }
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
@@ -126,7 +131,9 @@ public class JavaClass extends JavaObject {
     }
 
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return new JavaClass(recv.getRuntime(), name.asSymbol());
+        String className = name.asSymbol();
+        Class klass = recv.getRuntime().getJavaSupport().loadJavaClass(className);
+        return JavaClass.get(recv.getRuntime(), klass);
     }
 
     public RubyBoolean public_p() {
@@ -148,7 +155,7 @@ public class JavaClass extends JavaObject {
     public RubyBoolean array_p() {
         return getRuntime().newBoolean(javaClass().isArray());
     }
-
+    
     public RubyString name() {
         return getRuntime().newString(javaClass().getName());
     }
@@ -158,7 +165,7 @@ public class JavaClass extends JavaObject {
         if (superclass == null) {
             return getRuntime().getNil();
         }
-        return new JavaClass(getRuntime(), superclass.getName());
+        return JavaClass.get(getRuntime(), superclass);
     }
 
     public RubyFixnum op_cmp(IRubyObject other) {
@@ -202,19 +209,19 @@ public class JavaClass extends JavaObject {
 	    return java_methods(javaClass().getDeclaredMethods(), true);
     }
 
-	public JavaMethod java_method(IRubyObject[] args) {
+	public JavaMethod java_method(IRubyObject[] args) throws ClassNotFoundException {
         String methodName = args[0].asSymbol();
         Class[] argumentTypes = buildArgumentTypes(args);
         return JavaMethod.create(getRuntime(), javaClass(), methodName, argumentTypes);
     }
 
-    public JavaMethod declared_method(IRubyObject[] args) {
+    public JavaMethod declared_method(IRubyObject[] args) throws ClassNotFoundException {
         String methodName = args[0].asSymbol();
         Class[] argumentTypes = buildArgumentTypes(args);
         return JavaMethod.createDeclared(getRuntime(), javaClass(), methodName, argumentTypes);
     }
 
-    private Class[] buildArgumentTypes(IRubyObject[] args) {
+    private Class[] buildArgumentTypes(IRubyObject[] args) throws ClassNotFoundException {
         if (args.length < 1) {
             throw getRuntime().newArgumentError(args.length, 1);
         }
@@ -274,7 +281,7 @@ public class JavaClass extends JavaObject {
     }
 
     public JavaClass array_class() {
-        return new JavaClass(getRuntime(), Array.newInstance(javaClass(), 0).getClass());
+        return JavaClass.get(getRuntime(), Array.newInstance(javaClass(), 0).getClass());
     }
 
     public JavaObject new_array(IRubyObject lengthArgument) {
@@ -330,7 +337,7 @@ public class JavaClass extends JavaObject {
         Class[] interfaces = javaClass().getInterfaces();
         RubyArray result = getRuntime().newArray(interfaces.length);
         for (int i = 0; i < interfaces.length; i++) {
-            result.append(getRuntime().newString(interfaces[i].getName()));
+            result.append(JavaClass.get(getRuntime(), interfaces[i]));
         }
         return result;
     }
@@ -379,6 +386,6 @@ public class JavaClass extends JavaObject {
         if (! javaClass().isArray()) {
             throw new TypeError(getRuntime(), "not a java array-class");
         }
-        return new JavaClass(getRuntime(), javaClass().getComponentType());
+        return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
 }

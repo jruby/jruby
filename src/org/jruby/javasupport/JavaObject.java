@@ -63,6 +63,8 @@ public class JavaObject extends RubyObject {
         if (wrapper == null) {
             if (value != null && value.getClass().isArray()) {
                 wrapper = new JavaArray(runtime, value);
+            } else if (value != null && value.getClass().equals(Class.class)) {
+                wrapper = JavaClass.get(runtime, (Class)value);
             } else {
                 wrapper = new JavaObject(runtime, value);
             }
@@ -162,7 +164,7 @@ public class JavaObject extends RubyObject {
     }
 
     public IRubyObject java_class() {
-        return new JavaClass(getRuntime(), getJavaClass());
+        return JavaClass.get(getRuntime(), getJavaClass());
     }
 
     public RubyFixnum length() {

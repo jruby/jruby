@@ -90,9 +90,8 @@ module JavaUtilities
       setup_proxy_class(java_class, proxy_class)
     end
 
-    def wrap(java_object, return_type_name)
-      return_type = Java::JavaClass.for_name(return_type_name)
-      real_type = Java::JavaClass.for_name(java_object.java_type)
+    def wrap(java_object, return_type)
+      real_type = java_object.java_class
 
       if real_type.public?
         java_class = real_type
@@ -100,7 +99,7 @@ module JavaUtilities
         java_class = return_type
       end
 
-      proxy_class = new_proxy_class(java_class.name)
+      proxy_class = new_proxy_class(java_class)
       proxy = proxy_class.new_proxy
       proxy.java_class = java_class
       proxy.java_object = java_object
@@ -109,14 +108,13 @@ module JavaUtilities
         # If the instance is private, but implements public interfaces
         # then we want the methods on those available.
 
-        interfaces = real_type.interfaces.collect {|name|
-          Java::JavaClass.for_name(name)
-        }
+        interfaces = real_type.interfaces.collect 
+
         public_interfaces =
           interfaces.select {|interface| interface.public? }
 
         interface_proxies = public_interfaces.collect {|interface|
-          new_proxy_class(interface.name)
+          new_proxy_class(interface)
         }
         interface_proxies.each {|interface_proxy|
           proxy.extend(interface_proxy)
@@ -132,21 +130,22 @@ module JavaUtilities
       end
       @proxy_classes
     end
+    
+    def new_proxy_class(java_class)
+      java_class = Java::JavaClass.for_name(java_class) if java_class.kind_of?(String)
 
-    def new_proxy_class(java_class_name)
-      proxy_classes = JavaUtilities.proxy_classes
-
-      if proxy_classes.has_key?(java_class_name)
-        return proxy_classes[java_class_name]
+      if JavaUtilities.proxy_classes.has_key?(java_class)
+        return JavaUtilities.proxy_classes[java_class]
       end
-
-      java_class = Java::JavaClass.for_name(java_class_name)
-
+      create_proxy_class_from_java_class(java_class)
+    end
+    
+    def create_proxy_class_from_java_class(java_class)    
       proxy_class = Class.new
       proxy_class.class_eval { include(JavaProxy) }
 
       proxy_class.class_eval("@java_class = java_class")
-      proxy_classes[java_class_name] = proxy_class
+      JavaUtilities.proxy_classes[java_class] = proxy_class
       setup_proxy_class(java_class, proxy_class)
     end
 
@@ -164,7 +163,7 @@ module JavaUtilities
         end
       end
       if java_class.interface?
-	create_interface_constructor(java_class, proxy_class)
+     	create_interface_constructor(java_class, proxy_class)
         create_array_type_accessor(java_class, proxy_class)
       elsif java_class.array?
         create_array_class_constructor(java_class, proxy_class)
@@ -218,7 +217,7 @@ module JavaUtilities
     def create_array_type_accessor(java_class, proxy_class)
       class << proxy_class
         def []
-          JavaUtilities.new_proxy_class(java_class.array_class.name)
+          JavaUtilities.new_proxy_class(java_class.array_class)
         end
       end
     end
@@ -234,8 +233,8 @@ module JavaUtilities
 	    args = []
 	    java_args.each_with_index { |arg, idx|
 	      if arg.kind_of?(JavaObject)
-		arg = JavaUtilities.wrap(arg, method.argument_types[idx])
-              end
+    		arg = JavaUtilities.wrap(arg, method.argument_types[idx])
+          end
 	      args[idx] = arg
 	    }
 	    result = proxy.__send__(method.name, *args)
@@ -253,7 +252,7 @@ module JavaUtilities
           value = java_object[index]
           value = Java.java_to_primitive(value)
           if value.kind_of?(JavaObject)
-            value = JavaUtilities.wrap(value, java_class.component_type.name)
+            value = JavaUtilities.wrap(value, java_class.component_type)
           end
           value
         }
@@ -339,14 +338,13 @@ END
       return methods.first if methods.length == 1
 
       arg_types = args.collect {|a| a.java_class }
-      arg_type_names = arg_types.collect {|t| t.name }
 
       exact_match = methods.detect {|m|
-        m.argument_types == arg_type_names
+        m.argument_types == arg_types
       }
       return exact_match unless exact_match.nil?
       compatible_match = methods.detect {|m|
-        types = m.argument_types.collect {|t| Java::JavaClass.for_name(t) }
+        types = m.argument_types
         match = true
         0.upto(types.length - 1) {|i|
           unless types[i].assignable_from?(arg_types[i])
@@ -433,7 +431,7 @@ END
 	  define_method(attr.name) do |*args|
 	    result = Java.java_to_primitive(attr.value(@java_object))
 	    if result.kind_of?(JavaObject)
-	      result = JavaUtilities.wrap(result, result.java_type)
+	      result = JavaUtilities.wrap(result, result.java_class)
 	    end
 	    result
 	  end
@@ -445,7 +443,7 @@ END
 	    result = Java.java_to_primitive(attr.set_value(@java_object, 
 							   args.first))
 	    if result.kind_of?(JavaObject)
-	      result = JavaUtilities.wrap(result, result.java_type)
+	      result = JavaUtilities.wrap(result, result.java_class)
 	    end
 	    result
 	  end
@@ -478,7 +476,7 @@ END
 	    result = @java_class.field('#{constant.name}').static_value
             result = Java.java_to_primitive(result)
             if result.kind_of?(JavaObject)
-               result = JavaUtilities.wrap(result, result.java_type)
+               result = JavaUtilities.wrap(result, result.java_class)
             end
             result
           end

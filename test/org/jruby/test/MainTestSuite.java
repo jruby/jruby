@@ -32,6 +32,8 @@ package org.jruby.test;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
+import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 
 /**
@@ -49,6 +51,8 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestRubyTime.class));
         suite.addTest(new TestSuite(TestRuby.class));
         suite.addTest(new TestSuite(TestJavaUtil.class));
+        suite.addTestSuite(TestJavaClass.class);
+        suite.addTest(new TestSuite(TestKernel.class));
         suite.addTest(new TestSuite(TestKernel.class));
         suite.addTest(new TestSuite(TestRubyCollect.class));
         suite.addTest(new TestSuite(TestObjectSpace.class));

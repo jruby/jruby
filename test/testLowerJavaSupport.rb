@@ -21,10 +21,12 @@ if defined? Java
 #    inner_class = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeImplementation")
 #    test_equal("org.jruby.test.TestHelper$SomeImplementation", inner_class.name)
 
-  string_class = Java::JavaClass.for_name("java.lang.String")
+  string_class   = Java::JavaClass.for_name("java.lang.String")
   test_equal(string_class, Java::JavaClass.for_name("java.lang.String"))
 
   test_equal("java.lang.String", string_class.to_s)
+  test_equal(string_class.id, Java::JavaClass.for_name("java.lang.String").id)
+  
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
   test_ok(string_class.public?)
   test_ok(string_class.final?)
@@ -38,12 +40,18 @@ if defined? Java
   inner_class = Java::JavaClass.for_name("java.lang.Character$Subset")
   test_equal("java.lang.Character$Subset", inner_class.name)
 
+  #superclass
+  sql_date_class = Java::JavaClass.for_name("java.sql.Date")
   object_class = string_class.superclass
   test_equal("java.lang.Object", object_class.name)
   test_equal(nil, object_class.superclass)
-  test_ok(string_class.interfaces.include?("java.lang.Comparable"))
-  test_ok(string_class.interfaces.include?("java.io.Serializable"))
-  test_ok(! string_class.interfaces.include?("java.lang.Object"))
+  test_equal(Java::JavaClass.for_name('java.util.Date'), sql_date_class.superclass)
+
+  #interfaces
+  interfaces = string_class.interfaces.collect{|i| i.name()}
+  test_ok(interfaces.include?("java.lang.Comparable"))
+  test_ok(interfaces.include?("java.io.Serializable"))
+  test_ok(! interfaces.include?("java.lang.Object"))
 
   test_ok(string_class < object_class)
   test_ok(! (string_class > object_class))
@@ -105,7 +113,7 @@ if defined? Java
   #private constructors
   cons = TestHelper.java_class.declared_constructors() 
   test_ok(1,cons.length)
-  test_ok(['java.lang.String'], cons[0].argument_types)
+  test_ok(['java.lang.String'], cons[0].argument_types.collect{|arg_type| arg_type.name})
   test_ok(! cons[0].public?)
   test_ok(! cons[0].accessible?)
   cons[0].accessible = true
@@ -188,7 +196,7 @@ if defined? Java
 
   test_equal("java.lang.Long", Java.primitive_to_java(10).java_type)
   method = random_class.java_method(:nextInt, "int")
-  test_equal(["int"], method.argument_types)
+  test_equal(["int"], method.argument_types.collect{|arg_type| arg_type.name})
   test_exception(TypeError) { method.invoke(random, 10) }
   result = method.invoke(random, Java.primitive_to_java(10))
   test_equal("java.lang.Integer", result.java_type)
@@ -199,10 +207,10 @@ if defined? Java
   test_equal(string_class.to_s, result.java_type)
 
   # Control over return types and values
-  test_equal("java.lang.String", method.return_type)
+  test_equal("java.lang.String", method.return_type.name)
   test_equal(nil, string_class.java_method("notifyAll").return_type)
   test_equal(JavaObject,
-             method.invoke_static(Java.primitive_to_java(101)).class)
+  method.invoke_static(Java.primitive_to_java(101)).class)
 
   # Not arrays
   test_exception(TypeError) { random[0] }     # Not an array

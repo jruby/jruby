@@ -47,7 +47,7 @@ public abstract class JavaCallable extends JavaAccessibleObject {
         Class[] parameterTypes = parameterTypes();
         RubyArray result = getRuntime().newArray(parameterTypes.length);
         for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(getRuntime().newString(parameterTypes[i].getName()));
+            result.append(JavaClass.get(getRuntime(),  parameterTypes[i]));
         }
         return result;
     }

@@ -144,7 +144,19 @@ if defined? Java
     test_equal(0, l.foo)
     l.add(100)
     test_equal(1, l.foo)
-    
+
+    # test support of other class loaders 
+    test_helper_class = Java::JavaClass.for_name("org.jruby.util.TestHelper")
+    test_helper_class2 = Java::JavaClass.for_name("org.jruby.util.TestHelper")
+    test_ok(test_helper_class.java_class == test_helper_class2.java_class, "Successive calls return the same class")
+    method = test_helper_class.java_method('loadAlternateClass')
+    alt_test_helper_class = method.invoke_static()
+
+    constructor = alt_test_helper_class.constructor();
+    alt_test_helper = constructor.new_instance();
+    identityMethod = alt_test_helper_class.java_method('identityTest')
+    identity = Java.java_to_primitive(identityMethod.invoke(alt_test_helper))
+    test_equal("ABCDEFGH",   identity)
   end
 
 

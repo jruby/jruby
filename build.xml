@@ -155,24 +155,20 @@
     	</javac>
   	</target>
 
-  	<target name="create-test-jar" depends="compile-test" 
-		description="Create a jar file containing just the tests.">
-    	<jar destfile="${test.dir}/test.jar">
-      		<fileset dir="${test.classes.dir}" includes="**/*.class"/>
+  	<target name="copy-test-files" depends="compile-test" 
+		description="Make tests fails available as resources">
+    	<copy todir="${test.classes.dir}">
       		<fileset dir="${test.dir}" includes="org/**/*.rb"/>
-      		<manifest>
-        		<attribute name="Built-By" value="${user.name}"/>
-      		</manifest>
-    	</jar>
+    	</copy>
   	</target>
   
-  	<target name="test" depends="create-test-jar"
+  	<target name="test" depends="copy-test-files"
 		description="runs junit tests">
     	<junit fork="yes" haltonfailure="false" dir="${basedir}">
       		<classpath>
         		<path refid="build.classpath"/>
         		<pathelement path="${lib.dir}/jruby.jar"/>
-        		<pathelement path="${test.dir}/test.jar"/>
+        		<pathelement path="${test.classes.dir}"/>
       		</classpath>
       		<sysproperty key="jruby.base" value="${basedir}"/>
       		<sysproperty key="jruby.home" value="${basedir}"/>
@@ -255,7 +251,6 @@
   	<target name="clean" depends="init"
 		description="clean almost everything">
 		<delete dir="${build.dir}"/>
-      	<delete file="${test.dir}/test.jar" quiet="true"/>
       	<delete file="${lib.dir}/jruby.jar" quiet="true"/>
 		<delete dir="${api.docs.dir}"/>
   	</target>

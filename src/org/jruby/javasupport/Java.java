@@ -100,7 +100,7 @@ public class Java {
                 } else if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) {
                     return new Integer(proxy.getClass().hashCode());
                 } else if (method.getName().equals("equals") && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].equals(Object.class)) {
-                    return Boolean.valueOf(proxy == args[1]);
+                    return Boolean.valueOf(proxy == args[0]);
                 }
                 int length = args == null ? 0 : args.length;
                 IRubyObject[] rubyArgs = new IRubyObject[length + 2];

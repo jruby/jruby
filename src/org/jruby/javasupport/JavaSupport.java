@@ -52,7 +52,7 @@ public class JavaSupport {
 
     private ClassLoader javaClassLoader = this.getClass().getClassLoader();
 
-    private WeakHashMap javaObjectCache = new WeakHashMap(100);
+    private WeakHashMap instanceCache = new WeakHashMap(100);
 
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
@@ -69,7 +69,17 @@ public class JavaSupport {
             throw new NameError(runtime, "cannot load Java class " + className);
         }
     }
-
+    
+    public JavaClass getJavaClassFromCache(Class clazz) {
+        WeakReference ref = (WeakReference) instanceCache.get(clazz);
+        
+        return ref == null ? null : (JavaClass) ref.get();
+    }
+    
+    public void putJavaClassIntoCache(JavaClass clazz) {
+        instanceCache.put(clazz.javaClass(), new WeakReference(clazz));
+    }
+    
     public void addToClasspath(URL url) {
         javaClassLoader = new URLClassLoader(new URL[] { url }, javaClassLoader);
     }
@@ -136,7 +146,7 @@ public class JavaSupport {
     }
     
     public JavaObject getJavaObjectFromCache(Object object) {
-    	WeakReference ref = (WeakReference)javaObjectCache.get(object);
+    	WeakReference ref = (WeakReference)instanceCache.get(object);
     	if (ref == null) {
     		return null;
     	}
@@ -148,6 +158,6 @@ public class JavaSupport {
     }
     
     public void putJavaObjectIntoCache(JavaObject object) {
-    	javaObjectCache.put(object.getValue(), new WeakReference(object));
+    	instanceCache.put(object.getValue(), new WeakReference(object));
     }
 }

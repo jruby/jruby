@@ -28,7 +28,9 @@
  */
 package org.jruby.util;
 
-import java.lang.reflect.Constructor;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -49,6 +51,9 @@ public class TestHelper {
         privateField = x;
     }
     
+    public TestHelper() {
+    }
+    
     private String privateMethod() {
         return privateField;
     }
@@ -57,9 +62,10 @@ public class TestHelper {
         return "staticPM";
     }
     
-    public static String acceptConstructor(Constructor c) {
-        return c.toString();
+    public String identityTest() {
+        return "Original";
     }
+    
     /**
      * used to test Java Arrays in Ruby.
      *  while we don't yet have a way to create them this can be used to test basic
@@ -109,6 +115,13 @@ public class TestHelper {
         }
     }
 
+    
+    public static Class loadAlternateClass() throws ClassNotFoundException {
+        AlternateLoader loader = new AlternateLoader();
+        Class klass = loader.loadClass("org.jruby.util.TestHelper");
+        return klass;
+    }
+    
     /**
      * Used by JVM bytecode compiler tests to run compiled code
      */
@@ -153,4 +166,58 @@ public class TestHelper {
         }
 
     }
+    private static class AlternateLoader extends ClassLoader {
+        
+        protected Class findModClass(String name) throws ClassNotFoundException {
+           byte[] classBytes = loadClassBytes(name);
+           replace(classBytes, "Original", "ABCDEFGH");
+           return defineClass(name, classBytes, 0, classBytes.length);
+        }
+        private void replace(byte[] classBytes, String find, String replaceWith) {
+            byte[] findBytes = find.getBytes();
+            byte[] replaceBytes = replaceWith.getBytes();
+            for (int i=0; i<classBytes.length; i++) {
+                boolean match = true;
+                for (int j=0; j<findBytes.length; j++) {
+                    if (classBytes[i+j] != findBytes[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    for (int j=0; j<findBytes.length; j++) 
+                        classBytes[i+j] = replaceBytes[j]; 
+                    return;
+                }
+            }
+        }
+        public Class loadClass(String name) throws ClassNotFoundException {
+            if (name.equals("org.jruby.util.TestHelper"))
+                return findModClass(name);
+            return super.loadClass(name);
+        }
+        private byte[] loadClassBytes(String name) throws ClassNotFoundException {
+            FileInputStream stream = null;
+            try {
+                String fileName = name.replaceAll("\\.", "/");
+                fileName += ".class";
+                File file = new File("build/classes/jruby", fileName);
+                byte[] bytes = new byte[(int) file.length()];
+                stream = new FileInputStream(file);
+                stream.read(bytes);
+                return bytes;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new ClassNotFoundException(e.getMessage(),e);
+            } finally {
+                if (stream != null)
+                    try {
+                        stream.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+            }
+        }
+    }
+
 }
