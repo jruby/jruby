@@ -97,17 +97,7 @@ public class RubyJavaObject extends RubyObject {
     }
 
     public static RubyObject rbImport(Ruby ruby, RubyObject recv, RubyString packageName) {
-    	RubyArray imports;
-    	
-    	if (((RubyClass)recv).isClassVarDefined("imports")) {
-        	imports = (RubyArray)((RubyClass)recv).getClassVar("imports");
-    	} else {
-            imports = RubyArray.newArray(ruby);
-            ((RubyClass)recv).declareClassVar("imports", imports);
-        }
-
-        imports.funcall("push", packageName);
-
+		ruby.getJavaSupport().addImportPackage(packageName.getValue());
         return recv;
     }
 

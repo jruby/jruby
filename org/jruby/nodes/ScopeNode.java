@@ -40,7 +40,25 @@ import org.jruby.util.*;
 import org.jruby.util.collections.*;
 
 /**
- *
+ * Scope in the parse tree.
+ * indicates where in the parse tree a new scope should be started when evaling.
+ * Unlike many node this is not created directly as part of the parce process,
+ * rather it is created as a side effect of other things like creating a ClassNode 
+ * or SClassNode.  It can also be created by evaling a DefnNode or DefsNode as 
+ * part of the call to copyNodeScope.
+ * the meaning of the Node fields for BlockNodes is:
+ * <ul>
+ * <li>
+ * u1 ==&gt;  table (ExtendedList) NOTE: name of local variables (I think)
+ * </li>
+ * <li>
+ * u2 ==&gt; refValue (CRefNode)	NOTE: const reference stack
+ * </li>
+ * <li>
+ * u3 ==&gt;  nextNode (Node) NOTE: this is the content of the scope
+ * </li>
+ * </ul>
+
  * @author  jpetersen
  * @version
  */
@@ -53,6 +71,12 @@ public class ScopeNode extends Node implements CallableNode
 	{
 		super(Constants.NODE_SCOPE, table, refValue, nextNode);
 	}
+
+	/**
+	 * eval the scopenode.
+	 * pushes a new fraome on the tmpFrame stack and a new scope on the scope stack,
+	 * fill in the new scope with this scope's local variables. execute teh nextNode (content of the scope)
+	 **/
 
 	public RubyObject eval(Ruby ruby, RubyObject self)
 	{

@@ -773,24 +773,25 @@ public class RubyModule extends RubyObject {
     public RubyObject call0(RubyObject recv, String name, RubyPointer args, Node body, boolean noSuper) {
 
         // ...
-
-        if (getRuby().getIter().getIter() == RubyIter.ITER_PRE) {
-            getRuby().getIter().push(RubyIter.ITER_CUR);
+		Ruby ruby = getRuby();
+		RubyIter lIter = ruby.getIter();
+        if (lIter.getIter() == RubyIter.ITER_PRE) {
+            lIter.push(RubyIter.ITER_CUR);
         } else {
-            getRuby().getIter().push(RubyIter.ITER_NOT);
+            lIter.push(RubyIter.ITER_NOT);
         }
 
-        RubyFrame frame = getRuby().getRubyFrame();
+        RubyFrame frame = ruby.getRubyFrame();
         frame.push();
         frame.setLastFunc(name);
         frame.setLastClass(noSuper ? null : this);
         frame.setSelf(recv);
         frame.setArgs(args);
 
-        RubyObject result = ((CallableNode) body).call(getRuby(), recv, name, args, noSuper);
+        RubyObject result = ((CallableNode) body).call(ruby, recv, name, args, noSuper);
 
-        getRuby().getRubyFrame().pop();
-        getRuby().getIter().pop();
+        ruby.getRubyFrame().pop();
+        lIter.pop();
 
         return result;
     }

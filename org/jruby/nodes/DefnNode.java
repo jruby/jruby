@@ -57,7 +57,13 @@ public class DefnNode extends Node {
     public DefnNode(int noex, String mId, Node defnNode) {
         super(Constants.NODE_DEFN, noex, mId, defnNode);
     }
-    
+
+	/**
+	 * eval the defnNode.
+	 * creates a method with name mid in the current context
+	 * (the current rubyClass as returned by ruby.getRubyClass) 
+	 * then returns QNil
+	 **/
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getDefnNode() != null) {
 			RubyModule rubyClass = ruby.getRubyClass()	;
