@@ -39,7 +39,9 @@
     	<tstamp>
       		<format property="build.date" pattern="yyyy-MM-dd"/>
     	</tstamp>
+  		<property environment="env"/>
     	<property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
+  		<property name="ruby.home" value="${env.RUBY_HOME}"/>
   	</target>
 
 	<target name="prepare" depends="init" 
@@ -116,9 +118,18 @@
   	</target>
 
 	<target name="serialize" depends="compile"
-		description="Serializes the core Ruby library into Java format">
+		description="Serializes builting Ruby libraries into Java format">
     	<jruby-serialize destdir="${jruby.classes.dir}">
       		<fileset dir="${src.dir}">
+        		<patternset refid="ruby.src.pattern"/>
+      		</fileset>
+    	</jruby-serialize>
+	</target>
+
+	<target name="serialize.rubylib" depends="compile"
+		description="Serializes the core Ruby library into Java format">
+    	<jruby-serialize destdir="${jruby.classes.dir}" verbose="true">
+      		<fileset dir="${ruby.home}/lib/ruby/1.8">
         		<patternset refid="ruby.src.pattern"/>
       		</fileset>
     	</jruby-serialize>
@@ -139,6 +150,9 @@
       		</manifest>
     	</jar>
   	</target>
+	
+	<target name="jar.standalone" depends="serialize, serialize.rubylib, jar"
+		description="Create a standalone jruby.jar file using libraries from RUBY_HOME/lib/ruby/1.8"/>
   
   	<target name="compile-test" depends="jar" 
 		description="Compile the unit tests">
