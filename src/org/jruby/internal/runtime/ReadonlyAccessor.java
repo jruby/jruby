@@ -22,7 +22,6 @@
  */
 package org.jruby.internal.runtime;
 
-import org.jruby.Ruby;
 import org.jruby.exceptions.NameError;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;

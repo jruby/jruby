@@ -29,10 +29,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.BreakJump;
-import org.jruby.runtime.*;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.methods.AbstractMethod;
 
 /**
  *

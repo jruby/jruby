@@ -31,76 +31,84 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 
 /**
  *
  * @author  jpetersen
+ * @version $Revision$
  */
 public class RubyBoolean extends RubyObject {
-    private boolean value;
+	private boolean value;
 
-    public RubyBoolean(Ruby ruby, boolean value) {
-        super(ruby, null, // Don't initialize with class
-        false); // Don't put in object space
-        this.value = value;
-    }
+	public RubyBoolean(Ruby ruby, boolean value) {
+		super(ruby, null, // Don't initialize with class
+		false); // Don't put in object space
+		this.value = value;
+	}
 
-    public Class getJavaClass() {
-        return Boolean.TYPE;
-    }
+	public Class getJavaClass() {
+		return Boolean.TYPE;
+	}
 
-    public RubyClass getMetaClass() {
-        return value ? getRuntime().getClasses().getTrueClass() : getRuntime().getClasses().getFalseClass();
-    }
+	public RubyClass getMetaClass() {
+		return value
+			? getRuntime().getClasses().getTrueClass()
+			: getRuntime().getClasses().getFalseClass();
+	}
 
-    public boolean isTrue() {
-        return value;
-    }
+	public boolean isTrue() {
+		return value;
+	}
 
-    public boolean isFalse() {
-        return !value;
-    }
+	public boolean isFalse() {
+		return !value;
+	}
 
-    public static RubyClass createFalseClass(Ruby ruby) {
-        RubyClass falseClass = ruby.defineClass("FalseClass", ruby.getClasses().getObjectClass());
+	public static RubyClass createFalseClass(Ruby ruby) {
+		RubyClass falseClass =
+			ruby.defineClass("FalseClass", ruby.getClasses().getObjectClass());
 
-        falseClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
+		falseClass.defineMethod(
+			"type",
+			CallbackFactory.getMethod(RubyBoolean.class, "type"));
 
-        ruby.defineGlobalConstant("FALSE", ruby.getFalse());
+		ruby.defineGlobalConstant("FALSE", ruby.getFalse());
 
-        return falseClass;
-    }
+		return falseClass;
+	}
 
-    public static RubyClass createTrueClass(Ruby ruby) {
-        RubyClass trueClass = ruby.defineClass("TrueClass", ruby.getClasses().getObjectClass());
+	public static RubyClass createTrueClass(Ruby ruby) {
+		RubyClass trueClass =
+			ruby.defineClass("TrueClass", ruby.getClasses().getObjectClass());
 
-        trueClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
+		trueClass.defineMethod(
+			"type",
+			CallbackFactory.getMethod(RubyBoolean.class, "type"));
 
-        ruby.defineGlobalConstant("TRUE", ruby.getTrue());
+		ruby.defineGlobalConstant("TRUE", ruby.getTrue());
 
-        return trueClass;
-    }
+		return trueClass;
+	}
 
-    public static RubyBoolean newBoolean(Ruby ruby, boolean value) {
-        if (value) {
-            return ruby.getTrue();
-        } else {
-            return ruby.getFalse();
-        }
-    }
+	public static RubyBoolean newBoolean(Ruby ruby, boolean value) {
+		if (value) {
+			return ruby.getTrue();
+		} else {
+			return ruby.getFalse();
+		}
+	}
 
-        /** false_type
-     *  true_type
-     *
-     */
-    public RubyClass type() {
-        return getMetaClass();
-    }
+	/** false_type
+	 *  true_type
+	 *
+	 */
+	public RubyClass type() {
+		return getMetaClass();
+	}
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write(isTrue() ? 'T' : 'F');
-    }
+	public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write(isTrue() ? 'T' : 'F');
+	}
 }
 

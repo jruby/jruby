@@ -1,10 +1,9 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
-import org.jruby.libraries.RbConfig;
-import org.jruby.libraries.ThreadLibrary;
-import org.jruby.util.BuiltinScript;
 import org.jruby.internal.runtime.load.LoadService;
+import org.jruby.libraries.RbConfig;
+import org.jruby.util.BuiltinScript;
 
 /**
  *

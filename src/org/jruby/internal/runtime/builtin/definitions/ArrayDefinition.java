@@ -2,13 +2,10 @@ package org.jruby.internal.runtime.builtin.definitions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.definitions.ClassDefinition;
 import org.jruby.runtime.builtin.definitions.MethodContext;
 import org.jruby.runtime.builtin.definitions.SingletonMethodContext;
-import org.jruby.runtime.builtin.definitions.ModuleDefinition;
-import org.jruby.runtime.builtin.definitions.ClassDefinition;
-import org.jruby.runtime.builtin.definitions.ModuleFunctionsContext;
 import org.jruby.util.Asserts;
 
 public class ArrayDefinition extends ClassDefinition {

@@ -22,15 +22,12 @@
  */
 package org.jruby.libraries;
 
-import org.jruby.RubyObject;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyBoolean;
-import org.jruby.util.Asserts;
+import org.jruby.RubyClass;
+import org.jruby.RubyObject;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
-import org.jruby.runtime.IStaticCallable;
-import org.jruby.runtime.StaticCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Mutex extends RubyObject implements IndexCallable {
