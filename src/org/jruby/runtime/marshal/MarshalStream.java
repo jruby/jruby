@@ -73,6 +73,7 @@ public class MarshalStream extends FilterOutputStream {
             writeAndRegister(value);
         }
         depth--;
+        if (depth == 0) out.flush(); // flush afer whole dump is complete
     }
 
     private void writeDirectly(IRubyObject value) throws IOException {
