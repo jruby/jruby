@@ -237,6 +237,7 @@ public class RubyDateFormat extends DateFormat {
      */
     public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
         calendar.setTime(date);
+        calendar.setMinimalDaysInFirstWeek(1);
         
         Iterator iter = compiledPattern.iterator();
         while (iter.hasNext()) {
@@ -317,18 +318,11 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_WEEK_YEAR_M:
-                	// GregorianCalendar uses Sunday by default; switch to Monday and back
-                	calendar.setFirstDayOfWeek(Calendar.MONDAY);
+                	formatWeekYear(Calendar.MONDAY, toAppendTo);
+                    break;
                 	// intentional fall-through
                 case FORMAT_WEEK_YEAR_S:
-                	// Ruby uses zero-based weeks
-                    value = calendar.get(Calendar.WEEK_OF_YEAR) - 1;
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
-                    // to clear MONDAY from above
-                    calendar.setFirstDayOfWeek(Calendar.SUNDAY);
+                	formatWeekYear(Calendar.SUNDAY, toAppendTo);
                     break;
                 case FORMAT_DAY_WEEK:
                     value = calendar.get(Calendar.DAY_OF_WEEK) - 1;
@@ -378,6 +372,19 @@ public class RubyDateFormat extends DateFormat {
 
         return toAppendTo;
     }
+
+	private void formatWeekYear(int firstDayOfWeek, StringBuffer toAppendTo) {
+		calendar.setFirstDayOfWeek(firstDayOfWeek);
+		int value = calendar.get(Calendar.WEEK_OF_YEAR);
+		if (calendar.get(Calendar.DAY_OF_WEEK) != firstDayOfWeek) {
+			value--;
+		}
+		if (value < 10) {
+		    toAppendTo.append('0');
+		}
+		toAppendTo.append(value);
+		calendar.setFirstDayOfWeek(Calendar.SUNDAY);
+	}
 
     /**
      * @see DateFormat#parse(String, ParsePosition)
