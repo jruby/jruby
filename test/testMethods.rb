@@ -91,3 +91,6 @@ class TM_B < TM_A
 end
 test_equal("x", TM_B.new.foo) # Tests ZSuperNode
 test_equal("y", TM_B.new.bar) # Tests SuperNode
+
+def no_arg_opt(*); end
+test_no_exception { no_arg_opt }

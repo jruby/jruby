@@ -219,10 +219,18 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     public Arity getArity() {
-        if (getArgsNode() == null) {
+        ArgsNode args = getArgsNode();
+        
+        if (args == null) {
             return Arity.noArguments();
         }
-        ArgsNode args = getArgsNode();
+        
+        // TODO: Make special arity-related values use mnemonic
+        // -2 means (*) signature to method def
+        if (args.getRestArg() == -2) {
+        	return Arity.optional();
+        } 
+
         int argsCount = args.getArgsCount();
         if (args.getOptArgs() != null || args.getRestArg() >= 0) {
             return Arity.required(argsCount);
