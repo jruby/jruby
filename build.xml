@@ -11,8 +11,8 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.2.2"/>
-    <property name="version.file" value="0_2_2"/>
+    <property name="version" value="0.2.3"/>
+    <property name="version.file" value="0_2_3"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <property name="build.dest" value="${build.dir}/classes"/>
