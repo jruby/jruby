@@ -42,7 +42,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyString;
 
 /**
- * @author chadfowler
+ * @author Benoit
  */
 public class TestRubyBase extends TestCase {
     private PipedInputStream pipeIn;
