@@ -3,6 +3,9 @@ JRuby TODO
 ----------
 $Revision$
 
+Items marked '-' are done and will be available in the next release.
+
+
 * Documentation
     * Write a short overview
     * Short users guide
@@ -38,3 +41,5 @@ $Revision$
     - Don't link to special variables
     * Make bignum marshaling work for all bignum values
     - Don't store fixnums bigger than MRI's limit
+
+* Bytecode generation

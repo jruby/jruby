@@ -32,14 +32,7 @@ module Java
 
     def grouped_instance_methods(&block)
       methods = java_instance_methods.select {|m| m.public? }
-      by_name = {}
-      methods.each {|m|
-        if by_name.has_key?(m.name)
-          by_name[m.name] << m
-        else
-          by_name[m.name] = [m]
-        end
-      }
+      by_name = methods.group_by {|m| m.name }
       by_name.each(&block)
     end
   end
@@ -88,7 +81,6 @@ class Module
       end
 
       def proxy_class.create_methods(java_class)
-        # FIXME: deal with overloaded methods
         java_class.grouped_instance_methods {|name, methods|
           if methods.length == 1
             m = methods[0]
@@ -96,7 +88,19 @@ class Module
               m.invoke(self, *args)
             }
           else
-            raise "Didn't think you would get away with overloading, now did you!"
+            methods_by_arity = methods.group_by {|m| m.arity }
+            methods_by_arity.each {|arity, same_arity_methods|
+              if same_arity_methods.length == 1
+                # just one method with this length
+                define_method(name) {|*args|
+                  m = methods_by_arity[args.length].first
+                  m.invoke(self, *args)
+                }
+              else
+                # overloaded on same length
+                raise "java methods just differing on argument types not supported yet: #{name}"
+              end
+            }
           end
         }
       end
