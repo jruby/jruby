@@ -176,8 +176,8 @@ public class RubyThread extends RubyObject {
 
         thread.jvmThread = new Thread(new Runnable() {
             public void run() {
-                    // Thread started
-    synchronized (thread.hasStartedLock) {
+                // Thread started
+                synchronized (thread.hasStartedLock) {
                     thread.hasStarted = true;
                     thread.hasStartedLock.notifyAll();
                 }
@@ -338,6 +338,14 @@ public class RubyThread extends RubyObject {
     }
 
     private void ensureStarted() {
+        // The JVM's join() method may return immediately
+        // and isAlive() give the wrong result if the thread
+        // hasn't started yet. We give it a chance to start
+        // before we try to do anything.
+
+        if (hasStarted) {
+            return;
+        }
         synchronized (hasStartedLock) {
             if (!hasStarted) {
                 try {
