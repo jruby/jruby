@@ -65,7 +65,7 @@ public abstract class RubyNumeric extends RubyObject {
 
         result.defineMethod("+@", callbackFactory.getMethod(RubyNumeric.class, "op_uplus"));
         result.defineMethod("-@", callbackFactory.getMethod(RubyNumeric.class, "op_uminus"));
-        result.defineMethod("<=>", callbackFactory.getMethod(RubyBignum.class, "cmp", RubyNumeric.class));
+        result.defineMethod("<=>", callbackFactory.getMethod(RubyNumeric.class, "cmp", RubyNumeric.class));
         result.defineMethod("==", callbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
         result.defineMethod("equal?", callbackFactory.getMethod(RubyNumeric.class, "veryEqual", IRubyObject.class));
         result.defineMethod("===", callbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
