@@ -24,8 +24,8 @@ Run
 
 interprets the file 'rubyfile.rb'.
 
-You can also use the utility scripts 'jruby.sh' or 'jruby.bat' to
-run the interpreter.
+You can also use the utility scripts 'jruby.sh', 'jruby.rb' or 'jruby.bat'
+to run the interpreter.
 
 
 Compiling from source
@@ -36,11 +36,12 @@ You will need:
 * JDK 1.4 (earlier versions may work, but are not tested).
 * Apache Ant (http://jakarta.apache.org/ant/).
 
-Compiling is done with:
+To compile, just type:
 
-    ant compile
+    ant
 
-You will now find the file jruby.jar in the build/ directory.
+If everything goes well, you will find the file jruby.jar in the
+lib/ directory.
 
 
 More Information
