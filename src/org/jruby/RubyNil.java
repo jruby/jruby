@@ -40,20 +40,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyNil {
     public static RubyClass createNilClass(Ruby ruby) {
         RubyClass nilClass = ruby.defineClass("NilClass", ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        nilClass.defineMethod("type", callbackFactory.getSingletonMethod(RubyNil.class, "type"));
+        nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod(RubyNil.class, "to_i"));
+        nilClass.defineMethod("to_s", callbackFactory.getSingletonMethod(RubyNil.class, "to_s"));
+        nilClass.defineMethod("to_a", callbackFactory.getSingletonMethod(RubyNil.class, "to_a"));
+        nilClass.defineMethod("inspect", callbackFactory.getSingletonMethod(RubyNil.class, "inspect"));
         
-        nilClass.defineMethod("type", CallbackFactory.getSingletonMethod(RubyNil.class, "type"));
-        nilClass.defineMethod("to_i", CallbackFactory.getSingletonMethod(RubyNil.class, "to_i"));
-        nilClass.defineMethod("to_s", CallbackFactory.getSingletonMethod(RubyNil.class, "to_s"));
-        nilClass.defineMethod("to_a", CallbackFactory.getSingletonMethod(RubyNil.class, "to_a"));
-        nilClass.defineMethod("inspect", CallbackFactory.getSingletonMethod(RubyNil.class, "inspect"));
-        
-        nilClass.defineMethod("&", CallbackFactory.getSingletonMethod(RubyNil.class, "op_and", IRubyObject.class));
-        nilClass.defineMethod("|", CallbackFactory.getSingletonMethod(RubyNil.class, "op_or", IRubyObject.class));
-        nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", IRubyObject.class));
-        nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod(0));
-        nilClass.defineMethod("id", CallbackFactory.getSingletonMethod(RubyNil.class, "id"));
-        nilClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
-        nilClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
+        nilClass.defineMethod("&", callbackFactory.getSingletonMethod(RubyNil.class, "op_and", IRubyObject.class));
+        nilClass.defineMethod("|", callbackFactory.getSingletonMethod(RubyNil.class, "op_or", IRubyObject.class));
+        nilClass.defineMethod("^", callbackFactory.getSingletonMethod(RubyNil.class, "op_xor", IRubyObject.class));
+        nilClass.defineMethod("nil?", callbackFactory.getTrueMethod(0));
+        nilClass.defineMethod("id", callbackFactory.getSingletonMethod(RubyNil.class, "id"));
+        nilClass.defineMethod("taint", callbackFactory.getSelfMethod(0));
+        nilClass.defineMethod("freeze", callbackFactory.getSelfMethod(0));
 
         nilClass.getMetaClass().undefineMethod("new");
         

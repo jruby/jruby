@@ -42,16 +42,16 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  *
- * @author  jpetersen
+ * @author  jpetersen, Anders
  * @version $Revision$
  */
 public class ReflectionCallback implements Callback {
-    private final Class klass;
-    private final String methodName;
-    private final Class[] argumentTypes;
-    private final boolean isRestArgs;
+    protected final Class klass;
+    protected final String methodName;
+    protected final Class[] argumentTypes;
+    protected final boolean isRestArgs;
     private final Arity arity;
-    private final CallType callType;
+    protected final CallType callType;
 
     private Method method = null;
 
@@ -68,10 +68,14 @@ public class ReflectionCallback implements Callback {
         this.argumentTypes = args != null ? args : CallbackFactory.NULL_CLASS_ARRAY;
         this.isRestArgs = isRestArgs;
         this.arity = arity;
+        this.callType = callType(isStaticMethod);
+    }
+
+    protected CallType callType(boolean isStaticMethod) {
         if (isStaticMethod) {
-            this.callType = new StaticCallType();
+            return new StaticCallType();
         } else {
-            this.callType = new InstanceCallType();
+            return new InstanceCallType();
         }
     }
 
@@ -102,7 +106,7 @@ public class ReflectionCallback implements Callback {
         return method;
     }
 
-    private void testArgsCount(Ruby ruby, IRubyObject[] methodArgs) {
+    protected void testArgsCount(Ruby ruby, IRubyObject[] methodArgs) {
         if (isRestArgs) {
             if (methodArgs.length < (argumentTypes.length - 1)) {
                 throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
@@ -114,7 +118,7 @@ public class ReflectionCallback implements Callback {
         }
     }
 
-    private IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs) {
+    protected IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs) {
         try {
             return callType.invokeMethod(recv, methodArgs);
         } catch (InvocationTargetException e) {
@@ -220,14 +224,14 @@ public class ReflectionCallback implements Callback {
         return result;
     }
 
-    private abstract class CallType {
+    protected abstract class CallType {
         public abstract IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs)
                 throws IllegalAccessException, InvocationTargetException;
 
         public abstract Class[] reflectionArgumentTypes();
     }
 
-    private class StaticCallType extends CallType {
+    protected class StaticCallType extends CallType {
         public IRubyObject invokeMethod(IRubyObject recv, Object[] arguments)
                 throws IllegalAccessException, InvocationTargetException
         {
@@ -248,7 +252,7 @@ public class ReflectionCallback implements Callback {
         }
     }
 
-    private class InstanceCallType extends CallType {
+    protected class InstanceCallType extends CallType {
         public IRubyObject invokeMethod(IRubyObject recv, Object[] arguments)
                 throws IllegalAccessException, InvocationTargetException
         {

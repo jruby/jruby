@@ -71,7 +71,7 @@ public class RubyBoolean extends RubyObject {
 
 		falseClass.defineMethod(
 			"type",
-			CallbackFactory.getMethod(RubyBoolean.class, "type"));
+			ruby.callbackFactory().getMethod(RubyBoolean.class, "type"));
 
 		ruby.defineGlobalConstant("FALSE", ruby.getFalse());
 
@@ -84,7 +84,7 @@ public class RubyBoolean extends RubyObject {
 
 		trueClass.defineMethod(
 			"type",
-			CallbackFactory.getMethod(RubyBoolean.class, "type"));
+			ruby.callbackFactory().getMethod(RubyBoolean.class, "type"));
 
 		ruby.defineGlobalConstant("TRUE", ruby.getTrue());
 

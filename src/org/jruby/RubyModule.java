@@ -131,59 +131,61 @@ public class RubyModule extends RubyObject {
     }
 
     public static void createModuleClass(RubyClass moduleClass) {
-        Callback op_eqq = CallbackFactory.getMethod(RubyModule.class, "op_eqq", IRubyObject.class);
-        Callback op_cmp = CallbackFactory.getMethod(RubyModule.class, "op_cmp", IRubyObject.class);
-        Callback op_lt = CallbackFactory.getMethod(RubyModule.class, "op_lt", IRubyObject.class);
-        Callback op_le = CallbackFactory.getMethod(RubyModule.class, "op_le", IRubyObject.class);
-        Callback op_gt = CallbackFactory.getMethod(RubyModule.class, "op_gt", IRubyObject.class);
-        Callback op_ge = CallbackFactory.getMethod(RubyModule.class, "op_ge", IRubyObject.class);
+        CallbackFactory callbackFactory = moduleClass.callbackFactory();
 
-        Callback clone = CallbackFactory.getMethod(RubyModule.class, "rbClone");
-        Callback dup = CallbackFactory.getMethod(RubyModule.class, "dup");
-        Callback to_s = CallbackFactory.getMethod(RubyModule.class, "to_s");
-        Callback included_modules = CallbackFactory.getMethod(RubyModule.class, "included_modules");
-        Callback name = CallbackFactory.getMethod(RubyModule.class, "name");
-        Callback ancestors = CallbackFactory.getMethod(RubyModule.class, "ancestors");
+        Callback op_eqq = callbackFactory.getMethod(RubyModule.class, "op_eqq", IRubyObject.class);
+        Callback op_cmp = callbackFactory.getMethod(RubyModule.class, "op_cmp", IRubyObject.class);
+        Callback op_lt = callbackFactory.getMethod(RubyModule.class, "op_lt", IRubyObject.class);
+        Callback op_le = callbackFactory.getMethod(RubyModule.class, "op_le", IRubyObject.class);
+        Callback op_gt = callbackFactory.getMethod(RubyModule.class, "op_gt", IRubyObject.class);
+        Callback op_ge = callbackFactory.getMethod(RubyModule.class, "op_ge", IRubyObject.class);
 
-        Callback attr = CallbackFactory.getOptMethod(RubyModule.class, "attr", IRubyObject.class);
-        Callback attr_reader = CallbackFactory.getOptMethod(RubyModule.class, "attr_reader");
-        Callback attr_writer = CallbackFactory.getOptMethod(RubyModule.class, "attr_writer");
-        Callback attr_accessor = CallbackFactory.getOptMethod(RubyModule.class, "attr_accessor");
+        Callback clone = callbackFactory.getMethod(RubyModule.class, "rbClone");
+        Callback dup = callbackFactory.getMethod(RubyModule.class, "dup");
+        Callback to_s = callbackFactory.getMethod(RubyModule.class, "to_s");
+        Callback included_modules = callbackFactory.getMethod(RubyModule.class, "included_modules");
+        Callback name = callbackFactory.getMethod(RubyModule.class, "name");
+        Callback ancestors = callbackFactory.getMethod(RubyModule.class, "ancestors");
 
-        Callback newModule = CallbackFactory.getSingletonMethod(RubyModule.class, "newModule");
-        Callback initialize = CallbackFactory.getOptMethod(RubyModule.class, "initialize");
-        Callback instance_methods = CallbackFactory.getOptMethod(RubyModule.class, "instance_methods");
-        Callback public_instance_methods = CallbackFactory.getOptMethod(RubyModule.class, "instance_methods");
+        Callback attr = callbackFactory.getOptMethod(RubyModule.class, "attr", IRubyObject.class);
+        Callback attr_reader = callbackFactory.getOptMethod(RubyModule.class, "attr_reader");
+        Callback attr_writer = callbackFactory.getOptMethod(RubyModule.class, "attr_writer");
+        Callback attr_accessor = callbackFactory.getOptMethod(RubyModule.class, "attr_accessor");
+
+        Callback newModule = callbackFactory.getSingletonMethod(RubyModule.class, "newModule");
+        Callback initialize = callbackFactory.getOptMethod(RubyModule.class, "initialize");
+        Callback instance_methods = callbackFactory.getOptMethod(RubyModule.class, "instance_methods");
+        Callback public_instance_methods = callbackFactory.getOptMethod(RubyModule.class, "instance_methods");
         Callback protected_instance_methods =
-            CallbackFactory.getOptMethod(RubyModule.class, "protected_instance_methods");
-        Callback private_instance_methods = CallbackFactory.getOptMethod(RubyModule.class, "private_instance_methods");
+            callbackFactory.getOptMethod(RubyModule.class, "protected_instance_methods");
+        Callback private_instance_methods = callbackFactory.getOptMethod(RubyModule.class, "private_instance_methods");
 
-        Callback constants = CallbackFactory.getMethod(RubyModule.class, "constants");
-        Callback const_get = CallbackFactory.getMethod(RubyModule.class, "const_get", IRubyObject.class);
+        Callback constants = callbackFactory.getMethod(RubyModule.class, "constants");
+        Callback const_get = callbackFactory.getMethod(RubyModule.class, "const_get", IRubyObject.class);
         Callback const_set =
-            CallbackFactory.getMethod(RubyModule.class, "const_set", IRubyObject.class, IRubyObject.class);
-        Callback const_defined = CallbackFactory.getMethod(RubyModule.class, "const_defined", IRubyObject.class);
-        Callback class_variables = CallbackFactory.getMethod(RubyModule.class, "class_variables");
+            callbackFactory.getMethod(RubyModule.class, "const_set", IRubyObject.class, IRubyObject.class);
+        Callback const_defined = callbackFactory.getMethod(RubyModule.class, "const_defined", IRubyObject.class);
+        Callback class_variables = callbackFactory.getMethod(RubyModule.class, "class_variables");
         Callback remove_class_variable =
-            CallbackFactory.getMethod(RubyModule.class, "remove_class_variable", IRubyObject.class);
+            callbackFactory.getMethod(RubyModule.class, "remove_class_variable", IRubyObject.class);
 
-        Callback append_features = CallbackFactory.getMethod(RubyModule.class, "append_features", RubyModule.class);
-        Callback extend_object = CallbackFactory.getMethod(RubyModule.class, "extend_object", IRubyObject.class);
-        Callback include = CallbackFactory.getOptMethod(RubyModule.class, "include");
-        Callback rbPublic = CallbackFactory.getOptMethod(RubyModule.class, "rbPublic");
-        Callback rbProtected = CallbackFactory.getOptMethod(RubyModule.class, "rbProtected");
-        Callback rbPrivate = CallbackFactory.getOptMethod(RubyModule.class, "rbPrivate");
-        Callback module_function = CallbackFactory.getOptMethod(RubyModule.class, "module_function");
+        Callback append_features = callbackFactory.getMethod(RubyModule.class, "append_features", RubyModule.class);
+        Callback extend_object = callbackFactory.getMethod(RubyModule.class, "extend_object", IRubyObject.class);
+        Callback include = callbackFactory.getOptMethod(RubyModule.class, "include");
+        Callback rbPublic = callbackFactory.getOptMethod(RubyModule.class, "rbPublic");
+        Callback rbProtected = callbackFactory.getOptMethod(RubyModule.class, "rbProtected");
+        Callback rbPrivate = callbackFactory.getOptMethod(RubyModule.class, "rbPrivate");
+        Callback module_function = callbackFactory.getOptMethod(RubyModule.class, "module_function");
 
-        Callback method_defined = CallbackFactory.getMethod(RubyModule.class, "method_defined", IRubyObject.class);
-        Callback public_class_method = CallbackFactory.getOptMethod(RubyModule.class, "public_class_method");
-        Callback private_class_method = CallbackFactory.getOptMethod(RubyModule.class, "private_class_method");
+        Callback method_defined = callbackFactory.getMethod(RubyModule.class, "method_defined", IRubyObject.class);
+        Callback public_class_method = callbackFactory.getOptMethod(RubyModule.class, "public_class_method");
+        Callback private_class_method = callbackFactory.getOptMethod(RubyModule.class, "private_class_method");
 
-        Callback module_eval = CallbackFactory.getOptMethod(RubyModule.class, "module_eval");
-        Callback remove_method = CallbackFactory.getMethod(RubyModule.class, "remove_method", IRubyObject.class);
-        Callback undef_method = CallbackFactory.getMethod(RubyModule.class, "undef_method", IRubyObject.class);
+        Callback module_eval = callbackFactory.getOptMethod(RubyModule.class, "module_eval");
+        Callback remove_method = callbackFactory.getMethod(RubyModule.class, "remove_method", IRubyObject.class);
+        Callback undef_method = callbackFactory.getMethod(RubyModule.class, "undef_method", IRubyObject.class);
         Callback alias_method =
-            CallbackFactory.getMethod(RubyModule.class, "alias_method", IRubyObject.class, IRubyObject.class);
+            callbackFactory.getMethod(RubyModule.class, "alias_method", IRubyObject.class, IRubyObject.class);
 
         moduleClass.defineMethod("===", op_eqq);
         moduleClass.defineMethod("<=>", op_cmp);
@@ -216,7 +218,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("const_get", const_get);
         moduleClass.defineMethod("const_set", const_set);
         moduleClass.defineMethod("const_defined?", const_defined);
-        moduleClass.definePrivateMethod("method_added", CallbackFactory.getNilMethod(1));
+        moduleClass.definePrivateMethod("method_added", callbackFactory.getNilMethod(1));
         moduleClass.defineMethod("class_variables", class_variables);
         moduleClass.definePrivateMethod("remove_class_variable", remove_class_variable);
 
@@ -238,13 +240,13 @@ public class RubyModule extends RubyObject {
         moduleClass.definePrivateMethod("remove_method", remove_method);
         moduleClass.definePrivateMethod("undef_method", undef_method);
         moduleClass.definePrivateMethod("alias_method", alias_method);
-        moduleClass.definePrivateMethod("define_method", CallbackFactory.getOptMethod(RubyModule.class, "define_method"));
+        moduleClass.definePrivateMethod("define_method", callbackFactory.getOptMethod(RubyModule.class, "define_method"));
 
-        moduleClass.defineMethod("instance_method", CallbackFactory.getMethod(RubyModule.class, "instance_method", IRubyObject.class));
+        moduleClass.defineMethod("instance_method", callbackFactory.getMethod(RubyModule.class, "instance_method", IRubyObject.class));
 
-        moduleClass.defineMethod("const_missing", CallbackFactory.getMethod(RubyModule.class, "const_missing", IRubyObject.class));
+        moduleClass.defineMethod("const_missing", callbackFactory.getMethod(RubyModule.class, "const_missing", IRubyObject.class));
 
-        moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
+        moduleClass.defineSingletonMethod("nesting", callbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
     }
 
     /** classname

@@ -85,13 +85,11 @@ public class RubyClass extends RubyModule implements IndexCallable {
     }
 
     public static void createClassClass(RubyClass classClass) {
-        classClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyClass.class, "newClass"));
-
-        classClass.defineMethod("new", CallbackFactory.getOptMethod(RubyClass.class, "newInstance"));
-        classClass.defineMethod("superclass", CallbackFactory.getMethod(RubyClass.class, "superclass"));
-
-        classClass.defineSingletonMethod("inherited", CallbackFactory.getNilMethod(1));
-
+        CallbackFactory callbackFactory = classClass.callbackFactory();
+        classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyClass.class, "newClass"));
+        classClass.defineMethod("new", callbackFactory.getOptMethod(RubyClass.class, "newInstance"));
+        classClass.defineMethod("superclass", callbackFactory.getMethod(RubyClass.class, "superclass"));
+        classClass.defineSingletonMethod("inherited", callbackFactory.getNilMethod(1));
         classClass.undefineMethod("module_function");
     }
 

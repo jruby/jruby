@@ -62,35 +62,37 @@ public class RubyDir extends RubyObject {
 
         dirClass.includeModule(ruby.getModule("Enumerable"));
 
-		dirClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyDir.class, "newInstance"));
-        dirClass.defineSingletonMethod("glob", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
-        dirClass.defineSingletonMethod("entries", CallbackFactory.getSingletonMethod(RubyDir.class, "entries", RubyString.class));
-        dirClass.defineSingletonMethod("[]", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+
+		dirClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyDir.class, "newInstance"));
+        dirClass.defineSingletonMethod("glob", callbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
+        dirClass.defineSingletonMethod("entries", callbackFactory.getSingletonMethod(RubyDir.class, "entries", RubyString.class));
+        dirClass.defineSingletonMethod("[]", callbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
         // dirClass.defineAlias("[]", "glob");
-        dirClass.defineSingletonMethod("chdir", CallbackFactory.getSingletonMethod(RubyDir.class, "chdir", RubyString.class));
-        dirClass.defineSingletonMethod("chroot", CallbackFactory.getSingletonMethod(RubyDir.class, "chroot", RubyString.class));
-        dirClass.defineSingletonMethod("delete", CallbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
-        dirClass.defineSingletonMethod("foreach", CallbackFactory.getSingletonMethod(RubyDir.class, "foreach", RubyString.class));
-        dirClass.defineSingletonMethod("getwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
-        dirClass.defineSingletonMethod("pwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
+        dirClass.defineSingletonMethod("chdir", callbackFactory.getSingletonMethod(RubyDir.class, "chdir", RubyString.class));
+        dirClass.defineSingletonMethod("chroot", callbackFactory.getSingletonMethod(RubyDir.class, "chroot", RubyString.class));
+        dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
+        dirClass.defineSingletonMethod("foreach", callbackFactory.getSingletonMethod(RubyDir.class, "foreach", RubyString.class));
+        dirClass.defineSingletonMethod("getwd", callbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
+        dirClass.defineSingletonMethod("pwd", callbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
         // dirClass.defineAlias("pwd", "getwd");
-        dirClass.defineSingletonMethod("mkdir", CallbackFactory.getOptSingletonMethod(RubyDir.class, "mkdir"));
-        dirClass.defineSingletonMethod("open", CallbackFactory.getSingletonMethod(RubyDir.class, "open", RubyString.class));
-        dirClass.defineSingletonMethod("rmdir", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
-        dirClass.defineSingletonMethod("unlink", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
-        dirClass.defineSingletonMethod("delete", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
+        dirClass.defineSingletonMethod("mkdir", callbackFactory.getOptSingletonMethod(RubyDir.class, "mkdir"));
+        dirClass.defineSingletonMethod("open", callbackFactory.getSingletonMethod(RubyDir.class, "open", RubyString.class));
+        dirClass.defineSingletonMethod("rmdir", callbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
+        dirClass.defineSingletonMethod("unlink", callbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
+        dirClass.defineSingletonMethod("delete", callbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
         // dirClass.defineAlias("unlink", "rmdir");
         // dirClass.defineAlias("delete", "rmdir");
 
-        dirClass.defineMethod("close", CallbackFactory.getMethod(RubyDir.class, "close"));
-        dirClass.defineMethod("each", CallbackFactory.getMethod(RubyDir.class, "each"));
-        dirClass.defineMethod("tell", CallbackFactory.getMethod(RubyDir.class, "tell"));
+        dirClass.defineMethod("close", callbackFactory.getMethod(RubyDir.class, "close"));
+        dirClass.defineMethod("each", callbackFactory.getMethod(RubyDir.class, "each"));
+        dirClass.defineMethod("tell", callbackFactory.getMethod(RubyDir.class, "tell"));
         dirClass.defineAlias("pos", "tell");
-        dirClass.defineMethod("seek", CallbackFactory.getMethod(RubyDir.class, "seek", RubyFixnum.class));
+        dirClass.defineMethod("seek", callbackFactory.getMethod(RubyDir.class, "seek", RubyFixnum.class));
         dirClass.defineAlias("pos=", "seek");
-        dirClass.defineMethod("read", CallbackFactory.getMethod(RubyDir.class, "read"));
-        dirClass.defineMethod("rewind", CallbackFactory.getMethod(RubyDir.class, "rewind"));
-		dirClass.defineMethod("initialize", CallbackFactory.getMethod(RubyDir.class, "initialize", RubyString.class));
+        dirClass.defineMethod("read", callbackFactory.getMethod(RubyDir.class, "read"));
+        dirClass.defineMethod("rewind", callbackFactory.getMethod(RubyDir.class, "rewind"));
+		dirClass.defineMethod("initialize", callbackFactory.getMethod(RubyDir.class, "initialize", RubyString.class));
 
         return dirClass;
     }

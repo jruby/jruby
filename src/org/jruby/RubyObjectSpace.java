@@ -41,9 +41,9 @@ public class RubyObjectSpace {
      */
     public static RubyModule createObjectSpaceModule(Ruby ruby) {
         RubyModule objectSpaceModule = ruby.defineModule("ObjectSpace");
-
-        objectSpaceModule.defineModuleFunction("each_object", CallbackFactory.getOptSingletonMethod(RubyObjectSpace.class, "each_object"));
-        objectSpaceModule.defineModuleFunction("garbage_collect", CallbackFactory.getSingletonMethod(RubyObjectSpace.class, "garbage_collect"));
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod(RubyObjectSpace.class, "each_object"));
+        objectSpaceModule.defineModuleFunction("garbage_collect", callbackFactory.getSingletonMethod(RubyObjectSpace.class, "garbage_collect"));
 
         return objectSpaceModule;
     }

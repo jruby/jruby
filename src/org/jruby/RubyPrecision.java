@@ -39,14 +39,12 @@ public class RubyPrecision {
     
     public static RubyModule createPrecisionModule(Ruby ruby) {
         RubyModule precisionModule = ruby.defineModule("Precision");
-
-        precisionModule.defineSingletonMethod("append_features", CallbackFactory.getSingletonMethod(RubyPrecision.class, "append_features", IRubyObject.class));
-
-        precisionModule.defineMethod("prec", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec", IRubyObject.class));
-        precisionModule.defineMethod("prec_i", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec_i"));
-        precisionModule.defineMethod("prec_f", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec_f"));
-        
-        return precisionModule;     
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        precisionModule.defineSingletonMethod("append_features", callbackFactory.getSingletonMethod(RubyPrecision.class, "append_features", IRubyObject.class));
+        precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec", IRubyObject.class));
+        precisionModule.defineMethod("prec_i", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec_i"));
+        precisionModule.defineMethod("prec_f", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec_f"));
+        return precisionModule;
     }
 
     public static IRubyObject induced_from(IRubyObject receiver, IRubyObject source) {
@@ -56,7 +54,7 @@ public class RubyPrecision {
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
-            include.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyPrecision.class, "induced_from", IRubyObject.class));
+            include.defineSingletonMethod("induced_from", receiver.getRuntime().callbackFactory().getSingletonMethod(RubyPrecision.class, "induced_from", IRubyObject.class));
         }
         return receiver;
     }

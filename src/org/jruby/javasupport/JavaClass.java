@@ -34,9 +34,10 @@ import org.jruby.RubyInteger;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.callback.IndexedCallback;
+import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
@@ -87,7 +88,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass());
         javaClassClass.includeModule(runtime.getClasses().getComparableModule());
 
-        javaClassClass.defineSingletonMethod("for_name", CallbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));
+        CallbackFactory callbackFactory = new ReflectionCallbackFactory();
+        javaClassClass.defineSingletonMethod("for_name", callbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));
         javaClassClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
         javaClassClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
         javaClassClass.defineMethod("interface?", IndexedCallback.create(INTERFACE_P, 0));

@@ -29,17 +29,6 @@
  */
 package org.jruby;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.List;
-import java.util.Random;
-
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.common.IRubyErrorHandler;
@@ -50,17 +39,17 @@ import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.GlobalVariables;
-import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ClassFactory;
+import org.jruby.internal.runtime.GlobalVariables;
+import org.jruby.internal.runtime.ThreadService;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.BlockStack;
-import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
@@ -77,11 +66,24 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
 import org.jruby.util.collections.IStack;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+import java.util.Random;
 
 /**
  * The jruby runtime.
@@ -116,6 +118,8 @@ public final class Ruby {
     private int safeLevel = 0;
 
     private IObjectFactory factory = new ObjectFactory(this);
+
+    private CallbackFactory callbackFactory = new ReflectionCallbackFactory();
 
     // Default objects
     private IRubyObject nilObject;
@@ -872,4 +876,7 @@ public final class Ruby {
         return globalVariables;
     }
 
+    public CallbackFactory callbackFactory() {
+        return callbackFactory;
+    }
 }

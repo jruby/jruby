@@ -73,14 +73,15 @@ public class RubyIO extends RubyObject {
 
     public static RubyClass createIOClass(Ruby ruby) {
         RubyClass result = new IODefinition(ruby).getType();
-        result.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
-        result.defineMethod("printf", CallbackFactory.getOptSingletonMethod(RubyIO.class, "printf"));
-        result.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
-        result.defineMethod("lineno=", CallbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
-        result.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
-        result.defineMethod("fsync", CallbackFactory.getMethod(RubyIO.class, "fsync"));
-        result.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", IRubyObject.class));
-        result.defineSingletonMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        result.defineMethod("print", callbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
+        result.defineMethod("printf", callbackFactory.getOptSingletonMethod(RubyIO.class, "printf"));
+        result.defineMethod("puts", callbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
+        result.defineMethod("lineno=", callbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
+        result.defineMethod("sync=", callbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
+        result.defineMethod("fsync", callbackFactory.getMethod(RubyIO.class, "fsync"));
+        result.defineSingletonMethod("foreach", callbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", IRubyObject.class));
+        result.defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
         return result;
     }
 

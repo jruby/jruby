@@ -110,9 +110,9 @@ public class Method extends RubyObject {
      */
     public IRubyObject to_proc() {
         return runtime.iterate(
-            CallbackFactory.getSingletonMethod(Method.class, "mproc"),
+            callbackFactory().getSingletonMethod(Method.class, "mproc"),
             runtime.getNil(),
-            CallbackFactory.getBlockMethod(Method.class, "bmcall"),
+            callbackFactory().getBlockMethod(Method.class, "bmcall"),
             this);
     }
 

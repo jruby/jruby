@@ -19,11 +19,11 @@ import org.jruby.RubyFloat;
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
         RubyModule javaModule = runtime.defineModule("Java");
-
-        javaModule.defineModuleFunction("define_exception_handler", CallbackFactory.getOptSingletonMethod(Java.class, "define_exception_handler"));
-        javaModule.defineModuleFunction("primitive_to_java", CallbackFactory.getSingletonMethod(Java.class, "primitive_to_java", IRubyObject.class));
-        javaModule.defineModuleFunction("java_to_primitive", CallbackFactory.getSingletonMethod(Java.class, "java_to_primitive", IRubyObject.class));
-        javaModule.defineModuleFunction("new_proxy_instance", CallbackFactory.getOptSingletonMethod(Java.class, "new_proxy_instance"));
+        CallbackFactory callbackFactory = runtime.callbackFactory();
+        javaModule.defineModuleFunction("define_exception_handler", callbackFactory.getOptSingletonMethod(Java.class, "define_exception_handler"));
+        javaModule.defineModuleFunction("primitive_to_java", callbackFactory.getSingletonMethod(Java.class, "primitive_to_java", IRubyObject.class));
+        javaModule.defineModuleFunction("java_to_primitive", callbackFactory.getSingletonMethod(Java.class, "java_to_primitive", IRubyObject.class));
+        javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod(Java.class, "new_proxy_instance"));
 
         JavaClass.createJavaClassClass(runtime, javaModule);
         JavaMethod.createJavaMethodClass(runtime, javaModule);

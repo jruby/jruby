@@ -39,26 +39,28 @@ public class RubyFile extends RubyIO {
         pathSeparator.freeze();
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
 
-        fileClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
-        fileClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
-        fileClass.defineSingletonMethod("chmod", CallbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
-        fileClass.defineSingletonMethod("lstat", CallbackFactory.getSingletonMethod(RubyFile.class, "lstat", RubyString.class));
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-        fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
-        fileClass.defineSingletonMethod("exists?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
-        fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
-        fileClass.defineSingletonMethod("rename", CallbackFactory.getSingletonMethod(RubyFile.class, "rename", IRubyObject.class, IRubyObject.class));
-        fileClass.defineSingletonMethod("delete", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
-		fileClass.defineSingletonMethod("dirname", CallbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
-		fileClass.defineSingletonMethod("join", CallbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
-		fileClass.defineSingletonMethod("directory?", CallbackFactory.getSingletonMethod(RubyFile.class, "directory", RubyString.class));
-		fileClass.defineSingletonMethod("basename", CallbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
+        fileClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
+        fileClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
+        fileClass.defineSingletonMethod("chmod", callbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
+        fileClass.defineSingletonMethod("lstat", callbackFactory.getSingletonMethod(RubyFile.class, "lstat", RubyString.class));
 
-		fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
+        fileClass.defineSingletonMethod("exist?", callbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
+        fileClass.defineSingletonMethod("exists?", callbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
+        fileClass.defineSingletonMethod("unlink", callbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
+        fileClass.defineSingletonMethod("rename", callbackFactory.getSingletonMethod(RubyFile.class, "rename", IRubyObject.class, IRubyObject.class));
+        fileClass.defineSingletonMethod("delete", callbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
+		fileClass.defineSingletonMethod("dirname", callbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
+		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
+		fileClass.defineSingletonMethod("directory?", callbackFactory.getSingletonMethod(RubyFile.class, "directory", RubyString.class));
+		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
+
+		fileClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyFile.class, "initialize"));
 
         // Works around a strange-ish implementation that uses a static method on the superclass.
         // It broke when moved to indexed callbacks, so added this line:
-        fileClass.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
+        fileClass.defineMethod("print", callbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
 
         return fileClass;
     }

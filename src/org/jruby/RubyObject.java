@@ -61,6 +61,7 @@ import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
 
@@ -943,6 +944,10 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      */
     public RubyClass getType() {
         return type();
+    }
+
+    protected CallbackFactory callbackFactory() {
+        return runtime.callbackFactory();
     }
 
     /**

@@ -24,6 +24,7 @@
     	<exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     	<exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
     	<exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
+        <exclude unless="cglib.present" name="**/Cglib*.java"/>
   	</patternset>
 
   	<patternset id="rubyclass.src.pattern">
@@ -77,6 +78,8 @@
     	<available property="gnuregexp.present"
                	classname="gnu.regexp.RE"
 	       	classpathref="build.classpath"/>
+        <available property="cglib.present"
+                classname="net.sf.cglib.reflect.FastClass"/>
   	</target>
 
 	<target name="compile.tasks" depends="prepare"
