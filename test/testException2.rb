@@ -9,7 +9,7 @@ begin
 rescue ArgumentError
   e = $!
 end
-test_ok(e.kind_of?(ArgumentError))
+test_equal(ArgumentError, e.type)
 
 e = nil
 begin
@@ -17,7 +17,7 @@ begin
 rescue RuntimeError
   e = $!
 end
-test_ok(e.kind_of?(RuntimeError))
+test_equal(RuntimeError, e.type)
 
 e = nil
 type = ArgumentError
@@ -26,14 +26,18 @@ begin
 rescue type
   e = $!
 end
-test_ok(e.kind_of?(ArgumentError))
+test_equal(ArgumentError, e.type)
 
-#class SomeOtherException < StandardError
-#end
-#begin
-#  raise "whoah!"
-#rescue SomeOtherException
-#  test_fail()
-#rescue Exception
-#  test_ok(true)
-#end
+###class SomeOtherException < StandardError
+###end
+###e = Exception.new
+###test_ok(!e.kind_of?(SomeOtherException))
+###test_ok(!e.kind_of?(StandardError))
+###test_ok(e.kind_of?(Exception))
+###begin
+###  raise "whoah!"
+###rescue SomeOtherException
+###  test_fail()
+###rescue Exception
+###  test_ok(true)
+###end

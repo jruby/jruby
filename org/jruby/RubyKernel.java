@@ -353,7 +353,11 @@ public class RubyKernel {
         switch (args.length) {
         case 0 :
         case 1 :
-            throw new RaiseException(RubyException.newInstance(ruby, ruby.getExceptions().getRuntimeError(), args));
+            if (args[0] instanceof RubyException) {
+                throw new RaiseException((RubyException) args[0]);
+            } else {
+                throw new RaiseException(RubyException.newInstance(ruby, ruby.getExceptions().getRuntimeError(), args));
+            }
         case 2 :
             RubyException excptn = (RubyException) args[0].callMethod("exception", args[1]);
             throw new RaiseException(excptn);
