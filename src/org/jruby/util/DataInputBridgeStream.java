@@ -1,8 +1,9 @@
 /*
  * DataInputBridgeStream
  *
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -46,7 +47,7 @@ public class DataInputBridgeStream extends InputStream {
      * @see java.io.InputStream#read()
      */
     public int read() throws IOException {
-        return input.readChar();
+        return input.readUnsignedByte();
     }
 
 }
