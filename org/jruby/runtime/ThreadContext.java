@@ -203,20 +203,10 @@ public class ThreadContext {
 
     private RubyObject[] prepareArguments(IRubyObject value, IRubyObject self, Block currentBlock, boolean checkArguments) {
         INode blockVar = currentBlock.getVar();
-        if (blockVar != null) {
-            if (blockVar instanceof ZeroArgNode) {
-                if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
-                    throw new ArgumentError(ruby, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
-                }
-            } else {
-                if (!(blockVar instanceof MultipleAsgnNode)) {
-                    if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                        value = ((RubyArray) value).entry(0);
-                    }
-                }
-                new AssignmentVisitor(ruby, self.toRubyObject()).assign(blockVar, value.toRubyObject(), checkArguments);
-            }
-        } else {
+
+        value = prepareBlockVariable(blockVar, checkArguments, value, self);
+
+        if (blockVar == null) {
             if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
                 value = ((RubyArray) value).entry(0);
             }
@@ -229,5 +219,27 @@ public class ThreadContext {
             result = new RubyObject[] { value.toRubyObject() };
         }
         return result;
+    }
+
+    private IRubyObject prepareBlockVariable(INode blockVar, boolean checkArguments, IRubyObject value, IRubyObject self) {
+        if (blockVar == null) {
+            return value;
+        }
+
+        if (checkArguments && value instanceof RubyArray) {
+            if (blockVar instanceof ZeroArgNode) {
+                if (((RubyArray) value).getLength() != 0) {
+                    throw new ArgumentError(ruby, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
+                }
+            }
+
+            if (!(blockVar instanceof MultipleAsgnNode)) {
+                if (((RubyArray) value).getLength() == 1) {
+                    value = ((RubyArray) value).entry(0);
+                }
+            }
+        }
+        new AssignmentVisitor(ruby, self.toRubyObject()).assign(blockVar, value.toRubyObject(), checkArguments);
+        return value;
     }
 }
