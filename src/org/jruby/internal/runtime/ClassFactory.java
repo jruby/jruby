@@ -5,8 +5,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassFactory {
     private final Ruby runtime;
@@ -52,46 +50,5 @@ public class ClassFactory {
             module.includeModule(runtime.getWrapper());
         }
         return module;
-    }
-
-    private boolean matchingClassExists(String className, RubyClass superClass) {
-        if (! isConstantDefined(className)) {
-            return false;
-        }
-        IRubyObject type = getConstant(className);
-        if (! (type instanceof RubyClass)) {
-            throw new TypeError(runtime, className + " is not a class");
-        }
-        RubyClass rubyClass = (RubyClass) type;
-        if (superClass != null) {
-            if (rubyClass.getSuperClass().getRealClass() != superClass) {
-                return false;
-            }
-        }
-        if (runtime.getSafeLevel() >= 4) {
-            throw new SecurityError(runtime, "extending class prohibited");
-        }
-        return true;
-    }
-
-    private RubyClass createClass(String className, RubyClass superClass) {
-        if (superClass == null) {
-            superClass = runtime.getClasses().getObjectClass();
-        }
-        RubyClass result = runtime.defineClass(className, superClass);
-        setConstant(className, result);
-        return result;
-    }
-
-    private boolean isConstantDefined(String name) {
-        return runtime.getRubyClass().isConstantDefined(name);
-    }
-
-    private void setConstant(String name, IRubyObject value) {
-        runtime.getRubyClass().setConstant(name, value);
-    }
-
-    private IRubyObject getConstant(String name) {
-        return runtime.getRubyClass().getConstant(name);
     }
 }
