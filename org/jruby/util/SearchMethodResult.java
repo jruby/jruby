@@ -29,7 +29,7 @@
 package org.jruby.util;
 
 import org.jruby.*;
-import org.jruby.original.*;
+import org.jruby.interpreter.nodes.*;
 
 /**
  *
@@ -37,10 +37,10 @@ import org.jruby.original.*;
  * @version 
  */
 public class SearchMethodResult {
-    private NODE body;
+    private Node body;
     private RubyModule origin;
     
-    public SearchMethodResult(NODE body, RubyModule origin) {
+    public SearchMethodResult(Node body, RubyModule origin) {
         this.body = body;
         this.origin = origin;
     }
@@ -48,7 +48,7 @@ public class SearchMethodResult {
     /** Getter for property body.
      * @return Value of property body.
      */
-    public NODE getBody() {
+    public Node getBody() {
         return body;
     }
     

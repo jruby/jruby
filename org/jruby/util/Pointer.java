@@ -1,6 +1,6 @@
 /*
- * RubyGlobalEntryGetter.java - No description
- * Created on 16. September 2001, 17:26
+ * Pointer.java - No description
+ * Created on 13. Oktober 2001, 00:43
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
  * Jan Arne Petersen <japetersen@web.de>
@@ -28,13 +28,22 @@
 
 package org.jruby.util;
 
-import org.jruby.*;
+import java.util.*;
 
 /**
  *
  * @author  jpetersen
  * @version 
  */
-public interface RubyGlobalEntryGetter {
-    public RubyObject get(RubyId id, RubyObject value, RubyGlobalEntry entry);
+public interface Pointer extends Iterator, List {
+    public void inc();
+    public void dec();
+    
+    public void inc(int index);
+    public void dec(int index);
+    
+    public Pointer getPointer(int index);
+    
+    public void set(int index, Pointer pointer, int len);
+    public void set(Pointer pointer, int len);
 }
