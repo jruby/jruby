@@ -3,6 +3,7 @@
 <project basedir="." default="all" name="JRuby">
     <property name="build.dir" value="build"/>
     <property name="bsf.jar" value="lib/bsf.jar"/>
+    <property name="junit.jar" value="lib/junit.jar"/>
     
     <!--<property name="build.compiler" value="jikes"/-->
     <property name="build.compiler" value="modern"/>
@@ -24,18 +25,26 @@
 
     <target name="check_for_optional_packages">
         <available classname="java.lang.CharSequence" property="jdk1.4+"/>
-<!--        <available file="lib/bsf.jar" property="bsf"/> -->
+        <available file="lib/bsf.jar" property="bsf"/> 
+        <available file="lib/junit.jar" property="junit"/> 
     </target>
-
-    <target name="compile">
+    <target name="test" depends="compile">
+       <junit printsummary="yes">
+          <formatter type="plain"/>
+          <test name="org.jruby.test.MainTestSuite"/>
+       </junit>
+    </target>
+    <target depends="check_for_optional_packages" name="compile">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.dest}"/>
-        <javac excludes="org/jruby/javasupport/bsf/**/*.java" debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
+        <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="${bsf}"/>
+            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf"/>
+            <exclude unless="junit" name="**/test/**"/>
             <exclude name="**/tars/**"/>
             <classpath>
                 <path path="${bsf.jar}"/>
+                <path path="${junit.jar}"/>
             </classpath>
         </javac>
         <copy todir="${build.dest}">
