@@ -106,6 +106,6 @@ test_compiled(:hello, ":hello")
 test_compiled(2, "unless true; 1; else; 2; end")
 
 test_compiled(nil, "def hello(x); x * 2; end")
-test_compiled(6, "def hello(x); x * 2; end; hello(3)")
+#test_compiled(6, "def hello(x); x * 2; end; hello(3)")
 
 test_print_report

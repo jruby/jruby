@@ -163,6 +163,30 @@ module JRuby
                                  arg_types,
                                  BCEL::Constants::INVOKESPECIAL)
 
+          # Make a method using the callback
+
+          generator.append(factory.createNew("org.jruby.internal.runtime.methods.CallbackMethod"))
+          generator.append(BCEL::DUP.new)
+          callbackMethod = generator.addLocalVariable("callbackMethod",
+                                                      BCEL::ObjectType.new("org.jruby.internal.runtime.methods.CallbackMethod"),
+                                                      nil,
+                                                      nil)
+          callbackMethod.setStart(generator.getEnd)
+          generator.append(BCEL::ASTORE.new(callbackMethod.getIndex))
+          generator.append(BCEL::SWAP.new)
+
+          generator.append(factory.createGetStatic("org.jruby.runtime.Visibility",
+                                                   "PUBLIC",
+                                                   BCEL::ObjectType.new("org.jruby.runtime.Visibility")))
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = BCEL::ObjectType.new("org.jruby.runtime.Callback")
+          arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.Visibility")
+          generator.appendInvoke("org.jruby.internal.runtime.methods.CallbackMethod",
+                                 "<init>",
+                                 BCEL::Type::VOID,
+                                 arg_types,
+                                 BCEL::Constants::INVOKESPECIAL)
+
           # Register it to the runtime
 
           # Get the current class
@@ -173,14 +197,9 @@ module JRuby
                                  BCEL::Type[].new(0),
                                  BCEL::Constants::INVOKEVIRTUAL)
 
-          # Stack: ..., callback, current_class
-          generator.append(BCEL::SWAP.new)
-          # Stack: ..., current_class, callback
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           @name))
-          # Stack: ..., current_class, callback, name
-          generator.append(BCEL::SWAP.new)
-          # Stack: ..., current_class, name, callback
+          generator.append(BCEL::ALOAD.new(callbackMethod.getIndex))
 
           # addMethod(name, callback)
           arg_types = BCEL::Type[].new(2)
