@@ -544,13 +544,11 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
                 ((Frame) frameStack.peek()).setIter(frameStack.getPrevious().getIter());
             }
         }
-        threadContext.pushClass(threadContext.getCBase());
         IRubyObject result = getRuntime().getNil();
         try {
             INode node = getRuntime().parse(src.toString(), file);
             result = eval(node);
         } finally {
-            threadContext.popClass();
             if (scope.isNil()) {
                 threadContext.getCurrentFrame().setIter(iter);
             }
