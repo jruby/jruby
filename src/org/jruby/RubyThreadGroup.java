@@ -25,7 +25,12 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
@@ -42,7 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyThreadGroup extends RubyObject {
     private static boolean globalAbortOnException; // move to runtime object
 
-    private List rubyThreadList = new ArrayList();
+    private Map rubyThreadList = new HashMap();
     private boolean enclosed = false;
 
     public static RubyClass createThreadGroupClass(Ruby runtime) {
@@ -79,13 +84,18 @@ public class RubyThreadGroup extends RubyObject {
     	
     	if (rubyThread.group() != getRuntime().getNil()) {
     		RubyThreadGroup threadGroup = (RubyThreadGroup)rubyThread.group();
-    		threadGroup.rubyThreadList.remove(rubyThread);
+    		threadGroup.rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
     	}
     	
     	rubyThread.setThreadGroup(this);
-		rubyThreadList.add(rubyThread);
+		rubyThreadList.put(new Integer(System.identityHashCode(rubyThread)), rubyThread);
 	
 		return this;
+    }
+    
+    public void remove(RubyThread rubyThread) {
+    	rubyThread.setThreadGroup(null);
+    	rubyThreadList.remove(new Integer(System.identityHashCode(rubyThread)));
     }
     
     public IRubyObject enclose() {
@@ -99,7 +109,7 @@ public class RubyThreadGroup extends RubyObject {
     }
     
     public IRubyObject list() {
-    	return RubyArray.newArray(getRuntime(), rubyThreadList);
+    	return RubyArray.newArray(getRuntime(), (IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {

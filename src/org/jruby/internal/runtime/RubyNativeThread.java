@@ -27,6 +27,7 @@ package org.jruby.internal.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.RubyThread;
+import org.jruby.RubyThreadGroup;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
@@ -77,6 +78,8 @@ public class RubyNativeThread extends Thread {
             }
         } catch (RaiseException e) {
             rubyThread.exceptionRaised(e);
+        } finally {
+        	((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
         }
     }
 }
