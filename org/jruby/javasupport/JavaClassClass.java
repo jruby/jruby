@@ -59,10 +59,11 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int SUPERCLASS = 7;
     private static final int OP_CMP = 8;
     private static final int JAVA_INSTANCE_METHODS = 11;
-    private static final int CONSTANTS = 12;
-    private static final int JAVA_METHOD = 13;
-    private static final int CONSTRUCTORS = 14;
-    private static final int CONSTRUCTOR = 15;
+    private static final int JAVA_CLASS_METHODS = 12;
+    private static final int CONSTANTS = 13;
+    private static final int JAVA_METHOD = 14;
+    private static final int CONSTRUCTORS = 15;
+    private static final int CONSTRUCTOR = 16;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -79,6 +80,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("superclass", IndexedCallback.create(SUPERCLASS, 0));
         javaClassClass.defineMethod("<=>", IndexedCallback.create(OP_CMP, 1));
         javaClassClass.defineMethod("java_instance_methods", IndexedCallback.create(JAVA_INSTANCE_METHODS, 0));
+        javaClassClass.defineMethod("java_class_methods", IndexedCallback.create(JAVA_CLASS_METHODS, 0));
         javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
         javaClassClass.defineMethod("constructors", IndexedCallback.create(CONSTRUCTORS, 0));
@@ -139,10 +141,26 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         Method[] methods = javaClass.getMethods();
         RubyArray result = RubyArray.newArray(runtime, methods.length);
         for (int i = 0; i < methods.length; i++) {
-            result.append(JavaMethodClass.create(runtime, methods[i]));
+            Method method = methods[i];
+            if (! Modifier.isStatic(method.getModifiers())) {
+                result.append(JavaMethodClass.create(runtime, method));
+            }
         }
         return result;
     }
+
+    public RubyArray java_class_methods() {
+        Method[] methods = javaClass.getMethods();
+        RubyArray result = RubyArray.newArray(runtime, methods.length);
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (Modifier.isStatic(method.getModifiers())) {
+                result.append(JavaMethodClass.create(runtime, method));
+            }
+        }
+        return result;
+    }
+
 
     public RubyArray constants() {
         Field[] fields = javaClass.getFields();
@@ -215,6 +233,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return op_cmp(args[0]);
             case JAVA_INSTANCE_METHODS :
                 return java_instance_methods();
+            case JAVA_CLASS_METHODS :
+                return java_class_methods();
             case CONSTANTS :
                 return constants();
             case JAVA_METHOD :

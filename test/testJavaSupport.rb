@@ -71,6 +71,10 @@ if defined? Java
   string_methods = string_class.java_instance_methods
   test_ok(string_methods.detect {|m| m.name == "charAt" })
   test_ok(string_methods.detect {|m| m.name == "substring"})
+  test_ok(string_methods.detect {|m| m.name == "valueOf"}.nil?)
+
+  string_class_methods = string_class.java_class_methods
+  test_ok(string_class_methods.detect {|m| m.name == "valueOf" })
 
   integer_constants = Java::JavaClass.for_name("java.lang.Integer").constants
   test_ok(integer_constants.include?("MAX_VALUE"))

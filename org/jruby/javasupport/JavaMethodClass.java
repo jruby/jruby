@@ -52,6 +52,7 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
     private static final int FINAL_P = 4;
     private static final int INVOKE = 5;
     private static final int ARGUMENT_TYPES = 6;
+    private static final int INSPECT = 7;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaMethodClass =
@@ -62,6 +63,7 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         javaMethodClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
         javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE, 1));
         javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
+        javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
 
         return javaMethodClass;
     }
@@ -158,6 +160,21 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         return result;
     }
 
+    public RubyString inspect() {
+        StringBuffer result = new StringBuffer();
+        result.append("#<").append(getType().toString()).append("/");
+        result.append(method.getName()).append("(");
+        Class[] parameterTypes = method.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            result.append(parameterTypes[i].getName());
+            if (i < parameterTypes.length - 1) {
+                result.append(',');
+            }
+        }
+        result.append(")>");
+        return RubyString.newString(getRuntime(), result.toString());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case NAME :
@@ -172,7 +189,10 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
                 return invoke(args);
             case ARGUMENT_TYPES :
                 return argument_types();
+            case INSPECT :
+                return inspect();
+            default :
+                return super.callIndexed(index, args);
         }
-        return super.callIndexed(index, args);
     }
 }
