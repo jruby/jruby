@@ -205,7 +205,7 @@ public class JRubyEngine extends BSFEngineImpl {
         public IRubyObject setValue(IRubyObject value) {
             runtime.getLoadService().require("java");
             if (value.isKindOf(runtime.getModule("JavaProxy"))) {
-                value = value.getInstanceVariable("java_object");
+                value = value.getInstanceVariable("@java_object");
             }
             value = Java.primitive_to_java(value, value);
             bean.bean = JavaUtil.convertArgument(value, bean.type);
