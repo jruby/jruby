@@ -14,6 +14,7 @@ public class CompiledReflectionCallback implements Callback {
     private String className;
     private int arity;
     private ClassLoader classLoader;
+    private Method method = null;
 
     public CompiledReflectionCallback(Ruby runtime, String className, String methodName, int arity, ClassLoader classLoader) {
         this.runtime = runtime;
@@ -49,6 +50,9 @@ public class CompiledReflectionCallback implements Callback {
     }
 
     private Method getMethod() {
+        if (method != null) {
+            return method;
+        }
         try {
             Class javaClass = getJavaClass();
             Class[] args = new Class[2 + arity];
@@ -57,7 +61,8 @@ public class CompiledReflectionCallback implements Callback {
             for (int i = 2; i < args.length; i++) {
                 args[i] = IRubyObject.class;
             }
-            return javaClass.getMethod(methodName, args);
+            method = javaClass.getMethod(methodName, args);
+            return method;
 
         } catch (NoSuchMethodException e) {
             Asserts.notReached("method not found: " + methodName);

@@ -89,7 +89,7 @@ def test_compiled(expected, source)
 
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
-  classgen.getJavaClass.dump("/tmp/" + classgen.getClassName) # REMOVE ME
+#  classgen.getJavaClass.dump("/tmp/" + classgen.getClassName) # REMOVE ME
 
   JRubyCompiler::ByteCodeRuntime.addClass(classgen.getClassName,
                                           classgen.getJavaClass.getBytes)
@@ -117,5 +117,17 @@ test_compiled(2, "unless true; 1; else; 2; end")
 test_compiled(nil, "def hello(x); x * 2; end")
 test_compiled(7, "def abc(); 7; end; abc()")
 test_compiled(6, "def hello(x); x * 2; end; hello(3)")
+
+test_compiled(55, <<END
+def fib(n)
+  if n < 2
+    n
+  else
+    fib(n - 2) + fib(n - 1)
+  end
+end
+fib(10)
+END
+)
 
 test_print_report
