@@ -17,3 +17,7 @@ test_float_equal(39.0625, 2.5 ** 4)
 test_equal("1.1", 1.1.to_s)
 test_equal("1.0", 1.0.to_s)
 test_equal("-1.0", -1.0.to_s)
+
+test_equal(nil, 0.0.infinite?)
+test_equal(-1, (-1.0/0.0).infinite?)
+test_equal(1, (+1.0/0.0).infinite?)

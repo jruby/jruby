@@ -28,12 +28,12 @@
  */
 package org.jruby;
 
-import java.text.*;
-import java.util.*;
+import java.text.NumberFormat;
+import java.util.Locale;
 
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.TypeError;
 
 /**
@@ -113,6 +113,7 @@ public class RubyFloat extends RubyNumeric {
         floatClass.defineMethod("ceil", CallbackFactory.getMethod(RubyFloat.class, "ceil"));
         floatClass.defineMethod("round", CallbackFactory.getMethod(RubyFloat.class, "round"));
         floatClass.defineMethod("truncate", CallbackFactory.getMethod(RubyFloat.class, "truncate"));
+        floatClass.defineMethod("infinite?", CallbackFactory.getMethod(RubyFloat.class, "infinite_p"));
 
         return floatClass;
     }
@@ -261,14 +262,22 @@ public class RubyFloat extends RubyNumeric {
         return RubyString.newString(getRuntime(), usFormat.format(getValue()));
     }
 
-  public RubyFloat to_f() {
-    return this;
-  }
+    public RubyFloat to_f() {
+        return this;
+    }
 
     public RubyInteger to_i() {
-        // HACK +++
         return RubyFixnum.newFixnum(getRuntime(), getLongValue());
-        // HACK ---
+    }
+
+    public IRubyObject infinite_p() {
+        if (getValue() == Double.POSITIVE_INFINITY) {
+            return RubyFixnum.newFixnum(getRuntime(), 1);
+        } else if (getValue() == Double.NEGATIVE_INFINITY) {
+            return RubyFixnum.newFixnum(getRuntime(), -1);
+        } else {
+            return getRuntime().getNil();
+        }
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
