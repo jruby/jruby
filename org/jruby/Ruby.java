@@ -1,31 +1,31 @@
 /*
  * Ruby.java - No description
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -168,7 +168,7 @@ public final class Ruby {
 
     private boolean verbose;
 
-    // 
+    //
     private IStack iterStack = CollectionFactory.getInstance().newStack();
     private BlockStack block = new BlockStack(this);
 
@@ -207,7 +207,7 @@ public final class Ruby {
 
     /**
      * Returns a default instance of the JRuby runtime.
-     * 
+     *
      * @param regexpAdapterClass The RegexpAdapter class you want to use.
      * @return the JRuby runtime
      */
@@ -279,7 +279,7 @@ public final class Ruby {
     }
 
     /** Returns a class or module from the instance pool.
-     * 
+     *
      * @param name The name of the class or module.
      * @return The class or module.
      */
@@ -288,7 +288,7 @@ public final class Ruby {
     }
 
     /** Returns a class from the instance pool.
-     * 
+     *
      * @param name The name of the class.
      * @return The class.
      */
@@ -297,7 +297,7 @@ public final class Ruby {
     }
 
     /** Define a new class with name 'name' and super class 'superClass'.
-     * 
+     *
      * MRI: rb_define_class / rb_define_class_id
      *
      */
@@ -590,7 +590,7 @@ public final class Ruby {
     /** ruby_init
      *
      */
-    public void init() {
+    private void init() {
         if (initialized) {
             return;
         }
@@ -880,7 +880,7 @@ public final class Ruby {
     }
 
     /** defines a readonly global variable
-     * 
+     *
      */
     public void defineReadonlyVariable(String name, RubyObject value) {
         globalMap.put(name, new ReadonlyGlobalVariable(this, name, value));
@@ -890,9 +890,9 @@ public final class Ruby {
      * Init the LOAD_PATH variable.
      * MRI: eval.c:void Init_load()
      * 		from programming ruby
-     *			
+     *
      *   An array of strings, where each string specifies a directory to be searched
-     *   for Ruby scripts and binary extensions used by the load and require 
+     *   for Ruby scripts and binary extensions used by the load and require
      *   The initial value is the value of the arguments passed via the -I command-line
      *	 option, followed by an installation-defined standard library location, followed
      *   by the current directory (``.''). This variable may be set from within a program to alter
