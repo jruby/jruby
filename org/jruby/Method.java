@@ -29,17 +29,10 @@
  */
 package org.jruby;
 
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.AttrSetNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.internal.runtime.methods.CallbackMethod;
-import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** 

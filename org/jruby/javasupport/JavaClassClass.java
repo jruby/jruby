@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
 
 public class JavaClassClass extends RubyObject implements IndexCallable {
     private Class javaClass;
@@ -58,6 +59,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int JAVA_INSTANCE_METHODS = 11;
     private static final int CONSTANTS = 12;
     private static final int JAVA_METHOD = 13;
+    private static final int CONSTRUCTORS = 14;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -75,6 +77,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("java_instance_methods", IndexedCallback.create(JAVA_INSTANCE_METHODS, 0));
         javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
+        javaClassClass.defineMethod("constructors", IndexedCallback.create(CONSTRUCTORS, 0));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -161,6 +164,14 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return JavaMethodClass.create(runtime, javaClass, methodName, argumentTypes);
     }
 
+    public RubyArray constructors() {
+        Constructor[] constructors = javaClass.getConstructors();
+        RubyArray result = RubyArray.newArray(getRuntime(), constructors.length);
+        for (int i = 0; i < constructors.length; i++) {
+            result.append(new JavaConstructorClass(getRuntime(), constructors[i]));
+        }
+        return result;
+    }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
@@ -182,7 +193,10 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return constants();
             case JAVA_METHOD :
                 return java_method(args);
+            case CONSTRUCTORS :
+                return constructors();
+            default :
+                return super.callIndexed(index, args);
         }
-        return super.callIndexed(index, args);
     }
 }

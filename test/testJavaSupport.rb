@@ -89,6 +89,10 @@ if defined? Java
   Java::import("java.util")
   result = method.invoke(Random.new)
   test_ok(result.kind_of?(Fixnum))
+
+  constructors = random_class.constructors
+  test_equal(2, constructors.length)
+  test_equal([0, 1], constructors.collect {|c| c.arity }.sort)
 end
 
 test_print_report

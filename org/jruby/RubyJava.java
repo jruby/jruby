@@ -4,6 +4,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.JavaClassClass;
 import org.jruby.javasupport.JavaMethodClass;
+import org.jruby.javasupport.JavaConstructorClass;
 
 public class RubyJava {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -15,6 +16,7 @@ public class RubyJava {
 
         JavaClassClass.createJavaClassClass(runtime, javaModule);
         JavaMethodClass.createJavaMethodClass(runtime, javaModule);
+        JavaConstructorClass.createJavaConstructorClass(runtime, javaModule);
 
         return javaModule;
     }
