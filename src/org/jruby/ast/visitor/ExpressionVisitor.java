@@ -44,7 +44,6 @@ import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.UntilNode;
 import org.jruby.ast.WhileNode;
-import org.jruby.ast.util.ListNodeUtil;
 
 /**
  *
@@ -52,138 +51,73 @@ import org.jruby.ast.util.ListNodeUtil;
  * @version $Revision$
  */
 public class ExpressionVisitor extends AbstractVisitor {
-    private boolean expression = false;
+    private boolean expression;
     
     public boolean isExpression(Node node) {
         acceptNode(node);
-       	return isExpression();
+       	return expression;
     }
 
-    /**
-     * Gets the expression.
-     * @return Returns a boolean
-     */
-    public boolean isExpression() {
-        return expression;
-    }
-
-    /**
-     * Sets the expression.
-     * @param expression The expression to set
-     */
-    public void setExpression(boolean expression) {
-        this.expression = expression;
-    }
-
-    /**
-     * @see AbstractVisitor#visitNode(Node)
-     */
     protected void visitNode(Node iVisited) {
         expression = true;
     }
 
-    /**
-     * @see NodeVisitor#visitBeginNode(BeginNode)
-     */
     public void visitBeginNode(BeginNode iVisited) {
         acceptNode(iVisited.getBodyNode());
     }
 
-    /**
-     * @see NodeVisitor#visitBlockNode(BlockNode)
-     */
     public void visitBlockNode(BlockNode iVisited) {
-		acceptNode(ListNodeUtil.getLast(iVisited));
+		acceptNode(iVisited.getLast());
     }
 
-    /**
-     * @see NodeVisitor#visitBreakNode(BreakNode)
-     */
     public void visitBreakNode(BreakNode iVisited) {
-	acceptNode(iVisited.getValueNode());
+    	acceptNode(iVisited.getValueNode());
     }
 
-    /**
-     * @see NodeVisitor#visitClassNode(ClassNode)
-     */
     public void visitClassNode(ClassNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitDefnNode(DefnNode)
-     */
     public void visitDefnNode(DefnNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitDefsNode(DefsNode)
-     */
     public void visitDefsNode(DefsNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitIfNode(IfNode)
-     */
     public void visitIfNode(IfNode iVisited) {
-        expression = isExpression(iVisited.getThenBody()) &&
-        isExpression(iVisited.getElseBody());
+        expression = isExpression(iVisited.getThenBody()) && isExpression(iVisited.getElseBody());
     }
 
-    /**
-     * @see NodeVisitor#visitModuleNode(ModuleNode)
-     */
     public void visitModuleNode(ModuleNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitNewlineNode(NewlineNode)
-     */
     public void visitNewlineNode(NewlineNode iVisited) {
         acceptNode(iVisited.getNextNode());
     }
 
-    /**
-     * @see NodeVisitor#visitNextNode(NextNode)
-     */
     public void visitNextNode(NextNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitRedoNode(RedoNode)
-     */
     public void visitRedoNode(RedoNode iVisited) {
         expression = false;
     }
     
-    /**
-     * @see NodeVisitor#visitRetryNode(RetryNode)
-     */
     public void visitRetryNode(RetryNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitReturnNode(ReturnNode)
-     */
     public void visitReturnNode(ReturnNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitUntilNode(UntilNode)
-     */
     public void visitUntilNode(UntilNode iVisited) {
         expression = false;
     }
 
-    /**
-     * @see NodeVisitor#visitWhileNode(WhileNode)
-     */
     public void visitWhileNode(WhileNode iVisited) {
         expression = false;
     }

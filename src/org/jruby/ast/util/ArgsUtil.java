@@ -28,19 +28,7 @@
  */
 package org.jruby.ast.util;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.SplatNode;
-import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.lexer.yacc.SourcePosition;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Iter;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -49,51 +37,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public final class ArgsUtil {
-
-    public static Block beginCallArgs(ThreadContext context) {
-        Block currentBlock = context.getBlockStack().getCurrent();
-
-        if (context.getCurrentIter().isPre()) {
-            context.getBlockStack().pop();
-        }
-        context.getIterStack().push(Iter.ITER_NOT);
-        return currentBlock;
-    }
-
-    public static void endCallArgs(ThreadContext context, Block currentBlock) {
-        context.getBlockStack().setCurrent(currentBlock);
-        context.getIterStack().pop();
-    }
-
-    public static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, EvaluateVisitor visitor, Node node) {
-        if (node == null) {
-            return IRubyObject.NULL_ARRAY;
-        }
-
-        if (node instanceof ArrayNode) {
-        	SourcePosition position = context.getPosition();
-            ArrayList list = new ArrayList(((ArrayNode) node).size());
-            
-            for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){
-                final Node next = (Node) iter.next();
-                if (next instanceof SplatNode) {
-                    list.addAll(((RubyArray) visitor.eval(next)).getList());
-                } else {
-                    list.add(visitor.eval(next));
-                }
-            }
-
-            context.setPosition(position);
-
-            return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
-        }
-
-        return arrayify(runtime, visitor.eval(node));
-    }
     
-    public static IRubyObject[] arrayify(Ruby runtime, IRubyObject value) {
+    public static IRubyObject[] arrayify(IRubyObject value) {
         if (value == null) {
-            value = runtime.newArray(0);
+        	return IRubyObject.NULL_ARRAY;
         }
         
         if (value instanceof RubyArray) {
@@ -102,4 +49,5 @@ public final class ArgsUtil {
         
         return new IRubyObject[] { value };
     }
+    
 }

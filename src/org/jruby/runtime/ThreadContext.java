@@ -41,7 +41,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.LocalJumpError;
@@ -252,7 +251,7 @@ public class ThreadContext {
 
         getIterStack().push(currentBlock.getIter());
         
-        IRubyObject[] args = ArgsUtil.arrayify(runtime, value);
+        IRubyObject[] args = ArgsUtil.arrayify(value);
 
         try {
             while (true) {
@@ -280,7 +279,7 @@ public class ThreadContext {
     public IRubyObject mAssign(IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean pcall) {
         // Assign the values.
         int valueLen = value.getLength();
-        int varLen = ListNodeUtil.getLength(node.getHeadNode());
+        int varLen = node.getHeadNode() == null ? 0 : node.getHeadNode().size();
         
         Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
@@ -375,4 +374,21 @@ public class ThreadContext {
 
         return result == null ? runtime.getNil() : result;
     }
+    
+    public Block beginCallArgs() {
+        Block currentBlock = getBlockStack().getCurrent();
+
+        if (getCurrentIter().isPre()) {
+            getBlockStack().pop();
+        }
+        getIterStack().push(Iter.ITER_NOT);
+        return currentBlock;
+    }
+
+    public void endCallArgs(Block currentBlock) {
+        getBlockStack().setCurrent(currentBlock);
+        getIterStack().pop();
+    }
+
+
 }

@@ -110,7 +110,6 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
-import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.yacc.LexState;
 import org.jruby.lexer.yacc.LexerSource;
@@ -307,7 +306,7 @@ program     : {
                   if ($2 != null && !support.isCompileForEval()) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
-                          support.checkUselessStatement(ListNodeUtil.getLast($<BlockNode>2));
+                          support.checkUselessStatement(($<BlockNode>2).getLast());
                       } else {
                           support.checkUselessStatement($2);
                       }
@@ -1893,7 +1892,7 @@ assoc_list    : none_list
                     $$ = $1;
                 }
               | args trailer {
-                    if (ListNodeUtil.getLength($1) % 2 != 0) {
+                    if ($1.size() % 2 != 0) {
                         yyerror("Odd number list for Hash.");
                     }
                     $$ = $1;
@@ -1901,7 +1900,7 @@ assoc_list    : none_list
 
 assocs        : assoc
               | assocs ',' assoc {
-                    $$ = ListNodeUtil.addAll($1, $3);
+                    $$ = $1.addAll($3);
                 }
 
 assoc         : arg_value tASSOC arg_value {

@@ -110,7 +110,6 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
-import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.yacc.LexState;
 import org.jruby.lexer.yacc.LexerSource;
@@ -442,7 +441,7 @@ case 2:
                   if (((Node)yyVals[0+yyTop]) != null && !support.isCompileForEval()) {
                       /* last expression should not be void */
                       if (((Node)yyVals[0+yyTop]) instanceof BlockNode) {
-                          support.checkUselessStatement(ListNodeUtil.getLast(((BlockNode)yyVals[0+yyTop])));
+                          support.checkUselessStatement(((BlockNode)yyVals[0+yyTop]).getLast());
                       } else {
                           support.checkUselessStatement(((Node)yyVals[0+yyTop]));
                       }
@@ -2929,7 +2928,7 @@ case 464:
 case 465:
 					// line 1893 "DefaultRubyParser.y"
   {
-                    if (ListNodeUtil.getLength(((ListNode)yyVals[-1+yyTop])) % 2 != 0) {
+                    if (((ListNode)yyVals[-1+yyTop]).size() % 2 != 0) {
                         yyerror("Odd number list for Hash.");
                     }
                     yyVal = ((ListNode)yyVals[-1+yyTop]);
@@ -2938,7 +2937,7 @@ case 465:
 case 467:
 					// line 1901 "DefaultRubyParser.y"
   {
-                    yyVal = ListNodeUtil.addAll(((ListNode)yyVals[-2+yyTop]), ((ListNode)yyVals[0+yyTop]));
+                    yyVal = ((ListNode)yyVals[-2+yyTop]).addAll(((ListNode)yyVals[0+yyTop]));
                 }
   break;
 case 468:

@@ -85,8 +85,8 @@ import org.jruby.ast.TrueNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.util.ListNodeUtil;
-import org.jruby.ast.util.NodeUtil;
+import org.jruby.ast.visitor.BreakStatementVisitor;
+import org.jruby.ast.visitor.ExpressionVisitor;
 import org.jruby.ast.visitor.UselessStatementVisitor;
 import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.yacc.SourcePosition;
@@ -273,12 +273,12 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (warnings.isVerbose() && NodeUtil.isBreakStatement(ListNodeUtil.getLast((ListNode) head))) {
+        if (warnings.isVerbose() && new BreakStatementVisitor().isBreakStatement(((ListNode) head).getLast())) {
             warnings.warning(tail.getPosition(), "Statement not reached.");
         }
 
         if (tail instanceof BlockNode) {
-            ListNodeUtil.addAll((ListNode) head, (ListNode) tail);
+            ((ListNode) head).addAll((ListNode) tail);
         } else {
             ((ListNode) head).add(tail);
         }
@@ -376,7 +376,7 @@ public class ParserSupport {
     }
 
     public void checkExpression(Node node) {
-        if (!NodeUtil.isExpression(node)) {
+        if (!new ExpressionVisitor().isExpression(node)) {
             warnings.warning(node.getPosition(), "void value expression");
         }
     }
@@ -471,7 +471,7 @@ public class ParserSupport {
     }
 
     public Node getReturnArgsNode(Node node) {
-        if (node instanceof ArrayNode && ListNodeUtil.getLength((ListNode) node) == 1) {
+        if (node instanceof ArrayNode && ((ArrayNode) node).size() == 1) { 
             return (Node) ((ListNode) node).iterator().next();
         } else if (node instanceof BlockPassNode) {
             throw new SyntaxException(node.getPosition(), "Block argument should not be given.");

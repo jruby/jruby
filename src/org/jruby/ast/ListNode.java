@@ -62,4 +62,28 @@ public abstract class ListNode extends Node {
     public int size() {
         return list == null ? 0 : list.size();
     }
+    
+    public ListNode addAll(ListNode other) {
+        if (other != null) {
+        	for (Iterator iter = other.iterator(); iter.hasNext();) {
+                add((Node) iter.next());
+            }
+        }
+        return this;
+    }
+    
+    public Node getLast() {
+    	return list == null ? null : (Node) list.get(list.size() - 1);
+    }
+    
+    public String toString() {
+    	if (list == null) {
+    		return "";
+    	}
+    	StringBuffer b = new StringBuffer();
+    	for (int i = 0; i < list.size(); i++) {
+    		b.append(list.get(i));
+    	}
+    	return b.toString();
+    }
 }

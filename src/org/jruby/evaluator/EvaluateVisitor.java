@@ -429,14 +429,14 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCallNode(CallNode)
      */
     public void visitCallNode(CallNode iVisited) {
-        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
+        Block tmpBlock = threadContext.beginCallArgs();
         IRubyObject receiver = null;
         IRubyObject[] args = null;
         try {
             receiver = eval(iVisited.getReceiverNode());
-            args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
+            args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
         } finally {
-            ArgsUtil.endCallArgs(threadContext, tmpBlock);
+        	threadContext.endCallArgs(tmpBlock);
         }
         assert receiver.getMetaClass() != null : receiver.getClass().getName();
         
@@ -781,12 +781,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
     public void visitFCallNode(FCallNode iVisited) {
-        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
+        Block tmpBlock = threadContext.beginCallArgs();
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
+            args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
         } finally {
-            ArgsUtil.endCallArgs(threadContext, tmpBlock);
+        	threadContext.endCallArgs(tmpBlock);
         }
 
         result = self.getMetaClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
@@ -843,14 +843,14 @@ public final class EvaluateVisitor implements NodeVisitor {
             while (true) {
                 try {
                     SourcePosition position = threadContext.getPosition();
-                    Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
+                    Block tmpBlock = threadContext.beginCallArgs();
 
                     IRubyObject recv = null;
                     try {
                         recv = eval(iVisited.getIterNode());
                     } finally {
                         threadContext.setPosition(position);
-                        ArgsUtil.endCallArgs(threadContext, tmpBlock);
+                        threadContext.endCallArgs(tmpBlock);
                     }
                     result = recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
                     return;
@@ -1071,7 +1071,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
 
-        IRubyObject[] args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
+        IRubyObject[] args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
 
         IRubyObject firstValue = receiver.callMethod("[]", args);
 
@@ -1339,13 +1339,13 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new NameError(runtime, "Superclass method '" + threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
         }
 
-        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
+        Block tmpBlock = threadContext.beginCallArgs();
 
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
+            args = setupArgs(runtime, threadContext, iVisited.getArgsNode());
         } finally {
-            ArgsUtil.endCallArgs(threadContext, tmpBlock);
+        	threadContext.endCallArgs(tmpBlock);
         }
         result = threadContext.callSuper(args);
     }
@@ -1552,13 +1552,13 @@ public final class EvaluateVisitor implements NodeVisitor {
             return currentException.isKindOf(runtime.getExceptions().getStandardError());
         }
 
-        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
+        Block tmpBlock = threadContext.beginCallArgs();
 
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(runtime, threadContext, this, exceptionNodes);
+            args = setupArgs(runtime, threadContext, exceptionNodes);
         } finally {
-            ArgsUtil.endCallArgs(threadContext, tmpBlock);
+        	threadContext.endCallArgs(tmpBlock);
         }
 
         for (int i = 0; i < args.length; i++) {
@@ -1615,4 +1615,31 @@ public final class EvaluateVisitor implements NodeVisitor {
         
         return (RubyArray) newValue;
     }
+    
+    private IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, Node node) {
+        if (node == null) {
+            return IRubyObject.NULL_ARRAY;
+        }
+
+        if (node instanceof ArrayNode) {
+        	SourcePosition position = context.getPosition();
+            ArrayList list = new ArrayList(((ArrayNode) node).size());
+            
+            for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){
+                final Node next = (Node) iter.next();
+                if (next instanceof SplatNode) {
+                    list.addAll(((RubyArray) eval(next)).getList());
+                } else {
+                    list.add(eval(next));
+                }
+            }
+
+            context.setPosition(position);
+
+            return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
+        }
+
+        return ArgsUtil.arrayify(eval(node));
+    }
+
 }

@@ -40,7 +40,7 @@ import org.jruby.ast.ReturnNode;
  * @version $Revision$
  */
 public class BreakStatementVisitor extends AbstractVisitor {
-    private boolean breakStatement = false;
+    private boolean breakStatement;
     
     public boolean isBreakStatement(Node node) {
         breakStatement = false;
@@ -50,50 +50,29 @@ public class BreakStatementVisitor extends AbstractVisitor {
         return breakStatement;
     }
     
- 	/**
-     * @see AbstractVisitor#visitNode(Node)
-     */
     protected void visitNode(Node iVisited) {
     }
 
-    /**
-     * @see NodeVisitor#visitBreakNode(BreakNode)
-     */
     public void visitBreakNode(BreakNode iVisited) {
         breakStatement = true;
     }
 
-    /**
-     * @see NodeVisitor#visitNewlineNode(NewlineNode)
-     */
     public void visitNewlineNode(NewlineNode iVisited) {
         acceptNode(iVisited.getNextNode());
     }
 
-    /**
-     * @see NodeVisitor#visitNextNode(NextNode)
-     */
     public void visitNextNode(NextNode iVisited) {
         breakStatement = true;
     }
 
-    /**
-     * @see NodeVisitor#visitRedoNode(RedoNode)
-     */
     public void visitRedoNode(RedoNode iVisited) {
         breakStatement = true;
     }
 
-    /**
-     * @see NodeVisitor#visitRetryNode(RetryNode)
-     */
     public void visitRetryNode(RetryNode iVisited) {
         breakStatement = true;
     }
 
-    /**
-     * @see NodeVisitor#visitReturnNode(ReturnNode)
-     */
     public void visitReturnNode(ReturnNode iVisited) {
         breakStatement = true;
     }
