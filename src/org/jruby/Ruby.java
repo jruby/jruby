@@ -229,18 +229,12 @@ public final class Ruby {
         return defineClassUnder(name, superClass, getClasses().getObjectClass());
     }
     
-    public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentClass) {
+    public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentModule) {
         if (superClass == null) {
             superClass = getClasses().getObjectClass();
         }
-        
-        RubyClass newClass = RubyClass.newClass(this, superClass, parentClass, name);
-        
-        newClass.makeMetaClass(superClass.getMetaClass());
-        newClass.inheritedBy(superClass);
-        getClasses().putClass(name, newClass);
-        
-        return newClass;
+
+        return superClass.newSubClass(name, parentModule);
     }
     
     /** rb_define_module / rb_define_module_id

@@ -33,8 +33,10 @@ package org.jruby;
 import java.util.Locale;
 
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
@@ -100,121 +102,6 @@ public class RubyString extends RubyObject {
 	public byte[] toByteArray() {
 		return stringToBytes(value);
 	}
-
-    public static RubyClass createStringClass(Ruby runtime) {
-        RubyClass stringClass = runtime.defineClass("String", runtime.getClasses().getObjectClass());
-
-        stringClass.includeModule(runtime.getClasses().getComparableModule());
-        stringClass.includeModule(runtime.getClasses().getEnumerableModule());
-
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyString.class);
-
-        stringClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        stringClass.defineMethod("initialize", callbackFactory.getMethod("replace", IRubyObject.class));
-        stringClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
-        stringClass.defineMethod("dup", callbackFactory.getMethod("dup"));
-
-        stringClass.defineMethod("<=>", callbackFactory.getMethod("op_cmp", IRubyObject.class));
-        stringClass.defineMethod("casecmp", callbackFactory.getMethod("casecmp", IRubyObject.class));
-        stringClass.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
-        stringClass.defineMethod("===", callbackFactory.getMethod("veryEqual", IRubyObject.class));
-        stringClass.defineMethod("eql?", callbackFactory.getMethod("equal", IRubyObject.class));
-        stringClass.defineMethod("hash", callbackFactory.getMethod("hash"));
-
-        stringClass.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
-        stringClass.defineMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
-        stringClass.defineMethod("%", callbackFactory.getMethod("format", IRubyObject.class));
-        stringClass.defineMethod("[]", callbackFactory.getOptMethod("aref"));
-        stringClass.defineMethod("[]=", callbackFactory.getOptMethod("aset"));
-        stringClass.defineMethod("length", callbackFactory.getMethod("length"));
-        stringClass.defineMethod("size", callbackFactory.getMethod("length"));
-        stringClass.defineMethod("empty?", callbackFactory.getMethod("empty"));
-        stringClass.defineMethod("=~", callbackFactory.getMethod("match", IRubyObject.class));
-        stringClass.defineMethod("~", callbackFactory.getMethod("match2"));
-        stringClass.defineMethod("match", callbackFactory.getMethod("match3", IRubyObject.class));
-        stringClass.defineMethod("succ", callbackFactory.getMethod("succ"));
-        stringClass.defineMethod("succ!", callbackFactory.getMethod("succ_bang"));
-        stringClass.defineMethod("next", callbackFactory.getMethod("succ"));
-        stringClass.defineMethod("next!", callbackFactory.getMethod("succ_bang"));
-        stringClass.defineMethod("upto", callbackFactory.getMethod("upto", IRubyObject.class));
-        stringClass.defineMethod("index", callbackFactory.getOptMethod("index"));
-        stringClass.defineMethod("rindex", callbackFactory.getOptMethod("rindex"));
-        stringClass.defineMethod("replace", callbackFactory.getMethod("replace", IRubyObject.class));
-
-        stringClass.defineMethod("to_i", callbackFactory.getMethod("to_i"));
-        stringClass.defineMethod("to_f", callbackFactory.getMethod("to_f"));
-
-        stringClass.defineMethod("to_s", callbackFactory.getSelfMethod(0));
-        stringClass.defineMethod("to_str", callbackFactory.getSelfMethod(0));
-        stringClass.defineMethod("to_sym", callbackFactory.getMethod("to_sym"));
-        stringClass.defineAlias("intern", "to_sym");
-        stringClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
-        stringClass.defineMethod("dump", callbackFactory.getMethod("dump"));
-
-        stringClass.defineMethod("upcase", callbackFactory.getMethod("upcase"));
-        stringClass.defineMethod("downcase", callbackFactory.getMethod("downcase"));
-        stringClass.defineMethod("capitalize", callbackFactory.getMethod("capitalize"));
-        stringClass.defineMethod("swapcase", callbackFactory.getMethod("swapcase"));
-
-        stringClass.defineMethod("upcase!", callbackFactory.getMethod("upcase_bang"));
-        stringClass.defineMethod("downcase!", callbackFactory.getMethod("downcase_bang"));
-        stringClass.defineMethod("capitalize!", callbackFactory.getMethod("capitalize_bang"));
-        stringClass.defineMethod("swapcase!", callbackFactory.getMethod("swapcase_bang"));
-
-        stringClass.defineMethod("hex", callbackFactory.getMethod("hex"));
-        stringClass.defineMethod("oct", callbackFactory.getMethod("oct"));
-        stringClass.defineMethod("split", callbackFactory.getOptMethod("split"));
-        stringClass.defineMethod("reverse", callbackFactory.getMethod("reverse"));
-        stringClass.defineMethod("reverse!", callbackFactory.getMethod("reverse_bang"));
-        stringClass.defineMethod("concat", callbackFactory.getMethod("concat", IRubyObject.class));
-        stringClass.defineMethod("<<", callbackFactory.getMethod("concat", IRubyObject.class));
-
-        stringClass.defineMethod("include?", callbackFactory.getMethod("include", IRubyObject.class));
-
-        stringClass.defineMethod("scan", callbackFactory.getMethod("scan", IRubyObject.class));
-
-        stringClass.defineMethod("ljust", callbackFactory.getMethod("ljust", IRubyObject.class));
-        stringClass.defineMethod("rjust", callbackFactory.getMethod("rjust", IRubyObject.class));
-        stringClass.defineMethod("center", callbackFactory.getMethod("center", IRubyObject.class));
-
-        stringClass.defineMethod("sub", callbackFactory.getOptMethod("sub"));
-        stringClass.defineMethod("gsub", callbackFactory.getOptMethod("gsub"));
-        stringClass.defineMethod("chop", callbackFactory.getMethod("chop"));
-        stringClass.defineMethod("chomp", callbackFactory.getOptMethod("chomp"));
-        stringClass.defineMethod("strip", callbackFactory.getMethod("strip"));
-        stringClass.defineMethod("lstrip", callbackFactory.getMethod("lstrip"));
-        stringClass.defineMethod("rstrip", callbackFactory.getMethod("rstrip"));
-
-        stringClass.defineMethod("sub!", callbackFactory.getOptMethod("sub_bang"));
-        stringClass.defineMethod("gsub!", callbackFactory.getOptMethod("gsub_bang"));
-        stringClass.defineMethod("chop!", callbackFactory.getMethod("chop_bang"));
-        stringClass.defineMethod("chomp!", callbackFactory.getOptMethod("chomp_bang"));
-        stringClass.defineMethod("strip!", callbackFactory.getMethod("strip_bang"));
-        stringClass.defineMethod("lstrip!", callbackFactory.getMethod("lstrip_bang"));
-        stringClass.defineMethod("rstrip!", callbackFactory.getMethod("rstrip_bang"));
-
-        stringClass.defineMethod("tr", callbackFactory.getMethod("tr", RubyString.class, RubyString.class));
-        stringClass.defineMethod("tr_s", callbackFactory.getMethod("tr_s", RubyString.class, RubyString.class));
-        stringClass.defineMethod("delete", callbackFactory.getOptMethod("delete"));
-        stringClass.defineMethod("squeeze", callbackFactory.getOptMethod("squeeze"));
-        stringClass.defineMethod("count", callbackFactory.getOptMethod("count"));
-
-        stringClass.defineMethod("tr!", callbackFactory.getMethod("tr_bang", RubyString.class, RubyString.class));
-        stringClass.defineMethod("tr_s!", callbackFactory.getMethod("tr_s_bang", RubyString.class, RubyString.class));
-        stringClass.defineMethod("delete!", callbackFactory.getOptMethod("delete_bang"));
-        stringClass.defineMethod("squeeze!", callbackFactory.getOptMethod("squeeze_bang"));
-
-        stringClass.defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
-        stringClass.defineMethod("each", callbackFactory.getOptMethod("each_line"));
-        stringClass.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
-        stringClass.defineMethod("sum", callbackFactory.getOptMethod("sum"));
-
-        stringClass.defineMethod("slice", callbackFactory.getOptMethod("aref"));
-        stringClass.defineMethod("slice!", callbackFactory.getOptMethod("slice_bang"));
-
-        stringClass.defineMethod("unpack", callbackFactory.getMethod("unpack", IRubyObject.class));
-        return stringClass;
-    }
 
 	public static boolean isDigit(char c) {
 		return c >= '0' && c <= '9';
@@ -309,7 +196,7 @@ public class RubyString extends RubyObject {
 	public IRubyObject rbClone() {
 		IRubyObject newObject = dup();
 
-		newObject.setupClone(this);
+		newObject.initCopy(this);
 
 		return newObject;
 	}
@@ -368,6 +255,13 @@ public class RubyString extends RubyObject {
 		newString.setMetaClass((RubyClass) recv);
 		newString.callInit(args);
 		return newString;
+	}
+
+	public IRubyObject initialize(IRubyObject[] args) {
+	    if (checkArgumentCount(args, 0, 1) == 1) {
+	        replace(args[0]);
+	    }
+	    return this;
 	}
 
 	/** rb_str_cmp_m

@@ -25,6 +25,7 @@
 package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.exceptions.JumpException;
@@ -49,6 +50,19 @@ public abstract class AbstractCallback implements Callback {
     protected final boolean isRestArgs;
     protected final Arity arity;
     protected final boolean isStaticMethod;
+    
+    // FIXME temp variable
+    protected final boolean new_style;
+    
+    public AbstractCallback(Class type, String name, Arity arity) {
+        this.type = type;
+        this.methodName = name;
+        this.arity = arity;
+        this.new_style = true; // FIXME
+        this.argumentTypes = null;
+        this.isRestArgs = false;
+        this.isStaticMethod = false;
+    }
 
     public AbstractCallback(Class type, String methodName, Class[] argumentTypes, boolean isRestArgs, boolean isStaticMethod, Arity arity) {
         this.type = type;
@@ -57,6 +71,7 @@ public abstract class AbstractCallback implements Callback {
         this.isRestArgs = isRestArgs;
         this.arity = arity;
         this.isStaticMethod = isStaticMethod;
+        this.new_style = false; // FIXME
     }
     
     /**
@@ -121,7 +136,20 @@ public abstract class AbstractCallback implements Callback {
             assert false : message.toString();
             return null;
         } catch (final IllegalArgumentException e) {
-            throw new RaiseException(recv.getRuntime(), "TypeError", e.getMessage());
+/*            StringBuffer message = new StringBuffer();
+            message.append(e.getMessage());
+            message.append(':');
+            message.append(" methodName=").append(methodName);
+            message.append(" recv=").append(recv.toString());
+            message.append(" type=").append(type.getName());
+            message.append(" methodArgs=[");
+            for (int i = 0; i < methodArgs.length; i++) {
+                message.append(methodArgs[i]);
+                message.append(' ');
+            }
+            message.append(']');*/
+            assert false : e;
+            return null;
         }
     }
 
@@ -132,6 +160,16 @@ public abstract class AbstractCallback implements Callback {
      * Calls a wrapped Ruby method for the specified receiver with the specified arguments.
      */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+        if (new_style) {
+            assert recv != null;
+            assert args != null;
+
+            arity.checkArity(recv.getRuntime(), args);
+            if (arity.isFixed()) {
+                return invokeMethod(recv, args);
+            }
+            return invokeMethod(recv, new Object[]{args});
+        }
         args = (args != null) ? args : IRubyObject.NULL_ARRAY;
         arity.checkArity(recv.getRuntime(), args);
         return invokeMethod(recv, args);

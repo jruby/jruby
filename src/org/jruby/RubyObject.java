@@ -62,6 +62,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callback.ReflectionCallback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.PrintfFormat;
 
@@ -81,12 +82,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     private boolean frozen;
     private boolean taint;
 
-	public RubyObject(Ruby runtime, RubyClass rubyClass) {
-        this(runtime, rubyClass, true);
+	public RubyObject(Ruby runtime, RubyClass metaClass) {
+        this(runtime, metaClass, true);
     }
 
-    public RubyObject(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace) {
-        this.metaClass = rubyClass;
+    public RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
+        this.metaClass = metaClass;
         this.frozen = false;
         this.taint = false;
 
@@ -94,6 +95,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (useObjectSpace && !isImmediate()) {
             runtime.objectSpace.add(this);
         }
+
+        // FIXME are there objects who shouldn't be tainted?
+        // (mri: OBJSETUP)
+        taint |= runtime.getSafeLevel() >= 3;
     }
     
     /*
@@ -175,6 +180,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         return metaClass;
     }
+
     public void setMetaClass(RubyClass metaClass) {
         this.metaClass = metaClass;
     }
@@ -256,31 +262,37 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** SPECIAL_SINGLETON(x,c)
      *
      */
-    private RubyClass getNilSingletonClass() {
+    private MetaClass getNilSingletonClass() {
         RubyClass rubyClass = getMetaClass();
 
         if (!rubyClass.isSingleton()) {
-            rubyClass = rubyClass.newSingletonClass();
-            rubyClass.attachToObject(this);
+            MetaClass singleton = rubyClass.newSingletonClass();
+            singleton.attachToObject(this);
+            return singleton;
         }
 
-        return rubyClass;
+        return (MetaClass)rubyClass;
     }
 
     /** rb_singleton_class
      *
      */
-    public RubyClass getSingletonClass() {
+    public MetaClass getSingletonClass() {
         if (isNil()) {
             return getNilSingletonClass();
         }
 
-        RubyClass type = getMetaClass() instanceof MetaClass ? getMetaClass() : makeMetaClass(getMetaClass());
+        RubyClass type = getMetaClass();
+        if (!type.isSingleton()) { 
+            type = makeMetaClass(getMetaClass());
+        }
+
+        assert type instanceof MetaClass; 
 
         type.setTaint(isTaint());
         type.setFrozen(isFrozen());
 
-        return type;
+        return (MetaClass)type;
     }
 
     /** rb_define_singleton_method
@@ -290,14 +302,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         getSingletonClass().defineMethod(name, method);
     }
 
-    /** CLONESETUP
-     *
-     */
-    public void setupClone(IRubyObject obj) {
-        setMetaClass(obj.getMetaClass().getSingletonClassClone());
-        getMetaClass().attachToObject(this);
-        frozen = obj.isFrozen();
-        taint = obj.isTaint();
+    /* rb_init_ccopy */
+    public void initCopy(IRubyObject original) {
+        assert !isFrozen() : "frozen object (" + getMetaClass().getName() + ") allocated";
+
+        setInstanceVariables(new HashMap(original.getInstanceVariables()));
+
+        callMethod("initialize_copy", original);        
     }
 
     /** OBJ_INFECT
@@ -669,17 +680,14 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject rbClone() {
-        try {
-            RubyObject clone = (RubyObject) clone();
-            clone.setupClone(this);
-            if (getInstanceVariables() != null) {
-                clone.setInstanceVariables(new HashMap(getInstanceVariables()));
-            }
-            return clone;
-        } catch (CloneNotSupportedException e) {
-            assert false : e;
-            return null;
+        IRubyObject clone = getMetaClass().getRealClass().allocate();
+        clone.setMetaClass(getMetaClass().getSingletonClassClone());
+        clone.setFrozen(false);
+        clone.initCopy(this);
+        if (isFrozen()) {
+            clone.setFrozen(true);
         }
+        return clone;
     }
     
     public IRubyObject display(IRubyObject[] args) {

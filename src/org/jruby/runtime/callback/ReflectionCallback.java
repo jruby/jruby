@@ -28,6 +28,7 @@ package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -37,6 +38,32 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ReflectionCallback extends AbstractCallback {
     private final Method method;
+
+    public ReflectionCallback(Class type, String name, Arity arity) {
+        super(type, name, arity);
+
+        assert type != null;
+        assert name != null;
+        assert arity != null;
+
+        Class[] parameterTypes;
+        Method m = null;
+        if (arity.isFixed()) {
+            parameterTypes = new Class[arity.getValue()];
+            Arrays.fill(parameterTypes, IRubyObject.class);
+        } else {
+            parameterTypes = new Class[1];
+            parameterTypes[0] = IRubyObject[].class;
+        }
+        try {
+            m = type.getMethod(name, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            assert false : e;
+        } catch (SecurityException e) {
+            assert false : e;
+        }
+        this.method = m; 
+    }
 
     public ReflectionCallback(Class type, String methodName, Class[] argumentTypes,
             boolean isRestArgs, boolean isStaticMethod, Arity arity) {

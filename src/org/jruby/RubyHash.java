@@ -308,7 +308,7 @@ public class RubyHash extends RubyObject {
 
 	public IRubyObject rbClone() {
 		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue());
-		result.setupClone(this);
+		result.initCopy(this);
 		return result;
 	}
 

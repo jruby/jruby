@@ -26,7 +26,9 @@
 package org.jruby.runtime.builtin;
 
 import java.io.IOException;
+import java.util.Map;
 
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -58,6 +60,8 @@ public interface IRubyObject {
      * @return RubyObject
      */
     IRubyObject setInstanceVariable(String string, IRubyObject rubyObject);
+    
+    Map getInstanceVariables();
 
     /**
      * RubyMethod funcall.
@@ -105,7 +109,7 @@ public interface IRubyObject {
      * RubyMethod getSingletonClass.
      * @return RubyClass
      */
-    RubyClass getSingletonClass();
+    MetaClass getSingletonClass();
 
     /**
      * RubyMethod getType.
@@ -218,9 +222,9 @@ public interface IRubyObject {
 
     /**
      * RubyMethod setupClone.
-     * @param rubyString
+     * @param original
      */
-    void setupClone(IRubyObject rubyString);
+    void initCopy(IRubyObject original);
 
     /**
      * RubyMethod setFrozen.

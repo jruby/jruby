@@ -64,13 +64,13 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
     }
 
-    protected RubyClass(Ruby runtime, RubyClass rubyClass, RubyClass superClass) {
-        super(runtime, rubyClass, superClass, null, null);
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass) {
+        super(runtime, metaClass, superClass, null, null);
         this.runtime = runtime;
     }
     
-    protected RubyClass(Ruby runtime, RubyClass rubyClass, RubyClass superClass, RubyModule parentClass, String name) {
-        super(runtime, rubyClass, superClass, parentClass, name);
+    protected RubyClass(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
+        super(runtime, metaClass, superClass, parentModule, name);
         this.runtime = runtime;
     }
     
@@ -121,7 +121,7 @@ public class RubyClass extends RubyModule {
         }
 
         MetaClass clone = new MetaClass(getRuntime(), getMetaClass(), getSuperClass());
-        clone.setupClone(this);
+        clone.initCopy(this);
         clone.setInstanceVariables(new HashMap(getInstanceVariables()));
 
         Iterator iter = getMethods().entrySet().iterator();
@@ -154,9 +154,10 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    public void attachToObject(IRubyObject object) {
+    /*public void attachToObject(IRubyObject object) {
+        assert false : "A Class cannot be attached to an object (You need a MetaClass).";
         // Don't do anything, because a class cannot attached to an object.
-    }
+    }*/
 
     public MetaClass newSingletonClass() {
         MetaClass newClass = new MetaClass(getRuntime(), this);
@@ -184,10 +185,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public IRubyObject newInstance(IRubyObject[] args) {
-        if (isSingleton()) {
-            throw getRuntime().newTypeError("can't create instance of virtual class");
-        }
-        IRubyObject obj = new RubyObject(getRuntime(), this);
+        IRubyObject obj = allocate();
         obj.callInit(args);
         return obj;
     }
@@ -252,16 +250,46 @@ public class RubyClass extends RubyModule {
     }
 
     /**
-     * Creates a new object of this class by calling the 'allocate' method.
+     * Creates a new object of this class by calling the 'allocateObject' method.
      * This class must be the type of the new object.
      * 
      * @return the new allocated object.
      */
-    public IRubyObject allocateObject() {
-        IRubyObject newObject = callMethod("allocate");
+    public IRubyObject allocate() {
+        IRubyObject newObject = allocateObject();
         if (newObject.getType() != getRealClass()) {
             throw getRuntime().newTypeError("wrong instance allocation");
         }
         return newObject;
+    }
+
+    /**
+     * <p>
+     * This method is a constructor for ruby objects. It is called by the "Class#new",
+     * "Object#clone" and Object#dup" to create new object instances.
+     * </p>
+     * <p>
+     * Builtin meta classes (subclasses of {@link BuiltinClass}) have to override this method to
+     * create instances of the corresponding subclass of RubyObject.
+     * </p>
+     * <p>
+     * (mri: rb_class_allocate_instance)
+     * </p>
+     * 
+     * @return a new RubyObject
+     */
+    protected IRubyObject allocateObject() {
+        IRubyObject newObject = new RubyObject(runtime, this);
+        return newObject;
+    }
+
+    public RubyClass newSubClass(String name, RubyModule parentModule) {
+        RubyClass newClass = new RubyClass(getRuntime(), getRuntime().getClasses().getClassClass(), this, parentModule, name);
+
+        newClass.makeMetaClass(getMetaClass());
+        newClass.inheritedBy(this);
+        getRuntime().getClasses().putClass(name, newClass);
+
+        return newClass;
     }
 }

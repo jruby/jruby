@@ -1050,7 +1050,7 @@ public class RubyArray extends RubyObject {
      */
     public IRubyObject rbClone() {
         RubyArray result = getRuntime().newArray(new ArrayList(list));
-        result.setupClone(this);
+        result.initCopy(this);
         return result;
     }
 

@@ -25,18 +25,23 @@ package org.jruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MetaClass extends RubyClass {
-    public RubyClass type;
+    //public RubyClass type;
+
+    protected MetaClass(Ruby runtime) {
+        this(runtime, null);
+    }
 
     public MetaClass(Ruby runtime, RubyClass type) {
         super(runtime, runtime.getClasses().getClassClass(), type);
-        assert type != null;
+        //assert type != null;
 
-        this.type = type;
+        //this.type = type;
     }
 
     public MetaClass(Ruby runtime, RubyClass type, RubyClass superClass) {
         super(runtime, type, superClass);
     }
+
     public boolean isSingleton() {
         return true;
     }
@@ -59,5 +64,9 @@ public class MetaClass extends RubyClass {
 
     public IRubyObject getAttachedObject() {
         return getInstanceVariable("__attached__");
+    }
+
+    public IRubyObject allocateObject() {
+        throw getRuntime().newTypeError("can't create instance of virtual class");
     }
 }

@@ -90,7 +90,7 @@ public final class Arity {
         }
     }
 
-    private boolean isFixed() {
+    public boolean isFixed() {
         return value >= 0;
     }
 

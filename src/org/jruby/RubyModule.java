@@ -78,7 +78,7 @@ public class RubyModule extends RubyObject {
     
     // Containing class...It is guaranteed to never be null.  And will always
     // end up at RubyObject if you follow it up.
-    public RubyModule parentModule;
+    private RubyModule parentModule;
 
     // ClassId is the name of the class/module sans where it is located.
     // If it is null, then it an anonymous class.
@@ -88,8 +88,8 @@ public class RubyModule extends RubyObject {
 
     private Map methodCache = new TreeMap();
 
-    protected RubyModule(Ruby runtime, RubyClass rubyClass, RubyClass superClass, RubyModule parentModule, String name) {
-        super(runtime, rubyClass);
+    protected RubyModule(Ruby runtime, RubyClass metaClass, RubyClass superClass, RubyModule parentModule, String name) {
+        super(runtime, metaClass);
         
         this.superClass = superClass;
         this.parentModule = parentModule;
@@ -113,10 +113,8 @@ public class RubyModule extends RubyObject {
         return this.superClass;
     }
 
-    /** Setter for property superClass.
-     * @param superClass New value of property superClass.
-     */
-    private void setSuperClass(RubyClass superClass) {
+    // FIXME protected should be enough
+    public void setSuperClass(RubyClass superClass) {
         this.superClass = superClass;
     }
 
