@@ -26,6 +26,7 @@
  */
 package org.jruby.runtime;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.ablaf.ast.INode;
@@ -101,7 +102,7 @@ public class Block implements StackElement {
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVariables);
+        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, new HashMap(dynamicVariables));
 
         if (getNext() != null) {
             newBlock.setNext(((Block)getNext()));
