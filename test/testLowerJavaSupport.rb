@@ -108,7 +108,10 @@ if defined? Java
              method.invoke_static(Java.primitive_to_java(101)).type)
 
   # Arrays
-  string_array_class = string_class.array_class
+  array = string_class.new_array(10)
+  #test_equal(10, array.length)
+  string_array_class = Java::JavaClass.for_name(array.java_type)
   test_ok(string_array_class.array?)
   test_equal("[Ljava.lang.String;", string_array_class.name)
+  test_ok(string_array_class.constructors.empty?)
 end
