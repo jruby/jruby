@@ -788,6 +788,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyString inspect() {
+        // TODO Review this and either remove the comment, or do it
         //     if (TYPE(obj) == T_OBJECT
         // 	&& ROBJECT(obj)->iv_tbl
         // 	&& ROBJECT(obj)->iv_tbl->num_entries > 0) {
