@@ -149,20 +149,18 @@ public class JRubyEngine extends BSFEngineImpl {
         int size = declaredBeans.size();
         for (int i = 0; i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
-            BeanAccessor accessor = new BeanAccessor(bean);
-            ruby.defineHookedVariable(bean.name, null, accessor, accessor);
+            ruby.defineVariable(new BeanGlobalVariable(ruby, bean));
         }
 
         // ruby.defineGlobalFunction("declareBean", method);
     }
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
-        BeanAccessor accessor = new BeanAccessor(bean);
-        ruby.defineHookedVariable(bean.name, null, accessor, accessor);
+        ruby.defineVariable(new BeanGlobalVariable(ruby, bean));
     }
 
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
-        ruby.undefineGlobalEntry(bean.name);
+        ruby.undefineGlobalVar(bean.name);
     }
 
     public void handleException(BSFException bsfExcptn) {
@@ -170,25 +168,21 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
 
-    private static class BeanAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
+    private static class BeanGlobalVariable extends GlobalVariable {
         private BSFDeclaredBean bean;
 
-        protected BeanAccessor(BSFDeclaredBean bean) {
+        public BeanGlobalVariable(Ruby ruby, BSFDeclaredBean bean) {
+            super(ruby, bean.name, null);
             this.bean = bean;
         }
 
-        /*
-         * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
-         */
-        public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
+        public RubyObject get() {
             return JavaUtil.convertJavaToRuby(ruby, bean.bean);
         }
 
-        /*
-         * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
-         */
-        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+        public RubyObject set(RubyObject value) {
             bean.bean = JavaUtil.convertRubyToJava(ruby, value, bean.type);
+            return value;
         }
     }
 }
