@@ -32,13 +32,23 @@ import org.jruby.RubyModule;
  *
  * @author Anders
  */
-public class ObjectSpace {
-    private Set references = new HashSet();
+public final class ObjectSpace {
+    private HashMap references = new HashMap();
     private ReferenceQueue deadReferences = new ReferenceQueue();
+    
+    public ObjectSpace() {
+        /* Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            public void run() {
+                cleanup();
+            }
+        }, 8000, 2000);
+        */
+    }
 
     public void add(RubyObject object) {
-		cleanup();
-        references.add(new WeakReference(object, deadReferences));
+		//cleanup();
+        references.put(new WeakReference(object, deadReferences), null);
     }
 
     public Iterator iterator(RubyModule rubyClass) {
@@ -60,7 +70,7 @@ public class ObjectSpace {
 
         public ObjectSpaceIterator(RubyModule rubyClass) {
             this.rubyClass = rubyClass;
-            this.iterator = new ArrayList(references).iterator();
+            this.iterator = new ArrayList(references.keySet()).iterator();
             prefetch();
         }
 
