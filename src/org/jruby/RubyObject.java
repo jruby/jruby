@@ -3,12 +3,13 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *

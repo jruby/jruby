@@ -3,9 +3,10 @@
  * Created on 19.02.2002, 18:14:29
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -34,11 +35,14 @@ public class ThreadService {
     private Ruby runtime;
     private ThreadContext mainContext = new ThreadContext(runtime);
     private ThreadContextLocal localContext = new ThreadContextLocal(mainContext);
+    private ThreadGroup rubyThreadGroup;
+    private volatile boolean critical;
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
         this.mainContext = new ThreadContext(runtime);
         this.localContext = new ThreadContextLocal(mainContext);
+        this.rubyThreadGroup = new ThreadGroup("Ruby Threads#" + runtime.hashCode());
     }
 
     public void disposeCurrentThread() {
@@ -56,10 +60,87 @@ public class ThreadService {
     public void setMainThread(ThreadClass thread) {
         mainContext.setThread(thread);
     }
+    
+    public ThreadGroup getRubyThreadGroup() {
+    	return rubyThreadGroup;
+    }
 
     public void registerNewThread(ThreadClass thread) {
         localContext.set(new ThreadContext(runtime));
         getCurrentContext().setThread(thread);
+    }
+    
+    public synchronized void setCritical(boolean critical) {
+    	// TODO: this implementation is obviously dependent on native threads
+    	if (this.critical) {
+    		if (critical) return;
+    		
+    		this.critical = false;
+    		
+    		Thread[] activeThreads = new Thread[rubyThreadGroup.activeCount()];
+    		rubyThreadGroup.enumerate(activeThreads);
+    		
+    		// unsuspend all threads, starting with main if necessary
+    		if (getCurrentContext() != mainContext) {
+    			mainContext.getThread().decriticalize();
+    		}
+    		
+    		for (int i = 0; i < activeThreads.length; i++) {
+    			ThreadClass rubyThread = getRubyThreadFromThread(activeThreads[i]);
+    			
+    			rubyThread.decriticalize();
+    		}
+    	} else {
+    		if (!critical) return;
+    		
+    		this.critical = true;
+    		
+    		Thread[] activeThreads = new Thread[rubyThreadGroup.activeCount()];
+    		rubyThreadGroup.enumerate(activeThreads);
+    		AtomicSpinlock spinlock = new AtomicSpinlock();
+
+    		// suspend all threads, starting with main if necessary
+    		if (getCurrentContext() != mainContext) {
+    			mainContext.getThread().criticalize(spinlock);
+    		}
+    		
+    		for (int i = 0; i < activeThreads.length; i++) {
+    			ThreadClass rubyThread = null;
+    			rubyThread = getRubyThreadFromThread(activeThreads[i]);
+
+    			if (rubyThread != getCurrentContext().getThread()) {
+    				rubyThread.criticalize(spinlock);
+    			}
+    		}
+    		
+    		try {
+    			spinlock.waitForZero(1000);
+    		} catch (InterruptedException ie) {
+    			// TODO: throw something more appropriate
+    			throw new RuntimeException(ie);
+    		}
+    	}
+    }
+    
+    /**
+	 * @param activeThreads
+	 * @param i
+	 * @return
+	 */
+	private ThreadClass getRubyThreadFromThread(Thread activeThread) {
+		ThreadClass rubyThread;
+		if (activeThread instanceof RubyNativeThread) {
+			RubyNativeThread rubyNativeThread = (RubyNativeThread)activeThread;
+			rubyThread = rubyNativeThread.getRubyThread();
+		} else {
+			// main thread
+			rubyThread = mainContext.getThread();
+		}
+		return rubyThread;
+	}
+
+	public boolean getCritical() {
+    	return critical;
     }
 
     private static class ThreadContextLocal extends ThreadLocal {
