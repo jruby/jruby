@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Copyright (C) 2002 Thomas E Enebo
+ * Copyright (C) 2002-2003 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -45,7 +45,6 @@ import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
