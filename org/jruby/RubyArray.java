@@ -36,12 +36,13 @@ import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.marshal.*;
 import org.jruby.util.Pack;
+import org.jruby.util.Asserts;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyArray extends RubyObject {
+public class RubyArray extends RubyObject implements IndexCallable {
 	private ArrayList list;
 	private boolean tmpLock;
 
@@ -88,6 +89,23 @@ public class RubyArray extends RubyObject {
 		return list.size();
 	}
 
+    private static final int M_INSPECT = 2;
+    private static final int M_TO_S = 3;
+    private static final int M_FROZEN = 4;
+    private static final int M_EQUAL = 5;
+    private static final int M_EQL = 6;
+    private static final int M_FIRST = 10;
+    private static final int M_LAST = 11;
+    private static final int M_CONCAT = 12;
+    private static final int M_POP = 14;
+    private static final int M_SHIFT = 15;
+    private static final int M_EACH = 20;
+    private static final int M_EACH_INDEX = 21;
+    private static final int M_REVERSE_EACH = 22;
+    private static final int M_LENGTH = 23;
+    private static final int M_EMPTY_P = 24;
+
+
 	public static RubyClass createArrayClass(Ruby ruby) {
 		RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
 
@@ -97,37 +115,37 @@ public class RubyArray extends RubyObject {
 		arrayClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
 		arrayClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
 
-		arrayClass.defineMethod("inspect", CallbackFactory.getMethod(RubyArray.class, "inspect"));
-		arrayClass.defineMethod("to_s", CallbackFactory.getMethod(RubyArray.class, "to_s"));
-		arrayClass.defineMethod("to_a", CallbackFactory.getMethod(RubyArray.class, "to_a"));
-		arrayClass.defineMethod("to_ary", CallbackFactory.getMethod(RubyArray.class, "to_a"));
-		arrayClass.defineMethod("frozen?", CallbackFactory.getMethod(RubyArray.class, "frozen"));
+		arrayClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
+		arrayClass.defineMethod("to_s", IndexedCallback.create(M_TO_S, 0));
+		arrayClass.defineMethod("to_a", CallbackFactory.getSelfMethod(0));
+		arrayClass.defineMethod("to_ary", CallbackFactory.getSelfMethod(0));
+		arrayClass.defineMethod("frozen?", IndexedCallback.create(M_FROZEN, 0));
 
-		arrayClass.defineMethod("==", CallbackFactory.getMethod(RubyArray.class, "equal", RubyObject.class));
-		arrayClass.defineMethod("eql?", CallbackFactory.getMethod(RubyArray.class, "eql", RubyObject.class));
-		arrayClass.defineMethod("===", CallbackFactory.getMethod(RubyArray.class, "equal", RubyObject.class));
+		arrayClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
+		arrayClass.defineMethod("eql?", IndexedCallback.create(M_EQL, 1));
+		arrayClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
 
 		arrayClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
 		arrayClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyArray.class, "aset"));
 		arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
 
-		arrayClass.defineMethod("first", CallbackFactory.getMethod(RubyArray.class, "first"));
-		arrayClass.defineMethod("last", CallbackFactory.getMethod(RubyArray.class, "last"));
-		arrayClass.defineMethod("concat", CallbackFactory.getMethod(RubyArray.class, "concat", RubyObject.class));
+		arrayClass.defineMethod("first", IndexedCallback.create(M_FIRST, 0));
+		arrayClass.defineMethod("last", IndexedCallback.create(M_LAST, 0));
+		arrayClass.defineMethod("concat", IndexedCallback.create(M_CONCAT, 1));
 
 		arrayClass.defineMethod("<<", CallbackFactory.getMethod(RubyArray.class, "push", RubyObject.class));
 		arrayClass.defineMethod("push", CallbackFactory.getOptMethod(RubyArray.class, "push"));
-		arrayClass.defineMethod("pop", CallbackFactory.getMethod(RubyArray.class, "pop"));
+		arrayClass.defineMethod("pop", IndexedCallback.create(M_POP, 0));
 
-		arrayClass.defineMethod("shift", CallbackFactory.getMethod(RubyArray.class, "shift"));
+		arrayClass.defineMethod("shift", IndexedCallback.create(M_SHIFT, 0));
 		arrayClass.defineMethod("unshift", CallbackFactory.getOptMethod(RubyArray.class, "unshift"));
-		arrayClass.defineMethod("each", CallbackFactory.getMethod(RubyArray.class, "each"));
-		arrayClass.defineMethod("each_index", CallbackFactory.getMethod(RubyArray.class, "each_index"));
-		arrayClass.defineMethod("reverse_each", CallbackFactory.getMethod(RubyArray.class, "reverse_each"));
+		arrayClass.defineMethod("each", IndexedCallback.create(M_EACH, 0));
+		arrayClass.defineMethod("each_index", IndexedCallback.create(M_EACH_INDEX, 0));
+		arrayClass.defineMethod("reverse_each", IndexedCallback.create(M_REVERSE_EACH, 0));
 
-		arrayClass.defineMethod("length", CallbackFactory.getMethod(RubyArray.class, "length"));
-		arrayClass.defineMethod("size", CallbackFactory.getMethod(RubyArray.class, "length"));
-		arrayClass.defineMethod("empty?", CallbackFactory.getMethod(RubyArray.class, "empty_p"));
+		arrayClass.defineMethod("length", IndexedCallback.create(M_LENGTH, 0));
+		arrayClass.defineMethod("size", IndexedCallback.create(M_LENGTH, 0));
+		arrayClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY_P, 0));
 		arrayClass.defineMethod("index", CallbackFactory.getMethod(RubyArray.class, "index", RubyObject.class));
 		arrayClass.defineMethod("rindex", CallbackFactory.getMethod(RubyArray.class, "rindex", RubyObject.class));
 		arrayClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
@@ -180,6 +198,43 @@ public class RubyArray extends RubyObject {
 
 		return arrayClass;
 	}
+
+    public RubyObject callIndexed(int index, RubyObject[] args) {
+        switch (index) {
+        case M_INSPECT:
+            return inspect();
+        case M_TO_S:
+            return to_s();
+        case M_FROZEN:
+            return frozen();
+        case M_EQUAL:
+            return equal(args[0]);
+        case M_EQL:
+            return eql(args[0]);
+        case M_FIRST:
+            return first();
+        case M_LAST:
+            return last();
+        case M_CONCAT:
+            return concat(args[0]);
+        case M_POP:
+            return pop();
+        case M_SHIFT:
+            return shift();
+        case M_EACH:
+            return each();
+        case M_EACH_INDEX:
+            return each_index();
+        case M_REVERSE_EACH:
+            return reverse_each();
+        case M_LENGTH:
+            return length();
+        case M_EMPTY_P:
+            return empty_p();
+        }
+        Asserts.assertNotReached();
+        return null;
+    }
 
     public int hashCode() {
         return list.hashCode();

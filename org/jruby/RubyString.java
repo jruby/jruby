@@ -111,11 +111,13 @@ public class RubyString extends RubyObject implements IndexCallable {
     private static final int M_FORMAT = 6;
     private static final int M_LENGTH = 7;
     private static final int M_EMPTY = 8;
-
     private static final int M_MATCH = 9;
     private static final int M_MATCH2 = 10;
     private static final int M_SUCC = 11;
     private static final int M_SUCC_BANG = 12;
+    private static final int M_UPTO = 13;
+    private static final int M_REPLACE = 16;
+
 
 	public static RubyClass createStringClass(Ruby ruby) {
 		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
@@ -124,7 +126,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.includeModule(ruby.getClasses().getEnumerableModule());
 
 		stringClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
-		stringClass.defineMethod("initialize", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
+		stringClass.defineMethod("initialize", IndexedCallback.create(M_REPLACE, 1));
 		stringClass.defineMethod("clone", CallbackFactory.getMethod(RubyString.class, "rbClone"));
 		stringClass.defineMethod("dup", IndexedCallback.create(M_DUP, 0));
 
@@ -147,10 +149,10 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("succ!", IndexedCallback.create(M_SUCC_BANG, 0));
 		stringClass.defineMethod("next", IndexedCallback.create(M_SUCC, 0));
 		stringClass.defineMethod("next!", IndexedCallback.create(M_SUCC_BANG, 0));
-		stringClass.defineMethod("upto", CallbackFactory.getMethod(RubyString.class, "upto", RubyObject.class));
+		stringClass.defineMethod("upto", IndexedCallback.create(M_UPTO, 1));
 		stringClass.defineMethod("index", CallbackFactory.getOptMethod(RubyString.class, "index"));
 		stringClass.defineMethod("rindex", CallbackFactory.getOptMethod(RubyString.class, "rindex"));
-		stringClass.defineMethod("replace", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
+		stringClass.defineMethod("replace", IndexedCallback.create(M_REPLACE, 1));
 
 		stringClass.defineMethod("to_i", CallbackFactory.getMethod(RubyString.class, "to_i"));
 		stringClass.defineMethod("to_f", CallbackFactory.getMethod(RubyString.class, "to_f"));
@@ -254,6 +256,10 @@ public class RubyString extends RubyObject implements IndexCallable {
             return succ();
         case M_SUCC_BANG:
             return succ_bang();
+        case M_UPTO:
+            return upto(args[0]);
+        case M_REPLACE:
+            return replace(args[0]);
         }
         Asserts.assertNotReached();
         return null;

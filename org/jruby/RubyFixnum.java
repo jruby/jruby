@@ -39,7 +39,7 @@ import org.jruby.util.Asserts;
  */
 public class RubyFixnum extends RubyInteger implements IndexCallable {
     private long value;
-    private static int BIT_SIZE = 63;
+    private static final int BIT_SIZE = 63;
 
     public RubyFixnum(Ruby ruby) {
         this(ruby, 0);
