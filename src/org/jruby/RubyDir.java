@@ -3,12 +3,13 @@
  * Created on 18.03.2002, 15:19:50
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -187,9 +188,19 @@ public class RubyDir extends RubyObject {
             realPath = dir.getAbsolutePath();
         }
         
-        System.setProperty("user.dir", realPath);
+        IRubyObject result = null;
+        if (recv.getRuntime().isBlockGiven()) {
+        	// FIXME: Bad to manipulate system property for cwd; not thread safe
+        	String oldPath = System.getProperty("user.dir");
+        	System.setProperty("user.dir", realPath);
+        	result = recv.getRuntime().yield(path);
+        	System.setProperty("user.dir", oldPath); 
+        } else {
+        	System.setProperty("user.dir", realPath);
+        	result = recv.getRuntime().newFixnum(0);
+        }
         
-        return recv.getRuntime().newFixnum(0);
+        return result;
     }
 
     /**
