@@ -33,7 +33,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
@@ -212,9 +211,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public void modify() {
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "Array");
-        }
+    	testFrozen("Array");
         if (isTmpLock()) {
             throw new TypeError(getRuntime(), "can't modify array during sort");
         }
@@ -841,7 +838,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_equal
      *
      */
-    public RubyBoolean equal(IRubyObject obj) {
+    public IRubyObject equal(IRubyObject obj) {
         if (this == obj) {
             return getRuntime().getTrue();
         }

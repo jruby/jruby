@@ -194,7 +194,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_equal
      * 
      */
-    public RubyBoolean equal(IRubyObject other) {
+    public IRubyObject equal(IRubyObject other) {
         if (other == this) {
             return getRuntime().getTrue();
         }

@@ -32,7 +32,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.SecurityError;
@@ -108,9 +107,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private void modify() {
-        if (isFrozen()) {
-            throw new FrozenError(runtime, "Struct is frozen.");
-        }
+    	testFrozen("Struct is frozen");
 
         if (!isTaint() && runtime.getSafeLevel() >= 4) {
             throw new SecurityError(runtime, "Insecure: can't modify struct");
@@ -298,7 +295,7 @@ public class RubyStruct extends RubyObject {
         return clone;
     }
 
-    public RubyBoolean equal(IRubyObject other) {
+    public IRubyObject equal(IRubyObject other) {
         if (this == other) {
             return runtime.getTrue();
         } else if (!(other instanceof RubyStruct)) {

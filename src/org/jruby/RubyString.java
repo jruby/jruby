@@ -130,8 +130,9 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("dup", callbackFactory.getMethod(RubyString.class, "dup"));
 
         stringClass.defineMethod("<=>", callbackFactory.getMethod(RubyString.class, "op_cmp", IRubyObject.class));
+        stringClass.defineMethod("casecmp", callbackFactory.getMethod(RubyString.class, "casecmp", IRubyObject.class));
         stringClass.defineMethod("==", callbackFactory.getMethod(RubyString.class, "equal", IRubyObject.class));
-        stringClass.defineMethod("===", callbackFactory.getMethod(RubyString.class, "equal", IRubyObject.class));
+        stringClass.defineMethod("===", callbackFactory.getMethod(RubyString.class, "veryEqual", IRubyObject.class));
         stringClass.defineMethod("eql?", callbackFactory.getMethod(RubyString.class, "equal", IRubyObject.class));
         stringClass.defineMethod("hash", callbackFactory.getMethod(RubyString.class, "hash"));
 
@@ -194,12 +195,16 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("chop", callbackFactory.getMethod(RubyString.class, "chop"));
         stringClass.defineMethod("chomp", callbackFactory.getOptMethod(RubyString.class, "chomp"));
         stringClass.defineMethod("strip", callbackFactory.getMethod(RubyString.class, "strip"));
+        stringClass.defineMethod("lstrip", callbackFactory.getMethod(RubyString.class, "lstrip"));
+        stringClass.defineMethod("rstrip", callbackFactory.getMethod(RubyString.class, "rstrip"));
 
         stringClass.defineMethod("sub!", callbackFactory.getOptMethod(RubyString.class, "sub_bang"));
         stringClass.defineMethod("gsub!", callbackFactory.getOptMethod(RubyString.class, "gsub_bang"));
         stringClass.defineMethod("chop!", callbackFactory.getMethod(RubyString.class, "chop_bang"));
         stringClass.defineMethod("chomp!", callbackFactory.getOptMethod(RubyString.class, "chomp_bang"));
         stringClass.defineMethod("strip!", callbackFactory.getMethod(RubyString.class, "strip_bang"));
+        stringClass.defineMethod("lstrip!", callbackFactory.getMethod(RubyString.class, "lstrip_bang"));
+        stringClass.defineMethod("rstrip!", callbackFactory.getMethod(RubyString.class, "rstrip_bang"));
 
         stringClass.defineMethod("tr", callbackFactory.getOptMethod(RubyString.class, "tr"));
         stringClass.defineMethod("tr_s", callbackFactory.getOptMethod(RubyString.class, "tr_s"));
@@ -393,17 +398,31 @@ public class RubyString extends RubyObject {
 		return RubyFixnum.newFixnum(getRuntime(), cmp(stringValue(other)));
 	}
 
+	public RubyFixnum casecmp(IRubyObject other) {
+		RubyString thisLCString = 
+			RubyString.newString(getRuntime(), getValue().toLowerCase());
+		RubyString lcString = 
+			RubyString.newString(getRuntime(), 
+					stringValue(other).getValue().toLowerCase());
+
+		return thisLCString.op_cmp(lcString);
+	}
 	/** rb_str_equal
 	 *
 	 */
-	public RubyBoolean equal(IRubyObject other) {
+	public IRubyObject equal(IRubyObject other) {
 		if (other == this) {
 			return getRuntime().getTrue();
 		} else if (!(other instanceof RubyString)) {
-			return getRuntime().getFalse();
+			return getRuntime().getNil();
 		}
 		/* use Java implementation */
 		return getValue().equals(((RubyString) other).getValue()) ? getRuntime().getTrue() : getRuntime().getFalse();
+	}
+	
+	public IRubyObject veryEqual(IRubyObject other) {
+		IRubyObject truth = equal(other);
+		return truth == getRuntime().getNil() ? getRuntime().getFalse() : truth;
 	}
 
 	/** rb_str_match
@@ -1314,6 +1333,55 @@ public class RubyString extends RubyObject {
             return this;
         }
 		return nilString(getRuntime());
+	}
+
+	public IRubyObject lstrip() {
+		String value = getValue();
+		int length = value.length();
+		int i = 0;
+		
+		for (; i < length; i++) {
+			if (Character.isWhitespace(value.charAt(i)) == false) {
+				break;
+			}
+		}
+		
+		return newString(value.substring(i));
+	}
+	
+	public IRubyObject lstrip_bang() {
+		RubyString newValue = (RubyString) lstrip();
+		
+		if (newValue.getValue().equals(value)) {
+			return getRuntime().getNil();
+		}
+		value = newValue.getValue();
+		
+		return this;
+	}
+
+	public IRubyObject rstrip() {
+		String value = getValue();
+		int i = value.length() - 1;
+		
+		for (; i >= 0; i--) {
+			if (Character.isWhitespace(value.charAt(i)) == false) {
+				break;
+			}
+		}
+		
+		return newString(value.substring(0, i + 1));
+	}
+
+	public IRubyObject rstrip_bang() {
+		RubyString newValue = (RubyString) rstrip();
+		
+		if (newValue.getValue().equals(value)) {
+			return getRuntime().getNil();
+		}
+		value = newValue.getValue();
+		
+		return this;
 	}
 
 	/** rb_str_strip

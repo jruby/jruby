@@ -34,7 +34,6 @@ import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
@@ -124,7 +123,7 @@ public class RubyModule extends RubyObject {
     }
 
     public Map getMethods() {
-        return this.methods;
+        return methods;
     }
 
     public boolean isModule() {
@@ -174,7 +173,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("private_instance_methods", callbackFactory.getOptMethod(RubyModule.class, "private_instance_methods"));
         moduleClass.defineMethod("protected_instance_methods", callbackFactory.getOptMethod(RubyModule.class, "protected_instance_methods"));
         moduleClass.defineMethod("public_class_method", callbackFactory.getOptMethod(RubyModule.class, "public_class_method"));
-        moduleClass.defineMethod("public_instance_methods", callbackFactory.getOptMethod(RubyModule.class, "instance_methods"));
+        moduleClass.defineMethod("public_instance_methods", callbackFactory.getOptMethod(RubyModule.class, "public_instance_methods"));
         moduleClass.defineMethod("to_s",  callbackFactory.getMethod(RubyModule.class, "to_s"));
 
         moduleClass.definePrivateMethod("alias_method", callbackFactory.getMethod(RubyModule.class, "alias_method", IRubyObject.class, IRubyObject.class));
@@ -243,9 +242,9 @@ public class RubyModule extends RubyObject {
     }
     
     private RubyModule getModuleWithInstanceVar(String name) {
-        for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
-            if (tmp.hasInstanceVariable(name)) {
-                return tmp;
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if (p.hasInstanceVariable(name)) {
+                return p;
             }
         }
         return null;
@@ -294,25 +293,22 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name) {
-        boolean mod_retry = false;
-        RubyModule module = this;
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+        	IRubyObject var = p.getInstanceVariable(name);
+            if (var != null && !var.isNil()) {
+                return var;
+            }
+        }
+        
+        IRubyObject var = getRuntime().getTopConstant(name);
+        if (var != null && !var.isNil()) {
+        	return var;
+        }
 
-        while (true) {
-            while (module != null) {
-                if (!module.getInstanceVariable(name).isNil()) {
-                    return module.getInstanceVariable(name);
-                }
-                if (module == getRuntime().getClasses().getObjectClass() && getRuntime().getTopConstant(name) != null) {
-                    return getRuntime().getTopConstant(name);
-                }
-                module = module.getSuperClass();
-            }
-            if (!mod_retry && isModule()) {
-                mod_retry = true;
-                module = getRuntime().getClasses().getObjectClass();
-                continue;
-            }
-            break;
+        // XXXEnebo: Why doesn't first loop catch this?
+        var = getRuntime().getClasses().getObjectClass().getInstanceVariable(name);
+        if (var != null && !var.isNil()) {
+        	return var;
         }
         
         return callMethod("const_missing", RubySymbol.newSymbol(runtime, name));
@@ -327,20 +323,13 @@ public class RubyModule extends RubyObject {
         throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol());
     }
 
-    /** Include a new module in this module or class.
-     *
-     * MRI: rb_include_module
-     *
-     * Updated to Ruby 1.6.7.
-     *
+    /** 
+     * Include a new module in this module or class.
      */
     public void includeModule(IRubyObject arg) {
-        testFrozen();
+        testFrozen("module");
         if (!isTaint()) {
             runtime.secure(4);
-        }
-        if (arg == null || arg == this) {
-            return;
         }
 
         if (!(arg instanceof RubyModule)) {
@@ -348,33 +337,26 @@ public class RubyModule extends RubyObject {
         }
 
         RubyModule module = (RubyModule) arg;
+        Map moduleMethods = module.getMethods();
 
-        boolean changed = false;
-
-        RubyModule type = this;
-
-        addModule : while (module != null) {
-            if (getMethods() == module.getMethods()) {
-                throw new ArgumentError(runtime, "Cyclic include detected.");
-            }
-            // ignore if module is already included in one of the super classes.
-            for (RubyClass p = getSuperClass(); p != null; p = p.getSuperClass()) {
-                if (p.isIncluded() && p.getMethods() == module.getMethods()) {
-                    type = p;
-                    module = module.getSuperClass();
-                    continue addModule;
-                }
-            }
-            type.setSuperClass(module.newIncludeClass(type.getSuperClass()));
-            type = type.getSuperClass();
-            changed = true;
-
-            module = module.getSuperClass();
+        // Make sure the module we include does not already exist 
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+        	// XXXEnebo - Lame equality check (cause: IncludedModule?)
+        	if (p.getMethods() == moduleMethods) {
+        		return;
+        	}
+        }
+        
+        // Include new module
+        setSuperClass(module.newIncludeClass(getSuperClass()));
+        
+        // Try to include all included modules from module just added 
+        for (RubyModule p = module.getSuperClass(); p != null; 
+        	p = p.getSuperClass()) {
+        	includeModule(p);
         }
 
-        if (changed) {
-            clearMethodCache();
-        }
+        clearMethodCache();
     }
 
     /** rb_add_method
@@ -388,9 +370,8 @@ public class RubyModule extends RubyObject {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw new SecurityError(getRuntime(), "Insecure: can't define method");
         }
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "class/module");
-        }
+        testFrozen("class/module");
+
         // Clear cache for any instance methods
         methodCache.remove(name);
         getMethods().put(name, method);
@@ -398,7 +379,8 @@ public class RubyModule extends RubyObject {
     }
 
     public void defineMethod(String name, Callback method) {
-        Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
+        Visibility visibility = name.equals("initialize") ? 
+        		Visibility.PRIVATE : Visibility.PUBLIC;
 
         addMethod(name, new CallbackMethod(method, visibility));
     }
@@ -409,15 +391,6 @@ public class RubyModule extends RubyObject {
 
     public void undefineMethod(String name) {
         addMethod(name, UndefinedMethod.getInstance());
-    }
-
-    /** rb_frozen_class_p
-     *
-     */
-    protected void testFrozen() {
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "module");
-        }
     }
 
     /** rb_undef
@@ -431,7 +404,7 @@ public class RubyModule extends RubyObject {
         if (ruby.getSafeLevel() >= 4 && !isTaint()) {
             throw new SecurityException("Insecure: can't undef");
         }
-        testFrozen();
+        testFrozen("module");
         if (name.equals("__id__") || name.equals("__send__")) {
             /*rb_warn("undefining `%s' may cause serious problem",
                      rb_id2name( id ) );*/
@@ -476,8 +449,8 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isConstantDefined(String name) {
-        for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
-            if (!tmp.getInstanceVariable(name).isNil()) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if (!p.getInstanceVariable(name).isNil()) {
                 return true;
             }
         }
@@ -525,8 +498,7 @@ public class RubyModule extends RubyObject {
     }
 
     public Visibility getMethodVisibility(String name) {
-        CacheEntry entry = getMethodBodyCached(name);
-        return entry.getVisibility();
+        return getMethodBodyCached(name).getVisibility();
     }
 
     protected CacheEntry getMethodBodyCached(String name) {
@@ -655,7 +627,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public void aliasMethod(String name, String oldName) {
-        testFrozen();
+        testFrozen("module");
         if (oldName.equals(name)) {
             return;
         }
@@ -688,9 +660,8 @@ public class RubyModule extends RubyObject {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw new SecurityError(getRuntime(), "Insecure: can't remove method");
         }
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "class/module");
-        }
+        testFrozen("class/module");
+
         if (getMethods().remove(name) == null) {
             throw new NameError(getRuntime(), "method '" + name + "' not defined in " + getName());
         }
@@ -703,16 +674,15 @@ public class RubyModule extends RubyObject {
             IRubyObject type = getConstant(name);
             if (!(type instanceof RubyClass)) {
                 throw new TypeError(runtime, name + " is not a class.");
-            } else {
-                return (RubyClass) type;
             }
-        } else {
-            RubyClass newClass = getRuntime().defineClassUnder(name, superClass, this);
+            
+            return (RubyClass) type;
+        } 
 
-            setConstant(name, newClass);
+        RubyClass newClass = getRuntime().defineClassUnder(name, superClass, this);
+        setConstant(name, newClass);
 
-            return newClass;
-        }
+        return newClass;
     }
     
     /** rb_define_class_under
@@ -780,10 +750,7 @@ public class RubyModule extends RubyObject {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
         }
-
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "class/module");
-        }
+        testFrozen("class/module");
 
         IRubyObject value = removeInstanceVariable(name.asSymbol());
 
@@ -990,11 +957,8 @@ public class RubyModule extends RubyObject {
     public RubyArray class_variables() {
         RubyArray ary = RubyArray.newArray(getRuntime());
 
-        RubyModule rbModule = this;
-
-        while (rbModule != null) {
-            Iterator iter = rbModule.instanceVariableNames();
-            while (iter.hasNext()) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            for (Iterator iter = p.instanceVariableNames(); iter.hasNext();) {
                 String id = (String) iter.next();
                 if (IdUtil.isClassVariable(id)) {
                     RubyString kval = RubyString.newString(getRuntime(), id);
@@ -1003,7 +967,6 @@ public class RubyModule extends RubyObject {
                     }
                 }
             }
-            rbModule = rbModule.getSuperClass();
         }
         return ary;
     }
@@ -1015,14 +978,11 @@ public class RubyModule extends RubyObject {
         RubyModule clone = (RubyModule) super.rbClone();
         Map cloneMethods = clone.getMethods();
         
-        if (getMethods() != null) {
-            Iterator iter = getMethods().entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                Object key = entry.getKey();
-                ICallable value = ((ICallable) entry.getValue()).dup();
-                cloneMethods.put(key, value);
-            }
+        for (Iterator iter = getMethods().entrySet().iterator(); 
+        	 iter.hasNext();) {
+        	Map.Entry e = (Map.Entry) iter.next();
+
+        	cloneMethods.put(e.getKey(), ((ICallable) e.getValue()).dup()); 
         }
         return clone;
     }
@@ -1099,8 +1059,8 @@ public class RubyModule extends RubyObject {
             throw new TypeError(getRuntime(), "compared with non class/module");
         }
 
-        for (RubyModule mod = this; mod != null; mod = mod.getSuperClass()) { 
-            if (mod.getMethods() == ((RubyModule) obj).getMethods()) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) { 
+            if (p.getMethods() == ((RubyModule) obj).getMethods()) {
                 return getRuntime().getTrue();
             }
         }
@@ -1112,10 +1072,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyBoolean op_lt(IRubyObject obj) {
-        if (obj == this) {
-            return getRuntime().getFalse();
-        }
-        return op_le(obj);
+    	return obj == this ? getRuntime().getFalse() : op_le(obj); 
     }
 
     /** rb_mod_ge
@@ -1133,10 +1090,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyBoolean op_gt(IRubyObject obj) {
-        if (this == obj) {
-            return getRuntime().getFalse();
-        }
-        return op_ge(obj);
+        return this == obj ? getRuntime().getFalse() : op_ge(obj);
     }
 
     /** rb_mod_cmp
@@ -1278,60 +1232,44 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
-        boolean includeSuper = false;
-
-        if (args.length > 0) {
-            includeSuper = args[0].isTrue();
-        }
-
+        boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = RubyArray.newArray(getRuntime());
+        Map kernelMethods = getRuntime().getClasses().getKernelModule().getMethods();
 
-        for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
-            Iterator iter = klass.getMethods().entrySet().iterator();
-            while (iter.hasNext()) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+        	// kernel methods do not get printed out (but why?).
+        	if (p.getMethods() == kernelMethods) {
+        		continue;
+        	}
+
+            for (Iterator iter = p.getMethods().entrySet().iterator();
+            	iter.hasNext();) {
                 Map.Entry entry = (Map.Entry) iter.next();
-                String id = (String) entry.getKey();
                 ICallable method = (ICallable) entry.getValue();
 
-                if (method.getVisibility() == visibility) {
-                    RubyString name = RubyString.newString(getRuntime(), id);
+                if (method.getVisibility().is(visibility)) {
+                    RubyString name = RubyString.newString(getRuntime(), 
+                    	(String) entry.getKey());
 
                     if (!ary.includes(name)) {
-                        if (method == null) {
-                            ary.append(getRuntime().getNil());
-                        }
-                        ary.append(name);
+                    	ary.append(name);
                     }
-                } else if (
-                        method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
-                    ary.append(getRuntime().getNil());
-                    ary.append(RubyString.newString(getRuntime(), id));
-                }
+                } 
             }
             if (!includeSuper) {
                 break;
             }
         }
 
-        // What on earth is the above code doing when it inserts nil:s in front of
-        // some values in the array!? Very naughty! -- Anders
-
-        Iterator iter = ary.getList().iterator();
-        while (iter.hasNext()) {
-            if (((IRubyObject) iter.next()).isNil()) {
-                iter.remove();
-                iter.next();
-            }
-        }
-
         return ary;
     }
 
-    /** rb_class_instance_methods
-     *
-     */
     public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Visibility.PUBLIC);
+        return instance_methods(args, Visibility.PUBLIC_PROTECTED);
+    }
+
+    public RubyArray public_instance_methods(IRubyObject[] args) {
+    	return instance_methods(args, Visibility.PUBLIC);
     }
 
     public IRubyObject instance_method(IRubyObject symbol) {
@@ -1360,19 +1298,17 @@ public class RubyModule extends RubyObject {
         RubyModule objectClass = getRuntime().getClasses().getObjectClass();
         
         if (runtime.getClasses().getModuleClass() == this) {
-            Iterator iter = runtime.getClasses().nameIterator();
-            while (iter.hasNext()) {
+            for (Iterator iter = runtime.getClasses().nameIterator(); 
+            	iter.hasNext();) {
                 String name = (String) iter.next();
                 if (IdUtil.isConstant(name)) {
                     constantNames.add(RubyString.newString(getRuntime(), name));
                 }
             }
             
-            Iterator variables = 
-                objectClass.getInstanceVariables().keySet().iterator();
-            
-            while (variables.hasNext()) {
-                String name = (String) variables.next();
+            for (Iterator vars = objectClass.instanceVariableNames(); 
+            	vars.hasNext();) {
+                String name = (String) vars.next();
                 if (IdUtil.isConstant(name)) {
                     constantNames.add(RubyString.newString(getRuntime(), name));
                 }
@@ -1381,23 +1317,13 @@ public class RubyModule extends RubyObject {
             return RubyArray.newArray(getRuntime(), constantNames);
         }
 
-        for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
-            if (objectClass == tmp) {
-                continue;
-            }
-                
-            Map map = tmp.getInstanceVariables();
-                
-            // We try and keep going when we find a module with no instance
-            // variables, because it may include another module which has
-            // some.
-            if (map == null) {
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+            if (objectClass == p) {
                 continue;
             }
             
-            Iterator variables = map.keySet().iterator();
-            while (variables.hasNext()) {
-                String name = (String) variables.next();
+            for (Iterator vars = p.instanceVariableNames(); vars.hasNext();) {
+                String name = (String) vars.next();
                 if (IdUtil.isConstant(name)) {
                     constantNames.add(RubyString.newString(getRuntime(), name));
                 }
@@ -1419,9 +1345,7 @@ public class RubyModule extends RubyObject {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
         }
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "class/module");
-        }
+        testFrozen("class/module");
 
         if (hasInstanceVariable(id)) {
             return removeInstanceVariable(id);
@@ -1442,9 +1366,7 @@ public class RubyModule extends RubyObject {
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
         }
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "class/module");
-        }
+        testFrozen("class/module");
 
         if (hasInstanceVariable(id)) {
             return removeInstanceVariable(id);

@@ -155,7 +155,7 @@ public class RubySymbol extends RubyObject {
         return RubyString.newString(getRuntime(), symbol);
     }
 
-    public RubyBoolean equal(IRubyObject other) {
+    public IRubyObject equal(IRubyObject other) {
         // Symbol table ensures only one instance for every name,
         // so object identity is enough to compare symbols.
         return RubyBoolean.newBoolean(runtime, this == other);

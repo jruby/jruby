@@ -1,7 +1,5 @@
 package org.jruby;
 
-import org.jruby.exceptions.FrozenError;
-
 import java.util.Map;
 
 /** This class represents an included module.
@@ -34,12 +32,6 @@ public final class IncludedModuleWrapper extends RubyClass {
 
     public boolean isIncluded() {
         return true;
-    }
-
-    protected void testFrozen() {
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "module");
-        }
     }
 
     public RubyClass getMetaClass() {

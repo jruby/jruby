@@ -223,7 +223,7 @@ public class RubyRange extends RubyObject {
         return RubyFixnum.newFixnum(getRuntime(), size);
     }
 
-    public RubyBoolean equal(IRubyObject obj) {
+    public IRubyObject equal(IRubyObject obj) {
         if (!(obj instanceof RubyRange)) {
             return getRuntime().getFalse();
         }

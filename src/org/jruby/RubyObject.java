@@ -208,6 +208,15 @@ public class RubyObject implements Cloneable, IRubyObject {
         this.frozen = frozen;
     }
 
+    /** rb_frozen_class_p
+    *
+    */
+   protected void testFrozen(String message) {
+       if (isFrozen()) {
+           throw new FrozenError(getRuntime(), message);
+       }
+   }
+
     /**
      * Gets the taint.
      * @return Returns a boolean
@@ -344,9 +353,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw new SecurityError(getRuntime(), taintError);
         }
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), freezeError);
-        }
+        testFrozen(freezeError);
+
         if (getInstanceVariables() == null) {
             setInstanceVariables(new HashMap());
         }
@@ -589,7 +597,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_obj_equal
      *
      */
-    public RubyBoolean equal(IRubyObject obj) {
+    public IRubyObject equal(IRubyObject obj) {
         if (isNil()) {
             return RubyBoolean.newBoolean(getRuntime(), obj.isNil());
         }
@@ -697,9 +705,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject taint() {
         getRuntime().secure(4);
         if (!isTaint()) {
-            if (isFrozen()) {
-                throw new FrozenError(getRuntime(), "object");
-            }
+        	testFrozen("object");
             setTaint(true);
         }
         return this;
@@ -711,9 +717,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject untaint() {
         getRuntime().secure(3);
         if (isTaint()) {
-            if (isFrozen()) {
-                throw new FrozenError(getRuntime(), "object");
-            }
+        	testFrozen("object");
             setTaint(false);
         }
         return this;
@@ -981,13 +985,14 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         Callback equal = callbackFactory.getMethod(RubyObject.class, "equal", IRubyObject.class);
         module.defineMethod("==", equal);
-        module.defineMethod("to_s", callbackFactory.getMethod(RubyObject.class, "to_s"));
         module.defineMethod("===", equal);
+        module.defineMethod("to_s", callbackFactory.getMethod(RubyObject.class, "to_s"));
         module.defineMethod("nil?", callbackFactory.getFalseMethod(0));
         module.defineMethod("to_a", callbackFactory.getMethod(RubyObject.class, "to_a"));
         module.defineMethod("hash", callbackFactory.getMethod(RubyObject.class, "hash"));
         module.defineMethod("id", callbackFactory.getMethod(RubyObject.class, "id"));
         module.defineMethod("__id__", callbackFactory.getMethod(RubyObject.class, "id"));
+        module.defineAlias("object_id", "__id__");
         module.defineMethod("is_a?", callbackFactory.getMethod(RubyObject.class, "kind_of", IRubyObject.class));
         module.defineMethod("kind_of?", callbackFactory.getMethod(RubyObject.class, "kind_of", IRubyObject.class));
         module.defineMethod("dup", callbackFactory.getMethod(RubyObject.class, "dup"));

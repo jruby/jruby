@@ -32,7 +32,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.CallbackFactory;
@@ -204,9 +203,7 @@ public class RubyHash extends RubyObject {
      *
      */
     public void modify() {
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "Hash");
-        }
+    	testFrozen("Hash");
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
             throw new SecurityError(getRuntime(), "Insecure: can't modify hash");
         }
@@ -452,7 +449,7 @@ public class RubyHash extends RubyObject {
         return RubyArray.newArray(runtime, new ArrayList(valueMap.values()));
     }
 
-    public RubyBoolean equal(IRubyObject other) {
+    public IRubyObject equal(IRubyObject other) {
         if (this == other) {
             return runtime.getTrue();
         } else if (!(other instanceof RubyHash)) {

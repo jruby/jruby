@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
@@ -67,12 +66,6 @@ public class RubyClass extends RubyModule {
     
     protected RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass, RubyModule parentClass, String name) {
         super(ruby, rubyClass, superClass, parentClass, name);
-    }
-
-    protected void testFrozen() {
-        if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "class");
-        }
     }
 
     public boolean isModule() {

@@ -119,7 +119,7 @@ public class JavaObject extends RubyObject {
            value == null ? "null" : value.toString());
     }
 
-    public RubyBoolean equal(IRubyObject other) {
+    public IRubyObject equal(IRubyObject other) {
         if (other instanceof JavaObject == false) {
 	    return getRuntime().getFalse();
 	}

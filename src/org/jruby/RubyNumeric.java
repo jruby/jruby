@@ -332,13 +332,16 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean veryEqual(IRubyObject other) {
-        return super.equal(other); // +++ rb_equal
+    	IRubyObject truth = super.equal(other);
+    	
+    	return truth == getRuntime().getNil() ? getRuntime().getFalse() : 
+    		(RubyBoolean) truth;
     }
     
     /** num_equal
      *
      */
-    public RubyBoolean equal(IRubyObject other) {
+    public IRubyObject equal(IRubyObject other) {
         if (other instanceof RubyNumeric) {
             return RubyBoolean.newBoolean(getRuntime(), compareValue((RubyNumeric) other) == 0);
         }
@@ -357,7 +360,8 @@ public abstract class RubyNumeric extends RubyObject {
         
         // However, if they are the same type, then we try a regular
         // equal as a float with 1.0 may be two different ruby objects.
-        return equal(other);
+        // It will always return a boolean
+        return (RubyBoolean) equal(other);
     }
 
     /** num_abs
@@ -382,7 +386,8 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean zero_p() {
-        return equal(RubyFixnum.zero(getRuntime()));
+    	// Will always return a boolean
+        return (RubyBoolean) equal(RubyFixnum.zero(getRuntime()));
     }
 
     /** num_nonzero_p
