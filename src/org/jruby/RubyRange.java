@@ -30,8 +30,10 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.RangeError;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

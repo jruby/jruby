@@ -32,9 +32,9 @@
 
 package org.jruby.runtime;
 
-import org.jruby.*;
-import org.jruby.util.Asserts;
+import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 public class GlobalVariable {
     protected final Ruby ruby;

@@ -26,9 +26,9 @@
  */
 package org.jruby.test;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.Ruby;
 import junit.framework.TestCase;
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
     private Ruby ruby;

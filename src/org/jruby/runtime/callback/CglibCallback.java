@@ -2,9 +2,9 @@ package org.jruby.runtime.callback;
 
 import net.sf.cglib.reflect.FastClass;
 import net.sf.cglib.reflect.FastMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.exceptions.RaiseException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;

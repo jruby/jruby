@@ -26,14 +26,12 @@
  *
  */package org.jruby.internal.runtime.methods;
 
-import java.util.Iterator;
-
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyProc;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ScopeNode;
 import org.jruby.ast.types.IListNode;
@@ -41,11 +39,13 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Iterator;
 
 /**
  *

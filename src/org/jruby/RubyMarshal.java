@@ -32,19 +32,19 @@
 
 package org.jruby;
 
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.CallbackFactory;
 
 /**
  * Marshal module

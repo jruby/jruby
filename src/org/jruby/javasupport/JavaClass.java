@@ -22,26 +22,26 @@
  */
 package org.jruby.javasupport;
 
-import org.jruby.RubyObject;
-import org.jruby.RubyClass;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
-import org.jruby.exceptions.TypeError;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Method;
-import java.lang.reflect.Field;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 public class JavaClass extends RubyObject {
     private final Class javaClass;

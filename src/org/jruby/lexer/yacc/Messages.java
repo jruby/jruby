@@ -1,8 +1,8 @@
 package org.jruby.lexer.yacc;
 
+import java.text.MessageFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.text.MessageFormat;
 
 public final class Messages {
     private static final String BUNDLE_NAME = "org.jruby.lexer.yacc.RubyYaccLexerProperties"; //$NON-NLS-1$

@@ -30,18 +30,12 @@
  */
 package org.jruby;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeMap;
-
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -52,20 +46,26 @@ import org.jruby.internal.runtime.methods.MethodMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Iter;
-import org.jruby.runtime.Frame;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *

@@ -30,15 +30,14 @@
  */
 package org.jruby.test;
 
-import java.util.Date;
-
 import junit.framework.TestCase;
-
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyTime;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Date;
 
 /**
  * 

@@ -30,17 +30,17 @@
 
 package org.jruby;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
+
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *

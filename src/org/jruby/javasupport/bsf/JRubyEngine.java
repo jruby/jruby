@@ -22,7 +22,6 @@
  */
 package org.jruby.javasupport.bsf;
 
-import java.util.Vector;
 import org.ablaf.ast.INode;
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
@@ -42,6 +41,8 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Vector;
 
 /** An implementation of a JRuby BSF implementation.
  *

@@ -1,10 +1,10 @@
 package org.jruby.runtime;
 
 import org.jruby.IErrno;
-import org.jruby.RubyClass;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
 
 
 public class RubyExceptions implements IErrno {

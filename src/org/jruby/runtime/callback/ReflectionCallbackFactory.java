@@ -1,7 +1,7 @@
 package org.jruby.runtime.callback;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReflectionCallbackFactory extends CallbackFactory {

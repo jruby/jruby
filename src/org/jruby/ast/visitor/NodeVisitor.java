@@ -27,8 +27,8 @@
  */
 package org.jruby.ast.visitor;
 
-import org.jruby.ast.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.jruby.ast.*;
 
 /**
  * Visitor interface to be implemented by visitors of the jRuby AST.

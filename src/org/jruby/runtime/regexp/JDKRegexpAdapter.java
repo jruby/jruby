@@ -27,14 +27,14 @@
  */
 package org.jruby.runtime.regexp;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
 import org.jruby.exceptions.RegexpError;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Regexp adapter for Java 1.4+.

@@ -27,12 +27,12 @@
 package org.jruby.runtime;
 
 import org.ablaf.ast.INode;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.util.collections.StackElement;
-import org.jruby.RubyModule;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
 
 /**
  *

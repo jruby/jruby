@@ -26,19 +26,18 @@
  */
 package org.jruby.runtime.callback;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.util.AssertError;
-import org.jruby.util.Asserts;
 import org.jruby.Ruby;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.AssertError;
+import org.jruby.util.Asserts;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  *

@@ -52,9 +52,10 @@
  */
 package org.ablaf.lexer;
 
-import java.io.*;
+import org.ablaf.internal.lexer.ReaderLexerSource;
 
-import org.ablaf.internal.lexer.*;
+import java.io.Reader;
+import java.io.StringReader;
 
 /** Provides factory methods for creating default implementations of 
  * the interfaces in the org.ablaf.lexer package.

@@ -26,9 +26,9 @@
  */
 package org.jruby.internal.runtime;
 
-import org.jruby.runtime.ThreadContext;
 import org.jruby.Ruby;
 import org.jruby.ThreadClass;
+import org.jruby.runtime.ThreadContext;
 
 public class ThreadService {
     private Ruby runtime;

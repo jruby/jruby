@@ -23,11 +23,6 @@
  */
 package org.jruby;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadError;
@@ -38,6 +33,11 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is

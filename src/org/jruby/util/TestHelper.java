@@ -28,11 +28,11 @@
  */
 package org.jruby.util;
 
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Helper class, used for testing calls to java from ruby code.

@@ -26,8 +26,9 @@
  */
 package org.jruby.ast.util;
 
-import org.ablaf.ast.*;
-import org.jruby.ast.visitor.*;
+import org.ablaf.ast.INode;
+import org.jruby.ast.visitor.BreakStatementVisitor;
+import org.jruby.ast.visitor.ExpressionVisitor;
 
 /**
  *

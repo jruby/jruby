@@ -23,14 +23,14 @@
 
 package org.jruby.javasupport;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
-import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 import java.lang.reflect.Array;
 

@@ -31,19 +31,18 @@
  */
 package org.jruby;
 
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaArray;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.util.BuiltinScript;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.javasupport.JavaArray;
-import org.jruby.javasupport.JavaObject;
-import org.jruby.javasupport.Java;
-import org.jruby.util.BuiltinScript;
-import org.jruby.internal.runtime.builtin.definitions.ObjectDefinition;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -229,7 +228,7 @@ public class RubyClasses {
         objectClass.definePrivateMethod("initialize", objectClass.callbackFactory().getNilMethod(-1));
         classClass.definePrivateMethod("inherited", objectClass.callbackFactory().getNilMethod(1));
 
-        new ObjectDefinition(runtime).getModule();
+        RubyObject.createObjectClass(objectClass);
 
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);

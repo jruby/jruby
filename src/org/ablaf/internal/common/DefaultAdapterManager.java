@@ -52,9 +52,13 @@
  */
 package org.ablaf.internal.common;
 
-import java.util.*;
+import org.ablaf.common.IAdaptable;
+import org.ablaf.common.IAdapterFactory;
+import org.ablaf.common.IAdapterManager;
 
-import org.ablaf.common.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *

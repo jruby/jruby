@@ -22,16 +22,16 @@
  */
 package org.jruby.runtime.marshal;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubySymbol;
 import org.jruby.Ruby;
-import org.jruby.util.Asserts;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UnmarshalCache {
     private final Ruby runtime;

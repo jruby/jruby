@@ -1,8 +1,8 @@
 package org.jruby.runtime;
 
-import java.util.ArrayList;
-
 import org.jruby.internal.util.collections.Stack;
+
+import java.util.ArrayList;
 
 /**
  *

@@ -23,9 +23,21 @@
  */
 package org.jruby.internal.runtime.load;
 
+import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.LoadError;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.ExternalScript;
+import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.runtime.load.ILoadService;
+import org.jruby.runtime.load.JarredScript;
+import org.jruby.runtime.load.Library;
+
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -34,18 +46,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarFile;
-
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.exceptions.LoadError;
-import org.jruby.exceptions.IOError;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.runtime.load.ILoadService;
-import org.jruby.runtime.load.Library;
-import org.jruby.runtime.load.ExternalScript;
-import org.jruby.runtime.load.JarredScript;
 
 /**
  *

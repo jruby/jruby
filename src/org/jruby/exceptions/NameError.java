@@ -30,7 +30,8 @@
 
 package org.jruby.exceptions;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
 
 /**
  *

@@ -52,7 +52,7 @@
  */
 package org.ablaf.lexer;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  *

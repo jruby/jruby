@@ -31,12 +31,6 @@
  */
 package org.jruby;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
-
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.ZSuperNode;
@@ -46,32 +40,36 @@ import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.builtin.definitions.ObjectDefinition;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.Iter;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.Scope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.FrameStack;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.FrameStack;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
+import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.Scope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
+public class RubyObject implements Cloneable, IRubyObject {
 
     // A reference to the JRuby runtime.
     protected transient Ruby runtime;
@@ -958,71 +956,48 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         return runtime.callbackFactory();
     }
 
-    /**
-     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
-     */
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case ObjectDefinition.RBCLONE :
-                return rbClone();
-            case ObjectDefinition.DUP :
-                return dup();
-            case ObjectDefinition.EQUAL :
-                return equal(args[0]);
-            case ObjectDefinition.EXTEND :
-                return extend(args);
-            case ObjectDefinition.FREEZE :
-                return freeze();
-            case ObjectDefinition.FROZEN_P :
-                return frozen();
-            case ObjectDefinition.HASH :
-                return hash();
-            case ObjectDefinition.ID :
-                return id();
-            case ObjectDefinition.INSPECT :
-                return inspect();
-            case ObjectDefinition.INSTANCE_EVAL :
-                return instance_eval(args);
-            case ObjectDefinition.INSTANCE_OF :
-                return instance_of(args[0]);
-            case ObjectDefinition.INSTANCE_VARIABLES :
-                return instance_variables();
-            case ObjectDefinition.KIND_OF :
-                return kind_of(args[0]);
-            case ObjectDefinition.MATCH :
-                return runtime.getFalse();
-            case ObjectDefinition.METHOD :
-                return method(args[0]);
-            case ObjectDefinition.METHOD_MISSING :
-                return method_missing(args);
-            case ObjectDefinition.METHODS :
-                return methods();
-            case ObjectDefinition.NIL :
-                return runtime.getFalse();
-            case ObjectDefinition.PRIVATE_METHODS :
-                return private_methods();
-            case ObjectDefinition.PROTECTED_METHODS :
-                return protected_methods();
-            case ObjectDefinition.RESPOND_TO :
-                return respond_to(args);
-            case ObjectDefinition.SEND :
-                return send(args);
-            case ObjectDefinition.SINGLETON_METHODS :
-                return singleton_methods();
-            case ObjectDefinition.TAINT :
-                return taint();
-            case ObjectDefinition.TAINTED :
-                return tainted();
-            case ObjectDefinition.TO_A :
-                return to_a();
-            case ObjectDefinition.TO_S :
-                return to_s();
-            case ObjectDefinition.TYPE :
-                return type();
-            case ObjectDefinition.UNTAINT :
-                return untaint();
-        }
-        Asserts.notReached("invalid index '" + index + "' on a " + this.getType());
-        return null;
+    public static void createObjectClass(RubyClass module) {
+        CallbackFactory callbackFactory = module.getRuntime().callbackFactory();
+
+        Callback equal = callbackFactory.getMethod(RubyObject.class, "equal", IRubyObject.class);
+        module.defineMethod("==", equal);
+        module.defineMethod("to_s", callbackFactory.getMethod(RubyObject.class, "to_s"));
+        module.defineMethod("===", equal);
+        module.defineMethod("nil?", callbackFactory.getFalseMethod(0));
+        module.defineMethod("to_a", callbackFactory.getMethod(RubyObject.class, "to_a"));
+        module.defineMethod("hash", callbackFactory.getMethod(RubyObject.class, "hash"));
+        module.defineMethod("id", callbackFactory.getMethod(RubyObject.class, "id"));
+        module.defineMethod("__id__", callbackFactory.getMethod(RubyObject.class, "id"));
+        module.defineMethod("is_a?", callbackFactory.getMethod(RubyObject.class, "kind_of", IRubyObject.class));
+        module.defineMethod("kind_of?", callbackFactory.getMethod(RubyObject.class, "kind_of", IRubyObject.class));
+        module.defineMethod("dup", callbackFactory.getMethod(RubyObject.class, "dup"));
+        module.defineMethod("eql?", equal);
+        module.defineMethod("equal?", equal);
+        module.defineMethod("type", callbackFactory.getMethod(RubyObject.class, "type"));
+        module.defineMethod("class", callbackFactory.getMethod(RubyObject.class, "type"));
+        module.defineMethod("inspect", callbackFactory.getMethod(RubyObject.class, "inspect"));
+        module.defineMethod("=~", callbackFactory.getFalseMethod(1));
+        module.defineMethod("clone", callbackFactory.getMethod(RubyObject.class, "rbClone"));
+        module.defineMethod("extend", callbackFactory.getOptMethod(RubyObject.class, "extend"));
+        module.defineMethod("freeze", callbackFactory.getMethod(RubyObject.class, "freeze"));
+        module.defineMethod("frozen?", callbackFactory.getMethod(RubyObject.class, "frozen"));
+        module.defineMethod("instance_eval", callbackFactory.getOptMethod(RubyObject.class, "instance_eval"));
+        module.defineMethod("instance_of?", callbackFactory.getMethod(RubyObject.class, "instance_of", IRubyObject.class));
+        module.defineMethod("instance_variables", callbackFactory.getMethod(RubyObject.class, "instance_variables"));
+        module.defineMethod("method", callbackFactory.getMethod(RubyObject.class, "method", IRubyObject.class));
+        module.defineMethod("methods", callbackFactory.getMethod(RubyObject.class, "methods"));
+        module.defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
+        module.defineMethod("private_methods", callbackFactory.getMethod(RubyObject.class, "private_methods"));
+        module.defineMethod("protected_methods", callbackFactory.getMethod(RubyObject.class, "protected_methods"));
+        module.defineMethod("public_methods", callbackFactory.getMethod(RubyObject.class, "methods"));
+        module.defineMethod("respond_to?", callbackFactory.getOptMethod(RubyObject.class, "respond_to"));
+        Callback send = callbackFactory.getOptMethod(RubyObject.class, "send");
+        module.defineMethod("send", send);
+        module.defineMethod("__send__", send);
+        module.defineMethod("singleton_methods", callbackFactory.getMethod(RubyObject.class, "singleton_methods"));
+        module.defineMethod("taint", callbackFactory.getMethod(RubyObject.class, "taint"));
+        module.defineMethod("tainted?", callbackFactory.getMethod(RubyObject.class, "tainted"));
+        module.defineMethod("untaint", callbackFactory.getMethod(RubyObject.class, "untaint"));
+
     }
 }

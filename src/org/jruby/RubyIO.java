@@ -31,23 +31,23 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.ErrnoError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.SystemCallError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
-import org.jruby.util.Asserts;
 import org.jruby.util.IOModes;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.EOFError;
-import org.jruby.exceptions.SystemCallError;
-import org.jruby.exceptions.TypeError;
 
-import java.io.OutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Hashtable;
 
 /**

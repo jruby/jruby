@@ -52,8 +52,8 @@
  */
 package org.ablaf.ast;
 
-import org.ablaf.ast.visitor.*;
-import org.ablaf.common.*;
+import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
 
 /** This class represents a node in an AST.
  *

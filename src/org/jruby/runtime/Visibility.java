@@ -1,8 +1,8 @@
 package org.jruby.runtime;
 
-import java.io.Serializable;
-
 import org.jruby.util.Asserts;
+
+import java.io.Serializable;
 
 /**
  * 

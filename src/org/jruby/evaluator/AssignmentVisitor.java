@@ -28,10 +28,6 @@
  */
 package org.jruby.evaluator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-
 import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.jruby.Ruby;
@@ -54,6 +50,10 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 
 /**
  *

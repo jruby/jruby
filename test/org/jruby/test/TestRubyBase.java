@@ -29,12 +29,12 @@
  */
 package org.jruby.test;
 
+import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import junit.framework.TestCase;
 
-import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.StringReader;
 
 /**

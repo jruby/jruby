@@ -6,14 +6,14 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.net.URL;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
-import java.util.jar.JarEntry;
 import java.io.BufferedInputStream;
-import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 
 /**
  * Loading of Ruby scripts packaged in Jar files.

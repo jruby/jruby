@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.visitor.NodeVisitor;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents an integer literal.
  *

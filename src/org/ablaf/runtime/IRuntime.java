@@ -52,7 +52,7 @@
  */
 package org.ablaf.runtime;
 
-import org.ablaf.runtime.reflection.*;
+import org.ablaf.runtime.reflection.IReflection;
 
 /**
  *

@@ -26,9 +26,23 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.*;
-import org.jruby.ast.*;
-import org.jruby.ast.util.*;
+import org.ablaf.ast.INode;
+import org.jruby.ast.BeginNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.BreakNode;
+import org.jruby.ast.ClassNode;
+import org.jruby.ast.DefnNode;
+import org.jruby.ast.DefsNode;
+import org.jruby.ast.IfNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NextNode;
+import org.jruby.ast.RedoNode;
+import org.jruby.ast.RetryNode;
+import org.jruby.ast.ReturnNode;
+import org.jruby.ast.UntilNode;
+import org.jruby.ast.WhileNode;
+import org.jruby.ast.util.ListNodeUtil;
 
 /**
  *

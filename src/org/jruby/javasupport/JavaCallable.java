@@ -22,11 +22,11 @@
  */
 package org.jruby.javasupport;
 
-import org.jruby.RubyObject;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyArray;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 
 public abstract class JavaCallable extends RubyObject {

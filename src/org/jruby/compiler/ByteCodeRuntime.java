@@ -1,11 +1,11 @@
 
 package org.jruby.compiler;
 
-import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.callback.CompiledReflectionCallback;
-import org.jruby.runtime.Visibility;
 import org.jruby.Ruby;
 import org.jruby.internal.runtime.methods.CallbackMethod;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callback.CompiledReflectionCallback;
 
 /**
  * Provides some services for Ruby code that is compiled to JVM bytecode.

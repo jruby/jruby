@@ -31,11 +31,6 @@
  */
 package org.jruby;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
@@ -45,6 +40,11 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Glob;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * .The Ruby built-in class Dir.

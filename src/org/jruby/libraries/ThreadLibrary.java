@@ -22,8 +22,8 @@
  */
 package org.jruby.libraries;
 
-import org.jruby.runtime.load.Library;
 import org.jruby.Ruby;
+import org.jruby.runtime.load.Library;
 
 public class ThreadLibrary implements Library {
 

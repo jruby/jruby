@@ -22,9 +22,9 @@
  */
 package org.jruby;
 
-import java.io.File;
-
 import org.jruby.runtime.CallbackFactory;
+
+import java.io.File;
 
 /**
  * Implements File::Stat

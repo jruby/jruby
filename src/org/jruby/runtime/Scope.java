@@ -28,14 +28,14 @@
  */
 package org.jruby.runtime;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Arrays;
-
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A Scope in the Ruby Stack of scopes.

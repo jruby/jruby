@@ -26,14 +26,17 @@
  */
 package org.jruby.ast;
 
-import java.util.*;
-
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
+import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * a Dynamic String node.

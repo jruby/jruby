@@ -30,8 +30,8 @@
 
 package org.jruby.runtime.callback;
 
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *

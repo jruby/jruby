@@ -1,20 +1,20 @@
 package org.jruby.javasupport;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
+import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyModule;
+import org.jruby.RubyProc;
+import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyProc;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyBignum;
-import org.jruby.RubyString;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyFloat;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {

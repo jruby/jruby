@@ -1,10 +1,10 @@
 package org.jruby.runtime.load;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 

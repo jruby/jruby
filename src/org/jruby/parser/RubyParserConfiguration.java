@@ -26,7 +26,7 @@
  */
 package org.jruby.parser;
 
-import java.util.*;
+import java.util.List;
 
 /**
  *

@@ -1,14 +1,13 @@
 
 package org.jruby.runtime.callback;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.Arity;
 import org.jruby.Ruby;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class CompiledReflectionCallback implements Callback {
     private Ruby runtime;

@@ -2,7 +2,32 @@ package org.jruby.ast.visitor;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
-import org.jruby.ast.*;
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassNode;
+import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.ConstNode;
+import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DStrNode;
+import org.jruby.ast.DVarNode;
+import org.jruby.ast.DefinedNode;
+import org.jruby.ast.DotNode;
+import org.jruby.ast.FalseNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NilNode;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.SelfNode;
+import org.jruby.ast.StrNode;
+import org.jruby.ast.SymbolNode;
+import org.jruby.ast.TrueNode;
 import org.jruby.common.IErrors;
 
 /**

@@ -28,9 +28,9 @@
  */
 package org.jruby.runtime;
 
+import org.ablaf.common.ISourcePosition;
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.ablaf.common.ISourcePosition;
 
 /**
  *

@@ -52,7 +52,8 @@
  */
 package org.ablaf.lexer;
 
-import org.ablaf.common.*;
+import org.ablaf.common.IErrorSupport;
+import org.ablaf.common.ISourcePosition;
 
 /**
  *

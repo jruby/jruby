@@ -26,10 +26,10 @@
  */
 package org.jruby.parser;
 
-import java.io.*;
-import java.util.*;
+import org.ablaf.ast.INode;
 
-import org.ablaf.ast.*;
+import java.io.InputStream;
+import java.util.List;
 
 /**
  *

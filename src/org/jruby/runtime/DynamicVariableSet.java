@@ -24,8 +24,8 @@ package org.jruby.runtime;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Names and values of dynamic variables. Used instead of a HashMap to avoid the memory

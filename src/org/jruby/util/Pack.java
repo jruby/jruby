@@ -25,9 +25,6 @@
 
 package org.jruby.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
@@ -36,6 +33,9 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Pack {
     private static final String sSp10 = "          ";

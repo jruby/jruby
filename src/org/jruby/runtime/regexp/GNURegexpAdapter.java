@@ -32,7 +32,6 @@ package org.jruby.runtime.regexp;
 import gnu.regexp.RE;
 import gnu.regexp.REException;
 import gnu.regexp.REMatch;
-
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
 import org.jruby.exceptions.RegexpError;

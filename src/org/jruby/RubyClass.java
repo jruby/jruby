@@ -30,17 +30,17 @@
 
 package org.jruby;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
-
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.ICallable;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *

@@ -1,12 +1,12 @@
 package org.jruby.javasupport.test;
 
-import java.io.IOException;
-import java.net.URL;
-
 import org.jruby.Ruby;
 import org.jruby.javasupport.ReflectionClassMap;
 import org.jruby.javasupport.RubyProxyFactory;
 import org.jruby.javasupport.RubyToJavaClassMap;
+
+import java.io.IOException;
+import java.net.URL;
 
 public class TestRubyProxyFactory extends RubyTestCase {
     private static final double EPSILON = 0.0;

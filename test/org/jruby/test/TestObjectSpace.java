@@ -32,17 +32,16 @@
  */
 package org.jruby.test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import junit.framework.TestCase;
-
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
 * @author Anders

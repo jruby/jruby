@@ -26,7 +26,7 @@
  */
 package org.jruby.util.collections;
 
-import org.jruby.internal.util.collections.*;
+import org.jruby.internal.util.collections.Stack;
 
 /**
  *

@@ -31,12 +31,10 @@
  */
 package org.jruby;
 
-import java.util.List;
-
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
+import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,6 +42,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
+
+import java.util.List;
 
 /**
  * @version $Revision$

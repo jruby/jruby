@@ -28,10 +28,6 @@
  */
 package org.jruby.lexer.yacc;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.math.BigInteger;
-
 import org.ablaf.common.IErrorHandler;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.lexer.ILexerSource;
@@ -54,6 +50,10 @@ import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.common.IErrors;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Token;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.math.BigInteger;
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.6.7.
  *

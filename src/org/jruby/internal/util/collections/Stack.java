@@ -26,9 +26,9 @@
  */
 package org.jruby.internal.util.collections;
 
+import org.jruby.internal.util.Utils;
 import org.jruby.util.collections.IStack;
 import org.jruby.util.collections.StackEmptyException;
-import org.jruby.internal.util.Utils;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -1,8 +1,8 @@
 package org.jruby.runtime;
 
-import java.util.Iterator;
-
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Iterator;
 
 /**
  * 

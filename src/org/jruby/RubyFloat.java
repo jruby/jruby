@@ -30,10 +30,10 @@
  */
 package org.jruby;
 
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.exceptions.TypeError;
 
 /**
  *

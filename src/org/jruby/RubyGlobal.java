@@ -31,12 +31,12 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.ReadonlyGlobalVariable;
-import org.jruby.runtime.GlobalVariable;
-import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.ReadonlyGlobalVariable;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** This class initializes global variables and constants.
  * 

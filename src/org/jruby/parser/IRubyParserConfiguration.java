@@ -26,9 +26,9 @@
  */
 package org.jruby.parser;
 
-import java.util.*;
+import org.ablaf.common.IConfiguration;
 
-import org.ablaf.common.*;
+import java.util.List;
 
 /**
  *

@@ -29,10 +29,10 @@
  */
 package org.jruby.util;
 
-import java.io.PushbackInputStream;
-import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
 
 
 /**

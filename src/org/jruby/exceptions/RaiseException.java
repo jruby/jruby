@@ -26,10 +26,10 @@
  */
 package org.jruby.exceptions;
 
-import org.jruby.RubyException;
-import org.jruby.RubyClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyException;
 import org.jruby.RubyString;
 import org.jruby.runtime.Frame;
 

@@ -25,10 +25,10 @@
  */
 package org.jruby.util;
 
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.Locale;
 import java.text.DecimalFormatSymbols;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Vector;
 
 /**
  * PrintfFormat is a Java implementation of the <code>sprintf</code>

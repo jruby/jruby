@@ -29,14 +29,14 @@
 package org.jruby.internal.runtime.methods;
 
 import org.ablaf.ast.INode;
-import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.Ruby;
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
+import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *

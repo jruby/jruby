@@ -27,18 +27,18 @@
  */
 package org.jruby.util;
 
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
-import org.jruby.RubyNumeric;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyMatchData;
-import org.jruby.Ruby;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.List;
-import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Internals for String#split

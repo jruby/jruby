@@ -26,7 +26,7 @@
  */
 package org.jruby.util.collections;
 
-import java.util.*;
+import java.util.Iterator;
 
 /** 
  *

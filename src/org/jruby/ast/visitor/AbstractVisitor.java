@@ -26,9 +26,8 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.*;
+import org.ablaf.ast.INode;
 import org.jruby.ast.*;
-import org.jruby.ast.ExpandArrayNode;
 
 /** This visitor calls by default the visitNode method for each visited Node.
  *

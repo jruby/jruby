@@ -29,9 +29,9 @@
  */
 package org.jruby.test;
 
-import java.util.ArrayList;
-
 import org.jruby.Ruby;
+
+import java.util.ArrayList;
 
 /**
  * Unit test for the ruby class.

@@ -29,7 +29,7 @@
  */
 package org.jruby.exceptions;
 
-import org.jruby.*;
+import org.jruby.Ruby;
 
 /** End of file reached error.
  * 

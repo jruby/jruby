@@ -22,8 +22,8 @@
  */
 package org.jruby.javasupport.test;
 
-import junit.framework.TestSuite;
 import junit.framework.Test;
+import junit.framework.TestSuite;
 
 public class JavaSupportTestSuite extends TestSuite {
 

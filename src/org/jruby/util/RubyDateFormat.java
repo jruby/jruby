@@ -26,8 +26,17 @@
  */
 package org.jruby.util;
 
-import java.text.*;
-import java.util.*;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.FieldPosition;
+import java.text.ParsePosition;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  *

@@ -26,19 +26,19 @@
  */
 package org.jruby.ast.util;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
+import org.jruby.RubyArray;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.ExpandArrayNode;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Iter;
-import org.jruby.RubyArray;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  *

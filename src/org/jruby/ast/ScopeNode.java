@@ -29,12 +29,12 @@
  */
 package org.jruby.ast;
 
-import java.util.List;
-
 import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+
+import java.util.List;
 
 /**
  * Scope in the parse tree.

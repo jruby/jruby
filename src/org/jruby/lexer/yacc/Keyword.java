@@ -29,7 +29,7 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.jruby.parser.*;
+import org.jruby.parser.Token;
 
 public class Keyword implements Token {
 	public String name;

@@ -33,11 +33,11 @@
 
 package org.jruby;
 
-import java.math.BigInteger;
-
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.math.BigInteger;
 
 /**
  *

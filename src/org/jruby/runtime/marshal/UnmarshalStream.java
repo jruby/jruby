@@ -24,10 +24,6 @@
 
 package org.jruby.runtime.marshal;
 
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -42,6 +38,10 @@ import org.jruby.RubySymbol;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
+
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marsal format.

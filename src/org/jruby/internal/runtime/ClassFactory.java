@@ -4,9 +4,9 @@ package org.jruby.internal.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClassFactory {
     private final Ruby runtime;

@@ -29,8 +29,8 @@ package org.jruby.common;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.parser.SyntaxErrorState;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  *

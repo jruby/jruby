@@ -34,8 +34,8 @@
 
 package org.jruby;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

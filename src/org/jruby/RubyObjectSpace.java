@@ -29,10 +29,10 @@
  */
 package org.jruby;
 
-import java.util.Iterator;
-
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Iterator;
 
 public class RubyObjectSpace {
 

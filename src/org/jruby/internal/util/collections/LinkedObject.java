@@ -26,7 +26,7 @@
  */
 package org.jruby.internal.util.collections;
 
-import org.jruby.internal.util.*;
+import org.jruby.internal.util.Utils;
 
 /**
  *

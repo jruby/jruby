@@ -23,19 +23,19 @@
 
 package org.jruby.runtime.marshal;
 
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.RubyBoolean;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Marshals objects into Ruby's binary marshal format.

@@ -30,8 +30,8 @@
 
 package org.jruby.test;
 
-import junit.framework.TestSuite;
 import junit.framework.Test;
+import junit.framework.TestSuite;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
 
 /**

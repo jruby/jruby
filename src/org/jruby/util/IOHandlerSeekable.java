@@ -25,6 +25,12 @@
  */
 package org.jruby.util;
 
+import org.jruby.Ruby;
+import org.jruby.RubyIO;
+import org.jruby.exceptions.ErrnoError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.SystemCallError;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -32,12 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-
-import org.jruby.Ruby;
-import org.jruby.RubyIO;
-import org.jruby.exceptions.ErrnoError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.SystemCallError;
 
 /**
  * <p>This file implements a seekable IO file.</p>

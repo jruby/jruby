@@ -23,6 +23,9 @@
  */
 package org.jruby.runtime;
 
+import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
+
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -30,9 +33,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import org.jruby.RubyModule;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *

@@ -48,8 +48,9 @@
  */
 package org.ablaf.parser;
 
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
+import org.ablaf.common.IConfiguration;
+import org.ablaf.common.IErrorHandler;
+import org.ablaf.lexer.ILexerSource;
 
 /**
  *

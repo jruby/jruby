@@ -29,15 +29,15 @@
  */
 package org.jruby;
 
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.parser.ReOptions;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.exceptions.TypeError;
-import org.jruby.exceptions.ArgumentError;
 
 /**
  *

@@ -52,7 +52,7 @@
  */
 package org.ablaf.parser;
 
-import org.ablaf.ast.*;
+import org.ablaf.ast.INode;
 
 /**
  *

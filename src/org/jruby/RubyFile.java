@@ -28,11 +28,6 @@
  */
 package org.jruby;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
@@ -40,6 +35,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * Ruby File class equivalent in java.

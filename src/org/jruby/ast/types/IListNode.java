@@ -26,9 +26,9 @@
  */
 package org.jruby.ast.types;
 
-import java.util.*;
+import org.ablaf.ast.INode;
 
-import org.ablaf.ast.*;
+import java.util.Iterator;
 
 /** A node which contains a list of other nodes.
  *

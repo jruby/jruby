@@ -25,8 +25,8 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
+import org.ablaf.common.ISourcePosition;
+import org.ablaf.lexer.ILexerSupport;
 
 /** Add some special Ruby  stuff.
  *

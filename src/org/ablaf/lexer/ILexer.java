@@ -52,7 +52,7 @@
  */
 package org.ablaf.lexer;
 
-import org.ablaf.common.*;
+import org.ablaf.common.IErrorHandler;
 
 /**
  *

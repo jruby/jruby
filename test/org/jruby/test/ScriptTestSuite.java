@@ -33,10 +33,17 @@
 
 package org.jruby.test;
 
-import java.io.*;
-import junit.framework.*;
-import org.jruby.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 
 /**
  * @author Anders

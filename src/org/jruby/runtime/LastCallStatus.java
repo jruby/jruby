@@ -1,7 +1,7 @@
 package org.jruby.runtime;
 
-import org.jruby.util.IdUtil;
 import org.jruby.Ruby;
+import org.jruby.util.IdUtil;
 
 /**
  *

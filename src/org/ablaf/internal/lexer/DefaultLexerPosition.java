@@ -52,9 +52,9 @@
  */
 package org.ablaf.internal.lexer;
 
-import java.io.Serializable;
-
 import org.ablaf.common.ISourcePosition;
+
+import java.io.Serializable;
 
 /**
  * @author  jpetersen, ndrs

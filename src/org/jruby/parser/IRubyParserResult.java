@@ -26,10 +26,11 @@
  */
 package org.jruby.parser;
 
+import org.ablaf.ast.INode;
+import org.ablaf.parser.IParserResult;
+
 import java.io.InputStream;
 import java.util.List;
-import org.ablaf.parser.IParserResult;
-import org.ablaf.ast.INode;
 
 /** Represents the result of parsing a file with the Ruby parser.
  *

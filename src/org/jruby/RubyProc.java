@@ -32,7 +32,10 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Iter;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

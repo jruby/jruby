@@ -24,19 +24,19 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.RubyBoolean;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.InvocationTargetException;
 
 public class JavaMethod extends JavaCallable {
     private final Method method;

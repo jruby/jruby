@@ -22,12 +22,12 @@
  */
 package org.jruby.libraries;
 
-import org.jruby.runtime.Constants;
-import org.jruby.runtime.load.Library;
-import org.jruby.RubyHash;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.load.Library;
 
 import java.io.File;
 

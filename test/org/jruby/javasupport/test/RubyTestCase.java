@@ -1,16 +1,17 @@
 package org.jruby.javasupport.test;
 
 import junit.framework.TestCase;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileOutputStream;
-import java.io.File;
-import java.net.URL;
+import org.jruby.KernelModule;
+import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.Ruby;
-import org.jruby.KernelModule;
-import org.jruby.RubyString;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 public class RubyTestCase extends TestCase {
     private static final IRubyObject[] EMPTY_ARRAY = IRubyObject.NULL_ARRAY;

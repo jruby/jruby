@@ -1,8 +1,8 @@
 package org.jruby;
 
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 /**
  * 

@@ -28,13 +28,13 @@
  */
 package org.jruby.internal.runtime.methods;
 
+import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
-import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.ablaf.common.ISourcePosition;
+import org.jruby.runtime.callback.Callback;
 
 /**
  *

@@ -26,10 +26,10 @@
  */
 package org.jruby.parser;
 
-import java.util.*;
-
-import org.jruby.util.collections.*;
+import org.jruby.util.collections.AbstractStack;
 import org.jruby.util.collections.StackElement;
+
+import java.util.List;
 
 /**
  *

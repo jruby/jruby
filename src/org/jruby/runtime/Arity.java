@@ -23,12 +23,12 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The arity of a method is the number of arguments it takes.

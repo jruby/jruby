@@ -52,8 +52,8 @@
  */
 package org.ablaf.internal.lexer;
 
-import java.io.Reader;
 import java.io.IOException;
+import java.io.Reader;
 
 /** Default ILexerSource based on java.io.Reader.
  *

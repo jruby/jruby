@@ -30,9 +30,8 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
-
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.Ruby;
+import org.jruby.javasupport.JavaUtil;
 
 /**
  * @author jpetersen

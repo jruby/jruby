@@ -22,12 +22,12 @@
  */
 package org.jruby.javasupport;
 
-import org.jruby.RubyObject;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.RubyBoolean;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
