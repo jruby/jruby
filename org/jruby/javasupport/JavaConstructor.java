@@ -81,7 +81,9 @@ public class JavaConstructor implements Callback {
         } catch (IllegalArgumentException ex) {
             throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
         } catch (InvocationTargetException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+            ruby.getJavaSupport().handleNativeException((Exception)ex.getTargetException());
+
+            return ruby.getNil();
         }
     }
 
