@@ -117,8 +117,6 @@ public class RubyArray extends RubyObject implements IndexCallable {
 
         arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
 
-        arrayClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
-
         arrayClass.defineMethod("to_a", CallbackFactory.getSelfMethod(0));
         arrayClass.defineMethod("to_ary", CallbackFactory.getSelfMethod(0));
         arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
@@ -150,6 +148,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
+            case ArrayDefinition.INITIALIZE :
+                return initialize(args);
             case ArrayDefinition.INSPECT :
                 return inspect();
             case ArrayDefinition.TO_S :

@@ -10,11 +10,9 @@
   -->
 
   <instance-methods>
-
-<!--
-    <method name="initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
--->
-
+    <method name="initialize">
+      <arity optional="true">0</arity>
+    </method>
     <method name="inspect"/>
     <method name="to_s"/>
 
