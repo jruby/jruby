@@ -2,14 +2,17 @@ package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.javasupport.JavaClassClass;
 
 public class RubyJava {
-    public static RubyModule createJavaModule(Ruby ruby) {
-        RubyModule javaModule = ruby.defineModule("Java");
+    public static RubyModule createJavaModule(Ruby runtime) {
+        RubyModule javaModule = runtime.defineModule("Java");
 
         javaModule.defineModuleFunction("import", CallbackFactory.getSingletonMethod(RubyJava.class, "rbImport", RubyString.class));
         javaModule.defineModuleFunction("name", CallbackFactory.getSingletonMethod(RubyJava.class, "name", RubyString.class, RubyString.class));
         javaModule.defineModuleFunction("define_exception_handler", CallbackFactory.getOptSingletonMethod(RubyJava.class, "define_exception_handler"));
+
+        JavaClassClass.createJavaClassClass(runtime, javaModule);
 
         return javaModule;
     }

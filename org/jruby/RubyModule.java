@@ -123,7 +123,6 @@ public class RubyModule extends RubyObject {
     }
 
     public static void createModuleClass(RubyClass moduleClass) {
-        ;
         Callback op_eqq = CallbackFactory.getMethod(RubyModule.class, "op_eqq", IRubyObject.class);
         Callback op_cmp = CallbackFactory.getMethod(RubyModule.class, "op_cmp", IRubyObject.class);
         Callback op_lt = CallbackFactory.getMethod(RubyModule.class, "op_lt", IRubyObject.class);
@@ -232,12 +231,12 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("undef_method", undef_method);
         moduleClass.defineMethod("alias_method", alias_method);
         
-        /*rb_define_private_method(rb_cModule, "define_method", rb_mod_define_method, -1);
+        moduleClass.defineMethod("constant_missing", CallbackFactory.getMethod(RubyModule.class, "constant_missing", IRubyObject.class));
+
+        //rb_define_private_method(rb_cModule, "define_method", rb_mod_define_method, -1);
         
-        rb_define_singleton_method(rb_cModule, "constants", rb_mod_s_constants, 0);*/
         moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
 
-        moduleClass.defineMethod("constant_missing", CallbackFactory.getMethod(RubyModule.class, "constant_missing", IRubyObject.class));
     }
 
     /** classname
@@ -409,26 +408,23 @@ public class RubyModule extends RubyObject {
         setAv(name, value, true);
     }
 
-    /** rb_const_get
-     *
-     */
     public IRubyObject getConstant(String name) {
         boolean mod_retry = false;
-        RubyModule tmp = this;
+        RubyModule module = this;
 
         while (true) {
-            while (tmp != null) {
-                if (!tmp.getInstanceVariable(name).isNil()) {
-                    return tmp.getInstanceVariable(name);
+            while (module != null) {
+                if (!module.getInstanceVariable(name).isNil()) {
+                    return module.getInstanceVariable(name);
                 }
-                if (tmp == getRuntime().getClasses().getObjectClass() && getRuntime().getTopConstant(name) != null) {
+                if (module == getRuntime().getClasses().getObjectClass() && getRuntime().getTopConstant(name) != null) {
                     return getRuntime().getTopConstant(name);
                 }
-                tmp = tmp.getSuperClass();
+                module = module.getSuperClass();
             }
             if (!mod_retry && isModule()) {
                 mod_retry = true;
-                tmp = getRuntime().getClasses().getObjectClass();
+                module = getRuntime().getClasses().getObjectClass();
                 continue;
             }
             break;
@@ -456,9 +452,6 @@ public class RubyModule extends RubyObject {
         } else {
             throw new NameError(getRuntime(), "uninitialized constant " + name.toId());
         }
-
-        // return getRuby().getNil();
-
     }
 
     /** Include a new module in this module or class.

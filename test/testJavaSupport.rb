@@ -36,4 +36,8 @@ if defined? Java
     o = TestHelper.getLooslyCastedInstance()
     test_equal("stuff done", o.doStuff())
   end
+
+  string_class = Java::JavaClass.for_name("java.lang.String")
+  test_equal("java.lang.String", string_class.to_s)
+  test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
 end

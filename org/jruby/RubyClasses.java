@@ -37,6 +37,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
+import org.jruby.javasupport.JavaClassClass;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -117,6 +118,7 @@ public class RubyClasses {
     private RubyClass hashClass;
     private RubyClass integerClass;
     private RubyClass ioClass;
+    private RubyClass javaClassClass;
     private RubyClass javaInterfaceClass;
     private RubyClass javaObjectClass;
     private RubyClass matchDataClass;
@@ -683,6 +685,13 @@ public class RubyClasses {
         return javaModule;
     }
 
+    public RubyClass getJavaClassClass() {
+        if (javaClassClass == null) {
+            javaClassClass = JavaClassClass.createJavaClassClass(ruby);
+        }
+        return javaClassClass;
+    }
+
     /**
      * Returns the reference to the JavaInterface class.
      *
@@ -777,6 +786,8 @@ public class RubyClasses {
             return getIoClass();
         } else if (name == "Java") {
             return getJavaModule();
+        } else if (name == "Java::JavaClass") {
+            return getJavaClassClass();
         } else if (name == "Marshal") {
             return getMarshalModule();
         } else if (name == "MatchData") {
