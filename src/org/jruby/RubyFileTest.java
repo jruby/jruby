@@ -66,7 +66,7 @@ public class RubyFileTest {
                 new File(filename.getValue()).canRead());
     }
     
-    public static IRubyObject size(RubyString filename) {
+    public static IRubyObject size(IRubyObject recv, RubyString filename) {
         return RubyFixnum.newFixnum(filename.getRuntime(),
                 new File(filename.getValue()).length());
     }
@@ -78,7 +78,7 @@ public class RubyFileTest {
                 new File(filename.getValue()).canWrite());
     }
     
-    public static RubyBoolean zero_p(RubyString filename) {
+    public static RubyBoolean zero_p(IRubyObject recv, RubyString filename) {
         File file = new File(filename.getValue());
         return RubyBoolean.newBoolean(filename.getRuntime(),
                 file.exists() == true && file.length() == 0L);
