@@ -41,3 +41,12 @@ end
 method2 {
   test_ok(true)
 }
+
+#class TestBlock_Foo
+#  def foo
+#    Proc.new { self }
+#  end
+#end
+#proc = TestBlock_Foo.new.foo
+#o = Object.new
+#test_equal(o, o.instance_eval(&proc))
