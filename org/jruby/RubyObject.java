@@ -2,11 +2,12 @@
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Chad Fowler <chadfowler@chadfowler.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -197,6 +198,7 @@ public class RubyObject {
         Callback clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
         Callback dup = new ReflectionCallbackMethod(RubyObject.class, "dup");
         Callback equal = new ReflectionCallbackMethod(RubyObject.class, "equal", RubyObject.class);
+        Callback respond_to = new ReflectionCallbackMethod(RubyObject.class, "respond_to", RubySymbol.class);
         Callback extend = new ReflectionCallbackMethod(RubyObject.class, "extend", RubyObject[].class, true);
         Callback freeze = new ReflectionCallbackMethod(RubyObject.class, "freeze");
         Callback frozen = new ReflectionCallbackMethod(RubyObject.class, "frozen");
@@ -218,6 +220,7 @@ public class RubyObject {
 
         kernelModule.defineMethod("=~", CallbackFactory.getFalseMethod());
         kernelModule.defineMethod("==", equal);
+        kernelModule.defineMethod("respond_to?", respond_to);
         kernelModule.defineMethod("class", type);
         kernelModule.defineMethod("clone", clone);
         kernelModule.defineMethod("dup", dup);
@@ -674,6 +677,29 @@ public class RubyObject {
     public RubyBoolean equal(RubyObject obj) {
         return RubyBoolean.newBoolean(getRuby(), this == obj);
     }
+
+    /** rb_obj_respond_to
+     *
+     * "respond_to?"
+     */
+    //FIXME...Need to change this to support the optional boolean arg
+    //And the associated access control on methods
+    public RubyBoolean respond_to(RubySymbol sym) {
+       //Look in cache
+       RubyMethodCacheEntry ent = RubyMethodCacheEntry.getEntry(ruby, getRubyClass(), sym.toId());
+       if(ent != null) {
+          //Check to see if it's private and we're not including privates(return false)
+          //otherwise return true
+          return ruby.getTrue();
+       }
+       //Get from instance
+       MethodNode meth = getRubyClass().searchMethod(sym.toId());
+       if(meth != null && !meth.equals(ruby.getNil())) {
+          return ruby.getTrue();
+       }
+       return ruby.getFalse();
+    }
+
 
     /** Return the internal id of an object.
      * 
