@@ -136,6 +136,10 @@ public class DefaultLexerPosition implements ISourcePosition, Serializable {
     }
 
     public String toString() {
-        return file + ":" + line + ":" + column;
+        if (column == 0) {
+            return file + ":" + line;
+        } else {
+            return file + ":" + line + ":" + column;
+        }
     }
 }

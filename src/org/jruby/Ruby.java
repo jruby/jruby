@@ -674,7 +674,7 @@ public final class Ruby {
 
         if (backtrace.isNil()) {
             if (getSourceFile() != null) {
-                getErrorStream().print(getSourceFile() + ':' + getSourceLine());
+                getErrorStream().print(getPosition());
             } else {
                 getErrorStream().print(getSourceLine());
             }
@@ -742,10 +742,10 @@ public final class Ruby {
     private void printErrorPos() {
         if (getSourceFile() != null) {
             if (getCurrentFrame().getLastFunc() != null) {
-                getErrorStream().print(getSourceFile() + ':' + getSourceLine());
+                getErrorStream().print(getPosition());
                 getErrorStream().print(":in '" + getCurrentFrame().getLastFunc() + '\'');
             } else if (getSourceLine() != 0) {
-                getErrorStream().print(getSourceFile() + ':' + getSourceLine());
+                getErrorStream().print(getPosition());
             } else {
                 getErrorStream().print(getSourceFile());
             }
