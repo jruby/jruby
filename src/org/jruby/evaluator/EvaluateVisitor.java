@@ -60,6 +60,7 @@ import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
+import org.jruby.exceptions.SystemStackError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
@@ -127,7 +128,12 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         result = runtime.getNil();
         if (node != null) {
-            node.accept(this);
+        	try {
+        		node.accept(this);
+        	} catch (StackOverflowError soe) {
+        		// TODO: perhaps a better place to catch this
+        		throw new SystemStackError(runtime, "stack level too deep");
+        	}
         }
         return result;
     }
