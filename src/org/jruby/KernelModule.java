@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2001-2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
  * Chad Fowler, Anders Bengtsson
- * Copyright (C) 2002 Thomas E Enebo
+ * Copyright (C) 2002-2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -62,6 +62,7 @@ public class KernelModule {
         RubyModule kernelModule = ruby.defineModule("Kernel");
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
+        kernelModule.defineMethod("Array", callbackFactory.getSingletonMethod(KernelModule.class, "new_array", IRubyObject.class));
         kernelModule.defineMethod("autoload", callbackFactory.getSingletonMethod(KernelModule.class, "autoload", IRubyObject.class, IRubyObject.class));
         kernelModule.defineMethod("`", callbackFactory.getSingletonMethod(KernelModule.class, "backquote", IRubyObject.class));
         kernelModule.defineMethod("block_given?", callbackFactory.getSingletonMethod(KernelModule.class, "block_given"));
@@ -74,11 +75,13 @@ public class KernelModule {
         kernelModule.defineMethod("chop!", callbackFactory.getSingletonMethod(KernelModule.class, "chop_bang"));
         kernelModule.defineMethod("eval", callbackFactory.getOptSingletonMethod(KernelModule.class, "eval"));
         kernelModule.defineMethod("exit", callbackFactory.getOptSingletonMethod(KernelModule.class, "exit"));
+        kernelModule.defineMethod("Float", callbackFactory.getSingletonMethod(KernelModule.class, "new_float", IRubyObject.class));
         kernelModule.defineMethod("format", callbackFactory.getOptSingletonMethod(KernelModule.class, "sprintf"));
         kernelModule.defineMethod("gets", callbackFactory.getOptSingletonMethod(KernelModule.class, "gets"));
         kernelModule.defineMethod("global_variables", callbackFactory.getSingletonMethod(KernelModule.class, "global_variables"));
         kernelModule.defineMethod("gsub", callbackFactory.getOptSingletonMethod(KernelModule.class, "gsub"));
         kernelModule.defineMethod("gsub!", callbackFactory.getOptSingletonMethod(KernelModule.class, "gsub_bang"));
+        kernelModule.defineMethod("Integer", callbackFactory.getSingletonMethod(KernelModule.class, "new_integer", IRubyObject.class));
         kernelModule.defineMethod("lambda", callbackFactory.getSingletonMethod(KernelModule.class, "proc"));
         kernelModule.defineMethod("load", callbackFactory.getOptSingletonMethod(KernelModule.class, "load"));
         kernelModule.defineMethod("local_variables", callbackFactory.getSingletonMethod(KernelModule.class, "local_variables"));
@@ -101,6 +104,7 @@ public class KernelModule {
         kernelModule.defineMethod("split", callbackFactory.getOptSingletonMethod(KernelModule.class, "split"));
         kernelModule.defineMethod("sprintf", callbackFactory.getOptSingletonMethod(KernelModule.class, "sprintf"));
         kernelModule.defineMethod("srand", callbackFactory.getOptSingletonMethod(KernelModule.class, "srand"));
+        kernelModule.defineMethod("String", callbackFactory.getSingletonMethod(KernelModule.class, "new_string", IRubyObject.class));
         kernelModule.defineMethod("sub", callbackFactory.getOptSingletonMethod(KernelModule.class, "sub"));
         kernelModule.defineMethod("sub!", callbackFactory.getOptSingletonMethod(KernelModule.class, "sub_bang"));
         kernelModule.defineMethod("system", callbackFactory.getOptSingletonMethod(KernelModule.class, "system"));
@@ -142,6 +146,23 @@ public class KernelModule {
         return line;
     }
 
+    public static IRubyObject new_array(IRubyObject recv, IRubyObject object) {
+        return object.callMethod("to_a");
+    }
+    
+    public static IRubyObject new_float(IRubyObject recv, IRubyObject object) {
+        return object.callMethod("to_f");
+    }
+    
+    public static IRubyObject new_integer(IRubyObject recv, IRubyObject object) {
+        return object.callMethod("to_i");
+    }
+    
+    public static IRubyObject new_string(IRubyObject recv, IRubyObject object) {
+        return object.callMethod("to_s");
+    }
+    
+    
     public static IRubyObject p(IRubyObject recv, IRubyObject args[]) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
