@@ -39,7 +39,7 @@ import org.jruby.ast.types.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.marshal.*;
 import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
@@ -1849,6 +1849,16 @@ public class RubyModule extends RubyObject {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
 	output.write('m');
 	output.dumpString(name().toString());
+    }
+
+    public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        String name = input.unmarshalString();
+        Ruby ruby = input.getRuby();
+        RubyModule result = (RubyModule) ruby.getClasses().getClassMap().get(name);
+        if (result == null) {
+            throw new NameError(ruby, "uninitialized constant " + name);
+        }
+        return result;
     }
 
 

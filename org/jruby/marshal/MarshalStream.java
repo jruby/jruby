@@ -56,11 +56,8 @@ public class MarshalStream extends FilterOutputStream {
     public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
 		super(out);
         this.ruby = ruby;
-        if (depthLimit >= 0) {
-            this.depthLimit = depthLimit;
-        } else {
-            this.depthLimit = Integer.MAX_VALUE;
-        }
+        this.depthLimit = (depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE);
+
 		out.write(MARSHAL_MAJOR);
 		out.write(MARSHAL_MINOR);
     }

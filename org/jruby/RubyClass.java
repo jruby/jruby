@@ -36,7 +36,7 @@ import org.jruby.exceptions.*;
 import org.jruby.ast.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.marshal.*;
 
 /**
  *
@@ -262,5 +262,9 @@ public class RubyClass extends RubyModule {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('c');
         output.dumpString(getClassname().toString());
+    }
+
+    public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {
+        return (RubyClass) RubyModule.unmarshalFrom(output);
     }
 }

@@ -74,15 +74,12 @@ public class RubyMarshal {
         }
 
         try {
-
             if (io != null) {
-                MarshalStream output = new MarshalStream(ruby, io.getOutStream(), depthLimit);
-                output.dumpObject(objectToDump);
+                dumpToStream(objectToDump, io.getOutStream(), depthLimit);
                 return io;
             } else {
-                ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-                MarshalStream output = new MarshalStream(ruby, stringOutput, depthLimit);
-                output.dumpObject(objectToDump);
+                OutputStream stringOutput = new ByteArrayOutputStream();
+                dumpToStream(objectToDump, stringOutput, depthLimit);
                 return RubyString.newString(ruby, stringOutput.toString());
             }
 
@@ -124,6 +121,13 @@ public class RubyMarshal {
             exception.initCause(ioe);
             throw exception;
         }
+    }
+
+    private static void dumpToStream(RubyObject object, OutputStream rawOutput, int depthLimit)
+        throws IOException
+    {
+        MarshalStream output = new MarshalStream(object.getRuby(), rawOutput, depthLimit);
+        output.dumpObject(object);
     }
 
     private static boolean respondsTo(RubyObject object, String method) {

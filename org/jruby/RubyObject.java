@@ -42,7 +42,7 @@ import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.marshal.*;
 
 /**
  *
@@ -1038,5 +1038,21 @@ public class RubyObject implements Cloneable {
             output.dumpObject(RubySymbol.newSymbol(ruby, name));
             output.dumpObject(value);
         }
+    }
+
+    public static RubyObject unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        RubySymbol className = (RubySymbol) input.unmarshalObject();
+        int variableCount = input.unmarshalInt();
+        Ruby ruby = input.getRuby();
+
+        Map variables = new HashMap(variableCount);
+        for (int i = 0; i < variableCount; i++) {
+            RubySymbol name = (RubySymbol) input.unmarshalObject();
+            RubyObject value = input.unmarshalObject();
+            variables.put(name, value);
+        }
+
+        RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
+        return new RubyObject(ruby, rubyClass);
     }
 }

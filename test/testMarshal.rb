@@ -43,6 +43,10 @@ end
 test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo@\000",
 	   Marshal.dump(MarshalTestClass.new))
 
+# Unmarshaling
+
+#object = Marshal.load(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar")
+#test_equal(["@foo"], object.instance_variables)
 
 test_equal(true, Marshal.load(MARSHAL_HEADER + "T"))
 test_equal(false, Marshal.load(MARSHAL_HEADER + "F"))
@@ -55,8 +59,14 @@ test_equal(2000, Marshal.load(MARSHAL_HEADER + "i\002Ð\a"))
 test_equal(-2000, Marshal.load(MARSHAL_HEADER + "iþ0ø"))
 test_equal([1, 2, 3], Marshal.load(MARSHAL_HEADER + "[\010i\006i\ai\010"))
 test_equal({1=>2}, Marshal.load(MARSHAL_HEADER + "{\006i\006i\a"))
+test_equal(String, Marshal.load(MARSHAL_HEADER + "c\013String"))
+#test_equal(Enumerable, Marshal.load(MARSHAL_HEADER + "m\017Enumerable"))
+
 object = Marshal.load(MARSHAL_HEADER + "o:\013Object\000")
 test_equal(Object, object.class)
+
+
+
 
 exception_thrown = false
 begin

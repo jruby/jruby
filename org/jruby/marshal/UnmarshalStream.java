@@ -72,19 +72,12 @@ public class UnmarshalStream extends FilterInputStream {
             return RubyArray.unmarshalFrom(this);
         } else if (type == '{') {
             return RubyHash.unmarshalFrom(this);
+        } else if (type == 'c') {
+            return RubyClass.unmarshalFrom(this);
+        } else if (type == 'm') {
+            return RubyModule.unmarshalFrom(this);
         } else if (type == 'o') {
-            RubySymbol className = (RubySymbol) unmarshalObject();
-            int variableCount = unmarshalInt();
-
-            Map variables = new HashMap(variableCount);
-            for (int i = 0; i < variableCount; i++) {
-                RubySymbol name = (RubySymbol) unmarshalObject();
-                RubyObject value = unmarshalObject();
-                variables.put(name, value);
-            }
-
-            RubyClass rubyClass = getClass(className.toString());
-            return new RubyObject(ruby, rubyClass);
+            return RubyObject.unmarshalFrom(this);
         }
 
         throw new NotImplementedError(); // FIXME
@@ -92,11 +85,6 @@ public class UnmarshalStream extends FilterInputStream {
 
     public Ruby getRuby() {
         return ruby;
-    }
-
-    private RubyClass getClass(String name) {
-        // FIXME: real implementation!...
-        return ruby.getClasses().getObjectClass();
     }
 
     private int readUnsignedByte() throws IOException {
