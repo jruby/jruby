@@ -353,7 +353,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitCDeclNode(CDeclNode)
+     * @see NodeVisitor#visitConstDeclNode(ConstDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
         if (ruby.getRubyClass() == null) {
@@ -614,7 +614,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitDRegxNode(DRegxNode)
+     * @see NodeVisitor#visitDRegxNode(DRegexpNode)
      */
     public void visitDRegxNode(DRegexpNode iVisited) {
         StringBuffer sb = new StringBuffer();
@@ -677,34 +677,12 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     /**
      * @see NodeVisitor#visitDefnNode(DefnNode)
-     * @fixme Create new method store class.
      */
     public void visitDefnNode(DefnNode iVisited) {
         RubyModule rubyClass = ruby.getRubyClass();
         if (rubyClass == null) {
             throw new TypeError(ruby, "No class to add method.");
         }
-
-        //if (ruby_class == getRuby().getObjectClass() && node.nd_mid() == init) {
-        // warn("redefining Object#initialize may cause infinite loop");
-        //}
-        //if (node.nd_mid() == __id__ || node.nd_mid() == __send__) {
-        // warn("redefining `%s' may cause serious problem", ((RubyId)node.nd_mid()).toName());
-        //}
-        // ruby_class.setFrozen(true);
-
-        ICallable method = rubyClass.searchMethod(iVisited.getName());
-        // RubyObject origin = body.getOrigin();
-
-        // if (body != null){
-        // if (ruby_verbose.isTrue() && ruby_class == origin && body.nd_cnt() == 0) {
-        //     rom.rb_warning("discarding old %s", ((RubyId)node.nd_mid()).toName());
-        // }
-        // if (node.nd_noex() != 0) { /* toplevel */
-        /* should upgrade to rb_warn() if no super was called inside? */
-        //     rom.rb_warning("overriding global function `%s'", ((RubyId)node.nd_mid()).toName());
-        // }
-        //          }
 
         Visibility visibility = ruby.getCurrentVisibility();
 
@@ -714,14 +692,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             visibility = iVisited.getVisibility();
         }
 
-        /* FIXME Fix the undef stuff
-        if (method != null && method.getImplementationClass() == rubyClass && (method.getVisibility() & Constants.NOEX_UNDEF) != 0) {
-            noex |= Constants.NOEX_UNDEF;
-        }
-        */
-
-        // FIXME Create new method store class.
-        // ScopeNode body = copyNodeScope((ScopeNode)iVisited.getBodyNode(), ruby.getNamespace());
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace(), visibility);
 
         rubyClass.addMethod(iVisited.getName(), newMethod);
@@ -740,7 +710,6 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     /**
      * @see NodeVisitor#visitDefsNode(DefsNode)
-     * @fixme see above in visitDefnNode
      */
     public void visitDefsNode(DefsNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
@@ -748,10 +717,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (ruby.getSafeLevel() >= 4 && !receiver.isTaint()) {
             throw new RubySecurityException(ruby, "Insecure; can't define singleton method.");
         }
-        /*if (FIXNUM_P(recv) || SYMBOL_P(recv)) {
-          rb_raise(rb_eTypeError, "can't define singleton method \"%s\" for %s",
-          rb_id2name(node.nd_mid()), rb_class2name(CLASS_OF(recv)));
-          }*/ // not needed in jruby
 
         if (receiver.isFrozen()) {
             throw new RubyFrozenException(ruby, "object");
@@ -763,12 +728,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (ruby.getSafeLevel() >= 4) {
                 throw new RubySecurityException(ruby, "Redefining method prohibited.");
             }
-            /*if (RTEST(ruby_verbose)) {
-              rb_warning("redefine %s", rb_id2name(node.nd_mid()));
-              }*/
         }
 
-        // FIXME see above in visitDefnNode
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace(), Visibility.PUBLIC);
 
         // FIXME , Constants.NOEX_PUBLIC | (method != null ? method.getVisibility() & Constants.NOEX_UNDEF : 0)
@@ -793,7 +754,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             result = eval(iVisited.getBodyNode());
         } finally {
             if (iVisited.getEnsureNode() != null) {
-                // XXX
                 IRubyObject oldResult = result;
                 eval(iVisited.getEnsureNode());
                 result = oldResult;
@@ -898,7 +858,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitGAsgnNode(GlobalAsgnNode)
+     * @see NodeVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
         eval(iVisited.getValueNode());
@@ -906,7 +866,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitGVarNode(GVarNode)
+     * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
         result = ruby.getGlobalVar(iVisited.getName());
@@ -935,7 +895,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitIAsgnNode(InstVarAsgnNode)
+     * @see NodeVisitor#visitInstAsgnNode(InstAsgnNode)
      */
     public void visitInstAsgnNode(InstAsgnNode iVisited) {
         eval(iVisited.getValueNode());
@@ -943,7 +903,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitIVarNode(IVarNode)
+     * @see NodeVisitor#visitInstVarNode(InstVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
         result = self.getInstanceVariable(iVisited.getName());
@@ -985,7 +945,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitLAsgnNode(LAsgnNode)
+     * @see NodeVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
         eval(iVisited.getValueNode());
@@ -993,14 +953,14 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitLVarNode(LocalVarNode)
+     * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
      */
     public void visitLocalVarNode(LocalVarNode iVisited) {
         result = ruby.getScope().getValue(iVisited.getCount());
     }
 
     /**
-     * @see NodeVisitor#visitMAsgnNode(MultipleAsgnNode)
+     * @see NodeVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
     public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
         result = new AssignmentVisitor(ruby, self).assign(iVisited, eval(iVisited.getValueNode()), false);
@@ -1041,19 +1001,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(ruby, "no outer class/module");
         }
 
-        //if ((ruby.getRubyClass() == ruby.getClasses().getObjectClass()) && ruby.isAutoloadDefined(iVisited.getName())) {
-            // getRuby().rb_autoload_load(node.nd_cname());
-        //}
-
         RubyModule module = null;
 
         if (ruby.getRubyClass().isConstantDefined(iVisited.getName())) {
             module = (RubyModule) ruby.getRubyClass().getConstant(iVisited.getName());
-
-            /*if (!(module instanceof RubyModule)) {
-              throw new RubyTypeException(moduleName.toName() + " is not a module");
-
-              }*/
 
             if (ruby.getSafeLevel() >= 4) {
                 throw new RubySecurityException(ruby, "Extending module prohibited.");
@@ -1121,7 +1072,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitOpAsgn1Node(OpAsgn1Node)
+     * @see NodeVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
      */
     public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
@@ -1155,7 +1106,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitOpAsgn2Node(OpAsgn2Node)
+     * @see NodeVisitor#visitOpAsgnNode(OpAsgnNode)
      */
     public void visitOpAsgnNode(OpAsgnNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
@@ -1353,21 +1304,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitScopeNode(ScopeNode iVisited) {
         ruby.getCurrentFrame().tmpPush();
         ruby.getScope().push(iVisited.getLocalNames());
-
-        Namespace savedNamespace = null;
-        /*if (iVisited.getNamespace() != null) {
-          savedNamespace = ruby.getNamespace();
-          ruby.setNamespace(iVisited.getNamespace());
-          ruby.getRubyFrame().setNamespace(iVisited.getNamespace());
-          }*/
-
         try {
             eval(iVisited.getBodyNode());
         } finally {
-            if (savedNamespace != null) {
-                ruby.setNamespace(savedNamespace);
-            }
-
             ruby.getScope().pop();
             ruby.getCurrentFrame().tmpPop();
         }
