@@ -225,14 +225,16 @@ public class JavaUtil {
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, Array.get(object, i));
             }
-            return RubyArray.create(ruby, null, items);
+//            return RubyArray.create(ruby, null, items);			//Benoit: [ 524212 ] cannot iterate on ARGV   due to incorrect rubyClasss
+            return RubyArray.newArray(ruby, items);
         } else if (List.class.isAssignableFrom(javaClass)) {
             int len = ((List) object).size();
             RubyObject[] items = new RubyObject[len];
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, ((List) object).get(i));
             }
-            return RubyArray.create(ruby, null, items);
+//            return RubyArray.create(ruby, null, items);   //Benoit: [ 524212 ] cannot iterate on ARGV   due to incorrect rubyClasss
+            return RubyArray.newArray(ruby, items);
         } else if (Map.class.isAssignableFrom(javaClass)) {
             int len = ((Map) object).size();
             RubyObject[] items = new RubyObject[len * 2];
