@@ -267,28 +267,29 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitAttrSetNode(AttrSetNode iVisited) {
         if (runtime.getCurrentFrame().getArgs().length != 1) {
-            throw new ArgumentError(runtime, "wrong # of arguments(" + runtime.getCurrentFrame().getArgs().length + "for 1)");
+            throw new ArgumentError(runtime, "wrong # of arguments(" + threadContext.getCurrentFrame().getArgs().length + "for 1)");
         }
 
-        result = self.setInstanceVariable(iVisited.getAttributeName(), runtime.getCurrentFrame().getArgs()[0]);
+        result = self.setInstanceVariable(iVisited.getAttributeName(), threadContext.getCurrentFrame().getArgs()[0]);
     }
 
     /**
      * @see NodeVisitor#visitBackRefNode(BackRefNode)
      */
     public void visitBackRefNode(BackRefNode iVisited) {
+        IRubyObject backref = threadContext.getBackref();
         switch (iVisited.getType()) {
             case '&' :
-                result = RubyRegexp.last_match(runtime.getBackref());
+                result = RubyRegexp.last_match(backref);
                 break;
             case '`' :
-                result = RubyRegexp.match_pre(runtime.getBackref());
+                result = RubyRegexp.match_pre(backref);
                 break;
             case '\'' :
-                result = RubyRegexp.match_post(runtime.getBackref());
+                result = RubyRegexp.match_post(backref);
                 break;
             case '+' :
-                result = RubyRegexp.match_last(runtime.getBackref());
+                result = RubyRegexp.match_last(backref);
                 break;
         }
     }
@@ -382,23 +383,23 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        if (runtime.getCBase() == null) {
+        if (threadContext.getCBase() == null) {
             throw new TypeError(runtime, "no class/module to define class variable");
         }
         eval(iVisited.getValueNode());
-        runtime.getCBase().declareClassVar(iVisited.getName(), result);
+        threadContext.getCBase().declareClassVar(iVisited.getName(), result);
     }
 
     /**
      * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        if (runtime.getCBase() == null) {
+        if (threadContext.getCBase() == null) {
             result = self.getInternalClass().getClassVar(iVisited.getName());
-        } else if (!runtime.getCBase().isSingleton()) {
-            result = runtime.getCBase().getClassVar(iVisited.getName());
+        } else if (! threadContext.getCBase().isSingleton()) {
+            result = threadContext.getCBase().getClassVar(iVisited.getName());
         } else {
-            result = ((RubyModule) runtime.getCBase().getInstanceVariable("__attached__")).getClassVar(iVisited.getName());
+            result = ((RubyModule) threadContext.getCBase().getInstanceVariable("__attached__")).getClassVar(iVisited.getName());
         }
     }
 
@@ -599,7 +600,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        result = runtime.getCurrentFrame().getNamespace().getConstant(self, iVisited.getName());
+        result = threadContext.getCurrentFrame().getNamespace().getConstant(self, iVisited.getName());
     }
 
     /**
@@ -696,7 +697,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             runtime.getErrorHandler().warn("redefining '" + name + "' may cause serious problem");
         }
 
-        Visibility visibility = runtime.getCurrentVisibility();
+        Visibility visibility = threadContext.getCurrentVisibility();
         if (name.equals("initialize") || visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
         } else if (visibility.isPublic() && rubyClass == runtime.getClasses().getObjectClass()) {
@@ -707,7 +708,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         rubyClass.addMethod(name, newMethod);
 
-        if (runtime.getCurrentVisibility().isModuleFunction()) {
+        if (threadContext.getCurrentVisibility().isModuleFunction()) {
             rubyClass.getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
             rubyClass.callMethod("singleton_method_added", builtins.toSymbol(name));
         }
@@ -811,21 +812,21 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitFlipNode(FlipNode iVisited) {
         if (iVisited.isExclusive()) {
-            if (!runtime.getScope().getValue(iVisited.getCount()).isTrue()) {
+            if (! threadContext.getScopeStack().getValue(iVisited.getCount()).isTrue()) {
                 //Benoit: I don't understand why the result is inversed
                 result = eval(iVisited.getBeginNode()).isTrue() ? runtime.getFalse() : runtime.getTrue();
-                runtime.getScope().setValue(iVisited.getCount(), result);
+                threadContext.getScopeStack().setValue(iVisited.getCount(), result);
             } else {
                 if (eval(iVisited.getEndNode()).isTrue()) {
-                    runtime.getScope().setValue(iVisited.getCount(), runtime.getFalse());
+                    threadContext.getScopeStack().setValue(iVisited.getCount(), runtime.getFalse());
                 }
                 result = runtime.getTrue();
             }
         } else {
-            if (!runtime.getScope().getValue(iVisited.getCount()).isTrue()) {
+            if (! threadContext.getScopeStack().getValue(iVisited.getCount()).isTrue()) {
                 if (eval(iVisited.getBeginNode()).isTrue()) {
                     //Benoit: I don't understand why the result is inversed
-                    runtime.getScope().setValue(iVisited.getCount(), eval(iVisited.getEndNode()).isTrue() ? runtime.getFalse() : runtime.getTrue());
+                    threadContext.getScopeStack().setValue(iVisited.getCount(), eval(iVisited.getEndNode()).isTrue() ? runtime.getFalse() : runtime.getTrue());
                     result = runtime.getTrue();
                 } else {
                     result = runtime.getFalse();
@@ -843,8 +844,8 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitForNode(ForNode)
      */
     public void visitForNode(ForNode iVisited) {
-        runtime.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
-        runtime.getIterStack().push(Iter.ITER_PRE);
+        threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
+        threadContext.getIterStack().push(Iter.ITER_PRE);
 
         try {
             while (true) {
@@ -943,8 +944,8 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIterNode(IterNode)
      */
     public void visitIterNode(IterNode iVisited) {
-        runtime.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
-        runtime.getIterStack().push(Iter.ITER_PRE);
+        threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
+        threadContext.getIterStack().push(Iter.ITER_PRE);
         try {
             while (true) {
                 try {
@@ -958,8 +959,8 @@ public final class EvaluateVisitor implements NodeVisitor {
         } catch (BreakJump bExcptn) {
             result = runtime.getNil();
         } finally {
-            runtime.getIterStack().pop();
-            runtime.getBlockStack().pop();
+            threadContext.getIterStack().pop();
+            threadContext.getBlockStack().pop();
         }
     }
 
@@ -968,14 +969,14 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        runtime.getScope().setValue(iVisited.getCount(), result);
+        threadContext.getScopeStack().setValue(iVisited.getCount(), result);
     }
 
     /**
      * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
      */
     public void visitLocalVarNode(LocalVarNode iVisited) {
-        result = runtime.getScope().getValue(iVisited.getCount());
+        result = threadContext.getScopeStack().getValue(iVisited.getCount());
     }
 
     /**
@@ -1084,7 +1085,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNthRefNode(NthRefNode)
      */
     public void visitNthRefNode(NthRefNode iVisited) {
-        result = RubyRegexp.nth_match(iVisited.getMatchNumber(), runtime.getBackref());
+        result = RubyRegexp.nth_match(iVisited.getMatchNumber(), threadContext.getBackref());
     }
 
     /**
@@ -1318,13 +1319,13 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitScopeNode(ScopeNode)
      */
     public void visitScopeNode(ScopeNode iVisited) {
-        runtime.getCurrentFrame().tmpPush();
-        runtime.getScope().push(iVisited.getLocalNames());
+        threadContext.getCurrentFrame().tmpPush();
+        threadContext.getScopeStack().push(iVisited.getLocalNames());
         try {
             eval(iVisited.getBodyNode());
         } finally {
-            runtime.getScope().pop();
-            runtime.getCurrentFrame().tmpPop();
+            threadContext.getScopeStack().pop();
+            threadContext.getCurrentFrame().tmpPop();
         }
     }
 
@@ -1346,8 +1347,8 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
-        if (runtime.getCurrentFrame().getLastClass() == null) {
-            throw new NameError(runtime, "Superclass method '" + runtime.getCurrentFrame().getLastFunc() + "' disabled.");
+        if (threadContext.getCurrentFrame().getLastClass() == null) {
+            throw new NameError(runtime, "Superclass method '" + threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
@@ -1359,11 +1360,12 @@ public final class EvaluateVisitor implements NodeVisitor {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
 
-        runtime.getIterStack().push(runtime.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        threadContext.getIterStack().push(threadContext.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            result = runtime.getCurrentFrame().getLastClass().getSuperClass().call(runtime.getCurrentFrame().getSelf(), runtime.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
+            RubyClass superClass = threadContext.getCurrentFrame().getLastClass().getSuperClass();
+            result = superClass.call(threadContext.getCurrentFrame().getSelf(), threadContext.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
         } finally {
-            runtime.getIterStack().pop();
+            threadContext.getIterStack().pop();
         }
     }
 
@@ -1480,17 +1482,18 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
-        if (runtime.getCurrentFrame().getLastClass() == null) {
+        if (threadContext.getCurrentFrame().getLastClass() == null) {
             throw new NameError(runtime, "superclass method '" + runtime.getCurrentFrame().getLastFunc() + "' disabled");
         }
 
-        IRubyObject[] args = runtime.getCurrentFrame().getArgs();
+        IRubyObject[] args = threadContext.getCurrentFrame().getArgs();
 
-        runtime.getIterStack().push(runtime.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        threadContext.getIterStack().push(threadContext.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            result = runtime.getCurrentFrame().getLastClass().getSuperClass().call(runtime.getCurrentFrame().getSelf(), runtime.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
+            RubyClass superClass = threadContext.getCurrentFrame().getLastClass().getSuperClass();
+            result = superClass.call(threadContext.getCurrentFrame().getSelf(), threadContext.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
         } finally {
-            runtime.getIterStack().pop();
+            threadContext.getIterStack().pop();
         }
     }
 
@@ -1551,13 +1554,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         /* String file = ruby.getSourceFile();
            int line = ruby.getSourceLine(); */
 
-        runtime.getCurrentFrame().tmpPush();
+        threadContext.getCurrentFrame().tmpPush();
         runtime.pushClass(type);
-        runtime.getScope().push(iVisited.getLocalNames());
-        runtime.pushDynamicVars();
+        threadContext.getScopeStack().push(iVisited.getLocalNames());
+        threadContext.pushDynamicVars();
 
         runtime.setNamespace(new Namespace(type, runtime.getNamespace()));
-        runtime.getCurrentFrame().setNamespace(runtime.getNamespace());
+        threadContext.getCurrentFrame().setNamespace(runtime.getNamespace());
 
         IRubyObject oldSelf = self;
 
@@ -1575,10 +1578,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             self = oldSelf;
 
             runtime.setNamespace(runtime.getNamespace().getParent());
-            runtime.popDynamicVars();
-            runtime.getScope().pop();
+            threadContext.popDynamicVars();
+            threadContext.getScopeStack().pop();
             runtime.popClass();
-            runtime.getCurrentFrame().tmpPop();
+            threadContext.getCurrentFrame().tmpPop();
 
             if (isTrace()) {
                 callTraceFunction(

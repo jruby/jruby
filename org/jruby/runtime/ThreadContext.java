@@ -89,6 +89,9 @@ public class ThreadContext {
         dynamicVarsStack.push(new HashMap());
     }
 
+    public void popDynamicVars() {
+        dynamicVarsStack.pop();
+    }
     /**
      * Returns the currentThread.
      * @return RubyThread
@@ -143,6 +146,21 @@ public class ThreadContext {
 
     public void setPosition(ISourcePosition position) {
         sourcePosition = position;
+    }
+
+    public IRubyObject getBackref() {
+        if (getScopeStack().hasLocalValues()) {
+            return getScopeStack().getValue(1);
+        }
+        return ruby.getNil();
+    }
+
+    public RubyModule getCBase() {
+        return getCurrentFrame().getNamespace().getNamespaceModule();
+    }
+
+    public Visibility getCurrentVisibility() {
+        return getScopeStack().current().getVisibility();
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
