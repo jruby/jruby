@@ -124,6 +124,7 @@ public class RubyClasses {
     private RubyClass integerClass;
     private RubyClass ioClass;
     private RubyClass javaObjectClass;
+    private RubyClass javaArrayClass;
     private RubyClass matchDataClass;
     private RubyClass methodClass;
     private RubyClass moduleClass;
@@ -698,6 +699,13 @@ public class RubyClasses {
             javaObjectClass = JavaObject.createJavaObjectClass(runtime);
         }
         return javaObjectClass;
+    }
+
+    public RubyClass getJavaArrayClass() {
+        if (javaArrayClass == null) {
+            javaArrayClass = JavaArray.createJavaArrayClass(runtime);
+        }
+        return javaArrayClass;
     }
 
     /**

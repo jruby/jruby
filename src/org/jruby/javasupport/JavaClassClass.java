@@ -32,6 +32,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.JavaObject;
 import org.jruby.RubyInteger;
+import org.jruby.JavaArray;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
@@ -235,9 +236,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
             throw new TypeError(getRuntime(), lengthArgument, getRuntime().getClasses().getIntegerClass());
         }
         int length = (int) ((RubyInteger) lengthArgument).getLongValue();
-        return new JavaObject(getRuntime(),
-                                  getRuntime().getClasses().getJavaObjectClass(),
-                                  Array.newInstance(javaClass, length));
+        return new JavaArray(getRuntime(), Array.newInstance(javaClass, length));
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {

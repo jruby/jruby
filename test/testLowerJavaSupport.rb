@@ -109,7 +109,7 @@ if defined? Java
 
   # Arrays
   array = string_class.new_array(10)
-  #test_equal(10, array.length)
+  test_equal(10, array.length)
   string_array_class = Java::JavaClass.for_name(array.java_type)
   test_ok(string_array_class.array?)
   test_equal("[Ljava.lang.String;", string_array_class.name)
