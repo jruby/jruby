@@ -226,9 +226,9 @@ public class DefaultLexerSupport implements ILexerSupport {
     }
 
     /**
-     * @see ILexerSupport#unread(int)
+     * @see ILexerSupport#unreadMany(int)
      */
-    public void unread(int n) {
+    public void unreadMany(int n) {
         for (int i = 0; i < n; i++) {
             unread();
         }

@@ -1,16 +1,16 @@
 /*
  * LexState.java
  * Created on 22.02.2002, 22:51:53
- * 
+ *
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>. All rights
  * reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -18,18 +18,18 @@
  *    distribution.
  *
  * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:  
+ *    if any, must include the following acknowledgment:
  *       "This product includes software developed by
  *        Jan Arne Petersen (jpetersen@uni-bonn.de)."
  *    Alternately, this acknowledgment may appear in the software itself,
  *    if and wherever such third-party acknowledgments normally appear.
  *
  * 4. The names "JRuby" must not be used to endorse or promote products
- *    derived from this software without prior written permission. For 
+ *    derived from this software without prior written permission. For
  *    written permission, please contact jpetersen@uni-bonn.de.
  *
- * 5. Products derived from this software may not be called 
- *    "JRuby", nor may "JRuby" appear in their name, without prior 
+ * 5. Products derived from this software may not be called
+ *    "JRuby", nor may "JRuby" appear in their name, without prior
  *    written permission of Jan Arne Petersen.
  *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
@@ -44,13 +44,13 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * ====================================================================
  *
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.lexer.*;
+import org.ablaf.lexer.ILexerState;
 
 /**
  *
@@ -67,7 +67,7 @@ public final class LexState implements ILexerState {
     public static final LexState EXPR_FNAME  = new LexState("EXPR_FNAME");
     public static final LexState EXPR_DOT    = new LexState("EXPR_DOT");
     public static final LexState EXPR_CLASS  = new LexState("EXPR_CLASS");
-    
+
     private final String debug;
 
     private LexState(String debug) {
@@ -81,35 +81,35 @@ public final class LexState implements ILexerState {
     public boolean isExprBeg() {
         return this == EXPR_BEG;
     }
-    
+
     public boolean isExprEnd() {
         return this == EXPR_END;
     }
-    
+
     public boolean isExprArg() {
         return this == EXPR_ARG;
     }
-    
+
     public boolean isExprCmdArg() {
         return this == EXPR_CMDARG;
     }
-    
+
     public boolean isExprEndArg() {
         return this == EXPR_ENDARG;
     }
-    
+
     public boolean isExprMid() {
         return this == EXPR_MID;
     }
-    
+
     public boolean isExprFName() {
         return this == EXPR_FNAME;
     }
-    
+
     public boolean isExprDot() {
         return this == EXPR_DOT;
     }
-    
+
     public boolean isExprClass() {
         return this == EXPR_CLASS;
     }

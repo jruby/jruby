@@ -624,7 +624,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     break;
                 }
             }
-            support.unread(line.length() + 1);
+            support.unreadMany(line.length() + 1);
 
             while (true) {
                 switch (parseString(closeQuote, '\n', '\n')) {
@@ -1265,12 +1265,12 @@ public class RubyYaccLexer implements IYaccLexer {
                             if (isIdentifierChar(c)) {
                                 break;
                             }
-                            support.unread();
+                            pushback(c);
                             yaccValue = new NthRefNode(support.getPosition(), Integer.parseInt(tok().substring(1)));
                             return Token.tNTH_REF;
                         default :
                             if (!isIdentifierChar(c)) {
-                                support.unread();
+                                pushback(c);
                                 return '$';
                             }
                         case '0' :
@@ -1293,7 +1293,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         //$NON-NLS-1$
                     }
                     if (!isIdentifierChar(c)) {
-                        support.unread();
+                        pushback(c);
                         return '@';
                     }
                     break;
@@ -1320,7 +1320,7 @@ public class RubyYaccLexer implements IYaccLexer {
         if ((c == '!' || c == '?') && isIdentifierChar(tok().charAt(0)) && !peek('=')) {
             tokadd(c);
         } else {
-            support.unread();
+            pushback(c);
         }
         {
             int result = 0;
@@ -1377,7 +1377,7 @@ public class RubyYaccLexer implements IYaccLexer {
                                 result = Token.tIDENTIFIER;
                                 tokadd(c);
                             } else {
-                                support.unread();
+                                pushback(c);
                             }
                         }
                         if (result == 0 && Character.isUpperCase(tok().charAt(0))) {
@@ -1494,7 +1494,7 @@ public class RubyYaccLexer implements IYaccLexer {
                             }
                         }
                     }
-                    support.unread();
+                    pushback(c);
 
                     if (number.length() == startLen) {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_hex_digits")); //$NON-NLS-1$
@@ -1523,7 +1523,7 @@ public class RubyYaccLexer implements IYaccLexer {
                             }
                         }
                     }
-                    support.unread();
+                    pushback(c);
 
                     if (number.length() == startLen) {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_bin_digits")); //$NON-NLS-1$
@@ -1557,7 +1557,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         }
                     }
                     if (number.length() > startLen) {
-                        support.unread();
+                        pushback(c);
 
                         if (nondigit != '\0') {
                             errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
@@ -1576,7 +1576,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     number.append('0');
                     break;
                 default :
-                    support.unread();
+                    pushback(c);
                     yaccValue = new Long(0);
                     return Token.tINTEGER;
             }
@@ -1602,14 +1602,16 @@ public class RubyYaccLexer implements IYaccLexer {
                     break;
                 case '.' :
                     if (nondigit != '\0') {
-                        support.unread();
+                        pushback(c);
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, support.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
                     } else if (seen_point || seen_e) {
-                        support.unread();
+                        pushback(c);
                         return getNumberToken(number.toString(), true, nondigit);
                     } else {
+                        char oldC = c;
                         if (!Character.isDigit(c = support.read())) {
-                            support.unread(2);
+                            support.unread();
+                            support.unread();
                             if (support.getLastRead() == '_') {
 
                             } else {
@@ -1627,11 +1629,11 @@ public class RubyYaccLexer implements IYaccLexer {
                 case 'e' :
                 case 'E' :
                     if (nondigit != '\0') {
-                        support.unread();
+                        pushback(c);
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, support.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
                         return 0;
                     } else if (seen_e) {
-                        support.unread();
+                        pushback(c);
                         return getNumberToken(number.toString(), true, nondigit);
                     } else {
                         number.append(c);
@@ -1642,7 +1644,7 @@ public class RubyYaccLexer implements IYaccLexer {
                             number.append(c);
                             nondigit = c;
                         } else {
-                            support.unread();
+                            pushback(c);
                         }
                     }
                     break;
@@ -1654,7 +1656,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     nondigit = c;
                     break;
                 default :
-                    support.unread();
+                    pushback(c);
                     return getNumberToken(number.toString(), seen_e || seen_point, nondigit);
             }
         }
@@ -1700,7 +1702,7 @@ public class RubyYaccLexer implements IYaccLexer {
                 break;
             default :
                 token.append('#');
-                support.unread();
+                pushback(c);
                 return false;
         }
 
@@ -1734,7 +1736,7 @@ public class RubyYaccLexer implements IYaccLexer {
                             for (; Character.isDigit(c); c = support.read()) {
                                 token.append(c);
                             }
-                            support.unread();
+                            pushback(c);
                             list.add(new NthRefNode(token.getPosition(), Integer.parseInt(token.getToken().substring(1))));
                             token.newToken(support.getPosition());
                             return true;
@@ -1765,7 +1767,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         default :
                             if (c == closeQuote) {
                                 list.add(new StrNode(token.getPosition(), "#$")); //$NON-NLS-1$
-                                support.unread();
+                                pushback(c);
                                 token.newToken(support.getPosition());
                                 return true;
                             }
@@ -1793,7 +1795,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     for (; isIdentifierChar(c); c = support.read()) {
                         token.append(c);
                     }
-                    support.unread();
+                    pushback(c);
                     list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
                     token.newToken(support.getPosition());
                     return true;
@@ -1807,7 +1809,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     for (; isIdentifierChar(c); c = support.read()) {
                         token.append(c);
                     }
-                    support.unread();
+                    pushback(c);
                     if (token.getToken().startsWith("@@")) { //$NON-NLS-1$
                         list.add(new ClassVarNode(token.getPosition(), token.getToken()));
                     } else {
@@ -1859,7 +1861,7 @@ public class RubyYaccLexer implements IYaccLexer {
                                 case '/' :
                                 case '`' :
                                     if (c == closeQuote) {
-                                        support.unread();
+                                        pushback(c);
                                         list.add(new StrNode(token.getPosition(), "#")); //$NON-NLS-1$
                                         errorHandler.handleError(IErrors.WARNING, support.getPosition(), Messages.getString("bad_substitution")); //$NON-NLS-1$
                                         list.add(new StrNode(token.getPosition(), token.getToken()));
@@ -1884,6 +1886,10 @@ public class RubyYaccLexer implements IYaccLexer {
     }
 
     // Helper functions....................
+
+    private void pushback(int c) {
+        support.unread();
+    }
 
     private final boolean isArgState() {
         return lexState.isExprArg();
