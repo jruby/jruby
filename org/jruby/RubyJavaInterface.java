@@ -57,7 +57,7 @@ public class RubyJavaInterface extends RubyJavaObject {
     public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final RubyProc proc) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{interfaceMethod.getDeclaringClass()}, new InvocationHandler() {
             public Object invoke(Object recv, Method imethod, Object[] args) {
-                return JavaUtil.convertJavaToRuby(ruby, proc.call(JavaUtil.convertJavaToRuby(ruby, args)));
+                return JavaUtil.convertJavaToRuby(ruby, proc.call(JavaUtil.convertJavaArrayToRuby(ruby, args)));
             }
         }));
     }
@@ -65,7 +65,7 @@ public class RubyJavaInterface extends RubyJavaObject {
     public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final RubyMethod method) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{interfaceMethod.getDeclaringClass()}, new InvocationHandler() {
             public Object invoke(Object recv, Method imethod, Object[] args) {
-                return JavaUtil.convertJavaToRuby(ruby, method.call(JavaUtil.convertJavaToRuby(ruby, args)));
+                return JavaUtil.convertJavaToRuby(ruby, method.call(JavaUtil.convertJavaArrayToRuby(ruby, args)));
             }
         }));
     }
@@ -73,7 +73,7 @@ public class RubyJavaInterface extends RubyJavaObject {
     public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final RubyObject receiver, final RubyString method) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{interfaceMethod.getDeclaringClass()}, new InvocationHandler() {
             public Object invoke(Object recv, Method imethod, Object[] args) {
-                return JavaUtil.convertJavaToRuby(ruby, receiver.send(method, JavaUtil.convertJavaToRuby(ruby, args)), imethod.getReturnType());
+                return JavaUtil.convertJavaToRuby(ruby, receiver.send(method, JavaUtil.convertJavaArrayToRuby(ruby, args)));
             }
         }));
     }
@@ -81,7 +81,7 @@ public class RubyJavaInterface extends RubyJavaObject {
     public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Class javaInterface, final RubyObject receiver) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{javaInterface}, new InvocationHandler() {
             public Object invoke(Object recv, Method method, Object[] args) {
-                return JavaUtil.convertJavaToRuby(ruby, receiver.send(RubyString.newString(ruby, method.getName()), JavaUtil.convertJavaToRuby(ruby, args)), method.getReturnType());
+                return JavaUtil.convertJavaToRuby(ruby, receiver.send(RubyString.newString(ruby, method.getName()), JavaUtil.convertJavaArrayToRuby(ruby, args)));
             }
         }));
     }

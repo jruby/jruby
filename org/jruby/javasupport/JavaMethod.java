@@ -103,9 +103,7 @@ public class JavaMethod implements Callback {
         try {
             Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
             
-            Object result = method.invoke(receiver, newArgs);
-            
-            return JavaUtil.convertJavaToRuby(ruby, result, method.getReturnType());
+            return JavaUtil.convertJavaToRuby(ruby, method.invoke(receiver, newArgs));
         } catch (Exception excptn) {
             throw new RaiseException(ruby, "RuntimeError", excptn.getMessage());
         }

@@ -98,7 +98,7 @@ public class JavaSupport {
                     // Uppercase first character of the constant name
                     name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 
-                    rubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
+                    rubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null)));
                 } catch (IllegalAccessException iaExcptn) {
                 }
             }

@@ -182,11 +182,7 @@ public class JavaUtil {
         }
     }
 
-    public static RubyObject convertJavaToRuby(Ruby ruby, Object object) {
-        return convertJavaToRuby(ruby, object, null);
-    }
-
-    public static RubyObject[] convertJavaToRuby(Ruby ruby, Object[] objects) {
+    public static RubyObject[] convertJavaArrayToRuby(Ruby ruby, Object[] objects) {
         RubyObject[] rubyObjects = new RubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
             rubyObjects[i] = convertJavaToRuby(ruby, objects[i]);
@@ -194,14 +190,11 @@ public class JavaUtil {
         return rubyObjects;
     }
 
-    public static RubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {
+    public static RubyObject convertJavaToRuby(Ruby ruby, Object object) {
         if (object == null) {
             return ruby.getNil();
         }
-
-        if (javaClass == null) {
-            javaClass = object.getClass();
-        }
+        Class javaClass = object.getClass();
 
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
@@ -215,6 +208,14 @@ public class JavaUtil {
                 // else it's one of the integral types
                 return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
             }
+        } else if (javaClass == Boolean.class) {
+            return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
+        } else if (javaClass == Float.class || javaClass == Double.class) {
+            return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
+        } else if (javaClass == Character.class) {
+            return RubyFixnum.newFixnum(ruby, ((Character) object).charValue());
+        } else if (Number.class.isAssignableFrom(javaClass)) {
+            return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
         } else if (javaClass == String.class) {
             return RubyString.newString(ruby, object.toString());
         } else if (javaClass.isArray()) {
@@ -222,14 +223,14 @@ public class JavaUtil {
             int len = Array.getLength(object);
             RubyObject[] items = new RubyObject[len];
             for (int i = 0; i < len; i++) {
-                items[i] = convertJavaToRuby(ruby, Array.get(object, i), arrayClass);
+                items[i] = convertJavaToRuby(ruby, Array.get(object, i));
             }
             return RubyArray.create(ruby, null, items);
         } else if (List.class.isAssignableFrom(javaClass)) {
             int len = ((List) object).size();
             RubyObject[] items = new RubyObject[len];
             for (int i = 0; i < len; i++) {
-                items[i] = convertJavaToRuby(ruby, ((List) object).get(i), null);
+                items[i] = convertJavaToRuby(ruby, ((List) object).get(i));
             }
             return RubyArray.create(ruby, null, items);
         } else if (Map.class.isAssignableFrom(javaClass)) {
@@ -238,8 +239,8 @@ public class JavaUtil {
             Iterator iter = ((Map) object).entrySet().iterator();
             for (int i = 0; i < len; i++) {
                 Map.Entry entry = (Map.Entry) iter.next();
-                items[2 * i] = convertJavaToRuby(ruby, entry.getKey(), null);
-                items[2 * i + 1] = convertJavaToRuby(ruby, entry.getValue(), null);
+                items[2 * i] = convertJavaToRuby(ruby, entry.getKey());
+                items[2 * i + 1] = convertJavaToRuby(ruby, entry.getValue());
             }
             return RubyHash.create(ruby, null, items);
         } else {

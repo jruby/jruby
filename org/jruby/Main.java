@@ -242,7 +242,7 @@ public class Main {
 
         // Parse and interpret file
         RubyString rs = RubyString.newString(ruby, iString2Eval);
-        RubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args, String[].class);
+        RubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
         ruby.defineGlobalConstant("ARGV", lArgv);
         ruby.defineReadonlyVariable("$-p", (sDoPrint ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$-n", (sDoLoop ? ruby.getTrue() : ruby.getNil()));

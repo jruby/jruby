@@ -79,7 +79,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
         RubyObject[] rubyArgs = new RubyObject[args.size()];
         for (int i = args.size(); i >= 0; i--) {
-            rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args.elementAt(i), args.elementAt(i).getClass());
+            rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args.elementAt(i));
         }
 
         Object result = JavaUtil.convertRubyToJava(ruby, ruby.getRubyTopSelf().funcall("__jruby_bsf_anonymous", rubyArgs));
@@ -128,11 +128,11 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object call(Object recv, String method, Object[] args) throws BSFException {
         try {
-            RubyObject rubyRecv = JavaUtil.convertJavaToRuby(ruby, recv, recv.getClass());
+            RubyObject rubyRecv = JavaUtil.convertJavaToRuby(ruby, recv);
 
             RubyObject[] rubyArgs = new RubyObject[args.length];
             for (int i = args.length; i >= 0; i--) {
-                rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args[i], args[i].getClass());
+                rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args[i]);
             }
             RubyObject result = rubyRecv.funcall(method, rubyArgs);
 
@@ -184,7 +184,7 @@ public class JRubyEngine extends BSFEngineImpl {
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
          */
         public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
-            return JavaUtil.convertJavaToRuby(ruby, bean.bean, bean.type);
+            return JavaUtil.convertJavaToRuby(ruby, bean.bean);
         }
 
         /*
