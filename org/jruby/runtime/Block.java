@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.ablaf.ast.INode;
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
 
 /**
@@ -40,31 +41,31 @@ import org.jruby.util.collections.StackElement;
 public class Block implements StackElement {
     private INode var;
     private ICallable method;
-    private RubyObject self;
+    private IRubyObject self;
     private Frame frame;
     private Scope scope;
     private RubyModule klass;
     private Iter iter;
     private Map dynamicVariables;
-    private RubyObject origThread;
+    // private IRubyObject origThread;
 
     private Block next;
 
-    public static Block createBlock(INode var, ICallable method, RubyObject self) {
-        Ruby ruby = self.getRuby();
-        return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars(), null);
+    public static Block createBlock(INode var, ICallable method, IRubyObject self) {
+        Ruby ruby = self.toRubyObject().getRuntime();
+        return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars()/*, null*/);
     }
 
     private Block(
         INode var,
         ICallable method,
-        RubyObject self,
+        IRubyObject self,
         Frame frame,
         Scope scope,
         RubyModule klass,
         Iter iter,
-        Map dynamicVars,
-        RubyObject origThread) {
+        Map dynamicVars/*,
+        IRubyObject origThread*/) {
 
         this.var = var;
         this.method = method;
@@ -74,11 +75,11 @@ public class Block implements StackElement {
         this.klass = klass;
         this.iter = iter;
         this.dynamicVariables = dynamicVars;
-        this.origThread = origThread;
+        // this.origThread = origThread;
     }
 
     public Block cloneBlock() {
-        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVariables, origThread);
+        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVariables/*, origThread*/);
 
         if (getNext() != null) {
             newBlock.setNext(((Block)getNext()));
@@ -161,7 +162,7 @@ public class Block implements StackElement {
      * Gets the self.
      * @return Returns a RubyObject
      */
-    public RubyObject getSelf() {
+    public IRubyObject getSelf() {
         return self;
     }
 

@@ -30,7 +30,8 @@
 
 package org.jruby;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -46,9 +47,9 @@ public class RubyNil {
         nilClass.defineMethod("to_a", CallbackFactory.getSingletonMethod(RubyNil.class, "to_a"));
         nilClass.defineMethod("inspect", CallbackFactory.getSingletonMethod(RubyNil.class, "inspect"));
         
-        nilClass.defineMethod("&", CallbackFactory.getSingletonMethod(RubyNil.class, "op_and", RubyObject.class));
-        nilClass.defineMethod("|", CallbackFactory.getSingletonMethod(RubyNil.class, "op_or", RubyObject.class));
-        nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", RubyObject.class));
+        nilClass.defineMethod("&", CallbackFactory.getSingletonMethod(RubyNil.class, "op_and", IRubyObject.class));
+        nilClass.defineMethod("|", CallbackFactory.getSingletonMethod(RubyNil.class, "op_or", IRubyObject.class));
+        nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", IRubyObject.class));
         nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod(0));
         
         nilClass.getInternalClass().undefMethod("new");
@@ -63,64 +64,64 @@ public class RubyNil {
     /** nil_to_i
      *
      */
-    public static RubyFixnum to_i(Ruby ruby, RubyObject recv) {
-        return RubyFixnum.zero(ruby);
+    public static RubyFixnum to_i(IRubyObject recv) {
+        return RubyFixnum.zero(recv.getRuntime());
     }
 
     /** nil_to_s
      *
      */
-    public static RubyString to_s(Ruby ruby, RubyObject recv) {
-        return RubyString.newString(ruby, "");
+    public static RubyString to_s(IRubyObject recv) {
+        return RubyString.newString(recv.getRuntime(), "");
     }
     
     /** nil_to_a
      *
      */
-    public static RubyArray to_a(Ruby ruby, RubyObject recv) {
-        return RubyArray.newArray(ruby, 0);
+    public static RubyArray to_a(IRubyObject recv) {
+        return RubyArray.newArray(recv.getRuntime(), 0);
     }
     
     /** nil_inspect
      *
      */
-    public static RubyString inspect(Ruby ruby, RubyObject recv) {
-        return RubyString.newString(ruby, "nil");
+    public static RubyString inspect(IRubyObject recv) {
+        return RubyString.newString(recv.getRuntime(), "nil");
     }
     
     /** nil_type
      *
      */
-    public static RubyClass type(Ruby ruby, RubyObject recv) {
-        return ruby.getClasses().getNilClass();
+    public static RubyClass type(IRubyObject recv) {
+        return recv.getRuntime().getClasses().getNilClass();
     }
     
     /** nil_and
      *
      */
-    public static RubyBoolean op_and(Ruby ruby, RubyObject recv, RubyObject obj) {
-        return ruby.getFalse();
+    public static RubyBoolean op_and(IRubyObject recv, IRubyObject obj) {
+        return recv.getRuntime().getFalse();
     }
     
     /** nil_or
      *
      */
-    public static RubyBoolean op_or(Ruby ruby, RubyObject recv, RubyObject obj) {
-        if (obj.isFalse()) {
-            return ruby.getFalse();
+    public static RubyBoolean op_or(IRubyObject recv, IRubyObject obj) {
+        if (!obj.isTrue()) {
+            return recv.getRuntime().getFalse();
         } else {
-            return ruby.getTrue();
+            return recv.getRuntime().getTrue();
         }
     }
 
     /** nil_xor
      *
      */
-    public static RubyBoolean op_xor(Ruby ruby, RubyObject recv, RubyObject obj) {
+    public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
         if (obj.isTrue()) {
-            return ruby.getTrue();
+            return recv.getRuntime().getTrue();
         } else {
-            return ruby.getFalse();
+            return recv.getRuntime().getFalse();
         }
     }
 }

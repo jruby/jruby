@@ -28,7 +28,8 @@
  */
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -36,8 +37,8 @@ import org.jruby.*;
  * @version $Revision$
  */
 public class Frame {
-    private RubyObject self = null;
-    private RubyObject[] args = null;
+    private IRubyObject self = null;
+    private IRubyObject[] args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
     private Namespace namespace = null;
@@ -47,8 +48,8 @@ public class Frame {
     private Iter iter = Iter.ITER_NOT;
 
     public Frame(
-        RubyObject self,
-        RubyObject[] args,
+        IRubyObject self,
+        IRubyObject[] args,
         String lastFunc,
         RubyModule lastClass,
         Namespace namespace,
@@ -75,14 +76,14 @@ public class Frame {
     /** Getter for property args.
      * @return Value of property args.
      */
-    public RubyObject[] getArgs() {
+    public IRubyObject[] getArgs() {
         return args;
     }
 
     /** Setter for property args.
      * @param args New value of property args.
      */
-    public void setArgs(RubyObject[] args) {
+    public void setArgs(IRubyObject[] args) {
         this.args = args;
     }
 
@@ -171,14 +172,14 @@ public class Frame {
     /** Getter for property self.
      * @return Value of property self.
      */
-    public RubyObject getSelf() {
+    public IRubyObject getSelf() {
         return self;
     }
 
     /** Setter for property self.
      * @param self New value of property self.
      */
-    public void setSelf(RubyObject self) {
+    public void setSelf(IRubyObject self) {
         this.self = self;
     }
 

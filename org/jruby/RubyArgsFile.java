@@ -29,11 +29,15 @@
  */
 package org.jruby;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
+import org.jruby.exceptions.IOError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyInputStream;
 
 public class RubyArgsFile extends RubyObject {
 
@@ -205,12 +209,12 @@ public class RubyArgsFile extends RubyObject {
         return true;
     }
     
-    public RubyString internalGets(RubyObject[] args) {
+    public RubyString internalGets(IRubyObject[] args) {
         if (!nextArgsFile()) {
             return RubyString.nilString(ruby);
         }
 
-        RubyString line = (RubyString)currentFile.funcall("gets", args);
+        RubyString line = (RubyString)currentFile.callMethod("gets", args);
         
         while (line.isNil() && next_p != -1) {
         	next_p = 1;
@@ -219,7 +223,7 @@ public class RubyArgsFile extends RubyObject {
             if (!nextArgsFile()) {
             	return line;
         	}
-            line = (RubyString)currentFile.funcall("gets", args);
+            line = (RubyString)currentFile.callMethod("gets", args);
         }
         
         currentLineNumber++;
@@ -233,11 +237,11 @@ public class RubyArgsFile extends RubyObject {
     /** Invoke a block for each line.
      * 
      */
-    public RubyObject each_line(RubyObject[] args) {
+    public IRubyObject each_line(IRubyObject[] args) {
         RubyString nextLine = internalGets(args);
         
         while (!nextLine.isNil()) {
-        	getRuby().yield(nextLine);
+        	getRuntime().yield(nextLine);
         	nextLine = internalGets(args);
         }
         

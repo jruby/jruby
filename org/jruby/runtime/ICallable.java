@@ -26,7 +26,9 @@
  */
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -40,5 +42,5 @@ public interface ICallable {
     public int getNoex();
     public void setNoex(int noex);
 
-    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper);
+    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 }

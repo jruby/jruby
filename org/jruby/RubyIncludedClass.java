@@ -25,7 +25,7 @@ public final class RubyIncludedClass extends RubyClass {
      *
      */
     public RubyIncludedClass newIncludeClass(RubyClass superClass) {
-        return new RubyIncludedClass(getRuby(), superClass, getDelegate());
+        return new RubyIncludedClass(getRuntime(), superClass, getDelegate());
     }
 
     public boolean isModule() {
@@ -42,7 +42,7 @@ public final class RubyIncludedClass extends RubyClass {
 
     protected void testFrozen() {
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuby(), "module");
+            throw new RubyFrozenException(getRuntime(), "module");
         }
     }
 

@@ -23,10 +23,16 @@
  */
 package org.jruby.runtime;
 
-import java.util.*;
-import java.lang.ref.*;
-import org.jruby.RubyObject;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -36,7 +42,7 @@ public class ObjectSpace {
     private HashMap references = new HashMap();
     private ReferenceQueue deadReferences = new ReferenceQueue();
 
-    public void add(RubyObject object) {
+    public void add(IRubyObject object) {
 		cleanup();
         references.put(new WeakReference(object, deadReferences), null);
     }
@@ -56,7 +62,7 @@ public class ObjectSpace {
         private final RubyModule rubyClass;
         private final Iterator iterator;
 
-        private RubyObject next;
+        private IRubyObject next;
 
         public ObjectSpaceIterator(RubyModule rubyClass) {
             this.rubyClass = rubyClass;
@@ -68,7 +74,7 @@ public class ObjectSpace {
             if (! hasNext()) {
                 throw new NoSuchElementException();
             }
-            RubyObject result = next;
+            IRubyObject result = next;
             prefetch();
             return result;
         }
@@ -88,7 +94,7 @@ public class ObjectSpace {
                     return;
                 }
                 WeakReference ref = (WeakReference) iterator.next();
-                next = (RubyObject) ref.get();
+                next = (IRubyObject) ref.get();
                 if (next == null) {
                     references.remove(ref);
                 } else if (next != null && next.isKindOf(rubyClass)) {

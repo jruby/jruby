@@ -2,6 +2,7 @@ package org.jruby.javasupport;
 
 import org.jruby.*;
 import org.jruby.runtime.Callback;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaEachMethod implements Callback {
     private String hasNextMethod;
@@ -15,16 +16,16 @@ public class JavaEachMethod implements Callback {
     /*
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)
      */
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         while (recv.callMethod(hasNextMethod).isTrue()) {
             if (nextMethod == null) {
-                ruby.yield(recv);
+                recv.getRuntime().yield(recv);
             } else {
-                ruby.yield(recv.callMethod(nextMethod));
+                recv.getRuntime().yield(recv.callMethod(nextMethod));
             }
         }
 
-        return ruby.getNil();
+        return recv.getRuntime().getNil();
     }
     
     public int getArity() {

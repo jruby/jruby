@@ -1,9 +1,17 @@
 package org.jruby;
 
-import java.io.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IOError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyInputStream;
 
 public class RubyFile extends RubyIO {
 
@@ -45,7 +53,7 @@ public class RubyFile extends RubyIO {
         		this.outStream = new BufferedOutputStream(new FileOutputStream(file.getAbsolutePath(), append));
             }
         } catch (IOException ioExcptn) {
-            throw new IOError(getRuby(), ioExcptn.getMessage());
+            throw new IOError(getRuntime(), ioExcptn.getMessage());
         }
     }
 
@@ -57,17 +65,17 @@ public class RubyFile extends RubyIO {
 	 *  File class methods
 	 */
 	
-	public static RubyObject newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-	    RubyFile file = new RubyFile(ruby, (RubyClass)recv);
+	public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
+	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
 	    
 	    file.callInit(args);
 	    
 	    return file;
 	}
 	
-	public RubyObject initialize(RubyObject[] args) {
+	public IRubyObject initialize(IRubyObject[] args) {
 	    if (args.length == 0) {
-	        throw new ArgumentError(getRuby(), "");
+	        throw new ArgumentError(getRuntime(), "");
 	    }
 	    
 	    args[0].checkSafeString();
@@ -83,18 +91,18 @@ public class RubyFile extends RubyIO {
 	    
 	    openInternal(path, mode);
 	    
-	    if (getRuby().isBlockGiven()) {
+	    if (getRuntime().isBlockGiven()) {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
 	    }
 	    
 	    return this;
 	}
 	
-	public static RubyObject open(Ruby ruby, RubyObject recv, RubyObject[] args) {
-	    RubyFile file = new RubyFile(ruby, (RubyClass)recv);
+	public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
+	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
 	    
 	    if (args.length == 0) {
-	        throw new ArgumentError(ruby, "");
+	        throw new ArgumentError(recv.getRuntime(), "");
 	    }
 	    
 	    args[0].checkSafeString();
@@ -110,9 +118,9 @@ public class RubyFile extends RubyIO {
 	    
 	    file.openInternal(file.path, mode);
 	    
-	    if (ruby.isBlockGiven()) {
+	    if (recv.getRuntime().isBlockGiven()) {
 	        try {
-	            ruby.yield(file);
+	            recv.getRuntime().yield(file);
 	        } finally {
 	            file.closeStreams();
 	        }
@@ -121,38 +129,38 @@ public class RubyFile extends RubyIO {
 	    return file;
 	}
 
-	public static RubyObject unlink(Ruby ruby, RubyObject recv, RubyObject[] args) {
+	public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
 	    for (int i = 0; i < args.length; i++) {
 	        args[i].checkSafeString();
 			File lToDelete = new File(args[i].toString());
 			if (!lToDelete.exists())
-				 throw new IOError(ruby, " No such file or directory - \"" + args[i].toString() + "\"");
+				 throw new IOError(recv.getRuntime(), " No such file or directory - \"" + args[i].toString() + "\"");
 	        if (!lToDelete.delete()) {
-	            return ruby.getFalse();
+	            return recv.getRuntime().getFalse();
 	        }
 	    }
 	    
-	    return RubyFixnum.newFixnum(ruby, args.length);
+	    return RubyFixnum.newFixnum(recv.getRuntime(), args.length);
 	}
 
-	public static RubyObject exist(Ruby ruby, RubyObject recv, RubyString filename) {
-	    return RubyBoolean.newBoolean(ruby, new File(filename.toString()).exists());
+	public static IRubyObject exist(IRubyObject recv, RubyString filename) {
+	    return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).exists());
 	}
 
-    public static RubyString dirname(Ruby ruby, RubyObject recv, RubyString filename) {
+    public static RubyString dirname(IRubyObject recv, RubyString filename) {
 		String name = filename.toString();
 		int index = name.lastIndexOf(separator());
 		if (index == -1) {
-			return RubyString.newString(ruby, ".");
+			return RubyString.newString(recv.getRuntime(), ".");
 		} else if (index == 0) {
-			return RubyString.newString(ruby, separator());
+			return RubyString.newString(recv.getRuntime(), separator());
 		}
-		return RubyString.newString(ruby, name.substring(0, index));
+		return RubyString.newString(recv.getRuntime(), name.substring(0, index));
 	}
 
-    public static RubyString basename(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static RubyString basename(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1 || args.length > 2) {
-            throw new ArgumentError(ruby, "This method expected 1 or 2 arguments."); // XXX
+            throw new ArgumentError(recv.getRuntime(), "This method expected 1 or 2 arguments."); // XXX
         }
 
 		String name = args[0].toString();
@@ -163,15 +171,15 @@ public class RubyFile extends RubyIO {
 		    name = name.substring(0, name.length() - args[1].toString().length());
 		}
 
-		return RubyString.newString(ruby, name);
+		return RubyString.newString(recv.getRuntime(), name);
 	}
 
-    public static RubyString join(Ruby ruby, RubyObject recv, RubyObject[] args) {
-		RubyArray argArray = RubyArray.newArray(ruby, args);
-		return argArray.join(RubyString.newString(ruby, separator()));
+    public static RubyString join(IRubyObject recv, IRubyObject[] args) {
+		RubyArray argArray = RubyArray.newArray(recv.getRuntime(), args);
+		return argArray.join(RubyString.newString(recv.getRuntime(), separator()));
     }
 
-    public static RubyBoolean directory(Ruby ruby, RubyObject recv, RubyString filename) {
-		return RubyBoolean.newBoolean(ruby, new File(filename.toString()).isDirectory());
+    public static RubyBoolean directory(IRubyObject recv, RubyString filename) {
+		return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).isDirectory());
 	}
 }

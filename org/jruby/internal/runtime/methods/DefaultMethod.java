@@ -1,15 +1,21 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.*;
+import java.util.Iterator;
 
-import org.ablaf.ast.*;
-import org.jruby.*;
-import org.jruby.ast.*;
-import org.jruby.ast.types.*;
-import org.jruby.evaluator.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyProc;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ScopeNode;
+import org.jruby.ast.types.IListNode;
+import org.jruby.evaluator.AssignmentVisitor;
+import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.ReturnJump;
+import org.jruby.runtime.Namespace;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -30,8 +36,7 @@ public final class DefaultMethod extends AbstractMethod {
     /**
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
-    final public RubyObject call(final Ruby ruby, final RubyObject receiver, final String name, RubyObject[] args, final boolean noSuper) {
-
+    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         RubyProc optionalBlockArg = null;
         if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
             optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
@@ -64,7 +69,7 @@ public final class DefaultMethod extends AbstractMethod {
 
             return receiver.eval(body.getBodyNode());
 
-        } catch (ReturnException re) {
+        } catch (ReturnJump re) {
             return re.getReturnValue();
         } finally {
             ruby.popDynamicVars();
@@ -74,9 +79,9 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void prepareArguments(final Ruby ruby, final RubyObject receiver, RubyObject[] args) {
+    private void prepareArguments(Ruby ruby, IRubyObject receiver, IRubyObject[] args) {
         if (args == null) {
-            args = new RubyObject[0];
+            args = new IRubyObject[0];
         }
 
         int expectedArgsCount = argsNode.getArgsCount();
@@ -125,7 +130,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
     }
 
-    private void traceReturn(final Ruby ruby, final RubyObject receiver, final String name) {
+    private void traceReturn(Ruby ruby, IRubyObject receiver, String name) {
         if (ruby.getRuntime().getTraceFunction() == null) {
             return;
         }
@@ -141,7 +146,7 @@ public final class DefaultMethod extends AbstractMethod {
         ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, getImplementationClass()); // XXX
     }
 
-    private void traceCall(final Ruby ruby, final RubyObject receiver, final String name) {
+    private void traceCall(Ruby ruby, IRubyObject receiver, String name) {
         if (ruby.getRuntime().getTraceFunction() == null) {
             return;
         }

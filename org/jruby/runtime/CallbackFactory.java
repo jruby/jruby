@@ -1,6 +1,6 @@
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Helper class to build Callback method.
@@ -27,7 +27,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[] {arg1}, false, false, 1);
+        return new ReflectionCallbackMethod(type, method, new Class[] { arg1 }, false, false, 1);
     }
 
     /**
@@ -74,12 +74,15 @@ public final class CallbackFactory {
     }
 
     public static Callback getBlockMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { RubyObject.class, RubyObject.class }, false, true, 2);
+        return new ReflectionCallbackMethod(
+            type,
+            method,
+            new Class[] { IRubyObject.class, IRubyObject.class },
+            false,
+            true,
+            2);
     }
-    
 
-
-    
     /**
      * gets a singleton (class) method with 1 mandatory argument and some optional arguments.
      * @param type java class where the method is implemented
@@ -88,9 +91,9 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getOptSingletonMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, RubyObject[].class }, true, true, -1);
+        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, IRubyObject[].class }, true, true, -1);
     }
-    
+
     /**
      * gets a singleton (class) method with several mandatory argument and some optional arguments.
      * @param type java class where the method is implemented
@@ -103,67 +106,67 @@ public final class CallbackFactory {
         return new ReflectionCallbackMethod(type, method, args, true, true, -1);
     }
 
-     /**
-     * gets a singleton (class) method with no mandatory argument and some optional arguments.
-     * @param type java class where the method is implemented
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     **/
+    /**
+    * gets a singleton (class) method with no mandatory argument and some optional arguments.
+    * @param type java class where the method is implemented
+    * @param method name of the method
+    * @return a CallBack object corresponding to the appropriate method
+    **/
     public static Callback getOptSingletonMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[]{RubyObject[].class }, true, true, -1);
+        return new ReflectionCallbackMethod(type, method, new Class[] { IRubyObject[].class }, true, true, -1);
     }
 
-     /**
-     * gets an instance method with no mandatory argument and some optional arguments.
-     * @param type java class where the method is implemented
-     * @param method name of the method
-     * @return a CallBack object corresponding to the appropriate method
-     **/
+    /**
+    * gets an instance method with no mandatory argument and some optional arguments.
+    * @param type java class where the method is implemented
+    * @param method name of the method
+    * @return a CallBack object corresponding to the appropriate method
+    **/
     public static Callback getOptMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[]{RubyObject[].class}, true, false, -1);
+        return new ReflectionCallbackMethod(type, method, new Class[] { IRubyObject[].class }, true, false, -1);
     }
 
-     /**
-     * gets an instance method with 1 mandatory argument and some optional arguments.
-     * @param type java class where the method is implemented
-     * @param method name of the method
-     * @param arg1 the class of the only mandatory argument for this method
-     * @return a CallBack object corresponding to the appropriate method
-     **/
+    /**
+    * gets an instance method with 1 mandatory argument and some optional arguments.
+    * @param type java class where the method is implemented
+    * @param method name of the method
+    * @param arg1 the class of the only mandatory argument for this method
+    * @return a CallBack object corresponding to the appropriate method
+    **/
     public static Callback getOptMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[]{arg1, RubyObject[].class}, true, false, -1);
+        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, IRubyObject[].class }, true, false, -1);
     }
-    
+
     public static Callback getFalseMethod(final int arity) {
         return new Callback() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                return ruby.getFalse();
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+                return recv.getRuntime().getFalse();
             }
-            
+
             public int getArity() {
                 return arity;
             }
         };
     }
-    
+
     public static Callback getTrueMethod(final int arity) {
         return new Callback() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                return ruby.getTrue();
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+                return recv.getRuntime().getTrue();
             }
-            
+
             public int getArity() {
                 return arity;
             }
         };
     }
-    
+
     public static Callback getNilMethod(final int arity) {
         return new Callback() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                return ruby.getNil();
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+                return recv.getRuntime().getNil();
             }
-            
+
             public int getArity() {
                 return arity;
             }
@@ -172,10 +175,10 @@ public final class CallbackFactory {
 
     public static Callback getSelfMethod(final int arity) {
         return new Callback() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+            public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
                 return recv;
             }
-            
+
             public int getArity() {
                 return arity;
             }

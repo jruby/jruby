@@ -63,12 +63,12 @@ public final class ArgsUtil {
         ruby.getIterStack().pop();
     }
 
-    public final static RubyObject[] setupArgs(
+    public final static IRubyObject[] setupArgs(
         final Ruby ruby,
         final EvaluateVisitor visitor,
         final INode node) {
         if (node == null) {
-            return new RubyObject[0];
+            return new IRubyObject[0];
         }
 
         final String file = ruby.getSourceFile();
@@ -90,7 +90,7 @@ public final class ArgsUtil {
             ruby.setSourceFile(file);
             ruby.setSourceLine(line);
 
-            return (RubyObject[]) list.toArray(new RubyObject[list.size()]);
+            return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
 
         IRubyObject args = visitor.eval(node);
@@ -101,7 +101,7 @@ public final class ArgsUtil {
         if (args instanceof RubyArray) {
             return ((RubyArray) args).toJavaArray();
         } else {
-            return new RubyObject[] { args.toRubyObject() };
+            return new IRubyObject[] { args };
         }
     }
 }

@@ -30,8 +30,9 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -41,7 +42,7 @@ import org.jruby.runtime.*;
 public class RubyException extends RubyObject {
 
     private RubyArray backtrace;
-    public RubyObject message;
+    public IRubyObject message;
 
     private RubyException(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, null);
@@ -59,8 +60,12 @@ public class RubyException extends RubyObject {
     public static RubyClass createExceptionClass(Ruby ruby) {
         RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
 
-        exceptionClass.defineSingletonMethod("exception", CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
-        exceptionClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
+        exceptionClass.defineSingletonMethod(
+            "exception",
+            CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
+        exceptionClass.defineSingletonMethod(
+            "new",
+            CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
 
         exceptionClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyException.class, "initialize"));
         exceptionClass.defineMethod("exception", CallbackFactory.getOptMethod(RubyException.class, "exception"));
@@ -84,15 +89,15 @@ public class RubyException extends RubyObject {
 
     // Exception methods
 
-    public static RubyException newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyException newException = new RubyException(ruby, (RubyClass) recv);
+    public static RubyException newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyException newException = new RubyException(recv.getRuntime(), (RubyClass) recv);
 
         newException.callInit(args);
 
         return newException;
     }
 
-    public RubyObject initialize(RubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args) {
         if (args.length > 0) {
             message = args[0];
         }
@@ -111,25 +116,25 @@ public class RubyException extends RubyObject {
         return newBacktrace;
     }
 
-    public RubyException exception(RubyObject[] args) {
+    public RubyException exception(IRubyObject[] args) {
         switch (args.length) {
             case 0 :
                 return this;
             case 1 :
-            	if (args[0] == this) {
-            	    return this;
-            	} else {
-                	return (RubyException) newInstance(getRuby(), getInternalClass(), args);
-            	}
+                if (args[0] == this) {
+                    return this;
+                } else {
+                    return (RubyException) newInstance(getInternalClass(), args);
+                }
             default :
-                throw new ArgumentError(getRuby(), "Wrong argument count");
+                throw new ArgumentError(getRuntime(), "Wrong argument count");
         }
 
     }
 
     public RubyString to_s() {
         if (message.isNil()) {
-            return RubyString.newString(getRuby(), getInternalClass().getClassPath());
+            return RubyString.newString(getRuntime(), getInternalClass().getClassPath());
         } else {
             message.setTaint(isTaint());
             return (RubyString) message.callMethod("to_s");
@@ -146,7 +151,7 @@ public class RubyException extends RubyObject {
         RubyString exception = RubyString.stringValue(this);
 
         if (exception.getValue().length() == 0) {
-            return RubyString.newString(getRuby(), rubyClass.getClassPath());
+            return RubyString.newString(getRuntime(), rubyClass.getClassPath());
         } else {
             StringBuffer sb = new StringBuffer();
             sb.append("#<");
@@ -154,7 +159,7 @@ public class RubyException extends RubyObject {
             sb.append(": ");
             sb.append(exception.getValue());
             sb.append(">");
-            return RubyString.newString(getRuby(), sb.toString());
+            return RubyString.newString(getRuntime(), sb.toString());
         }
     }
 }

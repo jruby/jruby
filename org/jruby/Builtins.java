@@ -26,6 +26,8 @@
  */
 package org.jruby;
 
+import org.jruby.runtime.builtin.IRubyObject;
+
 /** Builtins provides methods to create the built-ins classes and to convert
  * between the classes.
  *
@@ -57,7 +59,7 @@ public class Builtins {
 	 * return a new one element array with value as the element.
 	 * 
 	 */
-    public RubyArray toArray(RubyObject value) {
+    public RubyArray toArray(IRubyObject value) {
         return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(ruby, value);
     }
 

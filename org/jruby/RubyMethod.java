@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
  * The RubyMethod class represents a Method object.
@@ -49,7 +50,7 @@ import org.jruby.runtime.Iter;
  */
 public class RubyMethod extends RubyObject {
     private RubyClass receiverClass;
-    private RubyObject receiver;
+    private IRubyObject receiver;
     private String methodId;
     private ICallable method;
     private RubyClass originalClass;
@@ -131,7 +132,7 @@ public class RubyMethod extends RubyObject {
      * Gets the receiver
      * @return Returns a RubyObject
      */
-    public RubyObject getReceiver() {
+    public IRubyObject getReceiver() {
         return receiver;
     }
 
@@ -139,7 +140,7 @@ public class RubyMethod extends RubyObject {
      * Sets the receiver
      * @param receiver The receiver to set
      */
-    public void setReceiver(RubyObject receiver) {
+    public void setReceiver(IRubyObject receiver) {
         this.receiver = receiver;
     }
 
@@ -162,15 +163,16 @@ public class RubyMethod extends RubyObject {
     /** Call the method.
      * 
      */
-    public RubyObject call(RubyObject[] args) {
+    public IRubyObject call(IRubyObject[] args) {
         if (args == null) {
-            args = new RubyObject[0];
+            args = new IRubyObject[0];
         }
-        getRuby().getIterStack().push(getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-        RubyObject result = getReceiverClass().call0(getReceiver(), getMethodId(), args, getMethod(), false);
-        getRuby().getIterStack().pop();
-
-        return result;
+        getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        try {
+            return getReceiverClass().call0(getReceiver(), getMethodId(), args, getMethod(), false);
+        } finally {
+            getRuntime().getIterStack().pop();
+        }
     }
 
     /**Returns the number of arguments a method accepted.
@@ -180,26 +182,26 @@ public class RubyMethod extends RubyObject {
     public RubyFixnum arity() {
         if (method instanceof EvaluateMethod) {
             if (((EvaluateMethod) method).getNode() instanceof AttrSetNode) {
-                return RubyFixnum.one(getRuby());
+                return RubyFixnum.one(getRuntime());
             } else if (((EvaluateMethod) method).getNode() instanceof InstVarNode) {
-                return RubyFixnum.zero(getRuby());
+                return RubyFixnum.zero(getRuntime());
             }
         } else if (method instanceof DefaultMethod) {
             ArgsNode args = ((DefaultMethod) method).getArgsNode();
 
             if (args == null) {
-                return RubyFixnum.zero(getRuby());
+                return RubyFixnum.zero(getRuntime());
             }
             int n = args.getArgsCount();
             if (args.getOptArgs() != null || args.getRestArg() >= 0) {
                 n = -n - 1;
             }
-            return RubyFixnum.newFixnum(getRuby(), n);
+            return RubyFixnum.newFixnum(getRuntime(), n);
         } else if (method instanceof CallbackMethod) {
-            return RubyFixnum.newFixnum(getRuby(), ((CallbackMethod) method).getCallback().getArity());
+            return RubyFixnum.newFixnum(getRuntime(), ((CallbackMethod) method).getCallback().getArity());
         }
 
-        return RubyFixnum.newFixnum(getRuby(), -1);
+        return RubyFixnum.newFixnum(getRuntime(), -1);
     }
 
     /**
@@ -221,7 +223,7 @@ public class RubyMethod extends RubyObject {
     /** Create a Proc object.
      * 
      */
-    public RubyObject to_proc() {
+    public IRubyObject to_proc() {
         return ruby.iterate(
             CallbackFactory.getSingletonMethod(RubyMethod.class, "mproc"),
             null,
@@ -234,14 +236,14 @@ public class RubyMethod extends RubyObject {
      * Used by the RubyMethod#to_proc method.
      *
      */
-    public static RubyObject mproc(Ruby ruby, RubyObject recv) {
+    public static IRubyObject mproc(IRubyObject recv) {
         try {
-            ruby.getIterStack().push(Iter.ITER_CUR);
-            ruby.getFrameStack().push();
-            return RubyKernel.proc(ruby, null);
+            recv.getRuntime().getIterStack().push(Iter.ITER_CUR);
+            recv.getRuntime().getFrameStack().push();
+            return RubyKernel.proc(recv);
         } finally {
-            ruby.getFrameStack().pop();
-            ruby.getIterStack().pop();
+            recv.getRuntime().getFrameStack().pop();
+            recv.getRuntime().getIterStack().pop();
         }
     }
 
@@ -250,11 +252,11 @@ public class RubyMethod extends RubyObject {
      * Used by the RubyMethod#to_proc method.
      *
      */
-    public static RubyObject bmcall(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
+    public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
         if (blockArg instanceof RubyArray) {
             return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray());
         } else {
-            return ((RubyMethod) arg1).call(new RubyObject[] { blockArg });
+            return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg });
         }
     }
 }

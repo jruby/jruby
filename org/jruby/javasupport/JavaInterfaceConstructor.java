@@ -2,6 +2,7 @@ package org.jruby.javasupport;
 
 import org.jruby.*;
 import org.jruby.runtime.Callback;
+import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author jpetersen
  * @version $Revision$
@@ -20,7 +21,7 @@ public class JavaInterfaceConstructor implements Callback {
     /*
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)
      */
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        return RubyJavaInterface.newJavaInterface(ruby, javaInterface, args[0]);
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+        return RubyJavaInterface.newJavaInterface(recv.getRuntime(), javaInterface, args[0]);
     }
 }

@@ -68,27 +68,22 @@ public class RubyRuntime {
 	/** Call the current method in the superclass of the current object
 	 *
 	 */
-	public RubyObject callSuper(RubyObject[] args) {
+	public IRubyObject callSuper(IRubyObject[] args) {
 		if (ruby.getCurrentFrame().getLastClass() == null) {
 			throw new NameError(ruby, "superclass method '" + ruby.getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
 		}
 
 		ruby.getIterStack().push(ruby.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
 
-		RubyObject result = ruby.getNil();
-
 		try {
-			result =
-				ruby.getCurrentFrame().getLastClass().getSuperClass().call(
-						ruby.getCurrentFrame().getSelf(),
+			return ruby.getCurrentFrame().getLastClass().getSuperClass().call(
+						ruby.getCurrentFrame().getSelf().toRubyObject(),
 						ruby.getCurrentFrame().getLastFunc(),
 						args,
 						3);
 		} finally {
 			ruby.getIterStack().pop();
 		}
-
-		return result;
 	}
 
 	/** This method compiles and interprets a Ruby script.
@@ -97,7 +92,7 @@ public class RubyRuntime {
 	 *
 	 */
 	public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-		RubyObject self = ruby.getRubyTopSelf();
+		IRubyObject self = ruby.getRubyTopSelf();
 		Namespace savedNamespace = ruby.getNamespace();
 
 		ruby.pushDynamicVars();
@@ -183,7 +178,7 @@ public class RubyRuntime {
     public synchronized void callTraceFunction(String event,
                                                String file,
                                                int line,
-                                               RubyObject self,
+                                               IRubyObject self,
                                                String name,
                                                IRubyObject type) {
         if (!tracing && traceFunction != null) {
@@ -200,12 +195,12 @@ public class RubyRuntime {
             ruby.getFrameStack().push();
             try {
                 traceFunction
-                    .call(new RubyObject[] {
+                    .call(new IRubyObject[] {
                         RubyString.newString(ruby, event),
                         RubyString.newString(ruby, file),
                         RubyFixnum.newFixnum(ruby, line),
                         RubySymbol.newSymbol(ruby, name),
-                        self,
+                        self.toRubyObject(),
                     // XXX
                     type.toRubyObject() });
             } finally {
@@ -238,7 +233,7 @@ public class RubyRuntime {
 		} else if (backtrace.getLength() == 0) {
 			printErrorPos();
 		} else {
-			RubyObject mesg = backtrace.entry(0);
+			IRubyObject mesg = backtrace.entry(0);
 
 			if (mesg.isNil()) {
 				printErrorPos();
@@ -281,7 +276,7 @@ public class RubyRuntime {
 		}
 
 		if (!backtrace.isNil()) {
-			RubyObject[] elements = backtrace.toJavaArray();
+			IRubyObject[] elements = backtrace.toJavaArray();
 
 			for (int i = 0; i < elements.length; i++) {
 				if (elements[i] instanceof RubyString) {
@@ -354,7 +349,7 @@ public class RubyRuntime {
 	 * @param outStream The outputStream to set
 	 */
 	public void setOutputStream(PrintStream outStream) {
-		RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), outStream);
+		IRubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), outStream);
 		if (ruby.getGlobalVar("$stdout") == ruby.getGlobalVar("$>")) {
 			ruby.setGlobalVar("$>", stdout);
 		}

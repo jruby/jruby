@@ -30,7 +30,8 @@
 
 package org.jruby;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 
 /**
@@ -41,9 +42,8 @@ public class RubyBoolean extends RubyObject {
     private boolean value;
 
     public RubyBoolean(Ruby ruby, boolean value) {
-        super(ruby,
-              null,   // Don't initialize with class
-              false); // Don't put in object space
+        super(ruby, null, // Don't initialize with class
+        false); // Don't put in object space
         this.value = value;
     }
 
@@ -52,7 +52,7 @@ public class RubyBoolean extends RubyObject {
     }
 
     public RubyClass getInternalClass() {
-        return value ? getRuby().getClasses().getTrueClass() : getRuby().getClasses().getFalseClass();
+        return value ? getRuntime().getClasses().getTrueClass() : getRuntime().getClasses().getFalseClass();
     }
 
     public boolean isTrue() {
@@ -69,9 +69,9 @@ public class RubyBoolean extends RubyObject {
         falseClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBoolean.class, "to_s"));
         falseClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
 
-        falseClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", RubyObject.class));
-        falseClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", RubyObject.class));
-        falseClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", RubyObject.class));
+        falseClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", IRubyObject.class));
+        falseClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", IRubyObject.class));
+        falseClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", IRubyObject.class));
 
         falseClass.getInternalClass().undefMethod("new");
 
@@ -86,9 +86,9 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBoolean.class, "to_s"));
         trueClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
 
-        trueClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", RubyObject.class));
-        trueClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", RubyObject.class));
-        trueClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", RubyObject.class));
+        trueClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", IRubyObject.class));
+        trueClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", IRubyObject.class));
+        trueClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", IRubyObject.class));
 
         trueClass.getInternalClass().undefMethod("new");
 
@@ -113,9 +113,9 @@ public class RubyBoolean extends RubyObject {
      */
     public RubyString to_s() {
         if (value) {
-            return RubyString.newString(getRuby(), "true");
+            return RubyString.newString(getRuntime(), "true");
         } else {
-            return RubyString.newString(getRuby(), "false");
+            return RubyString.newString(getRuntime(), "false");
         }
     }
 
@@ -131,11 +131,11 @@ public class RubyBoolean extends RubyObject {
      *  true_and
      *
      */
-    public RubyBoolean op_and(RubyObject obj) {
+    public RubyBoolean op_and(IRubyObject obj) {
         if (isTrue() && obj.isTrue()) {
-            return getRuby().getTrue();
+            return getRuntime().getTrue();
         } else {
-            return getRuby().getFalse();
+            return getRuntime().getFalse();
         }
     }
 
@@ -143,11 +143,11 @@ public class RubyBoolean extends RubyObject {
      *  true_or
      *
      */
-    public RubyBoolean op_or(RubyObject obj) {
-        if (isFalse() && obj.isFalse()) {
-            return getRuby().getFalse();
+    public RubyBoolean op_or(IRubyObject obj) {
+        if (isFalse() && !obj.isTrue()) {
+            return getRuntime().getFalse();
         } else {
-            return getRuby().getTrue();
+            return getRuntime().getTrue();
         }
     }
 
@@ -155,14 +155,13 @@ public class RubyBoolean extends RubyObject {
      *  true_xor
      *
      */
-    public RubyBoolean op_xor(RubyObject obj) {
-        if ((isTrue() && obj.isFalse()) || (isFalse() && obj.isTrue())) {
-            return getRuby().getTrue();
+    public RubyBoolean op_xor(IRubyObject obj) {
+        if ((isTrue() && !obj.isTrue()) || (isFalse() && obj.isTrue())) {
+            return getRuntime().getTrue();
         } else {
-            return getRuby().getFalse();
+            return getRuntime().getFalse();
         }
     }
-
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');

@@ -30,11 +30,15 @@
  */
 package org.jruby.test;
 
-import java.util.*;
+import java.util.Date;
 
-import junit.framework.*;
+import junit.framework.TestCase;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyTime;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * 
@@ -54,9 +58,9 @@ public class TestRubyTime extends TestCase {
         	ruby = Ruby.getDefaultInstance(null);
         }
         rubyTime = ruby.getClasses().getTimeClass();
-        RubyObject[] args = new RubyObject[1];
+        IRubyObject[] args = new IRubyObject[1];
         args[0] = RubyFixnum.newFixnum(ruby, 18000000);
-        nineTeenSeventy = RubyTime.s_at(ruby, rubyTime, args);
+        nineTeenSeventy = RubyTime.s_at(rubyTime, args);
     }
 
     public void testTimeCreated() {
@@ -65,7 +69,7 @@ public class TestRubyTime extends TestCase {
     }
 
     public void testTimeNow() {
-        RubyTime myTime = RubyTime.s_new(ruby, rubyTime);
+        RubyTime myTime = RubyTime.s_new(rubyTime);
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {

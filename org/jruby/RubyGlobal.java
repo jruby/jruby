@@ -31,6 +31,7 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** This class initializes global variables and constants.
  * 
@@ -42,9 +43,9 @@ public class RubyGlobal {
     public static void createGlobals(Ruby ruby) {
 
         // Version information:
-        RubyObject version = RubyString.newString(ruby, Constants.RUBY_VERSION).freeze();
-        RubyObject release = RubyString.newString(ruby, "$Date$").freeze(); // XXX
-        RubyObject platform = RubyString.newString(ruby, "java").freeze();
+        IRubyObject version = RubyString.newString(ruby, Constants.RUBY_VERSION).freeze();
+        IRubyObject release = RubyString.newString(ruby, "$Date$").freeze(); // XXX
+        IRubyObject platform = RubyString.newString(ruby, "java").freeze();
 
         ruby.defineGlobalConstant("RUBY_VERSION", version);
         ruby.defineGlobalConstant("RUBY_RELEASE_DATE", release);
@@ -67,9 +68,9 @@ public class RubyGlobal {
 
         ruby.defineVariable(new BacktraceGlobalVariable(ruby, "$@"));
 
-        RubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), System.in);
-        RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), System.out);
-        RubyObject stderr = RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), System.err);
+        IRubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), System.in);
+        IRubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), System.out);
+        IRubyObject stderr = RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), System.err);
 
         ruby.defineVariable(new InputGlobalVariable(ruby, "$stdin", stdin));
 
@@ -101,17 +102,19 @@ public class RubyGlobal {
         public LineNumberGlobalVariable(Ruby ruby, String name, RubyFixnum value) {
             super(ruby, name, value);
         }
-        public RubyObject set(RubyObject value) {
-            ((RubyArgsFile) ruby.getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
+
+        public IRubyObject set(IRubyObject value) {
+            ((RubyArgsFile) ruby.getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value.toRubyObject()));
             return super.set(value);
         }
     }
 
     private static class ErrorInfoGlobalVariable extends GlobalVariable {
-        public ErrorInfoGlobalVariable(Ruby ruby, String name, RubyObject value) {
+        public ErrorInfoGlobalVariable(Ruby ruby, String name, IRubyObject value) {
             super(ruby, name, value);
         }
-        public RubyObject set(RubyObject value) {
+
+        public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! value.isKindOf(ruby.getClasses().getExceptionClass())) {
                 throw new TypeError(ruby, "assigning non-exception to $!");
             }
@@ -121,10 +124,11 @@ public class RubyGlobal {
 
     // FIXME: move out of this class!
     public static class StringGlobalVariable extends GlobalVariable {
-        public StringGlobalVariable(Ruby ruby, String name, RubyObject value) {
+        public StringGlobalVariable(Ruby ruby, String name, IRubyObject value) {
             super(ruby, name, value);
         }
-        public RubyObject set(RubyObject value) {
+
+        public IRubyObject set(IRubyObject value) {
             if (! (value instanceof RubyString)) {
                 throw new TypeError(ruby, "value of " + name() + " must be a String");
             }
@@ -136,11 +140,13 @@ public class RubyGlobal {
         public SafeGlobalVariable(Ruby ruby, String name) {
             super(ruby, name, null);
         }
-        public RubyObject get() {
+
+        public IRubyObject get() {
             return RubyFixnum.newFixnum(ruby, ruby.getSafeLevel());
         }
-        public RubyObject set(RubyObject value) {
-            int level = RubyFixnum.fix2int(value);
+
+        public IRubyObject set(IRubyObject value) {
+            int level = RubyFixnum.fix2int(value.toRubyObject());
             if (level < ruby.getSafeLevel()) {
                 throw new SecurityException("tried to downgrade level from " + ruby.getSafeLevel() + " to " + level);
             }
@@ -154,16 +160,17 @@ public class RubyGlobal {
         public BacktraceGlobalVariable(Ruby ruby, String name) {
             super(ruby, name, null);
         }
-        public RubyObject get() {
-            RubyObject errorInfo = ruby.getGlobalVar("$!");
+
+        public IRubyObject get() {
+            IRubyObject errorInfo = ruby.getGlobalVar("$!");
             return errorInfo.isNil() ? ruby.getNil() : errorInfo.callMethod("backtrace");
         }
 
-        public RubyObject set(RubyObject value) {
+        public IRubyObject set(IRubyObject value) {
             if (ruby.getGlobalVar("$!").isNil()) {
                 throw new ArgumentError(ruby, "$! not set.");
             }
-            ruby.getGlobalVar("$!").callMethod("set_backtrace", value);
+            ruby.getGlobalVar("$!").callMethod("set_backtrace", value.toRubyObject());
             return value;
         }
     }
@@ -172,20 +179,23 @@ public class RubyGlobal {
         public LastlineGlobalVariable(Ruby ruby, String name) {
             super(ruby, name, null);
         }
-        public RubyObject get() {
+
+        public IRubyObject get() {
             return ruby.getLastline();
         }
-        public RubyObject set(RubyObject value) {
-            ruby.setLastline(value);
+
+        public IRubyObject set(IRubyObject value) {
+            ruby.setLastline(value.toRubyObject());
             return value;
         }
     }
 
     private static class InputGlobalVariable extends GlobalVariable {
-        public InputGlobalVariable(Ruby ruby, String name, RubyObject value) {
+        public InputGlobalVariable(Ruby ruby, String name, IRubyObject value) {
             super(ruby, name, value);
         }
-        public RubyObject set(RubyObject value) {
+
+        public IRubyObject set(IRubyObject value) {
             if (value == get()) {
                 return value;
             }
@@ -197,10 +207,11 @@ public class RubyGlobal {
     }
 
     private static class OutputGlobalVariable extends GlobalVariable {
-        public OutputGlobalVariable(Ruby ruby, String name, RubyObject value) {
+        public OutputGlobalVariable(Ruby ruby, String name, IRubyObject value) {
             super(ruby, name, value);
         }
-        public RubyObject set(RubyObject value) {
+
+        public IRubyObject set(IRubyObject value) {
             if (value == get()) {
                 return value;
             }
@@ -209,7 +220,7 @@ public class RubyGlobal {
             }
             if (! value.respondsTo("write")) {
                 throw new TypeError(ruby, name() + " must have write method, " +
-                                    value.type().toName() + " given");
+                                    value.getType().toName() + " given");
             }
             return super.set(value);
         }

@@ -50,12 +50,12 @@ public class TestJavaUtil extends TestCase {
     }
 
     public void testConvertJavaToRuby() {
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, null).type().toName(), "NilClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, new Integer(1000)).type().toName(), "Fixnum");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, new Double(1.0)).type().toName(), "Float");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.TRUE).type().toName(), "TrueClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.FALSE).type().toName(), "FalseClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, "AString").type().toName(), "String");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, null).getType().toName(), "NilClass");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, new Integer(1000)).getType().toName(), "Fixnum");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, new Double(1.0)).getType().toName(), "Float");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.TRUE).getType().toName(), "TrueClass");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.FALSE).getType().toName(), "FalseClass");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, "AString").getType().toName(), "String");
     }
 
     public void testCompatible() {

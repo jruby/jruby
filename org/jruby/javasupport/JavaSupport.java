@@ -8,6 +8,7 @@ import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaSupport {
     private Ruby ruby;
@@ -300,7 +301,7 @@ public class JavaSupport {
             excptnClass = excptnClass.getSuperclass();
         }
         if (handler != null) {
-            handler.call(new RubyObject[]{JavaUtil.convertJavaToRuby(ruby, excptn)});
+            handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(ruby, excptn)});
         } else {
             StringWriter stackTrace = new StringWriter();
             excptn.printStackTrace(new PrintWriter(stackTrace));

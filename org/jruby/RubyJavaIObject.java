@@ -29,11 +29,14 @@
  */
 package org.jruby;
 
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
-import org.jruby.exceptions.*;
-import org.jruby.javasupport.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler {
 
@@ -61,54 +64,54 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
      * @see InvocationHandler#invoke(Object, Method, Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        RubyObject result = getRuby().getNil();
+        IRubyObject result = getRuntime().getNil();
 
         RubyHash interfaceProcs = (RubyHash) getInstanceVariable("interfaceProcs");
 
-        RubyString methodName = RubyString.newString(getRuby(), method.getName());
+        RubyString methodName = RubyString.newString(getRuntime(), method.getName());
 
-        RubyObject proc;
-        RubyObject rubyMethod;
+        IRubyObject proc;
+        IRubyObject rubyMethod;
 
         if (!(proc = interfaceProcs.aref(methodName)).isNil()) {
-            RubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(getRuby(), args);
+            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(getRuntime(), args);
 
             result = ((RubyProc) proc).call(rubyArgs).toRubyObject();
         } else if (!(rubyMethod = method(methodName)).isNil()) {
-            RubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(getRuby(), args);
+            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(getRuntime(), args);
 
             result = ((RubyMethod) rubyMethod).call(rubyArgs);
         } else {
-            RubyObject[] rubyArgs = new RubyObject[args.length + 1];
+            IRubyObject[] rubyArgs = new IRubyObject[args.length + 1];
 
             for (int i = 0; i < args.length; i++) {
-                rubyArgs[i + 1] = JavaUtil.convertJavaToRuby(getRuby(), args[i]);
+                rubyArgs[i + 1] = JavaUtil.convertJavaToRuby(getRuntime(), args[i]);
             }
 
-            result = funcall("send", rubyArgs);
+            result = callMethod("send", rubyArgs);
         }
 
-        return JavaUtil.convertRubyToJava(getRuby(), result, method.getReturnType());
+        return JavaUtil.convertRubyToJava(getRuntime(), result, method.getReturnType());
     }
 
-    public static RubyJavaIObject newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyJavaIObject newInterface = new RubyJavaIObject(ruby, (RubyClass) recv);
+    public static RubyJavaIObject newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyJavaIObject newInterface = new RubyJavaIObject(recv.getRuntime(), (RubyClass) recv);
 
         newInterface.callInit(args);
 
         return newInterface;
     }
 
-    public RubyObject initialize(RubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args) {
         if (args.length == 0) {
-            throw new ArgumentError(getRuby(), "");
+            throw new ArgumentError(getRuntime(), "");
         }
 
         Class[] interfaces = new Class[args.length];
 
         for (int i = 0; i < args.length; i++) {
 			String name = ((RubyString) args[i]).getValue();
-            interfaces[i] = getRuby().getJavaSupport().loadJavaClass(name);
+            interfaces[i] = getRuntime().getJavaSupport().loadJavaClass(name);
         }
 
         try {
@@ -116,12 +119,12 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
         } catch (IllegalArgumentException iaExcptn) {
         }
         
-        setInstanceVariable("interfaceProcs", RubyHash.newHash(getRuby()));
+        setInstanceVariable("interfaceProcs", RubyHash.newHash(getRuntime()));
 
         return this;
     }
     
-    public RubyObject assign(RubyString methodName, RubyProc proc) {
+    public IRubyObject assign(RubyString methodName, RubyProc proc) {
     	((RubyHash) getInstanceVariable("interfaceProcs")).aset(methodName, proc);
     	
     	return this;

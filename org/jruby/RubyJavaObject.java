@@ -30,7 +30,8 @@
 
 package org.jruby;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -86,15 +87,15 @@ public class RubyJavaObject extends RubyObject {
 
     // JavaObject methods
     public RubyString to_s() {
-        return RubyString.newString(getRuby(), getValue() != null ? getValue().toString() : "null");
+        return RubyString.newString(getRuntime(), getValue() != null ? getValue().toString() : "null");
     }
 
-    public RubyBoolean equal(RubyObject other) {
+    public RubyBoolean equal(IRubyObject other) {
         if (other instanceof RubyJavaObject) {
             return (getValue() != null && getValue().equals(((RubyJavaObject) other).getValue()))
-                ? getRuby().getTrue()
-                : getRuby().getFalse();
+                ? getRuntime().getTrue()
+                : getRuntime().getFalse();
         }
-        return getRuby().getFalse();
+        return getRuntime().getFalse();
     }
 }

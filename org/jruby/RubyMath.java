@@ -29,7 +29,8 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
@@ -57,50 +58,50 @@ public class RubyMath {
         return mathModule;
     }
 
-    public static RubyFloat atan2(Ruby ruby, RubyObject recv, RubyNumeric x, RubyNumeric y) {
-        return RubyFloat.newFloat(ruby, Math.atan2(x.getDoubleValue(), y.getDoubleValue()));
+    public static RubyFloat atan2(IRubyObject recv, RubyNumeric x, RubyNumeric y) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.atan2(x.getDoubleValue(), y.getDoubleValue()));
     }
 
-    public static RubyFloat cos(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.cos(x.getDoubleValue()));
+    public static RubyFloat cos(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.cos(x.getDoubleValue()));
     }
 
-    public static RubyFloat exp(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.exp(x.getDoubleValue()));
+    public static RubyFloat exp(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.exp(x.getDoubleValue()));
     }
 
-    public static RubyArray frexp(Ruby ruby, RubyObject recv, RubyNumeric x) {
+    public static RubyArray frexp(IRubyObject recv, RubyNumeric x) {
         // return RubyFloat.m_newFloat(ruby, Math.exp(x.getDoubleValue()));
         return null;
     }
 
-    public static RubyFloat ldexp(Ruby ruby, RubyObject recv, RubyFloat x, RubyInteger y) {
-        return RubyFloat.newFloat(ruby, x.getDoubleValue() * Math.pow(2.0, y.getDoubleValue()));
+    public static RubyFloat ldexp(IRubyObject recv, RubyFloat x, RubyInteger y) {
+        return RubyFloat.newFloat(recv.getRuntime(), x.getDoubleValue() * Math.pow(2.0, y.getDoubleValue()));
     }
 
     /** Returns the natural logarithm of x.
      * 
      */
-    public static RubyFloat log(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.log(x.getDoubleValue()));
+    public static RubyFloat log(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.log(x.getDoubleValue()));
     }
 
     /** Returns the base 10 logarithm of x.
      * 
      */
-    public static RubyFloat log10(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.log(x.getDoubleValue()) / Math.log(10));
+    public static RubyFloat log10(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.log(x.getDoubleValue()) / Math.log(10));
     }
 
-    public static RubyFloat sin(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.sin(x.getDoubleValue()));
+    public static RubyFloat sin(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.sin(x.getDoubleValue()));
     }
 
-    public static RubyFloat sqrt(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.sqrt(x.getDoubleValue()));
+    public static RubyFloat sqrt(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.sqrt(x.getDoubleValue()));
     }
 
-    public static RubyFloat tan(Ruby ruby, RubyObject recv, RubyNumeric x) {
-        return RubyFloat.newFloat(ruby, Math.tan(x.getDoubleValue()));
+    public static RubyFloat tan(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), Math.tan(x.getDoubleValue()));
     }
 }

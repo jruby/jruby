@@ -26,10 +26,12 @@
  */
 package org.jruby.runtime;
 
-import java.util.*;
+import java.util.List;
 
-import org.jruby.*;
-import org.jruby.util.collections.*;
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.AbstractStack;
+import org.jruby.util.collections.StackElement;
 
 /**
  *
@@ -84,11 +86,11 @@ public class ScopeStack extends AbstractStack {
         current().setFlags(flags);
     }
 
-    public RubyObject getSuperObject() {
+    public IRubyObject getSuperObject() {
         return current().getSuperObject();
     }
 
-    public void setSuperObject(RubyObject superObject) {
+    public void setSuperObject(IRubyObject superObject) {
         current().setSuperObject(superObject);
     }
 
@@ -104,11 +106,11 @@ public class ScopeStack extends AbstractStack {
         return current().getLocalValues() != null;
     }
 
-    public RubyObject getValue(int count) {
+    public IRubyObject getValue(int count) {
         return current().getValue(count);
     }
 
-    public void setValue(int count, RubyObject value) {
+    public void setValue(int count, IRubyObject value) {
         current().setValue(count, value);
     }
 }

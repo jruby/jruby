@@ -37,6 +37,7 @@ import org.jruby.javasupport.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Class used to launch the interpreter.
@@ -249,7 +250,7 @@ public class Main {
         Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter);
 
         // Parse and interpret file
-        RubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
+        IRubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
 
         ruby.setVerbose(warning);
         ruby.defineReadonlyVariable("$VERBOSE", warning ? ruby.getTrue() : ruby.getNil());
@@ -266,7 +267,7 @@ public class Main {
         int lNbRequire = sRequireFirst.size();
         try {
 			for (int i = 0; i < lNbRequire; i++)
-				RubyKernel.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
+				RubyKernel.require(ruby.getRubyTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
             INode lScript = ruby.parse(iReader2Eval, iFileName);
 

@@ -28,8 +28,11 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RangeError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** Implementation of the Integer class.
  *
@@ -45,7 +48,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyClass createIntegerClass(Ruby ruby) {
         RubyClass integerClass = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
 
-        integerClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyInteger.class, "induced_from", RubyObject.class));
+        integerClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyInteger.class, "induced_from", IRubyObject.class));
 
         integerClass.defineMethod("chr", CallbackFactory.getMethod(RubyInteger.class, "chr"));
         integerClass.defineMethod("integer?", CallbackFactory.getMethod(RubyInteger.class, "int_p"));
@@ -75,45 +78,45 @@ public abstract class RubyInteger extends RubyNumeric {
     
     // Integer methods
 
-    public static RubyInteger induced_from(Ruby ruby, RubyObject recv, RubyObject number) {
+    public static RubyInteger induced_from(IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyNumeric) {
             return (RubyInteger) number.callMethod("to_i");
         } else {
-            throw new TypeError(ruby, "failed to convert " + number.getInternalClass() + " into Integer");
+            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getInternalClass() + " into Integer");
         }
     }
 
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
-            throw new RangeError(getRuby(), this.toString() + " out of char range");
+            throw new RangeError(getRuntime(), this.toString() + " out of char range");
         }
-        return RubyString.newString(getRuby(), new String(new char[] {(char) getLongValue()}));
+        return RubyString.newString(getRuntime(), new String(new char[] {(char) getLongValue()}));
     }
 
-    public RubyObject downto(RubyNumeric to) {
+    public IRubyObject downto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
             if (((RubyBoolean) i.callMethod("<", to)).isTrue()) {
                 break;
             }
-            getRuby().yield(i);
-            i = (RubyNumeric) i.callMethod("-", RubyFixnum.one(getRuby()));
+            getRuntime().yield(i);
+            i = (RubyNumeric) i.callMethod("-", RubyFixnum.one(getRuntime()));
         }
         return this;
     }
 
     public RubyBoolean int_p() {
-        return getRuby().getTrue();
+        return getRuntime().getTrue();
     }
 
-    public RubyObject step(RubyNumeric to, RubyNumeric step) {
+    public IRubyObject step(RubyNumeric to, RubyNumeric step) {
         RubyNumeric i = this;
         if (step.getLongValue() == 0) {
-            throw new ArgumentError(getRuby(), "step cannot be 0");
+            throw new ArgumentError(getRuntime(), "step cannot be 0");
         }
 
         String cmp = "<";
-        if (((RubyBoolean) step.callMethod("<", RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
+        if (((RubyBoolean) step.callMethod("<", RubyFixnum.newFixnum(getRuntime(), 0))).isFalse()) {
             cmp = ">";
         }
 
@@ -121,36 +124,36 @@ public abstract class RubyInteger extends RubyNumeric {
             if (((RubyBoolean) i.callMethod(cmp, to)).isTrue()) {
                 break;
             }
-            getRuby().yield(i);
+            getRuntime().yield(i);
             i = (RubyNumeric) i.callMethod("+", step);
         }
         return this;
     }
 
-    public RubyObject times() {
-        RubyNumeric i = RubyFixnum.zero(getRuby());
+    public IRubyObject times() {
+        RubyNumeric i = RubyFixnum.zero(getRuntime());
         while (true) {
-            if (i.callMethod("<", this).isFalse()) {
+            if (!i.callMethod("<", this).isTrue()) {
                 break;
             }
-            getRuby().yield(i);
-            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuby()));
+            getRuntime().yield(i);
+            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuntime()));
         }
         return this;
     }
 
-    public RubyObject succ() {
-        return callMethod("+", RubyFixnum.one(getRuby()));
+    public IRubyObject succ() {
+        return callMethod("+", RubyFixnum.one(getRuntime()));
     }
 
-    public RubyObject upto(RubyNumeric to) {
+    public IRubyObject upto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
             if (i.callMethod(">", to).isTrue()) {
                 break;
             }
-            getRuby().yield(i);
-            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuby()));
+            getRuntime().yield(i);
+            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuntime()));
         }
         return this;
     }

@@ -30,12 +30,14 @@
 
 package org.jruby.runtime.regexp;
 
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
-import org.jruby.RubyObject;
 import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Regexp adapter for gnu.regexp.
@@ -100,7 +102,7 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
     /**
      * Does the given argument match the pattern?
      */
-    public RubyObject search(Ruby ruby, String target, int startPos) {
+    public IRubyObject search(Ruby ruby, String target, int startPos) {
         if (matcher == null) {
             matcher = pattern.matcher(target);
         } else {

@@ -28,10 +28,12 @@
  */
 package org.jruby.runtime;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.jruby.Ruby;
-import org.jruby.RubyObject;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
 
 /**
@@ -48,7 +50,7 @@ import org.jruby.util.collections.StackElement;
 public class Scope implements StackElement {
 	private Ruby ruby;
 
-    private RubyObject superObject = null;
+    private IRubyObject superObject = null;
     
     private int flags = 0;
     
@@ -88,14 +90,14 @@ public class Scope implements StackElement {
     /** Getter for property superObject.
      * @return Value of property superObject.
      */
-    public RubyObject getSuperObject() {
+    public IRubyObject getSuperObject() {
         return superObject;
     }
 
     /** Setter for property superObject.
      * @param superObject New value of property superObject.
      */
-    public void setSuperObject(RubyObject superObject) {
+    public void setSuperObject(IRubyObject superObject) {
         this.superObject = superObject;
     }
     /**
@@ -125,11 +127,11 @@ public class Scope implements StackElement {
         return localValues;
     }
 
-	public RubyObject getValue(int count) {
-	    return (RubyObject)localValues.get(count);
+	public IRubyObject getValue(int count) {
+	    return (IRubyObject)localValues.get(count);
 	}
 	
-	public void setValue(int count, RubyObject value) {
+	public void setValue(int count, IRubyObject value) {
 	    localValues.set(count, value);
 	}
 

@@ -30,10 +30,11 @@
 
 package org.jruby;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -58,16 +59,16 @@ public abstract class RubyNumeric extends RubyObject {
 
         numericClass.includeModule(ruby.getClasses().getComparableModule());
 
-        numericClass.defineMethod("coerce", CallbackFactory.getMethod(RubyNumeric.class, "coerce", RubyObject.class));
+        numericClass.defineMethod("coerce", CallbackFactory.getMethod(RubyNumeric.class, "coerce", IRubyObject.class));
         numericClass.defineMethod("clone", CallbackFactory.getMethod(RubyNumeric.class, "rbClone"));
 
         numericClass.defineMethod("+@", CallbackFactory.getMethod(RubyNumeric.class, "op_uplus"));
         numericClass.defineMethod("-@", CallbackFactory.getMethod(RubyNumeric.class, "op_uminus"));
-        numericClass.defineMethod("===", CallbackFactory.getMethod(RubyNumeric.class, "equal", RubyObject.class));
-        numericClass.defineMethod("eql?", CallbackFactory.getMethod(RubyNumeric.class, "eql", RubyObject.class));
-        numericClass.defineMethod("divmod", CallbackFactory.getMethod(RubyNumeric.class, "divmod", RubyObject.class));
-        numericClass.defineMethod("modulo", CallbackFactory.getMethod(RubyNumeric.class, "modulo", RubyObject.class));
-        numericClass.defineMethod("remainder", CallbackFactory.getMethod(RubyNumeric.class, "remainder", RubyObject.class));
+        numericClass.defineMethod("===", CallbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
+        numericClass.defineMethod("eql?", CallbackFactory.getMethod(RubyNumeric.class, "eql", IRubyObject.class));
+        numericClass.defineMethod("divmod", CallbackFactory.getMethod(RubyNumeric.class, "divmod", IRubyObject.class));
+        numericClass.defineMethod("modulo", CallbackFactory.getMethod(RubyNumeric.class, "modulo", IRubyObject.class));
+        numericClass.defineMethod("remainder", CallbackFactory.getMethod(RubyNumeric.class, "remainder", IRubyObject.class));
         numericClass.defineMethod("abs", CallbackFactory.getMethod(RubyNumeric.class, "abs"));
 
         numericClass.defineMethod("integer?", CallbackFactory.getMethod(RubyNumeric.class, "int_p"));
@@ -82,31 +83,31 @@ public abstract class RubyNumeric extends RubyObject {
         return numericClass;
     }
 
-    public static long num2long(RubyObject arg) {
+    public static long num2long(IRubyObject arg) {
         if (arg instanceof RubyNumeric) {
             return ((RubyNumeric) arg).getLongValue();
         }
-        throw new TypeError(arg.getRuby(), "argument is not numeric");
+        throw new TypeError(arg.getRuntime(), "argument is not numeric");
     }
 
-    public static long fix2long(RubyObject arg) {
+    public static long fix2long(IRubyObject arg) {
         if (arg instanceof RubyFixnum) {
             return ((RubyFixnum) arg).getLongValue();
         }
-        throw new TypeError(arg.getRuby(), "argument is not a Fixnum");
+        throw new TypeError(arg.getRuntime(), "argument is not a Fixnum");
     }
 
-    public static int fix2int(RubyObject arg) {
+    public static int fix2int(IRubyObject arg) {
         long val = fix2long(arg);
         if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
-            throw new TypeError(arg.getRuby(), "argument value is too big to convert to int");
+            throw new TypeError(arg.getRuntime(), "argument value is too big to convert to int");
         }
         return (int) val;
     }
 
-    public static final RubyNumeric numericValue(RubyObject arg) {
+    public static final RubyNumeric numericValue(IRubyObject arg) {
         if (!(arg instanceof RubyNumeric)) {
-            throw new TypeError(arg.getRuby(), "argument not numeric");
+            throw new TypeError(arg.getRuntime(), "argument not numeric");
         }
         return (RubyNumeric) arg;
     }
@@ -231,15 +232,15 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_coerce
      *
      */
-    public RubyArray coerce(RubyObject num) {
+    public RubyArray coerce(IRubyObject num) {
         RubyNumeric other = numericValue(num);
         if (getInternalClass() == other.getInternalClass()) {
-            return RubyArray.newArray(getRuby(), other, this);
+            return RubyArray.newArray(getRuntime(), other, this);
         } else {
             return RubyArray.newArray(
-                getRuby(),
-                RubyFloat.newFloat(getRuby(), other.getDoubleValue()),
-                RubyFloat.newFloat(getRuby(), getDoubleValue()));
+                getRuntime(),
+                RubyFloat.newFloat(getRuntime(), other.getDoubleValue()),
+                RubyFloat.newFloat(getRuntime(), getDoubleValue()));
         }
     }
 
@@ -250,14 +251,14 @@ public abstract class RubyNumeric extends RubyObject {
         if (getInternalClass() == other.getInternalClass()) {
             return new RubyNumeric[] { this, other };
         } else {
-            return new RubyNumeric[] { RubyFloat.newFloat(getRuby(), getDoubleValue()), RubyFloat.newFloat(getRuby(), other.getDoubleValue())};
+            return new RubyNumeric[] { RubyFloat.newFloat(getRuntime(), getDoubleValue()), RubyFloat.newFloat(getRuntime(), other.getDoubleValue())};
         }
     }
 
     /** num_clone
      *
      */
-    public RubyObject rbClone() {
+    public IRubyObject rbClone() {
         return this;
     }
 
@@ -272,7 +273,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric op_uminus() {
-        RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuby()));
+        RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuntime()));
 
         return (RubyNumeric) coerce[1].callMethod("-", coerce[0]);
     }
@@ -280,25 +281,25 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_divmod
      *
      */
-    public RubyArray divmod(RubyObject val) {
+    public RubyArray divmod(IRubyObject val) {
         RubyNumeric other = numericValue(val);
 
         RubyNumeric div = (RubyNumeric) callMethod("/", other);
         if (div instanceof RubyFloat) {
             double d = Math.floor(((RubyFloat) div).getValue());
             if (((RubyFloat) div).getValue() > d) {
-                div = RubyFloat.newFloat(getRuby(), d);
+                div = RubyFloat.newFloat(getRuntime(), d);
             }
         }
         RubyNumeric mod = (RubyNumeric) callMethod("%", other);
 
-        return RubyArray.newArray(getRuby(), div, mod);
+        return RubyArray.newArray(getRuntime(), div, mod);
     }
 
     /** num_modulo
      *
      */
-    public RubyNumeric modulo(RubyObject val) {
+    public RubyNumeric modulo(IRubyObject val) {
         RubyNumeric other = numericValue(val);
 
         return (RubyNumeric) callMethod("%", other);
@@ -307,12 +308,12 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_remainder
      *
      */
-    public RubyNumeric remainder(RubyObject val) {
+    public RubyNumeric remainder(IRubyObject val) {
         RubyNumeric other = numericValue(val);
         
         RubyNumeric mod = (RubyNumeric) callMethod("%", other);
 
-        final RubyNumeric zero = RubyFixnum.zero(getRuby());
+        final RubyNumeric zero = RubyFixnum.zero(getRuntime());
 
         if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
 
@@ -325,16 +326,16 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_equal
      *
      */
-    public RubyBoolean equal(RubyObject other) {
+    public RubyBoolean equal(IRubyObject other) {
         return super.equal(other); // +++ rb_equal
     }
 
     /** num_eql
      *
      */
-    public RubyBoolean eql(RubyObject other) {
+    public RubyBoolean eql(IRubyObject other) {
         if (getInternalClass() != other.getInternalClass()) {
-            return getRuby().getFalse();
+            return getRuntime().getFalse();
         } else {
             return super.equal(other); // +++ rb_equal
         }
@@ -344,7 +345,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric abs() {
-        if (callMethod("<", RubyFixnum.zero(getRuby())).isTrue()) {
+        if (callMethod("<", RubyFixnum.zero(getRuntime())).isTrue()) {
             return (RubyNumeric) callMethod("-@");
         } else {
             return this;
@@ -355,22 +356,22 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean int_p() {
-        return getRuby().getFalse();
+        return getRuntime().getFalse();
     }
 
     /** num_zero_p
      *
      */
     public RubyBoolean zero_p() {
-        return equal(RubyFixnum.zero(getRuby()));
+        return equal(RubyFixnum.zero(getRuntime()));
     }
 
     /** num_nonzero_p
      *
      */
-    public RubyObject nonzero_p() {
+    public IRubyObject nonzero_p() {
         if (callMethod("zero?").isTrue()) {
-            return getRuby().getNil();
+            return getRuntime().getNil();
         }
         return this;
     }
@@ -379,27 +380,27 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyInteger floor() {
-        return RubyFloat.newFloat(getRuby(), getDoubleValue()).floor();
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue()).floor();
     }
 
     /** num_ceil
      *
      */
     public RubyInteger ceil() {
-        return RubyFloat.newFloat(getRuby(), getDoubleValue()).ceil();
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue()).ceil();
     }
 
     /** num_round
      *
      */
     public RubyInteger round() {
-        return RubyFloat.newFloat(getRuby(), getDoubleValue()).round();
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue()).round();
     }
 
     /** num_truncate
      *
      */
     public RubyInteger truncate() {
-        return RubyFloat.newFloat(getRuby(), getDoubleValue()).truncate();
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue()).truncate();
     }
 }

@@ -34,7 +34,6 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyObject;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
@@ -59,20 +58,20 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class AssignmentVisitor extends AbstractVisitor {
     private Ruby ruby;
-    private RubyObject self;
+    private IRubyObject self;
 
     private IErrorHandler errorHandler;
 
-    private RubyObject value;
+    private IRubyObject value;
     private boolean check;
-    private RubyObject result;
+    private IRubyObject result;
 
-    public AssignmentVisitor(Ruby ruby, RubyObject self) {
+    public AssignmentVisitor(Ruby ruby, IRubyObject self) {
         this.ruby = ruby;
         this.self = self;
     }
 
-    public RubyObject assign(INode node, RubyObject value, boolean check) {
+    public IRubyObject assign(INode node, IRubyObject value, boolean check) {
         this.value = value;
         this.check = check;
 
@@ -97,7 +96,7 @@ public class AssignmentVisitor extends AbstractVisitor {
         IRubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.getInternalClass().call(receiver.toRubyObject(), iVisited.getName(), new RubyObject[] {value}, 0);
+            receiver.getInternalClass().call(receiver.toRubyObject(), iVisited.getName(), new IRubyObject[] {value}, 0);
         } else { // element set
             RubyArray args = (RubyArray) evaluator.eval(iVisited.getArgsNode());
             args.append(value);
@@ -172,7 +171,7 @@ public class AssignmentVisitor extends AbstractVisitor {
         if (value == null) {
             value = RubyArray.newArray(ruby, 0);
         } else if (!(value instanceof RubyArray)) {
-            RubyObject newValue = value.convertToType("Array", "to_ary", false);
+            IRubyObject newValue = value.convertToType("Array", "to_ary", false);
             if (newValue.isNil()) {
                 newValue = RubyArray.newArray(ruby, value);
             }

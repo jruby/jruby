@@ -31,6 +31,7 @@ import java.lang.reflect.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -51,11 +52,11 @@ public class JavaFieldReader implements Callback {
     /**
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)
      */
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         try {
-			return JavaUtil.convertJavaToRuby(ruby, field.get(((RubyJavaObject)recv).getValue()));
+			return JavaUtil.convertJavaToRuby(recv.getRuntime(), field.get(((RubyJavaObject)recv).getValue()));
         } catch (IllegalAccessException iaExcptn) {
-            throw new RubySecurityException(ruby, iaExcptn.getMessage());
+            throw new RubySecurityException(recv.getRuntime(), iaExcptn.getMessage());
         }
     }
 }

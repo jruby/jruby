@@ -31,7 +31,8 @@ package org.jruby;
 
 import java.util.Iterator;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyObjectSpace {
 
@@ -47,21 +48,21 @@ public class RubyObjectSpace {
         return objectSpaceModule;
     }
 
-    public static RubyObject each_object(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args) {
         RubyModule rubyClass;
         if (args.length == 0) {
-            rubyClass = ruby.getClasses().getObjectClass();
+            rubyClass = recv.getRuntime().getClasses().getObjectClass();
         } else {
             rubyClass = (RubyModule) args[0];
         }
-        Iterator iter = ruby.objectSpace.iterator(rubyClass);
+        Iterator iter = recv.getRuntime().objectSpace.iterator(rubyClass);
         while (iter.hasNext()) {
-            ruby.yield((RubyObject) iter.next());
+            recv.getRuntime().yield((IRubyObject) iter.next());
         }
-        return ruby.getNil();
+        return recv.getRuntime().getNil();
     }
 
-    public static RubyObject garbage_collect(Ruby ruby, RubyObject recv) {
-        return RubyGC.start(ruby, recv);
+    public static IRubyObject garbage_collect(IRubyObject recv) {
+        return RubyGC.start(recv);
     }
 }

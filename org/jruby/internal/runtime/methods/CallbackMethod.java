@@ -26,8 +26,9 @@
  */
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.*;
-import org.jruby.runtime.*;
+import org.jruby.Ruby;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -44,7 +45,7 @@ public class CallbackMethod extends AbstractMethod {
     /**
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
-    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
+    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         if (ruby.getRuntime().getTraceFunction() != null) {
             String file = ruby.getFrameStack().getPrevious().getFile();
             int line = ruby.getFrameStack().getPrevious().getLine();
@@ -56,14 +57,12 @@ public class CallbackMethod extends AbstractMethod {
 
             ruby.getRuntime().callTraceFunction("c-call", file, line, receiver, name, getImplementationClass()); // XXX
             try {
-                return callback.execute(receiver, args, ruby);
+                return callback.execute(receiver, args);
             } finally {
-                if (ruby.getRuntime().getTraceFunction() != null) {
-                    ruby.getRuntime().callTraceFunction("c-return", file, line, receiver, name, getImplementationClass()); // XXX
-                }
+                ruby.getRuntime().callTraceFunction("c-return", file, line, receiver, name, getImplementationClass()); // XXX
             }
         } else {
-            return callback.execute(receiver, args, ruby);
+            return callback.execute(receiver, args);
         }
     }
 

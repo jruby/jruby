@@ -30,10 +30,20 @@
 
 package org.jruby;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.NotImplementedError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.marshal.*;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
  * Marshal module
@@ -52,11 +62,11 @@ public class RubyMarshal {
         return marshalModule;
     }
 
-    public static RubyObject dump(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(ruby, "wrong # of arguments(at least 1)");
+            throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(at least 1)");
         }
-        RubyObject objectToDump = args[0];
+        IRubyObject objectToDump = args[0];
 
         RubyIO io = null;
         int depthLimit = -1;
@@ -79,24 +89,24 @@ public class RubyMarshal {
             } else {
                 ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
                 dumpToStream(objectToDump, stringOutput, depthLimit);
-                return RubyString.newString(ruby, stringOutput.toByteArray());
+                return RubyString.newString(recv.getRuntime(), stringOutput.toByteArray());
             }
 
         } catch (IOException ioe) {
-            throw IOError.fromException(ruby, ioe);
+            throw IOError.fromException(recv.getRuntime(), ioe);
         }
 
     }
 
-    public static RubyObject load(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
         try {
             if (args.length < 1) {
-                throw new ArgumentError(ruby, "wrong # of arguments(at least 1)");
+                throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(at least 1)");
             }
 
             // FIXME: handle more parameters
 
-            RubyObject in = args[0];
+            IRubyObject in = args[0];
 
             InputStream rawInput;
             if (in instanceof RubyIO) {
@@ -105,22 +115,22 @@ public class RubyMarshal {
                 RubyString inString = (RubyString) in.callMethod("to_str");
                 rawInput = new ByteArrayInputStream(inString.toByteArray());
             } else {
-                throw new TypeError(ruby, "instance of IO needed");
+                throw new TypeError(recv.getRuntime(), "instance of IO needed");
             }
 
-            UnmarshalStream input = new UnmarshalStream(ruby, rawInput);
+            UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput);
 
             return input.unmarshalObject();
 
         } catch (IOException ioe) {
-            throw IOError.fromException(ruby, ioe);
+            throw IOError.fromException(recv.getRuntime(), ioe);
         }
     }
 
-    private static void dumpToStream(RubyObject object, OutputStream rawOutput, int depthLimit)
+    private static void dumpToStream(IRubyObject object, OutputStream rawOutput, int depthLimit)
         throws IOException
     {
-        MarshalStream output = new MarshalStream(object.getRuby(), rawOutput, depthLimit);
+        MarshalStream output = new MarshalStream(object.getRuntime(), rawOutput, depthLimit);
         output.dumpObject(object);
     }
 }

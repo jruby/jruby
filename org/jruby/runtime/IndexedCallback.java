@@ -24,14 +24,13 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyObject;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Implements callback on built-in Ruby methods using an integer index.
  *
  */
-
 public class IndexedCallback implements Callback {
     private final int index;
     private final int arity;
@@ -62,16 +61,16 @@ public class IndexedCallback implements Callback {
         return new IndexedCallback(index, -(1 + required));
     }
 
-    public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-        checkArity(ruby, args);
-        return ((IndexCallable) recv).callIndexed(index, args).toRubyObject();
+    public IRubyObject execute(IRubyObject recv, IRubyObject args[]) {
+        checkArity(recv.getRuntime(), args);
+        return ((IndexCallable) recv).callIndexed(index, args);
     }
 
     public int getArity() {
         return arity;
     }
 
-    private void checkArity(Ruby ruby, RubyObject[] args) {
+    private void checkArity(Ruby ruby, IRubyObject[] args) {
         if (arity >= 0) {
             if (arity != args.length) {
                 throw new ArgumentError(ruby,

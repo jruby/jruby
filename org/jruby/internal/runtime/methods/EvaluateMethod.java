@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 import org.ablaf.ast.INode;
 import org.jruby.*;
 import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -45,8 +46,8 @@ public class EvaluateMethod extends AbstractMethod {
     /**
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
-    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
-        return EvaluateVisitor.createVisitor(receiver).eval(node).toRubyObject();
+    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        return EvaluateVisitor.createVisitor(receiver).eval(node);
     }
 
     /**

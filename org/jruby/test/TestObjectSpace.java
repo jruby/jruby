@@ -32,11 +32,17 @@
  */
 package org.jruby.test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-import junit.framework.*;
-import org.jruby.*;
+import junit.framework.TestCase;
+
+import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
 import org.jruby.runtime.ObjectSpace;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
 * @author Anders
@@ -56,10 +62,10 @@ public class TestObjectSpace extends TestCase {
     public void testObjectSpace() {
         ObjectSpace os = new ObjectSpace();
 
-        RubyObject o1 = RubyFixnum.newFixnum(ruby, 10);
-        RubyObject o2 = RubyFixnum.newFixnum(ruby, 20);
-        RubyObject o3 = RubyFixnum.newFixnum(ruby, 30);
-        RubyObject o4 = RubyString.newString(ruby, "hello");
+        IRubyObject o1 = RubyFixnum.newFixnum(ruby, 10);
+        IRubyObject o2 = RubyFixnum.newFixnum(ruby, 20);
+        IRubyObject o3 = RubyFixnum.newFixnum(ruby, 30);
+        IRubyObject o4 = RubyString.newString(ruby, "hello");
 
         os.add(o1);
         os.add(o2);

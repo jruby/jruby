@@ -28,6 +28,7 @@ package org.jruby;
 
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -39,37 +40,37 @@ public class RubyPrecision {
     public static RubyModule createPrecisionModule(Ruby ruby) {
         RubyModule precisionModule = ruby.defineModule("Precision");
 
-        precisionModule.defineSingletonMethod("append_features", CallbackFactory.getSingletonMethod(RubyPrecision.class, "append_features", RubyObject.class));
+        precisionModule.defineSingletonMethod("append_features", CallbackFactory.getSingletonMethod(RubyPrecision.class, "append_features", IRubyObject.class));
 
-        precisionModule.defineMethod("prec", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec", RubyObject.class));
+        precisionModule.defineMethod("prec", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec", IRubyObject.class));
         precisionModule.defineMethod("prec_i", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec_i"));
         precisionModule.defineMethod("prec_f", CallbackFactory.getSingletonMethod(RubyPrecision.class, "prec_f"));
         
         return precisionModule;     
     }
 
-    public static RubyObject induced_from(Ruby ruby, RubyObject receiver, RubyObject source) {
-        throw new TypeError(ruby, "Undefined conversion from " + source.getInternalClass().toName() + " into " + ((RubyClass)receiver).toName());
+    public static IRubyObject induced_from(IRubyObject receiver, IRubyObject source) {
+        throw new TypeError(receiver.getRuntime(), "Undefined conversion from " + source.getInternalClass().toName() + " into " + ((RubyClass)receiver).toName());
     }
 
-    public static RubyObject append_features(Ruby ruby, RubyObject receiver, RubyObject include) {
+    public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {
         if (include instanceof RubyModule) {
             ((RubyModule)include).includeModule(receiver);
-            ((RubyModule)include).defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyPrecision.class, "induced_from", RubyObject.class));
+            ((RubyModule)include).defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyPrecision.class, "induced_from", IRubyObject.class));
         }
         
         return receiver;
     }
     
-    public static RubyObject prec(Ruby ruby, RubyObject receiver, RubyObject type) {
+    public static IRubyObject prec(IRubyObject receiver, IRubyObject type) {
         return type.callMethod("induced_from", receiver);
     }
 
-    public static RubyObject prec_i(Ruby ruby, RubyObject receiver) {
-        return ruby.getClasses().getIntegerClass().callMethod("induced_from", receiver);
+    public static IRubyObject prec_i(IRubyObject receiver) {
+        return receiver.getRuntime().getClasses().getIntegerClass().callMethod("induced_from", receiver);
     }
 
-    public static RubyObject prec_f(Ruby ruby, RubyObject receiver) {
-        return ruby.getClasses().getFloatClass().callMethod("induced_from", receiver);
+    public static IRubyObject prec_f(IRubyObject receiver) {
+        return receiver.getRuntime().getClasses().getFloatClass().callMethod("induced_from", receiver);
     }
 }

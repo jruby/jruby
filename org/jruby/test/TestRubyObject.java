@@ -29,10 +29,11 @@ package org.jruby.test;
 import junit.framework.*;
 
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
     private Ruby ruby;
-    private RubyObject rubyObject;
+    private IRubyObject rubyObject;
 
     public TestRubyObject(String name) {
         super(name);
@@ -51,55 +52,40 @@ public class TestRubyObject extends TestCase {
         assertTrue(rubyObject.isTrue());
     }
 
-    public void testFalse() {
-        assertTrue(!rubyObject.isFalse());
-    }
-
-    public void testEqual() {
-        assertTrue(rubyObject.equal(rubyObject).isTrue());
-    }
-
     public void testEquals() {
         assertTrue(rubyObject.equals(rubyObject));
     }
 
     public void testClone() {
-        assertTrue(rubyObject.rbClone().type() == rubyObject.type());
+        assertTrue(rubyObject.rbClone().getType() == rubyObject.getType());
     }
 
     public void testDup() {
-        assertTrue(rubyObject.dup().type() == rubyObject.type());
+        assertTrue(rubyObject.dup().getType() == rubyObject.getType());
     }
 
     public void testType() {
-        assertEquals("Object", rubyObject.type().name().toString());
+        assertEquals("Object", rubyObject.getType().name().toString());
     }
 
     public void testFreeze() {
-        assertTrue(rubyObject.frozen().isFalse());
-        rubyObject.freeze();
-        assertTrue(rubyObject.frozen().isTrue());
+        assertTrue(!rubyObject.isFrozen());
+        rubyObject.setFrozen(true);
+        assertTrue(rubyObject.isFrozen());
     }
 
     public void testTaint() {
-        assertTrue(rubyObject.tainted().isFalse());
-        rubyObject.taint();
-        assertTrue(rubyObject.tainted().isTrue());
-        rubyObject.untaint();
-        assertTrue(rubyObject.tainted().isFalse());
+        assertTrue(!rubyObject.isTaint());
+        rubyObject.setTaint(true);
+        assertTrue(rubyObject.isTaint());
     }
 
     public void test_to_s() {
-        assertTrue(rubyObject.to_s().toString().startsWith("#<Object:0x"));
-    }
-
-    public void test_instance_of() {
-        assertTrue(rubyObject.instance_of(ruby.getClasses().getObjectClass()).isTrue());
-        assertTrue(rubyObject.instance_of(ruby.getClasses().getStringClass()).isFalse());
+        assertTrue(rubyObject.toString().startsWith("#<Object:0x"));
     }
 
     public void test_kind_of() {
-        assertTrue(rubyObject.kind_of(ruby.getClasses().getObjectClass()).isTrue());
+        assertTrue(rubyObject.isKindOf(ruby.getClasses().getObjectClass()));
         // assertTrue(rubyObject.kind_of(ruby.getClasses().getStringClass()).isFalse());
     }
 }

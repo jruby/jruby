@@ -1,6 +1,7 @@
 package org.jruby;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyJava {
     public static RubyModule createJavaModule(Ruby ruby) {
@@ -14,25 +15,25 @@ public class RubyJava {
     }
 
 	// Java methods
-    public static RubyObject rbImport(Ruby ruby, RubyObject recv, RubyString packageName) {
-		ruby.getJavaSupport().addImportPackage(packageName.getValue());
+    public static IRubyObject rbImport(IRubyObject recv, RubyString packageName) {
+		recv.getRuntime().getJavaSupport().addImportPackage(packageName.getValue());
         return recv;
     }
 
-    public static RubyObject name(Ruby ruby, RubyObject recv, RubyString javaName, RubyString rubyName) {
-		ruby.getJavaSupport().rename(rubyName.getValue(), javaName.getValue());
+    public static IRubyObject name(IRubyObject recv, RubyString javaName, RubyString rubyName) {
+		recv.getRuntime().getJavaSupport().rename(rubyName.getValue(), javaName.getValue());
         return recv;
     }
 
-    public static RubyObject define_exception_handler(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static IRubyObject define_exception_handler(IRubyObject recv, IRubyObject[] args) {
         String name = args[0].toString();
         RubyProc handler = null;
         if (args.length > 1) {
             handler = (RubyProc)args[1];
         } else {
-            handler = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+            handler = RubyProc.newProc(recv.getRuntime(), recv.getRuntime().getClasses().getProcClass());
         }
-        ruby.getJavaSupport().defineExceptionHandler(name, handler);
+        recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 
         return recv;
     }

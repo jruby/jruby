@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class AliasGlobalVariable extends GlobalVariable {
 
@@ -40,14 +41,15 @@ public class AliasGlobalVariable extends GlobalVariable {
 
     public AliasGlobalVariable(Ruby ruby, String name, GlobalVariable original) {
         super(ruby, name, null);
+
         this.original = original;
     }
 
-    public RubyObject get() {
+    public IRubyObject get() {
         return original.get();
     }
 
-    public RubyObject set(RubyObject value) {
+    public IRubyObject set(IRubyObject value) {
         return original.set(value);
     }
 }

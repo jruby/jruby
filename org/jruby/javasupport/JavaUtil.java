@@ -31,9 +31,30 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
-import java.util.*;
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
+import org.jruby.RubyJavaObject;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -41,7 +62,7 @@ import org.jruby.*;
  * @version $Revision$
  */
 public class JavaUtil {
-    public static boolean isCompatible(RubyObject arg, Class javaClass) {
+    public static boolean isCompatible(IRubyObject arg, Class javaClass) {
         if (arg.isNil()) {
             return true;
         }
@@ -84,24 +105,27 @@ public class JavaUtil {
         }
     }
 
-    public static Object convertRubyToJava(Ruby ruby, RubyObject rubyObject) {
+    public static Object convertRubyToJava(Ruby ruby, IRubyObject rubyObject) {
         return convertRubyToJava(ruby, rubyObject, null);
     }
 
-    public static Object convertRubyToJava(Ruby ruby, RubyObject rubyObject, Class javaClass) {
+    public static Object convertRubyToJava(
+        Ruby ruby,
+        IRubyObject rubyObject,
+        Class javaClass) {
         if (rubyObject == null || rubyObject == ruby.getNil()) {
             return null;
         }
 
         if (rubyObject instanceof RubyJavaObject) {
-          return ((RubyJavaObject)rubyObject).getValue();
+            return ((RubyJavaObject) rubyObject).getValue();
         } else if (javaClass == Object.class || javaClass == null) {
             /* The Java method doesn't care what class it is, but we need to 
                know what to convert it to, so we use the object's own class.
                If that doesn't help, we use String to force a call to the 
                object's "to_s" method. */
             javaClass = rubyObject.getJavaClass();
-            if (javaClass == RubyObject.class) {
+            if (javaClass == IRubyObject.class) {
                 javaClass = String.class;
             }
         }
@@ -117,39 +141,51 @@ public class JavaUtil {
                 return new Boolean(rubyObject.isTrue());
             } else if (cName == "float") {
                 if (rubyObject.respondsTo("to_f")) {
-                    return new Float(((RubyNumeric) rubyObject.callMethod("to_f")).getDoubleValue());
+                    return new Float(
+                        ((RubyNumeric) rubyObject.callMethod("to_f"))
+                            .getDoubleValue());
                 } else {
                     return new Float(0.0);
                 }
             } else if (cName == "double") {
                 if (rubyObject.respondsTo("to_f")) {
-                    return new Double(((RubyNumeric) rubyObject.callMethod("to_f")).getDoubleValue());
+                    return new Double(
+                        ((RubyNumeric) rubyObject.callMethod("to_f"))
+                            .getDoubleValue());
                 } else {
                     return new Double(0.0);
                 }
             } else if (cName == "long") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Long(((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
+                    return new Long(
+                        ((RubyNumeric) rubyObject.callMethod("to_i"))
+                            .getLongValue());
                 } else {
                     return new Long(0);
                 }
             } else if (cName == "int") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Integer((int)((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
+                    return new Integer(
+                        (int) ((RubyNumeric) rubyObject.callMethod("to_i"))
+                            .getLongValue());
                 } else {
                     return new Integer(0);
                 }
             } else if (cName == "short") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Short((short)((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
+                    return new Short(
+                        (short) ((RubyNumeric) rubyObject.callMethod("to_i"))
+                            .getLongValue());
                 } else {
-                    return new Short((short)0);
+                    return new Short((short) 0);
                 }
             } else if (cName == "byte") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Byte((byte)((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
+                    return new Byte(
+                        (byte) ((RubyNumeric) rubyObject.callMethod("to_i"))
+                            .getLongValue());
                 } else {
-                    return new Byte((byte)0);
+                    return new Byte((byte) 0);
                 }
             }
 
@@ -168,7 +204,11 @@ public class JavaUtil {
                 int len = ((RubyArray) rubyObject).getLength();
                 Object javaObject = Array.newInstance(arrayClass, len);
                 for (int i = 0; i < len; i++) {
-                    Object item = convertRubyToJava(ruby, ((RubyArray) rubyObject).entry(i), getCanonicalJavaClass(arrayClass));
+                    Object item =
+                        convertRubyToJava(
+                            ruby,
+                            ((RubyArray) rubyObject).entry(i),
+                            getCanonicalJavaClass(arrayClass));
                     Array.set(javaObject, i, item);
                 }
                 return javaObject;
@@ -183,7 +223,11 @@ public class JavaUtil {
                 List javaObject = (List) javaClass.newInstance();
                 int len = ((RubyArray) rubyObject).getLength();
                 for (int i = 0; i < len; i++) {
-                    javaObject.add(convertRubyToJava(ruby, ((RubyArray) rubyObject).entry(i), null));
+                    javaObject.add(
+                        convertRubyToJava(
+                            ruby,
+                            ((RubyArray) rubyObject).entry(i),
+                            null));
                 }
                 return javaObject;
             } catch (InstantiationException iExcptn) {
@@ -196,12 +240,19 @@ public class JavaUtil {
             }
             try {
                 Map javaObject = (Map) javaClass.newInstance();
-                Iterator iter = ((RubyHash) rubyObject).getValueMap().entrySet().iterator();
+                Iterator iter =
+                    ((RubyHash) rubyObject).getValueMap().entrySet().iterator();
                 while (iter.hasNext()) {
                     Map.Entry entry = (Map.Entry) iter.next();
                     javaObject.put(
-                        convertRubyToJava(ruby, (RubyObject) entry.getKey(), null),
-                        convertRubyToJava(ruby, (RubyObject) entry.getValue(), null));
+                        convertRubyToJava(
+                            ruby,
+                            (IRubyObject) entry.getKey(),
+                            null),
+                        convertRubyToJava(
+                            ruby,
+                            (IRubyObject) entry.getValue(),
+                            null));
                 }
                 return javaObject;
             } catch (InstantiationException iExcptn) {
@@ -213,15 +264,17 @@ public class JavaUtil {
         }
     }
 
-    public static RubyObject[] convertJavaArrayToRuby(Ruby ruby, Object[] objects) {
-        RubyObject[] rubyObjects = new RubyObject[objects.length];
+    public static IRubyObject[] convertJavaArrayToRuby(
+        Ruby ruby,
+        Object[] objects) {
+        IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
             rubyObjects[i] = convertJavaToRuby(ruby, objects[i]);
         }
         return rubyObjects;
     }
 
-    public static RubyObject convertJavaToRuby(Ruby ruby, Object object) {
+    public static IRubyObject convertJavaToRuby(Ruby ruby, Object object) {
         if (object == null) {
             return ruby.getNil();
         }
@@ -229,7 +282,10 @@ public class JavaUtil {
         return convertJavaToRuby(ruby, object, object.getClass());
     }
 
-    public static RubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {
+    public static IRubyObject convertJavaToRuby(
+        Ruby ruby,
+        Object object,
+        Class javaClass) {
         if (object == null) {
             return ruby.getNil();
         }
@@ -237,17 +293,27 @@ public class JavaUtil {
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
+                return RubyBoolean.newBoolean(
+                    ruby,
+                    ((Boolean) object).booleanValue());
             } else if (cName == "float" || cName == "double") {
-                return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
+                return RubyFloat.newFloat(
+                    ruby,
+                    ((Number) object).doubleValue());
             } else if (cName == "char") {
-                return RubyFixnum.newFixnum(ruby, ((Character) object).charValue());
+                return RubyFixnum.newFixnum(
+                    ruby,
+                    ((Character) object).charValue());
             } else {
                 // else it's one of the integral types
-                return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
+                return RubyFixnum.newFixnum(
+                    ruby,
+                    ((Number) object).longValue());
             }
         } else if (javaClass == Boolean.class) {
-            return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
+            return RubyBoolean.newBoolean(
+                ruby,
+                ((Boolean) object).booleanValue());
         } else if (javaClass == Float.class || javaClass == Double.class) {
             return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
         } else if (javaClass == Character.class) {
@@ -258,71 +324,89 @@ public class JavaUtil {
             return RubyString.newString(ruby, object.toString());
         } else if (javaClass.isArray()) {
             int len = Array.getLength(object);
-            RubyObject[] items = new RubyObject[len];
+            IRubyObject[] items = new IRubyObject[len];
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, Array.get(object, i));
             }
-            return RubyArray.newArray(ruby, items); 
+            return RubyArray.newArray(ruby, items);
 
         } else if (List.class.isAssignableFrom(javaClass)) {
             int len = ((List) object).size();
-            RubyObject[] items = new RubyObject[len];
+            IRubyObject[] items = new IRubyObject[len];
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, ((List) object).get(i));
             }
-            return RubyArray.newArray(ruby, items); 
+            return RubyArray.newArray(ruby, items);
 
         } else if (Map.class.isAssignableFrom(javaClass)) {
             int len = ((Map) object).size();
-            RubyObject[] items = new RubyObject[len * 2];
+            IRubyObject[] items = new IRubyObject[len * 2];
             Iterator iter = ((Map) object).entrySet().iterator();
             for (int i = 0; i < len; i++) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 items[2 * i] = convertJavaToRuby(ruby, entry.getKey());
                 items[2 * i + 1] = convertJavaToRuby(ruby, entry.getValue());
             }
-            return RubyHash.create(ruby, null, items);
-        } else if (RubyObject.class.isAssignableFrom(javaClass)) {
-            return (RubyObject)object;
+            return RubyHash.create(ruby.getClasses().getHashClass(), items);
+        } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
+            return (IRubyObject) object;
         } else if (object instanceof RubyProxy) {
-              return ((RubyProxy)object).getRubyObject();
+            return ((RubyProxy) object).getRubyObject();
         } else {
             // Look if a RubyObject exists which already represents object.
-            Iterator iter = ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
+            Iterator iter =
+                ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
             while (iter.hasNext()) {
-                RubyObject rubyObject = (RubyObject) iter.next();
+                IRubyObject rubyObject = (IRubyObject) iter.next();
                 if (rubyObject instanceof RubyJavaObject) {
-                    if (((RubyJavaObject)rubyObject).getValue() == object) {
+                    if (((RubyJavaObject) rubyObject).getValue() == object) {
                         return rubyObject;
                     }
                 }
             }
-            return new RubyJavaObject(ruby, (RubyClass)ruby.getJavaSupport().loadClass(javaClass, null), object);
+            return new RubyJavaObject(
+                ruby,
+                (RubyClass) ruby.getJavaSupport().loadClass(javaClass, null),
+                object);
         }
     }
 
-    protected static Class getCanonicalJavaClass (Class type)
-    {
+    protected static Class getCanonicalJavaClass(Class type) {
         // Replace wrapper classes with the primitive class that each
         // represents.
-        if (type == Double.class)     return Double.TYPE;
-        if (type == Float.class)      return Float.TYPE;
-        if (type == Integer.class)    return Integer.TYPE;
-        if (type == Long.class)       return Long.TYPE;
-        if (type == Short.class)      return Short.TYPE;
-        if (type == Byte.class)       return Byte.TYPE;
-        if (type == Character.class)  return Character.TYPE;
-        if (type == Void.class)       return Void.TYPE;
-        if (type == Boolean.class)    return Boolean.TYPE;
+        if (type == Double.class)
+            return Double.TYPE;
+        if (type == Float.class)
+            return Float.TYPE;
+        if (type == Integer.class)
+            return Integer.TYPE;
+        if (type == Long.class)
+            return Long.TYPE;
+        if (type == Short.class)
+            return Short.TYPE;
+        if (type == Byte.class)
+            return Byte.TYPE;
+        if (type == Character.class)
+            return Character.TYPE;
+        if (type == Void.class)
+            return Void.TYPE;
+        if (type == Boolean.class)
+            return Boolean.TYPE;
 
         // Replace each common interface with a concrete class that
         // can implement it.
-        if (type == Collection.class) return ArrayList.class;
-        if (type == List.class)       return ArrayList.class;
-        if (type == Map.class)        return HashMap.class;
-        if (type == Set.class)        return HashSet.class;
-        if (type == SortedSet.class)  return TreeSet.class;
-        if (type == SortedMap.class)  return TreeMap.class;
+        if (type == Collection.class)
+            return ArrayList.class;
+        if (type == List.class)
+            return ArrayList.class;
+        if (type == Map.class)
+            return HashMap.class;
+        if (type == Set.class)
+            return HashSet.class;
+        if (type == SortedSet.class)
+            return TreeSet.class;
+        if (type == SortedMap.class)
+            return TreeMap.class;
 
         return type;
     }

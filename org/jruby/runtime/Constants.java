@@ -30,59 +30,7 @@
 
 package org.jruby.runtime;
 
-import java.io.File;
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
-import org.ablaf.internal.lexer.DefaultLexerPosition;
-import org.ablaf.lexer.LexerFactory;
-import org.ablaf.parser.IParser;
-import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.ZeroArgNode;
-import org.jruby.common.RubyErrorHandler;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.LoadError;
-import org.jruby.exceptions.NextJump;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RedoJump;
-import org.jruby.exceptions.RetryException;
-import org.jruby.exceptions.ReturnException;
-import org.jruby.exceptions.RubyBugException;
-import org.jruby.exceptions.RubySecurityException;
-import org.jruby.internal.runtime.methods.IterateMethod;
-import org.jruby.internal.runtime.methods.RubyMethodCache;
-import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.DefaultRubyParser;
-import org.jruby.parser.IRubyParserResult;
-import org.jruby.parser.RubyParserConfiguration;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.regexp.IRegexpAdapter;
-import org.jruby.util.RubyHashMap;
-import org.jruby.util.RubyMap;
-import org.jruby.util.RubyStack;
-import org.jruby.util.collections.CollectionFactory;
-import org.jruby.util.collections.IStack;
 
 public abstract class Constants {
     public static final int SCOPE_PUBLIC = 0;

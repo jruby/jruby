@@ -29,14 +29,18 @@
  */
 package org.jruby;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-import org.jruby.exceptions.*;
-import org.jruby.javasupport.*;
-import org.jruby.runtime.*;
-
-import org.apache.oro.io.*;
+import org.apache.oro.io.GlobFilenameFilter;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.NotImplementedError;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * .The Ruby built-in class Dir.
@@ -92,8 +96,8 @@ public class RubyDir extends RubyObject {
         return dirClass;
     }
 
-    public static RubyObject newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyDir result = new RubyDir(ruby, (RubyClass)recv);
+    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyDir result = new RubyDir(recv.getRuntime(), (RubyClass)recv);
         result.callInit(args);
         return result;
     }
@@ -105,14 +109,14 @@ public class RubyDir extends RubyObject {
      * <code>Dir</code> object returned, so a new <code>Dir</code> instance
      * must be created to reflect changes to the underlying file system.
      */
-    public RubyObject initialize(RubyString path) {
+    public IRubyObject initialize(RubyString path) {
         path.checkSafeString();
 
         dir = new File(path.getValue());
         if (!dir.isDirectory()) {
             path = null;
             dir = null;
-            throw new IOError(getRuby(), path.getValue() + " is not a directory");
+            throw new IOError(getRuntime(), path.getValue() + " is not a directory");
         }
 		List snapshotList = new ArrayList();
 		snapshotList.add(".");
@@ -130,7 +134,7 @@ public class RubyDir extends RubyObject {
      * Returns an array of filenames matching the specified wildcard pattern
      * <code>pat</code>.
      */
-    public static RubyArray glob(Ruby ruby, RubyObject recv, RubyString pat) {
+    public static RubyArray glob(IRubyObject recv, RubyString pat) {
         // FIXME this is only a small subset of the functionallity of this function
         
         String pattern = pat.toString();
@@ -141,20 +145,20 @@ public class RubyDir extends RubyObject {
 
         String[] files = new File(".").list(new GlobFilenameFilter(pattern));
 
-        return RubyArray.newArray(ruby, JavaUtil.convertJavaArrayToRuby(ruby, files));
+        return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
     /** Changes the current directory to <code>path</code> */
-    public static RubyObject chdir(Ruby ruby, RubyObject recv, RubyString path) {
-        System.setProperty("user.dir", getDir(ruby, path.toString()).toString());
-        return RubyFixnum.newFixnum(ruby, 0);
+    public static IRubyObject chdir(IRubyObject recv, RubyString path) {
+        System.setProperty("user.dir", getDir(recv.getRuntime(), path.toString()).toString());
+        return RubyFixnum.newFixnum(recv.getRuntime(), 0);
     }
 
     /**
      * Changes the root directory (only allowed by super user).  Not available
      * on all platforms.
      */
-    public static RubyObject chroot(Ruby ruby, RubyObject recv, RubyString path) {
+    public static IRubyObject chroot(IRubyObject recv, RubyString path) {
         throw new NotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }
 
@@ -162,29 +166,29 @@ public class RubyDir extends RubyObject {
      * Deletes the directory specified by <code>path</code>.  The directory must
      * be empty.
      */
-    public static RubyObject rmdir(Ruby ruby, RubyObject recv, RubyString path) {
+    public static IRubyObject rmdir(IRubyObject recv, RubyString path) {
         new File(path.toString()).delete();
-        return RubyFixnum.newFixnum(ruby, 0);
+        return RubyFixnum.newFixnum(recv.getRuntime(), 0);
     }
 
     /**
      * Executes the block once for each file in the directory specified by
      * <code>path</code>.
      */
-    public static RubyObject foreach(Ruby ruby, RubyObject recv, RubyString path) {
+    public static IRubyObject foreach(IRubyObject recv, RubyString path) {
         path.checkSafeString();
 
-        List contents = getContents(getDir(ruby, path.getValue()));
+        List contents = getContents(getDir(recv.getRuntime(), path.getValue()));
         for (Iterator i=contents.iterator(); i.hasNext();) {
             String name = (String) i.next();
-            ruby.yield(new RubyString(ruby, name));
+            recv.getRuntime().yield(new RubyString(recv.getRuntime(), name));
         }
-        return ruby.getNil();
+        return recv.getRuntime().getNil();
     }
 
     /** Returns the current directory. */
-    public static RubyString getwd(Ruby ruby, RubyObject recv) {
-        return new RubyString(ruby, System.getProperty("user.dir"));
+    public static RubyString getwd(IRubyObject recv) {
+        return new RubyString(recv.getRuntime(), System.getProperty("user.dir"));
     }
 
     /**
@@ -192,12 +196,12 @@ public class RubyDir extends RubyObject {
      * <code>mode</code> parameter is provided only to support existing Ruby
      * code, and is ignored.
      */
-    public static RubyObject mkdir(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(ruby, args.length, 1);
+            throw new ArgumentError(recv.getRuntime(), args.length, 1);
         }
         if (args.length > 2) {
-            throw new ArgumentError(ruby, args.length, 2);
+            throw new ArgumentError(recv.getRuntime(), args.length, 2);
         }
 
         args[0].checkSafeString();
@@ -205,10 +209,10 @@ public class RubyDir extends RubyObject {
 
         File newDir = new File(path);
         if (newDir.exists()) {
-            throw new IOError(ruby, path + " already exists");
+            throw new IOError(recv.getRuntime(), path + " already exists");
         }
 
-        return RubyBoolean.newBoolean(ruby, newDir.mkdir());
+        return RubyBoolean.newBoolean(recv.getRuntime(), newDir.mkdir());
     }
 
     /**
@@ -216,7 +220,7 @@ public class RubyDir extends RubyObject {
      * provided, a new directory object is passed to the block, which closes the
      * directory object before terminating.
      */
-    public static RubyObject open(Ruby ruby, RubyObject recv, RubyString path) {
+    public static IRubyObject open(IRubyObject recv, RubyString path) {
         throw new NotImplementedError();
     }
 
@@ -225,7 +229,7 @@ public class RubyDir extends RubyObject {
     /**
      * Closes the directory stream.
      */
-    public RubyObject close() {
+    public IRubyObject close() {
         // I don't think we need to close since we don't actually have
         // an open stream...
         return this;
@@ -234,10 +238,10 @@ public class RubyDir extends RubyObject {
     /**
      * Executes the block once for each entry in the directory.
      */
-    public RubyObject each() {
+    public IRubyObject each() {
         String[] contents = snapshot;
         for (int i=0; i<contents.length; i++) {
-            getRuby().yield(RubyString.newString(getRuby(), contents[i]));
+            getRuntime().yield(RubyString.newString(getRuntime(), contents[i]));
         }
         return this;
     }
@@ -246,27 +250,27 @@ public class RubyDir extends RubyObject {
      * Returns the current position in the directory.
      */
     public RubyInteger tell() {
-        return RubyFixnum.newFixnum(getRuby(), pos);
+        return RubyFixnum.newFixnum(getRuntime(), pos);
     }
 
     /**
      * Moves to a position <code>d</code>.  <code>pos</code> must be a value
      * returned by <code>tell</code> or 0.
      */
-    public RubyObject seek(RubyFixnum pos) {
+    public IRubyObject seek(RubyFixnum pos) {
         this.pos = (int) pos.getLongValue();
         return pos;
     }
 
     /** Returns the next entry from this directory. */
     public RubyString read() {
-        return new RubyString(getRuby(), snapshot[pos++]);
+        return new RubyString(getRuntime(), snapshot[pos++]);
     }
 
     /** Moves position in this directory to the first entry. */
-    public RubyObject rewind() {
+    public IRubyObject rewind() {
         pos = 0;
-        return RubyFixnum.newFixnum(getRuby(), pos);
+        return RubyFixnum.newFixnum(getRuntime(), pos);
     }
 
 // ----- Helper Methods --------------------------------------------------------

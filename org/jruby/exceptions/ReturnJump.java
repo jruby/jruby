@@ -29,21 +29,21 @@
  */
 package org.jruby.exceptions;
 
-import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** The ReturnException is thrown if a 'return' statement is interpreted.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class ReturnException extends JumpException {
-    private RubyObject returnValue;
+public class ReturnJump extends JumpException {
+    private IRubyObject returnValue;
 
 	/** Creates a new ReturnException with a return value.
 	 * 
 	 * @param returnValue The return value.
 	 */
-    public ReturnException(RubyObject returnValue) {
+    public ReturnJump(IRubyObject returnValue) {
         this.returnValue = returnValue;
     }
     
@@ -51,7 +51,7 @@ public class ReturnException extends JumpException {
      * 
      * @return Value of property returnValue.
      */
-    public RubyObject getReturnValue() {
+    public IRubyObject getReturnValue() {
         return returnValue;
     }
 }

@@ -36,6 +36,7 @@ import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -53,41 +54,41 @@ public class JavaConstructor implements Callback {
         return -1;
     }
 
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         Constructor constructor = findMatchingConstructor(args);
 
         if (constructor == null) {
-            throw new ArgumentError(ruby, "wrong arguments.");
+            throw new ArgumentError(recv.getRuntime(), "wrong arguments.");
         }
 
         int argsLength = args != null ? args.length : 0;
         Object[] newArgs = new Object[argsLength];
         for (int i = 0; i < argsLength; i++) {
             newArgs[i] =
-                JavaUtil.convertRubyToJava(ruby, args[i], constructor.getParameterTypes()[i]);
+                JavaUtil.convertRubyToJava(recv.getRuntime(), args[i], constructor.getParameterTypes()[i]);
         }
 
         try {
             Object javaValue = constructor.newInstance(newArgs);
             RubyJavaObject javaObject =
-                new RubyJavaObject(ruby, (RubyClass) recv, javaValue);
+                new RubyJavaObject(recv.getRuntime(), (RubyClass) recv, javaValue);
             javaObject.callInit(args);
             return javaObject;
 
         } catch (IllegalAccessException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+            throw new RaiseException(recv.getRuntime(), "RuntimeError", ex.getMessage());
         } catch (InstantiationException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+            throw new RaiseException(recv.getRuntime(), "RuntimeError", ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+            throw new RaiseException(recv.getRuntime(), "RuntimeError", ex.getMessage());
         } catch (InvocationTargetException ex) {
-            ruby.getJavaSupport().handleNativeException((Exception)ex.getTargetException());
+            recv.getRuntime().getJavaSupport().handleNativeException((Exception)ex.getTargetException());
 
-            return ruby.getNil();
+            return recv.getRuntime().getNil();
         }
     }
 
-    private Constructor findMatchingConstructor(RubyObject[] args) {
+    private Constructor findMatchingConstructor(IRubyObject[] args) {
         ArrayList executeConstructors = new ArrayList(constructors.length);
 
         for (int i = 0; i < constructors.length; i++) {
@@ -107,7 +108,7 @@ public class JavaConstructor implements Callback {
         return (constructor.getParameterTypes().length == expected);
     }
 
-    private static boolean hasMatchingArguments(Constructor constructor, RubyObject[] args) {
+    private static boolean hasMatchingArguments(Constructor constructor, IRubyObject[] args) {
         int expectedLength = (args != null ? args.length : 0);
         if (! hasMatchingArgumentCount(constructor, expectedLength)) {
             return false;

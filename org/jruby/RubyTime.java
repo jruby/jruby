@@ -32,6 +32,7 @@ import java.util.*;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyDateFormat;
 
 /** The Time class.
@@ -64,9 +65,9 @@ public class RubyTime extends RubyObject {
         timeClass.defineSingletonMethod("gm", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
         timeClass.defineSingletonMethod("utc", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
 
-        timeClass.defineMethod("<=>", CallbackFactory.getMethod(RubyTime.class, "op_cmp", RubyObject.class));
-        timeClass.defineMethod("-", CallbackFactory.getMethod(RubyTime.class, "op_minus", RubyObject.class));
-        timeClass.defineMethod("+", CallbackFactory.getMethod(RubyTime.class, "op_plus", RubyObject.class));
+        timeClass.defineMethod("<=>", CallbackFactory.getMethod(RubyTime.class, "op_cmp", IRubyObject.class));
+        timeClass.defineMethod("-", CallbackFactory.getMethod(RubyTime.class, "op_minus", IRubyObject.class));
+        timeClass.defineMethod("+", CallbackFactory.getMethod(RubyTime.class, "op_plus", IRubyObject.class));
 
         timeClass.defineMethod("sec", CallbackFactory.getMethod(RubyTime.class, "sec"));
         timeClass.defineMethod("min", CallbackFactory.getMethod(RubyTime.class, "min"));
@@ -88,7 +89,7 @@ public class RubyTime extends RubyObject {
         timeClass.defineMethod("ctime", CallbackFactory.getMethod(RubyTime.class, "asctime"));
         timeClass.defineMethod("to_s", CallbackFactory.getMethod(RubyTime.class, "to_s"));
         timeClass.defineMethod("inspect", CallbackFactory.getMethod(RubyTime.class, "to_s"));
-        timeClass.defineMethod("strftime", CallbackFactory.getMethod(RubyTime.class, "strftime", RubyObject.class));
+        timeClass.defineMethod("strftime", CallbackFactory.getMethod(RubyTime.class, "strftime", IRubyObject.class));
 
         timeClass.defineMethod("tv_usec", CallbackFactory.getMethod(RubyTime.class, "usec"));
         timeClass.defineMethod("usec", CallbackFactory.getMethod(RubyTime.class, "usec"));
@@ -111,16 +112,16 @@ public class RubyTime extends RubyObject {
     }
 
 
-    public static RubyTime s_new(Ruby ruby, RubyObject rubyClass) {
-        RubyObject[] args = new RubyObject[1];
-        args[0] = RubyFixnum.newFixnum(ruby, new Date().getTime());
-        return s_at(ruby, rubyClass, args);
+    public static RubyTime s_new(IRubyObject receiver) {
+        IRubyObject[] args = new IRubyObject[1];
+        args[0] = RubyFixnum.newFixnum(receiver.getRuntime(), new Date().getTime());
+        return s_at(receiver, args);
     }
 
-    public static RubyTime new_at(Ruby ruby, RubyObject type, RubyObject args[]) {
-        int len = type.argCount(args, 1, 2);
+    public static RubyTime new_at(IRubyObject receiver, IRubyObject args[]) {
+        int len = receiver.argCount(args, 1, 2);
 
-        RubyTime time = new RubyTime(ruby, (RubyClass) type);
+        RubyTime time = new RubyTime(receiver.getRuntime(), (RubyClass) receiver);
         time.cal = Calendar.getInstance();
 
         if (args[0] instanceof RubyTime) {
@@ -137,12 +138,12 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    public static RubyTime new_local(Ruby ruby, RubyObject type, RubyObject args[]) {
-        return createTime(ruby, type, args, false);
+    public static RubyTime new_local(IRubyObject type, IRubyObject args[]) {
+        return createTime(type, args, false);
     }
 
-    public static RubyTime new_utc(Ruby ruby, RubyObject type, RubyObject args[]) {
-        return createTime(ruby, type, args, true);
+    public static RubyTime new_utc(IRubyObject type, IRubyObject args[]) {
+        return createTime(type, args, true);
     }
 
     private static final String[] months = {"jan", "feb", "mar", "apr", "may", "jun",
@@ -150,10 +151,10 @@ public class RubyTime extends RubyObject {
     private static final long[] time_min = {1, 0, 0, 0, 0};
     private static final long[] time_max = {31, 23, 59, 60, Long.MAX_VALUE};
 
-    private static RubyTime createTime(Ruby ruby, RubyObject type, RubyObject args[], boolean gmt) {
+    private static RubyTime createTime(IRubyObject type, IRubyObject args[], boolean gmt) {
         int len = 6;
         if (args.length == 10) {
-            args = new RubyObject[] {
+            args = new IRubyObject[] {
                 args[5],
                 args[4],
                 args[3],
@@ -181,7 +182,7 @@ public class RubyTime extends RubyObject {
                         try {
                             month = Integer.parseInt(args[1].toString()) - 1;
                         } catch (NumberFormatException nfExcptn) {
-                            throw new ArgumentError(ruby, "Argument out of range.");
+                            throw new ArgumentError(type.getRuntime(), "Argument out of range.");
                         }
                     }
                 } else {
@@ -189,7 +190,7 @@ public class RubyTime extends RubyObject {
                 }
             }
             if (0 > month || month > 11) {
-                throw new ArgumentError(ruby, "Argument out of range.");
+                throw new ArgumentError(type.getRuntime(), "Argument out of range.");
             }
         }
 
@@ -199,12 +200,12 @@ public class RubyTime extends RubyObject {
             if (!args[i + 2].isNil()) {
                 int_args[i] = RubyNumeric.fix2int(args[i + 2]);
                 if (time_min[i] > int_args[i] || int_args[i] > time_max[i]) {
-                    throw new ArgumentError(ruby, "Argument out of range.");
+                    throw new ArgumentError(type.getRuntime(), "Argument out of range.");
                 }
             }
         }
 
-        RubyTime time = new RubyTime(ruby, (RubyClass) type);
+        RubyTime time = new RubyTime(type.getRuntime(), (RubyClass) type);
         if (gmt) {
             time.cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         } else {
@@ -219,9 +220,9 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    public static RubyTime s_at(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
+    public static RubyTime s_at(IRubyObject rubyClass, IRubyObject[] args) {
         long secs = RubyNumeric.num2long(args[0]);
-        RubyTime time = new RubyTime(ruby, (RubyClass) rubyClass);
+        RubyTime time = new RubyTime(rubyClass.getRuntime(), (RubyClass) rubyClass);
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date(secs));
         time.setJavaCalendar(cal);
@@ -242,7 +243,7 @@ public class RubyTime extends RubyObject {
         return RubyBoolean.newBoolean(ruby, cal.getTimeZone().getID().equals("GMT"));
     }
 
-    public RubyString strftime(RubyObject format) {
+    public RubyString strftime(IRubyObject format) {
         rubyDateFormat.setCalendar(cal);
         rubyDateFormat.applyPattern(format.toString());
         String result = rubyDateFormat.format(cal.getTime());
@@ -250,7 +251,7 @@ public class RubyTime extends RubyObject {
         return RubyString.newString(ruby, result);
     }
 
-    public RubyObject op_plus(RubyObject other) {
+    public IRubyObject op_plus(IRubyObject other) {
         long time = getTimeInMillis();
 
         if (other instanceof RubyTime) {
@@ -266,7 +267,7 @@ public class RubyTime extends RubyObject {
         }
     }
 
-    public RubyObject op_minus(RubyObject other) {
+    public IRubyObject op_minus(IRubyObject other) {
         long time = getTimeInMillis();
 
         if (other instanceof RubyTime) {
@@ -284,7 +285,7 @@ public class RubyTime extends RubyObject {
         }
     }
 
-    public RubyFixnum op_cmp(RubyObject other) {
+    public RubyFixnum op_cmp(IRubyObject other) {
         long millis = getTimeInMillis();
 
         if (other instanceof RubyFloat || other instanceof RubyBignum) {
@@ -329,7 +330,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyArray to_a() {
-        return RubyArray.newArray(ruby, new RubyObject[] {
+        return RubyArray.newArray(ruby, new IRubyObject[] {
             sec(),
             min(),
             hour(),

@@ -30,6 +30,7 @@ import java.lang.reflect.*;
 
 import org.jruby.*;
 import org.jruby.exceptions.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.AssertError;
 import org.jruby.util.Asserts;
 
@@ -74,10 +75,9 @@ public final class ReflectionCallbackMethod implements Callback {
             try {
                 Class[] newArgs = args;
                 if (isStaticMethod) {
-                    newArgs = new Class[args.length + 2];
-                    System.arraycopy(args, 0, newArgs, 2, args.length);
-                    newArgs[0] = Ruby.class;
-                    newArgs[1] = RubyObject.class;
+                    newArgs = new Class[args.length + 1];
+                    System.arraycopy(args, 0, newArgs, 1, args.length);
+                    newArgs[0] = IRubyObject.class;
                 }
                 method = klass.getMethod(methodName, newArgs);
             } catch (NoSuchMethodException nsmExcptn) {
@@ -99,30 +99,22 @@ public final class ReflectionCallbackMethod implements Callback {
         return method;
     }
 
-    protected final void testArgsCount(final Ruby ruby, final RubyObject[] methodArgs) {
+    protected void testArgsCount(Ruby ruby, IRubyObject[] methodArgs) {
         if (isRestArgs) {
             if (methodArgs.length < (args.length - 1)) {
-                throw new ArgumentError(
-                    ruby,
-                    getExpectedArgsString(methodArgs));
+                throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
             }
         } else {
             if (methodArgs.length != args.length) {
-                throw new ArgumentError(
-                    ruby,
-                    getExpectedArgsString(methodArgs));
+                throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
             }
         }
     }
 
-    protected final RubyObject invokeMethod(
-        final RubyObject recv,
-        final Object[] methodArgs,
-        final Ruby ruby) {
-        final Object[] reflectionArguments =
-            packageArgumentsForReflection(methodArgs, ruby, recv);
+    protected IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs) {
+        Object[] reflectionArguments = packageArgumentsForReflection(methodArgs, recv);
         try {
-            return (RubyObject) getMethod().invoke(
+            return (IRubyObject) getMethod().invoke(
                 isStaticMethod ? null : recv,
                 reflectionArguments);
         } catch (InvocationTargetException itExcptn) {
@@ -131,10 +123,11 @@ public final class ReflectionCallbackMethod implements Callback {
             } else if (itExcptn.getTargetException() instanceof JumpException) {
                 throw (JumpException) itExcptn.getTargetException();
             } else {
-                ruby.getJavaSupport().handleNativeException((Exception)itExcptn.getTargetException());
-                return ruby.getNil();
+                recv.getRuntime().getJavaSupport().handleNativeException(
+                    (Exception) itExcptn.getTargetException());
+                return recv.getRuntime().getNil();
             }
-        } catch (final IllegalAccessException iaExcptn) {
+        } catch (IllegalAccessException iaExcptn) {
             StringBuffer message = new StringBuffer();
             message.append(iaExcptn.getMessage());
             message.append(':');
@@ -149,37 +142,33 @@ public final class ReflectionCallbackMethod implements Callback {
             message.append(']');
             Asserts.assertNotReached(message.toString());
         } catch (final IllegalArgumentException iaExcptn) {
-            throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
+            throw new RaiseException(recv.getRuntime(), "TypeError", iaExcptn.getMessage());
         }
         throw new AssertError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
     }
 
-    public final RubyObject execute(final RubyObject recv, RubyObject[] args, final Ruby ruby) {
-        args = (args != null) ? args : new RubyObject[0];
-        testArgsCount(ruby, args);
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
+        args = (args != null) ? args : new IRubyObject[0];
+        testArgsCount(recv.getRuntime(), args);
         // testArgsClass(args);
-        return invokeMethod(recv, args, ruby);
+        return invokeMethod(recv, args);
     }
 
-    private final Object[] packageArgumentsForReflection(
-        final Object[] arguments,
-        final Ruby ruby,
-        final RubyObject rubyClass) {
+    private Object[] packageArgumentsForReflection(Object[] arguments, IRubyObject rubyClass) {
         Object[] result = arguments;
         if (isRestArgs) {
             result = packageRestArgumentsForReflection(result);
         }
         if (isStaticMethod) {
-            result =
-                packageStaticArgumentsForReflection(result, ruby, rubyClass);
+            result = packageStaticArgumentsForReflection(result, rubyClass.getRuntime(), rubyClass);
         }
         return result;
     }
 
-    private final Object[] packageStaticArgumentsForReflection(
-        final Object[] arguments,
-        final Ruby ruby,
-        final RubyObject rubyClass) {
+    private Object[] packageStaticArgumentsForReflection(
+        Object[] arguments,
+        Ruby ruby,
+        IRubyObject rubyClass) {
         Object[] result = new Object[arguments.length + 2];
         result[0] = ruby;
         result[1] = rubyClass;
@@ -188,8 +177,7 @@ public final class ReflectionCallbackMethod implements Callback {
     }
 
     private final Object[] packageRestArgumentsForReflection(final Object[] originalArgs) {
-        RubyObject[] restArray =
-            new RubyObject[originalArgs.length - (args.length - 1)];
+        IRubyObject[] restArray = new IRubyObject[originalArgs.length - (args.length - 1)];
         Object[] result = new Object[args.length];
         try {
             System.arraycopy(
@@ -205,14 +193,14 @@ public final class ReflectionCallbackMethod implements Callback {
                     + "\" in class \""
                     + klass.getName()
                     + "\". "
-                    + getExpectedArgsString((RubyObject[]) originalArgs));
+                    + getExpectedArgsString((IRubyObject[]) originalArgs));
         }
         System.arraycopy(originalArgs, 0, result, 0, args.length - 1);
         result[args.length - 1] = restArray;
         return result;
     }
 
-    protected String getExpectedArgsString(RubyObject[] methodArgs) {
+    protected String getExpectedArgsString(IRubyObject[] methodArgs) {
         StringBuffer sb = new StringBuffer();
         sb.append("Wrong arguments:");
 
@@ -224,9 +212,7 @@ public final class ReflectionCallbackMethod implements Callback {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                String className = methodArgs[i].getClass().getName();
-                className =
-                    className.substring(className.lastIndexOf(".Ruby") + 5);
+                String className = methodArgs[i].getType().toName();
                 sb.append("a");
                 if (className.charAt(0) == 'A'
                     || className.charAt(0) == 'E'
@@ -250,8 +236,7 @@ public final class ReflectionCallbackMethod implements Callback {
                     sb.append(",");
                 }
                 String className = args[i].getName();
-                sb.append("a").append(
-                    className.substring(className.lastIndexOf(".Ruby") + 5));
+                sb.append("a").append(className.substring(className.lastIndexOf(".Ruby") + 5));
             }
             if (isRestArgs) {
                 sb.append(", ...");

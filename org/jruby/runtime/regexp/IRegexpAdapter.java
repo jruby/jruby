@@ -30,8 +30,8 @@
 package org.jruby.runtime.regexp;
 
 import org.jruby.Ruby;
-import org.jruby.RubyObject;
 import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Regexp adapter base class.
@@ -84,7 +84,7 @@ public abstract class IRegexpAdapter {
     /**
      * Does the given argument match the pattern?
      */
-    public abstract RubyObject search(Ruby ruby, String target, int startPos);
+    public abstract IRubyObject search(Ruby ruby, String target, int startPos);
 
     /**
      * Removes whitespace and comments from regexp, for those libs 

@@ -32,11 +32,11 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -51,8 +51,7 @@ public class MarshalStream extends FilterOutputStream {
     private Map dumpedObjects = new HashMap();
     private Map dumpedSymbols = new HashMap();
 
-    public MarshalStream(Ruby ruby, OutputStream out, int depthLimit)
-        throws IOException {
+    public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
         super(out);
 
         this.ruby = ruby;
@@ -62,7 +61,7 @@ public class MarshalStream extends FilterOutputStream {
         out.write(Constants.MARSHAL_MINOR);
     }
 
-    public void dumpObject(RubyObject value) throws IOException {
+    public void dumpObject(IRubyObject value) throws IOException {
         depth++;
         if (depth > depthLimit) {
             throw new ArgumentError(ruby, "exceed depth limit");
@@ -77,18 +76,14 @@ public class MarshalStream extends FilterOutputStream {
         depth--;
     }
 
-    private void writeAndRegister(RubyObject value) throws IOException {
+    private void writeAndRegister(IRubyObject value) throws IOException {
         writeAndRegister(dumpedObjects, '@', value);
     }
     private void writeAndRegister(RubySymbol value) throws IOException {
         writeAndRegister(dumpedSymbols, ';', value);
     }
 
-    private void writeAndRegister(
-        Map registry,
-        char linkSymbol,
-        RubyObject value)
-        throws IOException {
+    private void writeAndRegister(Map registry, char linkSymbol, IRubyObject value) throws IOException {
         if (registry.containsKey(value)) {
             out.write(linkSymbol);
             dumpInt(((Integer) registry.get(value)).intValue());
@@ -98,16 +93,13 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
-    private boolean hasUserDefinedMarshaling(RubyObject value) {
+    private boolean hasUserDefinedMarshaling(IRubyObject value) {
         return value.respondsTo("_dump");
     }
 
-    private void userMarshal(RubyObject value) throws IOException {
+    private void userMarshal(IRubyObject value) throws IOException {
         out.write('u');
-        dumpObject(
-            RubySymbol.newSymbol(
-                ruby,
-                value.getInternalClass().getClassname()));
+        dumpObject(RubySymbol.newSymbol(ruby, value.getInternalClass().getClassname()));
 
         RubyInteger depth = RubyFixnum.newFixnum(ruby, depthLimit);
         RubyString marshaled = (RubyString) value.callMethod("_dump", depth);

@@ -40,6 +40,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -61,11 +62,11 @@ public class UnmarshalStream extends FilterInputStream {
         in.read(); // Minor
     }
 
-    public RubyObject unmarshalObject() throws IOException {
+    public IRubyObject unmarshalObject() throws IOException {
         int type = readUnsignedByte();
         switch (type) {
             case '0' :
-                return RubyObject.nilObject(ruby);
+                return ruby.getNil();
             case 'T' :
                 return RubyBoolean.newBoolean(ruby, true);
             case 'F' :
@@ -155,14 +156,14 @@ public class UnmarshalStream extends FilterInputStream {
         return (int) result;
     }
 
-    private RubyObject defaultObjectUnmarshal() throws IOException {
+    private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject();
         int variableCount = unmarshalInt();
 
         RubyMap variables = new RubyHashMap(variableCount);
         for (int i = 0; i < variableCount; i++) {
             RubySymbol name = (RubySymbol) unmarshalObject();
-            RubyObject value = unmarshalObject();
+            IRubyObject value = unmarshalObject();
             variables.put(name.toId(), value);
         }
 
@@ -174,7 +175,7 @@ public class UnmarshalStream extends FilterInputStream {
         return result;
     }
 
-    private RubyObject userUnmarshal() throws IOException {
+    private IRubyObject userUnmarshal() throws IOException {
         String className = ((RubySymbol) unmarshalObject()).toId();
         String marshaled = unmarshalString();
         RubyModule classInstance = ruby.getRubyModule(className);

@@ -32,16 +32,17 @@
 
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.Ruby;
 import org.jruby.exceptions.NameError;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReadonlyGlobalVariable extends GlobalVariable {
 
-    public ReadonlyGlobalVariable(Ruby ruby, String name, RubyObject value) {
+    public ReadonlyGlobalVariable(Ruby ruby, String name, IRubyObject value) {
         super(ruby, name, value);
     }
 
-    public RubyObject set(RubyObject value) {
+    public IRubyObject set(IRubyObject value) {
         throw new NameError(ruby, "can't set variable " + name());
     }
 }

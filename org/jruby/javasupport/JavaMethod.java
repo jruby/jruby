@@ -37,6 +37,7 @@ import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
 /**
@@ -63,31 +64,31 @@ public class JavaMethod implements Callback {
         return -1;
     }
 
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         Method method = findMatchingMethod(args);
 
         if (method == null) {
             if (callSuper) {
-            	return ruby.getRuntime().callSuper(args);
+            	return recv.getRuntime().getRuntime().callSuper(args);
             } else {
-            	throw new ArgumentError(ruby, "wrong argument count or types.");
+            	throw new ArgumentError(recv.getRuntime(), "wrong argument count or types.");
             }
         }
 
         int argsLength = args != null ? args.length : 0;
         Object[] newArgs = new Object[argsLength];
         for (int i = 0; i < argsLength; i++) {
-            newArgs[i] = JavaUtil.convertRubyToJava(ruby, args[i], method.getParameterTypes()[i]);
+            newArgs[i] = JavaUtil.convertRubyToJava(recv.getRuntime(), args[i], method.getParameterTypes()[i]);
         }
 
         try {
             Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
 
-            return JavaUtil.convertJavaToRuby(ruby, method.invoke(receiver, newArgs));
+            return JavaUtil.convertJavaToRuby(recv.getRuntime(), method.invoke(receiver, newArgs));
         } catch (InvocationTargetException itExcptn) {
-            convertException(ruby, (Exception)itExcptn.getTargetException());
+            convertException(recv.getRuntime(), (Exception)itExcptn.getTargetException());
 
-            return ruby.getNil();
+            return recv.getRuntime().getNil();
         } catch (Exception excptn) {
             Asserts.assertNotReached();
             return null;
@@ -105,7 +106,7 @@ public class JavaMethod implements Callback {
     }
 
 
-    private Method findMatchingMethod(RubyObject[] args) {
+    private Method findMatchingMethod(IRubyObject[] args) {
         ArrayList executeMethods = new ArrayList(methods.length);
 
         for (int i = 0; i < methods.length; i++) {
@@ -125,7 +126,7 @@ public class JavaMethod implements Callback {
         return (method.getParameterTypes().length == expected);
     }
 
-    private static boolean hasMatchingArguments(Method method, RubyObject[] args) {
+    private static boolean hasMatchingArguments(Method method, IRubyObject[] args) {
         int expectedLength = (args != null ? args.length : 0);
         if (! hasMatchingArgumentCount(method, expectedLength)) {
             return false;

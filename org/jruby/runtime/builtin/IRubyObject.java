@@ -26,10 +26,17 @@
  */
 package org.jruby.runtime.builtin;
 
+import java.io.IOException;
+import java.util.Map;
+
+import org.ablaf.ast.INode;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.util.RubyMap;
 
 /** Represents an object in Ruby. All the methods defined by this interface
  * are avaiable for all Ruby objects.
@@ -46,7 +53,7 @@ public interface IRubyObject {
      * @param string
      * @return RubyObject
      */
-    RubyObject getInstanceVariable(String string);
+    IRubyObject getInstanceVariable(String string);
 
     /**
      * Method setInstanceVar.
@@ -54,14 +61,14 @@ public interface IRubyObject {
      * @param rubyObject
      * @return RubyObject
      */
-    RubyObject setInstanceVariable(String string, RubyObject rubyObject);
+    IRubyObject setInstanceVariable(String string, IRubyObject rubyObject);
 
     /**
      * Method funcall.
      * @param string
      * @return RubyObject
      */
-    RubyObject callMethod(String string);
+    IRubyObject callMethod(String string);
 
     /**
      * Method isNil.
@@ -89,7 +96,7 @@ public interface IRubyObject {
      * @param arg
      * @return RubyObject
      */
-    RubyObject callMethod(String string, RubyObject arg);
+    IRubyObject callMethod(String string, IRubyObject arg);
 
     /**
      * Method getRubyClass.
@@ -107,4 +114,158 @@ public interface IRubyObject {
      * @return RubyClass
      */
     RubyClass getType();
+
+    /**
+     * Method isKindOf.
+     * @param rubyClass
+     * @return boolean
+     */
+    boolean isKindOf(RubyModule rubyClass);
+
+    /**
+     * Method respondsTo.
+     * @param string
+     * @return boolean
+     */
+    boolean respondsTo(String string);
+
+    /**
+     * Method getRuntime.
+     */
+    Ruby getRuntime();
+
+    /**
+     * Method getJavaClass.
+     * @return Class
+     */
+    Class getJavaClass();
+
+    /**
+     * Method callMethod.
+     * @param method
+     * @param rubyArgs
+     * @return IRubyObject
+     */
+    IRubyObject callMethod(String method, IRubyObject[] rubyArgs);
+
+    /**
+     * Method eval.
+     * @param iNode
+     * @return IRubyObject
+     */
+    IRubyObject eval(INode iNode);
+
+    /**
+     * Method eval.
+     * @param iRubyObject
+     * @param rubyObject
+     * @param string
+     * @param i
+     * @return IRubyObject
+     */
+    IRubyObject eval(IRubyObject iRubyObject, IRubyObject rubyObject, String string, int i);
+
+    /**
+     * Method extendObject.
+     * @param rubyModule
+     */
+    void extendObject(RubyModule rubyModule);
+
+    /**
+     * Method toId.
+     * @return String
+     */
+    String toId();
+
+    /**
+     * Method convertToType.
+     * @param string
+     * @param string1
+     * @param b
+     */
+    IRubyObject convertToType(String string, String string1, boolean b);
+
+    /**
+     * Method setTaint.
+     * @param b
+     */
+    void setTaint(boolean b);
+
+    /**
+     * Method checkSafeString.
+     */
+    void checkSafeString();
+
+    /**
+     * Method marshalTo.
+     * @param marshalStream
+     */
+    void marshalTo(MarshalStream marshalStream) throws IOException;
+
+    /**
+     * Method convertType.
+     * @param class
+     * @param string
+     * @param string1
+     */
+    IRubyObject convertType(Class type, String string, String string1);
+
+    /**
+     * Method dup.
+     */
+    IRubyObject dup();
+
+    /**
+     * Method setupClone.
+     * @param rubyString
+     */
+    void setupClone(IRubyObject rubyString);
+
+    /**
+     * Method setFrozen.
+     * @param b
+     */
+    void setFrozen(boolean b);
+    
+    /**
+     * Method send.
+     * @param method
+     * @param iRubyObjects
+     * @return Object
+     */
+    IRubyObject send(IRubyObject method, IRubyObject[] iRubyObjects);
+
+    /**
+     * Method inspect.
+     * @return String
+     */
+    RubyString inspect();
+
+    /**
+     * Method argCount.
+     * @param args
+     * @param i
+     * @param i1
+     * @return int
+     */
+    int argCount(IRubyObject[] args, int i, int i1);
+
+    /**
+     * Method rbClone.
+     * @return IRubyObject
+     */
+    IRubyObject rbClone();
+
+    /**
+     * Method isInstanceVarDefined.
+     * @param string
+     * @return boolean
+     */
+    boolean isInstanceVarDefined(String string);
+
+    /**
+     * Method getInstanceVariables.
+     * @return Object
+     */
+    RubyMap getInstanceVariables();
 }

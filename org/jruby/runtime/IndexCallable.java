@@ -23,10 +23,9 @@
 
 package org.jruby.runtime;
 
-import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
 public interface IndexCallable {
-    IRubyObject callIndexed(int index, RubyObject[] args);
+    IRubyObject callIndexed(int index, IRubyObject[] args);
 }

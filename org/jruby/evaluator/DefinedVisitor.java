@@ -26,15 +26,47 @@
  */
 package org.jruby.evaluator;
 
-import java.util.*;
+import java.util.Iterator;
 
-import org.ablaf.ast.*;
-
-import org.jruby.*;
-import org.jruby.ast.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.ablaf.ast.INode;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrSetNode;
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.ConstDeclNode;
+import org.jruby.ast.ConstNode;
+import org.jruby.ast.DAsgnCurrNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.DVarNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.FalseNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.Match2Node;
+import org.jruby.ast.Match3Node;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.NilNode;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.SelfNode;
+import org.jruby.ast.SuperNode;
+import org.jruby.ast.TrueNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.YieldNode;
+import org.jruby.ast.ZSuperNode;
+import org.jruby.ast.visitor.AbstractVisitor;
+import org.jruby.exceptions.JumpException;
+import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** This visitor is used to evaluate a defined? statement.
@@ -44,11 +76,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class DefinedVisitor extends AbstractVisitor {
     private Ruby ruby;
-    private RubyObject self;
+    private IRubyObject self;
 
     private String definition;
 
-    public DefinedVisitor(Ruby ruby, RubyObject self) {
+    public DefinedVisitor(Ruby ruby, IRubyObject self) {
         this.ruby = ruby;
         this.self = self;
     }

@@ -51,6 +51,7 @@
 package org.jruby.runtime;
 
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** Represents an element in the nested module/class namespace hierarchy.
  * 
@@ -120,12 +121,12 @@ public class Namespace {
         this.namespaceModule = namespaceModule;
     }
     
-    public RubyObject getConstant(RubyObject self, String name) {
+    public IRubyObject getConstant(IRubyObject self, String name) {
         for (Namespace ns = this; ns != null && ns.getParent() != null; ns = ns.getParent()) {
             if (ns.getNamespaceModule() == null) {
                 return self.getInternalClass().getConstant(name);
             } else if (! ns.getNamespaceModule().getInstanceVariable(name).isNil()) {
-                return (RubyObject) ns.getNamespaceModule().getInstanceVariables().get(name);
+                return (IRubyObject) ns.getNamespaceModule().getInstanceVariables().get(name);
             }
         }
         return getNamespaceModule().getConstant(name);

@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.*;
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
 
 /**
@@ -23,21 +24,22 @@ import org.jruby.util.*;
  * RubyObject and returns a wrapper around it, and getProxyForGlobal,
  * which finds the RubyObject stored in a Ruby global variable
  * ($variable) and returns a wrapper around it.  </p>
- **/
+ *
+ * @version $Revision$ 
+ * @author schwardo
+ */
 public class RubyProxyFactory {
-    private Ruby               ruby       = null;
-    private RubyToJavaClassMap classMap   = null;
-    private RubyConversion     conversion = null;
+    private Ruby ruby = null;
+    private RubyToJavaClassMap classMap = null;
+    private RubyConversion conversion = null;
 
-    public RubyProxyFactory (Ruby ruby, RubyToJavaClassMap classMap)
-    {
+    public RubyProxyFactory(Ruby ruby, RubyToJavaClassMap classMap) {
         this.ruby = ruby;
         this.classMap = classMap;
         this.conversion = new RubyConversion(this);
     }
 
-    public Ruby getRuby ()
-    {
+    public Ruby getRuby() {
         return ruby;
     }
 
@@ -46,16 +48,14 @@ public class RubyProxyFactory {
      * specified Java interface.  Return a Java object that conforms
      * to this Java interface, but implemented by the RubyClass.
      **/
-    public RubyProxy newProxyObject (Class javaInterface)
-    {
+    public RubyProxy newProxyObject(Class javaInterface) {
         return newProxyObject(javaInterface, new Object[0]);
     }
 
-    public RubyProxy newProxyObject (Class javaInterface, Object[] args)
-    {
+    public RubyProxy newProxyObject(Class javaInterface, Object[] args) {
         RubyClass rubyClass = getRubyClassForJavaClass(javaInterface);
-        RubyObject[] rubyArgs = convertJavaToRuby(args);
-        RubyObject obj = rubyClass.newInstance(rubyArgs);
+        IRubyObject[] rubyArgs = convertJavaToRuby(args);
+        IRubyObject obj = rubyClass.newInstance(rubyArgs);
 
         if (obj != null)
             return getProxyForObject(obj, javaInterface);
@@ -63,17 +63,15 @@ public class RubyProxyFactory {
             return null;
     }
 
-    public RubyProxy getProxyForGlobal (String globalVar)
-    {
+    public RubyProxy getProxyForGlobal(String globalVar) {
         return getProxyForGlobal(globalVar, null);
     }
 
-    public RubyProxy getProxyForGlobal (String globalVar, Class javaInterface)
-    {
-        RubyObject obj = getRuby().getGlobalVar(globalVar);
+    public RubyProxy getProxyForGlobal(String globalVar, Class javaInterface) {
+        IRubyObject obj = getRuby().getGlobalVar(globalVar);
 
         if (obj != null && !obj.isNil())
-          return getProxyForObject(obj, javaInterface);
+            return getProxyForObject(obj.toRubyObject(), javaInterface);
 
         return null;
     }
@@ -84,49 +82,43 @@ public class RubyProxyFactory {
      * and any returned objects will be converted to their
      * corresponding Java objects.
      **/
-    public RubyProxy getProxyForObject (RubyObject obj)
-    {
+    public RubyProxy getProxyForObject(IRubyObject obj) {
         return getProxyForObject(obj, null);
     }
 
-    public RubyProxy getProxyForObject (RubyObject obj, Class javaInterface)
-    {
+    public RubyProxy getProxyForObject(IRubyObject obj, Class javaInterface) {
         if (javaInterface == null)
             javaInterface = getJavaClassForRubyClass(obj.getInternalClass());
 
-        return (RubyProxy)Proxy.newProxyInstance(
+        return (RubyProxy) Proxy.newProxyInstance(
             getClass().getClassLoader(),
-            new Class[] {javaInterface, RubyProxy.class},
+            new Class[] { javaInterface, RubyProxy.class },
             new RubyInvocationHandler(this, obj));
     }
 
-        /*****************************************************
-                Helper methods for RubyToJavaClassMap
-         *****************************************************/
+    /*****************************************************
+            Helper methods for RubyToJavaClassMap
+     *****************************************************/
 
-    protected RubyClass getRubyClassForJavaClass (Class javaClass)
-    {
+    protected RubyClass getRubyClassForJavaClass(Class javaClass) {
         String className = classMap.getRubyClassNameForJavaClass(javaClass);
         return getRuby().getRubyClass(className);
     }
 
-    protected Class getJavaClassForRubyClass (RubyClass rubyClass)
-    {
-      return classMap.getJavaClassForRubyClass(rubyClass);
+    protected Class getJavaClassForRubyClass(RubyClass rubyClass) {
+        return classMap.getJavaClassForRubyClass(rubyClass);
     }
 
-        /*****************************************************
-                  Helper methods for RubyConversion
-                   (used by RubyInvocationHandler)
-         *****************************************************/
+    /*****************************************************
+              Helper methods for RubyConversion
+               (used by RubyInvocationHandler)
+     *****************************************************/
 
-    public RubyObject[] convertJavaToRuby (Object[] obj)
-    {
+    public IRubyObject[] convertJavaToRuby(Object[] obj) {
         return conversion.convertJavaToRuby(obj);
     }
 
-    public Object convertRubyToJava (RubyObject obj, Class type)
-    {
+    public Object convertRubyToJava(IRubyObject obj, Class type) {
         return conversion.convertRubyToJava(obj, type);
     }
 }

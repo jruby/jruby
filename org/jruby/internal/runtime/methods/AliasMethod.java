@@ -26,8 +26,10 @@
  */
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -51,7 +53,7 @@ public class AliasMethod extends AbstractMethod {
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      * @fixme name or oldName ?
      */
-    public RubyObject call(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
+    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return oldMethod.call(ruby, receiver, name, args, noSuper);
     }
 

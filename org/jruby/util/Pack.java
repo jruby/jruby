@@ -26,9 +26,14 @@ package org.jruby.util;
 
 import java.util.ArrayList;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RubyBugException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 
 public class Pack {
@@ -39,8 +44,10 @@ public class Pack {
     private static final String sNatStr = "sSiIlL";
     private static final String sTooFew = "too few arguments";
     private static final char hex_table[] = "0123456789ABCDEF".toCharArray();
-    private static final char[] uu_table = "`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_".toCharArray();
-    private static final char[] b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+    private static final char[] uu_table =
+        "`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_".toCharArray();
+    private static final char[] b64_table =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
     private static final char[] sHexDigits = "0123456789abcdef0123456789ABCDEFx".toCharArray();
 
     /**
@@ -53,7 +60,7 @@ public class Pack {
      * @return the io2Append buffer
      **/
     private static StringBuffer encodes(Ruby ruby, StringBuffer io2Append, String i2Encode, int iLength, char iType) {
-        iLength = iLength < i2Encode.length() ?  iLength : i2Encode.length();
+        iLength = iLength < i2Encode.length() ? iLength : i2Encode.length();
         io2Append.ensureCapacity(iLength * 4 / 3 + 6);
         int i = 0;
         char[] lTranslationTable = iType == 'u' ? uu_table : b64_table;
@@ -61,7 +68,12 @@ public class Pack {
         char[] l2Encode = i2Encode.toCharArray();
         if (iType == 'u') {
             if (iLength >= lTranslationTable.length)
-                throw new ArgumentError(ruby, "" + iLength + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to " + lTranslationTable.length);
+                throw new ArgumentError(
+                    ruby,
+                    ""
+                        + iLength
+                        + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to "
+                        + lTranslationTable.length);
             io2Append.append(lTranslationTable[iLength]);
             lPadding = '`';
         } else {
@@ -109,11 +121,9 @@ public class Pack {
         int lPrevChar = -1;
         char[] l2Encode = i2Encode.toCharArray();
         try {
-            for (int i = 0; ; i++) {
+            for (int i = 0;; i++) {
                 char lCurChar = l2Encode[i];
-                if ((lCurChar > 126) ||
-                        (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') ||
-                        (lCurChar == '=')) {
+                if ((lCurChar > 126) || (lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') || (lCurChar == '=')) {
                     io2Append.append('=');
                     io2Append.append(hex_table[lCurChar >> 4]);
                     io2Append.append(hex_table[lCurChar & 0x0f]);
@@ -144,7 +154,6 @@ public class Pack {
             //about 40 char
         }
 
-
         if (lCurLineLength > 0) {
             io2Append.append('=');
             io2Append.append('\n');
@@ -152,14 +161,13 @@ public class Pack {
         return io2Append;
     }
 
-    private static String convert2String(RubyObject l2Conv) {
-        Ruby ruby = l2Conv.getRuby();
+    private static String convert2String(IRubyObject l2Conv) {
+        Ruby ruby = l2Conv.getRuntime();
         if (l2Conv.getInternalClass() != ruby.getClasses().getStringClass()) {
-            l2Conv = l2Conv.convertToType("String", "to_s", true);	//we may need a false here, not sure
+            l2Conv = l2Conv.convertToType("String", "to_s", true); //we may need a false here, not sure
         }
         return ((RubyString) l2Conv).getValue();
     }
-
 
     /**
      *    Decodes <i>str</i> (which may contain binary data) according to the format
@@ -397,7 +405,7 @@ public class Pack {
      *
      **/
     public static RubyArray unpack(String value, RubyString iFmt) {
-        Ruby ruby = iFmt.getRuby();
+        Ruby ruby = iFmt.getRuntime();
 
         char[] lFmt = iFmt.getValue().toCharArray();
         int lFmtLength = lFmt.length;
@@ -407,7 +415,7 @@ public class Pack {
         for (int i = 0; i < lFmtLength;) {
             int lLength = 0;
             char lType = lFmt[i++];
-            char lNext = i < lFmtLength ? lFmt[i]: '\0';
+            char lNext = i < lFmtLength ? lFmt[i] : '\0';
             if (lNext == '_' || lNext == '!') {
                 if (sNatStr.indexOf(lType) != -1) {
                     i++;
@@ -427,47 +435,56 @@ public class Pack {
                 for (; lEndIndex < lFmtLength; lEndIndex++)
                     if (!Character.isDigit(lFmt[lEndIndex]))
                         break;
-                lLength = Integer.parseInt(new String(lFmt, i, lEndIndex - i));		//an exception may occur here if an int can't hold this but ...
+                lLength = Integer.parseInt(new String(lFmt, i, lEndIndex - i));
+                //an exception may occur here if an int can't hold this but ...
                 i = lEndIndex;
-                lNext = (i < lFmtLength)? lFmt[i] : '\0';
+                lNext = (i < lFmtLength) ? lFmt[i] : '\0';
             } else {
                 lLength = lType == '@' ? 0 : 1;
             }
             switch (lType) {
-                case '%':
+                case '%' :
                     throw new ArgumentError(ruby, "% is not supported");
-                case 'A':
-                    if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
+                case 'A' :
+                    if (lLength > (lValueLength - lCurValueIdx))
+                        lLength = (lValueLength - lCurValueIdx);
                     {
                         int end = lLength;
                         for (int t = lCurValueIdx + lLength - 1; lLength > 0; lLength--, t--)
-                            if (value.charAt(t) != ' ' && value.charAt(t) != '\0') break;
-                        lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+                            if (value.charAt(t) != ' ' && value.charAt(t) != '\0')
+                                break;
+                        lResult.append(
+                            RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
                         lCurValueIdx += end;
                     }
 
                     break;
 
-                case 'Z':
-                    if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
+                case 'Z' :
+                    if (lLength > (lValueLength - lCurValueIdx))
+                        lLength = (lValueLength - lCurValueIdx);
                     {
                         int end = lLength;
                         for (int t = lCurValueIdx + lLength - 1; lLength > 0; lLength--, t--)
-                            if (value.charAt(t) != '\0') break;
-                        lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+                            if (value.charAt(t) != '\0')
+                                break;
+                        lResult.append(
+                            RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
                         lCurValueIdx += end;
                     }
                     break;
 
-                case 'a':
-                    if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
+                case 'a' :
+                    if (lLength > (lValueLength - lCurValueIdx))
+                        lLength = (lValueLength - lCurValueIdx);
                     lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
                     lCurValueIdx += lLength;
                     break;
 
-                case 'b':
+                case 'b' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8) lLength = (lValueLength - lCurValueIdx) * 8;
+                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8)
+                            lLength = (lValueLength - lCurValueIdx) * 8;
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(lLength);
                         for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
@@ -481,9 +498,10 @@ public class Pack {
                     }
                     break;
 
-                case 'B':
+                case 'B' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8) lLength = (lValueLength - lCurValueIdx) * 8;
+                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8)
+                            lLength = (lValueLength - lCurValueIdx) * 8;
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(lLength);
                         for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
@@ -496,9 +514,10 @@ public class Pack {
                         lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
-                case 'h':
+                case 'h' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2) lLength = (lValueLength - lCurValueIdx) * 2;
+                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2)
+                            lLength = (lValueLength - lCurValueIdx) * 2;
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(lLength);
                         for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
@@ -511,9 +530,10 @@ public class Pack {
                         lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
-                case 'H':
+                case 'H' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2) lLength = (lValueLength - lCurValueIdx) * 2;
+                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2)
+                            lLength = (lValueLength - lCurValueIdx) * 2;
                         int bits = 0;
                         StringBuffer lElem = new StringBuffer(lLength);
                         for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
@@ -526,7 +546,7 @@ public class Pack {
                         lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
-                case 'c':
+                case 'c' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx)) {
@@ -536,7 +556,8 @@ public class Pack {
                         }
                         for (; lLength-- > 0;) {
                             int c = value.charAt(lCurValueIdx++);
-                            if (c > (char) 127) c -= 256;
+                            if (c > (char) 127)
+                                c -= 256;
                             lResult.append(RubyFixnum.newFixnum(ruby, c));
                         }
                         for (; lPadLength-- > 0;)
@@ -544,7 +565,7 @@ public class Pack {
                     }
 
                     break;
-                case 'C':
+                case 'C' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx)) {
@@ -560,7 +581,7 @@ public class Pack {
                             lResult.append(ruby.getNil());
                     }
                     break;
-                case 's':
+                case 's' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx) / 2) {
@@ -581,8 +602,8 @@ public class Pack {
 
                     break;
 
-                case 'S':
-                case 'v':
+                case 'S' :
+                case 'v' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx) / 2) {
@@ -602,8 +623,8 @@ public class Pack {
                     }
                     break;
 
-                case 'i':
-                case 'l':
+                case 'i' :
+                case 'l' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx) / 4) {
@@ -628,9 +649,9 @@ public class Pack {
 
                     break;
 
-                case 'I':
-                case 'V':
-                case 'L':
+                case 'I' :
+                case 'V' :
+                case 'L' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx) / 4) {
@@ -653,7 +674,7 @@ public class Pack {
                             lResult.append(ruby.getNil());
                     }
                     break;
-                case 'N':
+                case 'N' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx) / 4) {
@@ -675,7 +696,7 @@ public class Pack {
                             lResult.append(ruby.getNil());
                     }
                     break;
-                case 'n':
+                case 'n' :
                     {
                         int lPadLength = 0;
                         if (lLength > (lValueLength - lCurValueIdx) / 2) {
@@ -693,9 +714,10 @@ public class Pack {
                             lResult.append(ruby.getNil());
                     }
                     break;
-                case 'U':
+                case 'U' :
                     {
-                        if (lLength > lValueLength - lCurValueIdx) lLength = lValueLength - lCurValueIdx;
+                        if (lLength > lValueLength - lCurValueIdx)
+                            lLength = lValueLength - lCurValueIdx;
                         //get the correct substring
                         String toUnpack = value.substring(lCurValueIdx);
                         String lUtf8 = null;
@@ -745,7 +767,6 @@ public class Pack {
         i2Grow.append(iPads.substring(0, iLength));
         return i2Grow;
     }
-
 
     /**
      * pack_pack
@@ -916,14 +937,14 @@ public class Pack {
      * @see RubyString#unpack
      **/
     public static RubyString pack(ArrayList list, RubyString iFmt) {
-        Ruby ruby = iFmt.getRuby();
+        Ruby ruby = iFmt.getRuntime();
 
         char[] lFmt = iFmt.getValue().toCharArray();
         int lFmtLength = lFmt.length;
         int idx = 0;
         int lLeftInArray = list.size();
         StringBuffer lResult = new StringBuffer();
-        RubyObject lFrom;
+        IRubyObject lFrom;
         String lCurElemString;
         for (int i = 0; i < lFmtLength;) {
             int lLength = 1;
@@ -939,30 +960,31 @@ public class Pack {
                     throw new ArgumentError(ruby, "'" + lNext + "' allowed only after types " + sNatStr);
             }
             if (lNext == '*') {
-                lLength = "@Xxu".indexOf(lType) == -1 ?  lLeftInArray : 0;
+                lLength = "@Xxu".indexOf(lType) == -1 ? lLeftInArray : 0;
                 lNext = ++i < lFmtLength ? lFmt[i] : '\0';
             } else if (Character.isDigit(lNext)) {
                 int lEndIndex = i;
                 for (; lEndIndex < lFmtLength; lEndIndex++)
                     if (!Character.isDigit(lFmt[lEndIndex]))
                         break;
-                lLength = Integer.parseInt(new String(lFmt, i, lEndIndex - i));		//an exception may occur here if an int can't hold this but ...
+                lLength = Integer.parseInt(new String(lFmt, i, lEndIndex - i));
+                //an exception may occur here if an int can't hold this but ...
                 i = lEndIndex;
                 lNext = i < lFmtLength ? lFmt[i] : '\0';
-            }		//no else, the original value of length is correct
+            } //no else, the original value of length is correct
             switch (lType) {
-                case '%':
+                case '%' :
                     throw new ArgumentError(ruby, "% is not supported");
 
-                case 'A':
-                case 'a':
-                case 'Z':
-                case 'B':
-                case 'b':
-                case 'H':
-                case 'h':
+                case 'A' :
+                case 'a' :
+                case 'Z' :
+                case 'B' :
+                case 'b' :
+                case 'H' :
+                case 'h' :
                     if (lLeftInArray-- > 0)
-                        lFrom = (RubyObject) list.get(idx++);
+                        lFrom = (IRubyObject) list.get(idx++);
                     else
                         throw new ArgumentError(ruby, sTooFew);
                     if (lFrom == ruby.getNil())
@@ -972,44 +994,45 @@ public class Pack {
                     if (lFmt[i - 1] == '*')
                         lLength = lCurElemString.length();
                     switch (lType) {
-                        case 'a':
-                        case 'A':
-                        case 'Z':
+                        case 'a' :
+                        case 'A' :
+                        case 'Z' :
                             if (lCurElemString.length() >= lLength)
                                 lResult.append(lCurElemString.toCharArray(), 0, lLength);
-                            else 		//need padding
-                            {			//I'm fairly sure there is a library call to create a
+                            else //need padding
+                                { //I'm fairly sure there is a library call to create a
                                 //string filled with a given char with a given length but I couldn't find it
                                 lResult.append(lCurElemString);
                                 lLength -= lCurElemString.length();
-                                grow(lResult, (lType == 'a')?sNil10:sSp10, lLength);
+                                grow(lResult, (lType == 'a') ? sNil10 : sSp10, lLength);
                             }
                             break;
 
                             //I believe there is a bug in the b and B case we skip a char too easily
-                        case 'b':
+                        case 'b' :
                             {
                                 int lByte = 0;
                                 int lIndex = 0;
                                 char lCurChar;
                                 int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) {	//I don't understand this, why divide by 2
+                                if (lLength > lCurElemString.length()) { //I don't understand this, why divide by 2
                                     lPadLength = (lLength - lCurElemString.length() + 1) / 2;
                                     lLength = lCurElemString.length();
                                 }
                                 for (lIndex = 0; lIndex < lLength;) {
                                     lCurChar = lCurElemString.charAt(lIndex++);
-                                    if ((lCurChar & 1) != 0)	//if the low bit of the current char is set
-                                        lByte |= 128;	//set the high bit of the result
-                                    if ((lIndex & 7) != 0)		//if the index is not a multiple of 8, we are not on a byte boundary
-                                        lByte >>= 1;	//shift the byte
-                                    else {		//we are done with one byte, append it to the result and go for the next
+                                    if ((lCurChar & 1) != 0) //if the low bit of the current char is set
+                                        lByte |= 128; //set the high bit of the result
+                                    if ((lIndex & 7) != 0)
+                                        //if the index is not a multiple of 8, we are not on a byte boundary
+                                        lByte >>= 1; //shift the byte
+                                    else { //we are done with one byte, append it to the result and go for the next
                                         lResult.append((char) (lByte & 0xff));
                                         lByte = 0;
                                     }
                                 }
-                                if ((lLength & 7) != 0)	//if the length is not a multiple of 8
-                                {									//we need to pad the last byte
+                                if ((lLength & 7) != 0) //if the length is not a multiple of 8
+                                    { //we need to pad the last byte
                                     lByte >>= 7 - (lLength & 7);
                                     lResult.append((char) (lByte & 0xff));
                                 }
@@ -1019,28 +1042,29 @@ public class Pack {
                             }
                             break;
 
-                        case 'B':
+                        case 'B' :
                             {
                                 int lByte = 0;
                                 int lIndex = 0;
                                 char lCurChar;
                                 int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) {	//I don't understand this, why divide by 2
+                                if (lLength > lCurElemString.length()) { //I don't understand this, why divide by 2
                                     lPadLength = (lLength - lCurElemString.length() + 1) / 2;
                                     lLength = lCurElemString.length();
                                 }
                                 for (lIndex = 0; lIndex < lLength;) {
                                     lCurChar = lCurElemString.charAt(lIndex++);
                                     lByte |= lCurChar & 1;
-                                    if ((lIndex & 7) != 0)		//if the index is not a multiple of 8, we are not on a byte boundary
-                                        lByte <<= 1;	//shift the byte
-                                    else {		//we are done with one byte, append it to the result and go for the next
+                                    if ((lIndex & 7) != 0)
+                                        //if the index is not a multiple of 8, we are not on a byte boundary
+                                        lByte <<= 1; //shift the byte
+                                    else { //we are done with one byte, append it to the result and go for the next
                                         lResult.append((char) (lByte & 0xff));
                                         lByte = 0;
                                     }
                                 }
-                                if ((lLength & 7) != 0)	//if the length is not a multiple of 8
-                                {									//we need to pad the last byte
+                                if ((lLength & 7) != 0) //if the length is not a multiple of 8
+                                    { //we need to pad the last byte
                                     lByte <<= 7 - (lLength & 7);
                                     lResult.append((char) (lByte & 0xff));
                                 }
@@ -1050,19 +1074,20 @@ public class Pack {
                             }
                             break;
 
-                        case 'h':
+                        case 'h' :
                             {
                                 int lByte = 0;
                                 int lIndex = 0;
                                 char lCurChar;
                                 int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) {	//I don't undestand this why divide by 2
+                                if (lLength > lCurElemString.length()) { //I don't undestand this why divide by 2
                                     lPadLength = (lLength - lCurElemString.length() + 1) / 2;
                                     lLength = lCurElemString.length();
                                 }
                                 for (lIndex = 0; lIndex < lLength;) {
                                     lCurChar = lCurElemString.charAt(lIndex++);
-                                    if (Character.isJavaIdentifierStart(lCurChar))	//this test may be too lax but it is the same as in MRI
+                                    if (Character.isJavaIdentifierStart(lCurChar))
+                                        //this test may be too lax but it is the same as in MRI
                                         lByte |= (((lCurChar & 15) + 9) & 15) << 4;
                                     else
                                         lByte |= (lCurChar & 15) << 4;
@@ -1083,19 +1108,20 @@ public class Pack {
                             }
                             break;
 
-                        case 'H':
+                        case 'H' :
                             {
                                 int lByte = 0;
                                 int lIndex = 0;
                                 char lCurChar;
                                 int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) {	//I don't undestand this why divide by 2
+                                if (lLength > lCurElemString.length()) { //I don't undestand this why divide by 2
                                     lPadLength = (lLength - lCurElemString.length() + 1) / 2;
                                     lLength = lCurElemString.length();
                                 }
                                 for (lIndex = 0; lIndex < lLength;) {
                                     lCurChar = lCurElemString.charAt(lIndex++);
-                                    if (Character.isJavaIdentifierStart(lCurChar))	//this test may be too lax but it is the same as in MRI
+                                    if (Character.isJavaIdentifierStart(lCurChar))
+                                        //this test may be too lax but it is the same as in MRI
                                         lByte |= ((lCurChar & 15) + 9) & 15;
                                     else
                                         lByte |= (lCurChar & 15);
@@ -1118,28 +1144,29 @@ public class Pack {
                     }
                     break;
 
-
-                case 'x':
+                case 'x' :
                     grow(lResult, sNil10, lLength);
                     break;
 
-                case 'X':
+                case 'X' :
                     shrink(lResult, lLength);
                     break;
 
-                case '@':
+                case '@' :
                     lLength -= lResult.length();
-                    if (lLength > 0) grow(lResult, sNil10, lLength);
+                    if (lLength > 0)
+                        grow(lResult, sNil10, lLength);
                     lLength = -lLength;
-                    if (lLength > 0) shrink(lResult, lLength);
+                    if (lLength > 0)
+                        shrink(lResult, lLength);
                     break;
 
-                case 'c':
-                case 'C':
+                case 'c' :
+                case 'C' :
                     while (lLength-- > 0) {
                         char c;
                         if (lLeftInArray-- > 0)
-                            lFrom = (RubyObject) list.get(idx++);
+                            lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
                         if (lFrom == ruby.getNil())
@@ -1151,13 +1178,13 @@ public class Pack {
                     }
                     break;
 
-                case 's':
-                case 'v':
-                case 'S':
+                case 's' :
+                case 'v' :
+                case 'S' :
                     while (lLength-- > 0) {
                         int s;
                         if (lLeftInArray-- > 0)
-                            lFrom = (RubyObject) list.get(idx++);
+                            lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
                         if (lFrom == ruby.getNil())
@@ -1170,11 +1197,11 @@ public class Pack {
 
                     }
                     break;
-                case 'n':
+                case 'n' :
                     while (lLength-- > 0) {
                         int s;
                         if (lLeftInArray-- > 0)
-                            lFrom = (RubyObject) list.get(idx++);
+                            lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
                         if (lFrom == ruby.getNil())
@@ -1188,15 +1215,15 @@ public class Pack {
                     }
                     break;
 
-                case 'i':
-                case 'I':
-                case 'l':
-                case 'L':
-                case 'V':
+                case 'i' :
+                case 'I' :
+                case 'l' :
+                case 'L' :
+                case 'V' :
                     while (lLength-- > 0) {
                         int s;
                         if (lLeftInArray-- > 0)
-                            lFrom = (RubyObject) list.get(idx++);
+                            lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
                         if (lFrom == ruby.getNil())
@@ -1211,11 +1238,11 @@ public class Pack {
 
                     }
                     break;
-                case 'N':
+                case 'N' :
                     while (lLength-- > 0) {
                         int s;
                         if (lLeftInArray-- > 0)
-                            lFrom = (RubyObject) list.get(idx++);
+                            lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
                         if (lFrom == ruby.getNil())
@@ -1230,10 +1257,10 @@ public class Pack {
 
                     }
                     break;
-                case 'u':
-                case 'm':
+                case 'u' :
+                case 'm' :
                     if (lLeftInArray-- > 0)
-                        lFrom = (RubyObject) list.get(idx++);
+                        lFrom = (IRubyObject) list.get(idx++);
                     else
                         throw new ArgumentError(ruby, sTooFew);
                     if (lFrom == ruby.getNil())
@@ -1245,7 +1272,7 @@ public class Pack {
                         lLength = 45;
                     else
                         lLength = lLength / 3 * 3;
-                    for (; ;) {
+                    for (;;) {
                         encodes(ruby, lResult, lCurElemString, lLength, lType);
                         if (lLength < lCurElemString.length())
                             lCurElemString = lCurElemString.substring(lLength);
@@ -1254,9 +1281,9 @@ public class Pack {
                     }
                     break;
 
-                case 'M':
+                case 'M' :
                     if (lLeftInArray-- > 0)
-                        lFrom = (RubyObject) list.get(idx++);
+                        lFrom = (IRubyObject) list.get(idx++);
                     else
                         throw new ArgumentError(ruby, sTooFew);
                     if (lFrom == ruby.getNil())
@@ -1269,12 +1296,12 @@ public class Pack {
                     qpencode(lResult, lCurElemString, lLength);
                     break;
 
-                case 'U':
+                case 'U' :
                     char[] c = new char[lLength];
                     for (int lCurCharIdx = 0; lLength-- > 0; lCurCharIdx++) {
                         long l;
                         if (lLeftInArray-- > 0)
-                            lFrom = (RubyObject) list.get(idx++);
+                            lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
 

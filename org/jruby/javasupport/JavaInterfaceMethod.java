@@ -5,6 +5,7 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author jpetersen
  * @version $Revision$
@@ -26,15 +27,15 @@ public class JavaInterfaceMethod implements Callback {
     /*
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)
      */
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         RubyProc proc = null;
         RubyMethod method = null;
 
-        RubyObject sendRecv = null;
+        IRubyObject sendRecv = null;
         RubyString sendMethod = null;
 
-        if (ruby.isBlockGiven()) {
-            proc = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+        if (recv.getRuntime().isBlockGiven()) {
+            proc = RubyProc.newProc(recv.getRuntime(), recv.getRuntime().getClasses().getProcClass());
         } else {
             if (args.length == 2) {
                 sendRecv = args[0];
@@ -46,7 +47,7 @@ public class JavaInterfaceMethod implements Callback {
                     method = (RubyMethod) args[0];
                 } else {
                     sendRecv = args[0];
-                    sendMethod = RubyString.newString(ruby, methodName);
+                    sendMethod = RubyString.newString(recv.getRuntime(), methodName);
                 }
             }
         }
@@ -60,11 +61,11 @@ public class JavaInterfaceMethod implements Callback {
         }
 
         if (proc != null) {
-            return RubyJavaInterface.newJavaInterface(ruby, interfaceMethod, proc);
+            return RubyJavaInterface.newJavaInterface(recv.getRuntime(), interfaceMethod, proc);
         } else if (method != null) {
-            return RubyJavaInterface.newJavaInterface(ruby, interfaceMethod, method);
+            return RubyJavaInterface.newJavaInterface(recv.getRuntime(), interfaceMethod, method);
         } else {
-            return RubyJavaInterface.newJavaInterface(ruby, interfaceMethod, sendRecv, sendMethod);
+            return RubyJavaInterface.newJavaInterface(recv.getRuntime(), interfaceMethod, sendRecv, sendMethod);
         }
     }
 }

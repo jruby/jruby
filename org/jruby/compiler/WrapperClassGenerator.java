@@ -78,7 +78,7 @@ public class WrapperClassGenerator {
         String name = type.name().toString();
         
         RubyClass superClass = type.getSuperClass();
-        Class javaClass = type.getRuby().getJavaSupport().getJavaClass(superClass);
+        Class javaClass = type.getRuntime().getJavaSupport().getJavaClass(superClass);
         
         PrintWriter pw = new PrintWriter(new FileWriter(name + ".java"));
         

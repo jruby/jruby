@@ -33,6 +33,7 @@ package org.jruby.test;
 import java.util.ArrayList;
 import junit.framework.TestCase;
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
 * @author chadfowler
@@ -40,7 +41,7 @@ import org.jruby.*;
 public class TestRubyNil extends TestCase {
 
     private Ruby ruby;
-    private RubyObject rubyNil;
+    private IRubyObject rubyNil;
 
     public TestRubyNil(String name) {
         super(name);
@@ -56,41 +57,40 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testIsFalseOrTrue() {
-        assertTrue(rubyNil.isFalse());
         assertTrue(!rubyNil.isTrue());
     }
 
     public void testToI() {
-        assertEquals(RubyFixnum.zero(ruby), RubyNil.to_i(ruby, rubyNil));
+        assertEquals(RubyFixnum.zero(ruby), RubyNil.to_i(rubyNil));
     }
 
     public void testToS() {
-        assertEquals("", RubyNil.to_s(ruby, rubyNil).getValue());
+        assertEquals("", RubyNil.to_s(rubyNil).getValue());
     }
 
     public void testToA() {
-        assertEquals(new ArrayList(), RubyNil.to_a(ruby, rubyNil).getList());
+        assertEquals(new ArrayList(), RubyNil.to_a(rubyNil).getList());
     }
 
     public void testInspect() {
-        assertEquals("nil", RubyNil.inspect(ruby, rubyNil).getValue());
+        assertEquals("nil", RubyNil.inspect(rubyNil).getValue());
     }
 
     public void testType() {
-        assertEquals("NilClass", RubyNil.type(ruby, rubyNil).name().toString());
+        assertEquals("NilClass", RubyNil.type(rubyNil).name().toString());
     }
 
     public void testOpAnd() {
-        assertTrue(RubyNil.op_and(ruby, rubyNil, rubyNil).isFalse());
+        assertTrue(RubyNil.op_and(rubyNil, rubyNil).isFalse());
     }
   
     public void testOpOr() {
-        assertTrue(RubyNil.op_or(ruby, rubyNil, ruby.getTrue()).isTrue());
-        assertTrue(RubyNil.op_or(ruby, rubyNil, ruby.getFalse()).isFalse());
+        assertTrue(RubyNil.op_or(rubyNil, ruby.getTrue()).isTrue());
+        assertTrue(RubyNil.op_or(rubyNil, ruby.getFalse()).isFalse());
     }
 
     public void testOpXOr() {
-        assertTrue(RubyNil.op_xor(ruby, rubyNil, ruby.getTrue()).isTrue());
-        assertTrue(RubyNil.op_xor(ruby, rubyNil, ruby.getFalse()).isFalse());
+        assertTrue(RubyNil.op_xor(rubyNil, ruby.getTrue()).isTrue());
+        assertTrue(RubyNil.op_xor(rubyNil, ruby.getFalse()).isFalse());
     }
 }

@@ -113,7 +113,7 @@ public class RaiseException extends JumpException {
      * @param newException The exception to set
      */
     protected void setException(RubyException newException) {
-        Ruby ruby = newException.getRuby();
+        Ruby ruby = newException.getRuntime();
 
         // XXX Maybe move it into another methods.
         if (ruby.getRuntime().getTraceFunction() != null) {

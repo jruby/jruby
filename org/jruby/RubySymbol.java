@@ -77,8 +77,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     private static final int M_CLONE = 7;
 
     public static RubyClass createSymbolClass(Ruby ruby) {
-        RubyClass symbolClass =
-            ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
+        RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
 
         symbolClass.getInternalClass().undefMethod("new");
 
@@ -89,9 +88,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
 
         symbolClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
         symbolClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
-        symbolClass.defineMethod(
-            "inspect",
-            IndexedCallback.create(M_INSPECT, 0));
+        symbolClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
         symbolClass.defineMethod("dup", IndexedCallback.create(M_CLONE, 0));
         symbolClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
         symbolClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
@@ -100,7 +97,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         return symbolClass;
     }
 
-    public IRubyObject callIndexed(int index, RubyObject[] args) {
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case M_TO_S :
                 return to_s();
@@ -153,14 +150,14 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     }
 
     public RubyString inspect() {
-        return RubyString.newString(getRuby(), ":" + symbol);
+        return RubyString.newString(getRuntime(), ":" + symbol);
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuby(), symbol);
+        return RubyString.newString(getRuntime(), symbol);
     }
 
-    public RubyBoolean equal(RubyObject other) {
+    public RubyBoolean equal(IRubyObject other) {
         // Symbol table ensures only one instance for every name,
         // so object identity is enough to compare symbols.
         return RubyBoolean.newBoolean(ruby, this == other);
@@ -170,8 +167,8 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         return RubyFixnum.newFixnum(ruby, symbol.hashCode());
     }
 
-    public RubyObject rbClone() {
-        throw new TypeError(getRuby(), "can't clone Symbol");
+    public IRubyObject rbClone() {
+        throw new TypeError(getRuntime(), "can't clone Symbol");
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
@@ -179,8 +176,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         output.dumpString(symbol);
     }
 
-    public static RubySymbol unmarshalFrom(UnmarshalStream input)
-        throws java.io.IOException {
+    public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return RubySymbol.newSymbol(input.getRuby(), input.unmarshalString());
     }
 

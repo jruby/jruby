@@ -29,19 +29,26 @@
  */
 package org.jruby;
 
-import java.util.*;
+import java.util.List;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
-import org.jruby.runtime.marshal.*;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RubyBugException;
+import org.jruby.exceptions.RubyFrozenException;
+import org.jruby.exceptions.RubyIndexException;
+import org.jruby.exceptions.RubySecurityException;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.IdUtil;
 
 /**
  * @version $Revision$
  * @author  jpetersen
  */
 public class RubyStruct extends RubyObject {
-    private RubyObject[] values;
+    private IRubyObject[] values;
 
     /**
      * Constructor for RubyStruct.
@@ -61,7 +68,7 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyStruct.class, "initialize"));
         structClass.defineMethod("clone", CallbackFactory.getMethod(RubyStruct.class, "rbClone"));
 
-        structClass.defineMethod("==", CallbackFactory.getMethod(RubyStruct.class, "equal", RubyObject.class));
+        structClass.defineMethod("==", CallbackFactory.getMethod(RubyStruct.class, "equal", IRubyObject.class));
 
         structClass.defineMethod("to_s", CallbackFactory.getMethod(RubyStruct.class, "to_s"));
         structClass.defineMethod("inspect", CallbackFactory.getMethod(RubyStruct.class, "inspect"));
@@ -71,16 +78,16 @@ public class RubyStruct extends RubyObject {
         structClass.defineMethod("length", CallbackFactory.getMethod(RubyStruct.class, "size"));
 
         structClass.defineMethod("each", CallbackFactory.getMethod(RubyStruct.class, "each"));
-        structClass.defineMethod("[]", CallbackFactory.getMethod(RubyStruct.class, "aref", RubyObject.class));
-        structClass.defineMethod("[]=", CallbackFactory.getMethod(RubyStruct.class, "aset", RubyObject.class, RubyObject.class));
+        structClass.defineMethod("[]", CallbackFactory.getMethod(RubyStruct.class, "aref", IRubyObject.class));
+        structClass.defineMethod("[]=", CallbackFactory.getMethod(RubyStruct.class, "aset", IRubyObject.class, IRubyObject.class));
 
         structClass.defineMethod("members", CallbackFactory.getMethod(RubyStruct.class, "members"));
 
         return structClass;
     }
 
-    private static RubyObject getInstanceVariable(RubyClass type, String name) {
-        RubyClass structClass = type.getRuby().getClasses().getStructClass();
+    private static IRubyObject getInstanceVariable(RubyClass type, String name) {
+        RubyClass structClass = type.getRuntime().getClasses().getStructClass();
 
         while (type != null && type != structClass) {
             if (type.isInstanceVarDefined(name)) {
@@ -90,7 +97,7 @@ public class RubyStruct extends RubyObject {
             type = type.getSuperClass();
         }
 
-        return type.getRuby().getNil();
+        return type.getRuntime().getNil();
     }
 
     private RubyClass classOf() {
@@ -107,7 +114,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    private RubyObject setByName(String name, RubyObject value) {
+    private IRubyObject setByName(String name, IRubyObject value) {
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
         if (member.isNil()) {
@@ -125,7 +132,7 @@ public class RubyStruct extends RubyObject {
         throw new NameError(ruby, name + " is not struct member");
     }
 
-    private RubyObject getByName(String name) {
+    private IRubyObject getByName(String name) {
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
         if (member.isNil()) {
@@ -148,26 +155,26 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      * 
      */
-    public static RubyClass newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args) {
         String name = null;
 
         if (args.length > 0 && args[0] instanceof RubyString) {
             name = args[0].toString();
         }
 
-        RubyArray member = RubyArray.newArray(ruby);
+        RubyArray member = RubyArray.newArray(recv.getRuntime());
 
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            member.append(RubySymbol.newSymbol(ruby, args[i].toId()));
+            member.append(RubySymbol.newSymbol(recv.getRuntime(), args[i].toId()));
         }
 
         RubyClass newStruct;
 
         if (name == null) {
-            newStruct = RubyClass.newClass(ruby, (RubyClass) recv);
+            newStruct = RubyClass.newClass(recv.getRuntime(), (RubyClass) recv);
         } else {
             if (!IdUtil.isConstant(name)) {
-                throw new NameError(ruby, "identifier " + name + " needs to be constant");
+                throw new NameError(recv.getRuntime(), "identifier " + name + " needs to be constant");
             }
             newStruct = ((RubyClass) recv).defineClassUnder(name, ((RubyClass) recv));
         }
@@ -183,7 +190,7 @@ public class RubyStruct extends RubyObject {
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
             String memberName = args[i].toId();
             newStruct.defineMethod(memberName, CallbackFactory.getMethod(RubyStruct.class, "get"));
-            newStruct.defineMethod(memberName + "=", CallbackFactory.getMethod(RubyStruct.class, "set", RubyObject.class));
+            newStruct.defineMethod(memberName + "=", CallbackFactory.getMethod(RubyStruct.class, "set", IRubyObject.class));
         }
 
         return newStruct;
@@ -194,8 +201,8 @@ public class RubyStruct extends RubyObject {
      * MRI: struct_alloc
      * 
      */
-    public static RubyStruct newStruct(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyStruct struct = new RubyStruct(ruby, (RubyClass) recv);
+    public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args) {
+        RubyStruct struct = new RubyStruct(recv.getRuntime(), (RubyClass) recv);
 
         int size = RubyFixnum.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
 
@@ -206,7 +213,7 @@ public class RubyStruct extends RubyObject {
         return struct;
     }
 
-    public RubyObject initialize(RubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args) {
         modify();
 
         int size = RubyFixnum.fix2int(getInstanceVariable(getInternalClass(), "__size__"));
@@ -226,26 +233,26 @@ public class RubyStruct extends RubyObject {
         return ruby.getNil();
     }
 
-    public static RubyArray members(Ruby ruby, RubyObject recv) {
+    public static RubyArray members(IRubyObject recv) {
         RubyArray member = (RubyArray) getInstanceVariable((RubyClass) recv, "__member__");
 
         if (member.isNil()) {
             throw new RubyBugException("uninitialized struct");
         }
 
-        RubyArray result = RubyArray.newArray(ruby, member.getLength());
+        RubyArray result = RubyArray.newArray(recv.getRuntime(), member.getLength());
         for (int i = 0; i < member.getLength(); i++) {
-            result.append(RubyString.newString(ruby, member.entry(i).toId()));
+            result.append(RubyString.newString(recv.getRuntime(), member.entry(i).toId()));
         }
 
         return result;
     }
 
     public RubyArray members() {
-        return members(ruby, classOf());
+        return members(classOf());
     }
 
-    public RubyObject set(RubyObject value) {
+    public IRubyObject set(IRubyObject value) {
         String name = ruby.getCurrentFrame().getLastFunc();
         if (name.endsWith("=")) {
             name = name.substring(0, name.length() - 1);
@@ -268,7 +275,7 @@ public class RubyStruct extends RubyObject {
         throw new NameError(ruby, name + " is not struct member");
     }
 
-    public RubyObject get() {
+    public IRubyObject get() {
         String name = ruby.getCurrentFrame().getLastFunc();
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
@@ -286,7 +293,7 @@ public class RubyStruct extends RubyObject {
         throw new NameError(ruby, name + " is not struct member");
     }
 
-    public RubyObject rbClone() {
+    public IRubyObject rbClone() {
         RubyStruct clone = new RubyStruct(ruby, getInternalClass());
 
         clone.values = new RubyObject[values.length];
@@ -295,7 +302,7 @@ public class RubyStruct extends RubyObject {
         return clone;
     }
 
-    public RubyBoolean equal(RubyObject other) {
+    public RubyBoolean equal(IRubyObject other) {
         if (this == other) {
             return ruby.getTrue();
         } else if (!(other instanceof RubyStruct)) {
@@ -348,7 +355,7 @@ public class RubyStruct extends RubyObject {
         return RubyFixnum.newFixnum(ruby, values.length);
     }
 
-    public RubyObject each() {
+    public IRubyObject each() {
         for (int i = 0; i < values.length; i++) {
             ruby.yield(values[i]);
         }
@@ -356,7 +363,7 @@ public class RubyStruct extends RubyObject {
         return this;
     }
 
-    public RubyObject aref(RubyObject key) {
+    public IRubyObject aref(IRubyObject key) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             return getByName(key.toId());
         }
@@ -374,7 +381,7 @@ public class RubyStruct extends RubyObject {
         return values[idx];
     }
 
-    public RubyObject aset(RubyObject key, RubyObject value) {
+    public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
             return setByName(key.toId(), value);
         }
@@ -423,13 +430,13 @@ public class RubyStruct extends RubyObject {
 
         int size = input.unmarshalInt();
 
-        RubyObject[] values = new RubyObject[size];
+        IRubyObject[] values = new IRubyObject[size];
         for (int i = 0; i < size; i++) {
             input.unmarshalObject(); // Read and discard a Symbol, which is the name
             values[i] = input.unmarshalObject();
         }
         
-        return newStruct(ruby, rbClass, values);
+        return newStruct(rbClass, values);
     }
 
     private static RubyClass pathToClass(Ruby ruby, String path) {

@@ -35,6 +35,7 @@ import java.util.Map;
 
 import org.jruby.exceptions.RubyFrozenException;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.CallbackFactory;
@@ -71,9 +72,9 @@ public class RubyClass extends RubyModule {
     protected void testFrozen() {
         if (isFrozen()) {
             if (isSingleton()) {
-                throw new RubyFrozenException(getRuby(), "object");
+                throw new RubyFrozenException(getRuntime(), "object");
             } else {
-                throw new RubyFrozenException(getRuby(), "class");
+                throw new RubyFrozenException(getRuntime(), "class");
             }
         }
     }
@@ -123,7 +124,7 @@ public class RubyClass extends RubyModule {
             return (RubyClass) this;
         }
 
-        RubyClass clone = newClass(getRuby(), getInternalClass(), getSuperClass());
+        RubyClass clone = newClass(getRuntime(), getInternalClass(), getSuperClass());
         clone.setupClone(this);
         clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
         
@@ -153,7 +154,7 @@ public class RubyClass extends RubyModule {
     public RubyClass getInternalClass() {
         RubyClass type = super.getInternalClass();
 
-        return type != null ? type : getRuby().getClasses().getClassClass();
+        return type != null ? type : getRuntime().getClasses().getClassClass();
     }
     
 	public RubyClass getRealClass() {
@@ -166,11 +167,11 @@ public class RubyClass extends RubyModule {
     /** rb_singleton_class_attached
      *
      */
-    public void attachSingletonClass(RubyObject object) {
+    public void attachSingletonClass(IRubyObject object) {
         if (isSingleton()) {
             setInstanceVariable("__atached__", object);
         } else {
-            getRuby().getRuntime().printBug("attachSingletonClass called on a non singleton class.");
+            getRuntime().getRuntime().printBug("attachSingletonClass called on a non singleton class.");
         }
     }
 
@@ -178,7 +179,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public RubyClass newSingletonClass() {
-        RubyClass newClass = RubyClass.newClass(getRuby(), this);
+        RubyClass newClass = RubyClass.newClass(getRuntime(), this);
         newClass.setSingleton(true);
 
         return newClass;
@@ -200,12 +201,12 @@ public class RubyClass extends RubyModule {
     /** rb_class_new_instance
      *
      */
-    public RubyObject newInstance(RubyObject[] args) {
+    public IRubyObject newInstance(IRubyObject[] args) {
         if (isSingleton()) {
-            throw new TypeError(getRuby(), "can't create instance of virtual class");
+            throw new TypeError(getRuntime(), "can't create instance of virtual class");
         }
 
-        RubyObject obj = new RubyObject(getRuby(), this);
+        RubyObject obj = new RubyObject(getRuntime(), this);
 
         obj.callInit(args);
 
@@ -215,18 +216,18 @@ public class RubyClass extends RubyModule {
     /** rb_class_s_new
      *
      */
-    public static RubyModule newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyClass superClass = ruby.getClasses().getObjectClass();
+    public static RubyModule newInstance(IRubyObject recv, IRubyObject[] args) {
+        RubyClass superClass = recv.getRuntime().getClasses().getObjectClass();
 
         if (args.length >= 1) {
             superClass = (RubyClass) args[0];
         }
 
         if (superClass.isSingleton()) {
-            throw new TypeError(ruby, "Can't make subclass of virtual class.");
+            throw new TypeError(recv.getRuntime(), "Can't make subclass of virtual class.");
         }
 
-        RubyClass newClass = newClass(ruby, superClass);
+        RubyClass newClass = newClass(recv.getRuntime(), superClass);
 
         newClass.makeMetaClass(superClass.getInternalClass());
 
@@ -250,14 +251,14 @@ public class RubyClass extends RubyModule {
             superClass = superClass.getSuperClass();
         }
 
-        return superClass != null ? superClass : nilClass(getRuby());
+        return superClass != null ? superClass : nilClass(getRuntime());
     }
 
     /** rb_class_s_inherited
      *
      */
-    public static RubyObject inherited(Ruby ruby, RubyClass subClass) {
-        throw new TypeError(ruby, "can't make subclass of Class");
+    public static IRubyObject inherited(RubyClass recv) {
+        throw new TypeError(recv.getRuntime(), "can't make subclass of Class");
     }
 
 

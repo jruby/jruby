@@ -35,6 +35,7 @@ import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import com.ibm.bsf.*;
 import com.ibm.bsf.util.BSFEngineImpl;
@@ -73,12 +74,9 @@ public class JRubyEngine extends BSFEngineImpl {
 
         ruby.evalScript((String) sb.toString(), null);
 
-        RubyObject[] rubyArgs = new RubyObject[args.size()];
-        for (int i = args.size(); i >= 0; i--) {
-            rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args.elementAt(i));
-        }
+        IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args.toArray());
 
-        Object result = JavaUtil.convertRubyToJava(ruby, ruby.getRubyTopSelf().funcall("__jruby_bsf_anonymous", rubyArgs));
+        Object result = JavaUtil.convertRubyToJava(ruby, ruby.getRubyTopSelf().callMethod("__jruby_bsf_anonymous", rubyArgs));
 
         ruby.setSourceFile(oldFile);
         ruby.setSourceLine(oldLine);
@@ -124,11 +122,11 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object call(Object recv, String method, Object[] args) throws BSFException {
         try {
-            RubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(ruby, recv) : ruby.getRubyTopSelf();
+            IRubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(ruby, recv) : ruby.getRubyTopSelf();
 
-            RubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args);
+            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args);
 
-            RubyObject result = rubyRecv.funcall(method, rubyArgs);
+            IRubyObject result = rubyRecv.callMethod(method, rubyArgs);
 
             return JavaUtil.convertRubyToJava(ruby, result, Object.class);
         } catch (Exception excptn) {
@@ -176,7 +174,7 @@ public class JRubyEngine extends BSFEngineImpl {
             ruby.getRuntime().printError(((ThrowJump) exception).getNameError());
         } else if (exception instanceof BreakJump) {
             ruby.getRuntime().getErrorStream().println("break without block.");
-        } else if (exception instanceof ReturnException) {
+        } else if (exception instanceof ReturnJump) {
             ruby.getRuntime().getErrorStream().println("return without block.");
         }
     }
@@ -187,15 +185,16 @@ public class JRubyEngine extends BSFEngineImpl {
 
         public BeanGlobalVariable(Ruby ruby, BSFDeclaredBean bean) {
             super(ruby, bean.name, null);
+
             this.bean = bean;
         }
 
-        public RubyObject get() {
-            return JavaUtil.convertJavaToRuby(this.ruby, bean.bean);
+        public IRubyObject get() {
+            return JavaUtil.convertJavaToRuby(ruby, bean.bean);
         }
 
-        public RubyObject set(RubyObject value) {
-            bean.bean = JavaUtil.convertRubyToJava(this.ruby, value, bean.type);
+        public IRubyObject set(IRubyObject value) {
+            bean.bean = JavaUtil.convertRubyToJava(ruby, value.toRubyObject(), bean.type);
             return value;
         }
     }

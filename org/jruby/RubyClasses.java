@@ -31,9 +31,10 @@ package org.jruby;
 
 import java.util.Iterator;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.*;
+import org.jruby.util.RubyHashMap;
+import org.jruby.util.RubyMap;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -96,8 +97,7 @@ import org.jruby.util.*;
  * @author jpetersen
  * @since 0.1.8
  */
-public class RubyClasses
-{
+public class RubyClasses {
     private Ruby ruby;
 
     private RubyClass arrayClass;
@@ -154,8 +154,7 @@ public class RubyClasses
      *
      * @param ruby The Ruby runtime.
      */
-    public RubyClasses(Ruby ruby)
-    {
+    public RubyClasses(Ruby ruby) {
         this.ruby = ruby;
 
         classMap = new RubyHashMap();
@@ -168,8 +167,7 @@ public class RubyClasses
      * @param superClass Description of the Parameter
      * @return Description of the Return Value
      */
-    private RubyClass defineBootClass(String name, RubyClass superClass)
-    {
+    private RubyClass defineBootClass(String name, RubyClass superClass) {
         RubyClass bootClass = RubyClass.newClass(ruby, superClass);
         bootClass.setName(name);
         classMap.put(name, bootClass);
@@ -207,8 +205,7 @@ public class RubyClasses
      *
      *   + All metaclasses are instances of the class `Class'.
      */
-    public void initCoreClasses()
-    {
+    public void initCoreClasses() {
         objectClass = defineBootClass("Object", null);
         moduleClass = defineBootClass("Module", objectClass);
         classClass = defineBootClass("Class", moduleClass);
@@ -284,8 +281,7 @@ public class RubyClasses
      *
      * @return the Binding class.
      */
-    public RubyClass getBindingClass()
-    {
+    public RubyClass getBindingClass() {
         return bindingClass;
     }
 
@@ -294,8 +290,7 @@ public class RubyClasses
      *
      * @return The Class class.
      */
-    public RubyClass getClassClass()
-    {
+    public RubyClass getClassClass() {
         return classClass;
     }
 
@@ -304,8 +299,7 @@ public class RubyClasses
      *
      * @return The Module class.
      */
-    public RubyClass getModuleClass()
-    {
+    public RubyClass getModuleClass() {
         return moduleClass;
     }
 
@@ -314,8 +308,7 @@ public class RubyClasses
      *
      * @return The Struct class.
      */
-    public RubyClass getStructClass()
-    {
+    public RubyClass getStructClass() {
         return structClass;
     }
 
@@ -324,8 +317,7 @@ public class RubyClasses
      *
      * @return The Comparable module.
      */
-    public RubyModule getComparableModule()
-    {
+    public RubyModule getComparableModule() {
         return comparableModule;
     }
 
@@ -334,8 +326,7 @@ public class RubyClasses
      *
      * @return The Hash class.
      */
-    public RubyClass getHashClass()
-    {
+    public RubyClass getHashClass() {
         return hashClass;
     }
 
@@ -344,8 +335,7 @@ public class RubyClasses
      *
      * @return The Math module.
      */
-    public RubyModule getMathModule()
-    {
+    public RubyModule getMathModule() {
         return mathModule;
     }
 
@@ -354,8 +344,7 @@ public class RubyClasses
      *
      * @return The RegExp class.
      */
-    public RubyClass getRegExpClass()
-    {
+    public RubyClass getRegExpClass() {
         return regExpClass;
     }
 
@@ -364,8 +353,7 @@ public class RubyClasses
      *
      * @return The Process module.
      */
-    public RubyModule getProcessModule()
-    {
+    public RubyModule getProcessModule() {
         return processModule;
     }
 
@@ -374,8 +362,7 @@ public class RubyClasses
      *
      * @return The IO class.
      */
-    public RubyClass getIoClass()
-    {
+    public RubyClass getIoClass() {
         return ioClass;
     }
 
@@ -384,8 +371,7 @@ public class RubyClasses
      *
      * @return The ThreadGroup class.
      */
-    public RubyClass getThreadGroupClass()
-    {
+    public RubyClass getThreadGroupClass() {
         return threadGroupClass;
     }
 
@@ -394,8 +380,7 @@ public class RubyClasses
      *
      * @return The Bignum class.
      */
-    public RubyClass getBignumClass()
-    {
+    public RubyClass getBignumClass() {
         return bignumClass;
     }
 
@@ -404,8 +389,7 @@ public class RubyClasses
      *
      * @return The Struct::Tms class.
      */
-    public RubyClass getStructTmsClass()
-    {
+    public RubyClass getStructTmsClass() {
         return structTmsClass;
     }
 
@@ -414,8 +398,7 @@ public class RubyClasses
      *
      * @return The Range class.
      */
-    public RubyClass getRangeClass()
-    {
+    public RubyClass getRangeClass() {
         return rangeClass;
     }
 
@@ -424,8 +407,7 @@ public class RubyClasses
      *
      * @return The GC module.
      */
-    public RubyModule getGcModule()
-    {
+    public RubyModule getGcModule() {
         return gcModule;
     }
 
@@ -434,8 +416,7 @@ public class RubyClasses
      *
      * @return The Symbol class.
      */
-    public RubyClass getSymbolClass()
-    {
+    public RubyClass getSymbolClass() {
         return symbolClass;
     }
 
@@ -444,8 +425,7 @@ public class RubyClasses
      *
      * @return The Proc class.
      */
-    public RubyClass getProcClass()
-    {
+    public RubyClass getProcClass() {
         return procClass;
     }
 
@@ -454,8 +434,7 @@ public class RubyClasses
      *
      * @return The Continuation class.
      */
-    public RubyClass getContinuationClass()
-    {
+    public RubyClass getContinuationClass() {
         return continuationClass;
     }
 
@@ -464,8 +443,7 @@ public class RubyClasses
      *
      * @return The FalseClass class.
      */
-    public RubyClass getFalseClass()
-    {
+    public RubyClass getFalseClass() {
         return falseClass;
     }
 
@@ -474,8 +452,7 @@ public class RubyClasses
      *
      * @return The Float class.
      */
-    public RubyClass getFloatClass()
-    {
+    public RubyClass getFloatClass() {
         return floatClass;
     }
 
@@ -484,8 +461,7 @@ public class RubyClasses
      *
      * @return The Method class.
      */
-    public RubyClass getMethodClass()
-    {
+    public RubyClass getMethodClass() {
         return methodClass;
     }
 
@@ -494,8 +470,7 @@ public class RubyClasses
      *
      * @return The MatchData class.
      */
-    public RubyClass getMatchDataClass()
-    {
+    public RubyClass getMatchDataClass() {
         return matchDataClass;
     }
 
@@ -504,8 +479,7 @@ public class RubyClasses
      *
      * @return The Marshal module.
      */
-    public RubyModule getMarshalModule()
-    {
+    public RubyModule getMarshalModule() {
         return marshalModule;
     }
 
@@ -514,8 +488,7 @@ public class RubyClasses
      *
      * @return The Fixnum class.
      */
-    public RubyClass getFixnumClass()
-    {
+    public RubyClass getFixnumClass() {
         return fixnumClass;
     }
 
@@ -524,8 +497,7 @@ public class RubyClasses
      *
      * @return The Object class.
      */
-    public RubyClass getObjectClass()
-    {
+    public RubyClass getObjectClass() {
         return objectClass;
     }
 
@@ -534,8 +506,7 @@ public class RubyClasses
      *
      * @return The ObjectSpace module.
      */
-    public RubyModule getObjectSpaceModule()
-    {
+    public RubyModule getObjectSpaceModule() {
         return objectSpaceModule;
     }
 
@@ -544,8 +515,7 @@ public class RubyClasses
      *
      * @return The Dir class.
      */
-    public RubyClass getDirClass()
-    {
+    public RubyClass getDirClass() {
         return dirClass;
     }
 
@@ -554,8 +524,7 @@ public class RubyClasses
      *
      * @return The Exception class.
      */
-    public RubyClass getExceptionClass()
-    {
+    public RubyClass getExceptionClass() {
         return exceptionClass;
     }
 
@@ -564,8 +533,7 @@ public class RubyClasses
      *
      * @return The String class.
      */
-    public RubyClass getStringClass()
-    {
+    public RubyClass getStringClass() {
         return stringClass;
     }
 
@@ -574,8 +542,7 @@ public class RubyClasses
      *
      * @return The TrueClass class.
      */
-    public RubyClass getTrueClass()
-    {
+    public RubyClass getTrueClass() {
         return trueClass;
     }
 
@@ -584,8 +551,7 @@ public class RubyClasses
      *
      * @return The Integer class.
      */
-    public RubyClass getIntegerClass()
-    {
+    public RubyClass getIntegerClass() {
         return integerClass;
     }
 
@@ -594,8 +560,7 @@ public class RubyClasses
      *
      * @return The Kernel module.
      */
-    public RubyModule getKernelModule()
-    {
+    public RubyModule getKernelModule() {
         return kernelModule;
     }
 
@@ -604,8 +569,7 @@ public class RubyClasses
      *
      * @return The Thread class.
      */
-    public RubyClass getThreadClass()
-    {
+    public RubyClass getThreadClass() {
         return threadClass;
     }
 
@@ -614,8 +578,7 @@ public class RubyClasses
      *
      * @return The File class.
      */
-    public RubyClass getFileClass()
-    {
+    public RubyClass getFileClass() {
         return fileClass;
     }
 
@@ -624,8 +587,7 @@ public class RubyClasses
      *
      * @return The NilClass class.
      */
-    public RubyClass getNilClass()
-    {
+    public RubyClass getNilClass() {
         return nilClass;
     }
 
@@ -634,8 +596,7 @@ public class RubyClasses
      *
      * @return The Array class.
      */
-    public RubyClass getArrayClass()
-    {
+    public RubyClass getArrayClass() {
         return arrayClass;
     }
 
@@ -644,8 +605,7 @@ public class RubyClasses
      *
      * @return The File::Stat class.
      */
-    public RubyClass getFileStatClass()
-    {
+    public RubyClass getFileStatClass() {
         return fileStatClass;
     }
 
@@ -654,8 +614,7 @@ public class RubyClasses
      *
      * @return The Enumerable module.
      */
-    public RubyModule getEnumerableModule()
-    {
+    public RubyModule getEnumerableModule() {
         return enumerableModule;
     }
 
@@ -664,19 +623,16 @@ public class RubyClasses
      *
      * @return The precisionModule value
      */
-    public RubyModule getPrecisionModule()
-    {
+    public RubyModule getPrecisionModule() {
         return precisionModule;
     }
-
 
     /**
      * Returns the reference to the JavaObject class.
      *
      * @return The JavaObject class.
      */
-    public RubyClass getJavaObjectClass()
-    {
+    public RubyClass getJavaObjectClass() {
         return javaObjectClass;
     }
 
@@ -685,8 +641,7 @@ public class RubyClasses
      *
      * @return The Java module.
      */
-    public RubyModule getJavaModule()
-    {
+    public RubyModule getJavaModule() {
         return javaModule;
     }
 
@@ -695,8 +650,7 @@ public class RubyClasses
      *
      * @return The JavaInterface class.
      */
-    public RubyClass getJavaInterfaceClass()
-    {
+    public RubyClass getJavaInterfaceClass() {
         return javaInterfaceClass;
     }
 
@@ -705,8 +659,7 @@ public class RubyClasses
      *
      * @return The Numeric class.
      */
-    public RubyClass getNumericClass()
-    {
+    public RubyClass getNumericClass() {
         return numericClass;
     }
 
@@ -715,8 +668,7 @@ public class RubyClasses
      *
      * @return The Time class.
      */
-    public RubyClass getTimeClass()
-    {
+    public RubyClass getTimeClass() {
         return timeClass;
     }
 
@@ -726,8 +678,7 @@ public class RubyClasses
      *
      * @return A map with references to all named classes.
      */
-    public RubyMap getClassMap()
-    {
+    public RubyMap getClassMap() {
         return classMap;
     }
 
@@ -737,8 +688,7 @@ public class RubyClasses
      * @param name Description of the Parameter
      * @return The class value
      */
-    public RubyModule getClass(String name)
-    {
+    public RubyModule getClass(String name) {
         return (RubyModule) classMap.get(name);
     }
 
@@ -748,8 +698,7 @@ public class RubyClasses
      * @param path Description of the Parameter
      * @return The classFromPath value
      */
-    public RubyModule getClassFromPath(String path)
-    {
+    public RubyModule getClassFromPath(String path) {
         RubyModule result = getClass(path);
         if (result != null) {
             return result;
@@ -768,8 +717,7 @@ public class RubyClasses
      * @param name Description of the Parameter
      * @param rbClass Description of the Parameter
      */
-    public void putClass(String name, RubyModule rbClass)
-    {
+    public void putClass(String name, RubyModule rbClass) {
         classMap.put(name, rbClass);
     }
 
@@ -778,8 +726,7 @@ public class RubyClasses
      *
      * @return Description of the Return Value
      */
-    public Iterator nameIterator()
-    {
+    public Iterator nameIterator() {
         return classMap.keySet().iterator();
     }
 }

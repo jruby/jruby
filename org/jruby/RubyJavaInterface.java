@@ -29,8 +29,12 @@
  */
 package org.jruby;
 
-import java.lang.reflect.*;
-import org.jruby.javasupport.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyJavaInterface extends RubyJavaObject {
 
@@ -67,7 +71,7 @@ public class RubyJavaInterface extends RubyJavaObject {
         }));
     }
 
-    public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final RubyObject receiver, final RubyString method) {
+    public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final IRubyObject receiver, final RubyString method) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{interfaceMethod.getDeclaringClass()}, new InvocationHandler() {
             public Object invoke(Object recv, Method imethod, Object[] args) {
                 return JavaUtil.convertJavaToRuby(ruby, receiver.send(method, JavaUtil.convertJavaArrayToRuby(ruby, args)));
@@ -75,7 +79,7 @@ public class RubyJavaInterface extends RubyJavaObject {
         }));
     }
 
-    public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Class javaInterface, final RubyObject receiver) {
+    public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Class javaInterface, final IRubyObject receiver) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{javaInterface}, new InvocationHandler() {
             public Object invoke(Object recv, Method method, Object[] args) {
                 return JavaUtil.convertJavaToRuby(ruby, receiver.send(RubyString.newString(ruby, method.getName()), JavaUtil.convertJavaArrayToRuby(ruby, args)));

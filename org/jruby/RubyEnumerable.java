@@ -29,8 +29,9 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.BreakJump;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -50,13 +51,13 @@ public class RubyEnumerable {
         enumerableModule.defineMethod("find", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "find"));
         enumerableModule.defineMethod("find_all", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "find_all"));
         enumerableModule.defineMethod("grep",
-            CallbackFactory.getSingletonMethod(RubyEnumerable.class, "grep", RubyObject.class));
+            CallbackFactory.getSingletonMethod(RubyEnumerable.class, "grep", IRubyObject.class));
         enumerableModule.defineMethod("include?",
-            CallbackFactory.getSingletonMethod(RubyEnumerable.class, "member", RubyObject.class));
+            CallbackFactory.getSingletonMethod(RubyEnumerable.class, "member", IRubyObject.class));
         enumerableModule.defineMethod("map", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "collect"));
         enumerableModule.defineMethod("max", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "max"));
         enumerableModule.defineMethod("member?",
-            CallbackFactory.getSingletonMethod(RubyEnumerable.class, "member", RubyObject.class));
+            CallbackFactory.getSingletonMethod(RubyEnumerable.class, "member", IRubyObject.class));
         enumerableModule.defineMethod("min", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "min"));
         enumerableModule.defineMethod("reject", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "reject"));
         enumerableModule.defineMethod("select", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "find_all"));
@@ -66,80 +67,80 @@ public class RubyEnumerable {
         return enumerableModule;
     }
 
-    public static RubyObject each(Ruby ruby, RubyObject recv) {
+    public static IRubyObject each(IRubyObject recv) {
         return recv.callMethod("each");
     }
 
-    private static void iterateEach(Ruby ruby, RubyObject recv, String iter_method, RubyObject arg1) {
-        ruby.iterate(CallbackFactory.getSingletonMethod(RubyEnumerable.class, "each"), recv,
+    private static void iterateEach(IRubyObject recv, String iter_method, IRubyObject arg1) {
+        recv.getRuntime().iterate(CallbackFactory.getSingletonMethod(RubyEnumerable.class, "each"), recv,
             CallbackFactory.getBlockMethod(RubyEnumerable.class, iter_method), arg1);
     }
 
     // Block methods
 
-    public static RubyObject collect_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        ((RubyArray) arg1).append(ruby.yield(blockArg).toRubyObject());
+    public static IRubyObject collect_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        ((RubyArray) arg1).append(self.getRuntime().yield(blockArg));
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject each_with_index_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject index = ((RubyArray) arg1).pop();
+    public static IRubyObject each_with_index_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject index = ((RubyArray) arg1).pop();
         
-        ruby.yield(RubyArray.newArray(ruby, blockArg, index));
+        self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, index));
 
-        ((RubyArray) arg1).append(((RubyFixnum) index).op_plus(RubyFixnum.one(ruby)));
+        ((RubyArray) arg1).append(((RubyFixnum) index).op_plus(RubyFixnum.one(self.getRuntime())));
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject enum_all_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
+    public static IRubyObject enum_all_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
         ((RubyArray) arg1).append(blockArg);
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject find_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        if (ruby.yield(blockArg).isTrue()) {
+    public static IRubyObject find_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        if (self.getRuntime().yield(blockArg).isTrue()) {
             ((RubyArray) arg1).append(blockArg);
             throw new BreakJump();
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject find_all_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        if (ruby.yield(blockArg).isTrue()) {
+    public static IRubyObject find_all_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        if (self.getRuntime().yield(blockArg).isTrue()) {
             ((RubyArray) arg1).append(blockArg);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject grep_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject matcher = ((RubyArray) arg1).entry(0);
+    public static IRubyObject grep_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject matcher = ((RubyArray) arg1).entry(0);
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
         if (matcher.callMethod("===", blockArg).isTrue()) {
             resultArray.append(blockArg);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject grep_iter_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject matcher = ((RubyArray) arg1).entry(0);
+    public static IRubyObject grep_iter_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject matcher = ((RubyArray) arg1).entry(0);
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
         if (matcher.callMethod("===", blockArg).isTrue()) {
-            resultArray.append(ruby.yield(blockArg).toRubyObject());
+            resultArray.append(self.getRuntime().yield(blockArg).toRubyObject());
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject max_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject maxItem = ((RubyArray) arg1).pop();
+    public static IRubyObject max_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject maxItem = ((RubyArray) arg1).pop();
 
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
@@ -149,34 +150,34 @@ public class RubyEnumerable {
             ((RubyArray) arg1).append(maxItem);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject max_iter_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject maxItem = ((RubyArray) arg1).pop();
+    public static IRubyObject max_iter_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject maxItem = ((RubyArray) arg1).pop();
 
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem)).toRubyObject()) > 0) {
+        } else if (RubyFixnum.fix2int(self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, maxItem)).toRubyObject()) > 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject member_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
+    public static IRubyObject member_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
         if (blockArg.callMethod("==", ((RubyArray) arg1).entry(0)).isTrue()) {
-            ((RubyArray) arg1).append(ruby.getTrue());
+            ((RubyArray) arg1).append(self.getRuntime().getTrue());
             throw new BreakJump();
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject min_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject maxItem = ((RubyArray) arg1).pop();
+    public static IRubyObject min_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
         } else if (RubyFixnum.fix2int(blockArg.callMethod("<=>", maxItem)) < 0) {
@@ -185,118 +186,118 @@ public class RubyEnumerable {
             ((RubyArray) arg1).append(maxItem);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject min_iter_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        RubyObject maxItem = ((RubyArray) arg1).pop();
+    public static IRubyObject min_iter_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        IRubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem)).toRubyObject()) < 0) {
+        } else if (RubyFixnum.fix2int(self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, maxItem)).toRubyObject()) < 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
 
-    public static RubyObject reject_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        if (!ruby.yield(blockArg).isTrue()) {
+    public static IRubyObject reject_i(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
+        if (!self.getRuntime().yield(blockArg).isTrue()) {
             ((RubyArray) arg1).append(blockArg);
         }
 
-        return ruby.getNil();
+        return self.getRuntime().getNil();
     }
     
     /* methods of the Enumerable module. */
 
-    public static RubyObject collect(Ruby ruby, RubyObject recv) {
-        RubyArray result = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, ruby.isBlockGiven() ? "collect_i" : "enum_all_i", result);
+    public static IRubyObject collect(IRubyObject recv) {
+        RubyArray result = RubyArray.newArray(recv.getRuntime());
+        iterateEach(recv, recv.getRuntime().isBlockGiven() ? "collect_i" : "enum_all_i", result);
         return result;
     }
 
-    public static RubyObject each_with_index(Ruby ruby, RubyObject recv) {
-        iterateEach(ruby, recv, "each_with_index_i", RubyArray.newArray(ruby, RubyFixnum.zero(ruby)));
-        return ruby.getNil();
+    public static IRubyObject each_with_index(IRubyObject recv) {
+        iterateEach(recv, "each_with_index_i", RubyArray.newArray(recv.getRuntime(), RubyFixnum.zero(recv.getRuntime())));
+        return recv.getRuntime().getNil();
     }
 
-    public static RubyObject find(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, "find_i", ary);
+    public static IRubyObject find(IRubyObject recv) {
+        RubyArray ary = RubyArray.newArray(recv.getRuntime());
+        iterateEach(recv, "find_i", ary);
         if (ary.getLength() > 0) {
             return ary.shift();
         }
 
-        return ruby.getNil();
+        return recv.getRuntime().getNil();
     }
 
-    public static RubyObject find_all(Ruby ruby, RubyObject recv) {
-        RubyArray result = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, "find_all_i", result);
+    public static IRubyObject find_all(IRubyObject recv) {
+        RubyArray result = RubyArray.newArray(recv.getRuntime());
+        iterateEach(recv, "find_all_i", result);
         return result;
     }
 
-    public static RubyObject grep(Ruby ruby, RubyObject recv, RubyObject matcher) {
-        RubyArray result = RubyArray.newArray(ruby);
+    public static IRubyObject grep(IRubyObject recv, IRubyObject matcher) {
+        RubyArray result = RubyArray.newArray(recv.getRuntime());
         result.append(matcher);
-        result.append(RubyArray.newArray(ruby));
-        if (ruby.isBlockGiven()) {
-            iterateEach(ruby, recv, "grep_iter_i", result);
+        result.append(RubyArray.newArray(recv.getRuntime()));
+        if (recv.getRuntime().isBlockGiven()) {
+            iterateEach(recv, "grep_iter_i", result);
         } else {
-            iterateEach(ruby, recv, "grep_i", result);
+            iterateEach(recv, "grep_i", result);
         }
 
         return result.pop();
     }
 
-    public static RubyObject max(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        ary.append(ruby.getNil());
-        if (ruby.isBlockGiven()) {
-            iterateEach(ruby, recv, "max_iter_i", ary);
+    public static IRubyObject max(IRubyObject recv) {
+        RubyArray ary = RubyArray.newArray(recv.getRuntime());
+        ary.append(recv.getRuntime().getNil());
+        if (recv.getRuntime().isBlockGiven()) {
+            iterateEach(recv, "max_iter_i", ary);
         } else {
-            iterateEach(ruby, recv, "max_i", ary);
+            iterateEach(recv, "max_i", ary);
         }
 
         return ary.pop();
     }
 
-    public static RubyBoolean member(Ruby ruby, RubyObject recv, RubyObject item) {
-        RubyArray ary = RubyArray.newArray(ruby);
+    public static RubyBoolean member(IRubyObject recv, IRubyObject item) {
+        RubyArray ary = RubyArray.newArray(recv.getRuntime());
         ary.append(item);
-        iterateEach(ruby, recv, "member_i", ary);
-        return ary.getLength() > 1 ? ruby.getTrue() : ruby.getFalse();
+        iterateEach(recv, "member_i", ary);
+        return ary.getLength() > 1 ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
-    public static RubyObject min(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        ary.append(ruby.getNil());
-        if (ruby.isBlockGiven()) {
-            iterateEach(ruby, recv, "min_iter_i", ary);
+    public static IRubyObject min(IRubyObject recv) {
+        RubyArray ary = RubyArray.newArray(recv.getRuntime());
+        ary.append(recv.getRuntime().getNil());
+        if (recv.getRuntime().isBlockGiven()) {
+            iterateEach(recv, "min_iter_i", ary);
         } else {
-            iterateEach(ruby, recv, "min_i", ary);
+            iterateEach(recv, "min_i", ary);
         }
 
         return ary.pop();
     }
 
-    public static RubyObject reject(Ruby ruby, RubyObject recv) {
-        RubyArray result = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, "reject_i", result);
+    public static IRubyObject reject(IRubyObject recv) {
+        RubyArray result = RubyArray.newArray(recv.getRuntime());
+        iterateEach(recv, "reject_i", result);
         return result;
     }
 
-    public static RubyObject sort(Ruby ruby, RubyObject recv) {
-        RubyArray result = (RubyArray) to_a(ruby, recv);
+    public static IRubyObject sort(IRubyObject recv) {
+        RubyArray result = (RubyArray) to_a(recv);
         result.sort_bang();
         return result;
     }
 
-    public static RubyObject to_a(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, "enum_all_i", ary);
+    public static IRubyObject to_a(IRubyObject recv) {
+        RubyArray ary = RubyArray.newArray(recv.getRuntime());
+        iterateEach(recv, "enum_all_i", ary);
         return ary;
     }
 }

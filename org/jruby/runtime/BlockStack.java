@@ -1,7 +1,7 @@
 package org.jruby.runtime;
 
 import org.ablaf.ast.INode;
-import org.jruby.RubyObject;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.AbstractStack;
 
 /**
@@ -14,7 +14,7 @@ public class BlockStack extends AbstractStack {
     public BlockStack() {
     }
 
-    public void push(INode varNode, ICallable method, RubyObject self) {
+    public void push(INode varNode, ICallable method, IRubyObject self) {
         push(Block.createBlock(varNode, method, self));
     }
 

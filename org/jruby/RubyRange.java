@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author jpetersen
@@ -37,20 +38,20 @@ import org.jruby.runtime.*;
  */
 public class RubyRange extends RubyObject {
 
-    private RubyObject begin;
-    private RubyObject end;
+    private IRubyObject begin;
+    private IRubyObject end;
     private boolean isExclusive;
 
     public RubyRange(Ruby ruby) {
         super(ruby, ruby.getRubyClass("Range"));
     }
 
-    public void init(RubyObject begin, RubyObject end, RubyBoolean isExclusive) {
+    public void init(IRubyObject begin, IRubyObject end, RubyBoolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
             try {
                 begin.callMethod("<=>", end);
             } catch (RaiseException rExcptn) {
-                throw new ArgumentError(getRuby(), "bad value for range");
+                throw new ArgumentError(getRuntime(), "bad value for range");
             }
         }
 
@@ -64,8 +65,8 @@ public class RubyRange extends RubyObject {
 
         rangeClass.includeModule(ruby.getClasses().getEnumerableModule());
 
-        rangeClass.defineMethod("==", CallbackFactory.getMethod(RubyRange.class, "equal", RubyObject.class));
-        rangeClass.defineMethod("===", CallbackFactory.getMethod(RubyRange.class, "op_eqq", RubyObject.class));
+        rangeClass.defineMethod("==", CallbackFactory.getMethod(RubyRange.class, "equal", IRubyObject.class));
+        rangeClass.defineMethod("===", CallbackFactory.getMethod(RubyRange.class, "op_eqq", IRubyObject.class));
         rangeClass.defineMethod("first", CallbackFactory.getMethod(RubyRange.class, "first"));
         rangeClass.defineMethod("begin", CallbackFactory.getMethod(RubyRange.class, "first"));
         rangeClass.defineMethod("last", CallbackFactory.getMethod(RubyRange.class, "last"));
@@ -150,28 +151,28 @@ public class RubyRange extends RubyObject {
 
     // public Range methods
 
-    public static RubyRange newRange(Ruby ruby, RubyObject begin, RubyObject end, boolean isExclusive) {
+    public static RubyRange newRange(Ruby ruby, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(ruby);
         range.init(begin, end, isExclusive ? ruby.getTrue() : ruby.getFalse());
         return range;
     }
 
-    public RubyObject initialize(RubyObject[] args) {
+    public IRubyObject initialize(IRubyObject[] args) {
         if (args.length == 3) {
             init(args[0], args[1], (RubyBoolean) args[2]);
         } else if (args.length == 2) {
-            init(args[0], args[1], getRuby().getFalse());
+            init(args[0], args[1], getRuntime().getFalse());
         } else {
-            throw new ArgumentError(getRuby(), "Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
+            throw new ArgumentError(getRuntime(), "Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
         }
-        return getRuby().getNil();
+        return getRuntime().getNil();
     }
 
-    public RubyObject first() {
+    public IRubyObject first() {
         return begin;
     }
 
-    public RubyObject last() {
+    public IRubyObject last() {
         return end;
     }
 
@@ -185,14 +186,14 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyBoolean exclude_end_p() {
-        return RubyBoolean.newBoolean(getRuby(), isExclusive);
+        return RubyBoolean.newBoolean(getRuntime(), isExclusive);
     }
 
     public RubyFixnum length() {
         long size = 0;
 
         if (begin.callMethod(">", end).isTrue()) {
-            return RubyFixnum.newFixnum(getRuby(), 0);
+            return RubyFixnum.newFixnum(getRuntime(), 0);
         }
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
@@ -201,22 +202,22 @@ public class RubyRange extends RubyObject {
                 size++;
             }
         }
-        return RubyFixnum.newFixnum(getRuby(), size);
+        return RubyFixnum.newFixnum(getRuntime(), size);
     }
 
-    public RubyBoolean equal(RubyObject obj) {
+    public RubyBoolean equal(IRubyObject obj) {
         if (!(obj instanceof RubyRange)) {
-            return getRuby().getFalse();
+            return getRuntime().getFalse();
         }
         RubyRange otherRange = (RubyRange) obj;
         boolean result =
             begin.equals(otherRange.begin) &&
             end.equals(otherRange.end) &&
             isExclusive == otherRange.isExclusive;
-        return RubyBoolean.newBoolean(getRuby(), result);
+        return RubyBoolean.newBoolean(getRuntime(), result);
     }
 
-    public RubyBoolean op_eqq(RubyObject obj) {
+    public RubyBoolean op_eqq(IRubyObject obj) {
         if ((begin instanceof RubyFixnum) && (obj instanceof RubyFixnum) && (end instanceof RubyFixnum)) {
             long b = RubyNumeric.fix2long(begin);
             long o = RubyNumeric.fix2long(obj);
@@ -225,30 +226,30 @@ public class RubyRange extends RubyObject {
                 long e =  RubyNumeric.fix2long(end);
                 if (isExclusive) {
                     if (o < e) {
-                        return getRuby().getTrue();
+                        return getRuntime().getTrue();
                     }
                 } else {
                     if (o <= e) {
-                        return getRuby().getTrue();
+                        return getRuntime().getTrue();
                     }
                 }
             }
-            return getRuby().getFalse();
+            return getRuntime().getFalse();
         } else if (begin.callMethod("<=", obj).isTrue()) {
             if (isExclusive) {
                 if (end.callMethod(">", obj).isTrue()) {
-                    return getRuby().getTrue();
+                    return getRuntime().getTrue();
                 }
             } else {
                 if (end.callMethod(">=", obj).isTrue()) {
-                    return getRuby().getTrue();
+                    return getRuntime().getTrue();
                 }
             }
         }
-        return getRuby().getFalse();
+        return getRuntime().getFalse();
     }
 
-    public RubyObject each() {
+    public IRubyObject each() {
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long endLong = ((RubyNumeric) end).getLongValue();
             long i = ((RubyNumeric) begin).getLongValue();
@@ -258,32 +259,32 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                getRuby().yield(RubyFixnum.newFixnum(getRuby(), i));
+                getRuntime().yield(RubyFixnum.newFixnum(getRuntime(), i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
-        } else if (begin.isKindOf(getRuby().getClasses().getNumericClass())) {
+        } else if (begin.isKindOf(getRuntime().getClasses().getNumericClass())) {
             if (!isExclusive) {
-                end = end.callMethod("+", RubyFixnum.one(getRuby()));
+                end = end.callMethod("+", RubyFixnum.one(getRuntime()));
             }
             while (begin.callMethod("<", end).isTrue()) {
-                getRuby().yield(begin);
-                begin = begin.callMethod("+", RubyFixnum.one(getRuby()));
+                getRuntime().yield(begin);
+                begin = begin.callMethod("+", RubyFixnum.one(getRuntime()));
             }
         } else {
-            RubyObject v = begin;
+            IRubyObject v = begin;
 
             if (isExclusive) {
                 while (v.callMethod("<", end).isTrue()) {
                     if (v.equals(end)) {
                         break;
                     }
-                    getRuby().yield(v);
+                    getRuntime().yield(v);
                     v = v.callMethod("succ");
                 }
             } else {
                 while (v.callMethod("<=", end).isTrue()) {
-                    getRuby().yield(v);
+                    getRuntime().yield(v);
                     if (v.equals(end)) {
                         break;
                     }

@@ -33,14 +33,15 @@
 package org.jruby.runtime;
 
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable {
-
     protected final Ruby ruby;
-    private final String name;
-    private RubyObject value;
 
-    public GlobalVariable(Ruby ruby, String name, RubyObject value) {
+    private final String name;
+    private IRubyObject value;
+
+    public GlobalVariable(Ruby ruby, String name, IRubyObject value) {
         this.ruby = ruby;
         this.name = name;
         this.value = value;
@@ -50,11 +51,11 @@ public class GlobalVariable {
         return name;
     }
 
-    public RubyObject get() {
+    public IRubyObject get() {
         return value;
     }
 
-    public RubyObject set(RubyObject value) {
+    public IRubyObject set(IRubyObject value) {
         this.value = value;
         return value;
     }

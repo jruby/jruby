@@ -173,7 +173,7 @@ public class ThreadContext {
 
         getIterStack().push(currentBlock.getIter());
 
-        RubyObject[] args = prepareArguments(value, self, currentBlock.getVar(), checkArguments);
+        IRubyObject[] args = prepareArguments(value, self, currentBlock.getVar(), checkArguments);
 
         try {
             while (true) {
@@ -184,7 +184,7 @@ public class ThreadContext {
             }
         } catch (NextJump nExcptn) {
             return ruby.getNil();
-        } catch (ReturnException rExcptn) {
+        } catch (ReturnJump rExcptn) {
             return rExcptn.getReturnValue();
         } finally {
             getIterStack().pop();
@@ -201,7 +201,7 @@ public class ThreadContext {
         }
     }
 
-    private RubyObject[] prepareArguments(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
+    private IRubyObject[] prepareArguments(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
         value = prepareBlockVariable(value, self, blockVariableNode, checkArguments);
 
         if (blockVariableNode == null) {
@@ -213,11 +213,11 @@ public class ThreadContext {
         return arrayify(value);
     }
 
-    private RubyObject[] arrayify(IRubyObject value) {
+    private IRubyObject[] arrayify(IRubyObject value) {
         if (value instanceof RubyArray) {
             return ((RubyArray) value).toJavaArray();
         } else {
-            return new RubyObject[] { value.toRubyObject() };
+            return new IRubyObject[] { value };
         }
     }
 

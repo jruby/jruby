@@ -33,6 +33,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Unit test for the ruby class.
@@ -73,9 +74,9 @@ public class TestRuby extends TestRubyBase {
         list.add("toto");
         ruby.initLoad(list);
         //check that the global vars are correctly valuated
-        RubyObject lCol = ruby.getGlobalVar("$:");
-        RubyObject lI = ruby.getGlobalVar("$-I");
-        RubyObject lLoad = ruby.getGlobalVar("$LOAD_PATH");
+        IRubyObject lCol = ruby.getGlobalVar("$:");
+        IRubyObject lI = ruby.getGlobalVar("$-I");
+        IRubyObject lLoad = ruby.getGlobalVar("$LOAD_PATH");
         assertTrue(lCol == lI && lI == lLoad && lLoad != null);
         RubyArray lLoadA = (RubyArray) lLoad;
         //check that we have 2 non null element
@@ -144,7 +145,7 @@ public class TestRuby extends TestRubyBase {
         assertEquals("135 20 3", eval("puts $f, \" \", $g, \" \",  $h"));
     }
 
-    private void assertTrue(RubyObject iObj) {
+    private void assertTrue(IRubyObject iObj) {
         assertTrue(iObj.isTrue());
     }
 }

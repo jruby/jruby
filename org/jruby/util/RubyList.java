@@ -6,9 +6,12 @@
 
 package org.jruby.util;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -22,7 +25,7 @@ public class RubyList extends AbstractList {
         this(new ArrayList());
     }
     
-    public RubyList(RubyObject[] array) {
+    public RubyList(IRubyObject[] array) {
         this(new ArrayList(Arrays.asList(array)));
     }
     
@@ -58,8 +61,8 @@ public class RubyList extends AbstractList {
         return delegate.remove(index);
     }
     
-    public RubyObject[] toRubyArray() {
-        return (RubyObject[])delegate.toArray(new RubyObject[delegate.size()]);
+    public IRubyObject[] toRubyArray() {
+        return (IRubyObject[])delegate.toArray(new IRubyObject[delegate.size()]);
     }
     
     public void copy(RubyList other, int len) {

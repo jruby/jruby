@@ -30,7 +30,7 @@
 
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -38,7 +38,7 @@ import org.jruby.*;
  * @version $Revision$
  */
 public interface Callback {
-    public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby);
+    public IRubyObject execute(IRubyObject recv, IRubyObject args[]);
 
     public int getArity();
 }

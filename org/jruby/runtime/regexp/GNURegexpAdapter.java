@@ -36,8 +36,8 @@ import gnu.regexp.REMatch;
 
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
-import org.jruby.RubyObject;
 import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Regexp adapter for gnu.regexp.
@@ -104,7 +104,7 @@ public class GNURegexpAdapter extends IRegexpAdapter {
     /**
      * Does the given argument match the pattern?
      */
-    public RubyObject search(Ruby ruby, String target, int startPos) {
+    public IRubyObject search(Ruby ruby, String target, int startPos) {
         REMatch match = re.getMatch(target, startPos, eflags);
         if (match != null) {
             int count = re.getNumSubs() + 1;

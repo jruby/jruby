@@ -33,8 +33,8 @@ import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
-import org.jruby.RubyObject;
 import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Regexp adapter for Jakarta ORO.
@@ -103,7 +103,7 @@ public class ORORegexpAdapter extends IRegexpAdapter {
 	/**
 	 * Does the given argument match the pattern?
 	 */
-	public RubyObject search(Ruby ruby, String target, int startPos) {
+	public IRubyObject search(Ruby ruby, String target, int startPos) {
 		PatternMatcherInput pmi = new PatternMatcherInput(target);
 		pmi.setCurrentOffset(startPos);
 

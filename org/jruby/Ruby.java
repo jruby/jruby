@@ -44,7 +44,7 @@ import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RetryException;
-import org.jruby.exceptions.ReturnException;
+import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.RubyBugException;
 import org.jruby.exceptions.RubySecurityException;
 import org.jruby.internal.runtime.methods.IterateMethod;
@@ -117,7 +117,7 @@ public final class Ruby {
     private int safeLevel = 0;
 
     // Default objects
-    private RubyObject nilObject;
+    private IRubyObject nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
 
@@ -127,7 +127,7 @@ public final class Ruby {
 
     private final RubyRuntime runtime = new RubyRuntime(this);
 
-    private RubyObject rubyTopSelf;
+    private IRubyObject rubyTopSelf;
 
     private Scope topScope = null;
 
@@ -235,7 +235,7 @@ public final class Ruby {
     /** Returns the "nil" singleton instance.
      * @return "nil"
      */
-    public final RubyObject getNil() {
+    public IRubyObject getNil() {
         return nilObject;
     }
 
@@ -322,14 +322,14 @@ public final class Ruby {
     /** rb_define_global_const
      *
      */
-    public void defineGlobalConstant(String name, RubyObject value) {
+    public void defineGlobalConstant(String name, IRubyObject value) {
         getClasses().getObjectClass().defineConstant(name, value);
     }
 
     /** top_const_get
      *
      */
-    public RubyObject getTopConstant(String id) {
+    public IRubyObject getTopConstant(String id) {
         return getClasses().getClass(id);
     }
 
@@ -356,7 +356,7 @@ public final class Ruby {
         globalMap.remove(name);
     }
 
-    public RubyObject setGlobalVar(String name, RubyObject value) {
+    public IRubyObject setGlobalVar(String name, IRubyObject value) {
         GlobalVariable global = (GlobalVariable) globalMap.get(name);
         if (global == null) {
             globalMap.put(name, new GlobalVariable(this, name, value));
@@ -366,7 +366,7 @@ public final class Ruby {
         return value;
     }
 
-    public RubyObject getGlobalVar(String name) {
+    public IRubyObject getGlobalVar(String name) {
         GlobalVariable global = (GlobalVariable) globalMap.get(name);
         if (global == null) {
             globalMap.put(name, new GlobalVariable(this, name, getNil()));
@@ -402,24 +402,24 @@ public final class Ruby {
     /** Getter for property rubyTopSelf.
      * @return Value of property rubyTopSelf.
      */
-    public RubyObject getRubyTopSelf() {
+    public IRubyObject getRubyTopSelf() {
         return rubyTopSelf;
     }
 
     /** rb_iterate
      *
      */
-    public RubyObject iterate(Callback iterateMethod, RubyObject data1, Callback blockMethod, RubyObject data2) {
+    public IRubyObject iterate(Callback iterateMethod, IRubyObject data1, Callback blockMethod, IRubyObject data2) {
         getIterStack().push(Iter.ITER_PRE);
         getBlockStack().push(null, new IterateMethod(blockMethod, data2), getRubyTopSelf());
 
         try {
             while (true) {
                 try {
-                    return iterateMethod.execute(data1, null, this);
+                    return iterateMethod.execute(data1, null);
                 } catch (BreakJump bExcptn) {
                     return getNil();
-                } catch (ReturnException rExcptn) {
+                } catch (ReturnJump rExcptn) {
                     return rExcptn.getReturnValue();
                 } catch (RetryException rExcptn) {
                 }
@@ -551,12 +551,12 @@ public final class Ruby {
         return getCurrentContext().getCurrentDynamicVars();
     }
 
-    public RubyObject getDynamicValue(String name) {
+    public IRubyObject getDynamicValue(String name) {
         IRubyObject result = (IRubyObject)getDynamicVars().get(name);
         if (result == null) {
             return getNil();
         }
-        return (RubyObject) result;
+        return result;
     }
 
     /** Getter for property rubyClass.
@@ -683,7 +683,7 @@ public final class Ruby {
     /** defines a readonly global variable
      *
      */
-    public void defineReadonlyVariable(String name, RubyObject value) {
+    public void defineReadonlyVariable(String name, IRubyObject value) {
         globalMap.put(name, new ReadonlyGlobalVariable(this, name, value));
     }
 
@@ -780,28 +780,28 @@ public final class Ruby {
         return parser.parse(file, content);
     }
 
-    public RubyObject getLastline() {
+    public IRubyObject getLastline() {
         if (getScope().hasLocalValues()) {
             return getScope().getValue(0);
         }
         return RubyString.nilString(this);
     }
 
-    public void setLastline(RubyObject value) {
+    public void setLastline(IRubyObject value) {
         if (! getScope().hasLocalValues()) {
             getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
         }
         getScope().setValue(0, value);
     }
 
-    public RubyObject getBackref() {
+    public IRubyObject getBackref() {
         if (getScope().hasLocalValues()) {
             return getScope().getValue(1);
         }
         return getNil();
     }
 
-    public void setBackref(RubyObject match) {
+    public void setBackref(IRubyObject match) {
         if (! getScope().hasLocalValues()) {
             getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
         }
@@ -828,7 +828,7 @@ public final class Ruby {
         getCurrentContext().getDynamicVarsStack().pop();
     }
 
-    public void setDynamicVariable(String name, RubyObject value) {
+    public void setDynamicVariable(String name, IRubyObject value) {
         getDynamicVars().put(name, value);
     }
 

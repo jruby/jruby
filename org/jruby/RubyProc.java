@@ -66,8 +66,8 @@ public class RubyProc extends RubyObject {
 
     // Proc class
 
-    public static RubyProc newInstance(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
-        RubyProc proc = newProc(ruby, ruby.getClasses().getProcClass());
+    public static RubyProc newInstance(IRubyObject receiver, IRubyObject[] args) {
+        RubyProc proc = newProc(receiver.getRuntime(), receiver.getRuntime().getClasses().getProcClass());
 
         proc.callInit(args);
 
@@ -88,22 +88,22 @@ public class RubyProc extends RubyObject {
         return newProc;
     }
 
-    public IRubyObject call(RubyObject[] args) {
-        RubyModule oldWrapper = getRuby().getWrapper();
-        Block oldBlock = getRuby().getBlockStack().getCurrent();
+    public IRubyObject call(IRubyObject[] args) {
+        RubyModule oldWrapper = getRuntime().getWrapper();
+        Block oldBlock = getRuntime().getBlockStack().getCurrent();
 
-        getRuby().setWrapper(wrapper);
-        getRuby().getBlockStack().setCurrent(block);
+        getRuntime().setWrapper(wrapper);
+        getRuntime().getBlockStack().setCurrent(block);
 
-        getRuby().getIterStack().push(Iter.ITER_CUR);
-        getRuby().getCurrentFrame().setIter(Iter.ITER_CUR);
+        getRuntime().getIterStack().push(Iter.ITER_CUR);
+        getRuntime().getCurrentFrame().setIter(Iter.ITER_CUR);
 
         try {
-            return getRuby().yield(args != null ? RubyArray.newArray(getRuby(), args) : null, null, null, true);
+            return getRuntime().yield(args != null ? RubyArray.newArray(getRuntime(), args) : null, null, null, true);
         } finally {
-            getRuby().getIterStack().pop();
-            getRuby().getBlockStack().setCurrent(oldBlock);
-            getRuby().setWrapper(oldWrapper);
+            getRuntime().getIterStack().pop();
+            getRuntime().getBlockStack().setCurrent(oldBlock);
+            getRuntime().setWrapper(oldWrapper);
         }
     }
 }

@@ -29,7 +29,9 @@
  */
 package org.jruby.exceptions;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -45,7 +47,7 @@ public class TypeError extends RaiseException {
         super(ruby, ruby.getExceptions().getTypeError(), msg);
     }
 
-    public TypeError(Ruby ruby, RubyObject object, RubyClass rbClass) {
+    public TypeError(Ruby ruby, IRubyObject object, RubyClass rbClass) {
         this(ruby, "wrong argument type " + object.getInternalClass() + " (expected " + rbClass);
     }
 }

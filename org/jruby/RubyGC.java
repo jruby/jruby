@@ -23,6 +23,7 @@
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * GC (Garbage Collection) Module
@@ -42,8 +43,8 @@ public class RubyGC {
         return gcModule;
     }
 
-    public static RubyObject start(Ruby ruby, RubyObject recv) {
+    public static IRubyObject start(IRubyObject recv) {
         System.gc();
-        return ruby.getNil();
+        return recv.getRuntime().getNil();
     }
 }

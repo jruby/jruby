@@ -26,7 +26,8 @@
  */
 package org.jruby.exceptions;
 
-import org.jruby.*;
+import org.jruby.RubyException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** Created by the global throw function.
  *
@@ -35,25 +36,25 @@ import org.jruby.*;
  */
 public class ThrowJump extends JumpException {
     private String tag;
-    private RubyObject value;
+    private IRubyObject value;
     private RubyException nameError;
 
     /**
      * Constructor for ThrowJump.
      */
-    public ThrowJump(String tag, RubyObject value) {
+    public ThrowJump(String tag, IRubyObject value) {
         super();
 
         this.tag = tag;
         this.value = value;
-        this.nameError = new NameError(value.getRuby(), "uncaught throw '" + tag + '\'').getException();
+        this.nameError = new NameError(value.getRuntime(), "uncaught throw '" + tag + '\'').getException();
     }
     
     public String getTag() {
         return tag;
     }
     
-    public RubyObject getValue() {
+    public IRubyObject getValue() {
         return value;
     }
     

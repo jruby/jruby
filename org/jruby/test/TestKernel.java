@@ -40,46 +40,46 @@ package org.jruby.test;
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
-import org.jruby.RubyObject;
+import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Unit test for the kernel class.
  **/
 public class TestKernel extends TestRubyBase {
 
     public TestKernel(String name) {
-	super(name);
+        super(name);
     }
 
     public void setUp() {
-	ruby = Ruby.getDefaultInstance(null);
-	ruby.initLoad(new ArrayList());
+        ruby = Ruby.getDefaultInstance(null);
+        ruby.initLoad(new ArrayList());
     }
 
-    public void testLoad()  throws Exception {
-	//load should work several times in a row
-	assertEquals("0", eval("load 'test/loadTest'"));
-	assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest'"));
+    public void testLoad() throws Exception {
+        //load should work several times in a row
+        assertEquals("0", eval("load 'test/loadTest'"));
+        assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest'"));
     }
 
     public void testRequire() throws Exception {
-	//reset the $loadTestvar
-	eval("$loadTest = nil");
-	assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
-	assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
+        //reset the $loadTestvar
+        eval("$loadTest = nil");
+        assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
+        assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
 
-	assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
+        assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
     }
 
     public void testPrintf() throws Exception {
-	assertEquals("hello", eval("printf(\"%s\", \"hello\")"));
-	assertEquals("", eval("printf(\"%s\", nil)"));
+        assertEquals("hello", eval("printf(\"%s\", \"hello\")"));
+        assertEquals("", eval("printf(\"%s\", nil)"));
     }
 
-    private void assertTrue(RubyObject iObj) {
-	assertTrue(iObj.isTrue());
+    private void assertTrue(IRubyObject iObj) {
+        assertTrue(iObj.isTrue());
     }
     public void tearDown() {
-	super.tearDown();
+        super.tearDown();
     }
 
 }
