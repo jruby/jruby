@@ -1,23 +1,19 @@
+1. Make sure tests run at 100% ('ant test')
+2. Make sure samples run ('for i in samples/*.rb ; do ./bin/jruby.sh $i; done')
+3. Update/commit new version in build-config.xml
+4. Tag the release in CVS ('cvs rtag ...')
+5. Make binary-release and source release ('ant dist' from clean sandbox) 
+6. Make sure examples run from the binary release (see 2)
+7. Make sure src distribution compiles and tests ok ('ant test')
 
-* Make sure tests run att 100%
-* Make sure samples run
-* Put the right version in build-config.xml
-* Tag the release in CVS
-* Make binary-release
-* Make source-release
-* Make sure examples run from the binary release
+Steps 6 and 7 should be run on both linux and windows
 
-* Make a Sourceforge-release
-
-* Update homepage
-
-* Send out announcement to
-    * ruby-talk
-    * announce@rubynet.org
-    * jruby-devel
-    * jruby-user
-
-* Update entries in
-    * RAA
-    * freshmeat.net
-    * Berlios
+8. Make a Sourceforge-release
+9. Update homepage
+10. Send out announcement to
+ a. ruby-talk
+ b. jruby-devel
+ c. jruby-user
+11. Update entries in
+ a. RAA
+ b. freshmeat.net
