@@ -39,7 +39,7 @@ if exist "%JRUBY_HOME%\lib\jruby.jar" goto okHome
 set JRUBY_HOME=..
 :gotHome
 if exist "%JRUBY_HOME%\lib\jruby.jar" goto okHome
-echo Cannot find jruby.bat in %JRUBY_HOME% 
+echo Cannot find jruby.jar in %JRUBY_HOME%\lib
 echo Please check your JRUBY_HOME setting
 goto cleanup
 :okHome
@@ -63,7 +63,7 @@ set _STARTJAVA="%JAVA_HOME%\bin\java"
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-set CP=%JRUBY_HOME%\jruby.jar;%JAVA_HOME%\lib\tools.jar
+set CP=%JRUBY_HOME%\lib\jruby.jar;%JRUBY_HOME%\lib\jakarta-oro-2.0.6.jar;%JAVA_HOME%\lib\tools.jar
 set CLASSPATH=%CP%
 echo Using JRUBY_BASE: %JRUBY_BASE%
 echo Using JRUBY_HOME: %JRUBY_HOME%
@@ -73,8 +73,7 @@ echo Using Args:       %*
 
 rem ----- Execute The Requested Command ---------------------------------------
 
-%_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
-rem %_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
+%_STARTJAVA% -cp %CP% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
 
 rem ----- Restore Environment Variables ---------------------------------------
 
