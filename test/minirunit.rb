@@ -1,4 +1,5 @@
 
+$silentTests = false
 $testnum=0
 $ntest=0
 $failed = []
@@ -29,7 +30,7 @@ end
 
 
 def test_check(what)
-  printf "%s : ", what
+  printf "%s : ", what unless $silentTests
   $what = what
   $testnum = 0
 end
@@ -38,11 +39,11 @@ def test_ok(cond, msg="")
   $testnum+=1
   $ntest+=1
   if cond
-    print "."
+    print "." unless $silentTests
   else
     where = caller.reject {|where| where =~ /minirunit/}[0]
     $failed.push(MiniRUnit::Failure.new($what, $testnum, msg, where))
-    print "F"
+    print "F" unless $silentTests
     $curtestOK=false
   end
 end
@@ -95,13 +96,13 @@ def test_load(test)
 	$curtestOK=true
 	load(test)
   rescue Exception => boom
-	puts 'ERROR'
+	puts 'ERROR' unless $silentTests
 	$failed.push(MiniRUnit::Error.new($what, $testnum, boom))
   else
 	if $curtestOK
-		puts 'OK'
+		puts 'OK' unless $silentTests
 	else
-		puts 'FAILED'
+		puts 'FAILED' unless $silentTests
 	end
   end
 end
