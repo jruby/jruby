@@ -1,7 +1,7 @@
 /*
  * RubyKernel.java
  * Created on May 2, 2002
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
  * Chad Fowler, Anders Bengtsson
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
@@ -9,25 +9,25 @@
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
  * Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -146,7 +146,7 @@ public class KernelModule {
     }
 
     /** Returns value of $_.
-     * 
+     *
      * @throws TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
@@ -251,7 +251,7 @@ public class KernelModule {
     }
 
     /** Returns an Array with the names of all global variables.
-     * 
+     *
      */
     public static RubyArray global_variables(IRubyObject recv) {
         RubyArray globalVariables = RubyArray.newArray(recv.getRuntime());
@@ -267,7 +267,7 @@ public class KernelModule {
     }
 
     /** Returns an Array with the names of all local variables.
-     * 
+     *
      */
     public static RubyArray local_variables(IRubyObject recv) {
         RubyArray localVariables = RubyArray.newArray(recv.getRuntime());
@@ -462,7 +462,7 @@ public class KernelModule {
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
-        
+
         long oldRandomSeed = recv.getRuntime().randomSeed;
         if (args.length > 0) {
             RubyInteger integerSeed = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
@@ -475,18 +475,25 @@ public class KernelModule {
     }
 
     public static RubyNumeric rand(IRubyObject recv, IRubyObject args[]) {
+        long ceil;
         if (args.length == 0) {
-            double result = recv.getRuntime().random.nextDouble();
-            return RubyFloat.newFloat(recv.getRuntime(), result);
+            ceil = 0;
         } else if (args.length == 1) {
             RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
-            long ceil = integerCeil.getLongValue();
+            ceil = integerCeil.getLongValue();
+            ceil = Math.abs(ceil);
             if (ceil > Integer.MAX_VALUE) {
                 throw new NotImplementedError(recv.getRuntime(), "Random values larger than Integer.MAX_VALUE not supported");
             }
-            return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
         } else {
             throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(" + args.length + " for 1)");
+        }
+
+        if (ceil == 0) {
+            double result = recv.getRuntime().random.nextDouble();
+            return RubyFloat.newFloat(recv.getRuntime(), result);
+        } else {
+            return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
         }
     }
 }
