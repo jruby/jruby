@@ -59,7 +59,7 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
     }
 
     /**
-     * @see ILexerSupport#getPosition()
+     * @see DefaultLexerSupport#getPosition()
      */
     public ISourcePosition getPosition() {
         if (bufferPos <= 0) {
@@ -70,7 +70,7 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
     }
 
     /**
-     * @see ILexerSupport#read()
+     * @see DefaultLexerSupport#read()
      */
     public char read() {
         if (bufferPos == -1) {
@@ -84,7 +84,7 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
     }
 
     /**
-     * @see ILexerSupport#unread()
+     * @see DefaultLexerSupport#unread()
      */
     public char unread() {
         if (bufferPos == -1) {

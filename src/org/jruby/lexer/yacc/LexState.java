@@ -68,7 +68,7 @@ public final class LexState implements ILexerState {
     public static final LexState EXPR_DOT    = new LexState("EXPR_DOT");
     public static final LexState EXPR_CLASS  = new LexState("EXPR_CLASS");
     
-    private String debug;
+    private final String debug;
 
     private LexState(String debug) {
         this.debug = debug;
