@@ -4,10 +4,22 @@ test_check "Test IO"
 
 @file = "TestIO_tmp"
 @file2 = "Test2IO_tmp"
+@file3 = "Test3IO_tmp"
 
 test_exception(ArgumentError) { IO.new }
 test_exception(TypeError) { IO.new "FROGGER" }
 test_exception(TypeError) { IO.foreach 3 }
+
+# Test for appropriate handling of default gets delimiting
+f = File.new(@file3, "w")
+f.print("A\n\n\nB\n")
+f.close
+f = File.new(@file3)
+a = f.gets("\n\n")
+b = f.gets("\n\n")
+c = f.gets("\n\n")
+f.close
+test_ok(b == "\nB\n", "gets of non-paragraph \"\\n\\n\" failed")
 
 # Two ios with same fileno, but different objects.
 f = File.new(@file, "w")

@@ -1,8 +1,9 @@
 /*
  * IOHandler.java
  *
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headuis@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -41,6 +42,10 @@ public abstract class IOHandler {
     public static final int SEEK_SET = 0;
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
+    
+    // We use a highly uncommon string to represent the paragraph delimeter. 
+    // The 100% solution is not really worth the extra code.
+    public static final String PARAGRAPH_DELIMETER = "PARAGRPH_DELIM_MRK_ER";
     
     private Ruby ruby;
     protected IOModes modes;
@@ -147,7 +152,9 @@ public abstract class IOHandler {
         if (separatorString == null) {
             return getsEntireStream();
         }
-        final char[] separator = separatorString.toCharArray();
+        
+        final char[] separator = separatorString.equals(PARAGRAPH_DELIMETER) ?
+        		"\n\n".toCharArray() : separatorString.toCharArray();
 
         int c = read();
         if (c == -1) {
@@ -175,9 +182,7 @@ public abstract class IOHandler {
             break;
         }
         
-        // TODO: Replace this with real paragraph break type.  Currently,
-        // this will be broken for gets("\n\n") calls.
-        if (separatorString.equals("\n\n") == true) {
+        if (separatorString.equals(PARAGRAPH_DELIMETER) == true) {
             while (c == separator[0]) {
                 c = read();
             }

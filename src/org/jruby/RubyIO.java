@@ -3,12 +3,13 @@
  * Created on 12.01.2002, 19:14:58
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -353,10 +354,11 @@ public class RubyIO extends RubyObject {
             sepVal = args[0];
         }
 
+        
         String separator = sepVal.isNil() ? null : ((RubyString) sepVal).getValue();
 
         if (separator != null && separator.length() == 0) {
-            separator = "\n\n";
+            separator = IOHandler.PARAGRAPH_DELIMETER;
         }
 
         try {
