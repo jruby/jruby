@@ -141,13 +141,14 @@ end
 
 
 class ClassDescription
-  attr :is_module, true
-  attr :name, true
+
+  attr_writer :is_module
+  attr_writer :name
   attr :methods, true
   attr :class_methods, true
   attr :implementation, true
-  attr :superclass, true
-  attr :package, true
+  attr_writer :superclass
+  attr_writer :package
 
   def initialize
     @is_module = false
@@ -262,8 +263,8 @@ end
 class MethodGenerator
 
   def initialize(input)
-    @input = input
-    @class_description = ClassDescription.new
+    parser = Parser.new(input)
+    @class_description = parser.read_input
   end
 
   def implementation
@@ -271,7 +272,6 @@ class MethodGenerator
   end
 
   def generate(output)
-    read_input
     @class_description.generate_java(output)
   end
 
@@ -282,44 +282,54 @@ class MethodGenerator
   def package=(package)
     @class_description.package = package
   end
+end
+
+
+class Parser
+
+  def initialize(input)
+    @input = input
+  end
 
   def read_input
+    class_description = ClassDescription.new
+
     method_count = nil
     methods = nil
     method_description_class = nil
 
-    parser = Parser.new(@input)
+    parser = LowlevelParser.new(@input)
     parser.on_tag_start("module") {|name, attributes|
       if attributes['type'] == "module"
-        @class_description.is_module = true
+        class_description.is_module = true
       end
     }
     parser.on_tag_content("name") {|text|
-      @class_description.name = text
+      class_description.name = text
     }
     parser.on_tag_content("superclass") {|text|
       if text == 'none'
-        @class_description.superclass = :none
+        class_description.superclass = :none
       else
-        @class_description.superclass = text
+        class_description.superclass = text
       end
     }
     parser.on_tag_content("implementation") {|text|
-      @class_description.implementation = text
+      class_description.implementation = text
     }
     parser.on_tag_start("instance-methods") {|name, attributes|
-      methods = @class_description.methods
+      methods = class_description.methods
       method_count = 0
       method_description_class = MethodDescription
     }
     parser.on_tag_start("class-methods") {|name, attributes|
-      methods = @class_description.class_methods
+      methods = class_description.class_methods
       method_count = 0
       method_description_class = StaticMethodDescription
     }
     parser.on_tag_start("method") {|name, attributes|
       method_count += 1
-      methods << method_description_class.new(@class_description,
+      methods << method_description_class.new(class_description,
                                               attributes['name'],
                                               method_count)
     }
@@ -345,10 +355,12 @@ class MethodGenerator
       methods << UndefineMethod.new(name)
     }
     parser.parse
+
+    class_description
   end
 end
 
-class Parser
+class LowlevelParser
 
   def initialize(input)
     @saxparser = REXML::SAX2Parser.new(input)

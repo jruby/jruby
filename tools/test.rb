@@ -25,9 +25,6 @@ class TestGenerator < Test::Unit::TestCase
       generator.generate(output)
     end
 
-    assert_equal("FOO", generator.constant_name)
-    assert_equal("org.stuff.Foo", generator.implementation)
-
     expected_output = nil
     open("test_data.expected") do |file|
       expected_output = file.gets(nil)
@@ -39,6 +36,12 @@ class TestGenerator < Test::Unit::TestCase
     expected_output.each_with_index {|line, i|
       assert_equal(line, output[i])
     }
+  end
+
+  def test_class
+    c = ClassDescription.new
+    c.name = "Foo"
+    assert_equal("FOO", c.constant_name)
   end
 
   def test_method_constant
