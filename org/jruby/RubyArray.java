@@ -102,6 +102,14 @@ public class RubyArray extends RubyObject {
             throw new RubySecurityException("Insecure: can't modify array");
         }
     }
+
+    /* if list's size is not at least 'toLength', add nil's until it is */
+    private void autoExpand(long toLength) {
+        list.ensureCapacity((int)toLength);
+        for (int i = length(); i < toLength; i++) {
+            list.add(getRuby().getNil());
+        }
+    }
     
     /** rb_ary_store
      *
@@ -113,17 +121,9 @@ public class RubyArray extends RubyObject {
             if (idx < 0) {
                 throw new RubyIndexException("index " + (idx - length()) + " out of array");
             }
-        } else if (idx > length()) {
-            list.ensureCapacity((int)idx + 1);
-            for (int i = length(); i < idx; i++) {
-                list.add(getRuby().getNil());
-            }
         }
-        if (idx == length()) {
-            list.add(value);
-        } else {
-            list.set((int)idx, value);
-        }
+        autoExpand(idx + 1);
+        list.set((int)idx, value);
     }
 
 
@@ -168,15 +168,17 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject subseq(long beg, long len) {
-        if (beg > length()) {
+        int length = length();
+
+        if (beg > length) {
             return getRuby().getNil();
         }
         if (beg < 0 || len < 0) {
             return getRuby().getNil();
         }
         
-        if (beg + len > length()) {
-            len = length() - beg;
+        if (beg + len > length) {
+            len = length - beg;
         }
         if (len < 0) {
             len = 0;
@@ -194,11 +196,13 @@ public class RubyArray extends RubyObject {
      *
      */
     public void replace(long beg, long len, RubyObject repl) {
+        int length = length();
+
         if (len < 0) {
             throw new RubyIndexException("Negative array length: " + len);
         }
         if (beg < 0) {
-            beg += length();
+            beg += length;
         }
         if (beg < 0) {
             throw new RubyIndexException("Index out of bounds: " + beg);
@@ -206,18 +210,13 @@ public class RubyArray extends RubyObject {
 
         modify();
 
-        for (int i = 0; beg < length() && i < len; i++) {
+        for (int i = 0; beg < length && i < len; i++) {
             list.remove((int)beg);
         }
-        if (beg > length()) {
-            list.ensureCapacity((int)beg + 1);
-            for (int i = length(); i < beg; i++) {
-                list.add(getRuby().getNil());
-            }
-        }
+        autoExpand(beg);
         if (repl instanceof RubyArray) {
             List repList = ((RubyArray)repl).getList();
-            list.ensureCapacity(length() + repList.size());
+            list.ensureCapacity(length + repList.size());
             list.addAll((int)beg, repList);
         } else if (!repl.isNil()) {
             list.add((int)beg, repl);
@@ -493,14 +492,15 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyString m_inspect() {
+        // Performance
+        int length = length();
+
         // HACK +++
-        if (length() == 0) {
+        if (length == 0) {
             return RubyString.m_newString(getRuby(), "[]");
         }
         RubyString result = RubyString.m_newString(getRuby(), "[");
         
-        // Performance
-        int length = length();
         for (int i = 0; i < length; i++)  {
             if (i > 0) {
                 result.m_append(RubyString.m_newString(getRuby(), ", "));
@@ -566,7 +566,8 @@ public class RubyArray extends RubyObject {
      *
      */
     RubyString join(RubyString sep) {
-        if (length() == 0) {
+        int length = length();
+        if (length == 0) {
             RubyString.m_newString(getRuby(), "");
         }
         StringBuffer sbuf = new StringBuffer();
@@ -581,7 +582,7 @@ public class RubyArray extends RubyObject {
         } else {
             str = RubyString.objAsString(getRuby(), tmp);
         }
-        for (long i = 1; i < length(); i++) {
+        for (long i = 1; i < length; i++) {
             tmp = entry(i);
             taint |= tmp.isTaint();
             if (tmp instanceof RubyArray) {
@@ -628,12 +629,14 @@ public class RubyArray extends RubyObject {
         if (!(obj instanceof RubyArray)) {
             return getRuby().getFalse();
         }
+        int length = length();
+
         RubyArray ary = (RubyArray)obj;
-        if (length() != ary.length()) {
+        if (length != ary.length()) {
             return getRuby().getFalse();
         }
         RubyId equals = getRuby().intern("==");
-        for (long i = 0; i < length(); i++) {
+        for (long i = 0; i < length; i++) {
             RubyBoolean result = (RubyBoolean)entry(i).funcall(equals, ary.entry(i));
             if (result.isFalse()) {
                 return result;
@@ -649,12 +652,14 @@ public class RubyArray extends RubyObject {
         if (!(obj instanceof RubyArray)) {
             return getRuby().getFalse();
         }
+        int length = length();
+
         RubyArray ary = (RubyArray)obj;
-        if (length() != ary.length()) {
+        if (length != ary.length()) {
             return getRuby().getFalse();
         }
         RubyId equals = getRuby().intern("eql?");
-        for (long i = 0; i < length(); i++) {
+        for (long i = 0; i < length; i++) {
             RubyBoolean result = (RubyBoolean)entry(i).funcall(equals, ary.entry(i));
             if (result.isFalse()) {
                 return result;
@@ -669,7 +674,9 @@ public class RubyArray extends RubyObject {
     public RubyObject m_compact_bang() {
         modify();
         boolean changed = false;
-        for (int i = 0; i < length(); i++) {
+        int length = length();
+
+        for (int i = 0; i < length; i++) {
             if (entry(i).isNil()) {
                 list.remove(i);
                 changed = true;
@@ -684,6 +691,59 @@ public class RubyArray extends RubyObject {
     public RubyObject m_compact() {
         RubyArray ary = (RubyArray)m_dup();
         return ary.m_compact_bang();
+    }
+
+    /** rb_ary_empty_p
+     *
+     */
+    public RubyObject m_empty_p() {
+        return length() == 0 ? getRuby().getTrue() : getRuby().getFalse();
+    }
+
+    /** rb_ary_clear
+     *
+     */
+    public RubyObject m_clear() {
+        modify();
+        list.clear();
+        return this;
+    }
+
+    /** rb_ary_fill
+     *
+     */
+    public RubyObject m_fill(RubyObject[] args) {
+        int argc = argCount(args, 1, 3);
+        int beg = 0;
+        int len = length();
+        switch (argc) {
+            case 1:
+                break;
+            case 2:
+                if (args[1] instanceof RubyRange) {
+                    long[] begLen = ((RubyRange)args[1]).getBeginLength(len, false, true);
+                    beg = (int)begLen[0];
+                    len = (int)begLen[1];
+                    break;
+                }
+                /* fall through */
+            default:
+                beg = args[1].isNil() ? beg : RubyNumeric.fix2int(args[1]);
+                if (beg < 0 && (beg += len) < 0) {
+                    throw new RubyIndexException("Negative array index");
+                }
+                len -= beg;
+                if (argc == 3 && !args[2].isNil()) {
+                    len = RubyNumeric.fix2int(args[2]);
+                }
+        }
+
+        modify();
+        autoExpand(beg + len);
+        for (int i = beg; i < (beg + len); i++) {
+            list.set(i, args[0]);
+        }
+        return this;
     }
 
     /** rb_ary_sort
@@ -704,9 +764,9 @@ public class RubyArray extends RubyObject {
         }
         modify();
         setTmpLock(true);
-        Collections.sort(getList(), getRuby().isBlockGiven()
-                                    ? (Comparator)new BlockComparator()
-                                    : (Comparator)new DefaultComparator());
+        Collections.sort(list, getRuby().isBlockGiven()
+                               ? (Comparator)new BlockComparator()
+                               : (Comparator)new DefaultComparator());
         setTmpLock(false);
         return this;
     }

@@ -47,6 +47,7 @@ public class DotNode extends Node {
     public DotNode(Node beginNode, Node endNode, boolean exclusive) {
         super(exclusive ? Constants.NODE_DOT3 : Constants.NODE_DOT2,
                                             beginNode, endNode, null);
+        this.exclusive = exclusive;
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {

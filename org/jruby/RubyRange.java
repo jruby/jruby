@@ -55,45 +55,59 @@ public class RubyRange extends RubyObject {
         setInstanceVar("excl", exclusive);
     }
 
-    /** rb_range_beg_len
+    /**
+     * Converts this Range to a pair of integers representing a start position 
+     * and length.  If either of the range's endpoints is negative, it is added to 
+     * the <code>limit</code> parameter in an attempt to arrive at a position 
+     * <i>p</i> such that <i>0&nbsp;<=&nbsp;p&nbsp;<=&nbsp;limit</i>. If 
+     * <code>truncate</code> is true, the result will be adjusted, if possible, so 
+     * that <i>begin&nbsp;+&nbsp;length&nbsp;<=&nbsp;limit</i>.  If <code>strict</code> 
+     * is true, an exception will be raised if the range can't be converted as 
+     * described above; otherwise it just returns <b>null</b>. 
      * 
+     * @param limit    the size of the object (e.g., a String or Array) that 
+     *                 this range is being evaluated against.
+     * @param truncate if true, result must fit within the range <i>(0..limit)</i>.
+     * @param strict   if true, raises an exception if the range can't be converted.
+     * @return         a two-element array representing a start value and a length, 
+     *                 or <b>null</b> if the conversion failed.
      */
-    public long[] getBeginLength(long length, boolean limit, boolean strict) {
-        long begin = ((RubyNumeric)getInstanceVar("begin")).getLongValue();
-        long end = ((RubyNumeric)getInstanceVar("end")).getLongValue();
+    public long[] getBeginLength(long limit, boolean truncate, boolean strict) {
+        long begin = RubyNumeric.num2long(getInstanceVar("begin"));
+        long end = RubyNumeric.num2long(getInstanceVar("end"));
         boolean excl = getInstanceVar("excl").isTrue();
         end += excl ? 0 : 1;
 
-        if (begin < 0 && (begin += length) < 0) {
+        if (begin < 0 && (begin += limit) < 0) {
             if (strict) {
                 throw new RubyIndexException("Index out of bounds: " + begin);
             }
             return null;
         }
 
-        if (limit && begin > length) {
+        if (truncate && begin > limit) {
             if (strict) {
                 throw new RubyIndexException("Index out of bounds: " + begin);
             }
             return null;
         }
 
-        if (limit && end > length) {
-            end = length;
+        if (truncate && end > limit) {
+            end = limit;
         }
 
-        if (end < 0 && (end += length) < 0) {
+        if (end < 0 && (end += limit) < 0) {
             if (strict) {
                 throw new RubyIndexException("Index out of bounds: " + end);
             }
-            return null;
+            end = begin;
         }
 
         if (begin > end) {
             if (strict) {
                 throw new RubyIndexException("Malformed range");
             }
-            return null;
+            end = begin;
         }
 
         return new long[]{begin, end - begin};

@@ -80,7 +80,7 @@ public class RbArray {
 
         arrayClass.defineMethod("length", getMethod("m_length"));
         arrayClass.defineMethod("size", getMethod("m_length"));
-//        rb_define_method(rb_cArray, "empty?", rb_ary_empty_p, 0);
+        arrayClass.defineMethod("empty?", getMethod("m_empty_p"));
 //        rb_define_method(rb_cArray, "index", rb_ary_index, 1);
 //        rb_define_method(rb_cArray, "rindex", rb_ary_rindex, 1);
 //        rb_define_method(rb_cArray, "indexes", rb_ary_indexes, -1);
@@ -102,8 +102,8 @@ public class RbArray {
 //        rb_define_method(rb_cArray, "delete_if", rb_ary_delete_if, 0);
 //        rb_define_method(rb_cArray, "reject!", rb_ary_reject_bang, 0);
 //        rb_define_method(rb_cArray, "replace", rb_ary_replace_m, 1);
-//        rb_define_method(rb_cArray, "clear", rb_ary_clear, 0);
-//        rb_define_method(rb_cArray, "fill", rb_ary_fill, -1);
+        arrayClass.defineMethod("clear", getMethod("m_clear"));
+        arrayClass.defineMethod("fill", getRestArgsMethod("m_fill"));
 
         arrayClass.defineMethod("include?", getMethod("m_includes", RubyObject.class));
     

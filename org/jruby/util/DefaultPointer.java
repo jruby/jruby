@@ -128,7 +128,7 @@ public class DefaultPointer extends AbstractList implements Pointer {
     }
 
     public void add(int index, Object element) {
-        autoResize(index + position);
+        autoResize(Math.max(0, index + position - 1));
 
         delegate.add(index + position, element);
     }
