@@ -47,6 +47,10 @@ public class CRefNode extends Node {
     public CRefNode(RubyObject classValue, Node nextNode) {
         super(Constants.NODE_CREF, classValue, null, nextNode);
     }
+    
+    public CRefNode cloneCRefNode() {
+        return new CRefNode(getClassValue(), getNextNode() != null ? ((CRefNode)getNextNode()).cloneCRefNode() : null);
+    }
 
     /** push a new RubyObject to this CRefNode
      *

@@ -88,7 +88,7 @@ public class DefnNode extends Node {
                 noex |= Constants.NOEX_UNDEF;
             }
             
-            Node defn = getDefnNode(); // +++ .copyNodeScope(ruby.getCRef());
+            Node defn = getDefnNode().copyNodeScope(ruby.getCRef());
             ruby.getRubyClass().addMethod(getMId(), defn, noex);
             
             // rb_clear_cache_by_id(node.nd_mid());

@@ -109,13 +109,13 @@ public class Node {
      *
      */
     public Node copyNodeScope(CRefNode refValue) {
-        Node copy = new ScopeNode(null, refValue, getNextNode());
+        Node copy = new ScopeNode(null, refValue.cloneCRefNode(), getNextNode());
         
         if (getTable() != null) {
             RubyIdPointer newTable = new RubyIdPointer(getTable().getId(0).intValue() + 1);
             newTable.set(getTable(), getTable().getId(0).intValue() + 1);
             
-            copy.setTable(newTable);
+            copy = new ScopeNode(newTable, refValue.cloneCRefNode(), getNextNode());
         }
         
         return copy;
