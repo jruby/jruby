@@ -104,6 +104,9 @@ Java::JavaClass:
 
         Raises NameError if there is no field by that name.
 
+    cls.interfaces -> anArray
+        Returns a list of the names of the interfaces implemented by this
+        Java class.
 
 Java::JavaMethod:
 

@@ -39,6 +39,9 @@ if defined? Java
   object_class = string_class.superclass
   test_equal("java.lang.Object", object_class.name)
   test_equal(nil, object_class.superclass)
+  test_ok(string_class.interfaces.include?("java.lang.Comparable"))
+  test_ok(string_class.interfaces.include?("java.io.Serializable"))
+  test_ok(! string_class.interfaces.include?("java.lang.Object"))
 
   test_ok(string_class < object_class)
   test_ok(! (string_class > object_class))

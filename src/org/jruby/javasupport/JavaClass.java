@@ -73,6 +73,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int NEW_ARRAY = 18;
     private static final int FIELDS = 20;
     private static final int FIELD = 21;
+    private static final int INTERFACES = 22;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -97,6 +98,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("new_array", IndexedCallback.create(NEW_ARRAY, 1));
         javaClassClass.defineMethod("fields", IndexedCallback.create(FIELDS, 0));
         javaClassClass.defineMethod("field", IndexedCallback.create(FIELD, 1));
+        javaClassClass.defineMethod("interfaces", IndexedCallback.create(INTERFACES, 0));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -245,6 +247,15 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return new JavaField(getRuntime(), field);
     }
 
+    public RubyArray interfaces() {
+        Class[] interfaces = javaClass.getInterfaces();
+        RubyArray result = RubyArray.newArray(getRuntime(), interfaces.length);
+        for (int i = 0; i < interfaces.length; i++) {
+            result.append(RubyString.newString(getRuntime(), interfaces[i].getName()));
+        }
+        return result;
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -279,6 +290,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return fields();
             case FIELD :
                 return field(args[0]);
+            case INTERFACES :
+                return interfaces();
             default :
                 return super.callIndexed(index, args);
         }
