@@ -256,6 +256,7 @@ public class RubyClasses {
 	marshalModule = RubyMarshal.createMarshalModule(ruby);
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
+
         
         structClass = RubyStruct.createStructClass(ruby);
     }
@@ -529,6 +530,7 @@ public class RubyClasses {
     public RubyModule getPrecisionModule() {
         return precisionModule;
     }
+
 
     /** Returns the reference to the JavaObject class.
      * @return The JavaObject class.

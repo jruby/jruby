@@ -2,7 +2,7 @@ package org.jruby.runtime;
 
 import org.jruby.*;
 
-public class RubyExceptions {
+public class RubyExceptions implements IErrno {
     private RubyClass systemExit = null;
     private RubyClass fatal = null;
     private RubyClass interrupt = null;
@@ -28,10 +28,57 @@ public class RubyExceptions {
     
     private RubyClass ioError = null;
     private RubyClass eofError = null;
+    private RubyClass systemCallError = null;
     
     private RubyClass localJumpError = null;
     
     private Ruby ruby = null;
+    private RubyModule errnoModule;
+   
+ private RubyClass _ENOTEMPTY   ;
+ private RubyClass _ERANGE      ;
+ private RubyClass _ESPIPE      ;
+ private RubyClass _ENFILE      ;
+ private RubyClass _EXDEV       ;
+ private RubyClass _ENOMEM      ;
+ private RubyClass _E2BIG       ;
+ private RubyClass _ENOENT      ;
+ private RubyClass _ENOSYS      ;
+ private RubyClass _EDOM        ;
+ private RubyClass _ENOSPC      ;
+ private RubyClass _EINVAL      ;
+ private RubyClass _EEXIST      ;
+ private RubyClass _EAGAIN      ;
+ private RubyClass _ENXIO       ;
+ private RubyClass _EILSEQ      ;
+ private RubyClass _ENOLCK      ;
+ private RubyClass _EPIPE       ;
+ private RubyClass _EFBIG       ;
+ private RubyClass _EISDIR      ;
+ private RubyClass _EBUSY       ;
+ private RubyClass _ECHILD      ;
+ private RubyClass _EIO         ;
+ private RubyClass _EPERM       ;
+ private RubyClass _EDEADLOCK       ;
+ private RubyClass _ENAMETOOLONG;
+ private RubyClass _EMLINK      ;
+ private RubyClass _ENOTTY      ;
+ private RubyClass _ENOTDIR     ;
+ private RubyClass _EFAULT      ;
+ private RubyClass _EBADF       ;
+ private RubyClass _EINTR       ;
+ private RubyClass _EWOULDBLOCK ;
+ private RubyClass _EDEADLK     ;
+ private RubyClass _EROFS       ;
+ private RubyClass _EMFILE      ;
+ private RubyClass _ENODEV      ;
+ private RubyClass _EACCES      ;
+ private RubyClass _ENOEXEC     ;
+ private RubyClass _ESRCH       ;
+
+
+
+
     
     public RubyExceptions(Ruby ruby) {
         this.ruby = ruby;
@@ -65,9 +112,82 @@ public class RubyExceptions {
         
         ioError = ruby.defineClass("IOError", standardError);
         eofError = ruby.defineClass("EOFError", ioError);
-
+        systemCallError = ruby.defineClass("SystemCallError", standardError);
         localJumpError = ruby.defineClass("LocalJumpError", standardError);
+        errnoModule = ruby.defineModule("Errno");
+
+        _ENOTEMPTY = setSysErr(ENOTEMPTY, "ENOTEMPTY");   
+        _ERANGE = setSysErr(ERANGE, "ERANGE");      
+        _ESPIPE = setSysErr(ESPIPE, "ESPIPE");      
+        _ENFILE = setSysErr(ENFILE, "ENFILE");      
+        _EXDEV = setSysErr(EXDEV, "EXDEV");       
+        _ENOMEM = setSysErr(ENOMEM, "ENOMEM");      
+        _E2BIG = setSysErr(E2BIG, "E2BIG");       
+        _ENOENT = setSysErr(ENOENT, "ENOENT");      
+        _ENOSYS = setSysErr(ENOSYS, "ENOSYS");      
+        _EDOM = setSysErr(EDOM, "EDOM");        
+        _ENOSPC = setSysErr(ENOSPC, "ENOSPC");      
+        _EINVAL = setSysErr(EINVAL, "EINVAL");      
+        _EEXIST = setSysErr(EEXIST, "EEXIST");      
+        _EAGAIN = setSysErr(EAGAIN, "EAGAIN");      
+        _ENXIO = setSysErr(ENXIO, "ENXIO");       
+        _EILSEQ = setSysErr(EILSEQ, "EILSEQ");      
+        _ENOLCK = setSysErr(ENOLCK, "ENOLCK");      
+        _EPIPE = setSysErr(EPIPE, "EPIPE");       
+        _EFBIG = setSysErr(EFBIG, "EFBIG");       
+        _EISDIR = setSysErr(EISDIR, "EISDIR");      
+        _EBUSY = setSysErr(EBUSY, "EBUSY");       
+        _ECHILD = setSysErr(ECHILD, "ECHILD");      
+        _EIO = setSysErr(EIO, "EIO");         
+        _EPERM = setSysErr(EPERM, "EPERM");       
+        _EDEADLOCK = setSysErr(EDEADLOCK, "EDEADLOCK");   
+        _ENAMETOOLONG = setSysErr(ENAMETOOLONG, "ENAMETOOLONG");
+        _EMLINK = setSysErr(EMLINK, "EMLINK");      
+        _ENOTTY = setSysErr(ENOTTY, "ENOTTY");      
+        _ENOTDIR = setSysErr(ENOTDIR, "ENOTDIR");     
+        _EFAULT = setSysErr(EFAULT, "EFAULT");      
+        _EBADF = setSysErr(EBADF, "EBADF");       
+        _EINTR = setSysErr(EINTR, "EINTR");       
+        _EWOULDBLOCK = setSysErr(EWOULDBLOCK, "EWOULDBLOCK"); 
+        _EDEADLK = setSysErr(EDEADLK, "EDEADLK");     
+        _EROFS = setSysErr(EROFS, "EROFS");       
+        _EMFILE = setSysErr(EMFILE, "EMFILE");      
+        _ENODEV = setSysErr(ENODEV, "ENODEV");      
+        _EACCES = setSysErr(EACCES, "EACCES");      
+        _ENOEXEC = setSysErr(ENOEXEC, "ENOEXEC");             
+        _ESRCH = setSysErr(ESRCH, "ESRCH");       
+    } 
+    
+    /**
+     * Creates a system error.
+     * @param i the error code (will probably use a java exception instead)
+     * @param iName name of the error to define.
+     * @return the newly defined error
+     **/
+    private RubyClass setSysErr(int i, String iName)
+    {
+        RubyClass lError = errnoModule.defineClassUnder(iName, systemCallError);
+        lError.defineConstant("Errno", RubyFixnum.newFixnum(ruby, i));
+        return lError;
     }
+        
+    /** Returns the reference to the Errno module.
+     * @return The Errno module.
+     */
+    public RubyModule getErrnoModule() {
+        return errnoModule;
+    }
+
+
+
+    /**
+     * Gets the systemCallError
+     * @return Returns a RubyClass
+     */
+    public RubyClass getSystemCallError() {
+        return systemCallError;
+    }
+
     /**
      * Gets the argumentError
      * @return Returns a RubyClass

@@ -220,7 +220,10 @@ public class RubyRuntime {
 			if (file == null) {
 				file = "(ruby)";
 			}
+			if (type == null)
+				type = ruby.getFalse();
 
+			
 			ruby.getFrameStack().push();
 			try {
 				traceFunction.call(new RubyObject[] {

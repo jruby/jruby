@@ -9,6 +9,7 @@ import org.jruby.ast.types.*;
 import org.jruby.evaluator.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.ablaf.common.ISourcePosition;
 
 /**
  *
@@ -43,7 +44,7 @@ public class DefaultMethod extends AbstractMethod {
         ruby.getScope().push();
 
         Namespace savedNamespace = null;
-        
+
         if (namespace != null) {
             savedNamespace = ruby.getNamespace();
             ruby.setNamespace(namespace);
@@ -67,7 +68,7 @@ public class DefaultMethod extends AbstractMethod {
                     int opt = i;
 
                     IListNode optNode = argsNode.getOptArgs();
-                    
+
                     Iterator iter = optNode.iterator();
                     while (iter.hasNext()) {
                         iter.next();
@@ -91,13 +92,13 @@ public class DefaultMethod extends AbstractMethod {
 
                     if (argsNode.getOptArgs() != null) {
                         IListNode optArgs = argsNode.getOptArgs();
-                        
+
                         Iterator iter = optArgs.iterator();
                         for (int j = i; j < args.length && iter.hasNext(); j++) {
                             new AssignmentVisitor(ruby, receiver).assign((INode)iter.next(), args[j], true);
                             i++;
                         }
-                        
+
                         // assign the default values.
                         while (iter.hasNext()) {
                             new EvaluateVisitor(ruby, receiver).eval((INode)iter.next());
@@ -115,13 +116,38 @@ public class DefaultMethod extends AbstractMethod {
                     }
                 }
             }
-            
+
             if (optionalBlockArg != null) {
                 ruby.getScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
-            
+
             if (ruby.getRuntime().getTraceFunction() != null) {
-                ruby.getRuntime().callTraceFunction("call", body.getBodyNode().getPosition().getFile(), body.getBodyNode().getPosition().getLine(), receiver, name, null); // XXX
+                //a lot of complication to try to get a line number and a file name
+                //without a NullPointerException
+                ISourcePosition lPos = null;
+                if (body != null)
+                    if (body.getBodyNode() != null)
+                        if(body.getBodyNode().getPosition() != null)
+                            lPos = body.getBodyNode().getPosition();
+                        else
+                            ;
+                    else
+                        if (body.getPosition() != null)
+                            lPos = body.getPosition();
+                        else
+                            ;
+                else
+                    if (argsNode != null)
+                        lPos = argsNode.getPosition();
+
+                String lFile = ruby.getSourceFile();
+                int lLine = ruby.getSourceLine();
+                if (lPos != null)
+                {
+                    lFile = lPos.getFile();
+                    lLine = lPos.getLine();
+                }
+                ruby.getRuntime().callTraceFunction("call", lFile, lLine, receiver, name, getImplementationClass()); // XXX
             }
 
             return receiver.eval(body.getBodyNode()); // skip scope assignment
@@ -139,13 +165,13 @@ public class DefaultMethod extends AbstractMethod {
             if (ruby.getRuntime().getTraceFunction() != null) {
                 String file = ruby.getFrameStack().getPrevious().getFile();
                 int line = ruby.getFrameStack().getPrevious().getLine();
-                
+
                 if (file == null) {
                     file = ruby.getSourceFile();
                     line = ruby.getSourceLine();
                 }
-                
-                ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, null); // XXX
+
+                ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, getImplementationClass()); // XXX
             }
         }
     }
