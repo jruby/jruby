@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Class>
+<Order Name="TINAMIFORMES">
+        <Family Name="TINAMIDAE">
+            <Species Scientific_Name="Tinamus major">  Great Tinamou.</Species>
+            <Species Scientific_Name="Nothocercus">Highland Tinamou.</Species>
+            <Species Scientific_Name="Crypturellus soui">Little Tinamou.</Species>
+            <Species Scientific_Name="Crypturellus cinnamomeus">Thicket Tinamou.</Species>
+            <Species Scientific_Name="Crypturellus boucardi">Slaty-breasted Tinamou.</Species>
+            <Species Scientific_Name="Crypturellus kerriae">Choco Tinamou.</Species>
+        </Family>
+    </Order>
+<Order Name="GAVIIFORMES">
+        <Family Name="GAVIIDAE">
+            <Species Scientific_Name="Gavia stellata">Red-throated Loon.</Species>
+            <Species Scientific_Name="Gavia arctica">Arctic Loon.</Species>
+            <Species Scientific_Name="Gavia pacifica">Pacific Loon.</Species>
+            <Species Scientific_Name="Gavia immer">Common Loon.</Species>
+            <Species Scientific_Name="Gavia adamsii">Yellow-billed Loon.</Species>
+        </Family>
+    </Order>
+
+
+<Order Name="PODICIPEDIFORMES">
+        <Family Name="PODICIPEDIDAE">
+            <Species Scientific_Name="Tachybaptus dominicus">Least Grebe.</Species>
+            <Species Scientific_Name="Podilymbus podiceps">Pied-billed Grebe.</Species>
+            <Species Scientific_Name="">Atitlan Grebe.</Species>
+            <Species Scientific_Name="">Horned Grebe.</Species>
+            <Species Scientific_Name="">Red-necked Grebe.</Species>
+            <Species Scientific_Name="">Eared Grebe.</Species>
+            <Species Scientific_Name="">Western Grebe.</Species>
+            <Species Scientific_Name="">Clark's Grebe.</Species>
+            <Species Scientific_Name=""/>
+        </Family>
+    </Order>
+
+
+<Order Name="PROCELLARIIFORMES">
+        <Family Name="DIOMEDEIDAE">
+            <Species Scientific_Name="Thalassarche chlororhynchos">Yellow-nosed Albatross. (A)</Species>
+            <Species Scientific_Name="Thalassarche cauta">Shy Albatross. (A)</Species>
+            <Species Scientific_Name="Thalassarche melanophris">Black-browed Albatross. (A)</Species>
+            <Species Scientific_Name="Phoebetria palpebrata">Light-mantled Albatross. (A)</Species>
+            <Species Scientific_Name="Diomedea exulans">Wandering Albatross. (A)</Species>
+            <Species Scientific_Name="Phoebastria immutabilis">Laysan Albatross.</Species>
+            <Species Scientific_Name="Phoebastria nigripes">Black-footed Albatross.</Species>
+            <Species Scientific_Name="Phoebastria albatrus">Short-tailed Albatross. (N)</Species>
+        </Family>
+        <Family Name="PROCELLARIIDAE">
+            <Species Scientific_Name="Fulmarus glacialis">Northern Fulmar.</Species>
+            <Species Scientific_Name="Pterodroma neglecta">Kermadec Petrel. (A)</Species>
+            <Species Scientific_Name="Pterodroma arminjoniana">Herald Petrel. (A)</Species>
+            <Species Scientific_Name="Pterodroma ultima">Murphy's Petrel. (N)</Species>
+            <Species Scientific_Name="Pterodroma inexpectata">Mottled Petrel. (A)</Species>
+            <Species Scientific_Name="Pterodroma cahow">Bermuda Petrel.</Species>
+            <Species Scientific_Name="Pterodroma hasitata">Black-capped Petrel.</Species>
+            <Species Scientific_Name="Pterodroma externa">Juan Fernandez Petrel. (N)</Species>
+            <Species Scientific_Name="Pterodroma phaeopygia">Dark-rumped Petrel.</Species>
+            <Species Scientific_Name="Pterodroma cervicalis">White-necked Petrel. (H)</Species>
+            <Species Scientific_Name="Pterodroma hypoleuca">Bonin Petrel. (H)</Species>
+            <Species Scientific_Name="Pterodroma nigripennis">Black-winged Petrel. (H, A)</Species>
+            <Species Scientific_Name="Pterodroma cookii">Cook's Petrel. (N)</Species>
+            <Species Scientific_Name="Pterodroma longirostris">Stejneger's Petrel. (A)</Species>
+            <Species Scientific_Name="Bulweria bulwerii">Bulwer's Petrel. (H)</Species>
+            <Species Scientific_Name="Bulweria fallax">Jouanin's Petrel. (H, A)</Species>
+            <Species Scientific_Name="Procellaria parkinsoni">Parkinson's Petrel. (N)</Species>
+            <Species Scientific_Name="Calonectris leucomelas">Streaked Shearwater. (A)</Species>
+            <Species Scientific_Name="Calonectris diomedea">Cory's Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus creatopus">Pink-footed Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus carneipes">Flesh-footed Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus gravis">Greater Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus pacificus">Wedge-tailed Shearwater.</Species>
+            <Species Scientific_Name="Puffinus bulleri">Buller's Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus griseus">Sooty Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus tenuirostris">Short-tailed Shearwater. (N)</Species>
+            <Species Scientific_Name="Puffinus nativitatis">Christmas Shearwater. (H)</Species>
+            <Species Scientific_Name="Puffinus puffinus">Manx Shearwater.</Species>
+            <Species Scientific_Name="Puffinus auricularis">Townsend's Shearwater.</Species>
+            <Species Scientific_Name="Puffinus opisthomelas">Black-vented Shearwater.</Species>
+            <Species Scientific_Name="Puffinus lherminieri">Audubon's Shearwater.</Species>
+            <Species Scientific_Name="Puffinus assimilis">Little Shearwater. (A)</Species>
+        </Family>
+        <Family Name="HYDROBATIDAE">
+            <Species Scientific_Name="Oceanites oceanicus">Wilson's Storm-Petrel. (N)</Species>
+            <Species Scientific_Name="Pelagodroma marina">White-faced Storm-Petrel. (A)</Species>
+            <Species Scientific_Name="Hydrobates pelagicus">European Storm-Petrel. (A)</Species>
+            <Species Scientific_Name="Oceanodroma furcata">Fork-tailed Storm-Petrel.</Species>
+            <Species Scientific_Name="Oceanodroma leucorhoa">Leach's Storm-Petrel.</Species>
+            <Species Scientific_Name="Oceanodroma homochroa">Ashy Storm-Petrel.</Species>
+            <Species Scientific_Name="Oceanodroma castro">Band-rumped Storm-Petrel. (N)</Species>
+            <Species Scientific_Name="Oceanodroma tethys">Wedge-rumped Storm-Petrel. (N)</Species>
+            <Species Scientific_Name="Oceanodroma melania">Black Storm-Petrel.</Species>
+            <Species Scientific_Name="Oceanodroma macrodactyla">Guadalupe Storm-Petrel.</Species>
+            <Species Scientific_Name="Oceanodroma markhami">Markham's Storm-Petrel. (A)</Species>
+            <Species Scientific_Name="Oceanodroma tristrami">Tristram's Storm-Petrel. (H)</Species>
+            <Species Scientific_Name="Oceanodroma microsoma">Least Storm-Petrel.</Species>
+        </Family>
+    </Order>
+
+<Order Name="PELECANIFORMES">
+        <Family Name="PHAETHONTIDAE">
+            <Species Scientific_Name="Phaethon lepturus">White-tailed Tropicbird.</Species>
+            <Species Scientific_Name="Phaethon aethereus">Red-billed Tropicbird.</Species>
+            <Species Scientific_Name="Phaethon rubricauda">Red-tailed Tropicbird.</Species>
+        </Family>
+        <Family Name="SULIDAE">
+            <Species Scientific_Name="Sula dactylatra">Masked Booby.</Species>
+            <Species Scientific_Name="Sula nebouxii">Blue-footed Booby.</Species>
+            <Species Scientific_Name="Sula variegata">Peruvian Booby. (A)</Species>
+            <Species Scientific_Name="Sula leucogaster">Brown Booby.</Species>
+            <Species Scientific_Name="Sula sula">Red-footed Booby.</Species>
+            <Species Scientific_Name="Morus bassanus">Northern Gannet.</Species>
+        </Family>
+        <Family Name="PELECANIDAE">
+            <Species Scientific_Name="Pelecanus erythrorhynchos">American White Pelican.</Species>
+            <Species Scientific_Name="Pelecanus occidentalis">Brown Pelican.</Species>
+        </Family>
+        <Family Name="PHALACROCORACIDAE">
+            <Species Scientific_Name="Phalacrocorax penicillatus">Brandt's Cormorant.</Species>
+            <Species Scientific_Name="Phalacrocorax brasilianus">Neotropic Cormorant.</Species>
+            <Species Scientific_Name="Phalacrocorax auritus">Double-crested Cormorant.</Species>
+            <Species Scientific_Name="Phalacrocorax carbo">Great Cormorant.</Species>
+            <Species Scientific_Name="Phalacrocorax urile">Red-faced Cormorant.</Species>
+            <Species Scientific_Name="Phalacrocorax pelagicus">Pelagic Cormorant.</Species>
+        </Family>
+        <Family Name="ANHINGIDAE">
+            <Species Scientific_Name="Anhinga anhinga">Anhinga.</Species>
+        </Family>
+        <Family Name="FREGATIDAE">
+            <Species Scientific_Name="Fregata magnificens">Magnificent Frigatebird.</Species>
+            <Species Scientific_Name="Fregata minor">Great Frigatebird.</Species>
+            <Species Scientific_Name="Fregata ariel">Lesser Frigatebird. (A)</Species>
+        </Family>
+    </Order>
+</Class>

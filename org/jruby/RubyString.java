@@ -26,6 +26,8 @@
 
 package org.jruby;
 
+import org.jruby.exceptions.*;
+
 /**
  *
  * @author  jpetersen
@@ -89,7 +91,12 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString newString(String s) {
-        return new RubyString(getRuby(), getRubyClass(), s);
+        RubyModule klass = getRubyClass();
+        while (klass.isIncluded() || klass.isSingleton()) {
+            klass = klass.getSuperClass();
+        }
+        
+        return new RubyString(getRuby(), klass, s);
     }
 
     // Methods of the String class (rb_str_*):
@@ -112,9 +119,18 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject m_dup() {
-        // HACK +++
-        return m_newString(getRuby(), getString());
-        // HACK ---
+        return newString(getString());
+    }
+    
+    /** rb_str_clone
+     *
+     */
+    public RubyObject m_clone() {
+        RubyObject newObject = m_dup();
+        
+        newObject.setupClone(this);
+        
+        return newObject;
     }
     
     /** rb_str_cat
@@ -245,5 +261,157 @@ public class RubyString extends RubyObject {
         setString(sb.toString());
         
         return this;
+    }
+
+    /** rb_str_upcase
+     *
+     */
+    public RubyString m_upcase() {
+        return newString(getString().toUpperCase());
+    }
+    
+    /** rb_str_upcase_bang
+     *
+     */
+    public RubyString m_upcase_bang() {
+        setString(getString().toUpperCase());
+        
+        return this;
+    }
+
+    /** rb_str_downcase
+     *
+     */
+    public RubyString m_downcase() {
+        return newString(getString().toLowerCase());
+    }
+    
+    /** rb_str_downcase_bang
+     *
+     */
+    public RubyString m_downcase_bang() {
+        setString(getString().toLowerCase());
+        
+        return this;
+    }
+
+    /** rb_str_swapcase
+     *
+     */
+    public RubyString m_swapcase() {
+        RubyString newString = newString(getString());
+        
+        return newString.m_swapcase_bang();
+    }
+    
+    /** rb_str_swapcase_bang
+     *
+     */
+    public RubyString m_swapcase_bang() {
+        char[] chars = getString().toCharArray();
+        StringBuffer sb = new StringBuffer(chars.length);
+        
+        for (int i = 0; i < chars.length; i++) {
+            if (!Character.isLetter(chars[i])) {
+                sb.append(chars[i]);
+            } else if (Character.isLowerCase(chars[i])) {
+                sb.append(Character.toUpperCase(chars[i]));
+            } else {
+                sb.append(Character.toLowerCase(chars[i]));
+            }
+        }
+        setString(getString().toLowerCase());
+        
+        return this;
+    }
+    
+    /** rb_str_inspect
+     *
+     */
+    public RubyString m_inspect() {
+        final int length = getString().length();
+        
+        StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
+        
+        sb.append('\"');
+        
+        for (int i = 0; i < length; i++) {
+            char c = getString().charAt(i);
+            
+            if (Character.isLetterOrDigit(c)) {
+                sb.append(c);
+            } else if (c == '\"' || c == '\'' || c == '\\') {
+                sb.append('\\').append(c);
+            } else if (c == '\n') {
+                sb.append('\\').append('n');
+            } else if (c == '\r') {
+                sb.append('\\').append('r');
+            } else if (c == '\t') {
+                sb.append('\\').append('t');
+            } else if (c == '\f') {
+                sb.append('\\').append('f');
+            } else if (c == '\u0013') {
+                sb.append('\\').append('v');
+            } else if (c == '\u0007') {
+                sb.append('\\').append('a');
+            } else if (c == '\u0033') {
+                sb.append('\\').append('e');
+                
+            /* There may be other not printable characters. */
+                
+            } else {
+                sb.append(c);
+            }
+        }
+        
+        sb.append('\"');
+        
+        return m_newString(getRuby(), sb.toString());
+    }
+
+    /** rb_str_plus
+     *
+     */
+    public RubyString op_plus(RubyObject other) {
+        if (!(other instanceof RubyString)) {
+            other = other.covertType(RubyString.class, "String", "to_str");
+        }
+        
+        RubyString newString = newString(getString() + ((RubyString)other).getString());
+        
+        newString.setTaint(isTaint() || other.isTaint());
+        
+        return newString;
+    }
+
+    /** rb_str_mul
+     *
+     */
+    public RubyString op_mul(RubyInteger other) {
+        long len = other.getLongValue();
+        
+        if (len < 0) {
+            throw new RubyArgumentException("negative argument");
+        }
+        
+        if (Long.MAX_VALUE / len < getString().length()) {
+            throw new RubyArgumentException("argument too big");
+        }
+        StringBuffer sb = new StringBuffer((int)(getString().length() * len));
+        
+        for (int i = 0; i < len; i++) {
+            sb.append(getString());
+        }
+        
+        RubyString newString = newString(sb.toString());
+        newString.setTaint(isTaint());
+        return newString;
+    }
+
+    /** rb_str_hash_m
+     *
+     */
+    public RubyFixnum m_hash() {
+        return RubyFixnum.m_newFixnum(getRuby(), getString().hashCode());
     }
 }

@@ -402,4 +402,66 @@ public class RubyArray extends RubyObject {
         return RubyString.m_newString(getRuby(), sb.toString());
         // HACK ---
     }
+    
+    
+    /** rb_ary_sort
+     *
+     */
+    public RubyArray m_sort() {
+        RubyArray rubyArray = (RubyArray)m_dup();
+        
+        rubyArray.m_sort_bang();
+        
+        return rubyArray;
+    }
+    
+    /** rb_ary_sort_bang
+     *
+     */
+    public RubyObject m_sort_bang() {
+        if (length() <= 1) {
+            return getRuby().getNil();
+        }
+        
+        modify();
+        
+        setTmpLock(true);
+        
+        Comparator blockComparator = new Comparator() {
+            public int compare(Object o1, Object o2) {
+                RubyObject result = getRuby().yield(RubyArray.m_newArray(getRuby(), 
+                                                    (RubyObject)o1, (RubyObject)o2));
+                return (int)((RubyNumeric)result).getLongValue();
+            }
+            
+            public boolean equals(Object other) {
+                return this == other;
+            }
+        };
+        
+        Comparator defaultComparator = new Comparator() {
+            public int compare(Object o1, Object o2) {
+                if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+                    return (int)(((RubyFixnum)o1).getLongValue() - ((RubyFixnum)o2).getLongValue());
+                }
+                
+                if (o1 instanceof RubyString && o2 instanceof RubyString) {
+                    return (int)((RubyString)o1).op_cmp((RubyObject)o2).getLongValue();
+                }
+                
+                return (int)((RubyFixnum)((RubyObject)o1).funcall(getRuby().intern("<=>"), (RubyObject)o2)).getLongValue();
+            }
+            
+            public boolean equals(Object other) {
+                return this == other;
+            }
+        };
+        
+        Collections.sort(getArray(), getRuby().getInterpreter().isBlockGiven()
+                                        ? blockComparator :  defaultComparator);
+        
+        setTmpLock(false);
+        
+        return this;
+    }
 }

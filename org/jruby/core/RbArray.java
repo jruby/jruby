@@ -1,5 +1,5 @@
 /*
- * RbInteger.java - No description
+ * RbArray.java - No description
  * Created on 10. September 2001, 17:56
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
@@ -89,9 +89,11 @@ public class RbArray {
     rb_define_method(rb_cArray, "join", rb_ary_join_m, -1);
     rb_define_method(rb_cArray, "reverse", rb_ary_reverse_m, 0);
     rb_define_method(rb_cArray, "reverse!", rb_ary_reverse_bang, 0);
-    rb_define_method(rb_cArray, "sort", rb_ary_sort, 0);
-    rb_define_method(rb_cArray, "sort!", rb_ary_sort_bang, 0);
-    rb_define_method(rb_cArray, "collect", rb_ary_collect, 0);
+ */
+        arrayClass.defineMethod("sort", getMethod("m_sort"));
+        arrayClass.defineMethod("sort!", getMethod("m_sort_bang"));
+        
+    /* rb_define_method(rb_cArray, "collect", rb_ary_collect, 0);
     rb_define_method(rb_cArray, "collect!", rb_ary_collect_bang, 0);
     rb_define_method(rb_cArray, "map!", rb_ary_collect_bang, 0);
     rb_define_method(rb_cArray, "filter", rb_ary_filter, 0);

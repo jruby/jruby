@@ -41,22 +41,22 @@ public class RbString {
         RubyClass stringClass = ruby.defineClass("String", ruby.getObjectClass());
         
         stringClass.includeModule(ruby.getRubyClass("Comparable"));
-        // stringClass.includeModule(ruby.getModules().getEnumerable());
+        stringClass.includeModule(ruby.getRubyClass("Enumerable"));
         
         stringClass.defineSingletonMethod("new", getSingletonMethod("m_new", true));
         stringClass.defineMethod("initialize", getMethod("m_replace", RubyString.class));
-/*    rb_define_method(rb_cString, "clone", rb_str_clone, 0);
-    rb_define_method(rb_cString, "dup", rb_str_dup, 0);*/
+        stringClass.defineMethod("clone", getMethod("m_clone", false));
+        stringClass.defineMethod("dup", getMethod("m_dup", false));
         
         stringClass.defineMethod("<=>", getMethod("op_cmp", RubyObject.class));
         stringClass.defineMethod("==", getMethod("m_equal", RubyObject.class));
         stringClass.defineMethod("===", getMethod("m_equal", RubyObject.class));
         stringClass.defineMethod("eql?", getMethod("m_equal", RubyObject.class));
         
-    /*rb_define_method(rb_cString, "hash", rb_str_hash_m, 0);
-    rb_define_method(rb_cString, "+", rb_str_plus, 1);
-    rb_define_method(rb_cString, "*", rb_str_times, 1);
-    rb_define_method(rb_cString, "%", rb_str_format, 1); */
+        stringClass.defineMethod("hash", getMethod("m_hash", false));
+        stringClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
+        stringClass.defineMethod("*", getMethod("op_mul", RubyInteger.class));
+     /*rb_define_method(rb_cString, "%", rb_str_format, 1); */
         stringClass.defineMethod("[]", getMethod("m_slice", true));
     /*rb_define_method(rb_cString, "[]=", rb_str_aset_m, -1);
     rb_define_method(rb_cString, "length", rb_str_length, 0);
@@ -78,25 +78,20 @@ public class RbString {
         
         stringClass.defineMethod("to_s", getMethod("m_to_s", false));
         stringClass.defineMethod("to_str", getMethod("m_to_s", false));
+        stringClass.defineMethod("inspect", getMethod("m_inspect", false));
+    //rb_define_method(rb_cString, "dump", rb_str_dump, 0);
 
-    /*
-    rb_define_method(rb_cString, "inspect", rb_str_inspect, 0);
-    rb_define_method(rb_cString, "dump", rb_str_dump, 0);
-
-    rb_define_method(rb_cString, "upcase", rb_str_upcase, 0);
-    rb_define_method(rb_cString, "downcase", rb_str_downcase, 0);
-     */
+        stringClass.defineMethod("upcase", getMethod("m_upcase", false));
+        stringClass.defineMethod("downcase", getMethod("m_downcase", false));
         stringClass.defineMethod("capitalize", getMethod("m_capitalize", false));
-    /*rb_define_method(rb_cString, "swapcase", rb_str_swapcase, 0);
+        stringClass.defineMethod("swapcase", getMethod("m_swapcase", false));
 
-    rb_define_method(rb_cString, "upcase!", rb_str_upcase_bang, 0);
-    rb_define_method(rb_cString, "downcase!", rb_str_downcase_bang, 0);
-     */
-        
+        stringClass.defineMethod("upcase!", getMethod("m_upcase_bang", false));
+        stringClass.defineMethod("downcase!", getMethod("m_downcase_bang", false));
         stringClass.defineMethod("capitalize!", getMethod("m_capitalize_bang", false));
-    /*rb_define_method(rb_cString, "swapcase!", rb_str_swapcase_bang, 0);
+        stringClass.defineMethod("swapcase!", getMethod("m_swapcase_bang", false));
 
-    rb_define_method(rb_cString, "hex", rb_str_hex, 0);
+    /*rb_define_method(rb_cString, "hex", rb_str_hex, 0);
     rb_define_method(rb_cString, "oct", rb_str_oct, 0);
     rb_define_method(rb_cString, "split", rb_str_split_m, -1);*/
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));

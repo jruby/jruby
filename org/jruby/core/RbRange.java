@@ -40,10 +40,12 @@ public class RbRange {
     
     public static RubyClass createRangeClass(Ruby ruby) {
         RubyClass rangeClass = ruby.defineClass("Range", ruby.getObjectClass());
-     
+
+        rangeClass.includeModule(ruby.getRubyClass("Enumerable"));
+
         rangeClass.defineMethod("each", getMethod("m_each"));
         rangeClass.defineMethod("initialize", getRestArgsMethod("m_initialize"));
-        
+
         return rangeClass;
     }
     

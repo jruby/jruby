@@ -231,6 +231,7 @@ public final class Ruby implements token {
         trueClass = RbTrueClass.createTrueClass(this);
         
         RbComparable.createComparable(this);
+        RbEnumerable.createEnumerableModule(this);
         
         numericClass = RbNumeric.createNumericClass(this);
         integerClass = RbInteger.createIntegerClass(this);
@@ -536,5 +537,37 @@ public final class Ruby implements token {
      */
     public RubyObject getRubyTopSelf() {
         return rubyTopSelf;
+    }
+    
+    /** rb_iterate
+     *
+     */  
+    public RubyObject iterate(RubyCallbackMethod iterateMethod, RubyObject data1, RubyCallbackMethod blockMethod, RubyObject data2) {
+        NODE node = NODE.newIFunc(blockMethod, data2);
+        
+        // VALUE self = ruby_top_self;
+        RubyObject result = null;
+        
+        getInterpreter().getRubyIter().push(Iter.ITER_PRE);
+        getInterpreter().getRubyBlock().push(null, node, getRubyTopSelf());
+        
+        while (true) {
+            try {
+                result = iterateMethod.execute(data1, null, this);
+                
+                break;
+            } catch (RetryException rExcptn) {
+            } catch (BreakException bExcptn) {
+                result = getNil();
+                break;
+            } catch (ReturnException rExcptn) {
+                result = rExcptn.getReturnValue();
+                break;
+            }
+        }
+        getInterpreter().getRubyIter().pop();
+        getInterpreter().getRubyBlock().pop();
+        
+        return result;
     }
 }

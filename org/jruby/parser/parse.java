@@ -6411,15 +6411,26 @@ case 432:
     // -----------------
 
     boolean rb_dvar_defined(ID id) {
+	if (ruby.getInterpreter().getDynamicVars() == null) {
+	    return false;
+	}
+	
 	return ruby.getInterpreter().getDynamicVars().isDefined((RubyId)id);
     }
 
     boolean rb_dvar_curr(ID id) {
+	if (ruby.getInterpreter().getDynamicVars() == null) {
+	    return false;
+	}	    
         return ruby.getInterpreter().getDynamicVars().isCurrent((RubyId)id);
     }
 
     void rb_dvar_push(ID id, VALUE value) {
-	ruby.getInterpreter().getDynamicVars().push((RubyId)id, (RubyObject)value);
+	if (ruby.getInterpreter().getDynamicVars() == null) {
+		ruby.getInterpreter().setDynamicVars(new_dvar(id, value, null));
+	} else {
+		ruby.getInterpreter().getDynamicVars().push((RubyId)id, (RubyObject)value);
+	}
     }
 
     private RubyVarmap new_dvar(ID id, VALUE value, RubyVarmap prev) {
