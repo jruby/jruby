@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.OutputStream;
+import java.io.BufferedOutputStream;
 import java.util.ArrayList;
 
 import org.ablaf.ast.IAstEncoder;
@@ -51,8 +53,10 @@ public class ASTSerializer {
         super();
     }
     
-    public static void serialize(File input, File output) throws IOException {
-        IAstEncoder encoder = RubyAstMarshal.getInstance().openEncoder(new FileOutputStream(output));
+    public static void serialize(File input, File outputFile) throws IOException {
+        OutputStream output = new FileOutputStream(outputFile);
+        output = new BufferedOutputStream(output);
+        IAstEncoder encoder = RubyAstMarshal.getInstance().openEncoder(output);
         serialize(input, encoder);
         encoder.close();
     }
@@ -81,7 +85,7 @@ public class ASTSerializer {
 
     public static void main(String[] args) throws IOException {
         XmlAstMarshal marshal = new XmlAstMarshal(AstPersistenceDelegates.get());
-        IAstEncoder encoder = marshal.openEncoder(System.out);
+        IAstEncoder encoder = marshal.openEncoder(new BufferedOutputStream(System.out));
         serialize(new File(args[0]), encoder);
         encoder.close();
     }

@@ -30,6 +30,7 @@
 package org.jruby;
 
 import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -250,6 +251,7 @@ public class RubyClasses {
         if (in == null) {
             throw new IOError(runtime, "Resource not found: " + resourceName);
         }
+        in = new BufferedInputStream(in);
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
         runtime.loadNode("init-builtin", decoder.readNode(), false);
         decoder.close();

@@ -22,8 +22,6 @@
  */
 package org.ablaf.internal.ast;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -50,7 +48,7 @@ public class SerializationAstMarshal implements IAstMarshal {
      */
     public IAstEncoder openEncoder(OutputStream output) {
         try {
-            final ObjectOutputStream oout = new ObjectOutputStream(new BufferedOutputStream(output));
+            final ObjectOutputStream oout = new ObjectOutputStream(output);
             return new IAstEncoder() {
                 /**
                  * @see org.ablaf.ast.IAstEncoder#writeNode(INode)
@@ -85,7 +83,7 @@ public class SerializationAstMarshal implements IAstMarshal {
      */
     public IAstDecoder openDecoder(InputStream input) {
         try {
-            final ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(input));
+            final ObjectInputStream oin = new ObjectInputStream(input);
             return new IAstDecoder() {
                 /**
                  * @see org.ablaf.ast.IAstDecoder#readNode()
