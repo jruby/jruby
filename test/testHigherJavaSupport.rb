@@ -95,5 +95,16 @@ if defined? Java
     # on that should be available, even though the instance is of a
     # private class.
     test_equal("a", inner_instance_entry.getKey)
+
+    # Extending Java classes
+    class FooArrayList < ArrayList
+      def foo
+        size
+      end
+    end
+    l = FooArrayList.new
+    test_equal(0, l.foo)
+    l.add(100)
+    test_equal(1, l.foo)
   end
 end

@@ -129,6 +129,14 @@ module JavaUtilities
       class << proxy_class
         alias_method(:new_proxy, :new)
         attr_reader :java_class
+
+        # Carry the Java class as an instance variable on the
+        # derived classes too, otherwise their constructors
+        # won't work.
+        def inherited(subclass)
+          java_class = @java_class
+          subclass.class_eval("@java_class = java_class")
+        end
       end
       if java_class.interface?
 	create_interface_constructor(java_class, proxy_class)
