@@ -23,11 +23,6 @@
  * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
  * Boston, MA  02111-1307 USA
  */
-
-/**
- * Serves as a simple facade for all the parsing magic.
- */
-
 package org.jruby.parser;
 
 import java.io.Reader;
@@ -36,15 +31,18 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.lexer.yacc.SyntaxException;
 
+/**
+ * Serves as a simple facade for all the parsing magic.
+ */
 public class Parser {
     private final Ruby runtime;
-    private final RubyParserPool pool;
 
     public Parser(Ruby runtime) {
         this.runtime = runtime;
-        this.pool = RubyParserPool.getInstance();
     }
 
     public Node parse(String file, String content) {
@@ -61,13 +59,19 @@ public class Parser {
         DefaultRubyParser parser = null;
         RubyParserResult result = null;
         try {
-            parser = pool.borrowParser();
+            parser = RubyParserPool.getInstance().borrowParser();
             parser.setErrorHandler(runtime.getErrorHandler());
             parser.init(config);
             LexerSource lexerSource = LexerSource.getSource(file, content);
             result = parser.parse(lexerSource);
+        } catch (SyntaxException e) {
+            StringBuffer buffer = new StringBuffer(100);
+            buffer.append(e.getPosition().getFile()).append(':');
+            buffer.append(e.getPosition().getLine()).append(": ");
+            buffer.append(e.getMessage());
+            throw new SyntaxError(runtime, buffer.toString());
         } finally {
-            pool.returnParser(parser);
+            RubyParserPool.getInstance().returnParser(parser);
         }
 
         if (hasNewLocalVariables(result)) {
@@ -86,7 +90,7 @@ public class Parser {
     }
 
     private boolean hasNewLocalVariables(RubyParserResult result) {
-        int newSize = 0;
+       int newSize = 0;
         if (result.getLocalVariables() != null) {
             newSize = result.getLocalVariables().size();
         }

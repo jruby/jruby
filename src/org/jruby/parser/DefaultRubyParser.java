@@ -28,6 +28,7 @@
  */
 package org.jruby.parser;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 import org.jruby.ast.AliasNode;
@@ -3498,14 +3499,16 @@ case 494:
     public RubyParserResult parse(LexerSource source) {
         support.reset();
         support.setResult(new RubyParserResult());
-
-	lexer.setSource(source);
-	try {
+        
+        lexer.setSource(source);
+        try {
             yyparse(lexer, null);
-	} catch (Exception excptn) {
-            excptn.printStackTrace();
-	}
-
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (yyException e) {
+            e.printStackTrace();
+        }
+        
         return support.getResult();
     }
 

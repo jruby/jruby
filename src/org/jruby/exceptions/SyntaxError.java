@@ -23,8 +23,12 @@
  * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
  * Boston, MA  02111-1307 USA
  */
-package org.jruby.lexer.yacc;
+package org.jruby.exceptions;
 
-public abstract class StrTerm {
-    public abstract int parseString(RubyYaccLexer lexer, LexerSource src);
+import org.jruby.Ruby;
+
+public class SyntaxError extends RaiseException {
+    public SyntaxError(Ruby runtime, String message) {
+        super(runtime, runtime.getExceptions().getSyntaxError(), message, true);
+    }
 }

@@ -25,6 +25,16 @@
  */
 package org.jruby.lexer.yacc;
 
-public abstract class StrTerm {
-    public abstract int parseString(RubyYaccLexer lexer, LexerSource src);
+public class SyntaxException extends RuntimeException {
+    private SourcePosition position;
+
+    public SyntaxException(SourcePosition position, String message) {
+        super(message);
+
+        this.position = position;
+    }
+
+    public SourcePosition getPosition() {
+        return position;
+    }
 }

@@ -30,9 +30,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
-import org.jruby.common.IErrors;
-import org.jruby.common.IRubyErrorHandler;
-
 /**
  * This class is what feeds the lexer.  It is primarily a wrapper around a
  * Reader that can unread() data back onto the source.  Originally, I thought
@@ -239,7 +236,7 @@ public class LexerSource {
         return getColumn() == 1;
     }
 
-    public char readEscape(IRubyErrorHandler errorHandler) {
+    public char readEscape() {
         char c = read();
 
         switch (c) {
@@ -262,15 +259,14 @@ public class LexerSource {
             case '0' : case '1' : case '2' : case '3' : // octal constant
             case '4' : case '5' : case '6' : case '7' :
                 unread(c);
-                return (char) scanOct(3);
+                return scanOct(3);
             case 'x' : // hex constant
             	int offset = getColumn();
-            	char hexValue = (char) scanHex(2);
+            	char hexValue = scanHex(2);
             	
             	// No hex value after the 'x'.
             	if (offset == getColumn()) {
-            	    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
-                    return '\0';
+            	    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
             	}
                 return hexValue;
             case 'b' : // backspace
@@ -279,37 +275,35 @@ public class LexerSource {
                 return ' ';
             case 'M' :
                 if ((c = read()) != '-') {
-                    unread(c);
-                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 } else if ((c = read()) == '\\') {
-                    return (char) (readEscape(errorHandler) | 0x80);
+                    return (char) (readEscape() | 0x80);
                 } else if (c == '\0') {
-                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 } 
                 return (char) ((c & 0xff) | 0x80);
             case 'C' :
                 if ((c = read()) != '-') {
-                    unread(c);
-                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 }
             case 'c' :
                 if ((c = read()) == '\\') {
-                    c = readEscape(errorHandler);
+                    c = readEscape();
                 } else if (c == '?') {
                     return '\u0177';
                 } else if (c == '\0') {
-                    errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                    throw new SyntaxException(getPosition(), "Invalid escape character syntax");
                 }
                 return (char) (c & 0x9f);
             case '\0' :
-                errorHandler.handleError(IErrors.ERROR, getPosition(), "Invalid escape character syntax");
+                throw new SyntaxException(getPosition(), "Invalid escape character syntax");
             default :
                 return c;
         }
     }
 
-    private int scanHex(int count) {
-    	int value = 0;
+    private char scanHex(int count) {
+    	char value = '\0';
 
     	for (int i = 0; i < count; i++) {
     		char c = read();
@@ -326,8 +320,8 @@ public class LexerSource {
     	return value;
     }
 
-    private int scanOct(int count) {
-    	int value = 0;
+    private char scanOct(int count) {
+    	char value = '\0';
 
     	for (int i = 0; i < count; i++) {
     		char c = read();
