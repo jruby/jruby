@@ -71,12 +71,13 @@ public final class Ruby implements token {
     
     private RubyOriginalMethods originalMethods;
     
-    /**
-     *
-     */
-    // public SCOPE ruby_scope = new SCOPE();
     private RubyScope rubyScope = new RubyScope();
     private RubyVarmap dynamicVars = null;
+    
+    private String sourceFile;
+    private int sourceLine;
+    
+    private boolean verbose;
     
     public op_tbl[] op_tbl;
     
@@ -427,4 +428,47 @@ public final class Ruby implements token {
     public HashMap getMethodCache() {
         return methodCache;
     }
+    
+    /** Getter for property sourceFile.
+     * @return Value of property sourceFile.
+     */
+    public String getSourceFile() {
+        return sourceFile;
+    }
+    
+    /** Setter for property sourceFile.
+     * @param sourceFile New value of property sourceFile.
+     */
+    public void setSourceFile(String sourceFile) {
+        this.sourceFile = sourceFile;
+    }
+    
+    /** Getter for property sourceLine.
+     * @return Value of property sourceLine.
+     */
+    public int getSourceLine() {
+        return sourceLine;
+    }
+    
+    /** Setter for property sourceLine.
+     * @param sourceLine New value of property sourceLine.
+     */
+    public void setSourceLine(int sourceLine) {
+        this.sourceLine = sourceLine;
+    }
+    
+    /** Getter for property verbose.
+     * @return Value of property verbose.
+     */
+    public boolean isVerbose() {
+        return verbose;
+    }
+    
+    /** Setter for property verbose.
+     * @param verbose New value of property verbose.
+     */
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+    
 }

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="JRuby" basedir="." default="main">
+
+  <property name="src.dir" value="."/>
+  <property name="build.dir" value="build"/>
+  <property name="jar.file" value="jruby.jar"/>
+  <property name="build.compiler" value="modern"/>
+
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="${build.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${build.dir}" deprecation="true"
+           debug="true" includeantruntime="false">
+      <include name="org/jruby/**/*.java"/>
+      <exclude name="org/jruby/regex/Jakarta*.java"/>
+    </javac>
+  </target>
+
+  <target name="jar">
+    <jar jarfile="${jar.file}" manifest="jruby.mf" compress="false">
+      <fileset dir="${build.dir}" includes="**/*.class"/>
+    </jar>
+  </target>
+
+  <target name="main" depends="compile, jar"
+      description="Compile out-of-date source files and rebuild the jar file"/>
+
+  <target name="all" depends="clean, compile, jar"
+      description="Recompile all source files and rebuild the jar file"/>
+
+  <target name="new" depends="all">
+    <delete>
+      <fileset dir="." includes="**/.nbattrs,org/**/*.class"/>
+    </delete>
+  </target>
+
+</project>
