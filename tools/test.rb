@@ -9,6 +9,8 @@ def stream_string
   def output.write(s)
     self.<<(s)
   end
+  def output.close()
+  end
   output
 end
 
@@ -16,10 +18,11 @@ end
 class TestGenerator < Test::Unit::TestCase
 
   def test_generator
-    output = stream_string
+	  #    output = stream_string
 
     generator = nil
-    open("test_data.xml") do |file|
+	  output = nil
+    open("Foo.xml") do |file|
       generator = MethodGenerator.new(file, 'some.place.to.put.definitions')
       generator.generate(output)
     end
@@ -28,7 +31,10 @@ class TestGenerator < Test::Unit::TestCase
     open("test_data.expected") do |file|
       expected_output = file.gets(nil)
     end
-
+	output = nil
+	open("./org/stuff/Foo.java") do |file2|
+		output = file2.gets(nil)
+	end
     expected_output = expected_output.split
     output = output.split
     assert_equal(expected_output.length, output.length)
@@ -69,14 +75,14 @@ class TestGenerator < Test::Unit::TestCase
     m = MethodDescription.new(generator, "swamp", 12)
     assert_equal("swamp", m.name)
     m.generate_constant(output)
-    assert_equal("public static final int SWAMP = FOO | 12;\n", output)
+    assert_equal("public static final int SWAMP = FOO + 12;\n", output)
 
     assert_equal("swamp", m.name)
     
     m.java_name = "swamp_stuff"
     output = stream_string
     m.generate_constant(output)
-    assert_equal("public static final int SWAMP_STUFF = FOO | 12;\n", output)
+    assert_equal("public static final int SWAMP_STUFF = FOO + 12;\n", output)
 
     m.arity = 3
     m.optional = true
@@ -114,7 +120,7 @@ class TestGenerator < Test::Unit::TestCase
     m = StaticMethodDescription.new(generator, "swamp", 12)
     assert_equal("swamp", m.name)
     m.generate_constant(output)
-    assert_equal("public static final int SWAMP = STATIC | 12;\n", output)
+    assert_equal("public static final int SWAMP = STATIC + 12;\n", output)
   end
 
   def test_static_method_switch
