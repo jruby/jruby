@@ -30,7 +30,7 @@ def test_load(test)
 	load(test)
   rescue Exception => boom
 	puts 'KO'
-	$failed.push(sprintf("exception raised %s %d -- Exception: %s\n", $what, $testnum, boom.to_s))
+	$failed.push(sprintf("exception raised %s %d -- \n\tException: %s\n\t%s", $what, $testnum, boom.to_s, boom.backtrace.join "\n\t"))
   else
 	puts 'OK'
   end

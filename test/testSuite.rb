@@ -39,6 +39,9 @@ test_load('test/testMethods.rb')
 test_load('test/testGlobalVars.rb')
 test_load('test/testClasses.rb')
 test_load('test/testNumber.rb')
+test_load('test/testFloat.rb')
+test_load('test/testBlock.rb')
+test_load('test/testRange.rb')
 
 #MRI Ruby tests:
 test_load('test/mri/testAssignment.rb')
