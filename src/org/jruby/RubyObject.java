@@ -316,7 +316,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** OBJ_INFECT
      *
      */
-    protected IRubyObject infectBy(IRubyObject obj) {
+    public IRubyObject infectBy(IRubyObject obj) {
         setTaint(isTaint() || obj.isTaint());
         
         return this;
