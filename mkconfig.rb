@@ -9,8 +9,12 @@ RUBY_VERSION.scan(/(\d+)\.(\d+)\.(\d+)/) {
   $version_minor = $2
   $version_teeny = $3
 }
-  
-config = open("lib/ruby/#$version_major.#$version_minor/java/rbconfig.rb", "w")
+Java::import "java.lang"
+Java::name "java.io.File", "JavaFile"
+$bindir = JavaFile.new(System.getProperty("jruby.home")).getCanonicalPath();
+$ruby_install_name = System.getProperty("jruby.script");
+$osname = System.getProperty("os.name");
+config = open("#{System.getProperty('jruby.home')}/lib/ruby/#$version_major.#$version_minor/java/rbconfig.rb", "w")
 $> = config
 
 fast = {'prefix'=>TRUE, 'ruby_install_name'=>TRUE, 'INSTALL'=>TRUE, 'EXEEXT'=>TRUE}
@@ -31,12 +35,8 @@ v_fast = []
 v_others = []
 has_srcdir = false
 
-Java::import "java.lang"
-Java::name "java.io.File", "JavaFile"
 
 
-$bindir = JavaFile.new(System.getProperty("jruby.home")).getCanonicalPath();
-$ruby_install_name = System.getProperty("jruby.script");
 
 v_fast << "  CONFIG[\"bindir\"] = \"#$bindir\"\n"
 v_fast << "  CONFIG[\"RUBY_INSTALL_NAME\"] = \"#$ruby_install_name\"\n"
@@ -70,6 +70,12 @@ end
 if $so_name
   v_fast << "  CONFIG[\"RUBY_SO_NAME\"] = \"" + $so_name + "\"\n"
 end
+
+#this works for "Windows 2000" I don't know what are the other possible values
+if $osname =~ /Windows/
+  v_fast << '  CONFIG["EXEEXT"] = ".exe"' << "\n"
+end
+
 
 print v_fast, v_others
 print <<EOS
