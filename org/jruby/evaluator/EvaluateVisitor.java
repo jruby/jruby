@@ -491,7 +491,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         eval(iVisited.getValueNode());
-        RubyVarmap.assignCurrent(ruby, iVisited.getName(), result.toRubyObject());
+        ruby.assignCurrentVarmap(iVisited.getName(), result.toRubyObject());
     }
 
     /**
@@ -499,7 +499,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        RubyVarmap.assign(ruby, iVisited.getName(), result.toRubyObject());
+        ruby.assignVarmap(iVisited.getName(), result.toRubyObject());
     }
 
     /**
@@ -698,7 +698,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {
             RubyParserConfiguration config = new RubyParserConfiguration();
-            config.setBlockVariables(RubyVarmap.getNames(ruby));
+            config.setBlockVariables(ruby.getVarmapNames());
             INode node = ruby.getParser().parse("#{}", iVisited.getValue(), config);
             iVisited.setEvaluatedNode(node);
         }
@@ -1493,7 +1493,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         ruby.getCurrentFrame().tmpPush();
         ruby.pushClass(type);
         ruby.getScope().push(iVisited.getLocalNames());
-        RubyVarmap.push(ruby);
+        ruby.pushVarmap();
 
         ruby.setNamespace(new Namespace(type, ruby.getNamespace()));
         ruby.getCurrentFrame().setNamespace(ruby.getNamespace());
@@ -1517,7 +1517,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             self = oldSelf;
 
             ruby.setNamespace(ruby.getNamespace().getParent());
-            RubyVarmap.pop(ruby);
+            ruby.popVarmap();
             ruby.getScope().pop();
             ruby.popClass();
             ruby.getCurrentFrame().tmpPop();

@@ -30,9 +30,11 @@
 
 package org.jruby.runtime;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyObject;
 
 
 /**
@@ -41,47 +43,16 @@ import org.jruby.*;
  * @version $Revision$
  */
 public class RubyVarmap {
-    private String name = null;
-    private RubyObject val = null;
-    private RubyVarmap next = null;
+    public String name = null;
+    public RubyObject value = null;
+    public RubyVarmap next = null;
 
     /** Creates new RubyVarmap */
     public RubyVarmap(String name, RubyObject val, RubyVarmap next) {
         this.name = name;
-        this.val = val;
+        this.value = val;
         this.next = next;
     }
-
-    public RubyVarmap() {
-    }
-
-    /** PUSH_VARS
-     *
-     */
-    public static void push(Ruby ruby) {
-        ruby.varMapStack.push(ruby.getDynamicVars());
-        ruby.setDynamicVars(null);
-    }
-
-    /** POP_VARS
-     *
-     */
-    public static void pop(Ruby ruby) {
-        ruby.setDynamicVars((RubyVarmap) ruby.varMapStack.pop());
-    }
-
-    /*public void push() {
-        RubyVarmap varMap = new RubyVarmap(id, val, next);
-        next = varMap;
-    }
-    
-    public void pop() {
-        if (next != null) {
-            id = next.id;
-            val = next.val;
-            next = next.next;
-        }
-    }*/
 
     /** Getter for property id.
      * @return Value of property id.
@@ -111,54 +82,19 @@ public class RubyVarmap {
         this.next = next;
     }
 
-    /** Getter for property val.
-     * @return Value of property val.
+    /** Getter for property value.
+     * @return Value of property value.
      */
     public RubyObject getVal() {
-        return val;
+        return value;
     }
 
-    /** Setter for property val.
-     * @param val New value of property val.
+    /** Setter for property value.
+     * @param val New value of property value.
      */
     public void setVal(RubyObject val) {
-        this.val = val;
+        this.value = val;
     }
-
-    /** rb_dvar_defined
-     *
-     */
-    public static boolean isDefined(Ruby ruby, String name) {
-        RubyVarmap vars = ruby.getDynamicVars();
-
-        while (vars != null) {
-            if (name.equals(vars.name)) {
-                return true;
-            }
-            vars = vars.next;
-        }
-
-        return false;
-    }
-
-    /** rb_dvar_curr
-     *
-     */
-    public static boolean isCurrent(Ruby ruby, String name) {
-        RubyVarmap vars = ruby.getDynamicVars();
-
-        while (vars != null) {
-            if (vars.name == null) {
-                break;
-            }
-            if (vars.name.equals(name)) {
-                return true;
-            }
-            vars = vars.next;
-        }
-        return false;
-    }
-
 
     /** rb_dvar_ref
      *
@@ -172,69 +108,4 @@ public class RubyVarmap {
         return ruby.getNil();
     }
 
-    /** rb_dvar_push
-     *
-     */
-    public static void push(Ruby ruby, String rubyId, RubyObject val) {
-        ruby.setDynamicVars(new RubyVarmap(rubyId, val, ruby.getDynamicVars()));
-    }
-
-    /** dvar_asgn_internal
-     *
-     */
-    public static RubyVarmap assignInternal(RubyVarmap varMap, String id, RubyObject value, boolean current) {
-        int n = 0;
-        RubyVarmap tmpMap = varMap;
-
-        while (tmpMap != null) {
-            if (current && tmpMap.getName() == null) {
-                n++;
-                if (n == 2) {
-                    break;
-                }
-            }
-            if (id.equals(tmpMap.getName())) {
-                tmpMap.setVal(value);
-                return varMap;
-            }
-            tmpMap = tmpMap.getNext();
-        }
-        if (varMap == null) {
-            return new RubyVarmap(id, value, null);
-        } else {
-            tmpMap = new RubyVarmap(id, value, varMap.getNext());
-            varMap.setNext(tmpMap);
-            return varMap;
-        }
-    }
-
-    /** dvar_asgn
-     *
-     */
-    public static void assign(Ruby ruby, String id, RubyObject value) {
-        ruby.setDynamicVars(assignInternal(ruby.getDynamicVars(), id, value, false));
-    }
-
-    /** dvar_asgn_curr
-     *
-     */
-    public static void assignCurrent(Ruby ruby, String id, RubyObject value) {
-        ruby.setDynamicVars(assignInternal(ruby.getDynamicVars(), id, value, true));
-    }
-    
-    // XXX
-    public static List getNames(Ruby ruby) {
-        RubyVarmap vars = ruby.getDynamicVars();
-
-        ArrayList names = new ArrayList();
-        while (vars != null) {
-            if (vars.name == null) {
-                break;
-            } else {
-                names.add(vars.name);
-            }
-            vars = vars.next;
-        }
-        return names;
-    }
 }

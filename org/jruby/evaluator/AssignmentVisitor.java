@@ -120,14 +120,14 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        RubyVarmap.assignCurrent(ruby, iVisited.getName(), value);
+        ruby.assignCurrentVarmap(iVisited.getName(), value);
     }
 
     /**
      * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
-        RubyVarmap.assign(ruby, iVisited.getName(), value);
+        ruby.assignVarmap(iVisited.getName(), value);
     }
 
     /**

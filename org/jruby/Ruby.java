@@ -34,7 +34,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
@@ -139,9 +138,7 @@ public final class Ruby {
 
     private RubyObject rubyTopSelf;
 
-
     private Scope topScope = null;
-    private RubyVarmap dynamicVars = null;
 
     private Frame topFrame;
 
@@ -158,7 +155,9 @@ public final class Ruby {
     private RubyModule wrapper;
 
     private RubyStack classStack = new RubyStack();
+
     public RubyStack varMapStack = new RubyStack();
+    private RubyVarmap dynamicVars = null;
 
     // Java support
     private JavaSupport javaSupport;
@@ -409,7 +408,7 @@ public final class Ruby {
             throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
         }
 
-        RubyVarmap.push(this);
+        pushVarmap();
         Block currentBlock = getBlockStack().getCurrent();
 
         getFrameStack().push(currentBlock.getFrame());
@@ -484,7 +483,7 @@ public final class Ruby {
         } finally {
             getIterStack().pop();
             popClass();
-            RubyVarmap.pop(this);
+            popVarmap();
 
             getBlockStack().setCurrent(currentBlock);
             getFrameStack().pop();
@@ -931,5 +930,66 @@ public final class Ruby {
 
     public ISourcePosition getPosition() {
         return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
+    }
+
+    public void pushVarmap() {
+       varMapStack.push(getDynamicVars());
+       setDynamicVars(null);
+    }
+
+    public void popVarmap() {
+        setDynamicVars((RubyVarmap) varMapStack.pop());
+    }
+
+    public void pushVarmap(String rubyId, RubyObject val) {
+        setDynamicVars(new RubyVarmap(rubyId, val, getDynamicVars()));
+    }
+
+    private RubyVarmap assignVarmapInternal(RubyVarmap varMap, String id, RubyObject value, boolean current) {
+        int n = 0;
+        RubyVarmap tmpMap = varMap;
+
+        while (tmpMap != null) {
+            if (current && tmpMap.getName() == null) {
+                n++;
+                if (n == 2) {
+                    break;
+                }
+            }
+            if (id.equals(tmpMap.getName())) {
+                tmpMap.setVal(value);
+                return varMap;
+            }
+            tmpMap = tmpMap.getNext();
+        }
+        if (varMap == null) {
+            return new RubyVarmap(id, value, null);
+        } else {
+            tmpMap = new RubyVarmap(id, value, varMap.getNext());
+            varMap.setNext(tmpMap);
+            return varMap;
+        }
+    }
+
+    public void assignVarmap(String id, RubyObject value) {
+        setDynamicVars(assignVarmapInternal(getDynamicVars(), id, value, false));
+    }
+
+    public void assignCurrentVarmap(String id, RubyObject value) {
+        setDynamicVars(assignVarmapInternal(getDynamicVars(), id, value, true));
+    }
+
+    public List getVarmapNames() {
+        RubyVarmap vars = getDynamicVars();
+        ArrayList names = new ArrayList();
+        while (vars != null) {
+            if (vars.name == null) {
+                break;
+            } else {
+                names.add(vars.name);
+            }
+            vars = vars.next;
+        }
+        return names;
     }
 }

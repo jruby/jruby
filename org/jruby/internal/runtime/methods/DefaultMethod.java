@@ -49,7 +49,7 @@ public final class DefaultMethod extends AbstractMethod {
             ruby.getScope().setLocalNames(body.getLocalNames());
         }
 
-        RubyVarmap.push(ruby);
+        ruby.pushVarmap();
 
         try {
             if (argsNode != null) {
@@ -67,7 +67,7 @@ public final class DefaultMethod extends AbstractMethod {
         } catch (ReturnException re) {
             return re.getReturnValue();
         } finally {
-            RubyVarmap.pop(ruby);
+            ruby.popVarmap();
             ruby.getScope().pop();
             ruby.setNamespace(savedNamespace);
             traceReturn(ruby, receiver, name);

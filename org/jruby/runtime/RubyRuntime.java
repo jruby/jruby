@@ -110,7 +110,7 @@ public class RubyRuntime {
 
 		// volatile ID last_func;
 		// ruby_errinfo = Qnil; /* ensure */
-		RubyVarmap.push(ruby);
+		ruby.pushVarmap();
 
 		RubyModule wrapper = ruby.getWrapper();
 		ruby.setNamespace(ruby.getTopNamespace());
@@ -150,8 +150,8 @@ public class RubyRuntime {
 			ruby.getScope().pop();
 			ruby.getFrameStack().pop();
 			ruby.popClass();
-			RubyVarmap.pop(ruby);
-			ruby.setWrapper(wrapper);
+            ruby.popVarmap();
+            ruby.setWrapper(wrapper);
 		}
 	}
 
