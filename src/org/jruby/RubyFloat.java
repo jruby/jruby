@@ -40,7 +40,7 @@ import org.jruby.internal.runtime.builtin.definitions.FloatDefinition;
  * @author  jpetersen
  */
 public class RubyFloat extends RubyNumeric {
-    private double value;
+    private final double value;
 
     public RubyFloat(Ruby ruby) {
         this(ruby, 0.0);
@@ -60,13 +60,6 @@ public class RubyFloat extends RubyNumeric {
      */
     public double getValue() {
         return this.value;
-    }
-
-    /** Setter for property value.
-     * @param value New value of property value.
-     */
-    public void setValue(double value) {
-        this.value = value;
     }
 
     public double getDoubleValue() {
@@ -162,7 +155,7 @@ public class RubyFloat extends RubyNumeric {
         } else if (number instanceof RubyInteger) {
             return (RubyFloat) number.callMethod("to_f");
         } else {
-            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getMetaClass() + "into Float");
+            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getMetaClass() + " into Float");
         }
     }
 
@@ -260,15 +253,14 @@ public class RubyFloat extends RubyNumeric {
     public RubyNumeric op_mod(IRubyObject num) {
         RubyNumeric other = numericValue(num);
 
-	// Modelled after c ruby implementation (java /,% not same as ruby)
-	double x = getDoubleValue();
-	double y = other.getDoubleValue();
-	double div = x / y;
-	double mod = x % y;
+        // Modelled after c ruby implementation (java /,% not same as ruby)
+        double x = getDoubleValue();
+        double y = other.getDoubleValue();
+        double mod = x % y;
 
-	if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
-	    mod += y;
-	}
+        if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+            mod += y;
+        }
 
         return RubyFloat.newFloat(getRuntime(), mod);
     }

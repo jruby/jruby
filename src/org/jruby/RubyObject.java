@@ -1023,7 +1023,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             case ObjectDefinition.UNTAINT :
                 return untaint();
         }
-        Asserts.notReached("invalid index '" + index + "'.");
+        Asserts.notReached("invalid index '" + index + "' on a " + this.getType());
         return null;
     }
 

@@ -88,3 +88,5 @@ test_equal(9, 4.id)
 test_equal(1.id, 1.__id__) # Testing lexer's handling of numbers here
 
 test_exception(NameError) { Integer.new }
+test_exception(NameError) { Fixnum.new }
+test_exception(NameError) { Float.new }

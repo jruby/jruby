@@ -32,6 +32,7 @@ release.
 
 * Java support
     - Loading classes with colliding names
+    * Loading inner classes with colliding names
     * Loading external libraries written in Java
     * Predictable way of dispatching on null
     * Subclassing Java classes

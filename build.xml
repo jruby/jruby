@@ -33,7 +33,6 @@
   </patternset>
 
   <patternset id="rubyclass.src.pattern">
-    <!-- We keep old ObjectDefinition until bug 640052 is fixed -->
     <include name="**/*.xml"/>
   </patternset>
 

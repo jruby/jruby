@@ -111,5 +111,6 @@
     <method name="induced_from">
        <arity>1</arity>
     </method>
+    <undefine-method name="new"/>
   </class-methods>
 </module>
