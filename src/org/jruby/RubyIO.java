@@ -45,6 +45,7 @@ import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
+import org.jruby.util.IOHandlerProcess;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -174,6 +175,17 @@ public class RubyIO extends RubyObject {
         modes = handler.getModes();
         
         registerIOHandler(handler);
+    }
+    
+    public RubyIO(Ruby ruby, Process process) {
+    	super(ruby, ruby.getClasses().getIoClass());
+
+        modes = new IOModes(ruby, "w+");
+
+    	handler = new IOHandlerProcess(ruby, process, modes);
+    	modes = handler.getModes();
+    	
+    	registerIOHandler(handler);
     }
     
     public RubyIO(Ruby ruby, int descriptor) {

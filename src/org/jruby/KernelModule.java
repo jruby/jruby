@@ -5,12 +5,14 @@
  * Copyright (C) 2001-2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
  * Chad Fowler, Anders Bengtsson
  * Copyright (C) 2002-2004 Thomas E Enebo
+ * Copyright (C) 2004 Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
  * Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -188,11 +190,33 @@ public class KernelModule {
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
-        if (args[0].toString().startsWith("|")) {
-            // +++
-            return recv.getRuntime().getNil();
-            // ---
-        }
+        String arg = ((RubyString) args[0]).getValue();
+
+        // Should this logic be pushed into RubyIO Somewhere?
+        if (arg.startsWith("|")) {
+            String command = arg.substring(1);
+        	// exec process, create IO with process
+        	try {
+                // TODO: may need to part cli parms out ourself?
+                Process p = Runtime.getRuntime().exec(command);
+                RubyIO io = new RubyIO(recv.getRuntime(), p);
+        		
+        	    if (recv.getRuntime().isBlockGiven()) {
+        	        try {
+        	            recv.getRuntime().yield(io);
+        	            
+            	        return recv.getRuntime().getNil();
+        	        } finally {
+        	            io.close();
+        	        }
+        	    }
+
+                return io;
+        	} catch (IOException ioe) {
+        		throw new IOError(recv.getRuntime(), ioe.getMessage());
+        	}
+        } 
+
         return RubyFile.open(recv.getRuntime().getClass("File"), args);
     }
 
