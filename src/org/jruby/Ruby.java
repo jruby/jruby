@@ -266,6 +266,15 @@ public final class Ruby {
         if (superClass == null) {
             superClass = getClasses().getObjectClass();
         }
+		//find the boot classes
+		name = name.intern();
+		if (name == "Object")
+			return getClasses().getObjectClass();
+		else if (name == "Module")
+			return getClasses().getModuleClass();
+		else if (name == "Class")
+			return getClasses().getClassClass();
+			
 
         RubyClass newClass = RubyClass.newClass(this, superClass, name);
         newClass.makeMetaClass(superClass.getMetaClass());
