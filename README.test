@@ -42,7 +42,7 @@ or
 
 To use Rubicon for testing you must first install it. Get it from CVS with
 
-        cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src
+        cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src login
         cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src co rubicon
 
 Then follow Rubicon's README on how to install and run it.
