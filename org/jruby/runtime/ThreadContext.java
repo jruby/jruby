@@ -37,6 +37,8 @@ import org.jruby.util.RubyStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
 import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.ablaf.internal.lexer.DefaultLexerPosition;
 
 /**
  * @author jpetersen
@@ -54,6 +56,8 @@ public class ThreadContext {
     private ScopeStack scopeStack;
     private FrameStack frameStack;
     private IStack iterStack;
+
+    private ISourcePosition sourcePosition = new DefaultLexerPosition(null, 0, 0);
 
     /**
      * Constructor for Context.
@@ -135,6 +139,26 @@ public class ThreadContext {
 
     public Iter getCurrentIter() {
         return (Iter) getIterStack().peek();
+    }
+
+    public String getSourceFile() {
+        return getPosition().getFile();
+    }
+
+    public int getSourceLine() {
+        return getPosition().getLine();
+    }
+
+    public ISourcePosition getPosition() {
+        return sourcePosition;
+    }
+
+    public void setPosition(String file, int line) {
+        setPosition(new DefaultLexerPosition(file, line, 0));
+    }
+
+    public void setPosition(ISourcePosition position) {
+        sourcePosition = position;
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {

@@ -143,8 +143,6 @@ public final class Ruby {
     private Namespace namespace;
     private Namespace topNamespace;
 
-    private ISourcePosition sourcePosition = new DefaultLexerPosition(null, 0, 0);
-
     private boolean isVerbose = false;
 
     private RubyModule wrapper;
@@ -489,19 +487,15 @@ public final class Ruby {
      * @return Value of property sourceFile.
      */
     public String getSourceFile() {
-        return sourcePosition.getFile();
+        return getPosition().getFile();
     }
-
-
 
     /** Getter for property sourceLine.
      * @return Value of property sourceLine.
      */
     public int getSourceLine() {
-        return sourcePosition.getLine();
+        return getPosition().getLine();
     }
-
-
 
     /** Getter for property isVerbose.
      * @return Value of property isVerbose.
@@ -717,13 +711,15 @@ public final class Ruby {
     }
 
     public ISourcePosition getPosition() {
-        return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
+        return getCurrentContext().getPosition();
     }
 
     public void setPosition(String file, int line) {
         setPosition(new DefaultLexerPosition(file, line, 0));
-    }    public void setPosition(ISourcePosition position) {
-        sourcePosition = position;
+    }
+
+    public void setPosition(ISourcePosition position) {
+        getCurrentContext().setPosition(position);
     }
 
     public void pushDynamicVars() {
