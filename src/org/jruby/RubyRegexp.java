@@ -375,6 +375,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     private IRubyObject match(String target, int startPos) {
+    	if (target.length() == 0) {
+    		target = "\n";
+    	}
     	Matcher matcher = pattern.matcher(target);
         if (matcher.find(startPos)) {
             int count = matcher.groupCount() + 1;
