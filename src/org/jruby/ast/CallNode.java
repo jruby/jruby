@@ -28,12 +28,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * A method or operator call.
@@ -44,13 +43,12 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public final class CallNode extends AbstractNode {
     static final long serialVersionUID = -1993752395320088525L;
 
-    private INode receiverNode;
-    private String name;
-    private IListNode argsNode;
+    private final INode receiverNode;
+    private final String name;
+    private final IListNode argsNode;
 
     public CallNode(ISourcePosition position, INode receiverNode, String name, IListNode argsNode) {
         super(position);
-
         this.receiverNode = receiverNode;
         this.name = name.intern();
         this.argsNode = argsNode;
@@ -74,15 +72,6 @@ public final class CallNode extends AbstractNode {
     }
 
     /**
-     * Sets the argsNode.
-	 * argsNode representing the method's arguments' value for this call.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(IListNode argsNode) {
-        this.argsNode = argsNode;
-    }
-
-    /**
      * Gets the name.
 	 * name is the name of the method called
      * @return name
@@ -92,29 +81,11 @@ public final class CallNode extends AbstractNode {
     }
 
     /**
-     * Sets the name.
-	 * name is the name of the method called
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Gets the receiverNode.
 	 * receiverNode is the object on which the method is being called
      * @return receiverNode
      */
     public INode getReceiverNode() {
         return receiverNode;
-    }
-
-    /**
-     * Sets the receiverNode.
-	 * receiverNode is the object on which the method is being called
-     * @param receiverNode The receiverNode to set
-     */
-    public void setReceiverNode(INode receiverNode) {
-        this.receiverNode = receiverNode;
     }
 }

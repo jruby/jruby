@@ -26,9 +26,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *	Regexp backref.
@@ -53,11 +53,10 @@ public class BackRefNode extends AbstractNode {
 	/**
 	 * the character which generated the backreference
 	 **/
-    private char type;
+    private final char type;
 
     public BackRefNode(ISourcePosition position, char type) {
         super(position);
-
         this.type = type;
     }
 
@@ -76,14 +75,5 @@ public class BackRefNode extends AbstractNode {
      */
     public char getType() {
         return type;
-    }
-
-    /**
-     * Sets the type.
-	 * the type is the character which generates the backreference
-     * @param type The type to set
-     */
-    public void setType(char type) {
-        this.type = type;
     }
 }

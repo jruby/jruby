@@ -47,19 +47,18 @@ public class CaseNode extends AbstractNode {
 	/**
 	 * the case expression.
 	 **/
-    private INode caseNode;
+    private final INode caseNode;
 	/**
 	 * the body of the case.
-	 * this is a list of when nodes.
+	 * this is a list of WhenNodes.
 	 */
-    private IListNode whenNodes;
+    private final IListNode whenNodes;
     /** the else node
      */
-    private INode elseNode;
+    private final INode elseNode;
     
     public CaseNode(ISourcePosition position, INode caseNode, IListNode whenNodes, INode elseNode) {
         super(position);
-        
         this.caseNode = caseNode;
         this.whenNodes = whenNodes;
         this.elseNode = elseNode;
@@ -83,15 +82,6 @@ public class CaseNode extends AbstractNode {
     }
 
     /**
-     * Sets the caseNode.
-	 * caseNode is the case expression 
-     * @param caseNode The caseNode to set
-     */
-    public void setCaseNode(INode caseNode) {
-        this.caseNode = caseNode;
-    }
-
-    /**
      * Gets the whenNodes.
 	 * the body of the case statement, a list of WhenNode
      * @return whenNodes
@@ -101,27 +91,10 @@ public class CaseNode extends AbstractNode {
     }
 
     /**
-     * Sets the whenNodes.
-	 * the body of the case statement, a list of WhenNode
-     * @param whenNodes The whenNodes to set
-     */
-    public void setWhenNodes(IListNode whenNodes) {
-        this.whenNodes = whenNodes;
-    }
-
-    /**
      * Gets the elseNode.
      * @return Returns a INode
      */
     public INode getElseNode() {
         return elseNode;
-    }
-
-    /**
-     * Sets the elseNode.
-     * @param elseNode The elseNode to set
-     */
-    public void setElseNode(INode elseNode) {
-        this.elseNode = elseNode;
     }
 }

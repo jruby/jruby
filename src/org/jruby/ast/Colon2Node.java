@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a '::' constant access or method call.
  *
@@ -39,12 +39,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public class Colon2Node extends AbstractNode {
     static final long serialVersionUID = -3250593470034657352L;
 
-    private INode leftNode;
-    private String name;
+    private final INode leftNode;
+    private final String name;
 
     public Colon2Node(ISourcePosition position, INode leftNode, String name) {
         super(position);
-
         this.leftNode = leftNode;
         this.name = name;
     }
@@ -66,27 +65,10 @@ public class Colon2Node extends AbstractNode {
     }
 
     /**
-     * Sets the leftNode.
-     * @param leftNode The leftNode to set
-     */
-    public void setLeftNode(INode leftNode) {
-        this.leftNode = leftNode;
-    }
-
-    /**
      * Gets the name.
      * @return Returns a String
      */
     public String getName() {
         return name;
     }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
 }

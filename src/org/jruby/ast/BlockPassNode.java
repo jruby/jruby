@@ -43,7 +43,7 @@ import org.ablaf.common.ISourcePosition;
 public class BlockPassNode extends AbstractNode {
     static final long serialVersionUID = 7201862349971094217L;
 
-    private INode bodyNode;
+    private final INode bodyNode;
     private INode iterNode;
 
     /** Used by the arg_blk_pass and new_call, new_fcall and new_super
@@ -53,7 +53,6 @@ public class BlockPassNode extends AbstractNode {
 
     public BlockPassNode(ISourcePosition position, INode bodyNode) {
         super(position);
-        
         this.bodyNode = bodyNode;
     }
 
@@ -71,14 +70,6 @@ public class BlockPassNode extends AbstractNode {
      */
     public INode getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
     }
 
     /**

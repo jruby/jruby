@@ -89,12 +89,8 @@ public class ParserSupport {
         }
     }
 
-	/**
-	 * @fixme  fix also new_ methods
-	 **/
     public INode arg_blk_pass(IListNode firstNode, BlockPassNode secondNode) {
         if (secondNode != null) {
-            // FIXME fix also new_ methods
             secondNode.setArgsNode(firstNode);
             return secondNode;
         }
@@ -285,6 +281,7 @@ public class ParserSupport {
         if (lhs == null) {
             return null;
         }
+        INode result = lhs;
 
         checkExpression(rhs);
 
@@ -293,17 +290,13 @@ public class ParserSupport {
         } else if (lhs instanceof CallNode) {
 			CallNode lCallLHS = (CallNode) lhs;
 			IListNode lArgs = lCallLHS.getArgsNode();
-			if (lArgs == null)
-			{
+			if (lArgs == null) {
 				lArgs = new ArrayNode(lhs.getPosition());
-				lCallLHS.setArgsNode(lArgs);
+				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
 			}
             lArgs.add(rhs);
         }
-
-        // FIXME lhs.setPosFrom(rhs);
-
-        return lhs;
+        return result;
     }
 
     public void checkExpression(INode node) {
