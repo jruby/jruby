@@ -66,27 +66,19 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("to_str", callbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("taint", callbackFactory.getMethod(RubyFixnum.class, "taint"));
         fixnumClass.defineMethod("freeze", callbackFactory.getMethod(RubyFixnum.class, "freeze"));
-        fixnumClass.defineMethod("<<", callbackFactory.getMethod(RubyFixnum.class, "op_lshift", IRubyObject.class));
-        fixnumClass.defineMethod(">>", callbackFactory.getMethod(RubyFixnum.class, "op_rshift", IRubyObject.class));
-        fixnumClass.defineMethod("+", callbackFactory.getMethod(RubyFixnum.class, "op_plus", IRubyObject.class));
-        fixnumClass.defineMethod("-", callbackFactory.getMethod(RubyFixnum.class, "op_minus", IRubyObject.class));
-        fixnumClass.defineMethod("*", callbackFactory.getMethod(RubyFixnum.class, "op_mul", IRubyObject.class));
-        fixnumClass.defineMethod("/", callbackFactory.getMethod(RubyFixnum.class, "op_div", IRubyObject.class));
-        fixnumClass.defineMethod("%", callbackFactory.getMethod(RubyFixnum.class, "op_mod", IRubyObject.class));
-        fixnumClass.defineMethod("**", callbackFactory.getMethod(RubyFixnum.class, "op_pow", IRubyObject.class));
-        fixnumClass.defineMethod("==", callbackFactory.getMethod(RubyFixnum.class, "equal", IRubyObject.class));
-        fixnumClass.defineMethod("eql?", callbackFactory.getMethod(RubyFixnum.class, "veryEqual", IRubyObject.class));
-        fixnumClass.defineMethod("equal?", callbackFactory.getMethod(RubyFixnum.class, "veryEqual", IRubyObject.class));
-        fixnumClass.defineMethod("<=>", callbackFactory.getMethod(RubyFixnum.class, "op_cmp", IRubyObject.class));
-        fixnumClass.defineMethod(">", callbackFactory.getMethod(RubyFixnum.class, "op_gt", IRubyObject.class));
-        fixnumClass.defineMethod(">=", callbackFactory.getMethod(RubyFixnum.class, "op_ge", IRubyObject.class));
-        fixnumClass.defineMethod("<", callbackFactory.getMethod(RubyFixnum.class, "op_lt", IRubyObject.class));
-        fixnumClass.defineMethod("<=", callbackFactory.getMethod(RubyFixnum.class, "op_le", IRubyObject.class));
-        fixnumClass.defineMethod("&", callbackFactory.getMethod(RubyFixnum.class, "op_and", IRubyObject.class));
-        fixnumClass.defineMethod("|", callbackFactory.getMethod(RubyFixnum.class, "op_or", IRubyObject.class));
-        fixnumClass.defineMethod("^", callbackFactory.getMethod(RubyFixnum.class, "op_xor", IRubyObject.class));
+        fixnumClass.defineMethod("<<", callbackFactory.getMethod(RubyFixnum.class, "op_lshift", RubyNumeric.class));
+        fixnumClass.defineMethod(">>", callbackFactory.getMethod(RubyFixnum.class, "op_rshift", RubyNumeric.class));
+        fixnumClass.defineMethod("+", callbackFactory.getMethod(RubyFixnum.class, "op_plus", RubyNumeric.class));
+        fixnumClass.defineMethod("-", callbackFactory.getMethod(RubyFixnum.class, "op_minus", RubyNumeric.class));
+        fixnumClass.defineMethod("*", callbackFactory.getMethod(RubyFixnum.class, "op_mul", RubyNumeric.class));
+        fixnumClass.defineMethod("/", callbackFactory.getMethod(RubyFixnum.class, "op_div", RubyNumeric.class));
+        fixnumClass.defineMethod("%", callbackFactory.getMethod(RubyFixnum.class, "op_mod", RubyNumeric.class));
+        fixnumClass.defineMethod("**", callbackFactory.getMethod(RubyFixnum.class, "op_pow", RubyNumeric.class));
+        fixnumClass.defineMethod("&", callbackFactory.getMethod(RubyFixnum.class, "op_and", RubyNumeric.class));
+        fixnumClass.defineMethod("|", callbackFactory.getMethod(RubyFixnum.class, "op_or", RubyNumeric.class));
+        fixnumClass.defineMethod("^", callbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyNumeric.class));
         fixnumClass.defineMethod("size", callbackFactory.getMethod(RubyFixnum.class, "size"));
-        fixnumClass.defineMethod("[]", callbackFactory.getMethod(RubyFixnum.class, "aref", IRubyObject.class));
+        fixnumClass.defineMethod("[]", callbackFactory.getMethod(RubyFixnum.class, "aref", RubyNumeric.class));
         fixnumClass.defineMethod("hash", callbackFactory.getMethod(RubyFixnum.class, "hash"));
         fixnumClass.defineMethod("id2name", callbackFactory.getMethod(RubyFixnum.class, "id2name"));
         fixnumClass.defineMethod("~", callbackFactory.getMethod(RubyFixnum.class, "invert"));
@@ -171,8 +163,7 @@ public class RubyFixnum extends RubyInteger {
 	return RubyInteger.induced_from(recv, number);
     }
 
-    public RubyNumeric op_plus(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyNumeric op_plus(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return ((RubyFloat)other).op_plus(this);
         } else if (other instanceof RubyBignum) {
@@ -188,8 +179,7 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyNumeric op_minus(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyNumeric op_minus(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_minus(other);
         } else if (other instanceof RubyBignum) {
@@ -205,8 +195,8 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyNumeric op_mul(IRubyObject num) {
-        return numericValue(num).multiplyWith(this);
+    public RubyNumeric op_mul(RubyNumeric other) {
+        return other.multiplyWith(this);
     }
 
     public RubyNumeric multiplyWith(RubyFixnum other) {
@@ -230,8 +220,7 @@ public class RubyFixnum extends RubyInteger {
        return other.multiplyWith(RubyFloat.newFloat(runtime, getLongValue()));
     }
 
-    public RubyNumeric op_div(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyNumeric op_div(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_div(other);
         } else if (other instanceof RubyBignum) {
@@ -251,8 +240,7 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyNumeric op_mod(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyNumeric op_mod(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_mod(other);
         } else if (other instanceof RubyBignum) {
@@ -272,8 +260,7 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyNumeric op_pow(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyNumeric op_pow(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_pow(other);
         } else {
@@ -289,49 +276,6 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyBoolean veryEqual(IRubyObject other) {
-        if (other instanceof RubyFixnum == false) {
-            return getRuntime().getFalse();
-        } 
-          
-	return RubyBoolean.newBoolean(getRuntime(), 
-				      compareValue((RubyNumeric) other) == 0);
-    }
-
-    public RubyBoolean equal(IRubyObject other) {
-        if (other instanceof RubyNumeric == false) {
-            return getRuntime().getFalse();
-        } 
-          
-	return RubyBoolean.newBoolean(getRuntime(), 
-				      compareValue((RubyNumeric) other) == 0);
-    }
-
-    public RubyNumeric op_cmp(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        return RubyFixnum.newFixnum(getRuntime(), compareValue(other));
-    }
-
-    public RubyBoolean op_gt(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        return RubyBoolean.newBoolean(getRuntime(), compareValue(other) > 0);
-    }
-
-    public RubyBoolean op_ge(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        return RubyBoolean.newBoolean(getRuntime(), compareValue(other) >= 0);
-    }
-
-    public RubyBoolean op_lt(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        return RubyBoolean.newBoolean(getRuntime(), compareValue(other) < 0);
-    }
-
-    public RubyBoolean op_le(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        return RubyBoolean.newBoolean(getRuntime(), compareValue(other) <= 0);
-    }
-
     public RubyString to_s() {
         return RubyString.newString(getRuntime(), String.valueOf(getLongValue()));
     }
@@ -340,8 +284,7 @@ public class RubyFixnum extends RubyInteger {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue());
     }
 
-    public RubyInteger op_lshift(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyInteger op_lshift(RubyNumeric other) {
         long width = other.getLongValue();
         if (width < 0)
             return op_rshift(other.op_uminus());
@@ -366,50 +309,45 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(value << width);
     }
 
-    public RubyInteger op_rshift(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyInteger op_rshift(RubyNumeric other) {
         long width = other.getLongValue();
         if (width < 0)
             return op_lshift(other.op_uminus());
         return newFixnum(value >> width);
     }
 
-    public RubyNumeric op_and(IRubyObject other) {
-        RubyNumeric otherNumeric = numericValue(other);
-        long otherLong = otherNumeric.getTruncatedLongValue();
-        return newFixnum(value & otherLong);
+    public RubyNumeric op_and(RubyNumeric other) {
+        return newFixnum(value & other.getTruncatedLongValue());
     }
 
-    public RubyInteger op_or(IRubyObject other) {
+    public RubyInteger op_or(RubyNumeric other) {
         if (other instanceof RubyBignum) {
             return (RubyInteger) other.callMethod("|", this);
         }
-        RubyNumeric otherNumeric = numericValue(other);
-        return newFixnum(value | otherNumeric.getLongValue());
+        return newFixnum(value | other.getLongValue());
     }
 
-    public RubyInteger op_xor(IRubyObject other) {
+    public RubyInteger op_xor(RubyNumeric other) {
         if (other instanceof RubyBignum) {
             return (RubyInteger) other.callMethod("^", this);
         }
-        RubyNumeric otherNumeric = numericValue(other);
-        return newFixnum(value ^ otherNumeric.getLongValue());
+        return newFixnum(value ^ other.getLongValue());
     }
 
     public RubyFixnum size() {
         return newFixnum((long) Math.ceil(BIT_SIZE / 8.0));
     }
 
-    public RubyFixnum aref(IRubyObject other) {
-        RubyNumeric numericPosition = numericValue(other);
-	long position = numericPosition.getLongValue();
+    public RubyFixnum aref(RubyNumeric other) {
+        long position = other.getLongValue();
 
-	// Seems mighty expensive to keep creating over and over again.
-	// How else can this be done though?
-	if (position > BIT_SIZE) {
-	    RubyBignum bignum = RubyBignum.newBignum(runtime, value);
-	    return bignum.aref(numericPosition);
-	}
+        // Seems mighty expensive to keep creating over and over again.
+        // How else can this be done though?
+        if (position > BIT_SIZE) {
+            RubyBignum bignum = RubyBignum.newBignum(runtime, value);
+            
+            return bignum.aref(other);
+        }
 
         return newFixnum((value & (1L << position)) == 0 ? 0 : 1);
     }

@@ -3,7 +3,7 @@
  * Created on 10. September 2001, 17:49
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
- * Copyright (C) 2002 Thomas E. Enebo
+ * Copyright (C) 2002-2004 Thomas E. Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -33,45 +33,38 @@ package org.jruby;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RangeError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.IntegerDefinition;
 
 /** Implementation of the Integer class.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public abstract class RubyInteger extends RubyNumeric 
-    implements IndexCallable {
-
+public abstract class RubyInteger extends RubyNumeric { 
     public RubyInteger(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
 
     public static RubyClass createIntegerClass(Ruby ruby) {
-        return new IntegerDefinition(ruby).getType();
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-        case IntegerDefinition.CHR:
-            return chr();
-        case IntegerDefinition.DOWNTO:
-            return downto(args[0]);
-        case IntegerDefinition.INT_P:
-            return int_p();
-        case IntegerDefinition.NEXT:
-            return next();
-        case IntegerDefinition.STEP:
-            return step(args[0], args[1]);
-        case IntegerDefinition.TIMES:
-            return times();
-        case IntegerDefinition.UPTO:
-            return upto(args[0]);
-	}
-
-        return super.callIndexed(index, args);
+        RubyClass result = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+        result.includeModule(ruby.getClasses().getEnumerableModule());
+        
+        result.defineMethod("chr", callbackFactory.getMethod(RubyInteger.class, "chr"));
+        result.defineMethod("downto", callbackFactory.getMethod(RubyInteger.class, "downto", RubyNumeric.class));
+        result.defineMethod("integer?", callbackFactory.getMethod(RubyInteger.class, "int_p"));
+        result.defineMethod("next", callbackFactory.getMethod(RubyInteger.class, "next"));
+        result.defineMethod("step", callbackFactory.getMethod(RubyInteger.class, "step", RubyNumeric.class, RubyNumeric.class));
+        result.defineMethod("succ", callbackFactory.getMethod(RubyInteger.class, "next"));
+        result.defineMethod("times", callbackFactory.getMethod(RubyInteger.class, "times"));
+        result.defineMethod("upto", callbackFactory.getMethod(RubyInteger.class, "upto", RubyNumeric.class));
+        
+        result.getMetaClass().undefineMethod("new");
+        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod(RubyInteger.class, "induced_from", IRubyObject.class));
+        
+        return result;
     }
 
     // conversion
@@ -103,8 +96,7 @@ public abstract class RubyInteger extends RubyNumeric
         return RubyString.newString(getRuntime(), new String(new char[] {(char) getLongValue()}));
     }
 
-    public IRubyObject downto(IRubyObject val) {
-        RubyNumeric to = numericValue(val);
+    public IRubyObject downto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
             if (i.callMethod("<", to).isTrue()) {
@@ -120,9 +112,7 @@ public abstract class RubyInteger extends RubyNumeric
         return getRuntime().getTrue();
     }
 
-    public IRubyObject step(IRubyObject toVal, IRubyObject stepVal) {
-	RubyNumeric to = numericValue(toVal);
-	RubyNumeric step = numericValue(stepVal);
+    public IRubyObject step(RubyNumeric to, RubyNumeric step) {
         RubyNumeric i = this;
         if (step.getLongValue() == 0) {
             throw new ArgumentError(getRuntime(), "step cannot be 0");
@@ -159,8 +149,7 @@ public abstract class RubyInteger extends RubyNumeric
         return callMethod("+", RubyFixnum.one(getRuntime()));
     }
 
-    public IRubyObject upto(IRubyObject val) {
-	RubyNumeric to = numericValue(val);
+    public IRubyObject upto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
             if (i.callMethod(">", to).isTrue()) {

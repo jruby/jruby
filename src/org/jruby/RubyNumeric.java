@@ -4,7 +4,7 @@
  * 
  * Copyright (C) 2001,2002 Jan Arne Petersen, Stefan Matthias Aust, 
  *    Alan Moore, Benoit Cerrina
- * Copyright (C) 2002 Thomas E. Enebo
+ * Copyright (C) 2002-2004 Thomas E. Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -36,16 +36,15 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.NumericDefinition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public abstract class RubyNumeric extends RubyObject implements IndexCallable {
+public abstract class RubyNumeric extends RubyObject {
 
     public RubyNumeric(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
@@ -59,47 +58,33 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
     }
 
     public static RubyClass createNumericClass(Ruby ruby) {
-        return new NumericDefinition(ruby).getType();
-    }
+        RubyClass result = ruby.defineClass("Numeric", ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-	switch(index) {
-        case NumericDefinition.ABS:
-	    return abs();
-        case NumericDefinition.RBCLONE:
-	    return rbClone();
-        case NumericDefinition.CEIL:
-	    return ceil();
-        case NumericDefinition.COERCE:
-	    return coerce(args[0]);
-        case NumericDefinition.DIVMOD:
-	    return divmod(args[0]);
-        case NumericDefinition.EQL:
-	    return eql(args[0]);
-        case NumericDefinition.EQUAL:
-	    return equal(args[0]);
-        case NumericDefinition.FLOOR:
-	    return floor();
-        case NumericDefinition.INT_P:
-	    return int_p();
-        case NumericDefinition.MODULO:
-	    return modulo(args[0]);
-        case NumericDefinition.NONZERO_P:
-	    return nonzero_p();
-        case NumericDefinition.OP_UMINUS:
-	    return op_uminus();
-        case NumericDefinition.OP_UPLUS:
-	    return op_uplus();
-        case NumericDefinition.REMAINDER:
-	    return remainder(args[0]);
-        case NumericDefinition.ROUND:
-	    return round();
-        case NumericDefinition.TRUNCATE:
-	    return truncate();
-        case NumericDefinition.ZERO_P:
-	    return zero_p();
-        }
-        return super.callIndexed(index, args);
+        result.includeModule(ruby.getClasses().getComparableModule());
+
+        result.defineMethod("+@", callbackFactory.getMethod(RubyNumeric.class, "op_uplus"));
+        result.defineMethod("-@", callbackFactory.getMethod(RubyNumeric.class, "op_uminus"));
+        result.defineMethod("<=>", callbackFactory.getMethod(RubyBignum.class, "cmp", RubyNumeric.class));
+        result.defineMethod("==", callbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
+        result.defineMethod("equal?", callbackFactory.getMethod(RubyNumeric.class, "veryEqual", IRubyObject.class));
+        result.defineMethod("===", callbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
+        result.defineMethod("abs", callbackFactory.getMethod(RubyNumeric.class, "abs"));
+        result.defineMethod("ceil", callbackFactory.getMethod(RubyNumeric.class, "ceil"));
+        result.defineMethod("coerce", callbackFactory.getMethod(RubyNumeric.class, "coerce", RubyNumeric.class));
+        result.defineMethod("clone", callbackFactory.getMethod(RubyNumeric.class, "rbClone"));
+        result.defineMethod("divmod", callbackFactory.getMethod(RubyNumeric.class, "divmod", RubyNumeric.class));
+        result.defineMethod("eql?", callbackFactory.getMethod(RubyNumeric.class, "eql", IRubyObject.class));
+        result.defineMethod("floor", callbackFactory.getMethod(RubyNumeric.class, "floor"));
+        result.defineMethod("integer?", callbackFactory.getMethod(RubyNumeric.class, "int_p"));
+        result.defineMethod("modulo", callbackFactory.getMethod(RubyNumeric.class, "modulo", RubyNumeric.class));
+        result.defineMethod("nonzero?", callbackFactory.getMethod(RubyNumeric.class, "nonzero_p"));
+        result.defineMethod("remainder", callbackFactory.getMethod(RubyNumeric.class, "remainder", RubyNumeric.class));
+        result.defineMethod("round", callbackFactory.getMethod(RubyNumeric.class, "round"));
+        result.defineMethod("truncate", callbackFactory.getMethod(RubyNumeric.class, "truncate"));
+        result.defineMethod("zero?", callbackFactory.getMethod(RubyNumeric.class, "zero_p"));
+        
+        return result;
     }
 
     public static long num2long(IRubyObject arg) {
@@ -251,16 +236,15 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
     /** num_coerce
      *
      */
-    public RubyArray coerce(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
+    public RubyArray coerce(RubyNumeric other) {
         if (getMetaClass() == other.getMetaClass()) {
             return RubyArray.newArray(getRuntime(), other, this);
-        } else {
-            return RubyArray.newArray(
+        } 
+          
+        return RubyArray.newArray(
                 getRuntime(),
                 RubyFloat.newFloat(getRuntime(), other.getDoubleValue()),
                 RubyFloat.newFloat(getRuntime(), getDoubleValue()));
-        }
     }
 
     /**
@@ -296,13 +280,15 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
 
         return (RubyNumeric) coerce[1].callMethod("-", coerce[0]);
     }
+    
+    public RubyNumeric cmp(RubyNumeric other) {
+        return RubyFixnum.newFixnum(getRuntime(), compareValue(other));
+    }
 
     /** num_divmod
      *
      */
-    public RubyArray divmod(IRubyObject val) {
-        RubyNumeric other = numericValue(val);
-
+    public RubyArray divmod(RubyNumeric other) {
         RubyNumeric div = (RubyNumeric) callMethod("/", other);
         if (div instanceof RubyFloat) {
             double d = Math.floor(((RubyFloat) div).getValue());
@@ -310,31 +296,26 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
                 div = RubyFloat.newFloat(getRuntime(), d);
             }
         }
-        RubyNumeric mod = (RubyNumeric) callMethod("%", other);
 
-        return RubyArray.newArray(getRuntime(), div, mod);
+        return RubyArray.newArray(getRuntime(), div, modulo(other));
     }
 
     /** num_modulo
      *
      */
-    public RubyNumeric modulo(IRubyObject val) {
-        RubyNumeric other = numericValue(val);
-
+    public RubyNumeric modulo(RubyNumeric other) {
         return (RubyNumeric) callMethod("%", other);
     }
 
     /** num_remainder
      *
      */
-    public RubyNumeric remainder(IRubyObject val) {
-        RubyNumeric other = numericValue(val);
-        
-        RubyNumeric mod = (RubyNumeric) callMethod("%", other);
-
+    public RubyNumeric remainder(RubyNumeric other) {
+        RubyNumeric mod = modulo(other);
         final RubyNumeric zero = RubyFixnum.zero(getRuntime());
 
-        if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
+        if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || 
+            callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
 
             return (RubyNumeric) mod.callMethod("-", other);
         }
@@ -342,10 +323,25 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
         return mod;
     }
 
+    protected int compareValue(RubyNumeric other) {
+        System.out.println("ALLYOURBASE");
+        return -1;
+    }
+    
+    /** num_equal
+     *
+     */
+    public RubyBoolean veryEqual(IRubyObject other) {
+        return super.equal(other); // +++ rb_equal
+    }
+    
     /** num_equal
      *
      */
     public RubyBoolean equal(IRubyObject other) {
+        if (other instanceof RubyNumeric) {
+            return RubyBoolean.newBoolean(getRuntime(), compareValue((RubyNumeric) other) == 0);
+        }
         return super.equal(other); // +++ rb_equal
     }
 
@@ -353,11 +349,15 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
      *
      */
     public RubyBoolean eql(IRubyObject other) {
+        // Two numbers of the same value, but different types are not
+        // 'eql?'.
         if (getMetaClass() != other.getMetaClass()) {
             return getRuntime().getFalse();
-        } else {
-            return super.equal(other); // +++ rb_equal
         }
+        
+        // However, if they are the same type, then we try a regular
+        // equal as a float with 1.0 may be two different ruby objects.
+        return equal(other);
     }
 
     /** num_abs

@@ -132,7 +132,7 @@ public class RubyArray extends RubyObject {
         arrayClass.defineMethod("hash", callbackFactory.getMethod(RubyArray.class, "hash"));
         arrayClass.defineMethod("[]", callbackFactory.getOptMethod(RubyArray.class, "aref"));
         arrayClass.defineMethod("[]=", callbackFactory.getOptMethod(RubyArray.class, "aset"));
-        arrayClass.defineMethod("at", callbackFactory.getMethod(RubyArray.class, "at", IRubyObject.class));
+        arrayClass.defineMethod("at", callbackFactory.getMethod(RubyArray.class, "at", RubyNumeric.class));
         arrayClass.defineMethod("first", callbackFactory.getMethod(RubyArray.class, "first"));
         arrayClass.defineMethod("last", callbackFactory.getMethod(RubyArray.class, "last"));
         arrayClass.defineMethod("concat", callbackFactory.getMethod(RubyArray.class, "concat", IRubyObject.class));
@@ -590,8 +590,8 @@ public class RubyArray extends RubyObject {
     /** rb_ary_at
      *
      */
-    public IRubyObject at(IRubyObject obj) {
-        return entry(RubyNumeric.numericValue(obj).getLongValue());
+    public IRubyObject at(RubyNumeric pos) {
+        return entry(pos.getLongValue());
     }
 
     /** rb_ary_concat

@@ -100,7 +100,7 @@ public class KernelModule {
         kernelModule.defineMethod("scan", callbackFactory.getSingletonMethod(KernelModule.class, "scan", IRubyObject.class));
         kernelModule.defineMethod("set_trace_func", callbackFactory.getSingletonMethod(KernelModule.class, "set_trace_func", IRubyObject.class));
         kernelModule.defineMethod("singleton_method_added", callbackFactory.getSingletonMethod(KernelModule.class, "singleton_method_added", IRubyObject.class));
-        kernelModule.defineMethod("sleep", callbackFactory.getSingletonMethod(KernelModule.class, "sleep", IRubyObject.class));
+        kernelModule.defineMethod("sleep", callbackFactory.getSingletonMethod(KernelModule.class, "sleep", RubyNumeric.class));
         kernelModule.defineMethod("split", callbackFactory.getOptSingletonMethod(KernelModule.class, "split"));
         kernelModule.defineMethod("sprintf", callbackFactory.getOptSingletonMethod(KernelModule.class, "sprintf"));
         kernelModule.defineMethod("srand", callbackFactory.getOptSingletonMethod(KernelModule.class, "srand"));
@@ -319,9 +319,9 @@ public class KernelModule {
         return getLastlineString(recv.getRuntime()).scan(pattern);
     }
 
-    public static IRubyObject sleep(IRubyObject recv, IRubyObject seconds) {
+    public static IRubyObject sleep(IRubyObject recv, RubyNumeric seconds) {
         try {
-            Thread.sleep((long) (RubyNumeric.numericValue(seconds).getDoubleValue() * 1000.0));
+            Thread.sleep((long) (seconds.getDoubleValue() * 1000.0));
         } catch (InterruptedException iExcptn) {
         }
 

@@ -33,40 +33,48 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.MathDefinition;
 
 public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createMathModule(Ruby ruby) {
-        RubyModule mathModule = new MathDefinition(ruby).getModule();
+    public static RubyModule createMathModule(Ruby runtime) {
+        RubyModule result = runtime.defineModule("Math");
+        CallbackFactory callbackFactory = runtime.callbackFactory();
+        
+        result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
+        result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
 
-        mathModule.defineConstant("E", RubyFloat.newFloat(ruby, Math.E));
-        mathModule.defineConstant("PI", RubyFloat.newFloat(ruby, Math.PI));
-
-        return mathModule;
+        result.defineSingletonMethod("atan2", callbackFactory.getSingletonMethod(RubyMath.class, "atan2", RubyNumeric.class, RubyNumeric.class));
+        result.defineSingletonMethod("cos", callbackFactory.getSingletonMethod(RubyMath.class, "cos", RubyNumeric.class));
+        result.defineSingletonMethod("exp", callbackFactory.getSingletonMethod(RubyMath.class, "exp", RubyNumeric.class));
+        result.defineSingletonMethod("frexp", callbackFactory.getSingletonMethod(RubyMath.class, "frexp", RubyNumeric.class));
+        result.defineSingletonMethod("ldexp", callbackFactory.getSingletonMethod(RubyMath.class, "ldexp", RubyNumeric.class, RubyNumeric.class));
+        result.defineSingletonMethod("log", callbackFactory.getSingletonMethod(RubyMath.class, "log", RubyNumeric.class));
+        result.defineSingletonMethod("log10", callbackFactory.getSingletonMethod(RubyMath.class, "log10", RubyNumeric.class));
+        result.defineSingletonMethod("sin", callbackFactory.getSingletonMethod(RubyMath.class, "sin", RubyNumeric.class));
+        result.defineSingletonMethod("sqrt", callbackFactory.getSingletonMethod(RubyMath.class, "sqrt", RubyNumeric.class));
+        result.defineSingletonMethod("tan", callbackFactory.getSingletonMethod(RubyMath.class, "tan", RubyNumeric.class));
+        
+        return result;
     }
 
-    public static RubyFloat atan2(IRubyObject recv, 
-				  IRubyObject other, IRubyObject other2) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
-	double y = RubyNumeric.numericValue(other2).getDoubleValue();
-
-        return RubyFloat.newFloat(recv.getRuntime(), Math.atan2(x, y));
+    public static RubyFloat atan2(IRubyObject recv, RubyNumeric x, 
+            RubyNumeric y) {
+        return RubyFloat.newFloat(recv.getRuntime(), 
+                Math.atan2(x.getDoubleValue(), y.getDoubleValue()));
     }
 
-    public static RubyFloat cos(IRubyObject recv, IRubyObject other) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
-
-        return RubyFloat.newFloat(recv.getRuntime(), Math.cos(x));
+    public static RubyFloat cos(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), 
+                Math.cos(x.getDoubleValue()));
     }
 
-    public static RubyFloat exp(IRubyObject recv, IRubyObject other) {
-	double exponent = RubyNumeric.numericValue(other).getDoubleValue();
-
-        return RubyFloat.newFloat(recv.getRuntime(), Math.exp(exponent));
+    public static RubyFloat exp(IRubyObject recv, RubyNumeric exponent) {
+        return RubyFloat.newFloat(recv.getRuntime(), 
+                Math.exp(exponent.getDoubleValue()));
     }
 
     /*
@@ -75,82 +83,77 @@ public class RubyMath {
      * Where mantissa is in the range of [.5, 1)
      *
      */
-    public static RubyArray frexp(IRubyObject recv, IRubyObject other) {
-	double mantissa = RubyNumeric.numericValue(other).getDoubleValue();
-	short sign = 1;
-	double exponent = 0;
+    public static RubyArray frexp(IRubyObject recv, RubyNumeric other) {
+        double mantissa = other.getDoubleValue();
+        short sign = 1;
+        double exponent = 0;
 
-	if (mantissa != 0.0) {
-	    // Make mantissa same sign so we only have one code path.
-	    if (mantissa < 0) {
-		mantissa = -mantissa;
-		sign = -1;
-	    }
+        if (mantissa != 0.0) {
+            // Make mantissa same sign so we only have one code path.
+            if (mantissa < 0) {
+                mantissa = -mantissa;
+                sign = -1;
+            }
 
-	    // Increase value to hit lower range.
-	    for (; mantissa < 0.5; mantissa *= 2.0, exponent -=1) { }
+            // Increase value to hit lower range.
+            for (; mantissa < 0.5; mantissa *= 2.0, exponent -=1) { }
 
-	    // Decrease value to hit upper range.  
-	    for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
-	}
+            // Decrease value to hit upper range.  
+            for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
+        }
 	 
-	RubyArray result = RubyArray.newArray(recv.getRuntime(), 2);
-	result.append(RubyFloat.newFloat(recv.getRuntime(), sign * mantissa));
-	result.append(RubyFloat.newFloat(recv.getRuntime(), exponent));
+        RubyArray result = RubyArray.newArray(recv.getRuntime(), 2);
+        
+        result.append(RubyFloat.newFloat(recv.getRuntime(), sign * mantissa));
+        result.append(RubyFloat.newFloat(recv.getRuntime(), exponent));
 	
-	return result;
+        return result;
     }
 
     /*
      * r = x * 2 ** y
      */
-    public static RubyFloat ldexp(IRubyObject recv, IRubyObject x, 
-				  IRubyObject y) {
-	double mantissa = RubyNumeric.numericValue(x).getDoubleValue();
-	double exponent = RubyNumeric.numericValue(y).getDoubleValue();
-
+    public static RubyFloat ldexp(IRubyObject recv, RubyNumeric mantissa, 
+				  RubyNumeric exponent) {
         return RubyFloat.newFloat(recv.getRuntime(), 
-				  mantissa * Math.pow(2.0, exponent));
+				  mantissa.getDoubleValue() * 
+				  Math.pow(2.0, exponent.getDoubleValue()));
     }
 
     /** Returns the natural logarithm of x.
      * 
      */
-    public static RubyFloat log(IRubyObject recv, IRubyObject other) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
-
-        return RubyFloat.newFloat(recv.getRuntime(), Math.log(x));
+    public static RubyFloat log(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), 
+                Math.log(x.getDoubleValue()));
     }
 
     /** Returns the base 10 logarithm of x.
      * 
      */
-    public static RubyFloat log10(IRubyObject recv, IRubyObject other) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
-
+    public static RubyFloat log10(IRubyObject recv, RubyNumeric x) {
         return RubyFloat.newFloat(recv.getRuntime(), 
-				  Math.log(x) / Math.log(10));
+				  Math.log(x.getDoubleValue()) / Math.log(10));
     }
 
-    public static RubyFloat sin(IRubyObject recv, IRubyObject other) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
-
-        return RubyFloat.newFloat(recv.getRuntime(), Math.sin(x));
+    public static RubyFloat sin(IRubyObject recv, RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), 
+                Math.sin(x.getDoubleValue()));
     }
 
-    public static RubyFloat sqrt(IRubyObject recv, IRubyObject other) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
+    public static RubyFloat sqrt(IRubyObject recv, RubyNumeric other) {
+        double x = other.getDoubleValue();
 
-	if (x < 0) {
-	    throw new ArgumentError(recv.getRuntime(), 
-				    "square root for negative number");
-	}
+        if (x < 0) {
+            throw new ArgumentError(recv.getRuntime(), 
+            	"square root for negative number");
+        }
+        
         return RubyFloat.newFloat(recv.getRuntime(), Math.sqrt(x));
     }
 
-    public static RubyFloat tan(IRubyObject recv,  IRubyObject other) {
-	double x = RubyNumeric.numericValue(other).getDoubleValue();
-
-        return RubyFloat.newFloat(recv.getRuntime(), Math.tan(x));
+    public static RubyFloat tan(IRubyObject recv,  RubyNumeric x) {
+        return RubyFloat.newFloat(recv.getRuntime(), 
+                Math.tan(x.getDoubleValue()));
     }
 }

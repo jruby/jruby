@@ -190,7 +190,7 @@ public class RubyIO extends RubyObject {
         RubyClass result = 
             ruby.defineClass("IO", ruby.getClasses().getObjectClass());
         
-        result.includeModule(ruby.getClasses().getClass("Enumerable"));
+        result.includeModule(ruby.getClasses().getEnumerableModule());
         
         // TODO: Implement tty? and isatty.  We have no real capability to 
         // determine this from java, but if we could set tty status, then

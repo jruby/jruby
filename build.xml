@@ -27,11 +27,6 @@
         <exclude unless="cglib.present" name="**/Cglib*.java"/>
   	</patternset>
 
-  	<patternset id="rubyclass.src.pattern">
-    	<include name="**/*.xml"/>
-		<exclude name="**/Object.xml"/>
-  	</patternset>
-
   	<patternset id="ruby.src.pattern">
     	<include name="**/*.rb"/>
   	</patternset>
@@ -91,11 +86,6 @@
       		<classpath refid="build.classpath"/>
     	</javac>
 
-    	<taskdef name="jruby-methodGenerate" 
-			classname="org.jruby.util.ant.methodgenerator.JRubyMethodGenerator">
-      		<classpath path="${jruby.classes.dir}"/>
-    	</taskdef>
-
     	<taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
 			<classpath path="${jruby.classes.dir}"/>
     	</taskdef>
@@ -105,16 +95,7 @@
 		</copy>
 	</target>
 
-	<target name="generate" depends="compile.tasks, check-for-optional-packages"
-		description="Generates Ruby artifacts from XML description files.">
-    	<jruby-methodGenerate destdir="${gen-src.dir}">
-      		<fileset dir="${src.dir}">
-        		<patternset refid="rubyclass.src.pattern"/>
-      		</fileset>
-    	</jruby-methodGenerate>
-	</target>
-
-	<target name="copy.with.expansion" depends="generate"
+	<target name="copy.with.expansion" depends="compile.tasks, check-for-optional-packages"
 		description="Copy those files who need variables expanded">
 		<copy todir="${gen-src.dir}">
 			<fileset dir="${src.dir}" includes="**/Constants.java"/>
@@ -126,20 +107,19 @@
 
   	<target name="compile" depends="copy.with.expansion"
 		description="Compile the source files for the project.">
-
-		<javac destdir="${jruby.classes.dir}" debug="true">
-			<classpath refid="build.classpath"/>
-			<src path="${gen-src.dir}"/>
-			<include name="**/Constants.java"/>
-		</javac>
-
-    	<javac destdir="${jruby.classes.dir}" debug="true">
-      		<classpath refid="build.classpath"/>
-      		<src path="${src.dir}"/>
-			<src path="${gen-src.dir}"/>
-      		<patternset refid="java.src.pattern"/>
-			<exclude name="**/Constants.java"/>
-    	</javac>
+        <javac destdir="${jruby.classes.dir}" debug="true">
+           <classpath refid="build.classpath"/>
+           <src path="${gen-src.dir}"/>
+           <include name="**/Constants.java"/>
+        </javac>
+ 
+        <javac destdir="${jruby.classes.dir}" debug="true">
+           <classpath refid="build.classpath"/>
+           <src path="${src.dir}"/>
+           <src path="${gen-src.dir}"/>
+           <patternset refid="java.src.pattern"/>
+           <exclude name="**/Constants.java"/>
+        </javac>
   	</target>
 
 	<target name="serialize" depends="compile"

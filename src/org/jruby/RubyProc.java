@@ -3,7 +3,7 @@
  * Created on 18.01.2002, 01:04:33
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Copyright (C) 2002 Thomas E Enebo
+ * Copyright (C) 2002-2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -34,13 +34,12 @@ package org.jruby;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.ProcDefinition;
 
 /**
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyProc extends RubyObject implements IndexCallable {
+public class RubyProc extends RubyObject {
     private Block block = null;
     private RubyModule wrapper = null;
 
@@ -49,17 +48,21 @@ public class RubyProc extends RubyObject implements IndexCallable {
     }
 
     public static RubyClass createProcClass(Ruby ruby) {
-        return new ProcDefinition(ruby).getType();
-    }
+        RubyClass result = ruby.defineClass("Proc", 
+                ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+        result.defineMethod("arity", 
+                callbackFactory.getMethod(RubyProc.class, "arity"));
+        result.defineMethod("call", 
+                callbackFactory.getOptMethod(RubyProc.class, "call"));
+        result.defineMethod("[]", 
+                callbackFactory.getOptMethod(RubyProc.class, "call"));
 
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case ProcDefinition.CALL :
-                return call(args);
-            case ProcDefinition.ARITY :
-                return arity();
-        }
-        return super.callIndexed(index, args);
+        result.defineSingletonMethod("new", 
+                callbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
+        
+        return result;
     }
 
     public Block getBlock() {

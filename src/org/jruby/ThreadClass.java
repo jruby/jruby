@@ -31,11 +31,10 @@ import java.util.Map;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadError;
-import org.jruby.internal.runtime.builtin.definitions.ThreadDefinition;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
@@ -52,7 +51,7 @@ import org.jruby.util.Asserts;
  * @author Jason Voegele (jason@jvoegele.com)
  * @version $Revision$
  */
-public class ThreadClass extends RubyObject implements IndexCallable {
+public class ThreadClass extends RubyObject {
     private static boolean globalAbortOnException; // move to runtime object
 
     private Thread jvmThread;
@@ -65,12 +64,50 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
 
-    public static RubyClass createThreadClass(Ruby runtime) {
-        RubyClass threadClass = new ThreadDefinition(runtime).getType();
+    public static RubyClass createThreadClass(Ruby ruby) {
+        RubyClass threadClass = ruby.defineClass("Thread", 
+                ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-        ThreadClass currentThread = new ThreadClass(runtime, threadClass);
+        threadClass.defineMethod("[]", 
+                callbackFactory.getMethod(ThreadClass.class, "aref", IRubyObject.class));
+        threadClass.defineMethod("[]=", 
+                callbackFactory.getMethod(ThreadClass.class, "aset", IRubyObject.class, IRubyObject.class));
+        threadClass.defineMethod("abort_on_exception", 
+                callbackFactory.getMethod(ThreadClass.class, "abort_on_exception", IRubyObject.class));
+        threadClass.defineMethod("abort_on_exception=", 
+                callbackFactory.getMethod(ThreadClass.class, "abort_on_exception_set", IRubyObject.class, IRubyObject.class));
+        threadClass.defineMethod("alive?", 
+                callbackFactory.getMethod(ThreadClass.class, "is_alive"));
+        threadClass.defineMethod("join", 
+                callbackFactory.getMethod(ThreadClass.class, "join"));
+        threadClass.defineMethod("key?", 
+                callbackFactory.getMethod(ThreadClass.class, "has_key", IRubyObject.class));
+        threadClass.defineMethod("priority", 
+                callbackFactory.getMethod(ThreadClass.class, "priority"));
+        threadClass.defineMethod("priority=", 
+                callbackFactory.getMethod(ThreadClass.class, "priority_set", IRubyObject.class));
+        threadClass.defineMethod("raise", 
+                callbackFactory.getMethod(ThreadClass.class, "raise", IRubyObject.class));
+        threadClass.defineMethod("status", 
+                callbackFactory.getMethod(ThreadClass.class, "status"));
+        
+        threadClass.defineSingletonMethod("current",
+                callbackFactory.getSingletonMethod(ThreadClass.class, "current"));
+        threadClass.defineSingletonMethod("fork",
+                callbackFactory.getOptSingletonMethod(ThreadClass.class, "newInstance"));
+        threadClass.defineSingletonMethod("new",
+                callbackFactory.getOptSingletonMethod(ThreadClass.class, "newInstance"));
+        threadClass.defineSingletonMethod("list",
+                callbackFactory.getSingletonMethod(ThreadClass.class, "list"));
+        threadClass.defineSingletonMethod("pass",
+                callbackFactory.getSingletonMethod(ThreadClass.class, "pass"));
+        threadClass.defineSingletonMethod("start",
+                callbackFactory.getSingletonMethod(ThreadClass.class, "start"));
+
+        ThreadClass currentThread = new ThreadClass(ruby, threadClass);
         currentThread.jvmThread = Thread.currentThread();
-        runtime.getThreadService().setMainThread(currentThread);
+        ruby.getThreadService().setMainThread(currentThread);
 
         return threadClass;
     }
@@ -334,37 +371,5 @@ public class ThreadClass extends RubyObject implements IndexCallable {
 
     public static ThreadClass mainThread(IRubyObject receiver) {
         return receiver.getRuntime().getThreadService().getMainThread();
-    }
-
-    /**
-     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
-     */
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case ThreadDefinition.ABORT_ON_EXCEPTION :
-                return abort_on_exception();
-            case ThreadDefinition.ABORT_ON_EXCEPTION_SET :
-                return abort_on_exception_set(args[0]);
-            case ThreadDefinition.AREF :
-                return aref(args[0]);
-            case ThreadDefinition.ASET :
-                return aset(args[0], args[1]);
-            case ThreadDefinition.IS_KEY :
-                return has_key(args[0]);
-            case ThreadDefinition.IS_ALIVE :
-                return is_alive();
-            case ThreadDefinition.JOIN :
-                return join();
-            case ThreadDefinition.PRIORITY :
-                return priority();
-            case ThreadDefinition.PRIORITY_SET :
-                return priority_set(args[0]);
-            case ThreadDefinition.RAISE :
-                return raise(args[0]);
-            case ThreadDefinition.STATUS :
-                return status();
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }
