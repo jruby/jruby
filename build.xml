@@ -30,6 +30,7 @@
             <include name="README"/>
             <include name="test.rb"/>
             <include name="java.rb"/>
+            <include name="samples/**/*"/>
         </tar>
         <gzip src="jruby.tar" zipfile="jruby-${version.file}.tar.gz"/>
         <delete file="jruby.tar"/>
@@ -47,7 +48,7 @@
         <delete file="jruby-src.tar"/>
     </target>
 
-    <target depends="init,jar" description="Build everything." name="all">
+    <target depends="init,jar,src-tar" description="Build everything." name="all">
         <echo message="JRuby built."/>
     </target>
 
