@@ -343,7 +343,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        if (ruby.getClasses().getModuleClass().isConstantDefined(iVisited.getName())) {
+        if (ruby.getClasses().getModuleClass().getConstant(iVisited.getName(), false) != null) {
             definition = "constant";
         }
     }
@@ -373,7 +373,7 @@ public class DefinedVisitor extends AbstractVisitor {
         try {
             IRubyObject left = EvaluateVisitor.createVisitor(self).eval(iVisited.getLeftNode());
             if (left instanceof RubyModule) {
-                if (((RubyModule)left).isConstantDefinedAt(iVisited.getName())) {
+                if (((RubyModule)left).getConstantAt(iVisited.getName()) != null) {
                     definition = "constant";
                 }
             } else if (left.getMetaClass().isMethodBound(iVisited.getName(), true)) {

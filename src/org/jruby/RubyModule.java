@@ -287,31 +287,49 @@ public class RubyModule extends RubyObject {
         return getModuleWithInstanceVar(name) != null;
     }
 
-    public void setConstant(String name, IRubyObject value) {
-        setInstanceVariable(name, value, "Insecure: can't set constant", 
+    public IRubyObject setConstant(String name, IRubyObject value) {
+        return setInstanceVariable(name, value, "Insecure: can't set constant", 
                 "class/module");
     }
 
     public IRubyObject getConstant(String name) {
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-        	IRubyObject var = p.getInstanceVariable(name);
+    	return getConstant(name, true);
+    }
+    
+    public IRubyObject getConstant(String name, boolean invokeConstMissing) {
+    	// First look for constants in module hierachy
+    	for (RubyModule p = this; p != p.parentModule; p = p.parentModule) {
+            IRubyObject var = p.getInstanceVariable(name);
             if (var != null && !var.isNil()) {
                 return var;
             }
         }
-        
-        IRubyObject var = getRuntime().getTopConstant(name);
+
+    	// Above loop does not check top of module hierchy
+        IRubyObject var = getRuntime().getClasses().getObjectClass().getInstanceVariable(name);
         if (var != null && !var.isNil()) {
         	return var;
         }
 
-        // XXXEnebo: Why doesn't first loop catch this?
-        var = getRuntime().getClasses().getObjectClass().getInstanceVariable(name);
+        // Second look for constants in the inheritance hierachy
+        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
+        	var = p.getInstanceVariable(name);
+            if (var != null && !var.isNil()) {
+                return var;
+            }
+        }
+
+        // Lastly look for constants in top constant
+        var = getRuntime().getTopConstant(name);
         if (var != null && !var.isNil()) {
         	return var;
         }
         
-        return callMethod("const_missing", RubySymbol.newSymbol(runtime, name));
+        if (invokeConstMissing) {
+        	return callMethod("const_missing", 
+        			RubySymbol.newSymbol(runtime, name));
+        }
+        return null;
     }
 
     public IRubyObject const_missing(IRubyObject name) {
@@ -444,40 +462,17 @@ public class RubyModule extends RubyObject {
     public void defineAlias(String newName, String oldName) {
         aliasMethod(newName, oldName);
     }
-
-    /** rb_const_defined
-     *
-     */
-    public boolean isConstantDefined(String name) {
-        for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (!p.getInstanceVariable(name).isNil()) {
-                return true;
-            }
-        }
-
-        if (isModule()) {
-            return getRuntime().getClasses().getObjectClass().isConstantDefined(name);
-        }
-
-        if (getRuntime().isClassDefined(name)) {
-            return true;
-        }
-
-        return runtime.getLoadService().isAutoloadDefined(name);
-    }
-
-    /**
-     *
-     * MRI: rb_const_defined_at
-     *
-     */
-    public boolean isConstantDefinedAt(String name) {
-        if (!getInstanceVariable(name).isNil()) {
-            return true;
-        } else if (this == runtime.getClasses().getObjectClass()) {
-            return isConstantDefined(name);
-        }
-        return false;
+    
+    public IRubyObject getConstantAt(String name) {
+    	IRubyObject constant = getInstanceVariable(name);
+    	
+    	if (!constant.isNil()) {
+    		return constant;
+    	} 
+    	if (this == runtime.getClasses().getObjectClass()) {
+    		return getConstant(name, false);
+    	}
+    	return null;
     }
 
     /** search_method
@@ -485,16 +480,16 @@ public class RubyModule extends RubyObject {
      */
     public ICallable searchMethod(String name) {
         ICallable method = (ICallable) getMethods().get(name);
-        if (method == null) {
-            if (getSuperClass() != null) {
-                return getSuperClass().searchMethod(name);
-            } else {
-                return UndefinedMethod.getInstance();
-            }
-        } else {
+        if (method != null) {
             method.setImplementationClass(this);
             return method;
         }
+        
+        if (getSuperClass() == null) {
+        	return UndefinedMethod.getInstance();
+        }
+        
+        return getSuperClass().searchMethod(name);
     }
 
     public Visibility getMethodVisibility(String name) {
@@ -670,56 +665,53 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClass) {
-        if (isConstantDefinedAt(name)) {
-            IRubyObject type = getConstant(name);
-            if (!(type instanceof RubyClass)) {
-                throw new TypeError(runtime, name + " is not a class.");
-            }
+        IRubyObject type = getConstantAt(name);
+        
+        if (type == null) {
+            return (RubyClass) setConstant(name, 
+            		getRuntime().defineClassUnder(name, superClass, this)); 
+        }
+
+        if (!(type instanceof RubyClass)) {
+        	throw new TypeError(runtime, name + " is not a class.");
+        }
             
-            return (RubyClass) type;
-        } 
-
-        RubyClass newClass = getRuntime().defineClassUnder(name, superClass, this);
-        setConstant(name, newClass);
-
-        return newClass;
+        return (RubyClass) type;
     }
     
     /** rb_define_class_under
      *
      */
     public RubyClass defineClassUnder(String name, RubyClass superClass) {
-        if (isConstantDefinedAt(name)) {
-            IRubyObject type = getConstant(name);
-            if (!(type instanceof RubyClass)) {
-                throw new TypeError(runtime, name + " is not a class.");
-            } else if (((RubyClass) type).getSuperClass().getRealClass() != superClass) {
-                throw new NameError(runtime, name + " is already defined.");
-            } 
-            
-            return (RubyClass) type;
-        }
-        
-        RubyClass newClass = getRuntime().defineClassUnder(name, superClass, this);
-        setConstant(name, newClass);
+    	IRubyObject type = getConstantAt(name);
+    	
+    	if (type == null) {
+            return (RubyClass) setConstant(name, 
+            		getRuntime().defineClassUnder(name, superClass, this)); 
+    	}
 
-        return newClass;
+    	if (!(type instanceof RubyClass)) {
+    		throw new TypeError(runtime, name + " is not a class.");
+        } else if (((RubyClass) type).getSuperClass().getRealClass() != superClass) {
+        	throw new NameError(runtime, name + " is already defined.");
+        } 
+            
+    	return (RubyClass) type;
     }
 
     public RubyModule defineModuleUnder(String name) {
-        if (isConstantDefinedAt(name)) {
-            IRubyObject type = getConstant(name);
-            if (!(type instanceof RubyModule)) {
-                throw new TypeError(runtime, name + " is not a module.");
-            } 
-
-            return (RubyModule) type;
-        }
+        IRubyObject type = getConstantAt(name);
         
-        RubyModule newModule = getRuntime().defineModuleUnder(name, this);
-        setConstant(name, newModule);
+        if (type == null) {
+            return (RubyModule) setConstant(name, 
+            		getRuntime().defineModuleUnder(name, this)); 
+        }
 
-        return newModule;
+        if (!(type instanceof RubyModule)) {
+        	throw new TypeError(runtime, name + " is not a module.");
+        } 
+
+        return (RubyModule) type;
     }
 
     /** rb_define_const
@@ -841,10 +833,6 @@ public class RubyModule extends RubyObject {
             return !(checkVisibility && entry.getVisibility().isPrivate());
         }
         return false;
-    }
-
-    public boolean isMethodDefined(String name) {
-        return isMethodBound(name, true);
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
@@ -1213,9 +1201,7 @@ public class RubyModule extends RubyObject {
             throw new NameError(getRuntime(), "wrong constant name " + name);
         }
 
-        setConstant(name, value);
-
-        return value;
+        return setConstant(name, value); 
     }
 
     /** rb_mod_const_defined
@@ -1228,7 +1214,7 @@ public class RubyModule extends RubyObject {
             throw new NameError(getRuntime(), "wrong constant name " + name);
         }
 
-        return RubyBoolean.newBoolean(getRuntime(), isConstantDefined(name));
+        return RubyBoolean.newBoolean(getRuntime(), getConstant(name, false) != null);
     }
 
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {

@@ -293,7 +293,9 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no class/module to define constant");
         }
-        setConstant(iVisited.getName(), eval(iVisited.getValueNode()));
+        
+        threadContext.getRubyClass().setConstant(iVisited.getName(), 
+        		eval(iVisited.getValueNode()));
     }
 
     /**
@@ -452,7 +454,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        result = threadContext.getConstant(iVisited.getName());
+        result = threadContext.getRubyClass().getConstant(iVisited.getName());
     }
 
     /**
@@ -873,10 +875,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             module = enclosingModule.defineModuleUnder(iVisited.getName());
         }
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
-    }
-
-    private void setConstant(String name, IRubyObject value) {
-        threadContext.getRubyClass().setConstant(name, value);
     }
 
     /**

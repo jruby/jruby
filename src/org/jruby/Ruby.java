@@ -220,22 +220,14 @@ public final class Ruby {
         return classes.getClass(name);
     }
 
-    /**
-     * @deprecated use getModule(String) instead
-     */
-    public RubyModule getRubyModule(String name) {
-        return getModule(name);
-    }
-
     /** Returns a class from the instance pool.
      *
      * @param name The name of the class.
      * @return The class.
      */
     public RubyClass getClass(String name) {
-        RubyModule module = getModule(name);
         try {
-            return (RubyClass) module;
+            return (RubyClass) getModule(name); 
         } catch (ClassCastException e) {
             throw new TypeError(this, name + " is not a Class");
         }
@@ -284,16 +276,15 @@ public final class Ruby {
      * new module is created.
      */
     public RubyModule getOrCreateModule(String name) {
-        RubyModule module;
-        if (getRubyClass().isConstantDefined(name)) {
-            module = (RubyModule) getRubyClass().getConstant(name);
-            if (getSafeLevel() >= 4) {
-                throw new SecurityError(this, "Extending module prohibited.");
-            }
-        } else {
-            module = defineModule(name);
-            getRubyClass().setConstant(name, module);
+        RubyModule module = (RubyModule) getRubyClass().getConstant(name, false);
+        
+        if (module == null) {
+            module = (RubyModule) getRubyClass().setConstant(name, 
+            		defineModule(name)); 
+        } else if (getSafeLevel() >= 4) {
+        	throw new SecurityError(this, "Extending module prohibited.");
         }
+
         if (getWrapper() != null) {
             module.getSingletonClass().includeModule(getWrapper());
             module.includeModule(getWrapper());

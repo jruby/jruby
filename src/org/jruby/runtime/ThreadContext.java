@@ -180,18 +180,17 @@ public class ThreadContext {
     }
 
     public IRubyObject callSuper(IRubyObject[] args) {
-        if (getCurrentFrame().getLastClass() == null) {
-            throw new NameError(
-                runtime,
-                "superclass method '" + getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
+    	Frame frame = getCurrentFrame();
+    	
+        if (frame.getLastClass() == null) {
+            throw new NameError(runtime,
+                "superclass method '" + frame.getLastFunc() + "' must be enabled by enableSuper().");
         }
         getIterStack().push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            RubyClass superClass = getCurrentFrame().getLastClass().getSuperClass();
-            return superClass.call(getCurrentFrame().getSelf(),
-                                   getCurrentFrame().getLastFunc(),
-                                   args,
-                                   CallType.SUPER);
+            RubyClass superClass = frame.getLastClass().getSuperClass();
+            return superClass.call(frame.getSelf(), frame.getLastFunc(),
+                                   args, CallType.SUPER);
         } finally {
             getIterStack().pop();
         }
@@ -386,19 +385,5 @@ public class ThreadContext {
         IRubyObject result = ((DynamicVariableSet) dynamicVarsStack.peek()).get(name);
 
         return result == null ? runtime.getNil() : result;
-    }
-
-    public IRubyObject getConstant(String name) {
-        // First search the module hierarchy
-        RubyModule current = getRubyClass();
-        while (current != runtime.getTopSelf().getType() && current != null) {
-            if (current.hasInstanceVariable(name)) {
-                return current.getInstanceVariable(name);
-            }
-            current = current.parentModule;
-        }
-
-        // Then search the inheritance hierarchy
-        return getRubyClass().getConstant(name);
     }
 }
