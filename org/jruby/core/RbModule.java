@@ -36,12 +36,39 @@ import org.jruby.*;
  */
 public class RbModule {
     public static void initModuleClass(RubyClass moduleClass) {
+        moduleClass.defineMethod("===", getMethod("op_eqq", RubyObject.class, false));
+        moduleClass.defineMethod("<=>", getMethod("op_cmp", RubyObject.class, false));
+        moduleClass.defineMethod("<", getMethod("op_lt", RubyObject.class, false));
+        moduleClass.defineMethod("<=", getMethod("op_le", RubyObject.class, false));
+        moduleClass.defineMethod(">", getMethod("op_gt", RubyObject.class, false));
+        moduleClass.defineMethod(">=", getMethod("op_ge", RubyObject.class, false));
+        
+        moduleClass.defineMethod("clone", getMethod("m_clone", false));
+        moduleClass.defineMethod("dup", getMethod("m_dup", false));
+        moduleClass.defineMethod("to_s", getMethod("m_to_s", false));
+        moduleClass.defineMethod("included_modules", getMethod("m_included_modules", false));
+        moduleClass.defineMethod("name", getMethod("m_name", false));
+        moduleClass.defineMethod("ancestors", getMethod("m_ancestors", false));
+
         moduleClass.definePrivateMethod("attr", getMethod("m_attr", RubySymbol.class, true));
         moduleClass.definePrivateMethod("attr_reader", getMethod("m_attr_reader", true));
         moduleClass.definePrivateMethod("attr_writer", getMethod("m_attr_writer", true));
         moduleClass.definePrivateMethod("attr_accessor", getMethod("m_attr_accessor", true));
         
+        moduleClass.defineSingletonMethod("new", getSingletonMethod("m_new", false));
+        moduleClass.defineMethod("initialize", getMethod("m_initialize", true));
+        moduleClass.defineMethod("instance_methods", getMethod("m_instance_methods", true));
+        moduleClass.defineMethod("public_instance_methods", getMethod("m_instance_methods", true));
+        moduleClass.defineMethod("protected_instance_methods", getMethod("m_protected_instance_methods", true));
+        moduleClass.defineMethod("private_instance_methods", getMethod("m_private_instance_methods", true));
+        
+        moduleClass.defineMethod("constants", getMethod("m_constants", false));
+        moduleClass.defineMethod("const_get", getMethod("m_const_get", RubySymbol.class, false));
+        moduleClass.defineMethod("const_set", getMethod("m_const_set", RubySymbol.class, RubyObject.class));
+        moduleClass.defineMethod("const_defined?", getMethod("m_const_defined", RubySymbol.class, false));
         moduleClass.definePrivateMethod("method_added", getDummyMethod());
+        moduleClass.defineMethod("class_variables", getMethod("m_class_variables", false));
+        moduleClass.definePrivateMethod("remove_class_variable", getMethod("m_remove_class_variable", RubyObject.class, false));
     }
     
     public static RubyCallbackMethod getDummyMethod() {
@@ -68,7 +95,11 @@ public class RbModule {
         }
     }
     
-/*    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1, Class arg2) {
+        return new ReflectionCallbackMethod(RubyModule.class, methodName, new Class[] {arg1, arg2});
+    }
+    
+    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
         if (restArgs) {
             return new ReflectionCallbackMethod(RubyModule.class, methodName, RubyObject[].class, true, true);
         } else {
@@ -76,7 +107,7 @@ public class RbModule {
         }
     }
     
-    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
+    /*public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyModule.class, methodName, arg1, false, true);
     }*/
 }

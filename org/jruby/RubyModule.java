@@ -1060,6 +1060,79 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
     }
     
+    
+    /** Getter for property included.
+     * @return Value of property included.
+     */
+    public boolean isIncluded() {
+        return this.included;
+    }
+    
+    /** Setter for property included.
+     * @param included New value of property included.
+     */
+    public void setIncluded(boolean included) {
+        this.included = included;
+    }
+    
+    /** method_list
+     *
+     */
+    public RubyArray methodList(boolean option, RubyMapMethod method) {
+        RubyArray ary = RubyArray.m_newArray(getRuby());
+        
+        for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
+            klass.getMethods().foreach(method, ary);
+            if (!option) {
+                break;
+            }
+        }
+
+        Iterator iter = ary.getArray().iterator();
+        while (iter.hasNext()) {
+            if (getRuby().getNil() == iter.next()) {
+                iter.remove();
+                iter.next();
+            }
+        }
+        
+        return ary;
+    }
+    
+    public RubyArray getConstOf(RubyArray ary) {
+        RubyModule klass = this;
+        while (klass != null) {
+            getConstAt(ary);
+            klass = klass.getSuperClass();
+        }
+        return ary;
+    }
+    
+    public RubyArray getConstAt(RubyArray ary) {
+        RubyMapMethod sv_i = new RubyMapMethod() {
+            public int execute(Object key, Object value, Object arg) {
+                if (((RubyId)key).isConstId()) {
+                    RubyString name = RubyString.m_newString(getRuby(), ((RubyId)key).toName());
+                    if (((RubyArray)arg).m_includes(name).isFalse()) {
+                        ((RubyArray)arg).m_push(name);
+                    }
+                }
+                return RubyMapMethod.CONTINUE;
+            }
+        };
+        
+        if (getInstanceVariables() != null) {
+            getInstanceVariables().foreach(sv_i, ary);
+        }
+        if (this == getRuby().getObjectClass()) {
+            getRuby().getClassMap().foreach(sv_i, ary);
+            /*if (autoload_tbl) {
+                st_foreach(autoload_tbl, autoload_i, ary);
+            }*/
+        }
+        return ary;
+    }
+    
     // Methods of the Module Class (rb_mod_*):
     
     /** rb_mod_new
@@ -1124,7 +1197,16 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
         }
         
-        // clone methods.
+        // clone the methods.
+        if (getMethods() != null) {
+            clone.setMethods(new RubyHashMap());
+            getMethods().foreach(new RubyMapMethod() {
+                public int execute(Object key, Object value, Object arg) {
+                    ((RubyMap)arg).put(key, NODE.newMethod(((NODE)value).nd_body(), ((NODE)value).nd_noex()));
+                    return RubyMapMethod.CONTINUE;
+                }
+            }, clone.getMethods());
+        }
         
         return clone;
     }
@@ -1263,17 +1345,17 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** rb_mod_initialize
      *
      */
-    public RubyObject m_initialize() {
+    public RubyObject m_initialize(RubyObject[] args) {
         return getRuby().getNil();
     }
     
     /** rb_module_s_new
      *
      */
-    public static RubyModule m_new(Ruby ruby) {
+    public static RubyModule m_new(Ruby ruby, RubyModule rubyClass) {
         RubyModule mod = RubyModule.m_newModule(ruby);
         
-        // mod.setRubyClass(rubyClass);
+        mod.setRubyClass(rubyClass);
         ruby.getModuleClass().callInit(null);
         
         return mod;
@@ -1367,18 +1449,151 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         return RubyBoolean.m_newBoolean(getRuby(), isConstantDefined(id));
     }
     
-    /** Getter for property included.
-     * @return Value of property included.
+    /** rb_class_instance_methods
+     *
      */
-    public boolean isIncluded() {
-        return this.included;
+    public RubyObject m_instance_methods(RubyObject[] args) {
+        boolean includeSuper = false;
+        
+        if (args.length > 0) {
+            includeSuper = args[0].isTrue();
+        }
+
+        return methodList(includeSuper, new RubyMapMethod() {
+            public int execute(Object key, Object value, Object arg) {
+                // cast args
+                RubyId id = (RubyId)key;
+                NODE body = (NODE)value;
+                RubyArray ary = (RubyArray)arg;
+                
+                if ((body.nd_noex() & (NOEX_PRIVATE | NOEX_PROTECTED)) == 0) {
+                    RubyString name = RubyString.m_newString(getRuby(), id.toName());
+                    
+                    if (ary.m_includes(name).isFalse()) {
+                        if (body.nd_body() == null) {
+                            ary.push(getRuby().getNil());
+                        }
+                        ary.push(name);
+                    }
+                } else if (body.nd_body() != null && body.nd_body().nd_type() == NODE_ZSUPER) {
+                    ary.push(getRuby().getNil());
+                    ary.push(RubyString.m_newString(getRuby(), id.toName()));
+                }
+                return RubyMapMethod.CONTINUE;
+            }
+        });
+    }
+
+    /** rb_class_protected_instance_methods
+     *
+     */
+    public RubyObject m_protected_instance_methods(RubyObject[] args) {
+        boolean includeSuper = false;
+        
+        if (args.length > 0) {
+            includeSuper = args[0].isTrue();
+        }
+
+        return methodList(includeSuper, new RubyMapMethod() {
+            public int execute(Object key, Object value, Object arg) {
+                // cast args
+                RubyId id = (RubyId)key;
+                NODE body = (NODE)value;
+                RubyArray ary = (RubyArray)arg;
+                
+                if (body.nd_body() == null) {
+                    ary.push(getRuby().getNil());
+                    ary.push(RubyString.m_newString(getRuby(), id.toName()));
+                } else if ((body.nd_noex() & NOEX_PROTECTED) != 0) {
+                    RubyString name = RubyString.m_newString(getRuby(), id.toName());
+                    
+                    if (ary.m_includes(name).isFalse()) {
+                        ary.push(name);
+                    }
+                } else if (body.nd_body().nd_type() == NODE_ZSUPER) {
+                    ary.push(getRuby().getNil());
+                    ary.push(RubyString.m_newString(getRuby(), id.toName()));
+                }
+                return RubyMapMethod.CONTINUE;
+            }
+        });
+    }
+
+    /** rb_class_private_instance_methods
+     *
+     */
+    public RubyObject m_private_instance_methods(RubyObject[] args) {
+        boolean includeSuper = false;
+        
+        if (args.length > 0) {
+            includeSuper = args[0].isTrue();
+        }
+
+        return methodList(includeSuper, new RubyMapMethod() {
+            public int execute(Object key, Object value, Object arg) {
+                // cast args
+                RubyId id = (RubyId)key;
+                NODE body = (NODE)value;
+                RubyArray ary = (RubyArray)arg;
+                
+                if (body.nd_body() == null) {
+                    ary.push(getRuby().getNil());
+                    ary.push(RubyString.m_newString(getRuby(), id.toName()));
+                } else if ((body.nd_noex() & NOEX_PRIVATE) != 0) {
+                    RubyString name = RubyString.m_newString(getRuby(), id.toName());
+                    
+                    if (ary.m_includes(name).isFalse()) {
+                        ary.push(name);
+                    }
+                } else if (body.nd_body().nd_type() == NODE_ZSUPER) {
+                    ary.push(getRuby().getNil());
+                    ary.push(RubyString.m_newString(getRuby(), id.toName()));
+                }
+                return RubyMapMethod.CONTINUE;
+            }
+        });
     }
     
-    /** Setter for property included.
-     * @param included New value of property included.
+    /** rb_mod_constants
+     *
      */
-    public void setIncluded(boolean included) {
-        this.included = included;
+    public RubyObject m_constants() {
+        RubyArray ary = RubyArray.m_newArray(getRuby());
+        
+        return getConstOf(ary);
     }
     
+    /** rb_mod_remove_cvar
+     *
+     */
+    public RubyObject m_remove_class_variable(RubyObject name) {
+        RubyId id = null;
+        if (name instanceof RubySymbol) {
+            id = ((RubySymbol)name).toId();
+        } else if (name instanceof RubyString) {
+            id = getRuby().intern(((RubyString)name).getString());
+        }
+        
+        if (!id.isClassId()) {
+            throw new RubyNameException("wrong class variable name " + name);
+        }
+        if (!isTaint() && getRuby().getSecurityLevel() >= 4) {
+            throw new RubySecurityException("Insecure: can't remove class variable");
+        }
+        if (isFrozen()) {
+            throw new RubyFrozenException("class/module");
+        }
+        
+        if (getInstanceVariables() != null) {
+            Object value = getInstanceVariables().remove(id);
+            if (value != null) {
+                return (RubyObject)value;
+            }
+        }
+        
+        if (isClassVarDefined(id)) {
+            throw new RubyNameException("cannot remove " + id.toName() + " for " + toName());
+        }
+        throw new RubyNameException("class variable " + id.toName() + " not defined for " + toName());
+    }
 }
