@@ -47,7 +47,8 @@ public class RubyFileStat extends RubyObject {
     private static final int WRITE = 444;
 
     public static RubyClass createFileStatClass(Ruby runtime) {
-        RubyClass fileStatClass = runtime.defineClass("FileStat", runtime.getClasses().getObjectClass());
+        RubyClass fileStatClass = runtime.getClasses().getFileClass().defineClassUnder("Stat", 
+        		runtime.getClasses().getObjectClass());
     	
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileStat.class);
 
