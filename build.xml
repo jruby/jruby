@@ -17,8 +17,8 @@
     <property name="src.dir" value="."/>
     <property name="base.dir" value="."/>
 
-    <property name="version" value="0.2.0"/>
-    <property name="version.file" value="0_2_0"/>
+    <property name="version" value="0.2.1"/>
+    <property name="version.file" value="0_2_1"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <target name="check_for_optional_packages">
@@ -31,7 +31,6 @@
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
             <exclude name="org/jruby/bsf/**/*.java"/>
-            <exclude name="org/jruby/interpreter/nodes/BlockNode.java"/>
         </javac>
         <copy todir="${build.dest}">
             <fileset dir="${src.dir}">
