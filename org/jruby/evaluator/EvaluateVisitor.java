@@ -707,13 +707,11 @@ public final class EvaluateVisitor implements NodeVisitor {
         // }
         //          }
 
-        Visibility visibility = Visibility.PUBLIC;
+        Visibility visibility = ruby.getCurrentVisibility();
 
-        if (ruby.isScope(Constants.SCOPE_PRIVATE) || iVisited.getName().equals("initialize")) {
+        if (iVisited.getName().equals("initialize") || visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
-        } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
-            visibility = Visibility.PROTECTED;
-        } else if (rubyClass == ruby.getClasses().getObjectClass()) {
+        } else if (visibility.isPublic() && rubyClass == ruby.getClasses().getObjectClass()) {
             visibility = iVisited.getVisibility();
         }
 
@@ -729,7 +727,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         rubyClass.addMethod(iVisited.getName(), newMethod);
 
-        if (ruby.getCurrentMethodScope() == Constants.SCOPE_MODFUNC) {
+        if (ruby.getCurrentVisibility().isModuleFunction()) {
             rubyClass.getSingletonClass().addMethod(iVisited.getName(), new WrapperCallable(newMethod, Visibility.PUBLIC));
             rubyClass.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
         }

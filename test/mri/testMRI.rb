@@ -1,59 +1,5 @@
 require 'minirunit'
 
-test_check "call"
-def aaa(a, b=100, *rest)
-  res = [a, b]
-  res += rest if rest
-  return res
-end
-
-# not enough argument
-begin
-  aaa()				# need at least 1 arg
-  test_ok(false)
-rescue
-  test_ok(true)
-end
-
-begin
-  aaa				# no arg given (exception raised)
-  test_ok(false)
-rescue
-  test_ok(true)
-end
-
-test_ok(aaa(1) == [1, 100])
-test_ok(aaa(1, 2) == [1, 2])
-test_ok(aaa(1, 2, 3, 4) == [1, 2, 3, 4])
-test_ok(aaa(1, *[2, 3, 4]) == [1, 2, 3, 4])
-
-test_check "proc"
-$proc = proc{|i| i}
-test_ok($proc.call(2) == 2)
-test_ok($proc.call(3) == 3)
-
-$proc = proc{|i| i*2}
-test_ok($proc.call(2) == 4)
-test_ok($proc.call(3) == 6)
-
-proc{
-  iii=5				# nested local variable
-  $proc = proc{|i|
-    iii = i
-  }
-  $proc2 = proc {
-    $x = iii			# nested variables shared by procs
-  }
-  # scope of nested variables
-  test_ok(defined?(iii))
-}.call
-test_ok(!defined?(iii))		# out of scope
-
-$x=0
-$proc.call(5)
-$proc2.call
-test_ok($x == 5)
-
 if defined? Process.kill
   test_check "signal"
 

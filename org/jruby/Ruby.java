@@ -29,7 +29,6 @@
  */
 package org.jruby;
 
-import java.io.File;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +41,6 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.RubyBugException;
@@ -70,6 +68,7 @@ import org.jruby.runtime.RubyRuntime;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
@@ -147,8 +146,6 @@ public final class Ruby {
     private int sourceLine;
 
     private boolean isVerbose;
-
-    private int currentMethodScope;
 
     private RubyModule wrapper;
 
@@ -451,7 +448,7 @@ public final class Ruby {
         getScope().push();
         topScope = currentScope();
 
-        setCurrentMethodScope(Constants.SCOPE_PRIVATE);
+        setCurrentVisibility(Visibility.PRIVATE);
 
         try {
             classes = new RubyClasses(this);
@@ -637,35 +634,25 @@ public final class Ruby {
         return getCurrentFrame().getNamespace().getNamespaceModule();
     }
 
-    public boolean isScope(int scope) {
-        return (getCurrentMethodScope() & scope) != 0;
+    public Visibility getCurrentVisibility() {
+        return currentScope().getVisibility();
     }
 
-    /** Getter for property currentMethodScope.
-     * @return Value of property currentMethodScope.
-     */
-    public int getCurrentMethodScope() {
-        return currentMethodScope;
-    }
-
-    /** Setter for property currentMethodScope.
-     * @param currentMethodScope New value of property currentMethodScope.
-     */
-    public void setCurrentMethodScope(int currentMethodScope) {
-        this.currentMethodScope = currentMethodScope;
+    public void setCurrentVisibility(Visibility visibility) {
+        currentScope().setVisibility(visibility);
     }
 
     /** Getter for property wrapper.
      * @return Value of property wrapper.
      */
-    public org.jruby.RubyModule getWrapper() {
+    public RubyModule getWrapper() {
         return wrapper;
     }
 
     /** Setter for property wrapper.
      * @param wrapper New value of property wrapper.
      */
-    public void setWrapper(org.jruby.RubyModule wrapper) {
+    public void setWrapper(RubyModule wrapper) {
         this.wrapper = wrapper;
     }
 

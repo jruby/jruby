@@ -57,7 +57,7 @@ public class Scope implements StackElement {
     private List localNames = null;
 	private List localValues = null;
     
-    private int methodScope = Constants.SCOPE_PUBLIC; // Constants.SCOPE_PRIVATE; ? // Same as default for top level...just in case
+    private Visibility visibility = Visibility.PUBLIC; // Constants.SCOPE_PRIVATE; ? // Same as default for top level...just in case
 
     private Scope next = null;
 
@@ -139,15 +139,15 @@ public class Scope implements StackElement {
      * Gets the methodScope.
      * @return Returns a int
      */
-    public int getMethodScope() {
-        return methodScope;
+    public Visibility getVisibility() {
+        return visibility;
     }
 
     /**
      * Sets the methodScope.
      * @param methodScope The methodScope to set
      */
-    public void setMethodScope(int methodScope) {
-        this.methodScope = methodScope;
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
 }

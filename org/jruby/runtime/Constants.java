@@ -33,13 +33,10 @@ package org.jruby.runtime;
 
 
 public interface Constants {
-    public static final int SCOPE_PUBLIC = 0;
-    public static final int SCOPE_PRIVATE = 1;
-    public static final int SCOPE_PROTECTED = 2;
-    public static final int SCOPE_MODFUNC = 5;
-
     public static final String RUBY_MAJOR_VERSION = "1.6";
     public static final String RUBY_VERSION = "1.6.7";
+    public static final String COMPILE_DATE = "2002-08-08"; // replace with ant filter
+    public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
     public static final int MARSHAL_MINOR = 5;

@@ -44,8 +44,8 @@ public class RubyGlobal {
 
         // Version information:
         IRubyObject version = RubyString.newString(ruby, Constants.RUBY_VERSION).freeze();
-        IRubyObject release = RubyString.newString(ruby, "$Date$").freeze(); // XXX
-        IRubyObject platform = RubyString.newString(ruby, "java").freeze();
+        IRubyObject release = RubyString.newString(ruby, Constants.COMPILE_DATE).freeze();
+        IRubyObject platform = RubyString.newString(ruby, Constants.PLATFORM).freeze();
 
         ruby.defineGlobalConstant("RUBY_VERSION", version);
         ruby.defineGlobalConstant("RUBY_RELEASE_DATE", release);

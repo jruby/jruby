@@ -4,7 +4,6 @@ $ntest=0
 $failed = []
 $curtestOK=true
 
-
 module MiniRUnit
   class Failure
     def initialize(what, testnum, msg, where)

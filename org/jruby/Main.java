@@ -191,7 +191,7 @@ public class Main {
             System.out.print("ruby ");
             System.out.print(Constants.RUBY_VERSION);
             System.out.print(" (");
-            System.out.print("$Date$");
+            System.out.print(Constants.COMPILE_DATE);
             System.out.print(") [");
             System.out.print("java");
             System.out.println("]");
@@ -226,7 +226,7 @@ public class Main {
      */
     protected static void printUsage() {
         if (!sPrintedUsage) {
-            System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments] $Date$");
+            System.out.println("Usage: jruby [switches] [rubyfile.rb] [arguments]");
             System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");

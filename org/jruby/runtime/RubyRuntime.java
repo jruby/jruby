@@ -123,7 +123,7 @@ public class RubyRuntime {
 		ruby.getScope().push();
 
 		/* default visibility is private at loading toplevel */
-		ruby.setCurrentMethodScope(Constants.SCOPE_PRIVATE);
+		ruby.setCurrentVisibility(Visibility.PRIVATE);
 
 		try {
 			INode node = ruby.parse(source.toString(), scriptName.getValue());

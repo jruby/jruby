@@ -1013,17 +1013,21 @@ public class RubyModule extends RubyObject {
         declareClassVar(name, value);
     }
 
-    /** rb_attr
+    /** 
+     * 
+     * @mri rb_attr
      *
      */
     public void addAttribute(String name, boolean read, boolean write, boolean ex) {
         Visibility attributeScope = Visibility.PUBLIC;
 
         if (ex) {
-            if (getRuntime().getCurrentMethodScope() == Constants.SCOPE_PRIVATE) {
+            attributeScope = getRuntime().getCurrentVisibility();
+            if (attributeScope.isPrivate()) {
+                //FIXME warning
+            } else if (attributeScope.isModuleFunction()) {
                 attributeScope = Visibility.PRIVATE;
-            } else if (getRuntime().getCurrentMethodScope() == Constants.SCOPE_PROTECTED) {
-                attributeScope = Visibility.PROTECTED;
+                // FIXME warning
             }
         }
 
@@ -1659,7 +1663,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuntime().setCurrentMethodScope(Constants.SCOPE_PUBLIC);
+            getRuntime().setCurrentVisibility(Visibility.PUBLIC);
         } else {
             setMethodVisibility(args, Visibility.PUBLIC);
         }
@@ -1676,7 +1680,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuntime().setCurrentMethodScope(Constants.SCOPE_PROTECTED);
+            getRuntime().setCurrentVisibility(Visibility.PROTECTED);
         } else {
             setMethodVisibility(args, Visibility.PROTECTED);
         }
@@ -1693,7 +1697,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuntime().setCurrentMethodScope(Constants.SCOPE_PRIVATE);
+            getRuntime().setCurrentVisibility(Visibility.PRIVATE);
         } else {
             setMethodVisibility(args, Visibility.PRIVATE);
         }
@@ -1710,7 +1714,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuntime().setCurrentMethodScope(Constants.SCOPE_MODFUNC);
+            getRuntime().setCurrentVisibility(Visibility.MODULE_FUNCTION);
         } else {
             setMethodVisibility(args, Visibility.PRIVATE);
 

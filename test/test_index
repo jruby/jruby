@@ -32,6 +32,7 @@ testGC.rb
 ##testSocket.rb
 # (isKindOf fixes) testJavaSupport.rb
 testDir.rb
+testVisibility.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
@@ -46,6 +47,7 @@ mri/testHash.rb
 mri/testIterator.rb
 mri/testFloat.rb
 mri/testBignum.rb
-#mri/testString.rb
+mri/testString.rb
 mri/testAssignment2.rb
 mri/testCall.rb
+mri/testProc.rb

@@ -9,6 +9,7 @@ public final class Visibility {
     public static final Visibility PUBLIC = new Visibility();
     public static final Visibility PROTECTED = new Visibility();
     public static final Visibility PRIVATE = new Visibility();
+    public static final Visibility MODULE_FUNCTION = new Visibility();
 
     /**
      * Constructor for MethodScope.
@@ -27,5 +28,9 @@ public final class Visibility {
 
     public boolean isPrivate() {
         return this == PRIVATE;
+    }
+    
+    public boolean isModuleFunction() {
+        return this == MODULE_FUNCTION;
     }
 }
