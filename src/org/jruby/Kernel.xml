@@ -3,6 +3,7 @@
 <module type="module">
   <name>Kernel</name>
   <implementation>org.jruby.KernelModule</implementation>
+  <index-offset>0x1000</index-offset>
 
   <class-methods>
     <method name="autoload">
