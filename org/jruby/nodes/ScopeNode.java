@@ -159,6 +159,7 @@ public class ScopeNode extends Node implements CallableNode {
     }
     
     public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
+if(args == null) { args = new RubyPointer(); }
         CRefNode savedCref = null; // +++ = null;
         
         // RubyPointer argsList = new RubyPointer(args);
@@ -210,7 +211,10 @@ public class ScopeNode extends Node implements CallableNode {
                 
                 int i = callNode.getCount();
                 if (i > (args != null ? args.size() : 0)) {
-                    throw new RubyArgumentException(ruby, "wrong # of arguments(" + args.size() + " for " + i + ")");
+                    int size = 0;
+                    if(args != null) 
+                         size = args.size();
+                    throw new RubyArgumentException(ruby, "wrong # of arguments(" + size +  " for " + i + ")");
                 }
                 if (callNode.getRest() == -1) {
                     int opt = i;

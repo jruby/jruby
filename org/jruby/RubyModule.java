@@ -395,18 +395,22 @@ public class RubyModule extends RubyObject {
         while (true) {
             while (tmp != null) {
                 if (tmp.getInstanceVariables().get(id) != null) {
+System.out.println("First if");
                     return (RubyObject) tmp.getInstanceVariables().get(id);
                 }
                 if (tmp == getRuby().getClasses().getObjectClass() && getRuby().getTopConstant(id) != null) {
+System.out.println("Second if");
                     return getRuby().getTopConstant(id);
                 }
                 tmp = tmp.getSuperClass();
             }
             if (!mod_retry && isModule()) {
+System.out.println("First if outside while tmp!= null");
                 mod_retry = true;
                 tmp = getRuby().getClasses().getObjectClass();
                 continue;
             }
+System.out.println("Outside all ifs");
             break;
         }
 
@@ -414,7 +418,8 @@ public class RubyModule extends RubyObject {
         if (this != getRuby().getClasses().getObjectClass()) {
             throw new RubyNameException(getRuby(), "uninitialized constant " + id.toName() + " at " + getClassPath().getValue());
         } else {
-            throw new RubyNameException(getRuby(), "uninitialized constant " + id.toName());
+            throw new RubyNameException(getRuby(), "uninitialized constant " + id.toName() + " at " + getClassPath().getValue());
+            //throw new RubyNameException(getRuby(), "uninitialized constant " + id.toName());
         }
 
         // return getRuby().getNil();

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
 <project basedir="." default="all" name="JRuby">
-
     <property name="build.dir" value="build"/>
     <property name="bsf.jar" value="lib/bsf.jar"/>
     
@@ -25,15 +24,16 @@
 
     <target name="check_for_optional_packages">
         <available classname="java.lang.CharSequence" property="jdk1.4+"/>
-        <available file="${bsf.jar}" property="bsf"/>
+<!--        <available file="lib/bsf.jar" property="bsf"/> -->
     </target>
 
-    <target depends="check_for_optional_packages" name="compile">
+    <target name="compile">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.dest}"/>
-        <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
+        <javac excludes="org/jruby/javasupport/bsf/**/*.java" debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf"/>
+            <!--<exclude name="org/jruby/javasupport/bsf/**/*.java" unless="${bsf}"/>-->
+            <exclude name="org/jruby/javasupport/bsf/**/*.java"/>
             <classpath>
                 <path path="${bsf.jar}"/>
             </classpath>
