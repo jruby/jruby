@@ -2,10 +2,8 @@
  * CRefNode.java - No description
  * Created on 05. November 2001, 21:45
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
@@ -27,14 +25,36 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.nodes;
 
 import org.jruby.*;
 import org.jruby.exceptions.*;
+import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 
-/**
+/** CRefNode represents an element in the nested module/class hierarchy.
+ * 
+ * Example:
+ * 
+ * <pre>
+ * module JRuby
+ *    class ExampleClass
+ *       #1
+ *    end
+ * end
+ * </pre>
+ * 
+ * At point #1 there is the CRef structure:
+ * 
+ * <pre>
+ * CRefNode -> class = ExampleClass
+ *          -> next = CRefNode -> class = JRuby
+ *                             -> next = CRefNode -> class = TopSelf
+ *                                                -> next = null
+ * </pre>
+ * 
+ * TODO: This class should be moved to a simple LinkedList in org.jruby.runtime
+ * because there is no relation to the AST.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -43,13 +63,13 @@ public class CRefNode extends Node {
     public CRefNode(Node nextNode) {
         this(null, nextNode);
     }
-    
- 	public CRefNode(RubyObject classValue, Node nextNode) {
+
+    public CRefNode(RubyObject classValue, Node nextNode) {
         super(Constants.NODE_CREF, classValue, null, nextNode);
     }
-    
+
     public CRefNode cloneCRefNode() {
-        return new CRefNode(getClassValue(), getNextNode() != null ? ((CRefNode)getNextNode()).cloneCRefNode() : null);
+        return new CRefNode(getClassValue(), getNextNode() != null ? ((CRefNode) getNextNode()).cloneCRefNode() : null);
     }
 
     /** push a new RubyObject to this CRefNode
@@ -57,7 +77,7 @@ public class CRefNode extends Node {
      */
     public void push(RubyObject newClassValue) {
         setNextNode(new CRefNode(getClassValue(), getNextNode()));
-        
+
         setClassValue(newClassValue);
     }
 
@@ -68,12 +88,12 @@ public class CRefNode extends Node {
         setClassValue(getNextNode().getClassValue());
         setNextNode(getNextNode().getNextNode());
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitCRefNode(this);
-	}
+
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitCRefNode(this);
+    }
 }

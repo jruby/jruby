@@ -32,6 +32,7 @@ package org.jruby.nodes;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.types.*;
+import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 
 /**
@@ -66,9 +67,9 @@ public class DefinedNode extends Node {
     }
 
     public String getDefined(Ruby ruby, RubyObject self) {
-        Node head = getHeadNode();
+        Node node = getHeadNode();
 
-        switch (head.getType()) {
+        switch (node.getType()) {
             case Constants.NODE_ZSUPER :
             case Constants.NODE_SUPER :
                 //if (ruby_frame->last_func == 0) return 0;
@@ -116,11 +117,12 @@ public class DefinedNode extends Node {
             case Constants.NODE_DVAR :
                 return "local-variable(in-block)";
             case Constants.NODE_GVAR :
-                //FIXME...need to first check that it's defined!!!
-                // 	if (rb_gvar_defined(node->nd_entry)) {
-                return "global-variable";
+				if (node.getEntry().isDefined()) {
+                	return "global-variable";
+				}
+				return null;
             case Constants.NODE_IVAR :
-                return self.isInstanceVarDefined(head.getVId()) ? "instance-variable" : null;
+                return self.isInstanceVarDefined(node.getVId()) ? "instance-variable" : null;
             case Constants.NODE_CONST :
                 // FIXME if(constant is defined)
                 return "constant";
@@ -189,7 +191,7 @@ public class DefinedNode extends Node {
                 return null;
             default :
                 try {
-                    self.eval(head);
+                    self.eval(node);
                     return "expression";
                 } catch (JumpException jumpExcptn) {
                     return null;

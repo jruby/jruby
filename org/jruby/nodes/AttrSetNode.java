@@ -33,6 +33,7 @@ package org.jruby.nodes;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.types.*;
+import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 

@@ -1,3 +1,5 @@
+<?xml version="1.0"?>
+
 <changelog>
 	<release version="0.3.1">
 		<change type="new" description="Improve Javasupport. Add support for public fields." author="jpetersen" date="21  Jan  2002 23:26:34 +0100"/>

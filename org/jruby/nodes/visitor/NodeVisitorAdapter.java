@@ -25,18 +25,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.nodes;
+package org.jruby.nodes.visitor;
+
+import org.jruby.nodes.*;
 
 /**
  * Adapter for the NodeVisitor interface.
  * each visit method is implemented by calling
  * the #visit(Node) method which can be overriden.
+ * 
  * @see NodeVisitor
  * @author Benoit Cerrina
- * @version $Revision$
+ * @version $Revision: 1.4 $
  **/
 public class NodeVisitorAdapter implements NodeVisitor {
     boolean _expandBlocks = false;
+
     /**
      * Modifies the expandblocks property.
      * the expandblocks property directs the way the 
@@ -50,26 +54,33 @@ public class NodeVisitorAdapter implements NodeVisitor {
     public void setExpandBlocks(boolean iExpandBlock) {
         _expandBlocks = iExpandBlock;
     }
+
     protected void visit(Node iVisited) {
         visit(iVisited, true);
     }
+
     protected void visit(Node iVisited, boolean mayLeave) {
     }
+
     protected void leave(Node iVisited) {
     }
-    public void visitAliasNode(Node iVisited) {
+
+    public void visitAliasNode(AliasNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitAndNode(Node iVisited) {
+
+    public void visitAndNode(AndNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitArgsCatNode(Node iVisited) {
+
+    public void visitArgsCatNode(ArgsCatNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitArgsNode(Node iVisited) {
+
+    public void visitArgsNode(ArgsNode iVisited) {
         visit(iVisited);
         Node lOptNode = iVisited.getOptNode();
         if (lOptNode != null) {
@@ -78,31 +89,38 @@ public class NodeVisitorAdapter implements NodeVisitor {
 
         leave(iVisited);
     }
-    public void visitArgsPushNode(Node iVisited) {
+
+    public void visitArgsPushNode(ArgsPushNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitArrayNode(Node iVisited) {
+
+    public void visitArrayNode(ArrayNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitAttrSetNode(Node iVisited) {
+
+    public void visitAttrSetNode(AttrSetNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitBackRefNode(Node iVisited) {
+
+    public void visitBackRefNode(BackRefNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitBeginNode(Node iVisited) {
+
+    public void visitBeginNode(BeginNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitBlockArgNode(Node iVisited) {
+
+    public void visitBlockArgNode(BlockArgNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitBlockNode(Node iVisited) {
+
+    public void visitBlockNode(BlockNode iVisited) {
         visit(iVisited);
         if (!_expandBlocks) {
             for (Node node = iVisited; node != null; node = node.getNextNode()) {
@@ -113,26 +131,35 @@ public class NodeVisitorAdapter implements NodeVisitor {
             Node lNext = iVisited.getNextNode();
             if (lNext != null) {
                 lNext.accept(this);
-            }        }
+            }
+        }
         leave(iVisited);
     }
-    public void visitBlockPassNode(Node iVisited) {
+
+    public void visitBlockPassNode(BlockPassNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitBreakNode(Node iVisited) {
+
+    public void visitBreakNode(BreakNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCDeclNode(Node iVisited) {
+
+    public void visitCDeclNode(CDeclNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCFuncNode(Node iVisited) {
+
+    public void visitCFuncNode(CFuncNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCRefNode(Node iVisited) {
+
+    /**
+     * TODO: delete
+     */
+    public void visitCRefNode(CRefNode iVisited) {
         visit(iVisited);
         Node lNext = iVisited.getNextNode();
         if (lNext != null) {
@@ -140,346 +167,413 @@ public class NodeVisitorAdapter implements NodeVisitor {
         }
         leave(iVisited);
     }
-    public void visitCVAsgnNode(Node iVisited) {
+
+    public void visitCVAsgnNode(CVAsgnNode iVisited) {
         visit(iVisited);
         iVisited.getValueNode().accept(this);
         leave(iVisited);
     }
-    public void visitCVDeclNode(Node iVisited) {
+
+    public void visitCVDeclNode(CVDeclNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCVar2Node(Node iVisited) {
+
+    public void visitCVar2Node(CVar2Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCVarNode(Node iVisited) {
+
+    public void visitCVarNode(CVarNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCallNode(Node iVisited) {
+
+    public void visitCallNode(CallNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitCaseNode(Node iVisited) {
+
+    public void visitCaseNode(CaseNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitClassNode(Node iVisited) {
+
+    public void visitClassNode(ClassNode iVisited) {
         visit(iVisited);
         //FIXME not done yet just quick testing
         iVisited.getBodyNode().accept(this);
         leave(iVisited);
     }
-    public void visitColon2Node(Node iVisited) {
+
+    public void visitColon2Node(Colon2Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitColon3Node(Node iVisited) {
+
+    public void visitColon3Node(Colon3Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitConstNode(Node iVisited) {
+
+    public void visitConstNode(ConstNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDAsgnCurrNode(Node iVisited) {
+
+    public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         visit(iVisited);
         iVisited.getValueNode().accept(this);
         leave(iVisited);
     }
-    public void visitDAsgnNode(Node iVisited) {
+
+    public void visitDAsgnNode(DAsgnNode iVisited) {
         visit(iVisited);
         iVisited.getValueNode().accept(this);
         leave(iVisited);
     }
-    public void visitDRegxNode(Node iVisited) {
+
+    public void visitDRegxNode(DRegxNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDRegxOnceNode(Node iVisited) {
+
+    public void visitDRegxOnceNode(DRegxOnceNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDStrNode(Node iVisited) {
+
+    public void visitDStrNode(DStrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDVarNode(Node iVisited) {
+
+    public void visitDVarNode(DVarNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDXStrNode(Node iVisited) {
+
+    public void visitDXStrNode(DXStrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDefinedNode(Node iVisited) {
+
+    public void visitDefinedNode(DefinedNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDefnNode(Node iVisited) {
+
+    public void visitDefnNode(DefnNode iVisited) {
         visit(iVisited);
         iVisited.getDefnNode().accept(this);
         leave(iVisited);
     }
-    public void visitDefsNode(Node iVisited) {
+
+    public void visitDefsNode(DefsNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitDotNode(Node iVisited) {
+
+    public void visitDotNode(DotNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitEnsureNode(Node iVisited) {
+
+    public void visitEnsureNode(EnsureNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitEvStrNode(Node iVisited) {
+
+    public void visitEvStrNode(EvStrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitFBodyNode(Node iVisited) {
+
+    public void visitFBodyNode(FBodyNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitFCallNode(Node iVisited) {
+
+    public void visitFCallNode(FCallNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitFalseNode(Node iVisited) {
+
+    public void visitFalseNode(FalseNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitFlipNode(Node iVisited) {
+
+    public void visitFlipNode(FlipNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitForNode(Node iVisited) {
+
+    public void visitForNode(ForNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitGAsgnNode(Node iVisited) {
-        visit(iVisited);
-        iVisited.getValueNode().accept(this);
-        leave(iVisited);
-    }
-    public void visitGVarNode(Node iVisited) {
-        visit(iVisited);
-        leave(iVisited);
-    }
-    public void visitHashNode(Node iVisited) {
-        visit(iVisited);
-        leave(iVisited);
-    }
-    public void visitIAsgnNode(Node iVisited) {
+
+    public void visitGAsgnNode(GAsgnNode iVisited) {
         visit(iVisited);
         iVisited.getValueNode().accept(this);
         leave(iVisited);
     }
-    public void visitIFuncNode(Node iVisited) {
+
+    public void visitGVarNode(GVarNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitIVarNode(Node iVisited) {
+
+    public void visitHashNode(HashNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitIfNode(Node iVisited) {
-        visit(iVisited);
-        leave(iVisited);
-    }
-    public void visitIterNode(Node iVisited) {
-        visit(iVisited);
-        leave(iVisited);
-    }
-    public void visitLAsgnNode(Node iVisited) {
+
+    public void visitIAsgnNode(IAsgnNode iVisited) {
         visit(iVisited);
         iVisited.getValueNode().accept(this);
         leave(iVisited);
     }
-    public void visitLVarNode(Node iVisited) {
+
+    public void visitIFuncNode(IFuncNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitLitNode(Node iVisited) {
+
+    public void visitIVarNode(IVarNode iVisited) {
+        visit(iVisited);
+        leave(iVisited);
+    }
+
+    public void visitIfNode(IfNode iVisited) {
+        visit(iVisited);
+        leave(iVisited);
+    }
+
+    public void visitIterNode(IterNode iVisited) {
+        visit(iVisited);
+        leave(iVisited);
+    }
+
+    public void visitLAsgnNode(LAsgnNode iVisited) {
+        visit(iVisited);
+        iVisited.getValueNode().accept(this);
+        leave(iVisited);
+    }
+
+    public void visitLVarNode(LVarNode iVisited) {
+        visit(iVisited);
+        leave(iVisited);
+    }
+
+    public void visitLitNode(LitNode iVisited) {
         visit(iVisited, false);
+        leave(iVisited);
     }
-    public void visitMAsgnNode(Node iVisited) {
+
+    public void visitMAsgnNode(MAsgnNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitMatch2Node(Node iVisited) {
+
+    public void visitMatch2Node(Match2Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitMatch3Node(Node iVisited) {
+
+    public void visitMatch3Node(Match3Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitMatchNode(Node iVisited) {
+
+    public void visitMatchNode(MatchNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitMethodNode(Node iVisited) {
+
+    public void visitMethodNode(MethodNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitModuleNode(Node iVisited) {
+
+    public void visitModuleNode(ModuleNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitNewlineNode(Node iVisited) {
+
+    public void visitNewlineNode(NewlineNode iVisited) {
         visit(iVisited);
         iVisited.getNextNode().accept(this);
         leave(iVisited);
     }
-    public void visitNextNode(Node iVisited) {
+
+    public void visitNextNode(NextNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitNilNode(Node iVisited) {
+
+    public void visitNilNode(NilNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitNode(Node iVisited) {
+
+    public void visitNotNode(NotNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitNodeFactory(Node iVisited) {
+
+    public void visitNthRefNode(NthRefNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitNotNode(Node iVisited) {
+
+    public void visitOpAsgn1Node(OpAsgn1Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitNthRefNode(Node iVisited) {
+
+    public void visitOpAsgn2Node(OpAsgn2Node iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitOpAsgn1Node(Node iVisited) {
+
+    public void visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitOpAsgn2Node(Node iVisited) {
+
+    public void visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitOpAsgnAndNode(Node iVisited) {
-        visit(iVisited);
-        leave(iVisited);
-    }
-    public void visitOpAsgnOrNode(Node iVisited) {
-        visit(iVisited);
-        leave(iVisited);
-    }
-    public void visitOptNNode(Node iVisited) {
+
+    public void visitOptNNode(OptNNode iVisited) {
         visit(iVisited);
         iVisited.getBodyNode().accept(this);
         leave(iVisited);
     }
-    public void visitOrNode(Node iVisited) {
+
+    public void visitOrNode(OrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitPostExeNode(Node iVisited) {
+
+    public void visitPostExeNode(PostExeNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitRedoNode(Node iVisited) {
+
+    public void visitRedoNode(RedoNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitRescueBodyNode(Node iVisited) {
+
+    public void visitRescueBodyNode(RescueBodyNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitRescueNode(Node iVisited) {
+
+    public void visitRescueNode(RescueNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitRestArgsNode(Node iVisited) {
+
+    public void visitRestArgsNode(RestArgsNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitRetryNode(Node iVisited) {
+
+    public void visitRetryNode(RetryNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitReturnNode(Node iVisited) {
+
+    public void visitReturnNode(ReturnNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitSClassNode(Node iVisited) {
+
+    public void visitSClassNode(SClassNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitScopeNode(Node iVisited) {
+
+    public void visitScopeNode(ScopeNode iVisited) {
         visit(iVisited);
-        //FIXME: I don't have any idea of what is a CRef or what it is for
-        Node lRefValue = iVisited.getRefValue();
-        if (lRefValue != null) {
-            lRefValue.accept(this);
-        }
         Node lNext = iVisited.getNextNode();
         if (lNext != null) {
             lNext.accept(this);
         }
         leave(iVisited);
     }
-    public void visitSelfNode(Node iVisited) {
+
+    public void visitSelfNode(SelfNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitStrNode(Node iVisited) {
+
+    public void visitStrNode(StrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitSuperNode(Node iVisited) {
+
+    public void visitSuperNode(SuperNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitTrueNode(Node iVisited) {
+
+    public void visitTrueNode(TrueNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitUndefNode(Node iVisited) {
+
+    public void visitUndefNode(UndefNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitUntilNode(Node iVisited) {
+
+    public void visitUntilNode(UntilNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitVAliasNode(Node iVisited) {
+
+    public void visitVAliasNode(VAliasNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitVCallNode(Node iVisited) {
+
+    public void visitVCallNode(VCallNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitWhenNode(Node iVisited) {
+
+    public void visitWhenNode(WhenNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitWhileNode(Node iVisited) {
+
+    public void visitWhileNode(WhileNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitXStrNode(Node iVisited) {
+
+    public void visitXStrNode(XStrNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitYieldNode(Node iVisited) {
+
+    public void visitYieldNode(YieldNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitZArrayNode(Node iVisited) {
+
+    public void visitZArrayNode(ZArrayNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }
-    public void visitZSuperNode(Node iVisited) {
+
+    public void visitZSuperNode(ZSuperNode iVisited) {
         visit(iVisited);
         leave(iVisited);
     }

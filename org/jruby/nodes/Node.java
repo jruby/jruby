@@ -32,6 +32,7 @@ package org.jruby.nodes;
 
 import java.util.*;
 import org.jruby.*;
+import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 import org.jruby.util.collections.*;

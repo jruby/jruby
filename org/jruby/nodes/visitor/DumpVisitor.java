@@ -28,7 +28,8 @@
  * 
  */
 
-package org.jruby.nodes;
+package org.jruby.nodes.visitor;
+import org.jruby.nodes.*;
 import org.jruby.runtime.Constants;
 /**
  * Adapter for the NodeVisitor interface.
@@ -36,7 +37,7 @@ import org.jruby.runtime.Constants;
  * the #visit(Node) method which can be overriden.
  * @see NodeVisitor
  * @author Benoit Cerrina
- * @version $Revision$
+ * @version $Revision: 1.3 $
  **/
 public class DumpVisitor extends NodeVisitorAdapter
 {

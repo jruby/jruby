@@ -43,7 +43,8 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.regexp.*;
 import org.jruby.runtime.RubyGlobalEntry;
 import org.jruby.nodes.Node;
-import org.jruby.nodes.DumpVisitor;
+import org.jruby.nodes.visitor.*;
+import org.jruby.nodes.visitor.DumpVisitor;
 
 /**
  * Class used to launch the interpreter.

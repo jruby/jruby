@@ -31,6 +31,7 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
+import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 
 /**

@@ -31,6 +31,7 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
+import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 
 /**
@@ -44,16 +45,16 @@ public class CVar2Node extends Node {
     public CVar2Node(String vId) {
         super(Constants.NODE_CVAR2, vId, null, null);
     }
-    
- 	public RubyObject eval(Ruby ruby, RubyObject self) {
+
+    public RubyObject eval(Ruby ruby, RubyObject self) {
         return self.getClassVarSingleton().getClassVar(getVId());
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitCVarNode(this);
-	}
+
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitCVar2Node(this);
+    }
 }
