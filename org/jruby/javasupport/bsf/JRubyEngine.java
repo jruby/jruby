@@ -171,7 +171,7 @@ public class JRubyEngine extends BSFEngineImpl {
      */
     private static void printException(Ruby ruby, Exception exception) {
         if (exception instanceof RaiseException) {
-            ruby.getRuntime().printError(((RaiseException) exception).getActException());
+            ruby.getRuntime().printError(((RaiseException) exception).getException());
         } else if (exception instanceof ThrowJump) {
             ruby.getRuntime().printError(((ThrowJump) exception).getNameError());
         } else if (exception instanceof BreakJump) {

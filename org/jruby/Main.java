@@ -293,7 +293,7 @@ public class Main {
                 ruby.eval(lScript);
             }
         } catch (RaiseException rExcptn) {
-            ruby.getRuntime().printError(rExcptn.getActException());
+            ruby.getRuntime().printError(rExcptn.getException());
         } catch (ThrowJump throwJump) {
             ruby.getRuntime().printError(throwJump.getNameError());
         } catch (RubyBugException lBug) {

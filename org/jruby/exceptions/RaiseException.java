@@ -37,15 +37,15 @@ import org.jruby.runtime.*;
  * @version $Revision$
  */
 public class RaiseException extends JumpException {
-    private RubyException actException;
+    private RubyException exception;
 
     public RaiseException(RubyException actException) {
-        setActException(actException);
+        setException(actException);
     }
 
     public RaiseException(Ruby ruby, RubyClass excptnClass, String msg) {
 		super(msg);
-        setActException(RubyException.newException(ruby, excptnClass, msg));
+        setException(RubyException.newException(ruby, excptnClass, msg));
     }
 
     public RaiseException(Ruby ruby, String excptnClassName, String msg) {
@@ -54,7 +54,7 @@ public class RaiseException extends JumpException {
         if (excptnClass == null) {
             System.err.println(excptnClassName);
         }
-        setActException(RubyException.newException(ruby, excptnClass, msg));
+        setException(RubyException.newException(ruby, excptnClass, msg));
     }
 
     public Throwable fillInStackTrace() {
@@ -69,30 +69,13 @@ public class RaiseException extends JumpException {
     public static RubyArray createBacktrace(Ruby ruby, int level) {
         RubyArray backtrace = RubyArray.newArray(ruby);
 
-        /* Benoit: this generates the first line of the backtrace once too many time, see test/testException
-        if (level < 0) {
-            StringBuffer sb = new StringBuffer(100);
-        
-            if (frame.getLastFunc() != null) {
-                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
-                sb.append(":in '").append(frame.getLastFunc()).append('\'');
-            } else if (ruby.getSourceLine() == 0) {
-                sb.append(ruby.getSourceFile());
-            } else {
-                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
-            }
-            backtrace.append(RubyString.newString(ruby, sb.toString()));
-        } else {*/
-
         Iterator iter = ruby.getFrameStack().iterator();
-
         while (level-- > 0) {
             if (!iter.hasNext()) {
                 return RubyArray.nilArray(ruby);
             }
             iter.next();
         }
-        // }
 
         Frame frame = null;
         if (iter.hasNext()) {
@@ -118,19 +101,19 @@ public class RaiseException extends JumpException {
     }
 
     /**
-     * Gets the actException
+     * Gets the exception
      * @return Returns a RubyException
      */
-    public RubyException getActException() {
-        return actException;
+    public RubyException getException() {
+        return exception;
     }
 
     /**
-     * Sets the actException
-     * @param actException The actException to set
+     * Sets the exception
+     * @param newException The exception to set
      */
-    protected void setActException(RubyException actException) {
-        Ruby ruby = actException.getRuby();
+    protected void setException(RubyException newException) {
+        Ruby ruby = newException.getRuby();
 
         // XXX Maybe move it into another methods.
         if (ruby.getRuntime().getTraceFunction() != null) {
@@ -143,7 +126,7 @@ public class RaiseException extends JumpException {
                 ruby.getCurrentFrame().getLastClass());
         }
 
-        this.actException = actException;
+        this.exception = newException;
 
         if (ruby.stackTraces > 5) {
             return;
@@ -151,8 +134,8 @@ public class RaiseException extends JumpException {
 
         ruby.stackTraces++;
 
-        if (actException.callMethod("backtrace").isNil() && ruby.getSourceFile() != null) {
-            actException.callMethod("set_backtrace", createBacktrace(ruby, -1));
+        if (newException.callMethod("backtrace").isNil() && ruby.getSourceFile() != null) {
+            newException.callMethod("set_backtrace", createBacktrace(ruby, -1));
         }
 
         ruby.stackTraces--;

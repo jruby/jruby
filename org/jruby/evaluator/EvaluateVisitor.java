@@ -1275,14 +1275,12 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                 return;
             } catch (RaiseException raiseJump) {
-                ruby.setGlobalVar("$!", raiseJump.getActException());
-
-                // ruby.setSourceLine(getLine());
+                ruby.setGlobalVar("$!", raiseJump.getException());
 
                 Iterator iter = iVisited.getRescueNodes().iterator();
                 while (iter.hasNext()) {
                     RescueBodyNode rescueNode = (RescueBodyNode) iter.next();
-                    if (isRescueHandled(raiseJump.getActException(), rescueNode.getExceptionNodes())) {
+                    if (isRescueHandled(raiseJump.getException(), rescueNode.getExceptionNodes())) {
                         try {
                             eval(rescueNode);
                             return;
@@ -1643,11 +1641,9 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
     }
 
-    private boolean isRescueHandled(RubyException actExcptn, IListNode exceptionNodes) {
-        // TMP_PROTECT;
-
+    private boolean isRescueHandled(RubyException currentException, IListNode exceptionNodes) {
         if (exceptionNodes == null) {
-            return actExcptn.isKindOf(ruby.getExceptions().getStandardError());
+            return currentException.isKindOf(ruby.getExceptions().getStandardError());
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
@@ -1658,7 +1654,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (! args[i].isKindOf(ruby.getClasses().getModuleClass())) {
                 throw new TypeError(ruby, "class or module required for rescue clause");
             }
-            if (actExcptn.isKindOf((RubyModule) args[i])) {
+            if (currentException.isKindOf((RubyModule) args[i])) {
                 return true;
             }
         }

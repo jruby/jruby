@@ -46,7 +46,7 @@ public class ThrowJump extends JumpException {
 
         this.tag = tag;
         this.value = value;
-        this.nameError = new NameError(value.getRuby(), "uncaught throw '" + tag + '\'').getActException();
+        this.nameError = new NameError(value.getRuby(), "uncaught throw '" + tag + '\'').getException();
     }
     
     public String getTag() {

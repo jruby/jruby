@@ -27,3 +27,13 @@ rescue type
   e = $!
 end
 test_ok(e.kind_of?(ArgumentError))
+
+#class SomeOtherException < StandardError
+#end
+#begin
+#  raise "whoah!"
+#rescue SomeOtherException
+#  test_fail()
+#rescue Exception
+#  test_ok(true)
+#end

@@ -27,5 +27,3 @@ result = [1,2,3,4,5].collect {|v|
 }
 test_equal([1,2], values)
 test_ok(result.nil?)
-
-test_print_report
