@@ -33,9 +33,14 @@ import java.io.*;
 import org.jruby.parser.*;
 
 /**
- *
+ * Class used to launch the interpreter.
+ * This is the main class as defined in the jruby.mf manifest.
+ * It is very basic and does not support yet the same array of switches
+ * as the C interpreter.
+ *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
+ *           -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
  * @author  jpetersen
- * @version 
+ * @version 0.1
  */
 public class Main {
 
@@ -49,21 +54,68 @@ public class Main {
         if (args.length == 0) {
             printUsage();
         } else {
-            /*if (args[0].equals("-version")) {
-                printVersion();
-            } else*/ if (args[0].equals("-help")) {
+            int lNbArg = args.length;
+            for (int i = 0; i < lNbArg; i++)
+            {
+                if (args[i].equals("-h") || args[i].equals("-help"))
                 printUsage();
-            } else {
-                runInterpreter(args[0]);
+                else if (args[i].equals("-e"))
+                {
+                    if (i++ >= lNbArg)
+                    {
+                        System.err.println("invalid argument " + i);
+                        System.err.println(" -e must be followed by an expression to evaluate");
+                        printUsage();
+                    }
+                    else
+                        runInterpreter(args[i], "command line " + i);
+                }
+                else
+                {
+                    runInterpreterOnFile(args[0]);
             }
+        }
+
         }
     }
     
+    /**
+     * Prints the usage for the class.
+    *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
+    *           -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
+    */ 
     protected static void printUsage() {
-        System.out.println("Usage: java -jar jruby.jar rubyfile.rb");
+        System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
+        System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
     }
     
-    protected static void runInterpreter(String fileName) {
+    /**
+     * Launch the interpreter on a specific String.
+     * @param iString2Eval
+     * the string to evaluate
+     * @param iFileName
+     * the name of the File from which the string comes.
+     */
+    protected static void runInterpreter(String iString2Eval, String iFileName)
+    {
+        // Initialize Runtime
+        Ruby ruby = new Ruby();
+
+        // Initialize Parser
+        parse p = new parse(ruby);
+
+        // Parse and interpret file
+        RubyString rs = RubyString.m_newString(ruby, iString2Eval);
+        ruby.getInterpreter().eval(ruby.getObjectClass(), p.rb_compile_string(iFileName, rs, 0));
+    }
+
+    /**
+     * Run the interpreter on a File.
+     * open a file and feeds it to the interpreter.
+     * @param fileName
+     * the name of the file to interpret
+     */
+    protected static void runInterpreterOnFile(String fileName) {
         File rubyFile = new File(fileName);
         if (!rubyFile.canRead()) {
             System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
@@ -76,16 +128,7 @@ public class Main {
                     sb.append(line).append('\n');
                 }
                 br.close();
-                
-                // Initialize Runtime
-                Ruby ruby = new Ruby();
-                
-                // Initialize Parser
-                parse p = new parse(ruby);
-                
-                // Parse and interpret file
-                RubyString rs = RubyString.m_newString(ruby, sb.toString());
-                ruby.getInterpreter().eval(ruby.getObjectClass(), p.rb_compile_string(fileName, rs, 0));
+                runInterpreter(sb.toString(), fileName);
                 
             } catch (IOException ioExcptn) {
                 System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
