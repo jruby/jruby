@@ -429,13 +429,12 @@ class Module
       else
         real_name = constant
       end
+
       java_class = nil
-      @included_packages.detect {|package|
+      return super unless @included_packages.detect {|package|
           java_class = get_java_class(package + '.' + real_name.to_s)
       }
-      if java_class.nil?
-        return super
-      end
+      
       JavaUtilities.create_proxy_class(constant, java_class, self)
     end
   end

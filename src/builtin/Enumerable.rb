@@ -67,9 +67,7 @@ module Enumerable
   end
   
   def detect (nothing_found = nil)
-    each do |element|
-      return element if yield(element)
-    end
+    each { |element| return element if yield(element) }
     nothing_found.call unless nothing_found.nil?
     nil
   end
@@ -138,10 +136,9 @@ module Enumerable
   end
 
   def include? (value)
-    each do |item|
-      return true if item == value
-    end
-    false
+    result = false
+    each { |item| result = true if item == value }
+    result
   end
   alias member? include?
 
@@ -174,19 +171,17 @@ module Enumerable
   def all?
     return all? {|obj| obj} unless block_given?
 
-    each do |item|
-      return false unless yield(item)
-    end
-    true
+    result = true
+    each { |item| result = false unless yield(item) }
+    result
   end
 
   def any?
     return any? {|obj| obj} unless block_given?
 
-    each do |item|
-      return true if yield(item)
-    end
-    false
+    result = false
+    each { |item| result = true if yield(item) }
+    result
   end
 
   def zip(*args)
