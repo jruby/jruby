@@ -42,13 +42,18 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Array;
 
 public class JavaClassClass extends RubyObject implements IndexCallable {
     private Class javaClass;
 
     private JavaClassClass(Ruby runtime, String name) {
+        this(runtime, runtime.getJavaSupport().loadJavaClass(name));
+    }
+
+    private JavaClassClass(Ruby runtime, Class javaClass) {
         super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaClass"));
-        this.javaClass = runtime.getJavaSupport().loadJavaClass(name);
+        this.javaClass = javaClass;
     }
 
     private static final int PUBLIC_P = 1;
@@ -64,6 +69,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int JAVA_METHOD = 14;
     private static final int CONSTRUCTORS = 15;
     private static final int CONSTRUCTOR = 16;
+    private static final int ARRAY_CLASS = 17;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -85,6 +91,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
         javaClassClass.defineMethod("constructors", IndexedCallback.create(CONSTRUCTORS, 0));
         javaClassClass.defineMethod("constructor", IndexedCallback.createOptional(CONSTRUCTOR));
+        javaClassClass.defineMethod("array_class", IndexedCallback.create(ARRAY_CLASS, 0));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -215,6 +222,10 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return new JavaConstructorClass(getRuntime(), constructor);
     }
 
+    public JavaClassClass array_class() {
+        return new JavaClassClass(getRuntime(), Array.newInstance(javaClass, 0).getClass());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -243,6 +254,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return constructors();
             case CONSTRUCTOR :
                 return constructor(args);
+            case ARRAY_CLASS :
+                return array_class();
             default :
                 return super.callIndexed(index, args);
         }

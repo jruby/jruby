@@ -1,31 +1,31 @@
 /*
  * JavaUtil.java - No description
  * Created on 22. September 2001, 16:23
- * 
+ *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 
 package org.jruby.javasupport;
@@ -106,10 +106,7 @@ public class JavaUtil {
         return convertRubyToJava(ruby, rubyObject, null);
     }
 
-    public static Object convertRubyToJava(
-        Ruby ruby,
-        IRubyObject rubyObject,
-        Class javaClass) {
+    public static Object convertRubyToJava(Ruby ruby, IRubyObject rubyObject, Class javaClass) {
         if (rubyObject == null || rubyObject == ruby.getNil()) {
             return null;
         }
@@ -117,9 +114,9 @@ public class JavaUtil {
         if (rubyObject instanceof RubyJavaObject) {
             return ((RubyJavaObject) rubyObject).getValue();
         } else if (javaClass == Object.class || javaClass == null) {
-            /* The Java method doesn't care what class it is, but we need to 
+            /* The Java method doesn't care what class it is, but we need to
                know what to convert it to, so we use the object's own class.
-               If that doesn't help, we use String to force a call to the 
+               If that doesn't help, we use String to force a call to the
                object's "to_s" method. */
             javaClass = rubyObject.getJavaClass();
             if (javaClass == IRubyObject.class) {

@@ -3,32 +3,6 @@ test_check "Low-level Java Support"
 
 if defined? Java
 
-#  Java.import("java.lang")
-
-#  test_ok(ClassLoader.type)
-
-#  Java.name("Integer", "JavaInteger")
-
-#  test_ok(JavaInteger.respond_to?("parseInt"))
-#  test_ok(JavaInteger::MAX_VALUE > 0)
-#  test_equal(10, JavaInteger.parseInt("10"))
-#  test_equal(22, JavaInteger.new(22).intValue())
-#  test_equal(JavaInteger.parseInt("10"),
-#             JavaInteger.parseInt("10"))
-
-#  test_exception(NameError) { Cloneable.new }
-#  test_equal([Cloneable, Object, Kernel], Cloneable.ancestors)
-
-  # Inner classes
-  #Java.import("java.awt.geom")
-  #test_ok(Ellipse2D.type)
-  #test_ok(Ellipse2D::Float.type)
-
-#  Java.import("org.jruby.test")
-
-#  unless System.getProperty("jruby.script").nil?
-    # FIXME: I have no idea why this class isn't available when
-    # the test suite is run from ant/junit!? --Anders
 
 #    test_equal(nil, TestHelper.getNull())
 
@@ -45,7 +19,6 @@ if defined? Java
 #    test_exception(NameError) { Java::JavaClass.new }
 #    inner_class = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeImplementation")
 #    test_equal("org.jruby.test.TestHelper$SomeImplementation", inner_class.name)
-#  end
 
   string_class = Java::JavaClass.for_name("java.lang.String")
   test_equal(string_class, Java::JavaClass.for_name("java.lang.String"))
@@ -133,4 +106,9 @@ if defined? Java
   test_equal(Object, method.proxy_class)
   test_equal(Object,
              method.invoke_static(Java.primitive_to_java(101)).type)
+
+  # Arrays
+  string_array_class = string_class.array_class
+  test_ok(string_array_class.array?)
+  test_equal("[Ljava.lang.String;", string_array_class.name)
 end

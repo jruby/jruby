@@ -90,6 +90,16 @@ Java::JavaClass:
 
         Raises NameError if there isn't a matching constructor.
 
+    cls.array_class -> aJavaClass
+        Returns a Java::JavaClass representing arrays of this Java class.
+
+        Example:
+            cls = Java::JavaClass.for_name("java.lang.String")
+            cls.array?                      # -> false
+            array_cls = cls.array_class
+            array_cls.array?                # -> true
+            array_cls.name                  # -> "[Ljava.lang.String;"
+
 
 Java::JavaMethod:
 
