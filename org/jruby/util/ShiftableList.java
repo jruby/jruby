@@ -70,6 +70,7 @@ public class ShiftableList extends AbstractList {
     
     public ShiftableList getList(int shift) {
         ShiftableList newList = new ShiftableList(delegate);
+        newList.start = start;
         newList.shift(shift);
         return newList;
     }

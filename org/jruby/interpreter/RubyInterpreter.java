@@ -1268,6 +1268,12 @@ public class RubyInterpreter implements node_type, Scope {
     protected RubyObject getConstant(NODE cref, RubyId id, RubyObject self) {
         NODE cbase = cref;
         
+        // HACK +++
+        if (ruby.getClassMap().get(id) != null) {
+            return (RubyObject)ruby.getClassMap().get(id);
+        }
+        // HACK ---
+        
         while (cbase != null && cbase.nd_next() != null) {
             RubyObject rubyClass = (RubyObject)cbase.nd_clss();
             if (rubyClass.isNil()) {

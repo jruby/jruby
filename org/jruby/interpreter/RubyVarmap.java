@@ -30,6 +30,7 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.original.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -58,12 +59,13 @@ public class RubyVarmap {
      */
     public static void push(Ruby ruby) {
         // HACK +++
-        if (oldMap.get(ruby) != null) {
-            throw new RuntimeException("JRuby - BUG: Need Queue for oldMap in RubyVarmap");
+        if (oldMap.get(ruby) == null) {
+            oldMap.put(ruby, new RubyStack());
+            // throw new RuntimeException("JRuby - BUG: Need Queue for oldMap in RubyVarmap");
         }
         // HACK ---
         
-        oldMap.put(ruby, ruby.getInterpreter().getDynamicVars());
+        ((RubyStack)oldMap.get(ruby)).push(ruby.getInterpreter().getDynamicVars());
         ruby.getInterpreter().setDynamicVars(null);
     }
     
@@ -71,7 +73,7 @@ public class RubyVarmap {
      *
      */
     public static void pop(Ruby ruby) {
-        ruby.getInterpreter().setDynamicVars((RubyVarmap)oldMap.get(ruby));
+        ruby.getInterpreter().setDynamicVars((RubyVarmap)((RubyStack)oldMap.get(ruby)).pop());
     }
     
     /*public void push() {

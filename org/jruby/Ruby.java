@@ -241,6 +241,8 @@ public final class Ruby implements token {
         
         RbArray.createArrayClass(this);
         RbRange.createRangeClass(this);
+        
+        RbJavaObject.defineJavaObjectClass(this);
     }
     
     /** rb_define_class
