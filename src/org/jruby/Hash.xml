@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Hash</name>
+  <superclass>Object</superclass>
+  <includes>Enumerable</includes>
+
+  <implementation>org.jruby.RubyHash</implementation>
+
+  <instance-methods>
+    <method name="initialize">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="clone">
+      <java>rbClone</java>
+    </method>
+    <method name="rehash"/>
+    <method name="to_hash"/>
+    <method name="to_a"/>
+    <method name="to_s"/>
+    <method name="inspect"/>
+    <method name="==">
+      <arity>1</arity>
+      <java>equal</java>
+    </method>
+    <method name="[]">
+      <arity>1</arity>
+      <java>aref</java>
+    </method>
+    <method name="fetch">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="[]=">
+      <arity>2</arity>
+      <java>aset</java>
+    </method>
+    <method-alias name="store" original="[]="/>
+    <method name="default">
+      <java>getDefaultValue</java>
+    </method>
+    <method name="default=">
+      <arity>1</arity>
+      <java>setDefaultValue</java>
+    </method>
+    <method name="index">
+      <arity>1</arity>
+    </method>
+    <method name="indices">
+      <arity optional="true">0</arity>
+    </method>
+    <method-alias name="indexes" original="indices"/>
+    <method name="size"/>
+    <method-alias name="length" original="size"/>
+    <method name="empty?">
+      <java>empty_p</java>
+    </method>
+    <method name="each"/>
+    <method-alias name="each_pair" original="each"/>
+    <method name="each_value"/>
+    <method name="each_key"/>
+    <method name="sort"/>
+    <method name="keys"/>
+    <method name="values"/>
+    <method name="shift"/>
+    <method name="delete">
+      <arity>1</arity>
+    </method>
+    <method name="delete_if"/>
+    <method name="reject"/>
+    <method name="reject!">
+      <java>reject_bang</java>
+    </method>
+    <method name="clear"/>
+    <method name="invert"/>
+    <method name="update">
+      <arity>1</arity>
+    </method>
+    <method name="replace">
+      <arity>1</arity>
+    </method>
+    <method name="has_key?">
+      <arity>1</arity>
+      <java>has_key</java>
+    </method>
+    <method-alias name="include?" original="has_key?"/>
+    <method-alias name="member?" original="has_key?"/>
+    <method-alias name="key?" original="has_key?"/>
+    <method name="has_value?">
+      <arity>1</arity>
+      <java>has_value</java>
+    </method>
+    <method-alias name="value?" original="has_value?"/>
+  </instance-methods>
+
+  <class-methods>
+    <method name="new">
+      <arity optional="true">0</arity>
+      <java>newInstance</java>
+    </method>
+    <method name="[]">
+      <arity optional="true">0</arity>
+      <java>create</java>
+    </method>
+  </class-methods>
+</module>
+
