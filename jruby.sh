@@ -125,6 +125,12 @@ else
   fi
 fi
 
+EN_US=
+if [ "$1" = "EN_US" ]; then
+  EN_US="-Duser.language=en -Duser.country=US"
+  shift
+fi
+
 	
   $JAVA_HOME/bin/java $DEBUG -classpath $CP \
   -Djruby.base=$JRUBY_BASE \
@@ -132,6 +138,7 @@ fi
   -Djruby.lib=$JRUBY_BASE/lib \
   -Djruby.script=jruby.sh \
   -Djruby.shell=/bin/sh \
+  $EN_US \
      org.jruby.Main $JRUBY_OPTS "$@" 
 #     \
 #  >> $JRUBY_BASE/logs/jruby.out 2>&1 &
