@@ -30,6 +30,7 @@ import org.jruby.Ruby;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.ablaf.common.ISourcePosition;
 
 /**
  *
@@ -45,23 +46,20 @@ public class CallbackMethod extends AbstractMethod {
     }
 
     /**
-     * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
+     * @see IMethod#execute(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         if (ruby.getRuntime().getTraceFunction() != null) {
-            String file = ruby.getFrameStack().getPrevious().getFile();
-            int line = ruby.getFrameStack().getPrevious().getLine();
-                
-            if (file == null) {
-                file = ruby.getSourceFile();
-                line = ruby.getSourceLine();
+            ISourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
+            if (position == null) {
+                position = ruby.getPosition();
             }
 
-            ruby.getRuntime().callTraceFunction("c-call", file, line, receiver, name, getImplementationClass()); // XXX
+            ruby.getRuntime().callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
             try {
                 return callback.execute(receiver, args);
             } finally {
-                ruby.getRuntime().callTraceFunction("c-return", file, line, receiver, name, getImplementationClass()); // XXX
+                ruby.getRuntime().callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
             }
         } else {
             return callback.execute(receiver, args);

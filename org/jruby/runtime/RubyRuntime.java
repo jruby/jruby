@@ -29,6 +29,7 @@
 package org.jruby.runtime;
 
 import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.*;
@@ -163,6 +164,14 @@ public class RubyRuntime {
      * MRI: eval.c - call_trace_func
      *
      */
+    public synchronized void callTraceFunction(String event,
+                                               ISourcePosition position,
+                                               IRubyObject self,
+                                               String name,
+                                               IRubyObject type) {
+        callTraceFunction(event, position.getFile(), position.getLine(), self, name, type);
+    }
+
     public synchronized void callTraceFunction(String event,
                                                String file,
                                                int line,

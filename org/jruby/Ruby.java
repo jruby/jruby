@@ -54,7 +54,6 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.AliasGlobalVariable;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.Callback;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
@@ -143,8 +142,7 @@ public final class Ruby {
     private Namespace namespace;
     private Namespace topNamespace;
 
-    private String sourceFile;
-    private int sourceLine;
+    private ISourcePosition sourcePosition = new DefaultLexerPosition(null, 0, 0);
 
     private boolean isVerbose;
 
@@ -334,13 +332,9 @@ public final class Ruby {
         getClasses().getObjectClass().defineConstant(name, value);
     }
 
-    /** 
-     * @mri top_const_get
-     *
-     */
     public IRubyObject getTopConstant(String name) {
         IRubyObject constant = getClasses().getClass(name);
-        
+
         if (constant == null) {
             constant = getLoadService().autoload(name);
         }
@@ -494,28 +488,14 @@ public final class Ruby {
      * @return Value of property sourceFile.
      */
     public String getSourceFile() {
-        return sourceFile;
-    }
-
-    /** Setter for property sourceFile.
-     * @param sourceFile New value of property sourceFile.
-     */
-    public void setSourceFile(String sourceFile) {
-        this.sourceFile = sourceFile;
+        return sourcePosition.getFile();
     }
 
     /** Getter for property sourceLine.
      * @return Value of property sourceLine.
      */
     public int getSourceLine() {
-        return sourceLine;
-    }
-
-    /** Setter for property sourceLine.
-     * @param sourceLine New value of property sourceLine.
-     */
-    public void setSourceLine(int sourceLine) {
-        this.sourceLine = sourceLine;
+        return sourcePosition.getLine();
     }
 
     /** Getter for property isVerbose.
@@ -734,9 +714,12 @@ public final class Ruby {
         return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
     }
 
+    public void setPosition(String file, int line) {
+        setPosition(new DefaultLexerPosition(file, line, 0));
+    }
+
     public void setPosition(ISourcePosition position) {
-        setSourceFile(position.getFile());
-        setSourceLine(position.getLine());
+        sourcePosition = position;
     }
 
     public void pushDynamicVars() {

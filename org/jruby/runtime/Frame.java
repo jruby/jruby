@@ -30,6 +30,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.ablaf.common.ISourcePosition;
 
 /**
  *
@@ -43,8 +44,7 @@ public class Frame {
     private RubyModule lastClass = null;
     private Namespace namespace = null;
     private Frame tmp = null;
-    private String file = null;
-    private int line = 0;
+    private ISourcePosition position;
     private Iter iter = Iter.ITER_NOT;
 
     public Frame(
@@ -54,8 +54,7 @@ public class Frame {
         RubyModule lastClass,
         Namespace namespace,
         Frame tmp,
-        String file,
-        int line,
+        ISourcePosition position,
         Iter iter) {
 
         this.self = self;
@@ -64,13 +63,12 @@ public class Frame {
         this.lastClass = lastClass;
         this.namespace = namespace;
         this.tmp = tmp;
-        this.file = file;
-        this.line = line;
+        this.position = position;
         this.iter = iter;
     }
 
     public Frame(Frame frame) {
-        this(frame.self, frame.args, frame.lastFunc, frame.lastClass, frame.namespace, frame.tmp, frame.file, frame.line, frame.iter);
+        this(frame.self, frame.args, frame.lastFunc, frame.lastClass, frame.namespace, frame.tmp, frame.position, frame.iter);
     }
 
     /** Getter for property args.
@@ -95,18 +93,12 @@ public class Frame {
         this.namespace = namespace;
     }
 
-    /** Getter for property file.
-     * @return Value of property file.
-     */
-    public String getFile() {
-        return file;
+    public ISourcePosition getPosition() {
+        return position;
     }
 
-    /** Setter for property file.
-     * @param file New value of property file.
-     */
-    public void setFile(String file) {
-        this.file = file;
+    public String getFile() {
+        return position.getFile();
     }
 
     /** Getter for property iter.
@@ -159,14 +151,7 @@ public class Frame {
      * @return Value of property line.
      */
     public int getLine() {
-        return line;
-    }
-
-    /** Setter for property line.
-     * @param line New value of property line.
-     */
-    public void setLine(int line) {
-        this.line = line;
+        return position.getLine();
     }
 
     /** Getter for property self.
@@ -202,7 +187,7 @@ public class Frame {
      * 
      **/
     public void tmpPush() {
-        Frame tmpFrame = new Frame(self, args, lastFunc, lastClass, namespace, tmp, file, line, iter);
+        Frame tmpFrame = new Frame(self, args, lastFunc, lastClass, namespace, tmp, position, iter);
 
         tmp = tmpFrame;
     }
@@ -216,8 +201,7 @@ public class Frame {
         lastFunc = tmp.lastFunc;
         lastClass = tmp.lastClass;
         namespace = tmp.namespace;
-        file = tmp.file;
-        line = tmp.line;
+        position = tmp.position;
         iter = tmp.iter;
         tmp = tmp.tmp;
     }

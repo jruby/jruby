@@ -36,6 +36,7 @@ import org.jruby.exceptions.*;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.ablaf.common.ISourcePosition;
 
 import com.ibm.bsf.*;
 import com.ibm.bsf.util.BSFEngineImpl;
@@ -49,11 +50,8 @@ public class JRubyEngine extends BSFEngineImpl {
     private Ruby ruby;
 
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
-        String oldFile = ruby.getSourceFile();
-        int oldLine = ruby.getSourceLine();
-
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
+        ISourcePosition oldPosition = ruby.getPosition();
+        ruby.setPosition(file, line);
 
         StringBuffer sb = new StringBuffer(((String) funcBody).length() + 100);
 
@@ -78,25 +76,18 @@ public class JRubyEngine extends BSFEngineImpl {
 
         Object result = JavaUtil.convertRubyToJava(ruby, ruby.getTopSelf().callMethod("__jruby_bsf_anonymous", rubyArgs));
 
-        ruby.setSourceFile(oldFile);
-        ruby.setSourceLine(oldLine);
+        ruby.setPosition(oldPosition);
 
         return result;
     }
 
     public Object eval(String file, int line, int col, Object expr) throws BSFException {
-        String oldFile = ruby.getSourceFile();
-        int oldLine = ruby.getSourceLine();
-
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
+        ISourcePosition oldPosition = ruby.getPosition();
+        ruby.setPosition(file, line);
 
         try {
             Object result = ruby.evalScript((String) expr, Object.class);
-
-            ruby.setSourceFile(oldFile);
-            ruby.setSourceLine(oldLine);
-
+            ruby.setPosition(oldPosition);
             return result;
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
@@ -105,16 +96,13 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public void exec(String file, int line, int col, Object expr) throws BSFException {
         try {
-            String oldFile = ruby.getSourceFile();
-            int oldLine = ruby.getSourceLine();
-
-            ruby.setSourceFile(file);
-            ruby.setSourceLine(line);
+            ISourcePosition oldPosition = ruby.getPosition();
+            ruby.setPosition(file, line);
 
             ruby.evalScript((String) expr, Object.class);
 
-            ruby.setSourceFile(oldFile);
-            ruby.setSourceLine(oldLine);
+            ruby.setPosition(oldPosition);
+
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }

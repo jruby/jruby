@@ -137,15 +137,11 @@ public final class DefaultMethod extends AbstractMethod {
             return;
         }
 
-        String file = ruby.getFrameStack().getPrevious().getFile();
-        int line = ruby.getFrameStack().getPrevious().getLine();
-
-        if (file == null) {
-            file = ruby.getSourceFile();
-            line = ruby.getSourceLine();
+        ISourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
+        if (position == null) {
+            position = ruby.getPosition();
         }
-
-        ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, getImplementationClass()); // XXX
+        ruby.getRuntime().callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
     private void traceCall(Ruby ruby, IRubyObject receiver, String name) {
@@ -154,30 +150,27 @@ public final class DefaultMethod extends AbstractMethod {
         }
         //a lot of complication to try to get a line number and a file name
         //without a NullPointerException
-        ISourcePosition lPos = null;
+        ISourcePosition lPosition = null;
         if (body != null)
             if (body.getBodyNode() != null)
                 if(body.getBodyNode().getPosition() != null)
-                    lPos = body.getBodyNode().getPosition();
+                    lPosition = body.getBodyNode().getPosition();
                 else
                     ;
             else
                 if (body.getPosition() != null)
-                    lPos = body.getPosition();
+                    lPosition = body.getPosition();
                 else
                     ;
         else
             if (argsNode != null)
-                lPos = argsNode.getPosition();
+                lPosition = argsNode.getPosition();
 
-        String lFile = ruby.getSourceFile();
-        int lLine = ruby.getSourceLine();
-        if (lPos != null)
-        {
-            lFile = lPos.getFile();
-            lLine = lPos.getLine();
+
+        if (lPosition == null) {
+           lPosition = ruby.getPosition();
         }
-        ruby.getRuntime().callTraceFunction("call", lFile, lLine, receiver, name, getImplementationClass()); // XXX
+        ruby.getRuntime().callTraceFunction("call", lPosition, receiver, name, getImplementationClass()); // XXX
     }
 
     /**

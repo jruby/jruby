@@ -201,8 +201,8 @@ public final class EvaluateVisitor implements NodeVisitor {
         return ruby.getRuntime().getTraceFunction() != null;
     }
 
-    private void callTraceFunction(String event, String file, int line, IRubyObject self, String name, IRubyObject type) {
-        ruby.getRuntime().callTraceFunction(event, file, line, self, name, type);
+    private void callTraceFunction(String event, ISourcePosition position, IRubyObject self, String name, IRubyObject type) {
+        ruby.getRuntime().callTraceFunction(event, position, self, name, type);
     }
 
     public IRubyObject eval(INode node) {
@@ -424,8 +424,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 if (isTrace()) {
                     callTraceFunction(
                         "line",
-                        ruby.getSourceFile(),
-                        ruby.getSourceLine(),
+                        ruby.getPosition(),
                         self,
                         ruby.getCurrentFrame().getLastFunc(),
                         ruby.getCurrentFrame().getLastClass());
@@ -445,13 +444,11 @@ public final class EvaluateVisitor implements NodeVisitor {
             while (iter.hasNext()) {
                 WhenNode whenNode = (WhenNode) iter.next();
 
-                ruby.setSourceLine(whenNode.getPosition().getLine());
-                ruby.setSourceFile(whenNode.getPosition().getFile());
+                ruby.setPosition(whenNode.getPosition());
                 if (isTrace()) {
                     callTraceFunction(
                         "line",
-                        ruby.getSourceFile(),
-                        ruby.getSourceLine(),
+                        ruby.getPosition(),
                         self,
                         ruby.getCurrentFrame().getLastFunc(),
                         ruby.getCurrentFrame().getLastClass());
@@ -1033,8 +1030,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (isTrace()) {
                 callTraceFunction(
                     "line",
-                    ruby.getSourceFile(),
-                    ruby.getSourceLine(),
+                    ruby.getPosition(),
                     self,
                     ruby.getCurrentFrame().getLastFunc(),
                     ruby.getCurrentFrame().getLastClass());
@@ -1544,8 +1540,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (isTrace()) {
                 callTraceFunction(
                     "class",
-                    ruby.getSourceFile(),
-                    ruby.getSourceLine(),
+                    ruby.getPosition(),
                     type,
                     ruby.getCurrentFrame().getLastFunc(),
                     ruby.getCurrentFrame().getLastClass());
@@ -1565,8 +1560,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (isTrace()) {
                 callTraceFunction(
                     "end",
-                    ruby.getSourceFile(),
-                    ruby.getSourceLine(),
+                    ruby.getPosition(),
                     null,
                     ruby.getCurrentFrame().getLastFunc(),
                     ruby.getCurrentFrame().getLastClass());

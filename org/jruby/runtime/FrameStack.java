@@ -25,18 +25,15 @@ public class FrameStack extends Stack {
     public void push() {
         Namespace ns = peek() != null ? ((Frame)peek()).getNamespace() : null;
 
-        push(new Frame(null, null, null, null, ns, null, ruby.getSourceFile(), ruby.getSourceLine(), ruby.getCurrentIter()));
+        push(new Frame(null, null, null, null, ns, null, ruby.getPosition(), ruby.getCurrentIter()));
     }
 
     /**
      * @see IStack#pop()
      */
     public Object pop() {
-        Frame frame  = (Frame)super.pop();
-
-        ruby.setSourceFile(frame.getFile());
-        ruby.setSourceLine(frame.getLine());
-
+        Frame frame  = (Frame) super.pop();
+        ruby.setPosition(frame.getPosition());
         return frame;
     }
 }
