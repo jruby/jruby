@@ -23,8 +23,12 @@
 package org.jruby.javasupport.bsf;
 
 import java.util.Vector;
-
 import org.ablaf.ast.INode;
+import org.apache.bsf.BSFDeclaredBean;
+import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFManager;
+import org.apache.bsf.util.BSFEngineImpl;
+import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.BreakJump;
@@ -38,12 +42,6 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import com.ibm.bsf.BSFDeclaredBean;
-import com.ibm.bsf.BSFException;
-import com.ibm.bsf.BSFManager;
-import com.ibm.bsf.util.BSFEngineImpl;
-import com.ibm.bsf.util.BSFFunctions;
 
 /** An implementation of a JRuby BSF implementation.
  *
@@ -238,7 +236,7 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     /**
-     * @see com.ibm.bsf.BSFEngine#terminate()
+     * @see org.apache.bsf.BSFEngine#terminate()
      */
     public void terminate() {
         runtime.getThreadService().disposeCurrentThread();

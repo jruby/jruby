@@ -58,7 +58,7 @@
     <available property="jdk1.4+"
                classname="java.lang.CharSequence"/>
     <available property="bsf.present"
-               classname="com.ibm.bsf.BSFManager"
+               classname="org.apache.bsf.BSFManager"
                classpathref="build.classpath"/>
     <available property="junit.present"
                classname="junit.framework.TestCase"

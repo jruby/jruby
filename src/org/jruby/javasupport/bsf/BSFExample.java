@@ -34,8 +34,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
-import com.ibm.bsf.BSFException;
-import com.ibm.bsf.BSFManager;
+import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFManager;
 
 /** An example demonstrating the use of JRuby and BSF.
  * 
