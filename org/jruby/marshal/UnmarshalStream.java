@@ -77,6 +77,8 @@ public class UnmarshalStream extends FilterInputStream {
             return RubyClass.unmarshalFrom(this);
         } else if (type == 'm') {
             return RubyModule.unmarshalFrom(this);
+        } else if (type == 'l') {
+            return RubyBignum.unmarshalFrom(this);
         } else if (type == 'o') {
             return defaultObjectUnmarshal();
         } else if (type == 'u') {
@@ -90,7 +92,7 @@ public class UnmarshalStream extends FilterInputStream {
         return ruby;
     }
 
-    private int readUnsignedByte() throws IOException {
+    public int readUnsignedByte() throws IOException {
         int result = read();
         if (result == -1) {
             throw new IOException("Unexpected end of stream");
@@ -98,12 +100,12 @@ public class UnmarshalStream extends FilterInputStream {
         return result;
     }
 
-    private int readSignedByte() throws IOException {
+    public byte readSignedByte() throws IOException {
         int b = readUnsignedByte();
         if (b > 127) {
-            return b - 256;
+            return (byte) (b - 256);
         } else {
-            return b;
+            return (byte) b;
         }
     }
 

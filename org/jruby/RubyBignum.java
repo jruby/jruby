@@ -96,9 +96,6 @@ public class RubyBignum extends RubyInteger {
         //
         //rb_define_method(rb_cBignum, "===", rb_big_eq, 1);
         //    rb_define_method(rb_cBignum, "eql?", rb_big_eq, 1);
-        //    rb_define_method(rb_cBignum, "abs", rb_big_abs, 0);
-        //    rb_define_method(rb_cBignum, "size", rb_big_size, 0);
-        //  rb_define_method(rb_cBignum, "zero?", rb_big_zero_p, 0);
 
         bignumClass.defineMethod("-@", CallbackFactory.getMethod(RubyBignum.class, "op_uminus"));
 
@@ -130,6 +127,7 @@ public class RubyBignum extends RubyInteger {
         bignumClass.defineMethod("|", CallbackFactory.getMethod(RubyBignum.class, "op_or", RubyInteger.class));
         bignumClass.defineMethod("^", CallbackFactory.getMethod(RubyBignum.class, "op_xor", RubyInteger.class));
         bignumClass.defineMethod("[]", CallbackFactory.getMethod(RubyBignum.class, "aref", RubyInteger.class));
+        bignumClass.defineMethod("size", CallbackFactory.getMethod(RubyBignum.class, "size"));
 
         return bignumClass;
     }
@@ -337,6 +335,14 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(ruby, value.shiftRight((int) shift));
     }
 
+    public RubyFixnum size() {
+        int byteLength = value.bitLength() / 8;
+        if (value.bitLength() % 8 != 0) {
+            byteLength++;
+        }
+        return RubyFixnum.newFixnum(ruby, byteLength);
+    }
+
     public void marshalTo(MarshalStream output) throws IOException {
         output.write('l');
         output.write(value.signum() >= 0 ? '+' : '-');
@@ -366,5 +372,22 @@ public class RubyBignum extends RubyInteger {
             // Pad with a 0 if we've written all bytes and have an odd length.
             output.write(0);
         }
+    }
+
+    public static RubyBignum unmarshalFrom(UnmarshalStream input) throws IOException {
+        int signum = (input.readUnsignedByte() == '+' ? 1 : -1);
+        int shortLength = input.unmarshalInt();
+
+        byte[] digits = new byte[shortLength * 2];
+        for (int i = digits.length - 1; i >= 0; i--) {
+            digits[i] = input.readSignedByte();
+        }
+
+        BigInteger value = new BigInteger(digits);
+        if (signum == -1) {
+            value = value.negate();
+        }
+
+        return newBignum(input.getRuby(), value);
     }
 }

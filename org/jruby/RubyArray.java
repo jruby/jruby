@@ -337,7 +337,6 @@ public class RubyArray extends RubyObject {
 	private boolean flatten(ArrayList ary) {
 		boolean mod = false;
 		for (int i = ary.size() - 1; i >= 0; i--) {
-			RubyObject obj = (RubyObject) ary.get(i);
 			if (ary.get(i) instanceof RubyArray) {
 				ArrayList ary2 = ((RubyArray) ary.remove(i)).getList();
 				flatten(ary2);
@@ -537,10 +536,6 @@ public class RubyArray extends RubyObject {
 		}
 		return this;
 	}
-
-	/*public RubyObject dup() {
-		return aref(new RubyObject[] { RubyFixnum.zero(getRuby()), length()});
-		}*/
 
 	/** rb_ary_aref
 	 *

@@ -26,3 +26,16 @@ array.each {		# this should not generate an exception
 }
 test_ok(true)		#this is always true but it is used to count the iteration on ARGV as a test
 test_equal(array.length,  4)
+
+
+test_equal([1,2,3,4], [[[1], 2], [3, [4]]].flatten)
+test_equal(nil, [].flatten!)
+
+#arr = []
+#arr << [[[arr]]]
+#test_exception(ArgumentError) {
+#  arr.flatten
+#}
+#test_exception(ArgumentError) {
+#  arr.flatten!
+#}
