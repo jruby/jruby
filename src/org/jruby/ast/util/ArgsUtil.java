@@ -53,4 +53,20 @@ public final class ArgsUtil {
         return new IRubyObject[] { value };
     }
     
+    /**
+     * Remove first element from array
+     * 
+     * @param array to have first element "popped" off
+     * @return all but first element of the supplied array
+     */
+    public static IRubyObject[] popArray(IRubyObject[] array) {
+    	if (array == null || array.length == 0) {
+    		return IRubyObject.NULL_ARRAY;
+    	}
+    	
+    	IRubyObject[] newArray = new IRubyObject[array.length - 1];
+    	System.arraycopy(array, 1, newArray, 0, array.length - 1);
+    	
+    	return newArray;
+    }
 }
