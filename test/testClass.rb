@@ -33,3 +33,22 @@ f = Froboz.new
 test_equal([Froboz, Enumerable, Object, Kernel], f.type.ancestors)
 test_ok(f.kind_of?(Froboz))
 test_ok(f.kind_of?(Enumerable))
+
+class CM1
+  def a
+    A
+  end
+end
+
+class CM2
+  def a
+    A
+  end
+
+  def CM2::constant_missing
+    "A"
+  end
+end
+
+test_exception(NameError) {CM1.new.a}
+test_equal(CM2.new.a, "A")
