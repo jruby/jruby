@@ -31,26 +31,36 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
 
 public class RbConfig implements Library {
-    private RubyHash configHash;
-
+    /**
+     * Just enough configuration settings (most don't make sense in Java) to run the rubytests
+     * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
+     * <code>EXEEXT</code>.
+     */
     public void load(Ruby runtime) {
         RubyModule configModule = runtime.defineModule("Config");
-        configHash = RubyHash.newHash(runtime);
+        RubyHash configHash = RubyHash.newHash(runtime);
         configModule.defineConstant("CONFIG", configHash);
 
         String[] versionParts = Constants.RUBY_VERSION.split("\\.");
-        setConfig("MAJOR", versionParts[0]);
-        setConfig("MINOR", versionParts[1]);
-        setConfig("TEENY", versionParts[2]);
+        setConfig(configHash, "MAJOR", versionParts[0]);
+        setConfig(configHash, "MINOR", versionParts[1]);
+        setConfig(configHash, "TEENY", versionParts[2]);
 
-        setConfig("bindir",
-                  new File(System.getProperty("jruby.home") + File.separator + "bin").getAbsolutePath());
-        setConfig("RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
+        setConfig(configHash, "bindir", new File(System.getProperty("jruby.home"), "bin").getAbsolutePath());
+        setConfig(configHash, "RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
+        setConfig(configHash, "SHELL", System.getProperty("jruby.shell"));
+        
+        if (isWindows()) {
+        	setConfig(configHash, "EXEEXT", ".exe");
+        }
     }
 
-    private void setConfig(String key, String value) {
+    private static void setConfig(RubyHash configHash, String key, String value) {
         Ruby runtime = configHash.getRuntime();
-        configHash.aset(runtime.newString(key),
-                        runtime.newString(value));
+        configHash.aset(runtime.newString(key), runtime.newString(value));
+    }
+    
+    private static boolean isWindows() {
+    	return System.getProperty("os.name", "").startsWith("Windows");
     }
 }
