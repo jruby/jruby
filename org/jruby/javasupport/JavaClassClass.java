@@ -117,7 +117,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         if (this.javaClass == otherClass.javaClass) {
             return RubyFixnum.newFixnum(getRuntime(), 0);
         }
-        if (this.javaClass.isAssignableFrom(otherClass.javaClass)) {
+        if (otherClass.javaClass.isAssignableFrom(this.javaClass)) {
             return RubyFixnum.newFixnum(getRuntime(), -1);
         }
         return RubyFixnum.newFixnum(getRuntime(), 1);

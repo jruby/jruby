@@ -60,10 +60,12 @@ if defined? Java
   test_equal("java.lang.Object", object_class.name)
   test_equal(nil, object_class.superclass)
 
-#  test_ok(string_class < object_class)
-#  test_ok(! (string_class > object_class))
-#  test_ok(object_class > string_class)
-#  test_ok(! (object_class < string_class))
+  test_ok(string_class < object_class)
+  test_ok(! (string_class > object_class))
+  test_ok(object_class > string_class)
+  test_ok(! (object_class < string_class))
+  test_ok(object_class == object_class)
+  test_ok(object_class != string_class)
 
   string_methods = string_class.java_instance_methods
   test_ok(string_methods.include?("charAt"))
