@@ -3,9 +3,26 @@ JRuby TODO
 ----------
 $Id$
 
+This document is somewhat out of date.  If you are new to jruby and want
+to contribute, then go to our sourceforge web site and look for items
+there.  In particular, look for items with '[intro]' in the summary.
+These are tasks which do not require a large understanding of the
+internal workings of jruby, which make them decent candidates for 
+new jruby hackers.
+
+If you are a developer and want to define new tasks, then you should:
+1. Find or write a unit test which demonstrates a problem.  This is
+generally a rubicon test, but in the case where no unit test exists
+then you should make one for our builtin test suite (unless you have
+the extra determination to submit it to rubicon -- which if it is a 
+useful ruby testcase, that should be done).
+2. If you cannot solve the problem right away or you do not have CVS 
+commit access, then enter a bug on the sourceforge web site.  The bug
+should include the unit test (or describe which test in rubicon).  If
+you cannot easily make a unit test, then submit it anyways.
+
 Items marked '-' are done and will be available in the next
 release.
-
 
 * Documentation
     * Write a FAQ
@@ -13,15 +30,6 @@ release.
     * Short users guide
     * Embedding API docs (first determine what that API *is*)
     * Convert docs to HTML (Docbook?)
-
-* Builtin class implementation
-    * Implement FileTest module
-
-* Internal class restructuring
-    * Move Ruby class creation and method init into classes separate from
-      method implementation.
-    * Convert all callbacks to IndexedCallback.
-    * Generate class creation code from XML specifications.
 
 * Evaluator
     * Replace lexer with a generated one
@@ -31,8 +39,11 @@ release.
         * Continuation
     * Bytecode generation
 
+* Parser
+    * Create documentation on how to update the grammar
+    * Allow parser to be built as part of the build process
+
 * Java support
-    - Loading classes with colliding names
     * Loading inner classes with colliding names
     * Loading external libraries written in Java
     * Predictable way of dispatching on null
