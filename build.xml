@@ -59,7 +59,7 @@
             <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
             <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
             <exclude unless="junit.present" name="**/test/**"/>
-            <exclude unless="oro.present" name="org/jruby/regex/ORORegexpAdapter.java"/>
+            <exclude unless="oro.present" name="org/jruby/regexp/ORORegexpAdapter.java"/>
             <exclude name="**/tars/**"/>
         </javac>
         <copy todir="${build.dest}">
