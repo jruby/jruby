@@ -116,10 +116,12 @@ public class LocalNamesElement implements StackElement {
             localNames.add("_");
             localNames.add("~");
 
-            if (name.equals("_")) {
-                return 0;
-            } else if (name.equals("~")) {
-                return 1;
+            if (name != null) {
+                if (name.equals("_")) {
+                    return 0;
+                } else if (name.equals("~")) {
+                    return 1;
+                }
             }
         }
         localNames.add(name);
