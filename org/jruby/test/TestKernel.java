@@ -55,13 +55,13 @@ public class TestKernel extends TestRubyBase {
 	ruby.initLoad(new ArrayList());
     }
 
-    public void testLoad()  {
+    public void testLoad()  throws Exception {
 	//load should work several times in a row
 	assertEquals("0", eval("load 'test/loadTest'"));
 	assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest'"));
     }
 
-    public void testRequire() {
+    public void testRequire() throws Exception {
 	//reset the $loadTestvar
 	eval("$loadTest = nil");
 	assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
@@ -70,7 +70,7 @@ public class TestKernel extends TestRubyBase {
 	assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
     }
 
-    public void testPrintf() {
+    public void testPrintf() throws Exception {
 	assertEquals("hello", eval("printf(\"%s\", \"hello\")"));
 	assertEquals("", eval("printf(\"%s\", nil)"));
     }

@@ -52,7 +52,7 @@ public class TestRubyCollect extends TestRubyBase {
  super.tearDown(); 
  } 
  
- public void testRubyCollect() { 
+ public void testRubyCollect() throws Exception { 
  String result = eval("a = ['a', 'b'].collect {|x| \"#{x}\"}; p a"); 
  assertEquals("Bug: [ #502036 ]", "[\"a\", \"b\"]", result); 
  } 

@@ -65,7 +65,7 @@ public class TestRuby extends TestRubyBase {
     private String oldHomeProperty;
     private String oldLibProperty;
 
-    public void testInitLoad() {
+    public void testInitLoad() throws Exception {
         ArrayList list = new ArrayList();
         //check without a RubyHome and with one parameter
         System.setProperty("jruby.home", "");
@@ -134,7 +134,7 @@ public class TestRuby extends TestRubyBase {
         assertEquals(new File("./samples/fib.rb"), ruby.findFile(ruby, testFile));
     }
 
-    public void testVarAndMet() {
+    public void testVarAndMet() throws Exception {
         ArrayList list = new ArrayList();
         ruby.initLoad(list);
         eval("load './test/testVariableAndMethod.rb'");

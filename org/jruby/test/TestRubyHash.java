@@ -45,7 +45,7 @@ public class TestRubyHash extends TestRubyBase {
         super(name);
     }
 
-    public void setUp() {
+    public void setUp() throws Exception {
         ruby = Ruby.getDefaultInstance(null);
         eval("$h = {'foo' => 'bar'}");
     }
@@ -58,7 +58,7 @@ public class TestRubyHash extends TestRubyBase {
      * Test literal constructor {}, Hash::[], and Hash::new with and
      * without the optional default-value argument.
      */
-    public void testConstructors() {
+    public void testConstructors() throws Exception {
         result = eval("hash = {'a', 100}; p hash");
         assertEquals("{\"a\"=>100}", result);
         result = eval("hash = Hash['b', 200]; p hash");
@@ -73,7 +73,7 @@ public class TestRubyHash extends TestRubyBase {
      * Test Hash#[]= (store) and Hash#[] (retrieve).  Also test whether
      * Object#== is properly defined for each class.
      */
-    public void testLookups() {
+    public void testLookups() throws Exception {
         // value equality
         result = eval("key = 'a'; hash = {key => 'one'}; hash.store('a', 'two'); puts hash[key]");
         assertEquals("two", result);
@@ -97,7 +97,7 @@ public class TestRubyHash extends TestRubyBase {
     /**
      * Hash#to_s,  Hash#to_a, Hash#to_hash
      */
-    public void testConversions() {
+    public void testConversions() throws Exception {
         result = eval("p $h.to_s");
         assertEquals("\"foobar\"", result);
         result = eval("p $h.to_a");
@@ -109,7 +109,7 @@ public class TestRubyHash extends TestRubyBase {
     /**
      * Hash#size,  Hash#length, Hash#empty?
      */
-    public void testSizeRelated() {
+    public void testSizeRelated() throws Exception {
         assertEquals("1", eval("p $h.size"));
         assertEquals("1", eval("p $h.length"));
         assertEquals("false", eval("p $h.empty?"));
@@ -119,7 +119,7 @@ public class TestRubyHash extends TestRubyBase {
     /**
      * Hash#each, Hash#each_pair, Hash#each_value, Hash#each_key
      */
-    public void testIterating() {
+    public void testIterating() throws Exception {
         assertEquals("[\"foo\", \"bar\"]", eval("$h.each {|pair| p pair}"));
         assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each {|pair| }"));
         assertEquals("[\"foo\", \"bar\"]", eval("$h.each_pair {|pair| p pair}"));
@@ -135,7 +135,7 @@ public class TestRubyHash extends TestRubyBase {
     /**
      * Hash#delete, Hash#delete_if, Hash#reject, Hash#reject!
      */
-    public void testDeleting() {
+    public void testDeleting() throws Exception {
         eval("$delete_h = {1=>2,3=>4}");
         assertEquals("2", eval("p $delete_h.delete(1)"));
         assertEquals("{3=>4}", eval("p $delete_h"));
@@ -164,7 +164,7 @@ public class TestRubyHash extends TestRubyBase {
     /**
      * Hash#default, Hash#default=
      */
-    public void testDefault() {
+    public void testDefault() throws Exception {
         assertEquals("nil", eval("p $h['njet']"));
         assertEquals("nil", eval("p $h.default"));
         eval("$h.default = 'missing'");
@@ -175,7 +175,7 @@ public class TestRubyHash extends TestRubyBase {
     /**
      * Hash#sort, Hash#invert
      */
-    public void testRestructuring() {
+    public void testRestructuring() throws Exception {
 	eval("$h_sort = {\"a\"=>20,\"b\"=>30,\"c\"=>10}");
 	assertEquals("[[\"a\", 20], [\"b\", 30], [\"c\", 10]]",
 		     eval("p $h_sort.sort"));

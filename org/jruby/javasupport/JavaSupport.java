@@ -22,19 +22,19 @@ public class JavaSupport {
     public RubyModule loadClass(Class javaClass, String rubyName) {
         if (javaClass == Object.class) {
             return ruby.getClasses().getJavaObjectClass();
-        } else if (loadedJavaClasses.get(javaClass) != null) {
+        }
+        if (loadedJavaClasses.containsKey(javaClass)) {
             return (RubyModule) loadedJavaClasses.get(javaClass);
+        }
+ 
+        if (rubyName == null) {
+            String javaName = javaClass.getName();
+            rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
+        }
+        if (javaClass.isInterface()) {
+            return createRubyInterface(javaClass, rubyName);
         } else {
-            if (rubyName == null) {
-                String javaName = javaClass.getName();
-                rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
-            }
-
-            if (javaClass.isInterface()) {
-                return createRubyInterface(javaClass, rubyName);
-            } else {
-                return createRubyClass(javaClass, rubyName);
-            }
+            return createRubyClass(javaClass, rubyName);
         }
     }
 
@@ -55,12 +55,13 @@ public class JavaSupport {
     private RubyModule createRubyInterface(Class javaInterface, String rubyName) {
         RubyModule newInterface = ruby.defineModule(rubyName);
 
-        Map methods = sortMethodsByName(Arrays.asList(javaInterface.getMethods()));
+        Map methods = getMethodsByName(javaInterface);
 
         for (Iterator iter = methods.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
 
-            newInterface.defineModuleFunction((String) entry.getKey(), new JavaInterfaceMethod((String) entry.getKey(), (Set) entry.getValue()));
+            newInterface.defineModuleFunction((String) entry.getKey(),
+            new JavaInterfaceMethod((String) entry.getKey(), (Set) entry.getValue()));
         }
 
         newInterface.defineModuleFunction("new" + rubyName, new JavaInterfaceConstructor(javaInterface));
@@ -68,21 +69,25 @@ public class JavaSupport {
         return newInterface;
     }
 
-    private static Map sortMethodsByName(List methodList) {
-        Map methodMap = new HashMap();
+	/**
+	 * @return a Map (String --> Set) of methods by name
+	 */
+	private static Map getMethodsByName(Class javaClass) {
+		Method[] methods = javaClass.getMethods();
+		List methodList = Arrays.asList(methods);
+        Map result = new HashMap(methods.length);
 
         Iterator iter = methodList.iterator();
         while (iter.hasNext()) {
             Method method = (Method) iter.next();
+			String name = method.getName();
 
-            if (!methodMap.containsKey(method.getName())) {
-                methodMap.put(method.getName(), new HashSet());
+            if (! result.containsKey(name)) {
+                result.put(name, new HashSet());
             }
-
-            ((Set) methodMap.get(method.getName())).add(method);
+            ((Set) result.get(name)).add(method);
         }
-
-        return methodMap;
+        return result;
     }
 
     private void defineConstants(Class javaClass, RubyClass rubyClass) {
@@ -106,24 +111,24 @@ public class JavaSupport {
     }
 
     private void defineFields(Class javaClass, RubyClass rubyClass) {
-        // add constants
         Field[] fields = javaClass.getFields();
 
         for (int i = 0; i < fields.length; i++) {
-            int modifiers = fields[i].getModifiers();
+            Field field = fields[i];
+            int modifiers = field.getModifiers();
             if (Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
-                String name = fields[i].getName();
+                String name = field.getName();
 
                 // Create read access
                 if (!rubyClass.isMethodDefined(name)) {
                     ruby.getMethodCache().clearByName(name);
-                    rubyClass.defineMethod(name, new JavaFieldReader(fields[i]));
+                    rubyClass.defineMethod(name, new JavaFieldReader(field));
                 }
 
                 // Create write access
                 if (!rubyClass.isMethodDefined(name + "=")) {
                     ruby.getMethodCache().clearByName(name + "=");
-                    rubyClass.defineMethod(name + "=", new JavaFieldWriter(fields[i]));
+                    rubyClass.defineMethod(name + "=", new JavaFieldWriter(field));
                 }
             }
         }
