@@ -78,7 +78,13 @@ public class RubyPointer extends DefaultPointer {
     }
 
     public RubyObject getRuby(int index) {
-        return (RubyObject)get(index);
+    	Object obj = get(index);
+        if (obj instanceof RubyObject) {
+        	return (RubyObject)obj;
+        } else if (obj != null) {
+        	System.err.println("[BUG] A object of type " + obj.getClass() + " in a RubyPointer");
+        }
+        return null;
     }
     
     public RubyObject[] toRubyArray() {

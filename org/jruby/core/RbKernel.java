@@ -52,8 +52,7 @@ public class RbKernel {
         kernelModule.defineMethod("sprintf", getKernelMethod("m_sprintf"));
         kernelModule.defineMethod("format", getKernelMethod("m_sprintf"));
         kernelModule.defineMethod("printf", getKernelMethod("m_printf"));
-        kernelModule.defineMethod("require",
-            getKernelMethod("m_require", RubyString.class));
+        kernelModule.defineMethod("require", getKernelMethod("m_require", RubyString.class));
         kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
         kernelModule.defineMethod("hash", getObjectMethod("m_id"));
         kernelModule.defineMethod("id", getObjectMethod("m_id"));
@@ -66,8 +65,9 @@ public class RbKernel {
         kernelModule.defineMethod("equal?", getKernelMethod("m_equal"));
         kernelModule.defineMethod("eql?", getKernelMethod("m_equal"));
 
-        kernelModule.defineMethod("method",
-            getObjectMethod("m_method", RubyObject.class));
+        kernelModule.defineMethod("method", getObjectMethod("m_method", RubyObject.class));
+
+        kernelModule.defineMethod("instance_eval", getObjectMethod("instance_eval", true));
 
         return kernelModule;
     }
@@ -81,17 +81,19 @@ public class RbKernel {
     }
 
     public static RubyCallbackMethod getKernelMethod(String methodName) {
-        return new ReflectionCallbackMethod(RbKernel.class, methodName,
-                                            RubyObject[].class, true, true);
+        return new ReflectionCallbackMethod(RbKernel.class, methodName, RubyObject[].class, true, true);
     }
 
     public static RubyCallbackMethod getKernelMethod(String methodName, Class arg1) {
-        return new ReflectionCallbackMethod(RbKernel.class, methodName,
-                                            arg1, false, true);
+        return new ReflectionCallbackMethod(RbKernel.class, methodName, arg1, false, true);
     }
 
     public static RubyCallbackMethod getObjectMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyObject.class, methodName);
+    }
+
+    public static RubyCallbackMethod getObjectMethod(String methodName, boolean restArgs) {
+        return new ReflectionCallbackMethod(RubyObject.class, methodName, restArgs);
     }
 
     public static RubyCallbackMethod getObjectMethod(String methodName, Class arg1) {
@@ -99,21 +101,21 @@ public class RbKernel {
     }
 
     public static RubyObject m_equal(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        if(recv == args[0]) {
+        if (recv == args[0]) {
             return ruby.getTrue();
         }
-	return ruby.getFalse();
+        return ruby.getFalse();
     }
 
     public static RubyObject m_extend(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
             throw new RubyArgumentException(ruby, "wrong # of arguments");
         }
-	// FIXME: Check_Type?
-        for(int i = 0; i < args.length; i++) {
-            args[i].funcall(ruby.intern("extend_object"),recv);  
+        // FIXME: Check_Type?
+        for (int i = 0; i < args.length; i++) {
+            args[i].funcall(ruby.intern("extend_object"), recv);
         }
-	return recv; 
+        return recv;
     }
 
     public static RubyObject m_puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
@@ -126,8 +128,8 @@ public class RbKernel {
                 if (args[i] instanceof RubyArray) {
                     m_puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
                 } else {
-                    ruby.getRuntime().getOutputStream().println(args[i].isNil() ? "nil"
-                        : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
+                    ruby.getRuntime().getOutputStream().println(
+                        args[i].isNil() ? "nil" : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
                 }
             }
         }
@@ -140,11 +142,9 @@ public class RbKernel {
         switch (argsLength) {
             case 0 :
             case 1 :
-                throw new RaiseException(
-                    RubyException.s_new(ruby, ruby.getExceptions().getRuntimeError(), args));
+                throw new RaiseException(RubyException.s_new(ruby, ruby.getExceptions().getRuntimeError(), args));
             case 2 :
-                RubyException excptn =
-                    (RubyException) args[0].funcall(ruby.intern("exception"), args[1]);
+                RubyException excptn = (RubyException) args[0].funcall(ruby.intern("exception"), args[1]);
                 throw new RaiseException(excptn);
             default :
                 throw new RubyArgumentException(ruby, "wrong # of arguments");
@@ -160,20 +160,18 @@ public class RbKernel {
                 if (i > 0) {
                     ruby.getRuntime().getOutputStream().print(ofs);
                 }
-                ruby.getRuntime().getOutputStream().print(args[i].isNil() ? "nil"
-                    : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
+                ruby.getRuntime().getOutputStream().print(
+                    args[i].isNil() ? "nil" : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
             }
         }
-        ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? ""
-            : RubyString.stringValue(orsObj).getValue());
+        ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
         return ruby.getNil();
     }
 
     public static RubyObject m_p(Ruby ruby, RubyObject recv, RubyObject args[]) {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                ruby.getRuntime().getOutputStream().println(
-                    ((RubyString) args[i].funcall(ruby.intern("inspect"))).getValue());
+                ruby.getRuntime().getOutputStream().println(((RubyString) args[i].funcall(ruby.intern("inspect"))).getValue());
             }
         }
         return ruby.getNil();
@@ -181,8 +179,7 @@ public class RbKernel {
 
     public static RubyObject m_sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
-            throw new RubyArgumentException(ruby,
-                "sprintf must have at least one argument");
+            throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
         }
         RubyString str = RubyString.stringValue(args[0]);
         RubyArray newArgs = RubyArray.m_create(ruby, args);
@@ -191,8 +188,7 @@ public class RbKernel {
     }
 
     public static RubyObject m_printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        ruby.getRuntime().getOutputStream().print(
-            ((RubyString) m_sprintf(ruby, recv, args)).getValue());
+        ruby.getRuntime().getOutputStream().print(((RubyString) m_sprintf(ruby, recv, args)).getValue());
         return ruby.getNil();
     }
 
@@ -200,17 +196,14 @@ public class RbKernel {
         if (arg1.getValue().endsWith(".jar")) {
             File jarFile = new File(arg1.getValue());
             if (!jarFile.exists()) {
-                jarFile = new File(new File(ruby.getSourceFile()).getParentFile(),
-                                   arg1.getValue());
+                jarFile = new File(new File(ruby.getSourceFile()).getParentFile(), arg1.getValue());
                 if (!jarFile.exists()) {
-                    ruby.getRuntime().getErrorStream().println("[Error] Jarfile + \""
-                        + jarFile.getAbsolutePath() + "\"not found.");
+                    ruby.getRuntime().getErrorStream().println("[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
                 }
             }
             if (jarFile.exists()) {
                 try {
-                    ClassLoader javaClassLoader = new URLClassLoader(
-                        new URL[] { jarFile.toURL()}, ruby.getJavaClassLoader());
+                    ClassLoader javaClassLoader = new URLClassLoader(new URL[] { jarFile.toURL()}, ruby.getJavaClassLoader());
                     ruby.setJavaClassLoader(javaClassLoader);
                 } catch (MalformedURLException murlExcptn) {
                 }

@@ -45,55 +45,55 @@ public class RubyScope {
     public static final int SCOPE_MALLOC = 1;
     public static final int SCOPE_NOSTACK = 2;
     public static final int SCOPE_DONT_RECYCLE = 4;
-    
-    private RubyObject      superObject = null;
-    private RubyIdPointer   localTbl    = null;
-    private RubyPointer     localVars   = null;
-    private int             flags       = 0;
-    
-    private RubyScope       old         = null;
+
+    private RubyObject superObject = null;
+    private RubyIdPointer localTbl = null;
+    private RubyPointer localVars = null;
+    private int flags = 0;
+
+    private RubyScope old = null;
 
     public RubyScope() {
     }
-        
+
     public RubyScope(RubyScope scope) {
         this.superObject = scope.superObject;
-        this.localTbl    = scope.localTbl;
-        this.localVars   = scope.localVars;
-        this.flags       = scope.flags;
-        this.old         = scope.old;
+        this.localTbl = scope.localTbl;
+        this.localVars = scope.localVars;
+        this.flags = scope.flags;
+        this.old = scope.old;
     }
 
     public void push() {
         old = new RubyScope(this);
-        
-        localTbl    = null;
-        localVars   = null;
-        flags       = 0;
+
+        localTbl = null;
+        localVars = null;
+        flags = 0;
     }
-    
+
     public void pop() {
         this.superObject = old.superObject;
-        this.localTbl    = old.localTbl;
-        this.localVars   = old.localVars;
-        this.flags       = old.flags;
-        this.old         = old.old;
+        this.localTbl = old.localTbl;
+        this.localVars = old.localVars;
+        this.flags = old.flags;
+        this.old = old.old;
     }
-    
+
     /** Getter for property flags.
      * @return Value of property flags.
      */
     public int getFlags() {
         return flags;
     }
-    
+
     /** Setter for property flags.
      * @param flags New value of property flags.
      */
     public void setFlags(int flags) {
         this.flags = flags;
     }
-    
+
     /** Indexed getter for property localTbl.
      * @param index Index of the property.
      * @return Value of the property at <CODE>index</CODE>.
@@ -101,14 +101,14 @@ public class RubyScope {
     public RubyId getLocalTbl(int index) {
         return localTbl.getId(index);
     }
-    
+
     /** Getter for property localTbl.
      * @return Value of property localTbl.
      */
     public RubyIdPointer getLocalTbl() {
         return localTbl;
     }
-    
+
     /** Indexed setter for property localTbl.
      * @param index Index of the property.
      * @param localTbl New value of the property at <CODE>index</CODE>.
@@ -116,14 +116,14 @@ public class RubyScope {
     public void setLocalTbl(int index, RubyId newId) {
         localTbl.set(index, newId);
     }
-    
+
     /** Setter for property localTbl.
      * @param localTbl New value of property localTbl.
      */
     public void setLocalTbl(RubyIdPointer localTbl) {
         this.localTbl = localTbl;
     }
-    
+
     /** Indexed getter for property localVars.
      * @param index Index of the property.
      * @return Value of the property at <CODE>index</CODE>.
@@ -131,14 +131,14 @@ public class RubyScope {
     public RubyObject getLocalVars(int index) {
         return localVars.getRuby(index);
     }
-    
+
     /** Getter for property localVars.
      * @return Value of property localVars.
      */
     public RubyPointer getLocalVars() {
         return localVars;
     }
-    
+
     /** Indexed setter for property localVars.
      * @param index Index of the property.
      * @param localVars New value of the property at <CODE>index</CODE>.
@@ -156,21 +156,21 @@ public class RubyScope {
         // HACK ---
         localVars.set(index, newValue);
     }
-    
+
     /** Setter for property localVars.
      * @param localVars New value of property localVars.
      */
     public void setLocalVars(RubyPointer localVars) {
         this.localVars = localVars;
     }
-    
+
     /** Getter for property superObject.
      * @return Value of property superObject.
      */
     public RubyObject getSuperObject() {
         return superObject;
     }
-    
+
     /** Setter for property superObject.
      * @param superObject New value of property superObject.
      */

@@ -43,37 +43,36 @@ import org.jruby.util.*;
 public class ParserHelper {
     private Ruby ruby;
     private NodeFactory nf;
-    
+
     private Node evalTree;
     private Node evalTreeBegin;
-    
+
     private int inSingle;
     private int inDef;
-    
+
     private boolean inDefined;
-    
+
     private int compileForEval;
-    
+
     private int lexState;
     private int classNest;
     private RubyId curMid;
 
     // Scanner ?
-    
+
     private boolean rubyInCompile = false;
     private boolean rubyEndSeen;
-    
+
     private int heredocEnd;
     private boolean commandStart = true;
     // XXX is this really needed?
-    
+
     private RubyArray rubyDebugLines; // separate a Ruby string into lines...
 
-    
     public ParserHelper(Ruby ruby) {
         this.ruby = ruby;
     }
-    
+
     public void init() {
         nf = new NodeFactory(ruby);
     }
@@ -83,11 +82,11 @@ public class ParserHelper {
     public RubyId newId(int id) {
         return RubyId.newId(ruby, id);
     }
-    
+
     private void yyerror(String message) {
         ruby.getRuntime().getErrorStream().println(message);
     }
-    
+
     public void rb_compile_error(String message) {
         ruby.getRuntime().getErrorStream().println(message);
     }
@@ -104,9 +103,9 @@ public class ParserHelper {
         ruby.getRuntime().getErrorStream().println("[BUG] " + message);
     }
 
-// ---------------------------------------------------------------------------
-// here the parser methods start....
-// ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+    // here the parser methods start....
+    // ---------------------------------------------------------------------------
 
     /**
      *  Copies position info (added to reduce the need for casts).
@@ -117,7 +116,6 @@ public class ParserHelper {
     public void fixpos(Object n1, Node n2) {
         fixpos((Node) n1, n2);
     }
-
 
     /**
      *  Description of the Method
@@ -134,14 +132,12 @@ public class ParserHelper {
         return node1;
     }
 
-
     /**
      *  Description of the Method
      */
     void rb_parser_append_print() {
         evalTree = block_append(evalTree, nf.newFCall(ruby.intern("print"), nf.newArray(nf.newGVar(ruby.intern("$_")))));
     }
-
 
     /**
      *  Description of the Method
@@ -151,12 +147,13 @@ public class ParserHelper {
      */
     void rb_parser_while_loop(int chop, int split) {
         if (split != 0) {
-            evalTree = block_append(nf.newGAsgn(ruby.intern("$F"),
-                    nf.newCall(nf.newGVar(ruby.intern("$_")), ruby.intern("split"), null)), evalTree);
+            evalTree =
+                block_append(
+                    nf.newGAsgn(ruby.intern("$F"), nf.newCall(nf.newGVar(ruby.intern("$_")), ruby.intern("split"), null)),
+                    evalTree);
         }
         if (chop != 0) {
-            evalTree = block_append(nf.newCall(nf.newGVar(ruby.intern("$_")),
-                    ruby.intern("chop!"), null), evalTree);
+            evalTree = block_append(nf.newCall(nf.newGVar(ruby.intern("$_")), ruby.intern("chop!"), null), evalTree);
         }
         evalTree = nf.newOptN(evalTree);
     }
@@ -173,7 +170,6 @@ public class ParserHelper {
         return ruby.getNil();
     }
 
-
     /**
      *  Description of the Method
      *
@@ -187,7 +183,6 @@ public class ParserHelper {
         }
     }
 
-
     /**
      *  Description of the Method
      *
@@ -199,7 +194,6 @@ public class ParserHelper {
         }
         return ruby.getNil();
     }
-
 
     /**
      *  Description of the Method
@@ -214,7 +208,6 @@ public class ParserHelper {
         }
     }
 
-
     /**
      *  Description of the Method
      *
@@ -223,47 +216,47 @@ public class ParserHelper {
      */
     public Node gettable(RubyId id) {
         switch (id.intValue()) {
-            case Token.kSELF:
+            case Token.kSELF :
                 return nf.newSelf();
-            case Token.kNIL:
+            case Token.kNIL :
                 return nf.newNil();
-            case Token.kTRUE:
+            case Token.kTRUE :
                 return nf.newTrue();
-            case Token.kFALSE:
+            case Token.kFALSE :
                 return nf.newFalse();
-            case Token.k__FILE__:
+            case Token.k__FILE__ :
                 return nf.newStr(RubyString.m_newString(ruby, ruby.getSourceFile()));
-            case Token.k__LINE__:
+            case Token.k__LINE__ :
                 return nf.newLit(RubyFixnum.m_newFixnum(ruby, ruby.getSourceLine()));
-            default: {
-                if (id.isLocalId()) {
-                    if (dyna_in_block() && RubyVarmap.isDefined(ruby, id)) {
-                        return nf.newDVar(id);
-                    } else if (local_id(id)) {
-                        return nf.newLVar(id);
+            default :
+                {
+                    if (id.isLocalId()) {
+                        if (dyna_in_block() && RubyVarmap.isDefined(ruby, id)) {
+                            return nf.newDVar(id);
+                        } else if (local_id(id)) {
+                            return nf.newLVar(id);
+                        }
+                        /*
+                         *  method call without arguments
+                         */
+                        return nf.newVCall(id);
+                    } else if (id.isGlobalId()) {
+                        return nf.newGVar(id);
+                    } else if (id.isInstanceId()) {
+                        return nf.newIVar(id);
+                    } else if (id.isConstId()) {
+                        return nf.newConst(id);
+                    } else if (id.isClassId()) {
+                        if (isInSingle()) {
+                            return nf.newCVar2(id);
+                        }
+                        return nf.newCVar(id);
                     }
-                    /*
-                     *  method call without arguments
-                     */
-                    return nf.newVCall(id);
-                } else if (id.isGlobalId()) {
-                    return nf.newGVar(id);
-                } else if (id.isInstanceId()) {
-                    return nf.newIVar(id);
-                } else if (id.isConstId()) {
-                    return nf.newConst(id);
-                } else if (id.isClassId()) {
-                    if (isInSingle()) {
-                        return nf.newCVar2(id);
-                    }
-                    return nf.newCVar(id);
                 }
-            }
         }
         rb_bug("invalid id for gettable. id = " + id.intValue() + ", name= " + id.toName());
         return null;
     }
-
 
     /**
      *  Copies filename and line number from "orig" to "node".
@@ -296,7 +289,6 @@ public class ParserHelper {
         return nl;
     }
 
-
     /**
      *  Description of the Method
      *
@@ -313,7 +305,7 @@ public class ParserHelper {
 
         Node end;
         if (head instanceof BlockNode) {
-            end = ((BlockNode)head).getEndNode();
+            end = ((BlockNode) head).getEndNode();
         } else {
             end = nf.newBlock(head);
             end.setEndNode(end);
@@ -325,17 +317,17 @@ public class ParserHelper {
             Node nd = end.getHeadNode();
             while (true) {
                 switch (nd.getType()) {
-                    case Constants.NODE_RETURN:
-                    case Constants.NODE_BREAK:
-                    case Constants.NODE_NEXT:
-                    case Constants.NODE_REDO:
-                    case Constants.NODE_RETRY:
+                    case Constants.NODE_RETURN :
+                    case Constants.NODE_BREAK :
+                    case Constants.NODE_NEXT :
+                    case Constants.NODE_REDO :
+                    case Constants.NODE_RETRY :
                         rb_warning("statement not reached");
                         break;
-                    case Constants.NODE_NEWLINE:
+                    case Constants.NODE_NEWLINE :
                         nd = nd.getNextNode();
                         continue;
-                    default:
+                    default :
                         break;
                 }
                 break;
@@ -350,7 +342,6 @@ public class ParserHelper {
         head.setEndNode(tail.getEndNode());
         return head;
     }
-
 
     /**
      *  Description of the Method
@@ -374,7 +365,6 @@ public class ParserHelper {
         return head;
     }
 
-
     /**
      *  Description of the Method
      *
@@ -395,7 +385,6 @@ public class ParserHelper {
         return head;
     }
 
-
     /**
      *  Description of the Method
      *
@@ -408,7 +397,6 @@ public class ParserHelper {
     public Node call_op(Node recv, int op, int narg, Node arg1) {
         return call_op(recv, newId(op), narg, arg1);
     }
-
 
     /**
      *  Description of the Method
@@ -427,7 +415,6 @@ public class ParserHelper {
         return nf.newCall(recv, id, narg == 1 ? nf.newList(arg1) : null);
     }
 
-
     /**
      *  Description of the Method
      *
@@ -439,20 +426,20 @@ public class ParserHelper {
         local_cnt('~');
 
         switch (node1.getType()) {
-            case Constants.NODE_DREGX:
-            case Constants.NODE_DREGX_ONCE:
+            case Constants.NODE_DREGX :
+            case Constants.NODE_DREGX_ONCE :
                 return nf.newMatch2(node1, node2);
-            case Constants.NODE_LIT:
+            case Constants.NODE_LIT :
                 if (node1.getLiteral() instanceof RubyRegexp) {
                     return nf.newMatch2(node1, node2);
                 }
         }
 
         switch (node2.getType()) {
-            case Constants.NODE_DREGX:
-            case Constants.NODE_DREGX_ONCE:
+            case Constants.NODE_DREGX :
+            case Constants.NODE_DREGX_ONCE :
                 return nf.newMatch3(node2, node1);
-            case Constants.NODE_LIT:
+            case Constants.NODE_LIT :
                 if (node2.getLiteral() instanceof RubyRegexp) {
                     return nf.newMatch3(node2, node1);
                 }
@@ -460,7 +447,6 @@ public class ParserHelper {
 
         return nf.newCall(node1, newId(Token.tMATCH), nf.newList(node2));
     }
-
 
     /**
      *  Description of the Method
@@ -472,48 +458,49 @@ public class ParserHelper {
     public Node assignable(RubyId id, Node val) {
         value_expr(val);
         switch (id.intValue()) {
-            case Token.kSELF:
+            case Token.kSELF :
                 yyerror("Can't change the value of self");
-            case Token.kNIL:
+            case Token.kNIL :
                 yyerror("Can't assign to nil");
-            case Token.kTRUE:
+            case Token.kTRUE :
                 yyerror("Can't assign to true");
-            case Token.kFALSE:
+            case Token.kFALSE :
                 yyerror("Can't assign to false");
-            case Token.k__FILE__:
+            case Token.k__FILE__ :
                 yyerror("Can't assign to __FILE__");
-            case Token.k__LINE__:
+            case Token.k__LINE__ :
                 yyerror("Can't assign to __LINE__");
-            default: {
-                if (id.isLocalId()) {
-                    if (RubyVarmap.isCurrent(ruby, id)) {
-                        return nf.newDAsgnCurr(id, val);
-                    } else if (RubyVarmap.isDefined(ruby, id)) {
-                        return nf.newDAsgn(id, val);
-                    } else if (local_id(id) || !dyna_in_block()) {
-                        return nf.newLAsgn(id, val);
+            default :
+                {
+                    if (id.isLocalId()) {
+                        if (RubyVarmap.isCurrent(ruby, id)) {
+                            return nf.newDAsgnCurr(id, val);
+                        } else if (RubyVarmap.isDefined(ruby, id)) {
+                            return nf.newDAsgn(id, val);
+                        } else if (local_id(id) || !dyna_in_block()) {
+                            return nf.newLAsgn(id, val);
+                        } else {
+                            RubyVarmap.push(ruby, id, ruby.getNil());
+                            return nf.newDAsgnCurr(id, val);
+                        }
+                    } else if (id.isGlobalId()) {
+                        return nf.newGAsgn(id, val);
+                    } else if (id.isInstanceId()) {
+                        return nf.newIAsgn(id, val);
+                    } else if (id.isConstId()) {
+                        if (isInDef() || isInSingle()) {
+                            yyerror("dynamic constant assignment");
+                        }
+                        return nf.newCDecl(id, val);
+                    } else if (id.isClassId()) {
+                        if (isInSingle()) {
+                            return nf.newCVAsgn(id, val);
+                        }
+                        return nf.newCVDecl(id, val);
                     } else {
-                        RubyVarmap.push(ruby, id, ruby.getNil());
-                        return nf.newDAsgnCurr(id, val);
+                        rb_bug("bad id for variable");
                     }
-                } else if (id.isGlobalId()) {
-                    return nf.newGAsgn(id, val);
-                } else if (id.isInstanceId()) {
-                    return nf.newIAsgn(id, val);
-                } else if (id.isConstId()) {
-                    if (isInDef() || isInSingle()) {
-                        yyerror("dynamic constant assignment");
-                    }
-                    return nf.newCDecl(id, val);
-                } else if (id.isClassId()) {
-                    if (isInSingle()) {
-                        return nf.newCVAsgn(id, val);
-                    }
-                    return nf.newCVDecl(id, val);
-                } else {
-                    rb_bug("bad id for variable");
                 }
-            }
         }
         return null;
     }
@@ -530,7 +517,6 @@ public class ParserHelper {
         return nf.newCall(recv, newId(Token.tASET), idx);
     }
 
-
     /**
      *  Description of the Method
      *
@@ -544,7 +530,6 @@ public class ParserHelper {
         return nf.newCall(recv, id.toAttrSetId(), null);
     }
 
-
     /**
      *  Description of the Method
      *
@@ -552,15 +537,14 @@ public class ParserHelper {
      */
     public void rb_backref_error(Node node) {
         switch (node.getType()) {
-            case Constants.NODE_NTH_REF:
-                rb_compile_error("Can't set variable $" + ((NthRefNode)node).getNth());
+            case Constants.NODE_NTH_REF :
+                rb_compile_error("Can't set variable $" + ((NthRefNode) node).getNth());
                 break;
-            case Constants.NODE_BACK_REF:
-                rb_compile_error("Can't set variable $" + ((BackRefNode)node).getNth());
+            case Constants.NODE_BACK_REF :
+                rb_compile_error("Can't set variable $" + ((BackRefNode) node).getNth());
                 break;
         }
     }
-
 
     /**
      *  Description of the Method
@@ -576,7 +560,6 @@ public class ParserHelper {
         return nf.newArgsCat(node1, node2);
     }
 
-
     /**
      *  Description of the Method
      *
@@ -590,12 +573,11 @@ public class ParserHelper {
         }
 
         if (node1 instanceof ArrayNode) {
-            return list_append((ArrayNode)node1, node2);
+            return list_append((ArrayNode) node1, node2);
         } else {
             return nf.newArgsPush(node1, node2);
         }
     }
-
 
     /**
      *  Description of the Method
@@ -611,21 +593,21 @@ public class ParserHelper {
 
         value_expr(rhs);
         switch (lhs.getType()) {
-            case Constants.NODE_GASGN:
-            case Constants.NODE_IASGN:
-            case Constants.NODE_LASGN:
-            case Constants.NODE_DASGN:
-            case Constants.NODE_DASGN_CURR:
-            case Constants.NODE_MASGN:
-            case Constants.NODE_CDECL:
-            case Constants.NODE_CVDECL:
-            case Constants.NODE_CVASGN:
+            case Constants.NODE_GASGN :
+            case Constants.NODE_IASGN :
+            case Constants.NODE_LASGN :
+            case Constants.NODE_DASGN :
+            case Constants.NODE_DASGN_CURR :
+            case Constants.NODE_MASGN :
+            case Constants.NODE_CDECL :
+            case Constants.NODE_CVDECL :
+            case Constants.NODE_CVASGN :
                 lhs.setValueNode(rhs);
                 break;
-            case Constants.NODE_CALL:
+            case Constants.NODE_CALL :
                 lhs.setArgsNode(arg_add(lhs.getArgsNode(), rhs));
                 break;
-            default:
+            default :
                 /*
                  *  should not happen
                  */
@@ -637,7 +619,6 @@ public class ParserHelper {
         }
         return lhs;
     }
-
 
     /**
      *  Description of the Method
@@ -651,31 +632,31 @@ public class ParserHelper {
         }
 
         switch (node.getType()) {
-            case Constants.NODE_RETURN:
-            case Constants.NODE_BREAK:
-            case Constants.NODE_NEXT:
-            case Constants.NODE_REDO:
-            case Constants.NODE_RETRY:
-            case Constants.NODE_WHILE:
-            case Constants.NODE_UNTIL:
-            case Constants.NODE_CLASS:
-            case Constants.NODE_MODULE:
-            case Constants.NODE_DEFN:
-            case Constants.NODE_DEFS:
+            case Constants.NODE_RETURN :
+            case Constants.NODE_BREAK :
+            case Constants.NODE_NEXT :
+            case Constants.NODE_REDO :
+            case Constants.NODE_RETRY :
+            case Constants.NODE_WHILE :
+            case Constants.NODE_UNTIL :
+            case Constants.NODE_CLASS :
+            case Constants.NODE_MODULE :
+            case Constants.NODE_DEFN :
+            case Constants.NODE_DEFS :
                 yyerror("void value expression");
                 return false;
-            case Constants.NODE_BLOCK:
+            case Constants.NODE_BLOCK :
                 while (node.getNextNode() != null) {
                     node = node.getNextNode();
                 }
                 return value_expr(node.getHeadNode());
-            case Constants.NODE_BEGIN:
+            case Constants.NODE_BEGIN :
                 return value_expr(node.getBodyNode());
-            case Constants.NODE_IF:
+            case Constants.NODE_IF :
                 return value_expr(node.getBodyNode()) && value_expr(node.getElseNode());
-            case Constants.NODE_NEWLINE:
+            case Constants.NODE_NEWLINE :
                 return value_expr(node.getNextNode());
-            default:
+            default :
                 return true;
         }
     }
@@ -692,92 +673,92 @@ public class ParserHelper {
             return;
         }
 
-//        while(true) {
+        //        while(true) {
         while (node instanceof NewlineNode) {
             node = node.getNextNode();
         }
-            switch (node.getType()) {
-/*                case Constants.NODE_NEWLINE:
-                    node = node.getNext();
-                    continue;*/
-                case Constants.NODE_CALL:
-                    switch (node.getMId().intValue()) {
-                        case '+':
-                        case '-':
-                        case '*':
-                        case '/':
-                        case '%':
-                        case Token.tPOW:
-                        case Token.tUPLUS:
-                        case Token.tUMINUS:
-                        case '|':
-                        case '^':
-                        case '&':
-                        case Token.tCMP:
-                        case '>':
-                        case Token.tGEQ:
-                        case '<':
-                        case Token.tLEQ:
-                        case Token.tEQ:
-                        case Token.tNEQ:
-                            /*
-                             *  case tAREF:
-                             *  case tRSHFT:
-                             *  case tCOLON2:
-                             *  case tCOLON3: FIX 1.6.5
-                             */
+        switch (node.getType()) {
+            /*                case Constants.NODE_NEWLINE:
+                                node = node.getNext();
+                                continue;*/
+            case Constants.NODE_CALL :
+                switch (node.getMId().intValue()) {
+                    case '+' :
+                    case '-' :
+                    case '*' :
+                    case '/' :
+                    case '%' :
+                    case Token.tPOW :
+                    case Token.tUPLUS :
+                    case Token.tUMINUS :
+                    case '|' :
+                    case '^' :
+                    case '&' :
+                    case Token.tCMP :
+                    case '>' :
+                    case Token.tGEQ :
+                    case '<' :
+                    case Token.tLEQ :
+                    case Token.tEQ :
+                    case Token.tNEQ :
+                        /*
+                         *  case tAREF:
+                         *  case tRSHFT:
+                         *  case tCOLON2:
+                         *  case tCOLON3: FIX 1.6.5
+                         */
                         useless = node.getMId().toName();
                         break;
-                    }
-                    break;
-                case Constants.NODE_LVAR:
-                case Constants.NODE_DVAR:
-                case Constants.NODE_GVAR:
-                case Constants.NODE_IVAR:
-                case Constants.NODE_CVAR:
-                case Constants.NODE_NTH_REF:
-                case Constants.NODE_BACK_REF:
-                    useless = "a variable";
-                    break;
-                case Constants.NODE_CONST:
-                case Constants.NODE_CREF:
-                    useless = "a constant";
-                    break;
-                case Constants.NODE_LIT:
-                case Constants.NODE_STR:
-                case Constants.NODE_DSTR:
-                case Constants.NODE_DREGX:
-                case Constants.NODE_DREGX_ONCE:
-                    useless = "a literal";
-                    break;
-                case Constants.NODE_COLON2:
-                case Constants.NODE_COLON3:
-                    useless = "::";
-                    break;
-                case Constants.NODE_DOT2:
-                    useless = "..";
-                    break;
-                case Constants.NODE_DOT3:
-                    useless = "...";
-                    break;
-                case Constants.NODE_SELF:
-                    useless = "self";
-                    break;
-                case Constants.NODE_NIL:
-                    useless = "nil";
-                    break;
-                case Constants.NODE_TRUE:
-                    useless = "true";
-                    break;
-                case Constants.NODE_FALSE:
-                    useless = "false";
-                    break;
-                case Constants.NODE_DEFINED:
-                    useless = "defined?";
-                    break;
-            }
-//            break;
-//        }
+                }
+                break;
+            case Constants.NODE_LVAR :
+            case Constants.NODE_DVAR :
+            case Constants.NODE_GVAR :
+            case Constants.NODE_IVAR :
+            case Constants.NODE_CVAR :
+            case Constants.NODE_NTH_REF :
+            case Constants.NODE_BACK_REF :
+                useless = "a variable";
+                break;
+            case Constants.NODE_CONST :
+            case Constants.NODE_CREF :
+                useless = "a constant";
+                break;
+            case Constants.NODE_LIT :
+            case Constants.NODE_STR :
+            case Constants.NODE_DSTR :
+            case Constants.NODE_DREGX :
+            case Constants.NODE_DREGX_ONCE :
+                useless = "a literal";
+                break;
+            case Constants.NODE_COLON2 :
+            case Constants.NODE_COLON3 :
+                useless = "::";
+                break;
+            case Constants.NODE_DOT2 :
+                useless = "..";
+                break;
+            case Constants.NODE_DOT3 :
+                useless = "...";
+                break;
+            case Constants.NODE_SELF :
+                useless = "self";
+                break;
+            case Constants.NODE_NIL :
+                useless = "nil";
+                break;
+            case Constants.NODE_TRUE :
+                useless = "true";
+                break;
+            case Constants.NODE_FALSE :
+                useless = "false";
+                break;
+            case Constants.NODE_DEFINED :
+                useless = "defined?";
+                break;
+        }
+        //            break;
+        //        }
 
         if (useless != null) {
             int line = ruby.getSourceLine();
@@ -813,7 +794,6 @@ public class ParserHelper {
         }
     }
 
-
     /**
      *  Description of the Method
      *
@@ -822,41 +802,40 @@ public class ParserHelper {
      */
     private boolean assign_in_cond(Node node) {
         switch (node.getType()) {
-            case Constants.NODE_MASGN:
+            case Constants.NODE_MASGN :
                 yyerror("multiple assignment in conditional");
                 return true;
-            case Constants.NODE_LASGN:
-            case Constants.NODE_DASGN:
-            case Constants.NODE_GASGN:
-            case Constants.NODE_IASGN:
+            case Constants.NODE_LASGN :
+            case Constants.NODE_DASGN :
+            case Constants.NODE_GASGN :
+            case Constants.NODE_IASGN :
                 break;
-            case Constants.NODE_NEWLINE:
-            default:
+            case Constants.NODE_NEWLINE :
+            default :
                 return false;
         }
 
         switch (node.getValueNode().getType()) {
-            case Constants.NODE_LIT:
-            case Constants.NODE_STR:
-            case Constants.NODE_NIL:
-            case Constants.NODE_TRUE:
-            case Constants.NODE_FALSE:
+            case Constants.NODE_LIT :
+            case Constants.NODE_STR :
+            case Constants.NODE_NIL :
+            case Constants.NODE_TRUE :
+            case Constants.NODE_FALSE :
                 /*
                  *  reports always
                  */
                 rb_warn("found = in conditional, should be ==");
                 return true;
-            case Constants.NODE_DSTR:
-            case Constants.NODE_XSTR:
-            case Constants.NODE_DXSTR:
-            case Constants.NODE_EVSTR:
-            case Constants.NODE_DREGX:
-            default:
+            case Constants.NODE_DSTR :
+            case Constants.NODE_XSTR :
+            case Constants.NODE_DXSTR :
+            case Constants.NODE_EVSTR :
+            case Constants.NODE_DREGX :
+            default :
                 break;
         }
         return true;
     }
-
 
     /**
      *  Description of the Method
@@ -866,7 +845,6 @@ public class ParserHelper {
     private boolean e_option_supplied() {
         return ruby.getSourceFile().equals("-e");
     }
-
 
     /**
      *  Description of the Method
@@ -879,7 +857,6 @@ public class ParserHelper {
         }
     }
 
-
     /**
      *  Description of the Method
      *
@@ -890,7 +867,6 @@ public class ParserHelper {
             rb_warning(str);
         }
     }
-
 
     /**
      *  Description of the Method
@@ -922,7 +898,6 @@ public class ParserHelper {
         return node;
     }
 
-
     /**
      *  Description of the Method
      *
@@ -932,24 +907,24 @@ public class ParserHelper {
      */
     private Node cond0(Node node, int logop) {
         int type = node.getType(); // enum node_type
-        
+
         assign_in_cond(node);
         switch (type) {
-            case Constants.NODE_DSTR:
-            case Constants.NODE_STR:
+            case Constants.NODE_DSTR :
+            case Constants.NODE_STR :
                 if (logop != 0) {
                     break;
                 }
                 rb_warn("string literal in condition");
                 break;
-            case Constants.NODE_DREGX:
-            case Constants.NODE_DREGX_ONCE:
+            case Constants.NODE_DREGX :
+            case Constants.NODE_DREGX_ONCE :
                 warning_unless_e_option("regex literal in condition");
                 local_cnt('_');
                 local_cnt('~');
                 return nf.newMatch2(node, nf.newGVar(ruby.intern("$_")));
-            case Constants.NODE_DOT2:
-            case Constants.NODE_DOT3:
+            case Constants.NODE_DOT2 :
+            case Constants.NODE_DOT3 :
                 node.setBeginNode(range_op(node.getBeginNode(), logop));
                 node.setEndNode(range_op(node.getEndNode(), logop));
                 if (type == Constants.NODE_DOT2) {
@@ -962,8 +937,8 @@ public class ParserHelper {
                 // node.nd_cnt(local_append(newId(0)));
                 warning_unless_e_option("range literal in condition");
                 break;
-            case Constants.NODE_LIT:
-              if (node.getLiteral() instanceof RubyRegexp) {
+            case Constants.NODE_LIT :
+                if (node.getLiteral() instanceof RubyRegexp) {
                     warning_unless_e_option("regex literal in condition");
                     // +++
                     // node.nd_set_type(Constants.NODE_MATCH);
@@ -974,7 +949,6 @@ public class ParserHelper {
         }
         return node;
     }
-
 
     /**
      *  Description of the Method
@@ -993,7 +967,6 @@ public class ParserHelper {
         }
         return cond0(node, logop);
     }
-
 
     /**
      *  Description of the Method
@@ -1015,13 +988,13 @@ public class ParserHelper {
      */
     public Node logop(int type, Node left, Node right) {
         value_expr(left);
-        
+
         switch (type) {
-            case Constants.NODE_AND: 
+            case Constants.NODE_AND :
                 return new AndNode(cond1(left, 1), cond1(right, 1));
-            case Constants.NODE_OR: 
+            case Constants.NODE_OR :
                 return new OrNode(cond1(left, 1), cond1(right, 1));
-            default:
+            default :
                 throw new RuntimeException("[BUG] ParserHelper#logop: Nodetype=" + type);
         }
         // return nf.newDefaultNode(type, cond1(left, 1), cond1(right, 1), null);
@@ -1042,7 +1015,6 @@ public class ParserHelper {
         return node;
     }
 
-
     /*
      *  private Node arg_prepend(Node node1, Node node2) {
      *      switch (nodetype(node2)) {
@@ -1059,7 +1031,7 @@ public class ParserHelper {
      *      return null; // not reached
      *  }
      */
-    
+
     /**
      *  Description of the Method
      *
@@ -1173,7 +1145,6 @@ public class ParserHelper {
         return lvtbl.cnt++;
     }
 
-
     /**
      *  Description of the Method
      *
@@ -1183,7 +1154,6 @@ public class ParserHelper {
     public int local_cnt(int id) {
         return local_cnt(newId(id));
     }
-
 
     /**
      *  Description of the Method
@@ -1219,7 +1189,6 @@ public class ParserHelper {
         return false;
     }
 
-
     /**
      *  Description of the Method
      */
@@ -1240,7 +1209,6 @@ public class ParserHelper {
         }
     }
 
-
     /**
      *  Description of the Method
      */
@@ -1249,7 +1217,9 @@ public class ParserHelper {
         int i;
 
         if (len > 0) {
-            i = ruby.getRubyScope().getLocalTbl() != null && ruby.getRubyScope().getLocalTbl(0) != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
+            i =
+                ruby.getRubyScope().getLocalTbl() != null
+                    && ruby.getRubyScope().getLocalTbl(0) != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
 
             if (i < len) {
                 if (i == 0 || (ruby.getRubyScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {
@@ -1270,17 +1240,17 @@ public class ParserHelper {
                     ruby.getRubyScope().setFlags(ruby.getRubyScope().getFlags() | RubyScope.SCOPE_MALLOC);
                 } else {
                     Pointer vars = ruby.getRubyScope().getLocalVars().getPointer(-1);
-                    
+
                     // vars.setSize(len + 1);
-                    
-                    ruby.getRubyScope().setLocalVars((RubyPointer)vars.getPointer(1));
+
+                    ruby.getRubyScope().setLocalVars((RubyPointer) vars.getPointer(1));
                     // ruby.getRubyScope().getLocalVars().fill(ruby.getNil(), i, len - i);
                 }
-                
+
                 if (ruby.getRubyScope().getLocalTbl() != null && ruby.getRubyScope().getLocalVars(-1) == null) {
                     ruby.getRubyScope().setLocalTbl(null);
                 }
-                
+
                 ruby.getRubyScope().setLocalVars(-1, null);
                 ruby.getRubyScope().setLocalTbl(local_tbl());
             }
@@ -1308,7 +1278,7 @@ public class ParserHelper {
      */
     public void dyna_pop(RubyVarmap vars) {
         lvtbl.dlev--;
-        
+
         ruby.setDynamicVars(vars);
     }
 
@@ -1339,7 +1309,7 @@ public class ParserHelper {
      */
     public Node getEvalTree() {
         return evalTree;
-    }    
+    }
 
     /** Setter for property evalTree.
      * @param evalTree New value of property evalTree.
@@ -1347,207 +1317,207 @@ public class ParserHelper {
     public void setEvalTree(Node evalTree) {
         this.evalTree = evalTree;
     }
-    
+
     /** Getter for property evalTreeBegin.
      * @return Value of property evalTreeBegin.
      */
     public Node getEvalTreeBegin() {
         return evalTreeBegin;
     }
-    
+
     /** Setter for property evalTreeBegin.
      * @param evalTreeBegin New value of property evalTreeBegin.
      */
     public void setEvalTreeBegin(Node evalTreeBegin) {
         this.evalTreeBegin = evalTreeBegin;
     }
-    
+
     /** Getter for property inSingle.
      * @return Value of property inSingle.
      */
     public boolean isInSingle() {
         return inSingle != 0;
     }
-    
+
     /** Setter for property inSingle.
      * @param inSingle New value of property inSingle.
      */
     public void setInSingle(int inSingle) {
         this.inSingle = inSingle;
     }
-    
+
     /** Getter for property inDef.
      * @return Value of property inDef.
      */
     public boolean isInDef() {
         return inDef != 0;
     }
-    
+
     /** Setter for property inDef.
      * @param inDef New value of property inDef.
      */
     public void setInDef(int inDef) {
         this.inDef = inDef;
     }
-    
+
     /** Getter for property inSingle.
      * @return Value of property inSingle.
      */
     public int getInSingle() {
         return inSingle;
     }
-    
+
     /** Getter for property inDef.
      * @return Value of property inDef.
      */
     public int getInDef() {
         return inDef;
     }
-    
+
     /** Getter for property inDefined.
      * @return Value of property inDefined.
      */
     public boolean isInDefined() {
         return inDefined;
     }
-    
+
     /** Setter for property inDefined.
      * @param inDefined New value of property inDefined.
      */
     public void setInDefined(boolean inDefined) {
         this.inDefined = inDefined;
     }
-    
+
     /** Getter for property compileForEval.
      * @return Value of property compileForEval.
      */
     public int getCompileForEval() {
         return compileForEval;
     }
-    
+
     public boolean isCompileForEval() {
         return compileForEval != 0;
     }
-    
+
     /** Setter for property compileForEval.
      * @param compileForEval New value of property compileForEval.
      */
     public void setCompileForEval(int compileForEval) {
         this.compileForEval = compileForEval;
     }
-    
+
     /** Getter for property lexState.
      * @return Value of property lexState.
      */
     public int getLexState() {
         return lexState;
     }
-    
+
     /** Setter for property lexState.
      * @param lexState New value of property lexState.
      */
     public void setLexState(int lexState) {
         this.lexState = lexState;
     }
-    
+
     /** Getter for property classNest.
      * @return Value of property classNest.
      */
     public int getClassNest() {
         return classNest;
     }
-    
+
     /** Setter for property classNest.
      * @param classNest New value of property classNest.
      */
     public void setClassNest(int classNest) {
         this.classNest = classNest;
     }
-    
+
     /** Getter for property curMid.
      * @return Value of property curMid.
      */
     public RubyId getCurMid() {
         return curMid;
     }
-    
+
     /** Setter for property curMid.
      * @param curMid New value of property curMid.
      */
     public void setCurMid(RubyId curMid) {
         this.curMid = curMid;
     }
-    
+
     /** Getter for property rubyInCompile.
      * @return Value of property rubyInCompile.
      */
     public boolean isRubyInCompile() {
         return rubyInCompile;
     }
-    
+
     /** Setter for property rubyInCompile.
      * @param rubyInCompile New value of property rubyInCompile.
      */
     public void setRubyInCompile(boolean rubyInCompile) {
         this.rubyInCompile = rubyInCompile;
     }
-    
+
     /** Getter for property rubyEndSeen.
      * @return Value of property rubyEndSeen.
      */
     public boolean isRubyEndSeen() {
         return rubyEndSeen;
     }
-    
+
     /** Setter for property rubyEndSeen.
      * @param rubyEndSeen New value of property rubyEndSeen.
      */
     public void setRubyEndSeen(boolean rubyEndSeen) {
         this.rubyEndSeen = rubyEndSeen;
     }
-    
+
     /** Getter for property rubyDebugLines.
      * @return Value of property rubyDebugLines.
      */
     public RubyArray getRubyDebugLines() {
         return rubyDebugLines;
     }
-    
+
     /** Setter for property rubyDebugLines.
      * @param rubyDebugLines New value of property rubyDebugLines.
      */
     public void setRubyDebugLines(RubyArray rubyDebugLines) {
         this.rubyDebugLines = rubyDebugLines;
     }
-    
+
     /** Getter for property heredocEnd.
      * @return Value of property heredocEnd.
      */
     public int getHeredocEnd() {
         return heredocEnd;
     }
-    
+
     /** Setter for property heredocEnd.
      * @param heredocEnd New value of property heredocEnd.
      */
     public void setHeredocEnd(int heredocEnd) {
         this.heredocEnd = heredocEnd;
     }
-    
+
     /** Getter for property commandStart.
      * @return Value of property commandStart.
      */
     public boolean isCommandStart() {
         return commandStart;
     }
-    
+
     /** Setter for property commandStart.
      * @param commandStart New value of property commandStart.
      */
     public void setCommandStart(boolean commandStart) {
         this.commandStart = commandStart;
     }
-    
+
     /**
      *  Description of the Class
      *

@@ -49,31 +49,34 @@ public class RubyRuntime {
     public RubyRuntime(Ruby ruby) {
         this.ruby = ruby;
     }
-    
+
     /** This method compiles and interprets a Ruby script.
      *
      *  It can be used if you want to use JRuby as a Macro language.
      *
      */
-    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
+    public void loadScript(
+        RubyString scriptName,
+        RubyString source,
+        boolean wrap) {
         RubyObject self = ruby.getRubyTopSelf();
         CRefNode savedCRef = ruby.getCRef();
-        
+
         // TMP_PROTECT;
         if (wrap && ruby.getSecurityLevel() >= 4) {
             // Check_Type(fname, T_STRING);
         } else {
             // Check_SafeStr(fname);
         }
-        
+
         // volatile ID last_func;
         // ruby_errinfo = Qnil; /* ensure */
         RubyVarmap.push(ruby);
         ruby.pushClass();
-        
+
         RubyModule wrapper = ruby.getWrapper();
         ruby.setCRef(ruby.getTopCRef());
-        
+
         if (!wrap) {
             ruby.secure(4); /* should alter global state */
             ruby.setRubyClass(ruby.getClasses().getObjectClass());
@@ -92,52 +95,45 @@ public class RubyRuntime {
         ruby.getRubyFrame().setSelf(self);
         ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
         ruby.getRubyScope().push();
-        
+
         /* default visibility is private at loading toplevel */
         ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
-        
+
         RubyId last_func = ruby.getRubyFrame().getLastFunc();
         try {
             // RubyId last_func = ruby.getRubyFrame().getLastFunc();
             // DEFER_INTS;
             ruby.setInEval(ruby.getInEval() + 1);
-            
+
             ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
-            
+
             // ---
             ruby.setInEval(ruby.getInEval() - 1);
-            
-            // evalNode +++
-            if (ruby.getParserHelper().getEvalTreeBegin() != null) {
-                self.eval(ruby.getParserHelper().getEvalTreeBegin());
-                ruby.getParserHelper().setEvalTreeBegin(null);
-            }
-            if (ruby.getParserHelper().getEvalTree() != null) {
-                self.eval(ruby.getParserHelper().getEvalTree());
-            }
-            // evalNode ---
+
+            self.evalNode(ruby.getParserHelper().getEvalTree());
         } catch (Exception excptn) {
             excptn.printStackTrace(getErrorStream());
+        } finally {
+            ruby.getRubyFrame().setLastFunc(last_func);
+
+            /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+                if (ruby_scope->local_tbl)
+                    free(ruby_scope->local_tbl);
+            	}*/
+            ruby.setCRef(savedCRef);
+            ruby.getRubyScope().pop();
+            ruby.getRubyFrame().pop();
+            ruby.popClass();
+            RubyVarmap.pop(ruby);
+            ruby.setWrapper(wrapper);
         }
-        ruby.getRubyFrame().setLastFunc(last_func);
-        
-        /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
-            if (ruby_scope->local_tbl)
-                free(ruby_scope->local_tbl);
-        }*/
-        ruby.setCRef(savedCRef);
-        ruby.getRubyScope().pop();
-        ruby.getRubyFrame().pop();
-        ruby.popClass();
-        RubyVarmap.pop(ruby);
-        ruby.setWrapper(wrapper);
-        
+
         /*if (ruby_nerrs > 0) {
             ruby_nerrs = 0;
             rb_exc_raise(ruby_errinfo);
         }*/
     }
-    
+
     /** This method loads, compiles and interprets a Ruby file.
      *  It is used by Kernel#require.
      *
@@ -148,19 +144,19 @@ public class RubyRuntime {
         if (fname == null) {
             throw new RuntimeException("No such file to load -- " + fname.getValue());
         }
-        
+
         try {
             File rubyFile = new File(fname.getValue());
-            StringBuffer source = new StringBuffer((int)rubyFile.length());
+            StringBuffer source = new StringBuffer((int) rubyFile.length());
             BufferedReader br = new BufferedReader(new FileReader(rubyFile));
             String line;
             while ((line = br.readLine()) != null) {
                 source.append(line).append('\n');
             }
             br.close();
-            
+
             loadScript(fname, RubyString.m_newString(ruby, source.toString()), wrap);
-            
+
         } catch (IOException ioExcptn) {
             getErrorStream().println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");
             getErrorStream().println("IOEception: " + ioExcptn.getMessage());

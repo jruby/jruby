@@ -120,15 +120,10 @@ public class RubyModule extends RubyObject {
             rbModule = getRuby().getClasses().getObjectClass();
         }
 
-        path =
-            (RubyString) getInstanceVariables().get(getRuby().intern("__classpath__"));
+        path = (RubyString) getInstanceVariables().get(getRuby().intern("__classpath__"));
         if (path == null) {
             if (getInstanceVariables().get(getRuby().intern("__classid__")) != null) {
-                path =
-                    RubyString.m_newString(
-                        getRuby(),
-                        ((RubyId) getInstanceVariables().get(getRuby().intern("__classid__")))
-                            .toName());
+                path = RubyString.m_newString(getRuby(), ((RubyId) getInstanceVariables().get(getRuby().intern("__classid__"))).toName());
                 // todo: convert from symbol to string
 
                 getInstanceVariables().put(getRuby().intern("__classpath__"), path);
@@ -241,9 +236,7 @@ public class RubyModule extends RubyObject {
         arg.prev = null;
 
         if (getRuby().getClasses().getObjectClass().getInstanceVariables() != null) {
-            getRuby().getClasses().getObjectClass().getInstanceVariables().foreach(
-                new FindClassPathMapMethod(),
-                arg);
+            getRuby().getClasses().getObjectClass().getInstanceVariables().foreach(new FindClassPathMapMethod(), arg);
         }
 
         if (arg.name == null) {
@@ -312,9 +305,7 @@ public class RubyModule extends RubyObject {
             s = "Class";
         }
 
-        return RubyString.m_newString(
-            getRuby(),
-            "<" + s + " 01x" + Integer.toHexString(hashCode()) + ">");
+        return RubyString.m_newString(getRuby(), "<" + s + " 01x" + Integer.toHexString(hashCode()) + ">");
         // 0 = pointer
     }
 
@@ -331,20 +322,15 @@ public class RubyModule extends RubyObject {
     public void setClassVar(RubyId id, RubyObject value) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null
-                && tmp.getInstanceVariables().get(id) != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
                 if (tmp.isTaint() && getRuby().getSecurityLevel() >= 4) {
-                    throw new RubySecurityException(
-                        getRuby(),
-                        "Insecure: can't modify class variable");
+                    throw new RubySecurityException(getRuby(), "Insecure: can't modify class variable");
                 }
                 tmp.getInstanceVariables().put(id, value);
             }
             tmp = tmp.getSuperClass();
         }
-        throw new RubyNameException(
-            getRuby(),
-            "uninitialized class variable " + id.toName() + " in " + toName());
+        throw new RubyNameException(getRuby(), "uninitialized class variable " + id.toName() + " in " + toName());
     }
 
     /** rb_cvar_declare
@@ -353,12 +339,9 @@ public class RubyModule extends RubyObject {
     public void declareClassVar(RubyId id, RubyObject value) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null
-                && tmp.getInstanceVariables().get(id) != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
                 if (tmp.isTaint() && getRuby().getSecurityLevel() >= 4) {
-                    throw new RubySecurityException(
-                        getRuby(),
-                        "Insecure: can't modify class variable");
+                    throw new RubySecurityException(getRuby(), "Insecure: can't modify class variable");
                 }
                 tmp.getInstanceVariables().put(id, value);
             }
@@ -373,15 +356,12 @@ public class RubyModule extends RubyObject {
     public RubyObject getClassVar(RubyId id) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null
-                && tmp.getInstanceVariables().get(id) != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
                 return (RubyObject) tmp.getInstanceVariables().get(id);
             }
             tmp = tmp.getSuperClass();
         }
-        throw new RubyNameException(
-            getRuby(),
-            "uninitialized class variable " + id.toName() + " in " + toName());
+        throw new RubyNameException(getRuby(), "uninitialized class variable " + id.toName() + " in " + toName());
     }
 
     /** rb_cvar_defined
@@ -390,8 +370,7 @@ public class RubyModule extends RubyObject {
     public boolean isClassVarDefined(RubyId id) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null
-                && tmp.getInstanceVariables().get(id) != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
                 return true;
             }
             tmp = tmp.getSuperClass();
@@ -418,8 +397,7 @@ public class RubyModule extends RubyObject {
                 if (tmp.getInstanceVariables().get(id) != null) {
                     return (RubyObject) tmp.getInstanceVariables().get(id);
                 }
-                if (tmp == getRuby().getClasses().getObjectClass()
-                    && getRuby().getTopConstant(id) != null) {
+                if (tmp == getRuby().getClasses().getObjectClass() && getRuby().getTopConstant(id) != null) {
                     return getRuby().getTopConstant(id);
                 }
                 tmp = tmp.getSuperClass();
@@ -434,9 +412,7 @@ public class RubyModule extends RubyObject {
 
         /* Uninitialized constant */
         if (this != getRuby().getClasses().getObjectClass()) {
-            throw new RubyNameException(
-                getRuby(),
-                "uninitialized constant " + id.toName() + " at " + getClassPath().getValue());
+            throw new RubyNameException(getRuby(), "uninitialized constant " + id.toName() + " at " + getClassPath().getValue());
         } else {
             throw new RubyNameException(getRuby(), "uninitialized constant " + id.toName());
         }
@@ -453,12 +429,8 @@ public class RubyModule extends RubyObject {
         }
 
         /* Fixed to Ruby 1.6.5 */
-        for (RubyModule actClass = this;
-            rubyModule != null;
-            rubyModule = rubyModule.getSuperClass()) {
-            for (RubyModule rbClass = actClass.getSuperClass();
-                rbClass != null;
-                rbClass = rbClass.getSuperClass()) {
+        for (RubyModule actClass = this; rubyModule != null; rubyModule = rubyModule.getSuperClass()) {
+            for (RubyModule rbClass = actClass.getSuperClass(); rbClass != null; rbClass = rbClass.getSuperClass()) {
                 if (rbClass.isIncluded() && rbClass.methods == rubyModule.methods) {
                     continue;
                 }
@@ -512,36 +484,21 @@ public class RubyModule extends RubyObject {
     public void defineMethod(String name, RubyCallbackMethod method) {
         RubyId id = getRuby().intern(name);
 
-        int noex =
-            (name.charAt(0) == 'i' && id == getRuby().intern("initialize"))
-                ? Constants.NOEX_PRIVATE
-                : Constants.NOEX_PUBLIC;
+        int noex = (name.charAt(0) == 'i' && id == getRuby().intern("initialize")) ? Constants.NOEX_PRIVATE : Constants.NOEX_PUBLIC;
 
-        addMethod(
-            id,
-            new NodeFactory(getRuby()).newCFunc(method),
-            noex | Constants.NOEX_CFUNC);
+        addMethod(id, new NodeFactory(getRuby()).newCFunc(method), noex | Constants.NOEX_CFUNC);
     }
 
     public void defineMethodId(RubyId id, RubyCallbackMethod method) {
-        addMethod(
-            id,
-            new NodeFactory(getRuby()).newCFunc(method),
-            Constants.NOEX_PUBLIC | Constants.NOEX_CFUNC);
+        addMethod(id, new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PUBLIC | Constants.NOEX_CFUNC);
     }
 
     public void defineProtectedMethod(String name, RubyCallbackMethod method) {
-        addMethod(
-            getRuby().intern(name),
-            new NodeFactory(getRuby()).newCFunc(method),
-            Constants.NOEX_PROTECTED | Constants.NOEX_CFUNC);
+        addMethod(getRuby().intern(name), new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PROTECTED | Constants.NOEX_CFUNC);
     }
 
     public void definePrivateMethod(String name, RubyCallbackMethod method) {
-        addMethod(
-            getRuby().intern(name),
-            new NodeFactory(getRuby()).newCFunc(method),
-            Constants.NOEX_PRIVATE | Constants.NOEX_CFUNC);
+        addMethod(getRuby().intern(name), new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PRIVATE | Constants.NOEX_CFUNC);
     }
 
     /*public void undefMethod(RubyId id) {
@@ -605,9 +562,7 @@ public class RubyModule extends RubyObject {
             } else if (c.isModule()) {
                 s0 = " module";
             }
-            throw new RubyNameException(
-                getRuby(),
-                "undefined method " + id.toName() + " for" + s0 + " '" + c.toName() + "'");
+            throw new RubyNameException(getRuby(), "undefined method " + id.toName() + " for" + s0 + " '" + c.toName() + "'");
         }
         addMethod(id, null, Constants.NOEX_PUBLIC);
     }
@@ -639,8 +594,7 @@ public class RubyModule extends RubyObject {
      */
     public boolean isConstantDefined(RubyId id) {
         for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
-            if (tmp.getInstanceVariables() != null
-                && tmp.getInstanceVariables().get(id) != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
                 return true;
             }
         }
@@ -682,8 +636,7 @@ public class RubyModule extends RubyObject {
         MethodNode methodNode = searchMethod(id);
 
         if (methodNode == null || methodNode.getBodyNode() == null) {
-            System.out.println(
-                "Cant find method \"" + id.toName() + "\" in class " + toName());
+            System.out.println("Cant find method \"" + id.toName() + "\" in class " + toName());
 
             RubyMethodCacheEntry.saveEmptyEntry(getRuby(), this, id);
 
@@ -724,11 +677,7 @@ public class RubyModule extends RubyObject {
     /** rb_call
      *
      */
-    public RubyObject call(
-        RubyObject recv,
-        RubyId mid,
-        RubyPointer args,
-        int scope) {
+    public RubyObject call(RubyObject recv, RubyId mid, RubyPointer args, int scope) {
         RubyMethodCacheEntry ent = RubyMethodCacheEntry.getEntry(getRuby(), this, mid);
 
         RubyModule klass = this;
@@ -754,9 +703,7 @@ public class RubyModule extends RubyObject {
 
             if (body == null) {
                 if (scope == 3) {
-                    throw new RubyNameException(
-                        getRuby(),
-                        "super: no superclass method '" + mid.toName() + "'");
+                    throw new RubyNameException(getRuby(), "super: no superclass method '" + mid.toName() + "'");
                 }
                 throw new RuntimeException("undefined method " + mid.toName() + " for " + recv + ":" + recv.getRubyClass().toName());
             }
@@ -785,12 +732,7 @@ public class RubyModule extends RubyObject {
     /** rb_call0
      *
      */
-    public RubyObject call0(
-        RubyObject recv,
-        RubyId id,
-        RubyPointer args,
-        Node body,
-        boolean noSuper) {
+    public RubyObject call0(RubyObject recv, RubyId id, RubyPointer args, Node body, boolean noSuper) {
 
         // ...
 
@@ -807,8 +749,7 @@ public class RubyModule extends RubyObject {
         frame.setSelf(recv);
         frame.setArgs(args);
 
-        RubyObject result =
-            ((CallableNode) body).call(getRuby(), recv, id, args, noSuper);
+        RubyObject result = ((CallableNode) body).call(getRuby(), recv, id, args, noSuper);
 
         getRuby().getRubyFrame().pop();
         getRuby().getIter().pop();
@@ -866,9 +807,7 @@ public class RubyModule extends RubyObject {
 
         NodeFactory nf = new NodeFactory(getRuby());
 
-        methods.put(
-            newId,
-            nf.newMethod(nf.newFBody(body, oldId, origin), methodNode.getNoex()));
+        methods.put(newId, nf.newMethod(nf.newFBody(body, oldId, origin), methodNode.getNoex()));
     }
 
     /** remove_method
@@ -885,9 +824,7 @@ public class RubyModule extends RubyObject {
             // rb_error_frozen("class/module");
         }
         if (methods.remove(methodId) == null) {
-            throw new RubyNameException(
-                getRuby(),
-                "method '" + methodId.toName() + "' not defined in " + toName());
+            throw new RubyNameException(getRuby(), "method '" + methodId.toName() + "' not defined in " + toName());
         }
     }
 
@@ -929,8 +866,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyClass defineClassUnder(String name, RubyClass superClass) {
-        RubyClass newClass =
-            getRuby().defineClassId(getRuby().intern(name), superClass);
+        RubyClass newClass = getRuby().defineClassId(getRuby().intern(name), superClass);
 
         setConstant(getRuby().intern(name), newClass);
         newClass.setClassPath(this, name);
@@ -995,9 +931,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!isTaint() && getRuby().getSecurityLevel() >= 4) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't remove class variable");
+            throw new RubySecurityException(getRuby(), "Insecure: can't remove class variable");
         }
 
         if (isFrozen()) {
@@ -1011,14 +945,10 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new RubyNameException(
-                getRuby(),
-                "cannot remove " + id.toName() + " for " + toName());
+            throw new RubyNameException(getRuby(), "cannot remove " + id.toName() + " for " + toName());
         }
 
-        throw new RubyNameException(
-            getRuby(),
-            "class variable " + id.toName() + " not defined for " + toName());
+        throw new RubyNameException(getRuby(), "class variable " + id.toName() + " not defined for " + toName());
     }
 
     /** rb_define_class_variable
@@ -1147,9 +1077,7 @@ public class RubyModule extends RubyObject {
      */
     public void setMethodVisibility(RubyObject[] methods, int noex) {
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't change method visibility");
+            throw new RubySecurityException(getRuby(), "Insecure: can't change method visibility");
         }
 
         for (int i = 0; i < methods.length; i++) {
@@ -1190,7 +1118,7 @@ public class RubyModule extends RubyObject {
      */
     private boolean isMethodBound(RubyId id, int ex) {
         RubyMethodCacheEntry entry = RubyMethodCacheEntry.getEntry(getRuby(), this, id);
-        
+
         if (entry != null) {
             if (ex != 0 && (entry.getNoex() & Constants.NOEX_PRIVATE) != 0) {
                 return false;
@@ -1202,7 +1130,7 @@ public class RubyModule extends RubyObject {
         }
 
         GetMethodBodyResult gmbr = getMethodBody(id, ex);
-        
+
         if (gmbr != null) {
             if (ex != 0 && (gmbr.getNoex() & Constants.NOEX_PRIVATE) != 0) {
                 return false;
@@ -1213,10 +1141,7 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
-    public RubyObject newMethod(
-        RubyObject recv,
-        RubyId id,
-        RubyClass methodClass) {
+    public RubyObject newMethod(RubyObject recv, RubyId id, RubyClass methodClass) {
         RubyClass originalClass = (RubyClass) this;
         RubyId originalId = id;
 
@@ -1225,7 +1150,7 @@ public class RubyModule extends RubyObject {
             // printUndef();
             return getRuby().getNil();
         }
-        
+
         while (gmbr.getBody() instanceof ZSuperNode) {
             gmbr = gmbr.getRecvClass().getSuperClass().getMethodBody(gmbr.getId(), 0);
             if (gmbr == null) {
@@ -1233,7 +1158,7 @@ public class RubyModule extends RubyObject {
                 return getRuby().getNil();
             }
         }
-        
+
         RubyMethod newMethod = new RubyMethod(getRuby(), methodClass);
         newMethod.setReceiverClass((RubyClass) gmbr.getRecvClass());
         newMethod.setReceiver(recv);
@@ -1241,8 +1166,38 @@ public class RubyModule extends RubyObject {
         newMethod.setBodyNode(gmbr.getBody());
         newMethod.setOriginalClass(originalClass);
         newMethod.setOriginalId(originalId);
-        
+
         return newMethod;
+    }
+
+    public RubyObject executeUnder(RubyCallbackMethod method, RubyObject[] args) {
+        getRuby().pushClass();
+        getRuby().setRubyClass(this);
+        getRuby().getRubyFrame().push();
+
+        RubyFrame frame = getRuby().getRubyFrame().getPrev();
+        getRuby().getRubyFrame().setLastFunc(frame.getLastFunc());
+        getRuby().getRubyFrame().setLastClass(frame.getLastClass());
+        getRuby().getRubyFrame().setArgs(frame.getArgs());
+        if (getRuby().getCBase() != this) {
+            getRuby().getRubyFrame().setCbase(new CRefNode(this, getRuby().getRubyFrame().getCbase()));
+        }
+        getRuby().getCRef().push(this);
+
+        // mode = scope_vmode;
+        // SCOPE_SET(SCOPE_PUBLIC);
+
+        RubyObject result = null;
+
+        try {
+            result = method.execute(this, args, getRuby());
+        } finally {
+            getRuby().getCRef().pop();
+            getRuby().getRubyFrame().pop();
+            getRuby().popClass();
+        }
+
+        return result;
     }
 
     // Methods of the Module Class (rb_mod_*):
@@ -1276,8 +1231,7 @@ public class RubyModule extends RubyObject {
         RubyModule rbModule = this;
 
         if (isSingleton()) {
-            rbModule =
-                ((RubyObject) rbModule.getInstanceVar("__atached__")).getClassVarSingleton();
+            rbModule = ((RubyObject) rbModule.getInstanceVar("__atached__")).getClassVarSingleton();
         }
 
         while (rbModule != null) {
@@ -1319,9 +1273,7 @@ public class RubyModule extends RubyObject {
                 public int execute(Object key, Object value, Object arg) {
                     MethodNode methodNode = (MethodNode) value;
 
-                    ((RubyMap) arg).put(
-                        key,
-                        nf.newMethod(methodNode.getBodyNode(), methodNode.getNoex()));
+                    ((RubyMap) arg).put(key, nf.newMethod(methodNode.getBodyNode(), methodNode.getNoex()));
                     return RubyMapMethod.CONTINUE;
                 }
             }, clone.methods);
@@ -1451,9 +1403,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(obj instanceof RubyModule)) {
-            throw new RubyTypeException(
-                getRuby(),
-                "<=> requires Class or Module (" + getRubyClass().toName() + " given)");
+            throw new RubyTypeException(getRuby(), "<=> requires Class or Module (" + getRubyClass().toName() + " given)");
         }
 
         if (op_le(obj).isTrue()) {
@@ -1536,9 +1486,7 @@ public class RubyModule extends RubyObject {
         RubyId id = symbol.toId();
 
         if (!id.isConstId()) {
-            throw new RubyNameException(
-                getRuby(),
-                "wrong constant name " + symbol.getName());
+            throw new RubyNameException(getRuby(), "wrong constant name " + symbol.getName());
         }
 
         return getConstant(id);
@@ -1551,9 +1499,7 @@ public class RubyModule extends RubyObject {
         RubyId id = symbol.toId();
 
         if (!id.isConstId()) {
-            throw new RubyNameException(
-                getRuby(),
-                "wrong constant name " + symbol.getName());
+            throw new RubyNameException(getRuby(), "wrong constant name " + symbol.getName());
         }
 
         setConstant(id, value);
@@ -1568,9 +1514,7 @@ public class RubyModule extends RubyObject {
         RubyId id = symbol.toId();
 
         if (!id.isConstId()) {
-            throw new RubyNameException(
-                getRuby(),
-                "wrong constant name " + symbol.getName());
+            throw new RubyNameException(getRuby(), "wrong constant name " + symbol.getName());
         }
 
         return RubyBoolean.m_newBoolean(getRuby(), isConstantDefined(id));
@@ -1705,9 +1649,7 @@ public class RubyModule extends RubyObject {
             throw new RubyNameException(getRuby(), "wrong class variable name " + name);
         }
         if (!isTaint() && getRuby().getSecurityLevel() >= 4) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't remove class variable");
+            throw new RubySecurityException(getRuby(), "Insecure: can't remove class variable");
         }
         if (isFrozen()) {
             throw new RubyFrozenException(getRuby(), "class/module");
@@ -1721,13 +1663,9 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new RubyNameException(
-                getRuby(),
-                "cannot remove " + id.toName() + " for " + toName());
+            throw new RubyNameException(getRuby(), "cannot remove " + id.toName() + " for " + toName());
         }
-        throw new RubyNameException(
-            getRuby(),
-            "class variable " + id.toName() + " not defined for " + toName());
+        throw new RubyNameException(getRuby(), "class variable " + id.toName() + " not defined for " + toName());
     }
 
     /** rb_mod_append_features
@@ -1751,7 +1689,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject m_include(RubyObject[] modules) {
         for (int i = 0; i < modules.length; i++) {
-            funcall(getRuby().intern("append_features"), modules[i]);
+            modules[i].funcall(getRuby().intern("append_features"), this);
         }
 
         return this;
@@ -1762,9 +1700,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject m_public(RubyObject[] args) {
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't change method visibility");
+            throw new RubySecurityException(getRuby(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1781,9 +1717,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject m_protected(RubyObject[] args) {
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't change method visibility");
+            throw new RubySecurityException(getRuby(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1800,9 +1734,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject m_private(RubyObject[] args) {
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't change method visibility");
+            throw new RubySecurityException(getRuby(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1819,9 +1751,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject m_module_function(RubyObject[] args) {
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't change method visibility");
+            throw new RubySecurityException(getRuby(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1833,8 +1763,7 @@ public class RubyModule extends RubyObject {
                 RubyId id = args[i].toId();
                 MethodNode body = searchMethod(id);
                 if (body == null || body.getBodyNode() == null) {
-                    throw new RubyBugException(
-                        "undefined method '" + id.toName() + "'; can't happen");
+                    throw new RubyBugException("undefined method '" + id.toName() + "'; can't happen");
                 }
                 getSingletonClass().addMethod(id, body.getBodyNode(), Constants.NOEX_PUBLIC);
                 // rb_clear_cache_by_id(id);
@@ -1846,23 +1775,21 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyObject m_method_defined(RubyObject symbol) {
-        return isMethodBound(symbol.toId(), 1)
-            ? getRuby().getTrue()
-            : getRuby().getFalse();
+        return isMethodBound(symbol.toId(), 1) ? getRuby().getTrue() : getRuby().getFalse();
     }
 
     public RubyObject m_public_class_method(RubyObject[] args) {
         getRubyClass().setMethodVisibility(args, Constants.NOEX_PUBLIC);
-        
+
         return this;
     }
-    
+
     public RubyObject m_private_class_method(RubyObject[] args) {
         getRubyClass().setMethodVisibility(args, Constants.NOEX_PRIVATE);
 
         return this;
     }
-    
+
     public RubyModule alias_method(RubyObject newId, RubyObject oldId) {
         aliasMethod(newId.toId(), oldId.toId());
 
@@ -1873,6 +1800,10 @@ public class RubyModule extends RubyObject {
         undef(name.toId());
 
         return this;
+    }
+
+    public RubyObject module_eval(RubyObject[] args) {
+        return specificEval(this, args);
     }
 
     public RubyModule remove_method(RubyObject name) {
