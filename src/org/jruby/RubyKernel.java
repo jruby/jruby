@@ -552,10 +552,8 @@ public class RubyKernel {
 
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
         RubyString file = (RubyString)args[0];
-        if (recv.getRuntime().getLoadService().load(file.toString())) {
-            return recv.getRuntime().getTrue();
-        }
-        return recv.getRuntime().getFalse();
+        recv.getRuntime().getLoadService().load(file.toString());
+        return recv.getRuntime().getTrue();
     }
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {

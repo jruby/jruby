@@ -56,7 +56,7 @@ public interface ILoadService {
      */
     void init(List additionalDirectories);
 
-    boolean load(String file);
+    void load(String file);
     boolean require(String file);
 
     List getLoadPath();

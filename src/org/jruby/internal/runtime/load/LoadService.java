@@ -112,7 +112,7 @@ public class LoadService implements ILoadService {
         loadPath.add(runtime.newString(path));
     }
 
-    public boolean load(String file) {
+    public void load(String file) {
         Library library = null;
         for (int i = 0; i < suffixes.length; i++) {
             library = findLibrary(file + suffixes[i]);
@@ -128,7 +128,6 @@ public class LoadService implements ILoadService {
         } catch (IOException e) {
         	throw new LoadError(runtime, "IO error -- " + file);
         }
-        return true;
     }
 
     private Library findLibrary(String file) {
@@ -154,12 +153,16 @@ public class LoadService implements ILoadService {
         if (loadedFeatures.contains(name)) {
             return false;
         }
+        
         loadedFeatures.add(name);
-        if (load(file)) {
-            return true;
+        
+        try {
+	        load(file);
+	        return true;
+        } catch (RuntimeException e) {
+            loadedFeatures.remove(name);
+            throw e;
         }
-        loadedFeatures.remove(name);
-        return false;
     }
 
     public List getLoadPath() {
