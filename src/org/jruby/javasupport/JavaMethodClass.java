@@ -102,9 +102,25 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     }
 
     public IRubyObject invoke(IRubyObject[] args) {
-        if (args.length != getArity() + 1) {
-            throw new ArgumentError(getRuntime(), args.length, getArity() + 1);
+        int expectedArgumentCount = getArity() + (isStatic() ? 0 : 1);
+        if (args.length != expectedArgumentCount) {
+            throw new ArgumentError(getRuntime(), args.length, expectedArgumentCount);
         }
+        if (isStatic()) {
+            return invokeOnClass(args);
+        } else {
+            return invokeOnInstance(args);
+        }
+    }
+
+    private IRubyObject invokeOnClass(IRubyObject[] args) {
+        Object[] arguments = new Object[args.length];
+        System.arraycopy(args, 0, arguments, 0, arguments.length);
+        convertArguments(arguments);
+        return invokeWithExceptionHandling(null, arguments);
+    }
+
+    private IRubyObject invokeOnInstance(IRubyObject[] args) {
         IRubyObject invokee = args[0];
         if (! (invokee instanceof RubyJavaObject)) {
             throw new TypeError(getRuntime(), "invokee not a java object");
@@ -112,12 +128,11 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         Object javaInvokee = ((RubyJavaObject) invokee).getValue();
         Object[] arguments = new Object[args.length - 1];
         System.arraycopy(args, 1, arguments, 0, arguments.length);
-        Class[] parameterTypes = method.getParameterTypes();
-        for (int i = 0; i < arguments.length; i++) {
-            Object argument = arguments[i];
-            Class parameterType = parameterTypes[i];
-            arguments[i] = JavaUtil.convertArgument(argument, parameterType);
-        }
+        convertArguments(arguments);
+        return invokeWithExceptionHandling(javaInvokee, arguments);
+    }
+
+    private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
             return JavaUtil.convertJavaToRuby(getRuntime(), result, method);
@@ -133,6 +148,15 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         }
     }
 
+    private void convertArguments(Object[] arguments) {
+        Class[] parameterTypes = parameterTypes();
+        for (int i = 0; i < arguments.length; i++) {
+            Object argument = arguments[i];
+            Class parameterType = parameterTypes[i];
+            arguments[i] = JavaUtil.convertArgument(argument, parameterType);
+        }
+    }
+
     protected Class[] parameterTypes() {
         return method.getParameterTypes();
     }
@@ -142,7 +166,11 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     }
 
     public RubyBoolean static_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isStatic(method.getModifiers()));
+        return RubyBoolean.newBoolean(getRuntime(), isStatic());
+    }
+
+    private boolean isStatic() {
+        return Modifier.isStatic(method.getModifiers());
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {

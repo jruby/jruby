@@ -108,4 +108,10 @@ if defined? Java
   test_equal(["int"], method.argument_types)
   test_exception(TypeError) { method.invoke(random, 10) }
   result = method.invoke(random, Java.primitive_to_java(10))
+  # ... result type?
+
+  method = string_class.java_method("valueOf", "int")
+  test_ok(method.static?)
+  result = method.invoke(Java.primitive_to_java(101))
+  # ... result type?
 end

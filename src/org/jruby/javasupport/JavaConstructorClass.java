@@ -100,7 +100,7 @@ public class JavaConstructorClass extends JavaCallable implements IndexCallable 
         return getType().toString();
     }
 
-    public Class[] parameterTypes() {
+    protected Class[] parameterTypes() {
         return constructor.getParameterTypes();
     }
 
