@@ -30,6 +30,7 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.jruby.exceptions.ArgumentError;
@@ -136,9 +137,6 @@ public class ThreadClass extends RubyObject {
         threadClass.defineSingletonMethod("main",
         		callbackFactory.getSingletonMethod(ThreadClass.class, "main"));
         
-        // set to default thread group
-        currentThread.setThreadGroup((RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default"));
-
         return threadClass;
     }
 
@@ -232,7 +230,9 @@ public class ThreadClass extends RubyObject {
         super(ruby, type);
         this.threadService = ruby.getThreadService();
         // set to default thread group
-        setThreadGroup((RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default"));
+        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default");
+        defaultThreadGroup.add(this);
+        
     }
 
     /**
@@ -264,11 +264,14 @@ public class ThreadClass extends RubyObject {
     }
 
     public static RubyArray list(IRubyObject recv) {
-        ArrayList list = new ArrayList();
-        Iterator iter = recv.getRuntime().objectSpace.iterator(recv.getRuntime().getClasses().getThreadClass());
+    	Ruby ruby = recv.getRuntime();
+        List list = new ArrayList();
+        
+        Iterator iter = ruby.objectSpace.iterator(recv.getRuntime().getClasses().getThreadClass());
         while (iter.hasNext()) {
             list.add(iter.next());
         }
+        
         return RubyArray.newArray(recv.getRuntime(), list);
     }
 
@@ -435,7 +438,8 @@ public class ThreadClass extends RubyObject {
 
     public IRubyObject kill() {
     	// TODO: stubbed for now, will need to implement kill hooks into call stack
-    	return getRuntime().getNil();
+    	jvmThread.interrupt();
+    	return this;
     }
 
     private boolean isCurrent() {
