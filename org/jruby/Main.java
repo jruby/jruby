@@ -251,7 +251,7 @@ public class Main {
         //require additional libraries
         int lNbRequire = sRequireFirst.size();
         for (int i = 0; i < lNbRequire; i++)
-            RubyKernel.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
+            RubyGlobal.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
         try {
             Node lScript = ruby.getRubyParser().compileString(iFileName, rs, 0);

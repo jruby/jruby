@@ -67,26 +67,33 @@ public class RubyIO extends RubyObject {
         ioClass.includeModule(ruby.getClasses().getEnumerableModule());
 
         ioClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyIO.class, "newInstance"));
+        ioClass.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", String.class));
         ioClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyIO.class, "initialize"));
 
         ioClass.defineMethod("write", CallbackFactory.getMethod(RubyIO.class, "write", RubyObject.class));
 
         ioClass.defineMethod("<<", CallbackFactory.getMethod(RubyIO.class, "addString", RubyObject.class));
 
-		ioClass.defineMethod("each", CallbackFactory.getOptMethod(RubyIO.class, "each_line"));
-		ioClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyIO.class, "each_line"));
+        ioClass.defineMethod("each", CallbackFactory.getOptMethod(RubyIO.class, "each_line"));
+        ioClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyIO.class, "each_line"));
+        ioClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyIO.class, "each_byte"));
+        ioClass.defineMethod("getc", CallbackFactory.getMethod(RubyIO.class, "getc"));
+        ioClass.defineMethod("readchar", CallbackFactory.getMethod(RubyIO.class, "readchar"));
         ioClass.defineMethod("gets", CallbackFactory.getOptMethod(RubyIO.class, "gets"));
+        ioClass.defineMethod("readline", CallbackFactory.getOptMethod(RubyIO.class, "readline"));
 
         ioClass.defineMethod("lineno", CallbackFactory.getMethod(RubyIO.class, "lineno"));
         ioClass.defineMethod("lineno=", CallbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
         ioClass.defineMethod("sync", CallbackFactory.getMethod(RubyIO.class, "sync"));
         ioClass.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
-        
+
         ioClass.defineMethod("close", CallbackFactory.getMethod(RubyIO.class, "close"));
         ioClass.defineMethod("flush", CallbackFactory.getMethod(RubyIO.class, "flush"));
 
-		ioClass.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
-		
+        ioClass.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
+        ioClass.defineMethod("printf", CallbackFactory.getOptSingletonMethod(RubyIO.class, "printf"));
+        ioClass.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
+
         return ioClass;
     }
 
@@ -170,7 +177,7 @@ public class RubyIO extends RubyObject {
         readable = false;
         writeable = false;
         append = false;
-        
+
         if (mode.length() == 0) {
             throw new RubyArgumentException(getRuby(), "illegal access mode");
         }
@@ -180,7 +187,7 @@ public class RubyIO extends RubyObject {
                 readable = true;
                 break;
             case 'a' :
-            	append = true;
+                append = true;
             case 'w' :
                 writeable = true;
                 break;
@@ -220,13 +227,13 @@ public class RubyIO extends RubyObject {
                 throw new IOError(getRuby(), "Bad file descriptor");
         }
     }
-    
+
     /** Read a line.
      * 
      */
     public RubyString internalGets(RubyObject[] args) {
-		checkReadable();
-        
+        checkReadable();
+
         RubyObject sepVal = getRuby().getGlobalEntry("$/").get();
 
         if (args.length > 0) {
@@ -256,17 +263,17 @@ public class RubyIO extends RubyObject {
 
         return RubyString.nilString(getRuby());
     }
-    
+
     public void initIO(RubyInputStream inStream, OutputStream outStream, String path) {
         readable = inStream != null;
         writeable = outStream != null;
-        
+
         this.inStream = inStream;
         this.outStream = outStream;
-        
+
         this.path = path;
     }
-    
+
     // IO class methods.
 
     /** rb_io_s_new
@@ -278,6 +285,24 @@ public class RubyIO extends RubyObject {
         newObject.callInit(args);
 
         return newObject;
+    }
+
+    /** rb_io_s_foreach
+     * 
+     */
+    public static RubyObject foreach(Ruby ruby, RubyObject recv, RubyString filename, RubyObject[] args) {
+        filename.checkSafeString();
+
+        RubyIO io = (RubyIO) RubyGlobal.open(ruby, recv, filename);
+
+        if (!io.isNil()) {
+            try {
+                io.funcall("each", args);
+            } finally {
+                io.funcall("close");
+            }
+        }
+        return ruby.getNil();
     }
 
     /** rb_io_initialize
@@ -387,9 +412,9 @@ public class RubyIO extends RubyObject {
      */
     public RubyIO flush() {
         checkWriteable();
-        
+
         try {
-        	outStream.flush();
+            outStream.flush();
         } catch (IOException ioExcptn) {
             throw new IOError(ruby, ioExcptn.getMessage());
         }
@@ -402,12 +427,71 @@ public class RubyIO extends RubyObject {
      */
     public RubyString gets(RubyObject[] args) {
         RubyString result = internalGets(args);
-        
+
         if (!result.isNil()) {
-        	getRuby().getParserHelper().setLastline(result);
+            getRuby().getParserHelper().setLastline(result);
         }
-        
+
         return result;
+    }
+
+    /** Read a line.
+     * 
+     */
+    public RubyString readline(RubyObject[] args) {
+        RubyString line = gets(args);
+
+        if (line.isNil()) {
+            throw new EOFError(ruby);
+        } else {
+            return line;
+        }
+    }
+
+    /** Read a byte. On EOF returns nil.
+     * 
+     */
+    public RubyObject getc() {
+        checkReadable();
+
+        try {
+            int c = inStream.read();
+            return c != -1 ? RubyFixnum.newFixnum(ruby, c & 0xff) : ruby.getNil();
+        } catch (IOException ioExcptn) {
+            throw new IOError(ruby, ioExcptn.getMessage());
+        }
+    }
+
+    /** Read a byte. On EOF throw EOFError.
+     * 
+     */
+    public RubyObject readchar() {
+        RubyObject obj = getc();
+
+        if (obj.isNil()) {
+            throw new EOFError(ruby);
+        } else {
+            return obj;
+        }
+    }
+
+    /** Invoke a block for each byte.
+     * 
+     */
+    public RubyObject each_byte() {
+        checkReadable();
+
+        int c;
+
+        try {
+            while ((c = inStream.read()) != -1) {
+                ruby.yield(RubyFixnum.newFixnum(ruby, c & 0xff));
+            }
+        } catch (IOException ioExcptn) {
+            throw new IOError(ruby, ioExcptn.getMessage());
+        }
+
+        return ruby.getNil();
     }
 
     /** Invoke a block for each line.
@@ -415,16 +499,16 @@ public class RubyIO extends RubyObject {
      */
     public RubyIO each_line(RubyObject[] args) {
         RubyString nextLine = internalGets(args);
-        
+
         while (!nextLine.isNil()) {
-        	getRuby().yield(nextLine);
-        	nextLine = internalGets(args);
+            getRuby().yield(nextLine);
+            nextLine = internalGets(args);
         }
-        
+
         return this;
     }
-    
-	public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
+
+    public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
             recv.funcall("write", RubyString.newString(ruby, "\n"));
             return ruby.getNil();
@@ -438,9 +522,9 @@ public class RubyIO extends RubyObject {
                 puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
                 continue;
             } else {
-            	line = args[i].toString();
+                line = args[i].toString();
             }
-			recv.funcall("write", RubyString.newString(ruby, line));
+            recv.funcall("write", RubyString.newString(ruby, line));
             if (!line.endsWith("\n")) {
                 recv.funcall("write", RubyString.newString(ruby, "\n"));
             }
@@ -448,28 +532,58 @@ public class RubyIO extends RubyObject {
         return ruby.getNil();
     }
 
-	/**
-	 * Set this IO object outputstream as Ruby's outputstream.
-	 **/
-	public void setAsRubyOutputStream()
-	{
-		ruby.getRuntime().setOutputStream(new java.io.PrintStream(outStream));
-	}
+    /** Print some objects to the stream.
+     * 
+     */
+    public static RubyObject print(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length == 0) {
+            args = new RubyObject[] { ruby.getParserHelper().getLastline()};
+        }
 
-	/**
-	 * Set this IO object outputstream as Ruby's errorstream.
-	 **/
-	public void setAsRubyErrorStream()
-	{
-		ruby.getRuntime().setErrorStream(new java.io.PrintStream(outStream));
-	}
+        RubyObject fs = ruby.getGlobalVar("$,");
+        RubyObject rs = ruby.getGlobalVar("$\\");
 
-	/**
-	 * Set this IO object inputStream as Ruby's inputstream.
-	 **/
-	public void setAsRubyInputStream()
-	{
-		ruby.getRuntime().setInputStream(inStream);
-	}
+        for (int i = 0; i < args.length; i++) {
+            if (i > 0 && !fs.isNil()) {
+                recv.funcall("write", fs);
+            }
+            if (args[i].isNil()) {
+                recv.funcall("write", RubyString.newString(ruby, "nil"));
+            } else {
+                recv.funcall("write", args[i]);
+            }
+        }
+        if (!rs.isNil()) {
+            recv.funcall("write", rs);
+        }
 
+        return ruby.getNil();
+    }
+
+    public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        recv.funcall("write", RubyGlobal.sprintf(ruby, recv, args));
+
+        return ruby.getNil();
+    }
+
+    /**
+     * Set this IO object outputstream as Ruby's outputstream.
+     **/
+    public void setAsRubyOutputStream() {
+        ruby.getRuntime().setOutputStream(new java.io.PrintStream(outStream));
+    }
+
+    /**
+     * Set this IO object outputstream as Ruby's errorstream.
+     **/
+    public void setAsRubyErrorStream() {
+        ruby.getRuntime().setErrorStream(new java.io.PrintStream(outStream));
+    }
+
+    /**
+     * Set this IO object inputStream as Ruby's inputstream.
+     **/
+    public void setAsRubyInputStream() {
+        ruby.getRuntime().setInputStream(inStream);
+    }
 }

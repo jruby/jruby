@@ -219,8 +219,6 @@ public class RubyClasses {
 
         RubyObject.createObjectClass(kernelModule);
 
-        RubyKernel.createKernelModule(ruby);
-
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);
 
