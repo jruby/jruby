@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="**/CVS/*" output="build/classes/test" kind="src" path="test"/>
-	<classpathentry kind="src" path="build/gen-src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/bsf.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.6.jar"/>
