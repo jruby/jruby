@@ -37,6 +37,7 @@ import java.io.*;
 import org.jruby.internal.runtime.builtin.definitions.Kernel;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.SystemExit;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
@@ -239,14 +240,14 @@ public class KernelModule {
     }
 
     public static IRubyObject exit(IRubyObject recv, IRubyObject args[]) {
-        int status = 0;
+        recv.getRuntime().secure(4);
 
+        int status = 0;
         if (args.length > 0) {
             status = RubyNumeric.fix2int(args[0]);
         }
 
-        System.exit(status);
-        return recv.getRuntime().getNil();
+        throw new SystemExit(recv.getRuntime(), status);
     }
 
     /** Returns an Array with the names of all global variables.
