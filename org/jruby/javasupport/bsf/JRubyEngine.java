@@ -110,11 +110,7 @@ public class JRubyEngine extends BSFEngineImpl {
         super.initialize(mgr, lang, declaredBeans);
         
         ruby = new Ruby();
-        try {
-            ruby.setRegexpAdapterClass(Class.forName("org.jruby.regexp.GNURegexpAdapter"));
-        } catch (Exception e) {
-            throw new RuntimeException("Class GNURegexpAdapter not found");
-        }
+        ruby.setRegexpAdapterClass(org.jruby.regexp.GNURegexpAdapter.class);
         ruby.init();
         
         topSelf = ruby.getRubyTopSelf();

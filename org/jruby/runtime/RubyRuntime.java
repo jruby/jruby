@@ -41,7 +41,11 @@ import org.jruby.nodes.*;
  */
 public class RubyRuntime {
     private Ruby ruby;
-    
+
+    private InputStream inputStream;
+    private PrintStream errorStream;
+    private PrintStream outputStream;
+
     public RubyRuntime(Ruby ruby) {
         this.ruby = ruby;
     }
@@ -113,7 +117,7 @@ public class RubyRuntime {
             }
             // evalNode ---
         } catch (Exception excptn) {
-            excptn.printStackTrace();
+            excptn.printStackTrace(getErrorStream());
         }
         ruby.getRubyFrame().setLastFunc(last_func);
         
@@ -158,8 +162,53 @@ public class RubyRuntime {
             loadScript(fname, RubyString.m_newString(ruby, source.toString()), wrap);
             
         } catch (IOException ioExcptn) {
-            System.out.println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");
-            System.out.println("IOEception: " + ioExcptn.getMessage());
+            getErrorStream().println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");
+            getErrorStream().println("IOEception: " + ioExcptn.getMessage());
         }
     }
+	/**
+	 * Gets the errorStream
+	 * @return Returns a PrintStream
+	 */
+	public PrintStream getErrorStream() {
+		return errorStream != null ? errorStream : System.err;
+	}
+    /**
+     * Sets the errorStream
+     * @param errorStream The errorStream to set
+     */
+    public void setErrorStream(PrintStream errorStream) {
+        this.errorStream = errorStream;
+    }
+
+	/**
+	 * Gets the inputStream
+	 * @return Returns a InputStream
+	 */
+	public InputStream getInputStream() {
+		return inputStream != null ? inputStream : System.in;
+	}
+    /**
+     * Sets the inputStream
+     * @param inputStream The inputStream to set
+     */
+    public void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+    }
+
+	/**
+	 * Gets the outputStream
+	 * @return Returns a PrintStream
+	 */
+	public PrintStream getOutputStream() {
+		return outputStream != null ? outputStream : System.out;
+	}
+    /**
+     * Sets the outputStream
+     * @param outputStream The outputStream to set
+     */
+    public void setOutputStream(PrintStream outputStream) {
+        this.outputStream = outputStream;
+    }
+
 }

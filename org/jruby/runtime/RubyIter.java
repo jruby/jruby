@@ -41,7 +41,6 @@ public class RubyIter {
     public static final int ITER_CUR = 2;
     
     private int iter;
-    private int count = 0;
     private RubyIter prev;
 
     public RubyIter() {
@@ -54,21 +53,13 @@ public class RubyIter {
     }
     
     public void push(int newIter) {
-        if (newIter == iter) {
-            count ++;
-        } else {
-            prev = new RubyIter(iter, prev);
-            iter = newIter;
-        }
+        prev = new RubyIter(iter, prev);
+        iter = newIter;
     }
     
     public void pop() {
-        if (count > 0) {
-            count --;
-        } else {
-            iter = prev.iter;
-            prev = prev.prev;
-        }
+        iter = prev.iter;
+        prev = prev.prev;
     }
     
     public int getIter() {
@@ -76,11 +67,6 @@ public class RubyIter {
     }
     
     public void setIter(int newIter) {
-        if (count > 0) {
-            prev = new RubyIter(iter, prev);
-            prev.count --;
-            count = 0;
-        }
         iter = newIter;
     }
 }

@@ -91,7 +91,7 @@ public class RbKernel {
     
     public static RubyObject m_puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
-            System.out.println();
+            ruby.getRuntime().getOutputStream().println();
             return ruby.getNil();
         }
         for (int i = 0; i < args.length; i++) {
@@ -99,7 +99,7 @@ public class RbKernel {
                 if (args[i] instanceof RubyArray) {
                     m_puts(ruby, recv, ((RubyArray)args[i]).toJavaArray());
                 } else {
-                    System.out.println(args[i].isNil() ? "nil" :
+                    ruby.getRuntime().getOutputStream().println(args[i].isNil() ? "nil" :
                         ((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
                 }
             }
@@ -129,20 +129,20 @@ public class RbKernel {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
                 if (i > 0) {
-                    System.out.print(ofs);
+                    ruby.getRuntime().getOutputStream().print(ofs);
                 }
-                System.out.print(args[i].isNil() ? "nil" :
+                ruby.getRuntime().getOutputStream().print(args[i].isNil() ? "nil" :
                         ((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
             }
         }
-        System.out.print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
+        ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
         return ruby.getNil();
     }
     
     public static RubyObject m_p(Ruby ruby, RubyObject recv, RubyObject args[]) {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                System.out.println(((RubyString)args[i].funcall(ruby.intern("inspect"))).getValue());
+                ruby.getRuntime().getOutputStream().println(((RubyString)args[i].funcall(ruby.intern("inspect"))).getValue());
             }
         }
         return ruby.getNil();
@@ -168,7 +168,7 @@ public class RbKernel {
     }
     
     public static RubyObject m_printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        System.out.print(((RubyString)m_sprintf(ruby, recv, args)).getValue());
+        ruby.getRuntime().getOutputStream().print(((RubyString)m_sprintf(ruby, recv, args)).getValue());
         return ruby.getNil();
     }
     
@@ -178,7 +178,7 @@ public class RbKernel {
             if (!jarFile.exists()) {
                 jarFile = new File(new File(ruby.getSourceFile()).getParentFile(), arg1.getValue());
                 if (!jarFile.exists()) {
-                    System.err.println("[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
+                    ruby.getRuntime().getErrorStream().println("[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
                 }
             }
             if (jarFile.exists()) {

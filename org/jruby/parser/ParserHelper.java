@@ -85,23 +85,23 @@ public class ParserHelper {
     }
     
     private void yyerror(String message) {
-        System.err.println(message);
+        ruby.getRuntime().getErrorStream().println(message);
     }
     
     public void rb_compile_error(String message) {
-        System.err.println(message);
+        ruby.getRuntime().getErrorStream().println(message);
     }
 
     public void rb_warn(String message) {
-        System.err.println("[WARN] " + message);
+        ruby.getRuntime().getErrorStream().println("[WARN] " + message);
     }
 
     public void rb_warning(String message) {
-        System.err.println("[WARNING] " + message);
+        ruby.getRuntime().getErrorStream().println("[WARNING] " + message);
     }
 
     public void rb_bug(String message) {
-        System.err.println("[BUG] " + message);
+        ruby.getRuntime().getErrorStream().println("[BUG] " + message);
     }
 
 // ---------------------------------------------------------------------------
