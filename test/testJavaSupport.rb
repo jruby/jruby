@@ -112,15 +112,15 @@ if defined? Java
 
   # Test upper layer of javasupport
 
-#   module TestJavaSupport
-#     include_package "java.util"
+   module TestJavaSupport
+     include_package "java.util"
 
-#     r = Random.new
-#     test_equal(TestJavaSupport::Random, r.type)
-#     r = Random.new(1001)
-#     test_equal(TestJavaSupport::Random, r.type)
-#     test_equal(Fixnum, r.nextInt.type)
-#   end
+     r = Random.new
+     test_equal(TestJavaSupport::Random, r.type)
+     r = Random.new(1001)
+     test_equal(TestJavaSupport::Random, r.type)
+     test_equal(Fixnum, r.nextInt.type)
+   end
 end
 
 test_print_report

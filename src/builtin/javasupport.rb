@@ -41,11 +41,10 @@ class Module
   #
 
   def include_package(package_name)
-    if defined? @included_packages
-      @included_packages << package_name      
-      return
+    unless defined? @included_packages
+      @included_packages = []
     end
-    @included_packages = []
+    @included_packages << package_name      
     def self.const_missing(constant)
       java_class = find_java_class(constant)
       if java_class.nil?

@@ -82,7 +82,6 @@ end
 launch = JavaLaunch.new("#{java_home}/bin/java", "org.jruby.Main")
 
 classpath = Classpath.new
-classpath << "#{jruby_home}/jruby.jar"
 
 lib_path = "#{jruby_home}/lib"
 Dir.new(lib_path).grep(/\.jar$/).each {|jar|
