@@ -262,6 +262,7 @@ public class RubyClasses {
 
     public void initBuiltinClasses() {
         loadBuiltin("Enumerable");
+        //loadBuiltin("javasupport");
     }
 
     /**

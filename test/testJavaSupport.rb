@@ -96,6 +96,8 @@ if defined? Java
   constructor = random_class.constructor(:long)
   test_equal(1, constructor.arity)
   random = constructor.new_instance(2002)
+  result = method.invoke(random)
+  test_ok(result.kind_of?(Fixnum))
 end
 
 test_print_report

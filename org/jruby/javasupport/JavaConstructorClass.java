@@ -27,6 +27,7 @@ import org.jruby.RubyClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
 import org.jruby.util.Asserts;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.IndexCallable;
@@ -41,6 +42,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
 
     private static final int ARITY = 1;
     private static final int NEW_INSTANCE = 2;
+    private static final int INSPECT = 3;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaConstructorClass =
@@ -48,6 +50,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
 
         javaConstructorClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
         javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE));
+        javaConstructorClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
 
         return javaConstructorClass;
     }
@@ -83,12 +86,28 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         }
     }
 
+    public RubyString inspect() {
+        StringBuffer result = new StringBuffer();
+        result.append("#<" + getType() + "(");
+        Class[] parameterTypes = constructor.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            result.append(parameterTypes[i].getName());
+            if (i < parameterTypes.length - 1) {
+                result.append(',');
+            }
+        }
+        result.append(")>");
+        return RubyString.newString(getRuntime(), result.toString());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case ARITY :
                 return arity();
             case NEW_INSTANCE :
                 return new_instance(args);
+            case INSPECT :
+                return inspect();
             default :
                 return super.callIndexed(index, args);
         }
