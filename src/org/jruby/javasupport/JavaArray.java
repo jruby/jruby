@@ -30,6 +30,9 @@ import org.jruby.util.Asserts;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
+import org.jruby.exceptions.TypeError;
+import org.jruby.exceptions.ArgumentError;
 
 public class JavaArray extends JavaObject implements IndexCallable {
 
@@ -39,12 +42,14 @@ public class JavaArray extends JavaObject implements IndexCallable {
     }
 
     private static final int LENGTH = 1001;
+    private static final int AREF = 1002;
 
     public static RubyClass createJavaArrayClass(Ruby runtime) {
         RubyClass javaArrayClass =
                 runtime.defineClass("JavaArray", runtime.getClasses().getJavaObjectClass());
 
         javaArrayClass.defineMethod("length", IndexedCallback.create(LENGTH, 0));
+        javaArrayClass.defineMethod("[]", IndexedCallback.create(AREF, 1));
 
         return javaArrayClass;
     }
@@ -54,10 +59,33 @@ public class JavaArray extends JavaObject implements IndexCallable {
         return RubyFixnum.newFixnum(getRuntime(), length);
     }
 
+    public IRubyObject aref(IRubyObject index) {
+        if (! (index instanceof RubyInteger)) {
+            throw new TypeError(getRuntime(), index, getRuntime().getClasses().getIntegerClass());
+        }
+        int intIndex = (int) ((RubyInteger) index).getLongValue();
+        Object[] array = ((Object[]) getValue());
+        if (intIndex < 0 || intIndex >= array.length) {
+            throw new ArgumentError(getRuntime(),
+                                    "index out of bounds for java array (" + intIndex +
+                                    " for length " + array.length + ")");
+        }
+        Object result = array[intIndex];
+        if (result == null) {
+            return getRuntime().getNil();
+        }
+        return new JavaObject(getRuntime(),
+                              getRuntime().getClasses().getJavaObjectClass(),
+                              result);
+    }
+
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case LENGTH :
                 return length();
+            case AREF :
+                return aref(args[0]);
             default :
                 return super.callIndexed(index, args);
         }

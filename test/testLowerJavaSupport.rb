@@ -114,4 +114,8 @@ if defined? Java
   test_ok(string_array_class.array?)
   test_equal("[Ljava.lang.String;", string_array_class.name)
   test_ok(string_array_class.constructors.empty?)
+  test_ok(array[3].nil?)
+  test_exception(ArgumentError) { array[10] }
 end
+
+test_print_report
