@@ -59,7 +59,7 @@ public class RubyInputStream extends FilterInputStream {
         StringBuffer sb = new StringBuffer();
 
         LineLoop : while (true) {
-            while (c != sep[0]) {
+            while (c != sep[0] && c != -1) {
                 sb.append((char) c);
                 c = reader.read();
             }
