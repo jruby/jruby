@@ -53,7 +53,16 @@ import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Iter;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.Namespace;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 
@@ -62,8 +71,9 @@ import org.jruby.util.IdUtil;
  * @author  jpetersen
  */
 public class RubyModule extends RubyObject {
-    // The (virtual) super class.
+
     private RubyClass superClass;
+    public RubyModule parentModule;
 
     private String classId;
     private String classPath;
@@ -77,14 +87,14 @@ public class RubyModule extends RubyObject {
     }
 
     protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass, String name) {
-        super(ruby, rubyClass);
-        this.superClass = superClass;
+        this(ruby, rubyClass, superClass);
         this.classId = name;
     }
 
     protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
         super(ruby, rubyClass);
         this.superClass = superClass;
+        this.parentModule = ruby.getRubyClass();
     }
 
     /** Getter for property superClass.
@@ -263,28 +273,45 @@ public class RubyModule extends RubyObject {
      *
      */
     private String findClassPath() {
-        FindClassPathResult arg;
-        String path = null;
-        String name = null;
+        RubyModule current = this;
+        ArrayList path = new ArrayList();
+        while (current != runtime.getTopSelf().getType()) {
+            Asserts.notNull(current);
+            path.add(current);
+            current = current.parentModule;
+        }
+        StringBuffer result = new StringBuffer();
+        for (int i = path.size() - 1; i >= 0; i--) {
+            result.append(((RubyModule) path.get(i)).classId);
+            if (i > 0) {
+                result.append("::");
+            }
+        }
+        return result.toString();
 
-        Map instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
-        if (instanceVariables != null) {
-            Iterator iter = instanceVariables.entrySet().iterator();
-            arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
-            name = arg.name;
-            path = arg.path;
-        }
-        if (name == null) {
-            Iterator iter = getRuntime().getClasses().getClassMap().entrySet().iterator();
-            arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
-            name = arg.name;
-            path = arg.path;
-        }
-        if (name == null) {
-            return null;
-        }
-        classPath = path;
-        return path;
+
+//        FindClassPathResult arg;
+//        String path = null;
+//        String name = null;
+//
+//        Map instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
+//        if (instanceVariables != null) {
+//            Iterator iter = instanceVariables.entrySet().iterator();
+//            arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
+//            name = arg.name;
+//            path = arg.path;
+//        }
+//        if (name == null) {
+//            Iterator iter = getRuntime().getClasses().getClassMap().entrySet().iterator();
+//            arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
+//            name = arg.name;
+//            path = arg.path;
+//        }
+//        if (name == null) {
+//            return null;
+//        }
+//        classPath = path;
+//        return path;
     }
 
     /** include_class_new
@@ -1293,6 +1320,15 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
+    public static RubyModule newModule(IRubyObject recv) {
+        RubyModule mod = RubyModule.newModule(recv.getRuntime());
+
+        mod.setMetaClass((RubyClass) recv);
+        recv.getRuntime().getClasses().getModuleClass().callInit(null);
+
+        return mod;
+    }
+
     /** Return an array of nested modules or classes.
      *
      * rb_mod_nesting
@@ -1655,78 +1691,6 @@ public class RubyModule extends RubyObject {
         return result;
     }
 
-    private static class FindClassPathResult {
-        public String name;
-        public RubyModule klass;
-        public String path;
-        public IRubyObject track;
-        public FindClassPathResult prev;
-    }
-
-    private FindClassPathResult findClassPathMap(Iterator iter, RubyModule klass, IRubyObject track) {
-        FindClassPathResult result = new FindClassPathResult();
-        result.klass = klass;
-        result.track = track;
-        findClassPathMap(iter, result);
-        return result;
-    }
-
-    private void findClassPathMap(Iterator iter, FindClassPathResult res) {
-        OUTER : while (iter.hasNext()) {
-            Map.Entry entry = (Map.Entry)iter.next();
-            String key = (String) entry.getKey();
-            IRubyObject value = (IRubyObject) entry.getValue();
-
-            String path = null;
-
-            if (!IdUtil.isConstant(key)) {
-                continue;
-            }
-
-            if (res.path != null) {
-                path = res.path;
-                path += "::" + key;
-            } else {
-                path = key;
-            }
-
-            if (value == res.klass) {
-                res.name = key;
-                res.path = path;
-                break;
-            }
-
-            if (value.isKindOf(getRuntime().getClasses().getModuleClass())) {
-                if (value.getInstanceVariables() == null) {
-                    continue;
-                }
-
-                FindClassPathResult list = res;
-
-                while (list != null) {
-                    if (list.track == value) {
-                        continue OUTER;
-                    }
-                    list = list.prev;
-                }
-
-                FindClassPathResult arg = new FindClassPathResult();
-                arg.name = null;
-                arg.path = path;
-                arg.klass = res.klass;
-                arg.track = value;
-                arg.prev = res;
-
-                findClassPathMap(value.getInstanceVariables().entrySet().iterator(), arg);
-
-                if (arg.name != null) {
-                    res.name = arg.name;
-                    res.path = arg.path;
-                    break;
-                }
-            }
-        }
-    }
     public void setName(String name) {
         this.classId = name;
     }

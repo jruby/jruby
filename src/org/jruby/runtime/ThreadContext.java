@@ -314,6 +314,10 @@ public class ThreadContext {
     }
 
     public RubyModule getRubyClass() {
+        if (classStack.depth() == 0) {
+            return null;
+        }
+
         RubyModule rubyClass = (RubyModule) classStack.peek();
         if (rubyClass.isIncluded()) {
             return ((IncludedModuleWrapper) rubyClass).getDelegate();
@@ -338,16 +342,16 @@ public class ThreadContext {
     }
 
     public IRubyObject getConstant(IRubyObject self, String name) {
-        Namespace initial = getCurrentFrame().getNamespace();
-
-        // First search the current class hierarchy (the class-stack/namespace stack) ..?
-        for (Namespace ns = initial; ns != null && ns.getParent() != null; ns = ns.getParent()) {
-            if (ns.getModule().hasInstanceVariable(name)) {
-                return ns.getModule().getInstanceVariable(name);
+        // First search the module hierarchy
+        RubyModule current = getRubyClass();
+        while (current != runtime.getTopSelf().getType() && current != null) {
+            if (current.hasInstanceVariable(name)) {
+                return current.getInstanceVariable(name);
             }
+            current = current.parentModule;
         }
 
-        // Then search the inheritance hierarchy ..?
+        // Then search the inheritance hierarchy
         return getRubyClass().getConstant(name);
     }
 
