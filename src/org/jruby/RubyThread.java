@@ -417,7 +417,6 @@ public class RubyThread extends RubyObject {
 
     public static IRubyObject s_exit(IRubyObject receiver) {
     	RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
-    	Object stopLock = rubyThread.stopLock;
     	
 		rubyThread.killed = true;
 		// decriticalize all if we're the critical thread
