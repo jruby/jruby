@@ -23,8 +23,7 @@ public class StringToken extends DefaultToken {
     }
 
     public String toString() {
-    	//return "StringToken: String = \"" + value.replaceAll("\n", "\\n") + '\"';
-	return "lkjasdf";
+    	return "StringToken: String = \"" + value.replaceAll("\n", "\\n") + '\"';
     }
 }
 
