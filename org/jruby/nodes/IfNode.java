@@ -43,6 +43,10 @@ public class IfNode extends Node {
         super(Constants.NODE_IF, conditionNode, bodyNode, elseNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getConditionNode().toString() + ", "  + getBodyNode().toString() + "," + getElseNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         ruby.setSourceLine(getLine());
        Node x = getConditionNode();

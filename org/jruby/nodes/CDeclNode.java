@@ -46,6 +46,10 @@ public class CDeclNode extends Node implements AssignableNode {
         super(Constants.NODE_CDECL, vid, valueNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         ruby.getRubyClass().setConstant(getVId(), value);
     }

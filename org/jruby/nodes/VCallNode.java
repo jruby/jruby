@@ -43,6 +43,10 @@ public class VCallNode extends Node {
         super(Constants.NODE_VCALL, null, mId, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "mid:" + getMId().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return self.getRubyClass().call(self, getMId(), null, 2);
     }

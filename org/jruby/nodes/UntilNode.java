@@ -44,6 +44,10 @@ public class UntilNode extends Node {
         super(Constants.NODE_UNTIL, conditionNode, bodyNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "condition:" + getConditionNode().toString() + ", "  + "body:" + getBodyNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         while (getConditionNode().eval(ruby, self).isFalse()) {
             while (true) {

@@ -44,6 +44,10 @@ public class SelfNode extends Node {
         super(Constants.NODE_SELF);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return self;
     }

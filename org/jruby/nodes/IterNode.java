@@ -44,6 +44,10 @@ public class IterNode extends Node {
     public IterNode(Node varNode, Node bodyNode, Node iterNode) {
         super(Constants.NODE_ITER, varNode, bodyNode, iterNode);
     }
+ 	public String toString()   
+	{
+		return super.toString() + getVarNode().toString() + ", "  + getBodyNode().toString() + "," + getIterNode() +")";
+	}
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result;

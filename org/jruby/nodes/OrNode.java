@@ -43,6 +43,10 @@ public class OrNode extends Node {
         super(Constants.NODE_OR, firstNode, secondNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "first:" + getFirstNode().toString() + ", second:" + getSecondNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getFirstNode().eval(ruby, self).isTrue()) {
             return ruby.getTrue();

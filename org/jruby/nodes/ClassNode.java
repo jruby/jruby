@@ -44,6 +44,10 @@ public class ClassNode extends Node {
         super(Constants.NODE_CLASS, classNameId, bodyNode, superNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode().toString() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new RubyTypeException(ruby, "no outer class/module");

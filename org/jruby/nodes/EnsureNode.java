@@ -43,6 +43,10 @@ public class EnsureNode extends Node {
         super(Constants.NODE_ENSURE, headNode, null, ensureNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getEnsureNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result = null;
         try {

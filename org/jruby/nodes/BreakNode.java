@@ -45,6 +45,10 @@ public class BreakNode extends Node {
         super(Constants.NODE_BREAK);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new BreakException();
     }

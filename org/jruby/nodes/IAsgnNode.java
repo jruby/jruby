@@ -44,6 +44,10 @@ public class IAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_IASGN, vId, valueNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getVId().toString() + ", "  + getValueNode().toString() + ")";
+	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         self.setInstanceVar(getVId(), value);
     }

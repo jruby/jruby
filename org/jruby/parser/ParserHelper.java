@@ -111,17 +111,27 @@ public class ParserHelper {
     public void rb_compile_error(String message) {
         ruby.getRuntime().getErrorStream().println(message);
     }
+    
+    /**
+     * prints an error message on the error stream.
+     * puts an error message on the error stream with the line and file where it occured.
+     * @param message the specific message
+     **/
+    public void rb_errmess(String message)
+    {
+	ruby.getRuntime().getErrorStream().println(ruby.getSourceFile() + ":" + getLine() + " " + message);
+    }
 
     public void rb_warn(String message) {
-        ruby.getRuntime().getErrorStream().println("[WARN] " + message);
+        rb_errmess(" [WARN] " + message);
     }
 
     public void rb_warning(String message) {
-        ruby.getRuntime().getErrorStream().println("[WARNING] " + message);
+        rb_errmess("[WARNING] " + message);
     }
 
     public void rb_bug(String message) {
-        ruby.getRuntime().getErrorStream().println("[BUG] " + message);
+        rb_errmess("[BUG] " + message);
     }
 
     // ---------------------------------------------------------------------------

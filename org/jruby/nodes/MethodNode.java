@@ -45,6 +45,10 @@ public class MethodNode extends Node {
         super(Constants.NODE_METHOD, noex, bodyNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "noex:" + getNoex() + ", "  + "body:" +getBodyNode().toString() + ")";
+	}
     public RubyModule getMethodOrigin() {
         return methodOrigin;
     }

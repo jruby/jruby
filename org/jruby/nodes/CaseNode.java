@@ -43,6 +43,10 @@ public class CaseNode extends Node {
         super(Constants.NODE_CASE, headNode, bodyNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject obj = getHeadNode().eval(ruby, self);
         

@@ -45,6 +45,10 @@ public class RedoNode extends Node {
         super(Constants.NODE_REDO);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new RedoException();
     }

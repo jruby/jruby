@@ -43,6 +43,10 @@ public class LitNode extends Node {
         super(Constants.NODE_LIT, literal, null, null);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + getLiteral().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getLiteral();
     }

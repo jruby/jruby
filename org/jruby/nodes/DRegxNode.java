@@ -45,6 +45,10 @@ public class DRegxNode extends Node implements StringEvaluableNode {
         super(Constants.NODE_DREGX, literal, cflag, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return StringEvaluate.eval(ruby, self, this);
     }

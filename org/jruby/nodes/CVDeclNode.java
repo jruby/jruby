@@ -46,6 +46,10 @@ public class CVDeclNode extends Node implements AssignableNode {
         super(Constants.NODE_CVDECL, vId, valueNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         if (ruby.getCBase().isSingleton()) {
             ruby.getCBase().getInstanceVar("__attached__").getClassVarSingleton().setClassVar(getVId(), value);

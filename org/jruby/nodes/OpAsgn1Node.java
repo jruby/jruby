@@ -45,6 +45,10 @@ public class OpAsgn1Node extends Node {
         super(Constants.NODE_OP_ASGN1, recvNode, mId, argsNode);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + "receiv:" + getRecvNode().toString() + ", "  + "mid:" + getMId().toString() + "," + "args:" + getArgsNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // TMP_PROTECT;
 

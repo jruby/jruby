@@ -45,6 +45,10 @@ public class ForNode extends Node {
         super(Constants.NODE_FOR, varNode, bodyNode, iterNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result;
         

@@ -41,4 +41,9 @@ public class ArgsNode extends Node {
     public ArgsNode(Node optNode, int rest, int count) {
         super(Constants.NODE_ARGS, optNode, rest, count);
     }
+
+ 	public String toString()   
+	{
+		return super.toString() + stringOrNull(getFirstNode()) + ", "  + getRest() + ", count:" +  getCount() + ")";
+	}
 }

@@ -44,6 +44,10 @@ public class FalseNode extends Node {
         super(Constants.NODE_FALSE);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getFalse();
     }

@@ -43,7 +43,12 @@ public class BeginNode extends Node {
         super(Constants.NODE_BEGIN, null, body, null);
     }
 
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public String toString()   
+	{
+		return super.toString() + getSecondNode().toString() + ")";
+	}
+    
+	public RubyObject eval(Ruby ruby, RubyObject self) {
         return getBodyNode() != null ? getBodyNode().eval(ruby, self) : ruby.getNil();
     }
 }

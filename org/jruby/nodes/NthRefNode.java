@@ -43,6 +43,10 @@ public class NthRefNode extends Node {
         super(Constants.NODE_NTH_REF, null, nth, null);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + "nth:" + getNth() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return RubyRegexp.nth_match(getNth(), ruby.getBackRef());
     }

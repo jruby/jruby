@@ -45,6 +45,10 @@ public class RetryNode extends Node {
         super(Constants.NODE_RETRY);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new RetryException();
     }

@@ -52,6 +52,10 @@ public class OpAsgn2Node extends Node {
         this.aid = vid + "=";
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + "recv:" + getRecvNode().toString() + ", "  + "value:" + getValueNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject recv = getRecvNode().eval(ruby, self);
         RubyObject val = recv.funcall(vid, (RubyObject[]) null);

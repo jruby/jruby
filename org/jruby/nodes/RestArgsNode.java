@@ -44,6 +44,10 @@ public class RestArgsNode extends Node {
         super(Constants.NODE_RESTARGS, headNode, null, null);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + "head:" + getHeadNode().toString() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result = getHeadNode().eval(ruby, self);
         if (!(result instanceof RubyArray)) {

@@ -42,7 +42,10 @@ public class AndNode extends Node {
     public AndNode(Node firstNode, Node secondNode) {
         super(Constants.NODE_AND, firstNode, secondNode, null);
     }
-    
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getFirstNode().eval(ruby, self).isFalse()) {
             return ruby.getFalse();

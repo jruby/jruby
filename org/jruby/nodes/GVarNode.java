@@ -43,6 +43,10 @@ public class GVarNode extends Node {
         super(Constants.NODE_GVAR, null, null, entry);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "entry:" + getEntry().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getEntry().get();
     }

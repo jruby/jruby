@@ -43,6 +43,10 @@ public class ConstNode extends Node {
         super(Constants.NODE_CONST, vId, null, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getConstant(ruby, self, ruby.getRubyFrame().getCbase(), getVId());
     }

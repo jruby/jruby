@@ -43,6 +43,10 @@ public class RescueBodyNode extends Node {
         super(Constants.NODE_RESBODY, headNode, bodyNode, argsNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "head:" + getHeadNode().toString() + ", body"  + getBodyNode().toString() + ", args:" + getArgsNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getBodyNode().eval(ruby, self);
     }

@@ -48,6 +48,10 @@ public class ZSuperNode extends Node implements CallableNode {
         super(Constants.NODE_ZSUPER);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // TMP_PROTECT;
         

@@ -46,6 +46,10 @@ public class AttrSetNode extends Node implements CallableNode {
         super(Constants.NODE_ATTRSET, vId, null, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyFrame().getArgs().size() != 1) {
             throw new RubyArgumentException(ruby, "wrong # of arguments(" + ruby.getRubyFrame().getArgs().size() + "for 1)");

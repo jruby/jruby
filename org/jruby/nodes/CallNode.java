@@ -43,32 +43,37 @@ import org.jruby.util.*;
  */
 public class CallNode extends Node implements AssignableNode {
     public CallNode(Node recvNode, String mId, Node argsNode) {
-        super(Constants.NODE_CALL, recvNode, mId, argsNode);
+	super(Constants.NODE_CALL, recvNode, mId, argsNode);
     }
-    
+
+    public String toString()   
+    {
+	return super.toString() + "recv:" + stringOrNull(getRecvNode()) + ", mid:"  + getMId() + ", args:" + stringOrNull(getArgsNode()) +")";
+    }
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        // TMP_PROTECT;
-        
-        RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        
-        RubyObject recv = getRecvNode().eval(ruby, self);
-        RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode());
-        
-        ArgsUtil.endCallArgs(ruby, tmpBlock);
-        
-        return recv.getRubyClass().call(recv, getMId(), args, 0);
+	// TMP_PROTECT;
+
+	RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
+
+	RubyObject recv = getRecvNode().eval(ruby, self);
+	RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode());
+
+	ArgsUtil.endCallArgs(ruby, tmpBlock);
+
+	return recv.getRubyClass().call(recv, getMId(), args, 0);
     }
-    
+
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
-        RubyObject recv = getRecvNode().eval(ruby, self);
-        
-        if (getArgsNode() == null) {
-            /* attr set */
-            recv.getRubyClass().call(recv, getMId(), new RubyPointer(new RubyObject[] {value}), 0);
-        } else {
-            RubyArray args = (RubyArray)getArgsNode().eval(ruby, self);
-            args.push(value);
-            recv.getRubyClass().call(recv, getMId(), new RubyPointer(args.getList()), 0);
-        }
+	RubyObject recv = getRecvNode().eval(ruby, self);
+
+	if (getArgsNode() == null) {
+	    /* attr set */
+	    recv.getRubyClass().call(recv, getMId(), new RubyPointer(new RubyObject[] {value}), 0);
+	} else {
+	    RubyArray args = (RubyArray)getArgsNode().eval(ruby, self);
+	    args.push(value);
+	    recv.getRubyClass().call(recv, getMId(), new RubyPointer(args.getList()), 0);
+	}
     }
 }

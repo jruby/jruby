@@ -47,6 +47,10 @@ public class CVAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_CVASGN, vId, valueNode, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     /**
      * @param ruby
      * @param self

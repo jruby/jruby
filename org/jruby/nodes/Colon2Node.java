@@ -43,6 +43,10 @@ public class Colon2Node extends Node {
         super(Constants.NODE_COLON2, headNode, mId, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject value = getHeadNode().eval(ruby, self);
         if (value instanceof RubyModule) {

@@ -43,6 +43,10 @@ public class YieldNode extends Node {
         super(Constants.NODE_YIELD, sttsNode, null, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "stts:" + getSttsNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result = ruby.getNil();
 

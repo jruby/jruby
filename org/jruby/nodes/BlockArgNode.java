@@ -43,6 +43,10 @@ public class BlockArgNode extends Node {
         super(Constants.NODE_BLOCK_ARG, null, null, count);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + getCount() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyScope().getLocalValues() == null) {
             throw new RuntimeException("BUG: unexpected block argument");

@@ -45,6 +45,10 @@ public class StrNode extends Node implements StringExpandableNode {
         super(Constants.NODE_STR, literal, null, null);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + "literal:" + getLiteral().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getLiteral().to_s();
     }

@@ -52,6 +52,10 @@ public class ScopeNode extends Node implements CallableNode {
         super(Constants.NODE_SCOPE, table, refValue, nextNode);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + "table:" + stringOrNull(getTable()) + ", ref:"  + stringOrNull(getRefValue()) + ", next:" + stringOrNull(getNextNode()) +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         CRefNode savedCRef = null;
 

@@ -45,6 +45,10 @@ public class NextNode extends Node {
         super(Constants.NODE_NEXT);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new NextException();
     }

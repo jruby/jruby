@@ -43,6 +43,10 @@ public class Colon3Node extends Node {
         super(Constants.NODE_COLON3, null, mId, null);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + getBodyNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getClasses().getObjectClass().getConstant(getMId());
     }

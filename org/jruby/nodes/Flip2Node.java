@@ -44,6 +44,10 @@ public class Flip2Node extends Node {
         super(Constants.NODE_FLIP2, beginNode, endNode, count);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         /*
          * if (ruby_scope->local_vars == 0)

@@ -44,6 +44,10 @@ public class LAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_LASGN, null, valueNode, count);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + getValueNode().toString() + ", "  + getCount() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyScope().getLocalValues() == null) {
         	ruby.getRuntime().printBug("unexpected local variable assignment");

@@ -44,6 +44,10 @@ public class GAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_GASGN, null, valueNode, entry);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getValueNode().toString() + ", "  + getEntry().toString() + ")";
+	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         getEntry().set(value);
     }

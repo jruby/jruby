@@ -45,6 +45,10 @@ public class CVar2Node extends Node {
         super(Constants.NODE_CVAR2, vId, null, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return self.getClassVarSingleton().getClassVar(getVId());
     }

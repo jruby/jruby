@@ -45,6 +45,10 @@ public class DefnNode extends Node {
         super(Constants.NODE_DEFN, noex, mId, defnNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "noex:" + getNoex() + ", "  + "mid:" + getMId().toString() + "," + "defnNode:" + getDefnNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getDefnNode() != null) {
             if (ruby.getRubyClass() == null) {

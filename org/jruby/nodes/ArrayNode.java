@@ -46,6 +46,11 @@ public class ArrayNode extends Node {
         super(Constants.NODE_ARRAY, headNode, aLength, nextNode);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + stringOrNull(getHeadNode()) + ", length:"  + getALength() + ", next:" + stringOrNull(getNextNode()) +")";
+	}
+	
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getRubyArray(ruby, self);
     }

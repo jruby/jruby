@@ -39,27 +39,32 @@ import org.jruby.runtime.*;
  * @version
  */
 public class HashNode extends Node {
-    
+
     public HashNode(Node headNode) {
-        super(Constants.NODE_HASH, headNode, null, null);
+	super(Constants.NODE_HASH, headNode, null, null);
     }
-    
+
+    public String toString()   
+    {
+	return super.toString() + "head:" + stringOrNull(getHeadNode()) + ")";
+    }
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyHash hash = RubyHash.newHash(ruby);
-        
-        Node list = getHeadNode();
-        while(list != null) {
-            RubyObject key = list.getHeadNode().eval(ruby, self);
-            list = list.getNextNode();
-            if (list == null) {
-                // HACK +++
-                throw new RuntimeException("[BUG] odd number list for Hash");
-                // HACK ---
-            }
-            hash.aset(key, list.getHeadNode().eval(ruby, self));
-            
-            list = list.getNextNode();
-        }
-        return hash;
+	RubyHash hash = RubyHash.newHash(ruby);
+
+	Node list = getHeadNode();
+	while(list != null) {
+	    RubyObject key = list.getHeadNode().eval(ruby, self);
+	    list = list.getNextNode();
+	    if (list == null) {
+		// HACK +++
+		throw new RuntimeException("[BUG] odd number list for Hash");
+		// HACK ---
+	    }
+	    hash.aset(key, list.getHeadNode().eval(ruby, self));
+
+	    list = list.getNextNode();
+	}
+	return hash;
     }
 }

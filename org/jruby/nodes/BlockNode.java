@@ -43,6 +43,10 @@ public class BlockNode extends Node {
         super(Constants.NODE_BLOCK, headNode, null, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "head:" + stringOrNull(getHeadNode()) + ",\nnext:" + stringOrNull(getNextNode()) + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         Node node = this;
         while (node.getNextNode() != null) {

@@ -44,6 +44,10 @@ public class BackRefNode extends Node {
         super(Constants.NODE_BACK_REF, null, nth, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getSecondNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         switch ((char)getNth()) {
             case '&':

@@ -42,7 +42,27 @@ public final class Constants {
     public static final int NOEX_CFUNC          = 1;
     public static final int NOEX_PRIVATE        = 2;
     public static final int NOEX_PROTECTED      = 4;
-                                                
+	public static final String [] NODE_TRANSLATOR = 
+	{
+	"METHOD",   "FBODY",    "CFUNC",    "SCOPE",    "BLOCK",
+    "IF",    	"CASE",    "WHEN",    "OPT_N",    "WHILE",    "UNTIL",
+    "ITER",    	"FOR",    "BREAK",    "NEXT",    "REDO",    "RETRY",
+    "BEGIN",    "RESCUE",    "RESBODY",    "ENSURE",    "AND",
+	"OR",    	"NOT",    "MASGN",    "LASGN",    "DASGN",
+	"DASGN_CURR",    "GASGN",    "IASGN",    "CDECL",    "CVASGN",    "CVDECL",
+	"OP_ASGN1", "OP_ASGN2",    "OP_ASGN_AND",    "OP_ASGN_OR",
+    "CALL",    	"FCALL",    "VCALL",    "SUPER",    "ZSUPER",    "ARRAY",
+    "ZARRAY",   "HASH",    "RETURN",    "YIELD",    "LVAR",    "DVAR",
+    "GVAR",    	"IVAR",    "CONST",    "CVAR",    "CVAR2",    "NTH_REF",
+    "BACK_REF", "MATCH",    "MATCH2",    "MATCH3",    "LIT",    "STR",
+    "DSTR",    "XSTR",    "DXSTR",    "EVSTR",    "DREGX",    "DREGX_ONCE",
+    "ARGS",    "ARGSCAT",    "ARGSPUSH",    "RESTARGS",    "RESTARY",    "REXPAND",
+    "BLOCK_ARG",    "BLOCK_PASS",    "DEFN",    "DEFS",    "ALIAS",    "VALIAS",
+    "UNDEF",    "CLASS",    "MODULE",    "SCLASS",    "COLON2",    "COLON3",
+    "CREF",    "DOT2",    "DOT3",    "FLIP2",    "FLIP3",    "ATTRSET",
+	"SELF",    "NIL",    "TRUE",    "FALSE",    "DEFINED",    "NEWLINE",    "POSTEXE",
+	"ALLOCA",    "DMETHOD",    "BMETHOD",    "MEMO",    "IFUNC",    "LAST",		
+	};
     public static final int NODE_METHOD         = 0;
     public static final int NODE_FBODY          = 1;
     public static final int NODE_CFUNC          = 2;

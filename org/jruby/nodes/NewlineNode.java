@@ -43,6 +43,10 @@ public class NewlineNode extends Node{
         super(Constants.NODE_NEWLINE, null, null, nextNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "next:" + getNextNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         ruby.setSourceFile(getFile());
         ruby.setSourceLine(getNth());

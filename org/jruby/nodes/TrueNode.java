@@ -44,6 +44,10 @@ public class TrueNode extends Node {
         super(Constants.NODE_TRUE);
     }
 
+ 	public String toString()   
+	{
+		return super.toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getTrue();
     }

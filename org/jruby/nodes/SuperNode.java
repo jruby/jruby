@@ -46,6 +46,10 @@ public class SuperNode extends Node {
         super(Constants.NODE_SUPER, null, null, argsNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "args:" + getArgsNode().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // TMP_PROTECT;
         

@@ -46,6 +46,10 @@ public class EvStrNode extends Node implements StringExpandableNode {
         super(Constants.NODE_EVSTR, literal, null, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + getFirstNode().toString() + ")";
+	}
     public RubyString expandString(Ruby ruby, RubyObject self, Node parent) {
         // result = ruby_errinfo;
         // ruby_errinfo = Qnil;

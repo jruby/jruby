@@ -44,6 +44,10 @@ public class WhenNode extends Node {
         super(Constants.NODE_WHEN, headNode, bodyNode, nextNode);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "head:" + getHeadNode().toString() + ", body"  + getBodyNode().toString() + ", next:" + getNextNode() +")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         WhenNode node = this;
         

@@ -45,6 +45,10 @@ public class UndefNode extends Node {
         super(Constants.NODE_UNDEF, null, mId, null);
     }
     
+ 	public String toString()   
+	{
+		return super.toString() + "mId:" + getMId().toString() + ")";
+	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new RubyTypeException(ruby, "no class to undef method");
