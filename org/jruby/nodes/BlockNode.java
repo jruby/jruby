@@ -1,6 +1,6 @@
 /*
  * BlockNode.java - No description
- * Created on 10. September 2001, 17:46
+ * Created on 05. November 2001, 21:44
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>

@@ -1,5 +1,5 @@
 /*
- * NodeTypes.java - No description
+ * Constants.java - No description
  * Created on 02. November 2001, 01:25
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina

@@ -2,9 +2,11 @@
  * ReOptions.java - No description
  * Created on 10. September 2001, 17:51
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 

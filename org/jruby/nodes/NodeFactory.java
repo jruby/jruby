@@ -1,6 +1,6 @@
 /*
  * NodeFactory.java - No description
- * Created on 04. Oktober 2001, 23:35
+ * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
@@ -332,11 +332,9 @@ public class NodeFactory {
         return new ZSuperNode();
     }
     
-    public Node newArgs(Object f, Node o, RubyId r) {
-        // +++
-        // return new ArgsNode(o, r, f);
-        // ---
-        return null;
+    public Node newArgs(Integer count, Node optNode, RubyId rest) {
+        return new ArgsNode(optNode, rest != null ? rest.intValue() : 0,
+                                          count != null ? count.intValue() : 0);
     }
     
     public Node newArgsCat(Node head /*a*/, Node body) {

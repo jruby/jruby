@@ -1,6 +1,6 @@
 /*
- * LexState.java - No description
- * Created on 10. September 2001, 17:51
+ * ArgsNode.java - No description
+ * Created on 05. November 2001, 21:15
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
@@ -27,16 +27,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.parser;
 
-public interface LexState {
-    int EXPR_BEG    = 0;
-    int EXPR_END    = 1;
-    int EXPR_ARG    = 2;
-    int EXPR_CMDARG = 3;
-    int EXPR_ENDARG = 4;
-    int EXPR_MID    = 5;
-    int EXPR_FNAME  = 6;
-    int EXPR_DOT    = 7;
-    int EXPR_CLASS  = 8;
+package org.jruby.nodes;
+
+import org.jruby.*;
+import org.jruby.runtime.*;
+
+/**
+ *
+ * @author  jpetersen
+ */
+public class ArgsNode extends Node {
+    public ArgsNode(Node optNode, int rest, int count) {
+        super(Constants.NODE_ARGS, optNode, rest, count);
+    }
 }

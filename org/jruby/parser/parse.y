@@ -1553,23 +1553,19 @@ f_arglist	: '(' f_args opt_nl ')'
 
 f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    {
-                // +++
-			    $$ = ph.block_append(nf.newArgs($<>1, $3, $5), $6);
+                $$ = ph.block_append(nf.newArgs($1, $3, $5), $6);
 		    }
 		| f_arg ',' f_optarg opt_f_block_arg
 		    {
-                // +++
-			    $$ = ph.block_append(nf.newArgs($<>1, $3, RubyId.newId(ruby, -1)), $4);
+                $$ = ph.block_append(nf.newArgs($1, $3, RubyId.newId(ruby, -1)), $4);
 		    }
 		| f_arg ',' f_rest_arg opt_f_block_arg
 		    {
-                // +++
-			    $$ = ph.block_append(nf.newArgs($<>1, null, $3), $4);
+                $$ = ph.block_append(nf.newArgs($1, null, $3), $4);
 		    }
 		| f_arg opt_f_block_arg
 		    {
-                // +++
-			    $$ = ph.block_append(nf.newArgs($<>1, null, RubyId.newId(ruby, -1)), $2);
+                $$ = ph.block_append(nf.newArgs($1, null, RubyId.newId(ruby, -1)), $2);
 		    }
 		| f_optarg ',' f_rest_arg opt_f_block_arg
 		    {

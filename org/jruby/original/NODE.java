@@ -33,6 +33,7 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.core.*;
+import org.jruby.runtime.*;
 import org.jruby.util.*;
 
 /**

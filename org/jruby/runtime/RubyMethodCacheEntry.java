@@ -1,5 +1,5 @@
 /*
- * MethodCacheEntry.java - No description
+ * RubyMethodCacheEntry.java - No description
  * Created on 18. Oktober 2001, 17:19
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina

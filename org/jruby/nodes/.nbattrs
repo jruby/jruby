@@ -2,30 +2,54 @@
 <!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
 <attributes version="1.0">
     <fileobject name="IAsgnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42689878"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="IAsgnNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="IAsgnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="YieldNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4311d978"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="YieldNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="XStrNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe430e4f78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="XStrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="Match2Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42879778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Match2Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CVar2Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4205d078"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CVar2Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="FalseNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42510f78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="FalseNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="HashNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42657c78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="HashNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="IVarNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="IVarNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.CallableNode" stringvalue="IVarNode"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe426fb678"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="IVarNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="AliasNode.java">
         <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9e885ab5b78"/>
@@ -34,17 +58,29 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="VCallNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe43043a78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="VCallNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DotNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42447078"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DotNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="BreakNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41c28778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BreakNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ScopeNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ScopeNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.CallableNode" stringvalue="ScopeNode"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42e5a678"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ScopeNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ArgsCatNode.java">
         <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9e885c53978"/>
@@ -53,31 +89,60 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="OrNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42c88478"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="OrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="EvStrNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe424aba78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="EvStrNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.StringExpandableNode" stringvalue="EvStrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CVDeclNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42029378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="CVDeclNode"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CVDeclNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="OptNNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42c48878"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="OptNNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DRegxOnceNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DRegxOnceNode"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe422bb178"/>
         <attr name="class_dependency_org.jruby.nodes.types.StringEvaluableNode" stringvalue="DRegxOnceNode"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DRegxOnceNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="LVarNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe427cad78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="LVarNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="NodeFactory.java">
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42abe178"/>
     </fileobject>
     <fileobject name="GVarNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4262e878"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="GVarNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="TrueNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42f5b178"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="TrueNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ArgsPushNode.java">
         <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9e885d37178"/>
@@ -86,67 +151,130 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CDeclNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41d83c78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CDeclNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="CDeclNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="Flip3Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42589878"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Flip3Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="GAsgnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe425ed578"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="GAsgnNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="GAsgnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="ArgsNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe268f5d78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ArgsNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="MAsgnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4283a478"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="MAsgnNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="MAsgnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ZSuperNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ZSuperNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.CallableNode" stringvalue="ZSuperNode"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe43198a78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ZSuperNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="OpAsgn2Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42bb9f78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="OpAsgn2Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="Colon2Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42170778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Colon2Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="SuperNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42f27078"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="SuperNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="OpAsgnAndNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42be3c78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="OpAsgnAndNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CallNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe420c3878"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="CallNode"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CallNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="SClassNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42e29378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="SClassNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CaseNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42107378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CaseNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DefinedNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe423c3e78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DefinedNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="LAsgnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe427a1778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="LAsgnNode"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="LAsgnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="EnsureNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42482e78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="EnsureNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DefnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe423fa278"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DefnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="WhileNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe430a6078"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="WhileNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="UntilNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42fd3178"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="UntilNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="NthRefNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42b57378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="NthRefNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="BackRefNode.java">
         <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9e886064d78"/>
@@ -155,26 +283,47 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="IFuncNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe426b9378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="IFuncNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.ExecutableNode" stringvalue="IFuncNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="IfNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4273e878"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="IfNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="RescueNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42d52f78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="RescueNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ForNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe425c3078"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ForNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="NotNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42b19278"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="NotNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="Match3Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe428aa378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Match3Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CVarNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4208fd78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CVarNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CFuncNode.java">
         <attr name="class_dependency_org.jruby.nodes.types.CallableNode" stringvalue="CFuncNode"/>
@@ -184,7 +333,10 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="BlockPassNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41b44d78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BlockPassNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="AndNode.java">
         <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9e885b74a78"/>
@@ -199,37 +351,67 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="LitNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42803478"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="LitNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="StrNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42ef5378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="StrNode"/>
         <attr name="class_dependency_org.jruby.nodes.types.StringExpandableNode" stringvalue="StrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="Node.java">
-        <attr name="EA-OpenIDE-Connection" serialvalue="aced0005737200146a6176612e7574696c2e4c696e6b65644c6973740c29535d4a608822030000787077040000005a7372002a6f72672e6f70656e6964652e6c6f61646572732e436f6e6e656374696f6e537570706f72742450616972055f8af6f04a3bd80200024c00047479706574002b4c6f72672f6f70656e6964652f636f6f6b6965732f436f6e6e656374696f6e436f6f6b696524547970653b4c000576616c75657400124c6a6176612f6c616e672f4f626a6563743b78707372002e6f72672e6e65746265616e732e6d6f64756c65732e6a6176612e4a617661436f6e6e656374696f6e732454797065a83dd01001306d7402000149000666696c746572787000000050737200436f72672e6e65746265616e732e6d6f64756c65732e6a6176612e4a617661446174614f626a6563742450657273697374656e74436f6e6e656374696f6e48616e646c65ba16f1d2dd4c1cb60200014c000e646174614e6f646548616e646c6574001f4c6f72672f6f70656e6964652f6e6f6465732f4e6f64652448616e646c653b7870737200296f72672e6f70656e6964652e6c6f61646572732e446174614e6f6465244f626a65637448616e646c655bd0f82e01811d2e0200025a0005636c6f6e654c00036f626a7400244c6f72672f6f70656e6964652f66696c6573797374656d732f46696c654f626a6563743b787000737200326f72672e6f70656e6964652e66696c6573797374656d732e416273747261637446696c654f626a656374245265706c616365896fa1bce4b5219f0200024c000866696c654e616d657400124c6a6176612f6c616e672f537472696e673b4c000666734e616d6571007e000f78707400206f72672f6a727562792f6e6f6465732f4261636b5265664e6f64652e6a61766174005f6f72672e6e65746265616e732e6d6f64756c65732e7663732e616476616e6365642e436f6d6d616e644c696e6556637346696c6553797374656d202f686f6d652f6a706574657273656e2f6376732d776f726b2f6a727562792f6a727562797371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f426567696e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400216f72672f6a727562792f6e6f6465732f426c6f636b4172674e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f426c6f636b4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f426c6f636b506173734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f427265616b4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f434465636c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4346756e634e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f435265664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f43564173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f43564465636c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f43566172324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f435661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f436173654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f436c6173734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f5768656e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f436f6c6f6e324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f436f6c6f6e334e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f436f6e73744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f444173676e437572724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f444173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f44526567784f6e63654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f44526567784e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f445374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f445661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f44585374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f446566696e65644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f446566734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f456e737572654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4d4173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400236f72672f6a727562792f6e6f6465732f526573637565426f64794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f5a41727261794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f4e65776c696e654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d6574686f644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f4c69744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4e74685265664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f46426f64794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4946756e634e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f45765374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4643616c6c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f46616c73654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f466c6970324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f466c6970334e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f466f724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f474173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f475661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f486173684e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f494173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f495661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4c4173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4c5661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d61746368324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d61746368334e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4d617463684e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d6f64756c654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f43616c6c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4e6578744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f4e696c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f4e6f744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f4f704173676e314e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f4f704173676e324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f4f704173676e416e644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400216f72672f6a727562792f6e6f6465732f4f704173676e4f724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4f70744e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001b6f72672f6a727562792f6e6f6465732f4f724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f506f73744578654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f5265646f4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f5265736375654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400216f72672f6a727562792f6e6f6465732f52657374417267734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f52657472794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f52657475726e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f53436c6173734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f53656c664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f5374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f53757065724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f547275654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f556e6465664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f556e74696c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f56416c6961734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f5643616c6c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f5768696c654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f5969656c644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f585374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f497465724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f5a53757065724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f417474725365744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f446f744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001b6f72672f6a727562792f6e6f6465732f49664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4465666e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f53636f70654e6f64652e6a61766171007e001278"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42a7aa78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="EA-OpenIDE-Connection" serialvalue="aced0005737200146a6176612e7574696c2e4c696e6b65644c6973740c29535d4a608822030000787077040000005b7372002a6f72672e6f70656e6964652e6c6f61646572732e436f6e6e656374696f6e537570706f72742450616972055f8af6f04a3bd80200024c00047479706574002b4c6f72672f6f70656e6964652f636f6f6b6965732f436f6e6e656374696f6e436f6f6b696524547970653b4c000576616c75657400124c6a6176612f6c616e672f4f626a6563743b78707372002e6f72672e6e65746265616e732e6d6f64756c65732e6a6176612e4a617661436f6e6e656374696f6e732454797065a83dd01001306d7402000149000666696c746572787000000050737200436f72672e6e65746265616e732e6d6f64756c65732e6a6176612e4a617661446174614f626a6563742450657273697374656e74436f6e6e656374696f6e48616e646c65ba16f1d2dd4c1cb60200014c000e646174614e6f646548616e646c6574001f4c6f72672f6f70656e6964652f6e6f6465732f4e6f64652448616e646c653b7870737200296f72672e6f70656e6964652e6c6f61646572732e446174614e6f6465244f626a65637448616e646c655bd0f82e01811d2e0200025a0005636c6f6e654c00036f626a7400244c6f72672f6f70656e6964652f66696c6573797374656d732f46696c654f626a6563743b787000737200326f72672e6f70656e6964652e66696c6573797374656d732e416273747261637446696c654f626a656374245265706c616365896fa1bce4b5219f0200024c000866696c654e616d657400124c6a6176612f6c616e672f537472696e673b4c000666734e616d6571007e000f78707400206f72672f6a727562792f6e6f6465732f4261636b5265664e6f64652e6a61766174005f6f72672e6e65746265616e732e6d6f64756c65732e7663732e616476616e6365642e436f6d6d616e644c696e6556637346696c6553797374656d202f686f6d652f6a706574657273656e2f6376732d776f726b2f6a727562792f6a727562797371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4346756e634e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f46426f64794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f417474725365744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f446f744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001b6f72672f6a727562792f6e6f6465732f49664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4465666e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f53636f70654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f417267734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f426567696e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400216f72672f6a727562792f6e6f6465732f426c6f636b4172674e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f426c6f636b4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f426c6f636b506173734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f427265616b4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f434465636c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f435265664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f43564173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f43564465636c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f43566172324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f435661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f43616c6c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f436173654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f436c6173734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f436f6c6f6e324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f436f6c6f6e334e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f436f6e73744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f444173676e437572724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f444173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f44526567784e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f44526567784f6e63654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f445374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f445661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f44585374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f446566696e65644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f446566734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f456e737572654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f45765374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4643616c6c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f46616c73654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f466c6970324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f466c6970334e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f466f724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f474173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f475661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f486173684e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f494173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4946756e634e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f495661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f497465724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4c4173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4c5661724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f4c69744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4d4173676e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d61746368324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d61746368334e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f4d617463684e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d6574686f644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4d6f64756c654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f4e65776c696e654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4e6578744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f4e696c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f4e6f744e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f4e74685265664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f4f704173676e314e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f4f704173676e324e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400226f72672f6a727562792f6e6f6465732f4f704173676e416e644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400216f72672f6a727562792f6e6f6465732f4f704173676e4f724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f4f70744e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001b6f72672f6a727562792f6e6f6465732f4f724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400206f72672f6a727562792f6e6f6465732f506f73744578654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f5265646f4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400236f72672f6a727562792f6e6f6465732f526573637565426f64794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f5265736375654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e7400216f72672f6a727562792f6e6f6465732f52657374417267734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f52657472794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f52657475726e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f53436c6173734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f53656c664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001c6f72672f6a727562792f6e6f6465732f5374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f53757065724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f547275654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f556e6465664e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f556e74696c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f56416c6961734e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f5643616c6c4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f5768656e4e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f5768696c654e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001d6f72672f6a727562792f6e6f6465732f585374724e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001e6f72672f6a727562792f6e6f6465732f5969656c644e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f5a41727261794e6f64652e6a61766171007e00127371007e00027371007e0006000000507371007e00087371007e000b007371007e000e74001f6f72672f6a727562792f6e6f6465732f5a53757065724e6f64652e6a61766171007e001278"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="WhenNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4307a678"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="WhenNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="RescueBodyNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42d1ee78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="RescueBodyNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="RetryNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42dc2578"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="RetryNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="SelfNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42eb9978"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="SelfNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="MethodNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42924378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="MethodNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DStrNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DStrNode"/>
-        <attr name="EA-OpenIDE-Connection" serialvalue="aced0005737200146a6176612e7574696c2e4c696e6b65644c6973740c29535d4a608822030000787077040000000078"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe422f9d78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.StringEvaluableNode" stringvalue="DStrNode"/>
+        <attr name="EA-OpenIDE-Connection" serialvalue="aced0005737200146a6176612e7574696c2e4c696e6b65644c6973740c29535d4a608822030000787077040000000078"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DStrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="IterNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4276d478"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="IterNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="AttrSetNode.java">
         <attr name="class_dependency_org.jruby.nodes.types.CallableNode" stringvalue="AttrSetNode"/>
@@ -239,60 +421,114 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CRefNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41efeb78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CRefNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="Flip2Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42544e78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Flip2Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ModuleNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42962678"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ModuleNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ZArrayNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe43151078"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ZArrayNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="OpAsgn1Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42b82778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="OpAsgn1Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="BlockArgNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4193a778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BlockArgNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="NextNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe429fef78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="NextNode"/>
-    </fileobject>
-    <fileobject name="Colon3Node.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Colon3Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="UndefNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42f96a78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="UndefNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
-    <fileobject name="ConstNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ConstNode"/>
+    <fileobject name="Colon3Node.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe421bc178"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="Colon3Node"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ReturnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42df9b78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ReturnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="ConstNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe421e4b78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ConstNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="NilNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42a38178"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="NilNode"/>
-    </fileobject>
-    <fileobject name="NewlineNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="NewlineNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DRegxNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DRegxNode"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4227f978"/>
         <attr name="class_dependency_org.jruby.nodes.types.StringEvaluableNode" stringvalue="DRegxNode"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DRegxNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="NewlineNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe429aae78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="NewlineNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="RestArgsNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42d7de78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="RestArgsNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="RedoNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42ce9578"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="RedoNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="FCallNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe424ed378"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="FCallNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DAsgnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4225cf78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="DAsgnNode"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DAsgnNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="ArrayNode.java">
         <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9e885e03178"/>
@@ -301,42 +537,78 @@
         <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="CVAsgnNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41fe6e78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="CVAsgnNode"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="CVAsgnNode"/>
-    </fileobject>
-    <fileobject name="ClassNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ClassNode"/>
-    </fileobject>
-    <fileobject name="BlockNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BlockNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DAsgnCurrNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42226f78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.types.AssignableNode" stringvalue="DAsgnCurrNode"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DAsgnCurrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="BlockNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41a58778"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BlockNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="ClassNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42145978"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="ClassNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="VAliasNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42ffd178"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="VAliasNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DVarNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4233ae78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DVarNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="OpAsgnOrNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42c1cc78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="OpAsgnOrNode"/>
-    </fileobject>
-    <fileobject name="BeginNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BeginNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="MatchNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe428e1d78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="MatchNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
+    </fileobject>
+    <fileobject name="BeginNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe41774f78"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="BeginNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DXStrNode.java">
-        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DXStrNode"/>
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe4237e878"/>
         <attr name="class_dependency_org.jruby.nodes.types.StringEvaluableNode" stringvalue="DXStrNode"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+        <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DXStrNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="PostExeNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42cb5278"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="PostExeNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
     <fileobject name="DefsNode.java">
+        <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9fe42424578"/>
+        <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
         <attr name="class_dependency_org.jruby.nodes.Node" stringvalue="DefsNode"/>
+        <attr name="JavaHeaderDescription" stringvalue="No description"/>
     </fileobject>
 </attributes>

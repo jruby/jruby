@@ -1,31 +1,31 @@
 /*
  * ScopeNode.java - No description
- * Created on 01. November 2001, 16:30
- *
+ * Created on 05. November 2001, 21:46
+ * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- *
+ * 
  * JRuby - http://jruby.sourceforge.net
- *
+ * 
  * This file is part of JRuby
- *
+ * 
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ * 
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
+ * 
  */
 
 package org.jruby.nodes;
@@ -120,7 +120,14 @@ public class ScopeNode extends Node implements CallableNode {
             ruby.getRubyScope().setLocalTbl(null);
         }
         
-        ruby.getCRef().push(module);
+        // +++
+        // if (ruby.getCRef() != null) {
+            ruby.getCRef().push(module);
+        // } else {
+        //    ruby.setCRef(new CRefNode(module, null));
+        // }
+        // ---
+        
         ruby.getRubyFrame().setCbase(ruby.getCRef());
         // PUSH_TAG(PROT_NONE);
         
@@ -152,7 +159,7 @@ public class ScopeNode extends Node implements CallableNode {
     }
     
     public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyObject[] args, boolean noSuper) {
-        CRefNode savedCref = null;
+        CRefNode savedCref = ruby.getCRef(); // +++ = null;
         // VALUE[] localVars = null;
         
         RubyPointer argsList = new RubyPointer(args);
@@ -161,7 +168,7 @@ public class ScopeNode extends Node implements CallableNode {
         ruby.getRubyScope().push();
         
         if (getRefValue() != null) {
-            savedCref = ruby.getCRef();
+            // savedCref = ruby.getCRef(); s.a.
             ruby.setCRef(getRefValue());
             ruby.getRubyFrame().setCbase(getRefValue());
         }

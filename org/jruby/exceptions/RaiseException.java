@@ -1,5 +1,5 @@
 /*
- * ReturnException.java - No description
+ * RaiseException.java - No description
  * Created on 10. September 2001, 17:54
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina

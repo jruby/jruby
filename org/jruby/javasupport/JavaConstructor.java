@@ -1,10 +1,12 @@
 /*
- * JavaReflectionMethod.java - No description
+ * JavaConstructor.java - No description
  * Created on 21. September 2001, 15:03
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 

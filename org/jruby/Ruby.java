@@ -93,7 +93,7 @@ public final class Ruby {
     private RubyFrame rubyFrame;
     private RubyFrame topFrame;
     
-    private CRefNode cRef;
+    private CRefNode cRef = new CRefNode(null, null);
     private CRefNode topCRef;
     
     private String sourceFile;
