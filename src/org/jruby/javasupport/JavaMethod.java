@@ -153,8 +153,8 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
             throw new TypeError(getRuntime(), "illegal access on '" + method.getName() + "': " + iae.getMessage());
         } catch (InvocationTargetException ite) {
             getRuntime().getJavaSupport().handleNativeException((Exception) ite.getTargetException());
-            Asserts.notReached();
-            return null;
+            // This point is only reached if there was an exception handler installed.
+            return runtime.getNil();
         }
     }
 

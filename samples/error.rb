@@ -1,6 +1,13 @@
+
+require 'java'
+
 Java::define_exception_handler "java.lang.NumberFormatException" do |e|
-  puts e.type
-  puts e.message
+  puts e.java_type
+  puts JavaClass.for_name(e.java_type).java_method(:getMessage).invoke(e)
 end
 
-Java::Lang::Integer.parseInt "23aa"
+module JavaLang
+  include_package 'java.lang'
+end
+
+JavaLang::Long.parseLong("23aa")
