@@ -31,20 +31,9 @@ end
 
 # Extensions to existing classes and modules
 
-module Java
-  class JavaClass
-
-    def grouped_instance_methods(&block)
-      methods = java_instance_methods.select {|m| m.public? }
-      by_name = methods.group_by {|m| m.name }
-      by_name.each(&block)
-    end
-  end
-end
-
-
 class Module
   private
+
   def include_package(package)
     unless defined? @included_packages
       @included_packages = []
@@ -52,68 +41,76 @@ class Module
     @included_packages << package
 
     def self.const_missing(constant)
-      java_class = nil
-      @included_packages.detect {|package|
-        begin
-          class_name = package + '.' + constant.to_s
-          java_class = Java::JavaClass.for_name(class_name)
-          true
-        rescue NameError
-          false
-        end
-      }
+      java_class = find_java_class(constant)
       if java_class.nil?
         return super
       end
-
-      # Create proxy class
-      self.module_eval("class " + constant.to_s + "; include JavaProxy; end")
-      proxy_class = eval(self.name + '::' + constant.to_s)
-      proxy_class.class_eval("@java_class = java_class")
-
-      # FIXME: take types into consideration, like the old javasupport,
-      #        and do the searching long before call-time.
-      def proxy_class.new(*args)
-        arity = args.length
-        constructor = @java_class.constructors.detect {|c| c.arity == arity }
-        if constructor.nil?
-          raise NameError.new("wrong # of arguments for constructor")
-        end
-        result = constructor.new_instance(self, *args)
-        result.java_class = @java_class
-        result
-      end
-
-      def proxy_class.create_methods(java_class)
-        java_class.grouped_instance_methods {|name, methods|
-          if methods.length == 1
-            m = methods.first
-            define_method(m.name) {|*args|
-              args = convert_arguments(args)
-              m.invoke(self, *args)
-            }
-          else
-            methods_by_arity = methods.group_by {|m| m.arity }
-            methods_by_arity.each {|arity, same_arity_methods|
-              if same_arity_methods.length == 1
-                # just one method with this length
-                define_method(name) {|*args|
-                  m = methods_by_arity[args.length].first
-                  args = convert_arguments(args)
-                  m.invoke(self, *args)
-                }
-              else
-                # overloaded on same length
-                raise "java methods only differing on argument types not supported yet: #{name}"
-              end
-            }
-          end
-        }
-      end
-      proxy_class.create_methods(java_class)
-
-      return proxy_class
+      load_java_class(constant, java_class)
     end
+  end
+
+  def find_java_class(constant)
+    @included_packages.detect {|package|
+      begin
+        class_name = package + '.' + constant.to_s
+        return Java::JavaClass.for_name(class_name)
+      rescue NameError
+        return nil
+      end
+    }
+  end
+
+  def load_java_class(constant, java_class)
+    # Create proxy class
+    self.module_eval("class " + constant.to_s + "; include JavaProxy; end")
+    proxy_class = eval(self.name + '::' + constant.to_s)
+    proxy_class.class_eval("@java_class = java_class")
+
+    # FIXME: take types into consideration, like the old javasupport,
+    #        and do the searching long before call-time.
+    def proxy_class.new(*args)
+      arity = args.length
+      constructor = @java_class.constructors.detect {|c| c.arity == arity }
+      if constructor.nil?
+        raise NameError.new("wrong # of arguments for constructor")
+      end
+      result = constructor.new_instance(self, *args)
+      result.java_class = @java_class
+      result
+    end
+
+    def proxy_class.create_methods(java_class)
+      public_methods =
+        java_class.java_instance_methods.select {|m| m.public? }
+      grouped_methods = public_methods.group_by {|m| m.name }
+      grouped_methods.each {|name, methods|
+        if methods.length == 1
+          m = methods.first
+          define_method(m.name) {|*args|
+            args = convert_arguments(args)
+            m.invoke(self, *args)
+          }
+        else
+          methods_by_arity = methods.group_by {|m| m.arity }
+          methods_by_arity.each {|arity, same_arity_methods|
+            if same_arity_methods.length == 1
+              # just one method with this length
+              define_method(name) {|*args|
+                m = methods_by_arity[args.length].first
+                args = convert_arguments(args)
+                m.invoke(self, *args)
+              }
+            else
+              # overloaded on same length
+              raise "java methods only differing on argument types not supported yet: #{name}"
+            end
+          }
+        end
+      }
+    end
+    proxy_class.create_methods(java_class)
+
+    return proxy_class
   end
 
   def remove_package(package)

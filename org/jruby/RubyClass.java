@@ -57,8 +57,12 @@ public class RubyClass extends RubyModule {
         this(ruby, null, superClass);
     }
 
-    public RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
+    private RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
         super(ruby, rubyClass, superClass);
+    }
+
+    private RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass, String name) {
+        super(ruby, rubyClass, superClass, name);
     }
 
     public static RubyClass nilClass(Ruby ruby) {
@@ -192,6 +196,10 @@ public class RubyClass extends RubyModule {
      */
     public static RubyClass newClass(Ruby ruby, RubyClass superClass) {
         return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass);
+    }
+
+    public static RubyClass newClass(Ruby ruby, RubyClass superClass, String name) {
+        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass, name);
     }
 
     public static RubyClass newClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {

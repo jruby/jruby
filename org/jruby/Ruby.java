@@ -297,8 +297,7 @@ public final class Ruby {
             superClass = getClasses().getObjectClass();
         }
 
-        RubyClass newClass = RubyClass.newClass(this, superClass);
-        newClass.setName(name);
+        RubyClass newClass = RubyClass.newClass(this, superClass, name);
 
         newClass.makeMetaClass(superClass.getInternalClass());
 
@@ -319,11 +318,8 @@ public final class Ruby {
      *
      */
     public RubyModule defineModule(String name) {
-        RubyModule newModule = RubyModule.newModule(this);
-        newModule.setName(name);
-
+        RubyModule newModule = RubyModule.newModule(this, name);
         getClasses().putClass(name, newModule);
-
         return newModule;
     }
 

@@ -80,13 +80,18 @@ public class RubyModule extends RubyObject {
     // The methods.
     private RubyMap methods = new RubyHashMap();
 
-    public RubyModule(Ruby ruby, RubyClass rubyClass) {
+    private RubyModule(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, null);
     }
 
-    public RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
+    protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass, String name) {
         super(ruby, rubyClass);
+        this.superClass = superClass;
+        this.classId = name;
+    }
 
+    protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
+        super(ruby, rubyClass);
         this.superClass = superClass;
     }
 
@@ -295,10 +300,6 @@ public class RubyModule extends RubyObject {
      */
     public RubyIncludedClass newIncludeClass(RubyClass superClass) {
         return new RubyIncludedClass(getRuntime(), superClass, this);
-    }
-
-    public void setName(String name) {
-        classId = name;
     }
 
     /** rb_set_class_path
@@ -1160,8 +1161,13 @@ public class RubyModule extends RubyObject {
      */
     public static RubyModule newModule(Ruby ruby) {
         RubyModule newModule = new RubyModule(ruby, ruby.getClasses().getModuleClass());
-
         return newModule;
+    }
+
+    public static RubyModule newModule(Ruby ruby, String name) {
+        RubyModule result = newModule(ruby);
+        result.classId = name;
+        return result;
     }
 
     /** rb_mod_name
@@ -1416,7 +1422,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_reader(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol) args[i]).asSymbol(), true, false, true);
+            addAttribute(args[i].asSymbol(), true, false, true);
         }
 
         return getRuntime().getNil();
@@ -1427,7 +1433,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_writer(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol) args[i]).asSymbol(), false, true, true);
+            addAttribute(args[i].asSymbol(), false, true, true);
         }
 
         return getRuntime().getNil();
@@ -1438,7 +1444,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_accessor(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol) args[i]).asSymbol(), true, true, true);
+            addAttribute(args[i].asSymbol(), true, true, true);
         }
 
         return getRuntime().getNil();

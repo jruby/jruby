@@ -1,7 +1,7 @@
 package org.jruby;
 
-import org.jruby.exceptions.*;
 import org.jruby.util.RubyMap;
+import org.jruby.exceptions.FrozenError;
 
 /** This class represents an included module.
  * 
@@ -10,11 +10,6 @@ import org.jruby.util.RubyMap;
 public final class RubyIncludedClass extends RubyClass {
     private RubyModule delegate;
 
-    /**
-     * Constructor for RubyIncludedClass.
-     * @param ruby
-     * @param parent
-     */
     public RubyIncludedClass(Ruby ruby, RubyClass superClass, RubyModule delegate) {
         super(ruby, superClass);
 
@@ -58,7 +53,6 @@ public final class RubyIncludedClass extends RubyClass {
      * @see RubyObject#getRubyClass()
      */
     public RubyClass getInternalClass() {
-//        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
 		return delegate.getInternalClass();
     }
 
@@ -98,7 +92,6 @@ public final class RubyIncludedClass extends RubyClass {
     }
 
     public String getClassname() {
-		//throw new UnsupportedOperationException("An included class is only a wrapper for a module");
 		return delegate.getClassname();
     }
 

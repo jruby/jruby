@@ -43,3 +43,6 @@ Items marked '-' are done and will be available in the next release.
     - Don't store fixnums bigger than MRI's limit
 
 * Bytecode generation
+
+* Warnings
+

@@ -176,8 +176,7 @@ public class RubyClasses {
      * @return Description of the Return Value
      */
     private RubyClass defineBootClass(String name, RubyClass superClass) {
-        RubyClass bootClass = RubyClass.newClass(runtime, superClass);
-        bootClass.setName(name);
+        RubyClass bootClass = RubyClass.newClass(runtime, superClass, name);
         classMap.put(name, bootClass);
 
         return bootClass;

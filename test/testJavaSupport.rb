@@ -105,6 +105,18 @@ if defined? Java
   test_equal(["int"], method.argument_types)
   test_exception(TypeError) { method.invoke(random, 10) }
   result = method.invoke(random, Java.primitive_to_java(10))
+
+  # Test upper layer of javasupport
+
+#   module TestJavaSupport
+#     include_package "java.util"
+
+#     r = Random.new
+#     test_equal(TestJavaSupport::Random, r.type)
+#     r = Random.new(1001)
+#     test_equal(TestJavaSupport::Random, r.type)
+#     test_equal(Fixnum, r.nextInt.type)
+#   end
 end
 
 test_print_report
