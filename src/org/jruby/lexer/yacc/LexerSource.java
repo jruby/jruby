@@ -168,6 +168,13 @@ public class LexerSource {
         try {
         	int c = reader.read();
         	
+        	// If \r\n then just pass along \n (windows)
+        	// If \r[^\n] then pass along \n (MAC)
+        	if (c == '\r' && ((c = reader.read()) != '\n')) {
+				unread((char)c);
+				c = '\n';
+        	}
+        	
         	return c != -1 ? (char) c : '\0';
         } catch (IOException e) {
             return 0;
