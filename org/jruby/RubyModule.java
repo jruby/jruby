@@ -1017,7 +1017,7 @@ public class RubyModule extends RubyObject {
     /** method_list
      *
      */
-    public RubyArray methodList(boolean option, RubyMapMethod method) {
+    private RubyArray methodList(boolean option, RubyMapMethod method) {
         RubyArray ary = RubyArray.newArray(getRuby());
 
         for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
@@ -1498,10 +1498,7 @@ public class RubyModule extends RubyObject {
         return RubyBoolean.newBoolean(getRuby(), isConstantDefined(name));
     }
 
-    /** rb_class_instance_methods
-     *
-     */
-    public RubyArray instance_methods(RubyObject[] args) {
+    private RubyArray instance_methods(RubyObject[] args, final int noex) {
         boolean includeSuper = false;
 
         if (args.length > 0) {
@@ -1515,7 +1512,7 @@ public class RubyModule extends RubyObject {
                 IMethod method = (IMethod) value;
                 RubyArray ary = (RubyArray) arg;
 
-                if ((method.getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
+                if ((method.getNoex() & noex) == 0) {
                     RubyString name = RubyString.newString(getRuby(), id);
 
                     if (! ary.includes(name)) {
@@ -1533,74 +1530,26 @@ public class RubyModule extends RubyObject {
         });
     }
 
+    /** rb_class_instance_methods
+     *
+     */
+    public RubyArray instance_methods(RubyObject[] args) {
+        return instance_methods(args,
+                                (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED));
+    }
+
     /** rb_class_protected_instance_methods
      *
      */
     public RubyArray protected_instance_methods(RubyObject[] args) {
-        boolean includeSuper = false;
-
-        if (args.length > 0) {
-            includeSuper = args[0].isTrue();
-        }
-
-        return methodList(includeSuper, new RubyMapMethod() {
-            public int execute(Object key, Object value, Object arg) {
-                // cast args
-                String id = (String) key;
-                IMethod method = (IMethod) value;
-                RubyArray ary = (RubyArray) arg;
-
-                if (method == null) {
-                    ary.append(getRuby().getNil());
-                    ary.append(RubyString.newString(getRuby(), id));
-                } else if ((method.getNoex() & Constants.NOEX_PROTECTED) != 0) {
-                    RubyString name = RubyString.newString(getRuby(), id);
-
-                    if (! ary.includes(name)) {
-                        ary.append(name);
-                    }
-                } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
-                    ary.append(getRuby().getNil());
-                    ary.append(RubyString.newString(getRuby(), id));
-                }
-                return RubyMapMethod.CONTINUE;
-            }
-        });
+        return instance_methods(args, Constants.NOEX_PROTECTED);
     }
 
     /** rb_class_private_instance_methods
      *
      */
     public RubyArray private_instance_methods(RubyObject[] args) {
-        boolean includeSuper = false;
-
-        if (args.length > 0) {
-            includeSuper = args[0].isTrue();
-        }
-
-        return methodList(includeSuper, new RubyMapMethod() {
-            public int execute(Object key, Object value, Object arg) {
-                // cast args
-                String id = (String) key;
-                IMethod method = (IMethod) value;
-                RubyArray ary = (RubyArray) arg;
-
-                if (method == null) {
-                    ary.append(getRuby().getNil());
-                    ary.append(RubyString.newString(getRuby(), id));
-                } else if ((method.getNoex() & Constants.NOEX_PRIVATE) != 0) {
-                    RubyString name = RubyString.newString(getRuby(), id);
-
-                    if (! ary.includes(name)) {
-                        ary.append(name);
-                    }
-                } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
-                    ary.append(getRuby().getNil());
-                    ary.append(RubyString.newString(getRuby(), id));
-                }
-                return RubyMapMethod.CONTINUE;
-            }
-        });
+        return instance_methods(args, Constants.NOEX_PRIVATE);
     }
 
     /** rb_mod_constants
