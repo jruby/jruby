@@ -106,6 +106,7 @@ public final class Ruby {
     private RubyRuntime runtime = new RubyRuntime(this);
 
     private RubyObject rubyTopSelf;
+    private EvaluateVisitor rubyTopSelfEvaluateVisitor;
 
     // Eval
     private ScopeStack scope = new ScopeStack(this);
@@ -206,7 +207,11 @@ public final class Ruby {
      * Evaluates a script and returns a RubyObject.
      */
     public RubyObject evalScript(String script) {
-        return getRubyTopSelf().eval(compile(script, "<script>", 1));
+        return eval(compile(script, "<script>", 1));
+    }
+
+    public RubyObject eval(INode node) {
+        return getRubyTopSelfEvaluateVisitor().eval(node);
     }
 
     /**
@@ -541,6 +546,11 @@ public final class Ruby {
         return rubyTopSelf;
     }
 
+    // For use by EvaluateVisitor only.
+    public EvaluateVisitor getRubyTopSelfEvaluateVisitor() {
+        return rubyTopSelfEvaluateVisitor;
+    }
+
     /** rb_iterate
      *
      */
@@ -599,6 +609,7 @@ public final class Ruby {
             exceptions.initDefaultExceptionClasses();
 
             rubyTopSelf = new RubyObject(this, classes.getObjectClass());
+            rubyTopSelfEvaluateVisitor = new EvaluateVisitor(this, rubyTopSelf);
 
             rubyClass = getClasses().getObjectClass();
             getActFrame().setSelf(rubyTopSelf);

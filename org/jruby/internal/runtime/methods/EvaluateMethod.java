@@ -47,7 +47,7 @@ public class EvaluateMethod extends AbstractMethod {
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
     public RubyObject execute(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
-        return new EvaluateVisitor(ruby, receiver).eval(node);
+        return EvaluateVisitor.createVisitor(receiver).eval(node);
     }
 
     /**

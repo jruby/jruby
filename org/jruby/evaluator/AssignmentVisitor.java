@@ -81,8 +81,8 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitCallNode(CallNode)
      */
     public void visitCallNode(CallNode iVisited) {
-        EvaluateVisitor evaluator = new EvaluateVisitor(ruby, self);
-        
+        EvaluateVisitor evaluator = EvaluateVisitor.createVisitor(self);
+
         RubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.

@@ -298,7 +298,7 @@ public class Main {
                 lScript.accept(lVisitor);
                 ruby.getRuntime().getOutputStream().println(lVisitor.dump());
             } else {
-                ruby.getRubyTopSelf().eval(lScript);
+                ruby.eval(lScript);
             }
         } catch (RaiseException rExcptn) {
             ruby.getRuntime().printError(rExcptn.getActException());

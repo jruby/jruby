@@ -153,7 +153,7 @@ public class RubyRuntime {
 			// ---
 			ruby.setInEval(ruby.getInEval() - 1);
 
-			self.evalNode(node);
+			self.eval(node);
 		} finally {
 			ruby.getActFrame().setLastFunc(last_func);
 

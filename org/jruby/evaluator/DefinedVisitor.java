@@ -81,7 +81,7 @@ public class DefinedVisitor extends AbstractVisitor {
      */
     protected void visitNode(INode iVisited) {
         try {
-            new EvaluateVisitor(ruby, self).eval(iVisited);
+            EvaluateVisitor.createVisitor(self).eval(iVisited);
             definition = "expression";
         } catch (JumpException jumpExcptn) {
         }
@@ -114,7 +114,7 @@ public class DefinedVisitor extends AbstractVisitor {
     public void visitCallNode(CallNode iVisited) {
         if (getDefinition(iVisited.getReceiverNode()) != null) {
             try {
-                RubyObject receiver = new EvaluateVisitor(ruby, self).eval(iVisited.getReceiverNode());
+                RubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
                 
                 int noex = receiver.getRubyClass().getMethodNoex(iVisited.getName());
 
@@ -343,7 +343,7 @@ public class DefinedVisitor extends AbstractVisitor {
      */
     public void visitColon2Node(Colon2Node iVisited) {
         try {
-            RubyObject left = new EvaluateVisitor(ruby, self).eval(iVisited.getLeftNode());
+            RubyObject left = EvaluateVisitor.createVisitor(self).eval(iVisited.getLeftNode());
             if (left instanceof RubyModule) {
                 if (((RubyModule)left).isConstantDefinedAt(iVisited.getName())) {
                     definition = "constant";

@@ -411,23 +411,7 @@ public class RubyObject implements Cloneable {
      */
     public RubyObject eval(INode n) {
         return n == null ? getRuby().getNil() : 
-        new EvaluateVisitor(getRuby(), this).eval(n);
-    }
-
-	/**@fixme*/
-    public RubyObject evalNode(INode n) {
-        // FIXME:
-        /* 
-        Node beginTree = ruby.getParserHelper().getEvalTreeBegin();
-        ruby.getParserHelper().setEvalTreeBegin(null);
-        if (beginTree != null) {
-            eval(beginTree);
-        }
-        */
-        if (n == null) {
-            return getRuby().getNil();
-        }
-        return eval(n);
+            EvaluateVisitor.createVisitor(this).eval(n);
     }
 
     public void callInit(RubyObject[] args) {
@@ -634,7 +618,7 @@ public class RubyObject implements Cloneable {
             // if (!result.isNil()) {
             //	ruby_errinfo = result;
             //}
-            result = evalNode(node);
+            result = eval(node);
         } catch (RaiseException rExcptn) {
             /*
             VALUE err;

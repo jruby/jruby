@@ -100,7 +100,7 @@ public class DefaultMethod extends AbstractMethod {
 
                         // assign the default values.
                         while (iter.hasNext()) {
-                            new EvaluateVisitor(ruby, receiver).eval((INode)iter.next());
+                            EvaluateVisitor.createVisitor(receiver).eval((INode)iter.next());
                         }
                     }
 

@@ -68,6 +68,24 @@ public final class EvaluateVisitor implements NodeVisitor {
         builtins = new Builtins(ruby);
     }
 
+    public static EvaluateVisitor createVisitor(RubyObject self) {
+        Ruby ruby = self.getRuby();
+        if (ruby.getRubyTopSelf() == self) {
+            EvaluateVisitor result = ruby.getRubyTopSelfEvaluateVisitor();
+            result.reset();
+            return result;
+        } else {
+            // FIXME: I don't know the evaluator good enough to rule this case out,
+            // but I haven't seen it so far. (Anders)
+            return new EvaluateVisitor(ruby, self);
+        }
+    }
+
+    private void reset() {
+        result = null;
+        _curPos = null;
+    }
+
     /**
      * Helper method.
      * 
