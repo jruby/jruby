@@ -121,6 +121,12 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
         Object[] arguments = new Object[args.length - 1];
         System.arraycopy(args, 1, arguments, 0, arguments.length);
         convertArguments(arguments);
+
+        if (! method.getDeclaringClass().isInstance(javaInvokee)) {
+            throw new TypeError(getRuntime(), "invokee not instance of method's class (" +
+                                              "got" + javaInvokee.getClass().getName() + " wanted " +
+                                              method.getDeclaringClass().getName() + ")");
+        }
         return invokeWithExceptionHandling(javaInvokee, arguments);
     }
 
@@ -161,8 +167,7 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {
-            // FIXME: what's the best exception to throw here?
-            throw new TypeError(getRuntime(), "illegal access");
+            throw new TypeError(getRuntime(), "illegal access on '" + method.getName() + "': " + iae.getMessage());
         } catch (InvocationTargetException ite) {
             getRuntime().getJavaSupport().handleNativeException((Exception) ite.getTargetException());
             Asserts.notReached();

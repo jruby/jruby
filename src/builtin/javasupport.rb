@@ -23,6 +23,7 @@
 
 module JavaProxy
   attr :java_class, true
+  attr :java_object, true
 
   def JavaProxy.convert_arguments(arguments)
     arguments.collect {|v| Java.primitive_to_java(v) }
@@ -36,15 +37,22 @@ end
 module JavaUtilities
   class << self
 
-    def convert_result(object)
-      Java.java_to_primitive(object)
-    end
-
     def create_proxy_class(constant, java_class, mod)
       mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(mod.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
       setup_proxy_class(java_class, proxy_class)
+    end
+
+    def wrap(java_object, java_class_name)
+      java_class = Java::JavaClass.for_name(java_class_name)
+
+      proxy_class = new_proxy_class(java_class.name)
+      proxy = proxy_class.new_proxy
+      proxy.extend(JavaProxy)   # FIXME: do this on the class level instead
+      proxy.java_class = java_class
+      proxy.java_object = java_object
+      proxy
     end
 
     def proxy_classes
@@ -62,30 +70,42 @@ module JavaUtilities
       end
 
       java_class = Java::JavaClass.for_name(java_class_name)
+
+      #proxy_class = Class.new(JavaProxy)  ... borken in jruby?
       proxy_class = Class.new
-      proxy_class.extend(JavaProxy)
+
       proxy_class.class_eval("@java_class = java_class")
       proxy_classes[java_class_name] = proxy_class
       setup_proxy_class(java_class, proxy_class)
     end
 
     def create_constructor(java_class, proxy_class)
-      def proxy_class.new(*args)
-        # FIXME: take types into consideration, like the old javasupport,
-        #        and do the searching long before call-time.
-        arity = args.length
-        constructor = @java_class.constructors.detect {|c| c.arity == arity }
-        if constructor.nil?
-          raise NameError.new("wrong # of arguments for constructor")
+      class << proxy_class
+        def new(*args)
+          # FIXME: take types into consideration, like the old javasupport,
+          #        and do the searching long before call-time.
+          arity = args.length
+          constructor = @java_class.constructors.detect {|c| c.arity == arity }
+          if constructor.nil?
+            raise NameError.new("wrong # of arguments for constructor")
+          end
+          args = JavaProxy.convert_arguments(args)
+          java_object = constructor.new_instance(JavaObject, *args)
+          result = new_proxy
+          result.extend(JavaProxy) # FIXME: do on class level instead
+          result.java_class = @java_class
+          result.java_object = java_object
+          result
         end
-        args = JavaProxy.convert_arguments(args)
-        result = constructor.new_instance(self, *args)
-        result.java_class = @java_class
-        result
       end
     end
 
     def setup_proxy_class(java_class, proxy_class)
+
+      class << proxy_class
+        alias_method(:new_proxy, :new)
+      end
+
       unless java_class.interface?
         create_constructor(java_class, proxy_class)
       end
@@ -98,12 +118,17 @@ module JavaUtilities
           if methods.length == 1
             m = methods.first
             return_type = m.return_type
-            unless return_type.nil?
-              m.proxy_class = JavaUtilities.new_proxy_class(return_type)
-            end
+#            unless return_type.nil?
+#              m.proxy_class = JavaUtilities.new_proxy_class(return_type)
+#            end
             define_method(m.name) {|*args|
               args = JavaProxy.convert_arguments(args)
-              JavaUtilities.convert_result(m.invoke(self, *args))
+              result = m.invoke(self.java_object, *args)
+              result = Java.java_to_primitive(result)
+              if Java.type_of(result)
+                result = JavaUtilities.wrap(result, m.return_type)
+              end
+              result
             }
           else
             methods_by_arity = methods.group_by {|m| m.arity }
@@ -113,12 +138,16 @@ module JavaUtilities
                 define_method(name) {|*args|
                   m = methods_by_arity[args.length].first
                   return_type = m.return_type
-                  unless return_type.nil?
-                    # FIXME: don't need to set this *every* time...
-                    m.proxy_class = JavaUtilities.new_proxy_class(return_type)
-                  end
+#                  unless return_type.nil?
+#                    # FIXME: don't need to set this *every* time...
+#                    m.proxy_class = JavaUtilities.new_proxy_class(return_type)
+#                  end
                   args = convert_arguments(args)
-                  JavaUtilities.convert_result(m.invoke(self, *args))
+                  result = Java.java_to_primitive(m.invoke(self.java_object, *args))
+                  if Java.type_of(result)
+                    result = JavaUtilities.wrap(result, m.return_type)
+                  end
+                  result
                 }
               else
                 # overloaded on same length
@@ -144,10 +173,14 @@ module JavaUtilities
                                "methods = @class_methods['" + name + "'];" +
                                "method = methods.first;" +
                                "return_type = method.return_type;" +
-                               "unless return_type.nil?;" +
-                               "method.proxy_class = JavaUtilities.new_proxy_class(return_type);" +
+#                               "unless return_type.nil?;" +
+#                               "  method.proxy_class = JavaUtilities.new_proxy_class(return_type);" +
+#                               "end;" +
+                               "result = Java.java_to_primitive(method.invoke_static(*args));" +
+                               "if Java.type_of(result);" +
+                               "  result = JavaUtilities.wrap(result, method.return_type);" +
                                "end;" +
-                               "JavaUtilities.convert_result(method.invoke_static(*args));" +
+                               "result;" +
                                "end")
       }
 
