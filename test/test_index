@@ -1,6 +1,7 @@
 
 # Basic JRuby unit tests
 
+testConstant.rb
 testReturn.rb
 testRegexp.rb
 testStringEval.rb

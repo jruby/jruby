@@ -284,11 +284,13 @@ public class RubyClass extends RubyModule {
     }
 
     public RubyClass newSubClass(String name, RubyModule parentModule) {
-        RubyClass newClass = new RubyClass(getRuntime(), getRuntime().getClasses().getClassClass(), this, parentModule, name);
+        Ruby runtime = getRuntime();
+        RubyClass newClass = new RubyClass(runtime, runtime.getClasses().getClassClass(), this, parentModule, name);
 
         newClass.makeMetaClass(getMetaClass());
         newClass.inheritedBy(this);
-        getRuntime().getClasses().putClass(name, newClass);
+
+        runtime.getClasses().putClass(name, newClass, parentModule);
 
         return newClass;
     }

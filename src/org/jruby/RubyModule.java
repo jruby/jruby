@@ -488,7 +488,17 @@ public class RubyModule extends RubyObject {
     public void defineAlias(String newName, String oldName) {
         aliasMethod(newName, oldName);
     }
-    
+
+    public IRubyObject getConstantAtOrConstantMissing(String name) {
+        IRubyObject constant = getConstantAt(name);
+
+        if (constant != null) {
+             return constant;
+        }
+        
+        return callMethod("const_missing", RubySymbol.newSymbol(getRuntime(), name));
+    }
+
     public IRubyObject getConstantAt(String name) {
     	IRubyObject constant = getInstanceVariable(name);
     	
@@ -545,14 +555,25 @@ public class RubyModule extends RubyObject {
     }
 
     public static void clearMethodCache(Ruby runtime) {
-        Iterator iter = runtime.getClasses().getClassMap().values().iterator();
+        Iterator iter = runtime.getClasses().getTopLevelClassMap().values().iterator();
+        while (iter.hasNext()) {
+            ((RubyModule) iter.next()).methodCache.clear();
+        }
+        
+        iter = runtime.getClasses().getNonTopLevelClassMap().values().iterator();
         while (iter.hasNext()) {
             ((RubyModule) iter.next()).methodCache.clear();
         }
     }
 
     public static void clearMethodCache(Ruby runtime, String methodName) {
-        Iterator iter = runtime.getClasses().getClassMap().values().iterator();
+        Iterator iter = runtime.getClasses().getTopLevelClassMap().values().iterator();
+        while (iter.hasNext()) {
+            RubyModule module = (RubyModule) iter.next();
+            module.methodCache.remove(methodName);
+        }
+        
+        iter = runtime.getClasses().getNonTopLevelClassMap().values().iterator();
         while (iter.hasNext()) {
             RubyModule module = (RubyModule) iter.next();
             module.methodCache.remove(methodName);

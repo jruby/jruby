@@ -249,7 +249,7 @@ public final class Ruby {
     public RubyModule defineModuleUnder(String name, RubyModule parentModule) {
         RubyModule newModule = RubyModule.newModule(this, name, parentModule);
 
-        getClasses().putClass(name, newModule);
+        getClasses().putClass(name, newModule, parentModule);
         
         return newModule;
     }

@@ -164,7 +164,8 @@ public class RubyClasses {
     private RubyModule processModule;
     private RubyModule precisionModule;
 
-    private Map classMap;
+    private Map topLevelClasses;
+    private Map nonTopLevelClasses;
 
     /**
      * Creates a new RubyClasses instance and defines all the
@@ -175,7 +176,8 @@ public class RubyClasses {
     public RubyClasses(Ruby runtime) {
         this.runtime = runtime;
 
-        classMap = new HashMap();
+        topLevelClasses = new HashMap();
+        nonTopLevelClasses = new HashMap();
     }
 
     /**
@@ -187,7 +189,7 @@ public class RubyClasses {
      */
     private RubyClass defineBootClass(String name, RubyClass superClass) {
         RubyClass bootClass = RubyClass.newClass(runtime, superClass, null, name);
-        classMap.put(name, bootClass);
+        topLevelClasses.put(name, bootClass);
 
         return bootClass;
     }
@@ -773,12 +775,18 @@ public class RubyClasses {
 
     /**
      * Returns a RubyMap with references to all named classes in
-     * a ruby runtime..
-     *
-     * @return A map with references to all named classes.
+     * the top-level of the ruby runtime..
      */
-    public Map getClassMap() {
-        return classMap;
+    public Map getTopLevelClassMap() {
+        return topLevelClasses;
+    }
+    
+    /**
+     * Returns a RubyMap with references to all named classes in
+     * that are not in the top-level.
+     */
+    public Map getNonTopLevelClassMap() {
+    	return nonTopLevelClasses;
     }
 
     /**
@@ -788,7 +796,7 @@ public class RubyClasses {
      * @return The class value
      */
     public RubyModule getClass(String name) {
-        RubyModule type = (RubyModule) classMap.get(name);
+        RubyModule type = (RubyModule) topLevelClasses.get(name);
         if (type == null) {
             type = getAutoload(name);
         }
@@ -878,23 +886,16 @@ public class RubyClasses {
         return (RubyModule) type;
     }
 
-    /**
-     * Description of the RubyMethod
-     *
-     * @param name Description of the Parameter
-     * @param rbClass Description of the Parameter
-     */
-    public void putClass(String name, RubyModule rbClass) {
-        classMap.put(name, rbClass);
+    public void putClass(String name, RubyModule rbClass, RubyModule parentModule) {
+    	if (parentModule == objectClass) {
+    		topLevelClasses.put(name, rbClass);
+    	} else {
+    		nonTopLevelClasses.put(rbClass.name(), rbClass);
+    	}
     }
 
-    /**
-     * Description of the RubyMethod
-     *
-     * @return Description of the Return Value
-     */
     public Iterator nameIterator() {
-        return classMap.keySet().iterator();
+        return topLevelClasses.keySet().iterator();
     }
 }
 

@@ -571,7 +571,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } else {
             eval(iVisited.getLeftNode());
             if (result instanceof RubyModule) {
-                result = ((RubyModule) result).getConstant(iVisited.getName());
+                result = ((RubyModule) result).getConstantAtOrConstantMissing(iVisited.getName());
             } else {
                 result = result.callMethod(iVisited.getName());
             }
@@ -582,7 +582,11 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon3Node(Colon3Node)
      */
     public void visitColon3Node(Colon3Node iVisited) {
-        result = runtime.getClasses().getObjectClass().getConstant(iVisited.getName());
+        result = runtime.getClasses().getClass(iVisited.getName());
+        
+        if (result == null) {
+        	result = runtime.getClasses().getObjectClass().getConstant(iVisited.getName());
+        }
     }
 
     /**

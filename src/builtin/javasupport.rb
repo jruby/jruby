@@ -516,7 +516,11 @@ class Object
         constant = class_name
       end
 
-      eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")")
+      if (respond_to?(:class_eval, true))
+        class_eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")")
+      else
+        eval("#{constant} = JavaUtilities.get_proxy_class(\"#{full_class_name}\")")
+      end
     end
   end
 end
