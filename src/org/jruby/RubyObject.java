@@ -117,8 +117,6 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     /**
      * Create a new meta class.
      *
-     * This method is used by a lot of other methods.
-     *
      * @since Ruby 1.6.7
      */
     public MetaClass makeMetaClass(RubyClass type) {
@@ -126,6 +124,10 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         setMetaClass(metaClass);
         metaClass.attachToObject(this);
         return metaClass;
+    }
+
+    public boolean singletonMethodsAllowed() {
+        return true;
     }
 
     public Class getJavaClass() {

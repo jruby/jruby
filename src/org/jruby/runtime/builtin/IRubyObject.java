@@ -277,4 +277,6 @@ public interface IRubyObject {
     void defineSingletonMethod(String name, Callback callback);
 
     void setInstanceVariables(Map map);
+
+    boolean singletonMethodsAllowed();
 }

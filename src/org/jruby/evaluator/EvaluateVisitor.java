@@ -634,10 +634,17 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
             throw new SecurityError(runtime, "Insecure; can't define singleton method.");
         }
-
         if (receiver.isFrozen()) {
             throw new FrozenError(runtime, "object");
         }
+        if (! receiver.singletonMethodsAllowed()) {
+            throw new TypeError(runtime,
+                                "can't define singleton method \"" +
+                                iVisited.getName() +
+                                "\" for " +
+                                receiver.getType());
+        }
+
         RubyClass rubyClass = receiver.getSingletonClass();
 
         if (runtime.getSafeLevel() >= 4) {

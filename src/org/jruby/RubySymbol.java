@@ -99,6 +99,10 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         }
     }
 
+    public boolean singletonMethodsAllowed() {
+        return false;
+    }
+
     public static RubySymbol getSymbol(Ruby ruby, long id) {
         RubySymbol result = ruby.symbolTable.lookup(id);
         if (result == null) {

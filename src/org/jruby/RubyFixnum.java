@@ -185,6 +185,10 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         return newFixnum(runtime, value);
     }
 
+    public boolean singletonMethodsAllowed() {
+        return false;
+    }
+
     public static RubyInteger induced_from(IRubyObject recv, 
 					   IRubyObject number) {
 	// For undocumented reasons ruby allows Symbol as parm for Fixnum.

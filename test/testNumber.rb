@@ -90,3 +90,10 @@ test_equal(1.id, 1.__id__) # Testing lexer's handling of numbers here
 test_exception(NameError) { Integer.new }
 test_exception(NameError) { Fixnum.new }
 test_exception(NameError) { Float.new }
+
+x = 1234
+test_exception(TypeError) {
+  def x.+(other)
+    "fools"
+  end
+}

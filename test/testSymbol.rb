@@ -29,3 +29,11 @@ s = :alpha
 test_ok("alpha", s.id2name)
 id = s.to_i
 test_ok("alpha", id.id2name)
+
+
+x = :froboz
+test_exception(TypeError) {
+  def x.foo(other)
+    "fools"
+  end
+}
