@@ -13,6 +13,12 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyInputStream;
 
+/**
+ * Ruby File class equivalent in java.
+ * TODO: create the FileTest mixin and add the tests there.
+ * @author jpetersen
+ * @version $Revision$
+ **/
 public class RubyFile extends RubyIO {
 
 	public RubyFile(Ruby ruby, RubyClass type) {
@@ -21,7 +27,14 @@ public class RubyFile extends RubyIO {
 
     public static RubyClass createFileClass(Ruby ruby) {
         RubyClass fileClass = ruby.defineClass("File", ruby.getClasses().getIoClass());
+		
 
+        fileClass.defineConstant("SEPARATOR", RubyString.newString(ruby, java.io.File.separator));
+        fileClass.defineConstant("Separator", RubyString.newString(ruby, java.io.File.separator)); //maybe this should be an alias
+        fileClass.defineConstant("ALT_SEPARATOR", RubyString.newString(ruby, (java.io.File.separatorChar == '/'? "\\" : "/")));
+        fileClass.defineConstant("PATH_SEPARATOR", RubyString.newString(ruby, java.io.File.pathSeparator));
+
+		
         fileClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
         fileClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
         fileClass.defineSingletonMethod("chmod", CallbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
