@@ -40,39 +40,37 @@ import org.jruby.runtime.*;
  * @version $Revision$
  */
 public class IterNode extends Node {
-    
+
     public IterNode(Node varNode, Node bodyNode, Node iterNode) {
         super(Constants.NODE_ITER, varNode, bodyNode, iterNode);
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result;
-        
+
         ruby.getBlock().push(getVarNode(), getBodyNode(), self);
         ruby.getIter().push(RubyIter.ITER_PRE);
-        while (true) {
-            try {
-                result = getIterNode().eval(ruby, self);
-                break;
-            } catch (RetryException rExcptn) {
-            } catch (ReturnException rExcptn) {
-                result = rExcptn.getReturnValue();
-                break;
-            } catch (BreakException bExcptn) {
-                result = ruby.getNil();
-                break;
+        try {
+            while (true) {
+                try {
+                    return getIterNode().eval(ruby, self);
+                } catch (RetryException rExcptn) {
+                }
             }
+        } catch (ReturnException rExcptn) {
+            return rExcptn.getReturnValue();
+        } catch (BreakException bExcptn) {
+            return ruby.getNil();
+        } finally {
+            ruby.getIter().pop();
+            ruby.getBlock().pop();
         }
-        ruby.getIter().pop();
-        ruby.getBlock().pop();
-        return result;
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitIterNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitIterNode(this);
+    }
 }

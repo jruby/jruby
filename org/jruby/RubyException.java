@@ -33,7 +33,6 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
-
 /**
  *
  * @author  jpetersen
@@ -44,33 +43,42 @@ public class RubyException extends RubyObject {
     public RubyException(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
-    
+
     public static RubyClass createExceptionClass(Ruby ruby) {
         RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
-        
+
+        exceptionClass.defineSingletonMethod(
+            "exception",
+            CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
+
+        exceptionClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyException.class, "initialize"));
+        exceptionClass.defineMethod("exception", CallbackFactory.getOptMethod(RubyException.class, "exception"));
+
         exceptionClass.defineMethod("to_s", CallbackFactory.getMethod(RubyException.class, "to_s"));
         exceptionClass.defineMethod("to_str", CallbackFactory.getMethod(RubyException.class, "to_s"));
         exceptionClass.defineMethod("message", CallbackFactory.getMethod(RubyException.class, "to_s"));
         exceptionClass.defineMethod("inspect", CallbackFactory.getMethod(RubyException.class, "inspect"));
-        
+
         exceptionClass.defineMethod("backtrace", CallbackFactory.getMethod(RubyException.class, "backtrace"));
-        exceptionClass.defineMethod("set_backtrace", CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyObject.class));
-        
+        exceptionClass.defineMethod(
+            "set_backtrace",
+            CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyObject.class));
+
         // exceptionClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
-        
+
         return exceptionClass;
     }
-    
+
     private RubyArray createBacktrace(RubyObject newBackTrace) {
         if (newBackTrace instanceof RubyString) {
             return RubyArray.newArray(ruby, newBackTrace);
         } else if (newBackTrace instanceof RubyArray) {
-            for (int i = 0; i < ((RubyArray)newBackTrace).getLength(); i++) {
-                if (!(((RubyArray)newBackTrace).entry(i) instanceof RubyString)) {
+            for (int i = 0; i < ((RubyArray) newBackTrace).getLength(); i++) {
+                if (!(((RubyArray) newBackTrace).entry(i) instanceof RubyString)) {
                     throw new TypeError(ruby, "backtrace must be Array of String");
                 }
             }
-            return (RubyArray)newBackTrace;
+            return (RubyArray) newBackTrace;
         }
         throw new TypeError(ruby, "backtrace must be Array of String");
     }
@@ -81,23 +89,33 @@ public class RubyException extends RubyObject {
         return newException;
     }
 
+    // Exception methods
+
     public static RubyException newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyException newException = new RubyException(ruby, (RubyClass)recv);
-        if (args.length == 1) {
-            newException.setInstanceVar("mesg", args[0]);
-        }
+        RubyException newException = new RubyException(ruby, (RubyClass) recv);
+
+        newException.callInit(args);
+
         return newException;
     }
-    
+
+    public RubyObject initialize(RubyObject[] args) {
+        if (args.length > 0) {
+            setInstanceVar("mesg", args[0]);
+        }
+
+        return this;
+    }
+
     public RubyArray backtrace() {
         if (!isInstanceVarDefined("bt")) {
             return RubyArray.nilArray(ruby);
         }
-        return (RubyArray)getInstanceVar("bt");
+        return (RubyArray) getInstanceVar("bt");
     }
 
     public RubyArray set_backtrace(RubyObject newBacktrace) {
-        return (RubyArray)setInstanceVar("bt", createBacktrace(newBacktrace));
+        return (RubyArray) setInstanceVar("bt", createBacktrace(newBacktrace));
     }
 
     public RubyException exception(RubyObject[] args) {

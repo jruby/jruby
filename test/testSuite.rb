@@ -53,6 +53,10 @@ test_load('test/mri/testException.rb')
 test_load('test/mri/testArray.rb')
 test_load('test/mri/testHash.rb')
 test_load('test/mri/testIterator.rb')
+test_load('test/mri/testFloat.rb')
+test_load('test/mri/testBignum.rb')
+#test_load('test/mri/testString.rb')
+#test_load('test/mri/testAssignement2.rb')
 
 #Output result
 puts

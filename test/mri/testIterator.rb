@@ -29,6 +29,7 @@ def tt
 end
 
 tt{|i| break if i == 5}
+
 test_ok(i == 5)
 
 def tt2(dummy)
