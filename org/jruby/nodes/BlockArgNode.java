@@ -44,12 +44,12 @@ public class BlockArgNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        if (ruby.getRubyScope().getLocalVars() == null) {
+        if (ruby.getRubyScope().getLocalValues() == null) {
             throw new RuntimeException("BUG: unexpected block argument");
         } else if (ruby.isBlockGiven()) {
             // Create Proc object
             RubyObject result = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
-            ruby.getRubyScope().setLocalVars(getCount(), result);
+            ruby.getRubyScope().setValue(getCount(), result);
             return result;
         } else {
             return ruby.getNil();

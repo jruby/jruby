@@ -45,10 +45,10 @@ import org.jruby.util.*;
 public class RubyMethod extends RubyObject {
     private RubyClass receiverClass;
     private RubyObject receiver;
-    private RubyId methodId;
+    private String methodId;
     private Node bodyNode;
     private RubyClass originalClass;
-    private RubyId originalId;
+    private String originalId;
 
     public static class Nil extends RubyMethod {
         public Nil(Ruby ruby) {
@@ -99,7 +99,7 @@ public class RubyMethod extends RubyObject {
      * Gets the methodId
      * @return Returns a RubyId
      */
-    public RubyId getMethodId() {
+    public String getMethodId() {
         return methodId;
     }
 
@@ -107,7 +107,7 @@ public class RubyMethod extends RubyObject {
      * Sets the methodId
      * @param methodId The methodId to set
      */
-    public void setMethodId(RubyId methodId) {
+    public void setMethodId(String methodId) {
         this.methodId = methodId;
     }
 
@@ -131,7 +131,7 @@ public class RubyMethod extends RubyObject {
      * Gets the originalId
      * @return Returns a RubyId
      */
-    public RubyId getOriginalId() {
+    public String getOriginalId() {
         return originalId;
     }
 
@@ -139,7 +139,7 @@ public class RubyMethod extends RubyObject {
      * Sets the originalId
      * @param originalId The originalId to set
      */
-    public void setOriginalId(RubyId originalId) {
+    public void setOriginalId(String originalId) {
         this.originalId = originalId;
     }
 

@@ -45,6 +45,6 @@ public class XStrNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return self.funcall(ruby.intern("`"), getLiteral());
+        return self.funcall("`", getLiteral());
     }
 }

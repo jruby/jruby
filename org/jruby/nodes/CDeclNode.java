@@ -42,7 +42,7 @@ import org.jruby.runtime.*;
  */
 public class CDeclNode extends Node implements AssignableNode {
     
-    public CDeclNode(RubyId vid, Node valueNode) {
+    public CDeclNode(String vid, Node valueNode) {
         super(Constants.NODE_CDECL, vid, valueNode, null);
     }
     

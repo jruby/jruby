@@ -43,7 +43,7 @@ public class CVAsgnNode extends Node implements AssignableNode {
     /**
      * @param vid
      * @param valueNode  */    
-    public CVAsgnNode(RubyId vId, Node valueNode) {
+    public CVAsgnNode(String vId, Node valueNode) {
         super(Constants.NODE_CVASGN, vId, valueNode, null);
     }
     

@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class Colon2Node extends Node {
-    public Colon2Node(Node headNode, RubyId mId) {
+    public Colon2Node(Node headNode, String mId) {
         super(Constants.NODE_COLON2, headNode, mId, null);
     }
     

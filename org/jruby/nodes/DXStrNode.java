@@ -51,6 +51,6 @@ public class DXStrNode extends Node implements StringEvaluableNode {
     }
     
     public RubyObject evalString(Ruby ruby, RubyObject self, RubyString str) {
-        return self.funcall(ruby.intern("`"), str);
+        return self.funcall("`", str);
     }
 }

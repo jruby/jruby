@@ -130,7 +130,7 @@ public class RubyClass extends RubyModule {
      */
     public void attachSingletonClass(RubyObject object) {
         if (isSingleton()) {
-            getInstanceVariables().put(getRuby().intern("__atached__"), object);
+            getInstanceVariables().put("__atached__", object);
         } else {
             getRuby().getRuntime().printBug("attachSingletonClass called on a non singleton class.");
         }
@@ -198,7 +198,7 @@ public class RubyClass extends RubyModule {
         newClass.callInit(args);
 
         // call "inherited" method of the superclass
-        superClass.funcall(ruby.intern("inherited"), newClass);
+        superClass.funcall("inherited", newClass);
 
         return newClass;
     }

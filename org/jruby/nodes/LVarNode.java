@@ -44,6 +44,6 @@ public class LVarNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return ruby.getRubyScope().getLocalVars(getCount());
+        return ruby.getRubyScope().getValue(getCount());
     }
 }

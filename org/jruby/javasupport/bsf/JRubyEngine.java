@@ -74,7 +74,7 @@ public class JRubyEngine extends BSFEngineImpl {
                                                   args.elementAt(i).getClass());
         }
         
-        RubyObject result = topSelf.funcall(ruby.intern("jruby_bsf_anonymous"), rubyArgs);
+        RubyObject result = topSelf.funcall("jruby_bsf_anonymous", rubyArgs);
 
         return JavaUtil.convertRubyToJava(ruby, result, Object.class);
     }
@@ -101,7 +101,7 @@ public class JRubyEngine extends BSFEngineImpl {
             rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args[i], args[i].getClass());
         }
 
-        RubyObject result = rubyRecv.funcall(ruby.intern(method), rubyArgs);
+        RubyObject result = rubyRecv.funcall(method, rubyArgs);
         
         return JavaUtil.convertRubyToJava(ruby, result, Object.class);
     }

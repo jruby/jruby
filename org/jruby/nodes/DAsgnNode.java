@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class DAsgnNode extends Node implements AssignableNode {
-    public DAsgnNode(RubyId vId, Node valueNode) {
+    public DAsgnNode(String vId, Node valueNode) {
         super(Constants.NODE_DASGN, vId, valueNode, null);
     }
     

@@ -414,7 +414,7 @@ case 9:
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("alias within method");
-		        yyVal = nf.newAlias(((RubyId)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+		        yyVal = nf.newAlias(((String)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 10:
@@ -422,16 +422,16 @@ case 10:
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("alias within method");
-		        yyVal = nf.newVAlias(((RubyId)yyVals[-1+yyTop]), ((RubyId)yyVals[0+yyTop]));
+		        yyVal = nf.newVAlias(((String)yyVals[-1+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 11:
 					// line 243 "parse.y"
   {
-			    if (ph.isInDef() || ph.isInSingle())
+			    if (ph.isInDef() || ph.isInSingle()) {
 			        yyerror("alias within method");
-			    String buf = "$" + (char)((Node)yyVals[0+yyTop]).getNth();
-		        yyVal = nf.newVAlias(((RubyId)yyVals[-1+yyTop]), ruby.intern(buf));
+                }
+			    yyVal = nf.newVAlias(((String)yyVals[-1+yyTop]), "$" + (char)((Node)yyVals[0+yyTop]).getNth());
 		    }
   break;
 case 12:
@@ -586,20 +586,20 @@ case 37:
 					// line 369 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 38:
 					// line 374 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 39:
 					// line 380 "parse.y"
   {
-			    yyVal = ph.new_fcall(((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_fcall(((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[0+yyTop]));
 		    }
   break;
@@ -607,7 +607,7 @@ case 40:
 					// line 385 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-3+yyTop]));
 		    }
   break;
@@ -615,7 +615,7 @@ case 41:
 					// line 391 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-3+yyTop]));
 		    }
   break;
@@ -704,7 +704,7 @@ case 57:
 case 58:
 					// line 462 "parse.y"
   {
-			    yyVal = ph.assignable(((RubyId)yyVals[0+yyTop]), null);
+			    yyVal = ph.assignable(((String)yyVals[0+yyTop]), null);
 		    }
   break;
 case 59:
@@ -716,19 +716,19 @@ case 59:
 case 60:
 					// line 470 "parse.y"
   {
-			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 61:
 					// line 474 "parse.y"
   {
-			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 62:
 					// line 478 "parse.y"
   {
-			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 63:
@@ -741,7 +741,7 @@ case 63:
 case 64:
 					// line 488 "parse.y"
   {
-			    yyVal = ph.assignable(((RubyId)yyVals[0+yyTop]), null);
+			    yyVal = ph.assignable(((String)yyVals[0+yyTop]), null);
 		    }
   break;
 case 65:
@@ -753,19 +753,19 @@ case 65:
 case 66:
 					// line 496 "parse.y"
   {
-			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 67:
 					// line 500 "parse.y"
   {
-			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 68:
 					// line 504 "parse.y"
   {
-			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.attrset(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 69:
@@ -785,7 +785,7 @@ case 75:
 					// line 523 "parse.y"
   {
 			    ph.setLexState(LexState.EXPR_END);
-                yyVal = ((RubyId)yyVals[0+yyTop]);
+                yyVal = ((String)yyVals[0+yyTop]);
 		    }
   break;
 case 76:
@@ -798,7 +798,7 @@ case 76:
 case 79:
 					// line 537 "parse.y"
   {
-			    yyVal = nf.newUndef(((RubyId)yyVals[0+yyTop]));
+			    yyVal = nf.newUndef(((String)yyVals[0+yyTop]));
 		    }
   break;
 case 80:
@@ -808,112 +808,112 @@ case 80:
 case 81:
 					// line 541 "parse.y"
   {
-			    yyVal = ph.block_append(((Node)yyVals[-3+yyTop]), nf.newUndef(((RubyId)yyVals[0+yyTop])));
+			    yyVal = ph.block_append(((Node)yyVals[-3+yyTop]), nf.newUndef(((String)yyVals[0+yyTop])));
 		    }
   break;
 case 82:
 					// line 545 "parse.y"
-  { yyVal = RubyId.newId(ruby, '|'); }
+  { yyVal = "|"; }
   break;
 case 83:
 					// line 546 "parse.y"
-  { yyVal = RubyId.newId(ruby, '^'); }
+  { yyVal = "^"; }
   break;
 case 84:
 					// line 547 "parse.y"
-  { yyVal = RubyId.newId(ruby, '&'); }
+  { yyVal = "&"; }
   break;
 case 85:
 					// line 548 "parse.y"
-  { yyVal = RubyId.newId(ruby, tCMP); }
+  { yyVal = "<=>"; }
   break;
 case 86:
 					// line 549 "parse.y"
-  { yyVal = RubyId.newId(ruby, tEQ); }
+  { yyVal = "=="; }
   break;
 case 87:
 					// line 550 "parse.y"
-  { yyVal = RubyId.newId(ruby, tEQQ); }
+  { yyVal = "==="; }
   break;
 case 88:
 					// line 551 "parse.y"
-  { yyVal = RubyId.newId(ruby, tMATCH); }
+  { yyVal = "=~"; }
   break;
 case 89:
 					// line 552 "parse.y"
-  { yyVal = RubyId.newId(ruby, '>'); }
+  { yyVal = ">"; }
   break;
 case 90:
 					// line 553 "parse.y"
-  { yyVal = RubyId.newId(ruby, tGEQ); }
+  { yyVal = ">="; }
   break;
 case 91:
 					// line 554 "parse.y"
-  { yyVal = RubyId.newId(ruby, '<'); }
+  { yyVal = "<"; }
   break;
 case 92:
 					// line 555 "parse.y"
-  { yyVal = RubyId.newId(ruby, tLEQ); }
+  { yyVal = "<="; }
   break;
 case 93:
 					// line 556 "parse.y"
-  { yyVal = RubyId.newId(ruby, tLSHFT); }
+  { yyVal = "<<"; }
   break;
 case 94:
 					// line 557 "parse.y"
-  { yyVal = RubyId.newId(ruby, tRSHFT); }
+  { yyVal = ">>"; }
   break;
 case 95:
 					// line 558 "parse.y"
-  { yyVal = RubyId.newId(ruby, '+'); }
+  { yyVal = "+"; }
   break;
 case 96:
 					// line 559 "parse.y"
-  { yyVal = RubyId.newId(ruby, '-'); }
+  { yyVal = "-"; }
   break;
 case 97:
 					// line 560 "parse.y"
-  { yyVal = RubyId.newId(ruby, '*'); }
+  { yyVal = "*"; }
   break;
 case 98:
 					// line 561 "parse.y"
-  { yyVal = RubyId.newId(ruby, '*'); }
+  { yyVal = "*"; }
   break;
 case 99:
 					// line 562 "parse.y"
-  { yyVal = RubyId.newId(ruby, '/'); }
+  { yyVal = "/"; }
   break;
 case 100:
 					// line 563 "parse.y"
-  { yyVal = RubyId.newId(ruby, '%'); }
+  { yyVal = "%"; }
   break;
 case 101:
 					// line 564 "parse.y"
-  { yyVal = RubyId.newId(ruby, tPOW); }
+  { yyVal = "**"; }
   break;
 case 102:
 					// line 565 "parse.y"
-  { yyVal = RubyId.newId(ruby, '~'); }
+  { yyVal = "~"; }
   break;
 case 103:
 					// line 566 "parse.y"
-  { yyVal = RubyId.newId(ruby, tUPLUS); }
+  { yyVal = "+@"; }
   break;
 case 104:
 					// line 567 "parse.y"
-  { yyVal = RubyId.newId(ruby, tUMINUS); }
+  { yyVal = "-@"; }
   break;
 case 105:
 					// line 568 "parse.y"
-  { yyVal = RubyId.newId(ruby, tAREF); }
+  { yyVal = "[]"; }
   break;
 case 106:
 					// line 569 "parse.y"
-  { yyVal = RubyId.newId(ruby, tASET); }
+  { yyVal = "[]="; }
   break;
 case 107:
 					// line 570 "parse.y"
-  { yyVal = RubyId.newId(ruby, '`'); }
+  { yyVal = "`"; }
   break;
 case 149:
 					// line 581 "parse.y"
@@ -924,24 +924,24 @@ case 149:
   break;
 case 150:
 					// line 585 "parse.y"
-  {yyVal = ph.assignable(((RubyId)yyVals[-1+yyTop]), null);}
+  {yyVal = ph.assignable(((String)yyVals[-1+yyTop]), null);}
   break;
 case 151:
 					// line 586 "parse.y"
   {
-			    if (((RubyId)yyVals[-2+yyTop]).intValue() == tOROP) {
+			    if (((String)yyVals[-2+yyTop]).equals("||")) {
 			        ((Node)yyVals[-1+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-			        yyVal = nf.newOpAsgnOr(ph.gettable(((RubyId)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
-			        if (((RubyId)yyVals[-3+yyTop]).isInstanceId()) {
-				        ((Node)yyVal).setAId(((RubyId)yyVals[-3+yyTop]));
+			        yyVal = nf.newOpAsgnOr(ph.gettable(((String)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
+			        if (IdUtil.isInstanceVariable(((String)yyVals[-3+yyTop]))) {
+				        ((Node)yyVal).setAId(((String)yyVals[-3+yyTop]));
 			        }
-			    } else if (((RubyId)yyVals[-2+yyTop]).intValue() == tANDOP) {
+			    } else if (((String)yyVals[-2+yyTop]).equals("&&")) {
 			        ((Node)yyVals[-1+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-			        yyVal = nf.newOpAsgnAnd(ph.gettable(((RubyId)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
+			        yyVal = nf.newOpAsgnAnd(ph.gettable(((String)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
 			    } else {
 			        yyVal = ((Node)yyVals[-1+yyTop]);
 			        if (yyVal != null) {
-				        ((Node)yyVal).setValueNode(ph.call_op(ph.gettable(((RubyId)yyVals[-3+yyTop])),((RubyId)yyVals[-2+yyTop]).intValue(),1,((Node)yyVals[0+yyTop])));
+				        ((Node)yyVal).setValueNode(ph.call_op(ph.gettable(((String)yyVals[-3+yyTop])),((String)yyVals[-2+yyTop]),1,((Node)yyVals[0+yyTop])));
 			        }
 			    }
 			    ph.fixpos(yyVal, ((Node)yyVals[0+yyTop]));
@@ -954,102 +954,82 @@ case 152:
 
 			    ph.list_append(((Node)yyVals[-3+yyTop]), nf.newNil());
 			    ph.list_concat(args, ((Node)yyVals[-3+yyTop]));
-                if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 0);
-			    } else if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tANDOP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 1);
-			    }
-			    yyVal = nf.newOpAsgn1(((Node)yyVals[-5+yyTop]), ((RubyId)yyVals[-1+yyTop]), args);
+                yyVal = nf.newOpAsgn1(((Node)yyVals[-5+yyTop]), ((String)yyVals[-1+yyTop]), args);
 		        ph.fixpos(yyVal, ((Node)yyVals[-5+yyTop]));
 		    }
   break;
 case 153:
-					// line 619 "parse.y"
+					// line 614 "parse.y"
   {
-                if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 0);
-			    } else if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tANDOP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 1);
-			    }
-			    yyVal = nf.newOpAsgn2(((Node)yyVals[-4+yyTop]), ((RubyId)yyVals[-2+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                yyVal = nf.newOpAsgn2(((Node)yyVals[-4+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-4+yyTop]));
 		    }
   break;
 case 154:
-					// line 629 "parse.y"
+					// line 619 "parse.y"
   {
-                if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 0);
-			    } else if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tANDOP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 1);
-			    }
-			    yyVal = nf.newOpAsgn2(((Node)yyVals[-4+yyTop]), ((RubyId)yyVals[-2+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                yyVal = nf.newOpAsgn2(((Node)yyVals[-4+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-4+yyTop]));
 		    }
   break;
 case 155:
-					// line 639 "parse.y"
+					// line 624 "parse.y"
   {
-			    if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 0);
-			    } else if (((RubyId)yyVals[-1+yyTop]).intValue() == Token.tANDOP) {
-			        yyVals[-1+yyTop] = RubyId.newId(ruby, 1);
-			    }
-			    yyVal = nf.newOpAsgn2(((Node)yyVals[-4+yyTop]), ((RubyId)yyVals[-2+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                yyVal = nf.newOpAsgn2(((Node)yyVals[-4+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-4+yyTop]));
 		    }
   break;
 case 156:
-					// line 649 "parse.y"
+					// line 629 "parse.y"
   {
 		        ph.rb_backref_error(((Node)yyVals[-2+yyTop]));
 			    yyVal = null; /*XXX 0*/
 		    }
   break;
 case 157:
-					// line 654 "parse.y"
+					// line 634 "parse.y"
   {
 			    yyVal = nf.newDot2(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 158:
-					// line 658 "parse.y"
+					// line 638 "parse.y"
   {
 			    yyVal = nf.newDot3(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 159:
-					// line 662 "parse.y"
+					// line 642 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '+', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 160:
-					// line 666 "parse.y"
+					// line 646 "parse.y"
   {
 		        yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '-', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 161:
-					// line 670 "parse.y"
+					// line 650 "parse.y"
   {
 		        yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '*', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 162:
-					// line 674 "parse.y"
+					// line 654 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '/', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 163:
-					// line 678 "parse.y"
+					// line 658 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '%', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 164:
-					// line 682 "parse.y"
+					// line 662 "parse.y"
   {
 			    boolean need_negate = false;
 
@@ -1057,8 +1037,8 @@ case 164:
                     if (((Node)yyVals[-2+yyTop]).getLiteral() instanceof RubyFixnum || 
                         ((Node)yyVals[-2+yyTop]).getLiteral() instanceof RubyFloat ||
                         ((Node)yyVals[-2+yyTop]).getLiteral() instanceof RubyBignum) {
-                        if (((Node)yyVals[-2+yyTop]).getLiteral().funcall(ruby.intern("<"), RubyFixnum.zero(ruby)).isTrue()) {
-                            ((Node)yyVals[-2+yyTop]).setLiteral(((Node)yyVals[-2+yyTop]).getLiteral().funcall(ruby.intern("-@")));
+                        if (((Node)yyVals[-2+yyTop]).getLiteral().funcall("<", RubyFixnum.zero(ruby)).isTrue()) {
+                            ((Node)yyVals[-2+yyTop]).setLiteral(((Node)yyVals[-2+yyTop]).getLiteral().funcall("-@"));
                             need_negate = true;
                         }
                     }
@@ -1070,7 +1050,7 @@ case 164:
 		    }
   break;
 case 165:
-					// line 701 "parse.y"
+					// line 681 "parse.y"
   {
 			    if (((Node)yyVals[0+yyTop]) != null && ((Node)yyVals[0+yyTop]) instanceof LitNode) {
 			        yyVal = ((Node)yyVals[0+yyTop]);
@@ -1080,7 +1060,7 @@ case 165:
 		    }
   break;
 case 166:
-					// line 709 "parse.y"
+					// line 689 "parse.y"
   {
 			    if (((Node)yyVals[0+yyTop]) != null && ((Node)yyVals[0+yyTop]) instanceof LitNode && ((Node)yyVals[0+yyTop]).getLiteral() instanceof RubyFixnum) {
 			        long i = ((RubyFixnum)((Node)yyVals[0+yyTop]).getLiteral()).getValue();
@@ -1093,133 +1073,133 @@ case 166:
 		    }
   break;
 case 167:
-					// line 720 "parse.y"
+					// line 700 "parse.y"
   {
 		        yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '|', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 168:
-					// line 724 "parse.y"
+					// line 704 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '^', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 169:
-					// line 728 "parse.y"
+					// line 708 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '&', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 170:
-					// line 732 "parse.y"
+					// line 712 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tCMP, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 171:
-					// line 736 "parse.y"
+					// line 716 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '>', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 172:
-					// line 740 "parse.y"
+					// line 720 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tGEQ, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 173:
-					// line 744 "parse.y"
+					// line 724 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), '<', 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 174:
-					// line 748 "parse.y"
+					// line 728 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tLEQ, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 175:
-					// line 752 "parse.y"
+					// line 732 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tEQ, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 176:
-					// line 756 "parse.y"
+					// line 736 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tEQQ, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 177:
-					// line 760 "parse.y"
+					// line 740 "parse.y"
   {
 			    yyVal = nf.newNot(ph.call_op(((Node)yyVals[-2+yyTop]), tEQ, 1, ((Node)yyVals[0+yyTop])));
 		    }
   break;
 case 178:
-					// line 764 "parse.y"
+					// line 744 "parse.y"
   {
 			    yyVal = ph.match_gen(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 179:
-					// line 768 "parse.y"
+					// line 748 "parse.y"
   {
 			    yyVal = nf.newNot(ph.match_gen(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop])));
 		    }
   break;
 case 180:
-					// line 772 "parse.y"
+					// line 752 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = nf.newNot(ph.cond(((Node)yyVals[0+yyTop])));
 		    }
   break;
 case 181:
-					// line 777 "parse.y"
+					// line 757 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[0+yyTop]), '~', 0, null);
 		    }
   break;
 case 182:
-					// line 781 "parse.y"
+					// line 761 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tLSHFT, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 183:
-					// line 785 "parse.y"
+					// line 765 "parse.y"
   {
 			    yyVal = ph.call_op(((Node)yyVals[-2+yyTop]), tRSHFT, 1, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 184:
-					// line 789 "parse.y"
+					// line 769 "parse.y"
   {
 			    yyVal = ph.logop(Constants.NODE_AND, ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 185:
-					// line 793 "parse.y"
+					// line 773 "parse.y"
   {
 			    yyVal = ph.logop(Constants.NODE_OR, ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 186:
-					// line 796 "parse.y"
+					// line 776 "parse.y"
   { ph.setInDefined(true);}
   break;
 case 187:
-					// line 797 "parse.y"
+					// line 777 "parse.y"
   {
 		        ph.setInDefined(false);
 			    yyVal = nf.newDefined(((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 188:
-					// line 802 "parse.y"
+					// line 782 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-4+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
@@ -1227,93 +1207,93 @@ case 188:
 		    }
   break;
 case 189:
-					// line 808 "parse.y"
+					// line 788 "parse.y"
   {
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 191:
-					// line 814 "parse.y"
+					// line 794 "parse.y"
   {
 			yyVal = nf.newList(((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 192:
-					// line 818 "parse.y"
+					// line 798 "parse.y"
   {
 			yyVal = ph.list_append(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
             }
   break;
 case 193:
-					// line 822 "parse.y"
+					// line 802 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 194:
-					// line 826 "parse.y"
+					// line 806 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 195:
-					// line 831 "parse.y"
+					// line 811 "parse.y"
   {
 			    yyVal = nf.newList(nf.newHash(((Node)yyVals[-1+yyTop])));
 		    }
   break;
 case 196:
-					// line 835 "parse.y"
+					// line 815 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = nf.newRestArgs(((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 197:
-					// line 841 "parse.y"
+					// line 821 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 198:
-					// line 845 "parse.y"
+					// line 825 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-2+yyTop]);
 		    }
   break;
 case 199:
-					// line 849 "parse.y"
+					// line 829 "parse.y"
   {
 			    yyVal = nf.newList(((Node)yyVals[-2+yyTop]));
 		    }
   break;
 case 200:
-					// line 853 "parse.y"
+					// line 833 "parse.y"
   {
 			    yyVal = ph.list_append(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-2+yyTop]));
 		    }
   break;
 case 203:
-					// line 861 "parse.y"
+					// line 841 "parse.y"
   {
 			    yyVal = nf.newList(((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 204:
-					// line 865 "parse.y"
+					// line 845 "parse.y"
   {
 			yyVal = ph.list_append(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 205:
-					// line 869 "parse.y"
+					// line 849 "parse.y"
   {
 			    yyVal = ph.arg_blk_pass(((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 206:
-					// line 873 "parse.y"
+					// line 853 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
@@ -1321,14 +1301,14 @@ case 206:
 		    }
   break;
 case 207:
-					// line 879 "parse.y"
+					// line 859 "parse.y"
   {
 			    yyVal = nf.newList(nf.newHash(((Node)yyVals[-1+yyTop])));
 			    yyVal = ph.arg_blk_pass(((Node)yyVal), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 208:
-					// line 884 "parse.y"
+					// line 864 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(nf.newList(nf.newHash(((Node)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
@@ -1336,14 +1316,14 @@ case 208:
 		    }
   break;
 case 209:
-					// line 890 "parse.y"
+					// line 870 "parse.y"
   {
 			    yyVal = ph.list_append(((Node)yyVals[-3+yyTop]), nf.newHash(((Node)yyVals[-1+yyTop])));
 			    yyVal = ph.arg_blk_pass(((Node)yyVal), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 210:
-					// line 895 "parse.y"
+					// line 875 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(ph.list_append(((Node)yyVals[-6+yyTop]), nf.newHash(((Node)yyVals[-4+yyTop]))), ((Node)yyVals[-1+yyTop]));
@@ -1351,80 +1331,80 @@ case 210:
 		    }
   break;
 case 211:
-					// line 901 "parse.y"
+					// line 881 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_blk_pass(nf.newRestArgs(((Node)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 213:
-					// line 907 "parse.y"
+					// line 887 "parse.y"
   { rs.CMDARG_PUSH(); }
   break;
 case 214:
-					// line 908 "parse.y"
+					// line 888 "parse.y"
   {
 			    rs.CMDARG_POP();
 		        yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 215:
-					// line 914 "parse.y"
+					// line 894 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = nf.newBlockPass(((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 216:
-					// line 920 "parse.y"
+					// line 900 "parse.y"
   {
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 218:
-					// line 926 "parse.y"
+					// line 906 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = nf.newList(((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 219:
-					// line 931 "parse.y"
+					// line 911 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = ph.list_append(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 220:
-					// line 937 "parse.y"
+					// line 917 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 222:
-					// line 944 "parse.y"
+					// line 924 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = ph.list_append(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 223:
-					// line 949 "parse.y"
+					// line 929 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = ph.arg_concat(((Node)yyVals[-3+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 224:
-					// line 954 "parse.y"
+					// line 934 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 225:
-					// line 960 "parse.y"
+					// line 940 "parse.y"
   {
 			    yyVal = ((Node)yyVals[0+yyTop]);
 			    if (((Node)yyVals[0+yyTop]) != null) {
@@ -1437,25 +1417,25 @@ case 225:
 		    }
   break;
 case 226:
-					// line 972 "parse.y"
+					// line 952 "parse.y"
   {
 			    yyVal = nf.newLit(((RubyObject)yyVals[0+yyTop]));
 		    }
   break;
 case 228:
-					// line 977 "parse.y"
+					// line 957 "parse.y"
   {
 			    yyVal = nf.newXStr(((RubyObject)yyVals[0+yyTop]));
 		    }
   break;
 case 233:
-					// line 985 "parse.y"
+					// line 965 "parse.y"
   {
-			    yyVal = nf.newVCall(((RubyId)yyVals[0+yyTop]));
+			    yyVal = nf.newVCall(((String)yyVals[0+yyTop]));
 		    }
   break;
 case 234:
-					// line 994 "parse.y"
+					// line 974 "parse.y"
   {
 			    if (((Node)yyVals[-3+yyTop]) == null && ((Node)yyVals[-2+yyTop]) == null && ((Node)yyVals[-1+yyTop]) == null)
 			        yyVal = nf.newBegin(((Node)yyVals[-4+yyTop]));
@@ -1472,33 +1452,33 @@ case 234:
 		    }
   break;
 case 235:
-					// line 1009 "parse.y"
+					// line 989 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 236:
-					// line 1013 "parse.y"
+					// line 993 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-2+yyTop]));
-			    yyVal = nf.newColon2(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
+			    yyVal = nf.newColon2(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 237:
-					// line 1018 "parse.y"
+					// line 998 "parse.y"
   {
-			    yyVal = nf.newColon3(((RubyId)yyVals[0+yyTop]));
+			    yyVal = nf.newColon3(((String)yyVals[0+yyTop]));
 		    }
   break;
 case 238:
-					// line 1022 "parse.y"
+					// line 1002 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = nf.newCall(((Node)yyVals[-3+yyTop]), ph.newId(tAREF), ((Node)yyVals[-1+yyTop]));
+			    yyVal = nf.newCall(((Node)yyVals[-3+yyTop]), "[]", ((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 239:
-					// line 1027 "parse.y"
+					// line 1007 "parse.y"
   {
 		        if (((Node)yyVals[-1+yyTop]) == null) {
 			        yyVal = nf.newZArray(); /* zero length array*/
@@ -1508,13 +1488,13 @@ case 239:
 		    }
   break;
 case 240:
-					// line 1035 "parse.y"
+					// line 1015 "parse.y"
   {
 			    yyVal = nf.newHash(((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 241:
-					// line 1039 "parse.y"
+					// line 1019 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -1523,7 +1503,7 @@ case 241:
 		    }
   break;
 case 242:
-					// line 1046 "parse.y"
+					// line 1026 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -1531,7 +1511,7 @@ case 242:
 		    }
   break;
 case 243:
-					// line 1052 "parse.y"
+					// line 1032 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -1539,44 +1519,44 @@ case 243:
 		    }
   break;
 case 244:
-					// line 1058 "parse.y"
+					// line 1038 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-1+yyTop]));
 			    yyVal = nf.newYield(((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 245:
-					// line 1063 "parse.y"
+					// line 1043 "parse.y"
   {
 			    yyVal = nf.newYield(null);
 		    }
   break;
 case 246:
-					// line 1067 "parse.y"
+					// line 1047 "parse.y"
   {
 			    yyVal = nf.newYield(null);
 		    }
   break;
 case 247:
-					// line 1070 "parse.y"
+					// line 1050 "parse.y"
   {ph.setInDefined(true);}
   break;
 case 248:
-					// line 1071 "parse.y"
+					// line 1051 "parse.y"
   {
 		        ph.setInDefined(false);
 			    yyVal = nf.newDefined(((Node)yyVals[-1+yyTop]));
 		    }
   break;
 case 249:
-					// line 1076 "parse.y"
+					// line 1056 "parse.y"
   {
-			    ((Node)yyVals[0+yyTop]).setIterNode(nf.newFCall(((RubyId)yyVals[-1+yyTop]), null));
+			    ((Node)yyVals[0+yyTop]).setIterNode(nf.newFCall(((String)yyVals[-1+yyTop]), null));
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 251:
-					// line 1082 "parse.y"
+					// line 1062 "parse.y"
   {
 			    if (((Node)yyVals[-1+yyTop]) != null && ((Node)yyVals[-1+yyTop]).getType() == Constants.NODE_BLOCK_PASS) {
 			        ph.rb_compile_error("both block arg and actual block given");
@@ -1587,7 +1567,7 @@ case 251:
 		    }
   break;
 case 252:
-					// line 1094 "parse.y"
+					// line 1074 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-4+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
@@ -1595,7 +1575,7 @@ case 252:
 		    }
   break;
 case 253:
-					// line 1103 "parse.y"
+					// line 1083 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-4+yyTop]));
 			    yyVal = nf.newUnless(ph.cond(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
@@ -1603,15 +1583,15 @@ case 253:
 		    }
   break;
 case 254:
-					// line 1108 "parse.y"
+					// line 1088 "parse.y"
   { rs.COND_PUSH(); }
   break;
 case 255:
-					// line 1108 "parse.y"
+					// line 1088 "parse.y"
   { rs.COND_POP(); }
   break;
 case 256:
-					// line 1111 "parse.y"
+					// line 1091 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-4+yyTop]));
 			    yyVal = nf.newWhile(ph.cond(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop])); /* , 1*/
@@ -1619,15 +1599,15 @@ case 256:
 		    }
   break;
 case 257:
-					// line 1116 "parse.y"
+					// line 1096 "parse.y"
   { rs.COND_PUSH(); }
   break;
 case 258:
-					// line 1116 "parse.y"
+					// line 1096 "parse.y"
   { rs.COND_POP(); }
   break;
 case 259:
-					// line 1119 "parse.y"
+					// line 1099 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-4+yyTop]));
 			    yyVal = nf.newUntil(ph.cond(((Node)yyVals[-4+yyTop])), ((Node)yyVals[-1+yyTop])); /*, 1*/
@@ -1635,7 +1615,7 @@ case 259:
 		    }
   break;
 case 260:
-					// line 1127 "parse.y"
+					// line 1107 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
 			    yyVal = nf.newCase(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
@@ -1643,21 +1623,21 @@ case 260:
 		    }
   break;
 case 261:
-					// line 1133 "parse.y"
+					// line 1113 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 262:
-					// line 1136 "parse.y"
+					// line 1116 "parse.y"
   { rs.COND_PUSH(); }
   break;
 case 263:
-					// line 1136 "parse.y"
+					// line 1116 "parse.y"
   { rs.COND_POP(); }
   break;
 case 264:
-					// line 1139 "parse.y"
+					// line 1119 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-4+yyTop]));
 			    yyVal = nf.newFor(((Node)yyVals[-7+yyTop]), ((Node)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
@@ -1665,7 +1645,7 @@ case 264:
 		    }
   break;
 case 265:
-					// line 1145 "parse.y"
+					// line 1125 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("class definition in method body");
@@ -1675,23 +1655,23 @@ case 265:
 		    }
   break;
 case 266:
-					// line 1154 "parse.y"
+					// line 1134 "parse.y"
   {
-		        yyVal = nf.newClass(((RubyId)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-3+yyTop]));
+		        yyVal = nf.newClass(((String)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[-3+yyTop]));
 		        ((Node)yyVal).setLine(((Integer)yyVals[-2+yyTop]).intValue());
 		        ph.local_pop();
 			    ph.setClassNest(ph.getClassNest() - 1);
 		    }
   break;
 case 267:
-					// line 1161 "parse.y"
+					// line 1141 "parse.y"
   {
 			    yyVal = new Integer(ph.getInDef());
 		        ph.setInDef(0);
 		    }
   break;
 case 268:
-					// line 1166 "parse.y"
+					// line 1146 "parse.y"
   {
 		        yyVal = new Integer(ph.getInSingle());
 		        ph.setInSingle(0);
@@ -1700,7 +1680,7 @@ case 268:
 		    }
   break;
 case 269:
-					// line 1174 "parse.y"
+					// line 1154 "parse.y"
   {
 		        yyVal = nf.newSClass(((Node)yyVals[-5+yyTop]), ((Node)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-5+yyTop]));
@@ -1711,7 +1691,7 @@ case 269:
 		    }
   break;
 case 270:
-					// line 1183 "parse.y"
+					// line 1163 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("module definition in method body");
@@ -1721,27 +1701,27 @@ case 270:
 		    }
   break;
 case 271:
-					// line 1192 "parse.y"
+					// line 1172 "parse.y"
   {
-		        yyVal = nf.newModule(((RubyId)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
+		        yyVal = nf.newModule(((String)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
 		        ((Node)yyVal).setLine(((Integer)yyVals[-2+yyTop]).intValue());
 		        ph.local_pop();
 			    ph.setClassNest(ph.getClassNest() - 1);
 		    }
   break;
 case 272:
-					// line 1199 "parse.y"
+					// line 1179 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("nested method definition");
 			    yyVal = ph.getCurMid();
-                ph.setCurMid(((RubyId)yyVals[0+yyTop]));
+                ph.setCurMid(((String)yyVals[0+yyTop]));
 			    ph.setInDef(ph.getInDef() + 1);
 			    ph.local_push();
 		    }
   break;
 case 273:
-					// line 1213 "parse.y"
+					// line 1193 "parse.y"
   {
 		        if (((Node)yyVals[-3+yyTop]) != null)
                     yyVals[-4+yyTop] = nf.newRescue(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-2+yyTop]));
@@ -1753,22 +1733,23 @@ case 273:
                     yyVals[-4+yyTop] = nf.newEnsure(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
 
 		        /* NOEX_PRIVATE for toplevel */
-			    yyVal = nf.newDefn(((RubyId)yyVals[-7+yyTop]), ((Node)yyVals[-5+yyTop]), ((Node)yyVals[-4+yyTop]), ph.getClassNest() !=0 ? 
+			    yyVal = nf.newDefn(((String)yyVals[-7+yyTop]), ((Node)yyVals[-5+yyTop]), ((Node)yyVals[-4+yyTop]), ph.getClassNest() !=0 ? 
                                 Constants.NOEX_PUBLIC : Constants.NOEX_PRIVATE);
-			    if (((RubyId)yyVals[-7+yyTop]).isAttrSetId())
+			    if (IdUtil.isAttrSet(((String)yyVals[-7+yyTop])))
                     ((Node)yyVal).setNoex(Constants.NOEX_PUBLIC);
 		        ph.fixpos(yyVal, ((Node)yyVals[-5+yyTop]));
 		        ph.local_pop();
 			    ph.setInDef(ph.getInDef() - 1);
-			    ph.setCurMid(((RubyId)yyVals[-6+yyTop]));
+			    /*+++ ph.setCurMid($3);*/
+                ph.setCurMid(((String)yyVals[-7+yyTop]));
 		    }
   break;
 case 274:
-					// line 1233 "parse.y"
+					// line 1214 "parse.y"
   {ph.setLexState(LexState.EXPR_FNAME);}
   break;
 case 275:
-					// line 1234 "parse.y"
+					// line 1215 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
                 ph.setInSingle(ph.getInSingle() + 1);
@@ -1777,7 +1758,7 @@ case 275:
 		    }
   break;
 case 276:
-					// line 1246 "parse.y"
+					// line 1227 "parse.y"
   {
 		        if (((Node)yyVals[-3+yyTop]) != null)
                     yyVals[-4+yyTop] = nf.newRescue(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-3+yyTop]), ((Node)yyVals[-2+yyTop]));
@@ -1787,38 +1768,38 @@ case 276:
 			    }
 			    if (((Node)yyVals[-1+yyTop]) != null) yyVals[-4+yyTop] = nf.newEnsure(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]));
 
-			    yyVal = nf.newDefs(((Node)yyVals[-10+yyTop]), ((RubyId)yyVals[-7+yyTop]), ((Node)yyVals[-5+yyTop]), ((Node)yyVals[-4+yyTop]));
+			    yyVal = nf.newDefs(((Node)yyVals[-10+yyTop]), ((String)yyVals[-7+yyTop]), ((Node)yyVals[-5+yyTop]), ((Node)yyVals[-4+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-10+yyTop]));
 		        ph.local_pop();
 			    ph.setInSingle(ph.getInSingle() - 1);
 		    }
   break;
 case 277:
-					// line 1261 "parse.y"
+					// line 1242 "parse.y"
   {
 			    yyVal = nf.newBreak();
 		    }
   break;
 case 278:
-					// line 1265 "parse.y"
+					// line 1246 "parse.y"
   {
 			    yyVal = nf.newNext();
 		    }
   break;
 case 279:
-					// line 1269 "parse.y"
+					// line 1250 "parse.y"
   {
 			    yyVal = nf.newRedo();
 		    }
   break;
 case 280:
-					// line 1273 "parse.y"
+					// line 1254 "parse.y"
   {
 			    yyVal = nf.newRetry();
 		    }
   break;
 case 287:
-					// line 1288 "parse.y"
+					// line 1269 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((Node)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
@@ -1826,37 +1807,37 @@ case 287:
 		    }
   break;
 case 289:
-					// line 1296 "parse.y"
+					// line 1277 "parse.y"
   {
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 293:
-					// line 1305 "parse.y"
+					// line 1286 "parse.y"
   {
 		        yyVal = Node.ONE; /* new Integer(1); //XXX (Node*)1;*/
 		    }
   break;
 case 294:
-					// line 1309 "parse.y"
+					// line 1290 "parse.y"
   {
 		        yyVal = Node.ONE; /* new Integer(1); //XXX (Node*)1;*/
 		    }
   break;
 case 295:
-					// line 1313 "parse.y"
+					// line 1294 "parse.y"
   {
 			yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 296:
-					// line 1318 "parse.y"
+					// line 1299 "parse.y"
   {
 		        yyVal = ph.dyna_push();
 		    }
   break;
 case 297:
-					// line 1324 "parse.y"
+					// line 1305 "parse.y"
   {
 			    yyVal = nf.newIter(((Node)yyVals[-2+yyTop]), null, ((Node)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-2+yyTop])!=null?((Node)yyVals[-2+yyTop]):((Node)yyVals[-1+yyTop]));
@@ -1864,7 +1845,7 @@ case 297:
 		    }
   break;
 case 298:
-					// line 1331 "parse.y"
+					// line 1312 "parse.y"
   {
 			    if (((Node)yyVals[-1+yyTop]) != null && ((Node)yyVals[-1+yyTop]).getType() == Constants.NODE_BLOCK_PASS) {
 			        ph.rb_compile_error("both block arg and actual block given");
@@ -1875,51 +1856,51 @@ case 298:
 		    }
   break;
 case 299:
-					// line 1340 "parse.y"
+					// line 1321 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 300:
-					// line 1345 "parse.y"
+					// line 1326 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 301:
-					// line 1351 "parse.y"
+					// line 1332 "parse.y"
   {
-			    yyVal = ph.new_fcall(((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_fcall(((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 302:
-					// line 1356 "parse.y"
+					// line 1337 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-3+yyTop]));
 		    }
   break;
 case 303:
-					// line 1362 "parse.y"
+					// line 1343 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-3+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.new_call(((Node)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-3+yyTop]));
 		    }
   break;
 case 304:
-					// line 1368 "parse.y"
+					// line 1349 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[-2+yyTop]));
-			    yyVal = ph.new_call(((Node)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]), null);
+			    yyVal = ph.new_call(((Node)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]), null);
 		    }
   break;
 case 305:
-					// line 1373 "parse.y"
+					// line 1354 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle() && !ph.isInDefined())
 			        yyerror("super called outside of method");
@@ -1927,7 +1908,7 @@ case 305:
 		    }
   break;
 case 306:
-					// line 1379 "parse.y"
+					// line 1360 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle() && !ph.isInDefined())
 			        yyerror("super called outside of method");
@@ -1935,13 +1916,13 @@ case 306:
 		    }
   break;
 case 307:
-					// line 1386 "parse.y"
+					// line 1367 "parse.y"
   {
 		        yyVal = ph.dyna_push();
 		    }
   break;
 case 308:
-					// line 1391 "parse.y"
+					// line 1372 "parse.y"
   {
 			    yyVal = nf.newIter(((Node)yyVals[-2+yyTop]), null, ((Node)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-1+yyTop]));
@@ -1949,13 +1930,13 @@ case 308:
 		    }
   break;
 case 309:
-					// line 1397 "parse.y"
+					// line 1378 "parse.y"
   {
 		        yyVal = ph.dyna_push();
 		    }
   break;
 case 310:
-					// line 1402 "parse.y"
+					// line 1383 "parse.y"
   {
 			    yyVal = nf.newIter(((Node)yyVals[-2+yyTop]), null, ((Node)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((Node)yyVals[-1+yyTop]));
@@ -1963,36 +1944,36 @@ case 310:
 		    }
   break;
 case 311:
-					// line 1411 "parse.y"
+					// line 1392 "parse.y"
   {
 			    yyVal = nf.newWhen(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 313:
-					// line 1417 "parse.y"
+					// line 1398 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = ph.list_append(((Node)yyVals[-3+yyTop]), nf.newWhen(((Node)yyVals[0+yyTop]), null, null));
 		    }
   break;
 case 314:
-					// line 1422 "parse.y"
+					// line 1403 "parse.y"
   {
 			    ph.value_expr(((Node)yyVals[0+yyTop]));
 			    yyVal = nf.newList(nf.newWhen(((Node)yyVals[0+yyTop]), null, null));
 		    }
   break;
 case 319:
-					// line 1434 "parse.y"
+					// line 1415 "parse.y"
   {
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 321:
-					// line 1442 "parse.y"
+					// line 1423 "parse.y"
   {
 		        if (((Node)yyVals[-3+yyTop]) != null) {
-		            yyVals[-3+yyTop] = ph.node_assign(((Node)yyVals[-3+yyTop]), nf.newGVar(ruby.intern("$!")));
+		            yyVals[-3+yyTop] = ph.node_assign(((Node)yyVals[-3+yyTop]), nf.newGVar("$!"));
 			        yyVals[-1+yyTop] = ph.block_append(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
 			    }
 			    yyVal = nf.newResBody(((Node)yyVals[-4+yyTop]), ((Node)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
@@ -2000,7 +1981,7 @@ case 321:
 		    }
   break;
 case 324:
-					// line 1454 "parse.y"
+					// line 1435 "parse.y"
   {
 			    if (((Node)yyVals[0+yyTop]) != null)
 			        yyVal = ((Node)yyVals[0+yyTop]);
@@ -2010,19 +1991,19 @@ case 324:
 		    }
   break;
 case 326:
-					// line 1464 "parse.y"
+					// line 1445 "parse.y"
   {
-			    yyVal = ((RubyId)yyVals[0+yyTop]).toSymbol();
+			    yyVal = RubySymbol.newSymbol(ruby, ((String)yyVals[0+yyTop]));
 		    }
   break;
 case 328:
-					// line 1470 "parse.y"
+					// line 1451 "parse.y"
   {
 			    yyVal = nf.newStr(((RubyObject)yyVals[0+yyTop]));
 		    }
   break;
 case 330:
-					// line 1475 "parse.y"
+					// line 1456 "parse.y"
   {
 		        if (((Node)yyVals[-1+yyTop]).getType() == Constants.NODE_DSTR) {
 			        ph.list_append(((Node)yyVals[-1+yyTop]), nf.newStr(((RubyObject)yyVals[0+yyTop])));
@@ -2033,7 +2014,7 @@ case 330:
 		    }
   break;
 case 331:
-					// line 1484 "parse.y"
+					// line 1465 "parse.y"
   {
 		        if (((Node)yyVals[-1+yyTop]).getType() == Constants.NODE_STR) {
 			        yyVal = nf.newDStr(((Node)yyVals[-1+yyTop]).getLiteral());
@@ -2047,229 +2028,229 @@ case 331:
 		    }
   break;
 case 332:
-					// line 1497 "parse.y"
+					// line 1478 "parse.y"
   {
 		        ph.setLexState(LexState.EXPR_END);
-			    yyVal = ((RubyId)yyVals[0+yyTop]);
+			    yyVal = ((String)yyVals[0+yyTop]);
 		    }
   break;
 case 344:
-					// line 1515 "parse.y"
-  {yyVal = ph.newId(kNIL);}
+					// line 1496 "parse.y"
+  {yyVal = "~~NIL";}
   break;
 case 345:
-					// line 1516 "parse.y"
-  {yyVal = ph.newId(kSELF);}
+					// line 1497 "parse.y"
+  {yyVal = "~~SELF";}
   break;
 case 346:
-					// line 1517 "parse.y"
-  {yyVal = ph.newId(kTRUE);}
+					// line 1498 "parse.y"
+  {yyVal = "~~TRUE";}
   break;
 case 347:
-					// line 1518 "parse.y"
-  {yyVal = ph.newId(kFALSE);}
+					// line 1499 "parse.y"
+  {yyVal = "~~FALSE";}
   break;
 case 348:
-					// line 1519 "parse.y"
-  {yyVal = ph.newId(k__FILE__);}
+					// line 1500 "parse.y"
+  {yyVal = "~~__FILE__";}
   break;
 case 349:
-					// line 1520 "parse.y"
-  {yyVal = ph.newId(k__LINE__);}
+					// line 1501 "parse.y"
+  {yyVal = "~~__LINE__";}
   break;
 case 350:
-					// line 1523 "parse.y"
+					// line 1504 "parse.y"
   {
-			    yyVal = ph.gettable(((RubyId)yyVals[0+yyTop]));
+			    yyVal = ph.gettable(((String)yyVals[0+yyTop]));
 		    }
   break;
 case 353:
-					// line 1531 "parse.y"
+					// line 1512 "parse.y"
   {
 			    yyVal = null;
 		    }
   break;
 case 354:
-					// line 1535 "parse.y"
+					// line 1516 "parse.y"
   {
 			    ph.setLexState(LexState.EXPR_BEG);
 		    }
   break;
 case 355:
-					// line 1539 "parse.y"
+					// line 1520 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 356:
-					// line 1542 "parse.y"
+					// line 1523 "parse.y"
   {yyerrok(); yyVal = null;}
   break;
 case 357:
-					// line 1545 "parse.y"
+					// line 1526 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-2+yyTop]);
 			    ph.setLexState(LexState.EXPR_BEG);
 		    }
   break;
 case 358:
-					// line 1550 "parse.y"
+					// line 1531 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 359:
-					// line 1555 "parse.y"
+					// line 1536 "parse.y"
   {
                 yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-5+yyTop]), ((Node)yyVals[-3+yyTop]), ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 360:
-					// line 1559 "parse.y"
+					// line 1540 "parse.y"
   {
                 yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]), -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 361:
-					// line 1563 "parse.y"
+					// line 1544 "parse.y"
   {
                 yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), null, ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 362:
-					// line 1567 "parse.y"
+					// line 1548 "parse.y"
   {
                 yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-1+yyTop]), null, -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 363:
-					// line 1571 "parse.y"
+					// line 1552 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, ((Node)yyVals[-3+yyTop]), ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 364:
-					// line 1575 "parse.y"
+					// line 1556 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, ((Node)yyVals[-1+yyTop]), -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 365:
-					// line 1579 "parse.y"
+					// line 1560 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, null, ((Integer)yyVals[-1+yyTop]).intValue()), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 366:
-					// line 1583 "parse.y"
+					// line 1564 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, null, -1), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 367:
-					// line 1587 "parse.y"
+					// line 1568 "parse.y"
   {
 			    yyVal = nf.newArgs(null, null, -1);
 		    }
   break;
 case 368:
-					// line 1592 "parse.y"
+					// line 1573 "parse.y"
   {
 			    yyerror("formal argument cannot be a constant");
 		    }
   break;
 case 369:
-					// line 1596 "parse.y"
+					// line 1577 "parse.y"
   {
                 yyerror("formal argument cannot be an instance variable");
 		    }
   break;
 case 370:
-					// line 1600 "parse.y"
+					// line 1581 "parse.y"
   {
                 yyerror("formal argument cannot be a global variable");
 		    }
   break;
 case 371:
-					// line 1604 "parse.y"
+					// line 1585 "parse.y"
   {
                 yyerror("formal argument cannot be a class variable");
 		    }
   break;
 case 372:
-					// line 1608 "parse.y"
+					// line 1589 "parse.y"
   {
-			    if (!((RubyId)yyVals[0+yyTop]).isLocalId())
+			    if (!IdUtil.isLocal(((String)yyVals[0+yyTop])))
 			        yyerror("formal argument must be local variable");
-			    else if (ph.local_id(((RubyId)yyVals[0+yyTop])))
+			    else if (ph.local_id(((String)yyVals[0+yyTop])))
 			        yyerror("duplicate argument name");
-			    ph.local_cnt(((RubyId)yyVals[0+yyTop]));
+			    ph.local_cnt(((String)yyVals[0+yyTop]));
 			    yyVal = new Integer(1);
 		    }
   break;
 case 374:
-					// line 1619 "parse.y"
+					// line 1600 "parse.y"
   {
 			    yyVal = new Integer(((Integer)yyVal).intValue() + 1);
 		    }
   break;
 case 375:
-					// line 1624 "parse.y"
+					// line 1605 "parse.y"
   {
-			    if (!((RubyId)yyVals[-2+yyTop]).isLocalId())
+			    if (!IdUtil.isLocal(((String)yyVals[-2+yyTop])))
 			        yyerror("formal argument must be local variable");
-			    else if (ph.local_id(((RubyId)yyVals[-2+yyTop])))
+			    else if (ph.local_id(((String)yyVals[-2+yyTop])))
 			        yyerror("duplicate optional argument name");
-			    yyVal = ph.assignable(((RubyId)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+			    yyVal = ph.assignable(((String)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 376:
-					// line 1633 "parse.y"
+					// line 1614 "parse.y"
   {
 			    yyVal = nf.newBlock(((Node)yyVals[0+yyTop]));
 			    ((Node)yyVal).setEndNode(((Node)yyVal));
 		    }
   break;
 case 377:
-					// line 1638 "parse.y"
+					// line 1619 "parse.y"
   {
 			    yyVal = ph.block_append(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 378:
-					// line 1643 "parse.y"
+					// line 1624 "parse.y"
   {
-			    if (!((RubyId)yyVals[0+yyTop]).isLocalId())
+			    if (!IdUtil.isLocal(((String)yyVals[0+yyTop])))
 			        yyerror("rest argument must be local variable");
-			    else if (ph.local_id(((RubyId)yyVals[0+yyTop])))
+			    else if (ph.local_id(((String)yyVals[0+yyTop])))
 			        yyerror("duplicate rest argument name");
-			    yyVal = new Integer(ph.local_cnt(((RubyId)yyVals[0+yyTop])));
+			    yyVal = new Integer(ph.local_cnt(((String)yyVals[0+yyTop])));
 		    }
   break;
 case 379:
-					// line 1651 "parse.y"
+					// line 1632 "parse.y"
   {
 			    yyVal = new Integer(-2);
 		    }
   break;
 case 380:
-					// line 1656 "parse.y"
+					// line 1637 "parse.y"
   {
-			    if (!((RubyId)yyVals[0+yyTop]).isLocalId())
+			    if (!IdUtil.isLocal(((String)yyVals[0+yyTop])))
 			        yyerror("block argument must be local variable");
-			    else if (ph.local_id(((RubyId)yyVals[0+yyTop])))
+			    else if (ph.local_id(((String)yyVals[0+yyTop])))
 			        yyerror("duplicate block argument name");
-			    yyVal = nf.newBlockArg(((RubyId)yyVals[0+yyTop]));
+			    yyVal = nf.newBlockArg(((String)yyVals[0+yyTop]));
 		    }
   break;
 case 381:
-					// line 1665 "parse.y"
+					// line 1646 "parse.y"
   {
 			    yyVal = ((Node)yyVals[0+yyTop]);
 		    }
   break;
 case 383:
-					// line 1671 "parse.y"
+					// line 1652 "parse.y"
   {
 			    if (((Node)yyVals[0+yyTop]).getType() == Constants.NODE_SELF) {
 			        yyVal = nf.newSelf();
@@ -2279,11 +2260,11 @@ case 383:
 		    }
   break;
 case 384:
-					// line 1678 "parse.y"
+					// line 1659 "parse.y"
   {ph.setLexState(LexState.EXPR_BEG);}
   break;
 case 385:
-					// line 1679 "parse.y"
+					// line 1660 "parse.y"
   {
 			    switch (((Node)yyVals[-2+yyTop]).getType()) {
 			        case Constants.NODE_STR:
@@ -2302,13 +2283,13 @@ case 385:
 		    }
   break;
 case 387:
-					// line 1698 "parse.y"
+					// line 1679 "parse.y"
   {
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
   break;
 case 388:
-					// line 1702 "parse.y"
+					// line 1683 "parse.y"
   {
 			    /* if ($1.getLength() % 2 != 0) {
 			        yyerror("odd number list for Hash");
@@ -2317,32 +2298,32 @@ case 388:
 		    }
   break;
 case 390:
-					// line 1711 "parse.y"
+					// line 1692 "parse.y"
   {
 			    yyVal = ph.list_concat(((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 391:
-					// line 1716 "parse.y"
+					// line 1697 "parse.y"
   {
 			    yyVal = ph.list_append(nf.newList(((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
 		    }
   break;
 case 411:
-					// line 1746 "parse.y"
+					// line 1727 "parse.y"
   {yyerrok();}
   break;
 case 414:
-					// line 1750 "parse.y"
+					// line 1731 "parse.y"
   {yyerrok();}
   break;
 case 415:
-					// line 1753 "parse.y"
+					// line 1734 "parse.y"
   {
 		        yyVal = null; /*XXX 0;*/
 		    }
   break;
-					// line 2370 "-"
+					// line 2351 "-"
         }
         yyTop -= YyLenClass.yyLen[yyN];
         yyState = yyStates[yyTop];
@@ -2789,7 +2770,7 @@ case 415:
   } /* End of class YyNameClass */
 
 
-					// line 1757 "parse.y"
+					// line 1738 "parse.y"
 
     // XXX +++
     // Helper Methods
@@ -2882,9 +2863,8 @@ case 415:
      *
      */
     public Node yycompile(String f, int line) {
-        RubyId sl_id = ruby.intern("SCRIPT_LINES__");
-        if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined(sl_id)) {
-            RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant(sl_id);
+        if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined("SCRIPT_LINES__")) {
+            RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant("SCRIPT_LINES__");
             RubyString fName = RubyString.newString(ruby, f);
             
             // XXX +++
@@ -2931,4 +2911,4 @@ case 415:
         return ph.getEvalTree();
     }
 }
-					// line 6722 "-"
+					// line 6702 "-"

@@ -84,11 +84,11 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyObject downto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (((RubyBoolean) i.funcall(getRuby().intern("<"), to)).isTrue()) {
+            if (((RubyBoolean) i.funcall("<", to)).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall(getRuby().intern("-"), RubyFixnum.newFixnum(getRuby(), 1));
+            i = (RubyNumeric) i.funcall("-", RubyFixnum.one(getRuby()));
         }
         return this;
     }
@@ -103,9 +103,9 @@ public abstract class RubyInteger extends RubyNumeric {
             throw new RubyArgumentException(getRuby(), "step cannot be 0");
         }
 
-        RubyId cmp = getRuby().intern("<");
-        if (((RubyBoolean) step.funcall(cmp, RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
-            cmp = getRuby().intern(">");
+        String cmp = "<";
+        if (((RubyBoolean) step.funcall("<", RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
+            cmp = ">";
         }
 
         while (true) {
@@ -113,35 +113,35 @@ public abstract class RubyInteger extends RubyNumeric {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall(getRuby().intern("+"), step);
+            i = (RubyNumeric) i.funcall("+", step);
         }
         return this;
     }
 
     public RubyObject times() {
-        RubyNumeric i = RubyFixnum.newFixnum(getRuby(), 0);
+        RubyNumeric i = RubyFixnum.zero(getRuby());
         while (true) {
-            if (i.funcall(getRuby().intern("<"), this).isFalse()) {
+            if (i.funcall("<", this).isFalse()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
+            i = (RubyNumeric) i.funcall("+", RubyFixnum.one(getRuby()));
         }
         return this;
     }
 
     public RubyObject succ() {
-        return funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
+        return funcall("+", RubyFixnum.one(getRuby()));
     }
 
     public RubyObject upto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (i.funcall(getRuby().intern(">"), to).isTrue()) {
+            if (i.funcall(">", to).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
+            i = (RubyNumeric) i.funcall("+", RubyFixnum.one(getRuby()));
         }
         return this;
     }

@@ -39,15 +39,15 @@ import org.jruby.nodes.*;
  * @version 
  */
 public class RubyMethodCacheEntry {
-    private RubyId mid;             /* method's id */
-    private RubyId mid0;            /* method's original id */
+    private String mid;             /* method's id */
+    private String mid0;            /* method's original id */
     private RubyModule recvClass;   /* receiver's class */
     private RubyModule origin;      /* where method defined  */
 
     private Node method;
     private int noex;
 
-    public RubyMethodCacheEntry(RubyId mid, RubyId mid0, RubyModule recvClass, 
+    public RubyMethodCacheEntry(String mid, String mid0, RubyModule recvClass, 
                                     RubyModule origin, Node method, int noex) {
         this.mid = mid;
         this.mid0 = mid0;
@@ -57,7 +57,7 @@ public class RubyMethodCacheEntry {
         this.noex = noex;
     }
     
-    public RubyMethodCacheEntry(RubyModule recvClass, RubyId mid) {
+    public RubyMethodCacheEntry(RubyModule recvClass, String mid) {
         this.mid = mid;
         this.mid0 = mid;
         this.recvClass = recvClass;
@@ -71,17 +71,17 @@ public class RubyMethodCacheEntry {
         this.noex = noex;
     }
     
-    public static void saveEmptyEntry(Ruby ruby, RubyModule recvClass, RubyId id) {
+    public static void saveEmptyEntry(Ruby ruby, RubyModule recvClass, String id) {
         ruby.getMethodCache().put(getCacheHash(recvClass, id), new RubyMethodCacheEntry(recvClass, id));
     }
 
-    public static void saveEntry(Ruby ruby, RubyModule recvClass, RubyId id, RubyMethodCacheEntry entry) {
+    public static void saveEntry(Ruby ruby, RubyModule recvClass, String id, RubyMethodCacheEntry entry) {
         ruby.getMethodCache().put(getCacheHash(recvClass, id), entry);
     }
     
-    public static RubyMethodCacheEntry getEntry(Ruby ruby, RubyModule recvClass, RubyId id) {
+    public static RubyMethodCacheEntry getEntry(Ruby ruby, RubyModule recvClass, String id) {
         RubyMethodCacheEntry entry = (RubyMethodCacheEntry)ruby.getMethodCache().get(getCacheHash(recvClass, id));
-        if (entry != null && entry.mid.intValue() == id.intValue() && entry.recvClass == recvClass) {
+        if (entry != null && entry.mid.equals(id) && entry.recvClass == recvClass) {
             return entry;
         } else {
             return null;
@@ -119,28 +119,28 @@ public class RubyMethodCacheEntry {
     /** Getter for property mid.
      * @return Value of property mid.
      */
-    public RubyId getMid() {
+    public String getMid() {
         return mid;
     }
     
     /** Setter for property mid.
      * @param mid New value of property mid.
      */
-    public void setMid(RubyId mid) {
+    public void setMid(String mid) {
         this.mid = mid;
     }
     
     /** Getter for property mid0.
      * @return Value of property mid0.
      */
-    public RubyId getMid0() {
+    public String getMid0() {
         return mid0;
     }
     
     /** Setter for property mid0.
      * @param mid0 New value of property mid0.
      */
-    public void setMid0(RubyId mid0) {
+    public void setMid0(String mid0) {
         this.mid0 = mid0;
     }
     
@@ -174,8 +174,8 @@ public class RubyMethodCacheEntry {
     
     private static final int CACHE_MASK = 0x7ff;
     
-    public static Integer getCacheHash(RubyModule recvClass, RubyId id) {
+    public static Integer getCacheHash(RubyModule recvClass, String id) {
         int c = System.identityHashCode(recvClass);
-        return new Integer((((c) >> 3) ^ (id.intValue())) & CACHE_MASK);
+        return new Integer((((c) >> 3) ^ (id.hashCode())) & CACHE_MASK);
     }
 }

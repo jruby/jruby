@@ -40,108 +40,108 @@ import org.jruby.nodes.*;
  * @author  jpetersen
  */
 public class RubyRuntime {
-	private boolean printBugs = false;
+    private boolean printBugs = false;
 
-	private Ruby ruby;
+    private Ruby ruby;
 
-	private InputStream inputStream;
-	private PrintStream errorStream;
-	private PrintStream outputStream;
+    private InputStream inputStream;
+    private PrintStream errorStream;
+    private PrintStream outputStream;
 
-	public RubyRuntime(Ruby ruby) {
-		this.ruby = ruby;
-	}
+    public RubyRuntime(Ruby ruby) {
+        this.ruby = ruby;
+    }
 
-	/** Print a bug report to the Error stream if bug 
-	 * reporting is enabled
-	 * 
-	 */
-	public void printBug(String description) {
-		if (printBugs) {
-			getErrorStream().println("[BUG] " + description);
-		}
-	}
+    /** Print a bug report to the Error stream if bug 
+     * reporting is enabled
+     * 
+     */
+    public void printBug(String description) {
+        if (printBugs) {
+            getErrorStream().println("[BUG] " + description);
+        }
+    }
 
-	/** This method compiles and interprets a Ruby script.
-	 *
-	*  It can be used if you want to use JRuby as a Macro language.
-	*
-	*/
-	public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-		RubyObject self = ruby.getRubyTopSelf();
-		CRefNode savedCRef = ruby.getCRef();
+    /** This method compiles and interprets a Ruby script.
+     *
+     *  It can be used if you want to use JRuby as a Macro language.
+     *
+     */
+    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
+        RubyObject self = ruby.getRubyTopSelf();
+        CRefNode savedCRef = ruby.getCRef();
 
-		// TMP_PROTECT;
-		if (wrap && ruby.getSecurityLevel() >= 4) {
-			// Check_Type(fname, T_STRING);
-		} else {
-			// Check_SafeStr(fname);
-		}
+        // TMP_PROTECT;
+        if (wrap && ruby.getSecurityLevel() >= 4) {
+            // Check_Type(fname, T_STRING);
+        } else {
+            // Check_SafeStr(fname);
+        }
 
-		// volatile ID last_func;
-		// ruby_errinfo = Qnil; /* ensure */
-		RubyVarmap.push(ruby);
-		ruby.pushClass();
+        // volatile ID last_func;
+        // ruby_errinfo = Qnil; /* ensure */
+        RubyVarmap.push(ruby);
+        ruby.pushClass();
 
-		RubyModule wrapper = ruby.getWrapper();
-		ruby.setCRef(ruby.getTopCRef());
+        RubyModule wrapper = ruby.getWrapper();
+        ruby.setCRef(ruby.getTopCRef());
 
-		if (!wrap) {
-			ruby.secure(4); /* should alter global state */
-			ruby.setRubyClass(ruby.getClasses().getObjectClass());
-			ruby.setWrapper(null);
-		} else {
-			/* load in anonymous module as toplevel */
-			ruby.setWrapper(RubyModule.newModule(ruby));
-			ruby.setRubyClass(ruby.getWrapper());
-			self = ruby.getRubyTopSelf().rbClone();
-			self.extendObject(ruby.getRubyClass());
-			ruby.getCRef().push(ruby.getWrapper());
-		}
-		ruby.getRubyFrame().push();
-		ruby.getRubyFrame().setLastFunc(null);
-		ruby.getRubyFrame().setLastClass(null);
-		ruby.getRubyFrame().setSelf(self);
-		ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
-		ruby.getRubyScope().push();
+        if (!wrap) {
+            ruby.secure(4); /* should alter global state */
+            ruby.setRubyClass(ruby.getClasses().getObjectClass());
+            ruby.setWrapper(null);
+        } else {
+            /* load in anonymous module as toplevel */
+            ruby.setWrapper(RubyModule.newModule(ruby));
+            ruby.setRubyClass(ruby.getWrapper());
+            self = ruby.getRubyTopSelf().rbClone();
+            self.extendObject(ruby.getRubyClass());
+            ruby.getCRef().push(ruby.getWrapper());
+        }
+        ruby.getRubyFrame().push();
+        ruby.getRubyFrame().setLastFunc(null);
+        ruby.getRubyFrame().setLastClass(null);
+        ruby.getRubyFrame().setSelf(self);
+        ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
+        ruby.getRubyScope().push();
 
-		/* default visibility is private at loading toplevel */
-		ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
+        /* default visibility is private at loading toplevel */
+        ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
 
-		RubyId last_func = ruby.getRubyFrame().getLastFunc();
-		try {
-			// RubyId last_func = ruby.getRubyFrame().getLastFunc();
-			// DEFER_INTS;
-			ruby.setInEval(ruby.getInEval() + 1);
+        String last_func = ruby.getRubyFrame().getLastFunc();
+        try {
+            // RubyId last_func = ruby.getRubyFrame().getLastFunc();
+            // DEFER_INTS;
+            ruby.setInEval(ruby.getInEval() + 1);
 
-			ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
+            ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
 
-			// ---
-			ruby.setInEval(ruby.getInEval() - 1);
+            // ---
+            ruby.setInEval(ruby.getInEval() - 1);
 
-			self.evalNode(ruby.getParserHelper().getEvalTree());
-		} catch (Exception excptn) {
-			excptn.printStackTrace(getErrorStream());
-		} finally {
-			ruby.getRubyFrame().setLastFunc(last_func);
+            self.evalNode(ruby.getParserHelper().getEvalTree());
+        } catch (Exception excptn) {
+            excptn.printStackTrace(getErrorStream());
+        } finally {
+            ruby.getRubyFrame().setLastFunc(last_func);
 
-			/*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
-			  if (ruby_scope->local_tbl)
-			  free(ruby_scope->local_tbl);
-			  }*/
-			ruby.setCRef(savedCRef);
-			ruby.getRubyScope().pop();
-			ruby.getRubyFrame().pop();
-			ruby.popClass();
-			RubyVarmap.pop(ruby);
-			ruby.setWrapper(wrapper);
-		}
+            /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+                if (ruby_scope->local_tbl)
+                    free(ruby_scope->local_tbl);
+            	}*/
+            ruby.setCRef(savedCRef);
+            ruby.getRubyScope().pop();
+            ruby.getRubyFrame().pop();
+            ruby.popClass();
+            RubyVarmap.pop(ruby);
+            ruby.setWrapper(wrapper);
+        }
 
-		/*if (ruby_nerrs > 0) {
-		  ruby_nerrs = 0;
-		  rb_exc_raise(ruby_errinfo);
-		  }*/
-	}
+        /*if (ruby_nerrs > 0) {
+            ruby_nerrs = 0;
+            rb_exc_raise(ruby_errinfo);
+        }*/
+    }
 
 	/** This method loads, compiles and interprets a Ruby file.
 	*  It is used by Kernel#require.

@@ -42,7 +42,7 @@ import org.jruby.runtime.*;
  */
 public class CVDeclNode extends Node implements AssignableNode {
     
-    public CVDeclNode(RubyId vId, Node valueNode) {
+    public CVDeclNode(String vId, Node valueNode) {
         super(Constants.NODE_CVDECL, vId, valueNode, null);
     }
     

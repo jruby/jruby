@@ -37,36 +37,18 @@ import org.jruby.runtime.*;
  * @author  jpetersen
  */
 public class RubySymbol extends RubyObject {
-    private RubyId id = null;
+    private String symbol = null;
     
-    public RubySymbol(Ruby ruby, RubyId id) {
+    public RubySymbol(Ruby ruby, String symbol) {
         super(ruby, ruby.getClasses().getSymbolClass());
-        this.id = id;
+        this.symbol = symbol;
     }
     
     /** rb_to_id
      *
      */
-    public RubyId toId() {
-        return getId();
-    }
-    
-    public String getName() {
-        return getId().toName();
-    }
-    
-    /** Getter for property id.
-     * @return Value of property id.
-     */
-    public RubyId getId() {
-        return id;
-    }
-    
-    /** Setter for property id.
-     * @param id New value of property id.
-     */
-    public void setId(RubyId id) {
-        this.id = id;
+    public String toId() {
+        return symbol;
     }
     
     public static RubyClass createSymbolClass(Ruby ruby) {
@@ -90,28 +72,28 @@ public class RubySymbol extends RubyObject {
      * 
      */
     
-    public static RubySymbol newSymbol(Ruby ruby, RubyId rubyId) {
-        return new RubySymbol(ruby, rubyId);
+    public static RubySymbol newSymbol(Ruby ruby, String name) {
+        return new RubySymbol(ruby, name);
     }
 
     public RubyFixnum to_i() {
-        return RubyFixnum.newFixnum(getRuby(), getId().intValue());
+        return RubyFixnum.newFixnum(getRuby(), symbol.hashCode());
     }
     
     public RubyString inspect() {
-        return RubyString.newString(getRuby(), ":" + getId().toName());
+        return RubyString.newString(getRuby(), ":" + symbol);
     }
     
     public RubyString to_s() {
-        return RubyString.newString(getRuby(), getId().toName());
+        return RubyString.newString(getRuby(), symbol);
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuby(), (":" + getName()).hashCode());
+        return RubyFixnum.newFixnum(getRuby(), (":" + symbol).hashCode());
     }
 
     public RubyBoolean equal(RubyObject other) {
-        if ((other instanceof RubySymbol) && getName().equals(((RubySymbol) other).getName())) {
+        if ((other instanceof RubySymbol) && symbol.equals(((RubySymbol) other).symbol)) {
             return getRuby().getTrue();
         } else {
             return getRuby().getFalse();

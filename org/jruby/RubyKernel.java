@@ -57,79 +57,80 @@ public class RubyKernel {
 		ruby.defineGlobalFunction("sprintf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
 	}
 
-	public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
-		if (args.length == 0) {
-			ruby.getRuntime().getOutputStream().println();
-			return ruby.getNil();
-		}
-		for (int i = 0; i < args.length; i++) {
-			if (args[i] != null) {
-				if (args[i] instanceof RubyArray) {
-					puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
-				} else {
-					ruby.getRuntime().getOutputStream().println(
-							args[i].isNil() ? "nil" : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
-				}
-			}
-		}
-		return ruby.getNil();
-	}
+    public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length == 0) {
+            ruby.getRuntime().getOutputStream().println();
+            return ruby.getNil();
+        }
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] != null) {
+                if (args[i] instanceof RubyArray) {
+                    puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
+                } else {
+                    ruby.getRuntime().getOutputStream().println(
+                        args[i].isNil() ? "nil" : ((RubyString) args[i].funcall("to_s")).getValue());
+                }
+            }
+        }
+        return ruby.getNil();
+    }
 
-	public static RubyObject raise(Ruby ruby, RubyObject recv, RubyObject args[]) {
-		int argsLength = args != null ? args.length : 0;
+    public static RubyObject raise(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        int argsLength = args != null ? args.length : 0;
 
-		switch (argsLength) {
-			case 0 :
-			case 1 :
-				throw new RaiseException(RubyException.newInstance(ruby, ruby.getExceptions().getRuntimeError(), args));
-			case 2 :
-				RubyException excptn = (RubyException) args[0].funcall(ruby.intern("exception"), args[1]);
-				throw new RaiseException(excptn);
-			default :
-				throw new RubyArgumentException(ruby, "wrong # of arguments");
-		}
-	}
+        switch (argsLength) {
+            case 0 :
+            case 1 :
+                throw new RaiseException(RubyException.newInstance(ruby, ruby.getExceptions().getRuntimeError(), args));
+            case 2 :
+                RubyException excptn = (RubyException) args[0].funcall("exception", args[1]);
+                throw new RaiseException(excptn);
+            default :
+                throw new RubyArgumentException(ruby, "wrong # of arguments");
+        }
+    }
 
-	public static RubyObject print(Ruby ruby, RubyObject recv, RubyObject args[]) {
-		RubyObject ofsObj = ruby.getGlobalVar("$,");
-		RubyObject orsObj = ruby.getGlobalVar("$\\");
-		String ofs = ofsObj.isNil() ? "" : RubyString.stringValue(ofsObj).getValue();
-		for (int i = 0; i < args.length; i++) {
-			if (args[i] != null) {
-				if (i > 0) {
-					ruby.getRuntime().getOutputStream().print(ofs);
-				}
-				ruby.getRuntime().getOutputStream().print(
-						args[i].isNil() ? "nil" : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
-			}
-		}
-		ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
-		return ruby.getNil();
-	}
+    public static RubyObject print(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        RubyObject ofsObj = ruby.getGlobalVar("$,");
+        RubyObject orsObj = ruby.getGlobalVar("$\\");
+        String ofs = ofsObj.isNil() ? "" : RubyString.stringValue(ofsObj).getValue();
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] != null) {
+                if (i > 0) {
+                    ruby.getRuntime().getOutputStream().print(ofs);
+                }
+                ruby.getRuntime().getOutputStream().print(
+                    args[i].isNil() ? "nil" : ((RubyString) args[i].funcall("to_s")).getValue());
+            }
+        }
+        ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
+        return ruby.getNil();
+    }
 
-	public static RubyObject p(Ruby ruby, RubyObject recv, RubyObject args[]) {
-		for (int i = 0; i < args.length; i++) {
-			if (args[i] != null) {
-				ruby.getRuntime().getOutputStream().println(((RubyString) args[i].funcall(ruby.intern("inspect"))).getValue());
-			}
-		}
-		return ruby.getNil();
-	}
+    public static RubyObject p(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] != null) {
+                ruby.getRuntime().getOutputStream().println(((RubyString) args[i].funcall("inspect")).getValue());
+            }
+        }
+        return ruby.getNil();
+    }
 
-	public static RubyObject sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
-		if (args.length == 0) {
-			throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
-		}
-		RubyString str = RubyString.stringValue(args[0]);
-		RubyArray newArgs = RubyArray.create(ruby, null, args);
-		newArgs.shift();
-		return str.format(newArgs);
-	}
+    public static RubyObject sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length == 0) {
+            throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
+        }
+        RubyString str = RubyString.stringValue(args[0]);
+        RubyArray newArgs = RubyArray.create(ruby, null, args);
+        newArgs.shift();
+        return str.format(newArgs);
+    }
 
-	public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
-		ruby.getRuntime().getOutputStream().print(((RubyString) sprintf(ruby, recv, args)).getValue());
-		return ruby.getNil();
-	}
+    public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        ruby.getRuntime().getOutputStream().print(((RubyString) sprintf(ruby, recv, args)).getValue());
+        return ruby.getNil();
+    }
+
 	/**
 	 * Require.
 	 * MRI allows to require ever .rb files or ruby extension dll (.so or .dll depending on system).

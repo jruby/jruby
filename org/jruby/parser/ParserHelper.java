@@ -33,6 +33,7 @@ import org.jruby.*;
 import org.jruby.nodes.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.util.collections.*;
 
 /**
  *  Description of the Class
@@ -56,7 +57,7 @@ public class ParserHelper {
 
     private int lexState;
     private int classNest;
-    private RubyId curMid;
+    private String curMid;
 
     // Scanner ?
 
@@ -79,9 +80,9 @@ public class ParserHelper {
 
     private LocalVars lvtbl = new LocalVars();
 
-    public RubyId newId(int id) {
+    /*public RubyId newId(int id) {
         return RubyId.newId(ruby, id);
-    }
+    }*/
 
     private void yyerror(String message) {
         ruby.getRuntime().getErrorStream().println(message);
@@ -106,6 +107,76 @@ public class ParserHelper {
     // ---------------------------------------------------------------------------
     // here the parser methods start....
     // ---------------------------------------------------------------------------
+
+    public String getOperatorId(int id) {
+        switch (id) {
+            case Token.tDOT2 :
+                return "..";
+            case Token.tDOT3 :
+                return "...";
+            case '+' :
+                return "+";
+            case '-' :
+                return "-";
+            case '*' :
+                return "*";
+            case '/' :
+                return "/";
+            case '%' :
+                return "%";
+            case Token.tPOW :
+                return "**";
+            case Token.tUPLUS :
+                return "+@";
+            case Token.tUMINUS :
+                return "-@";
+            case '|' :
+                return "|";
+            case '^' :
+                return "^";
+            case '&' :
+                return "&";
+            case Token.tCMP :
+                return "<=>";
+            case '>' :
+                return ">";
+            case Token.tGEQ :
+                return ">=";
+            case '<' :
+                return "<";
+            case Token.tLEQ :
+                return "<=";
+            case Token.tEQ :
+                return "==";
+            case Token.tEQQ :
+                return "===";
+            case Token.tNEQ :
+                return "!=";
+            case Token.tMATCH :
+                return "=~";
+            case Token.tNMATCH :
+                return "!~";
+            case '!' :
+                return "!";
+            case '~' :
+                return "~";
+            case Token.tAREF :
+                return "[]";
+            case Token.tASET :
+                return "[]=";
+            case Token.tLSHFT :
+                return "<<";
+            case Token.tRSHFT :
+                return ">>";
+            case Token.tCOLON2 :
+                return "::";
+            case '`' :
+                return "`";
+            default :
+                rb_bug("Operator: \"" + id + "\" not known.");
+                return null;
+        }
+    }
 
     /**
      *  Copies position info (added to reduce the need for casts).
@@ -136,7 +207,7 @@ public class ParserHelper {
      *  Description of the Method
      */
     void rb_parser_append_print() {
-        evalTree = block_append(evalTree, nf.newFCall(ruby.intern("print"), nf.newArray(nf.newGVar(ruby.intern("$_")))));
+        evalTree = block_append(evalTree, nf.newFCall("print", nf.newArray(nf.newGVar("$_"))));
     }
 
     /**
@@ -147,13 +218,10 @@ public class ParserHelper {
      */
     void rb_parser_while_loop(int chop, int split) {
         if (split != 0) {
-            evalTree =
-                block_append(
-                    nf.newGAsgn(ruby.intern("$F"), nf.newCall(nf.newGVar(ruby.intern("$_")), ruby.intern("split"), null)),
-                    evalTree);
+            evalTree = block_append(nf.newGAsgn("$F", nf.newCall(nf.newGVar("$_"), "split", null)), evalTree);
         }
         if (chop != 0) {
-            evalTree = block_append(nf.newCall(nf.newGVar(ruby.intern("$_")), ruby.intern("chop!"), null), evalTree);
+            evalTree = block_append(nf.newCall(nf.newGVar("$_"), "chop!", null), evalTree);
         }
         evalTree = nf.newOptN(evalTree);
     }
@@ -164,8 +232,8 @@ public class ParserHelper {
      *@return    Description of the Returned Value
      */
     RubyObject rb_backref_get() {
-        if (ruby.getRubyScope().getLocalVars() != null) {
-            return ruby.getRubyScope().getLocalVars(1);
+        if (ruby.getRubyScope().getLocalValues() != null) {
+            return ruby.getRubyScope().getValue(1);
         }
         return ruby.getNil();
     }
@@ -176,10 +244,10 @@ public class ParserHelper {
      *@param  val  Description of Parameter
      */
     void rb_backref_set(RubyObject val) {
-        if (ruby.getRubyScope().getLocalVars() != null) {
-            ruby.getRubyScope().setLocalVars(1, val);
+        if (ruby.getRubyScope().getLocalValues() != null) {
+            ruby.getRubyScope().setValue(1, val);
         } else {
-            special_local_set('~', val);
+            special_local_set("~", val);
         }
     }
 
@@ -189,8 +257,8 @@ public class ParserHelper {
      *@return    Description of the Returned Value
      */
     RubyObject rb_lastline_get() {
-        if (ruby.getRubyScope().getLocalVars() != null) {
-            return ruby.getRubyScope().getLocalVars(0);
+        if (ruby.getRubyScope().getLocalValues() != null) {
+            return ruby.getRubyScope().getValue(0);
         }
         return ruby.getNil();
     }
@@ -201,10 +269,10 @@ public class ParserHelper {
      *@param  val  Description of Parameter
      */
     void rb_lastline_set(RubyObject val) {
-        if (ruby.getRubyScope().getLocalVars() != null) {
-            ruby.getRubyScope().setLocalVars(0, val);
+        if (ruby.getRubyScope().getLocalValues() != null) {
+            ruby.getRubyScope().setValue(0, val);
         } else {
-            special_local_set('_', val);
+            special_local_set("_", val);
         }
     }
 
@@ -214,47 +282,46 @@ public class ParserHelper {
      *@param  id  Description of Parameter
      *@return     Description of the Returned Value
      */
-    public Node gettable(RubyId id) {
-        switch (id.intValue()) {
-            case Token.kSELF :
+    public Node gettable(String id) {
+        if (id.startsWith("~~")) {
+            if (id.endsWith("SELF")) {
                 return nf.newSelf();
-            case Token.kNIL :
+            } else if (id.endsWith("NIL")) {
                 return nf.newNil();
-            case Token.kTRUE :
+            } else if (id.endsWith("TRUE")) {
                 return nf.newTrue();
-            case Token.kFALSE :
+            } else if (id.endsWith("FALSE")) {
                 return nf.newFalse();
-            case Token.k__FILE__ :
+            } else if (id.endsWith("__FILE__")) {
                 return nf.newStr(RubyString.newString(ruby, ruby.getSourceFile()));
-            case Token.k__LINE__ :
+            } else if (id.endsWith("__LINE__")) {
                 return nf.newLit(RubyFixnum.newFixnum(ruby, ruby.getSourceLine()));
-            default :
-                {
-                    if (id.isLocalId()) {
-                        if (dyna_in_block() && RubyVarmap.isDefined(ruby, id)) {
-                            return nf.newDVar(id);
-                        } else if (local_id(id)) {
-                            return nf.newLVar(id);
-                        }
-                        /*
-                         *  method call without arguments
-                         */
-                        return nf.newVCall(id);
-                    } else if (id.isGlobalId()) {
-                        return nf.newGVar(id);
-                    } else if (id.isInstanceId()) {
-                        return nf.newIVar(id);
-                    } else if (id.isConstId()) {
-                        return nf.newConst(id);
-                    } else if (id.isClassId()) {
-                        if (isInSingle()) {
-                            return nf.newCVar2(id);
-                        }
-                        return nf.newCVar(id);
-                    }
+            }
+        } else {
+            if (IdUtil.isLocal(id)) {
+                if (dyna_in_block() && RubyVarmap.isDefined(ruby, id)) {
+                    return nf.newDVar(id);
+                } else if (local_id(id)) {
+                    return nf.newLVar(id);
                 }
+                /*
+                 *  method call without arguments
+                 */
+                return nf.newVCall(id);
+            } else if (IdUtil.isGlobal(id)) {
+                return nf.newGVar(id);
+            } else if (IdUtil.isInstanceVariable(id)) {
+                return nf.newIVar(id);
+            } else if (IdUtil.isConstant(id)) {
+                return nf.newConst(id);
+            } else if (IdUtil.isClassVariable(id)) {
+                if (isInSingle()) {
+                    return nf.newCVar2(id);
+                }
+                return nf.newCVar(id);
+            }
         }
-        rb_bug("invalid id for gettable. id = " + id.intValue() + ", name= " + id.toName());
+        rb_bug("invalid id for gettable. id = " + id);
         return null;
     }
 
@@ -395,7 +462,7 @@ public class ParserHelper {
      *@return       Description of the Returned Value
      */
     public Node call_op(Node recv, int op, int narg, Node arg1) {
-        return call_op(recv, newId(op), narg, arg1);
+        return call_op(recv, getOperatorId(op), narg, arg1);
     }
 
     /**
@@ -407,7 +474,7 @@ public class ParserHelper {
      *@param  arg1  Description of Parameter
      *@return       Description of the Returned Value
      */
-    public Node call_op(Node recv, RubyId id, int narg, Node arg1) {
+    public Node call_op(Node recv, String id, int narg, Node arg1) {
         value_expr(recv);
         if (narg == 1) {
             value_expr(arg1);
@@ -423,7 +490,7 @@ public class ParserHelper {
      *@return        Description of the Returned Value
      */
     public Node match_gen(Node node1, Node node2) {
-        local_cnt('~');
+        local_cnt("~");
 
         switch (node1.getType()) {
             case Constants.NODE_DREGX :
@@ -445,7 +512,7 @@ public class ParserHelper {
                 }
         }
 
-        return nf.newCall(node1, newId(Token.tMATCH), nf.newList(node2));
+        return nf.newCall(node1, "=~", nf.newList(node2));
     }
 
     /**
@@ -455,52 +522,51 @@ public class ParserHelper {
      *@param  val  Description of Parameter
      *@return      Description of the Returned Value
      */
-    public Node assignable(RubyId id, Node val) {
+    public Node assignable(String id, Node val) {
         value_expr(val);
-        switch (id.intValue()) {
-            case Token.kSELF :
+        if (id.startsWith("~~")) {
+            if (id.endsWith("SELF")) {
                 yyerror("Can't change the value of self");
-            case Token.kNIL :
+            } else if (id.endsWith("NIL")) {
                 yyerror("Can't assign to nil");
-            case Token.kTRUE :
+            } else if (id.endsWith("TRUE")) {
                 yyerror("Can't assign to true");
-            case Token.kFALSE :
+            } else if (id.endsWith("FALSE")) {
                 yyerror("Can't assign to false");
-            case Token.k__FILE__ :
+            } else if (id.endsWith("__FILE__")) {
                 yyerror("Can't assign to __FILE__");
-            case Token.k__LINE__ :
+            } else if (id.endsWith("__LINE__")) {
                 yyerror("Can't assign to __LINE__");
-            default :
-                {
-                    if (id.isLocalId()) {
-                        if (RubyVarmap.isCurrent(ruby, id)) {
-                            return nf.newDAsgnCurr(id, val);
-                        } else if (RubyVarmap.isDefined(ruby, id)) {
-                            return nf.newDAsgn(id, val);
-                        } else if (local_id(id) || !dyna_in_block()) {
-                            return nf.newLAsgn(id, val);
-                        } else {
-                            RubyVarmap.push(ruby, id, ruby.getNil());
-                            return nf.newDAsgnCurr(id, val);
-                        }
-                    } else if (id.isGlobalId()) {
-                        return nf.newGAsgn(id, val);
-                    } else if (id.isInstanceId()) {
-                        return nf.newIAsgn(id, val);
-                    } else if (id.isConstId()) {
-                        if (isInDef() || isInSingle()) {
-                            yyerror("dynamic constant assignment");
-                        }
-                        return nf.newCDecl(id, val);
-                    } else if (id.isClassId()) {
-                        if (isInSingle()) {
-                            return nf.newCVAsgn(id, val);
-                        }
-                        return nf.newCVDecl(id, val);
-                    } else {
-                        rb_bug("bad id for variable");
-                    }
+            }
+        } else {
+            if (IdUtil.isLocal(id)) {
+                if (RubyVarmap.isCurrent(ruby, id)) {
+                    return nf.newDAsgnCurr(id, val);
+                } else if (RubyVarmap.isDefined(ruby, id)) {
+                    return nf.newDAsgn(id, val);
+                } else if (local_id(id) || !dyna_in_block()) {
+                    return nf.newLAsgn(id, val);
+                } else {
+                    RubyVarmap.push(ruby, id, ruby.getNil());
+                    return nf.newDAsgnCurr(id, val);
                 }
+            } else if (IdUtil.isGlobal(id)) {
+                return nf.newGAsgn(id, val);
+            } else if (IdUtil.isInstanceVariable(id)) {
+                return nf.newIAsgn(id, val);
+            } else if (IdUtil.isConstant(id)) {
+                if (isInDef() || isInSingle()) {
+                    yyerror("dynamic constant assignment");
+                }
+                return nf.newCDecl(id, val);
+            } else if (IdUtil.isClassVariable(id)) {
+                if (isInSingle()) {
+                    return nf.newCVAsgn(id, val);
+                }
+                return nf.newCVDecl(id, val);
+            } else {
+                rb_bug("bad id for variable");
+            }
         }
         return null;
     }
@@ -514,7 +580,7 @@ public class ParserHelper {
      */
     public Node aryset(Node recv, Node idx) {
         value_expr(recv);
-        return nf.newCall(recv, newId(Token.tASET), idx);
+        return nf.newCall(recv, "[]=", idx);
     }
 
     /**
@@ -524,10 +590,10 @@ public class ParserHelper {
      *@param  id    Description of Parameter
      *@return       Description of the Returned Value
      */
-    public Node attrset(Node recv, RubyId id) {
+    public Node attrset(Node recv, String id) {
         value_expr(recv);
 
-        return nf.newCall(recv, id.toAttrSetId(), null);
+        return nf.newCall(recv, id + "=", null);
     }
 
     /**
@@ -682,32 +748,25 @@ public class ParserHelper {
                                 node = node.getNext();
                                 continue;*/
             case Constants.NODE_CALL :
-                switch (node.getMId().intValue()) {
-                    case '+' :
-                    case '-' :
-                    case '*' :
-                    case '/' :
-                    case '%' :
-                    case Token.tPOW :
-                    case Token.tUPLUS :
-                    case Token.tUMINUS :
-                    case '|' :
-                    case '^' :
-                    case '&' :
-                    case Token.tCMP :
-                    case '>' :
-                    case Token.tGEQ :
-                    case '<' :
-                    case Token.tLEQ :
-                    case Token.tEQ :
-                    case Token.tNEQ :
-                        /*
-                         *  case tAREF:
-                         *  case tRSHFT:
-                         *  case tCOLON2:
-                         *  case tCOLON3: FIX 1.6.5
-                         */
-                        useless = node.getMId().toName();
+                if (node.getMId().equals("+") ||
+                    node.getMId().equals("-") ||
+                    node.getMId().equals("*") ||
+                    node.getMId().equals("/") ||
+                    node.getMId().equals("%") ||
+                    node.getMId().equals("**") ||
+                    node.getMId().equals("+@") ||
+                    node.getMId().equals("-@") ||
+                    node.getMId().equals("|") ||
+                    node.getMId().equals("^") ||
+                    node.getMId().equals("&") ||
+                    node.getMId().equals("<=>") ||
+                    node.getMId().equals(">") ||
+                    node.getMId().equals(">=") ||
+                    node.getMId().equals("<") ||
+                    node.getMId().equals("<=") ||
+                    node.getMId().equals("==") ||
+                    node.getMId().equals("!=")) {
+                        useless = node.getMId();
                         break;
                 }
                 break;
@@ -893,7 +952,7 @@ public class ParserHelper {
             node = node.getNextNode();
         }
         if (type == Constants.NODE_LIT && node.getLiteral() instanceof RubyFixnum) {
-            return call_op(node, Token.tEQ, 1, nf.newGVar(ruby.intern("$.")));
+            return call_op(node, Token.tEQ, 1, nf.newGVar("$."));
         }
         return node;
     }
@@ -920,9 +979,9 @@ public class ParserHelper {
             case Constants.NODE_DREGX :
             case Constants.NODE_DREGX_ONCE :
                 warning_unless_e_option("regex literal in condition");
-                local_cnt('_');
-                local_cnt('~');
-                return nf.newMatch2(node, nf.newGVar(ruby.intern("$_")));
+                local_cnt("_");
+                local_cnt("~");
+                return nf.newMatch2(node, nf.newGVar("$_"));
             case Constants.NODE_DOT2 :
             case Constants.NODE_DOT3 :
                 node.setBeginNode(range_op(node.getBeginNode(), logop));
@@ -943,8 +1002,8 @@ public class ParserHelper {
                     // +++
                     // node.nd_set_type(Constants.NODE_MATCH);
                     // ---
-                    local_cnt('_');
-                    local_cnt('~');
+                    local_cnt("_");
+                    local_cnt("~");
                 }
         }
         return node;
@@ -1040,7 +1099,7 @@ public class ParserHelper {
      *@param  a  Description of Parameter
      *@return    Description of the Returned Value
      */
-    public Node new_call(Node r, RubyId m, Node args) {
+    public Node new_call(Node r, String m, Node args) {
         if (args != null && args instanceof BlockPassNode) {
             args.setIterNode(nf.newCall(r, m, args.getHeadNode()));
             return args;
@@ -1055,7 +1114,7 @@ public class ParserHelper {
      *@param  a  Description of Parameter
      *@return    Description of the Returned Value
      */
-    public Node new_fcall(RubyId mid, Node args) {
+    public Node new_fcall(String mid, Node args) {
         if (args != null && args instanceof BlockPassNode) {
             args.setIterNode(nf.newFCall(mid, args.getHeadNode()));
             return args;
@@ -1082,11 +1141,13 @@ public class ParserHelper {
      */
     public void local_push() {
         LocalVars local = new LocalVars();
+        
         local.prev = lvtbl;
-        local.nofree = 0;
+        local.nofree = false;
         local.cnt = 0;
         local.tbl = null;
         local.dlev = 0;
+        
         lvtbl = local;
     }
 
@@ -1096,14 +1157,11 @@ public class ParserHelper {
     public void local_pop() {
         LocalVars local = lvtbl.prev;
 
-        if (lvtbl.tbl != null) {
-            if (lvtbl.nofree == 0) {
-                // free(lvtbl.tbl);
-            } else {
-                lvtbl.tbl.set(0, newId(lvtbl.cnt));
+        /*if (lvtbl.tbl != null) {
+            if (lvtbl.nofree) {
+                lvtbl.tbl.setCount(lvtbl.cnt);
             }
-        }
-        // free(lvtbl);
+        }*/
         lvtbl = local;
     }
 
@@ -1112,8 +1170,8 @@ public class ParserHelper {
      *
      *@return    Description of the Returned Value
      */
-    public RubyIdPointer local_tbl() {
-        lvtbl.nofree = 1;
+    public ExtendedList local_tbl() {
+        lvtbl.nofree = true;
         return lvtbl.tbl;
     }
 
@@ -1123,16 +1181,16 @@ public class ParserHelper {
      *@param  id  Description of Parameter
      *@return     Description of the Returned Value
      */
-    private int local_append(RubyId id) {
+    private int local_append(String id) {
         if (lvtbl.tbl == null) {
-            lvtbl.tbl = new RubyIdPointer(4);
-            lvtbl.tbl.set(0, newId(0));
-            lvtbl.tbl.set(1, newId('_'));
-            lvtbl.tbl.set(2, newId('~'));
+            lvtbl.tbl = new ExtendedList();
+            // lvtbl.tbl.setCount(0);
+            lvtbl.tbl.add("_");
+            lvtbl.tbl.add("~");
             lvtbl.cnt = 2;
-            if (id.intValue() == '_') {
+            if (id.equals("_")) {
                 return 0;
-            } else if (id.intValue() == '~') {
+            } else if (id.equals("~")) {
                 return 1;
             }
         } else {
@@ -1141,7 +1199,7 @@ public class ParserHelper {
             lvtbl.tbl = ntbl;*/
         }
 
-        lvtbl.tbl.set(lvtbl.cnt + 1, id);
+        lvtbl.tbl.add(id);
         return lvtbl.cnt++;
     }
 
@@ -1151,38 +1209,38 @@ public class ParserHelper {
      *@param  id  Description of Parameter
      *@return     Description of the Returned Value
      */
-    public int local_cnt(int id) {
-        return local_cnt(newId(id));
-    }
-
-    /**
-     *  Description of the Method
-     *
-     *@param  id  Description of Parameter
-     *@return     Description of the Returned Value
-     */
-    public int local_cnt(RubyId id) {
+    public int local_cnt(String id) {
         if (id == null) {
             return lvtbl.cnt;
+        } else if (lvtbl.tbl == null) {
+            return local_append(id);
         }
 
-        for (int cnt = 1, max = lvtbl.cnt + 1; cnt < max; cnt++) {
-            if (lvtbl.tbl.get(cnt) == id) {
-                return cnt - 1;
+        for (int i = 0; i < lvtbl.tbl.size(); i++) {
+            if (id.equals(lvtbl.tbl.get(i))) {
+                return i;
             }
         }
+
         return local_append(id);
     }
 
-    public boolean local_id(RubyId id) {
-        int i;
-        int max;
+    public boolean local_id(String id) {
+        // int i;
+        // int max;
 
-        if (lvtbl == null) {
+        if (lvtbl == null || lvtbl.tbl == null) {
             return false;
         }
+        /*
         for (i = 3, max = lvtbl.cnt + 1; i < max; i++) {
-            if (lvtbl.tbl.get(i) == id) {
+            if (lvtbl.tbl.get(i).equals(id)) {
+                return true;
+            }
+        }
+        */
+        for (int i = 0; i < lvtbl.tbl.size(); i++) {
+            if (id.equals(lvtbl.tbl.get(i))) {
                 return true;
             }
         }
@@ -1194,11 +1252,10 @@ public class ParserHelper {
      */
     public void top_local_init() {
         local_push();
-        lvtbl.cnt = ruby.getRubyScope().getLocalTbl() != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
+        lvtbl.cnt = ruby.getRubyScope().getLocalNames() != null ? ruby.getRubyScope().getLocalNames().size() : 0;
         if (lvtbl.cnt > 0) {
-            lvtbl.tbl = new RubyIdPointer(lvtbl.cnt + 3);
-            // System.arraycopy(lvtbl.tbl, 0, ruby.getRubyScope().getLocalTbl(), 0, lvtbl.cnt + 1);
-            ruby.getRubyScope().setLocalTbl(lvtbl.tbl);
+            lvtbl.tbl = new ExtendedList(lvtbl.cnt + 2, null);
+            ruby.getRubyScope().setLocalNames(lvtbl.tbl);
         } else {
             lvtbl.tbl = null;
         }
@@ -1217,42 +1274,34 @@ public class ParserHelper {
         int i;
 
         if (len > 0) {
-            i =
-                ruby.getRubyScope().getLocalTbl() != null
-                    && ruby.getRubyScope().getLocalTbl(0) != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
+            i = ruby.getRubyScope().getLocalNames() != null ? ruby.getRubyScope().getLocalNames().size() : 0;
 
             if (i < len) {
                 if (i == 0 || (ruby.getRubyScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {
-                    RubyPointer vars = new RubyPointer(ruby.getNil(), len + 1);
-                    // ShiftableList vars = new ShiftableList(new RubyObject[len + 1]);
-                    int vi = 0;
-                    if (ruby.getRubyScope().getLocalVars() != null) {
-                        vars.set(0, ruby.getRubyScope().getLocalVars(-1));
-                        vars.inc();
-                        vars.set(ruby.getRubyScope().getLocalVars(), i);
-                        // vars.fill(ruby.getNil(), i, len - i);
-                    } else {
+                    ExtendedList values = new ExtendedList(len + 1, ruby.getNil());
+                    //int vi = 0;
+                    if (ruby.getRubyScope().getLocalValues() != null) {
+                        // vars.set(0, ruby.getRubyScope().getLocalVars(-1));
+                        // vars.inc();
+                        values.copy(ruby.getRubyScope().getLocalValues(), i);
+                    } /*else {
                         vars.set(0, null);
                         vars.inc(1);
-                        // vars.fill(ruby.getNil(), len);
-                    }
-                    ruby.getRubyScope().setLocalVars(vars);
+                    }*/
+                    ruby.getRubyScope().setLocalValues(values);
                     ruby.getRubyScope().setFlags(ruby.getRubyScope().getFlags() | RubyScope.SCOPE_MALLOC);
                 } else {
-                    Pointer vars = ruby.getRubyScope().getLocalVars().getPointer(-1);
-
-                    // vars.setSize(len + 1);
-
-                    ruby.getRubyScope().setLocalVars((RubyPointer) vars.getPointer(1));
-                    // ruby.getRubyScope().getLocalVars().fill(ruby.getNil(), i, len - i);
+                    ExtendedList values = new ExtendedList(len/* + 1*/, ruby.getNil());
+                    values.copy(ruby.getRubyScope().getLocalValues(), values.size());
+                    ruby.getRubyScope().setLocalValues(values);
                 }
 
-                if (ruby.getRubyScope().getLocalTbl() != null && ruby.getRubyScope().getLocalVars(-1) == null) {
-                    ruby.getRubyScope().setLocalTbl(null);
-                }
+                // if (ruby.getRubyScope().getLocalNames() != null && ruby.getRubyScope().getLocalVars(-1) == null) {
+                //    ruby.getRubyScope().setLocalNames(null);
+                // }
 
-                ruby.getRubyScope().setLocalVars(-1, null);
-                ruby.getRubyScope().setLocalTbl(local_tbl());
+                // ruby.getRubyScope().setLocalVars(-1, null);
+                ruby.getRubyScope().setLocalNames(local_tbl());
             }
         }
         local_pop();
@@ -1297,11 +1346,11 @@ public class ParserHelper {
      *@param  c    Description of Parameter
      *@param  val  Description of Parameter
      */
-    private void special_local_set(char c, RubyObject val) {
+    private void special_local_set(String c, RubyObject val) {
         top_local_init();
         int cnt = local_cnt(c);
         top_local_setup();
-        ruby.getRubyScope().setLocalVars(cnt, val);
+        ruby.getRubyScope().setValue(cnt, val);
     }
 
     /** Getter for property evalTree.
@@ -1437,14 +1486,14 @@ public class ParserHelper {
     /** Getter for property curMid.
      * @return Value of property curMid.
      */
-    public RubyId getCurMid() {
+    public String getCurMid() {
         return curMid;
     }
 
     /** Setter for property curMid.
      * @param curMid New value of property curMid.
      */
-    public void setCurMid(RubyId curMid) {
+    public void setCurMid(String curMid) {
         this.curMid = curMid;
     }
 
@@ -1525,8 +1574,8 @@ public class ParserHelper {
      *@created    4. Oktober 2001
      */
     private class LocalVars {
-        RubyIdPointer tbl;
-        int nofree;
+        ExtendedList tbl;
+        boolean nofree;
         int cnt;
         int dlev;
         LocalVars prev;

@@ -41,7 +41,7 @@ import org.jruby.util.*;
  * @version 
  */
 public class IVarNode extends Node implements CallableNode {
-    public IVarNode(RubyId vId) {
+    public IVarNode(String vId) {
         super(Constants.NODE_IVAR, vId, null, null);
     }
     
@@ -49,7 +49,7 @@ public class IVarNode extends Node implements CallableNode {
         return self.getInstanceVar(getVId());
     }
     
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
 }

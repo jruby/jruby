@@ -63,7 +63,7 @@ public class ForNode extends Node {
                 
                 ruby.setSourceFile(file);
                 ruby.setSourceLine(line);
-                result = recv.getRubyClass().call(recv, ruby.intern("each"), null, 0);
+                result = recv.getRubyClass().call(recv, "each", null, 0);
                 break;
             } catch (RetryException rExcptn) {
             } catch (ReturnException rExcptn) {

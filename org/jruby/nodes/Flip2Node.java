@@ -50,9 +50,9 @@ public class Flip2Node extends Node {
          *    rb_bug("unexpected local variable");
          */
         
-        if (ruby.getRubyScope().getLocalVars(getCount()).isFalse()) {
+        if (ruby.getRubyScope().getValue(getCount()).isFalse()) {
             if (getBeginNode().eval(ruby, self).isTrue()) {
-                ruby.getRubyScope().setLocalVars(getCount(), getEndNode().eval(ruby, self).isTrue() ?
+                ruby.getRubyScope().setValue(getCount(), getEndNode().eval(ruby, self).isTrue() ?
                                                      ruby.getFalse() : ruby.getTrue());
                 return ruby.getTrue();
             } else {
@@ -60,7 +60,7 @@ public class Flip2Node extends Node {
             }
         } else {
             if (getEndNode().eval(ruby, self).isTrue()) {
-                ruby.getRubyScope().setLocalVars(getCount(), ruby.getFalse());
+                ruby.getRubyScope().setValue(getCount(), ruby.getFalse());
             }
             return ruby.getTrue();
         }

@@ -39,5 +39,5 @@ import org.jruby.util.*;
  * @version 
  */
 public interface CallableNode {
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper);
+    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper);
 }

@@ -49,7 +49,7 @@ public class Match3Node extends Node {
         if (l instanceof RubyString) {
             return ((RubyRegexp)r).match(l);
         } else {
-            return l.funcall(ruby.intern("=~"), r);
+            return l.funcall("=~", r);
         }
     }
 }

@@ -1053,14 +1053,14 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     if ((c = nextc()) == '*') {
                         ph.setLexState(LexState.EXPR_BEG);
                         if (nextc() == '=') {
-                            yyVal = ph.newId(Token.tPOW);
+                            yyVal = "**"; // ph.newId(Token.tPOW);
                             return Token.tOP_ASGN;
                         }
                         pushback(c);
                         return Token.tPOW;
                     }
                     if (c == '=') {
-                        yyVal = ph.newId('*');
+                        yyVal = "*"; // ph.newId('*');
                         ph.setLexState(LexState.EXPR_BEG);
                         return Token.tOP_ASGN;
                     }
@@ -1152,7 +1152,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     if (c == '<') {
                         if (nextc() == '=') {
-                            yyVal = ph.newId(Token.tLSHFT);
+                            yyVal = "<<"; // ph.newId(Token.tLSHFT);
                             return Token.tOP_ASGN;
                         }
                         pushback(c);
@@ -1167,7 +1167,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     if (c == '>') {
                         if ((c = nextc()) == '=') {
-                            yyVal = ph.newId(Token.tRSHFT);
+                            yyVal = ">>"; //ph.newId(Token.tRSHFT);
                             return Token.tOP_ASGN;
                         }
                         pushback(c);
@@ -1213,13 +1213,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     if ((c = nextc()) == '&') {
                         ph.setLexState(LexState.EXPR_BEG);
                         if ((c = nextc()) == '=') {
-                            yyVal = ph.newId(Token.tANDOP);
+                            yyVal = "&&"; // ph.newId(Token.tANDOP);
                             return Token.tOP_ASGN;
                         }
                         pushback(c);
                         return Token.tANDOP;
                     } else if (c == '=') {
-                        yyVal = ph.newId('&');
+                        yyVal = "&"; //ph.newId('&');
                         ph.setLexState(LexState.EXPR_BEG);
                         return Token.tOP_ASGN;
                     }
@@ -1238,13 +1238,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     ph.setLexState(LexState.EXPR_BEG);
                     if ((c = nextc()) == '|') {
                         if ((c = nextc()) == '=') {
-                            yyVal = ph.newId(Token.tOROP);
+                            yyVal = "||"; // ph.newId(Token.tOROP);
                             return Token.tOP_ASGN;
                         }
                         pushback(c);
                         return Token.tOROP;
                     } else if (c == '=') {
-                        yyVal = ph.newId('|');
+                        yyVal = "|"; //ph.newId('|');
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
@@ -1260,7 +1260,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     if (c == '=') {
                         ph.setLexState(LexState.EXPR_BEG);
-                        yyVal = ph.newId('+');
+                        yyVal = "+"; //ph.newId('+');
                         return Token.tOP_ASGN;
                     }
                     if (ph.getLexState() == LexState.EXPR_BEG
@@ -1291,7 +1291,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     if (c == '=') {
                         ph.setLexState(LexState.EXPR_BEG);
-                        yyVal = ph.newId('-');
+                        yyVal = "-"; // ph.newId('-');
                         return Token.tOP_ASGN;
                     }
                     if (ph.getLexState() == LexState.EXPR_BEG
@@ -1373,7 +1373,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     if ((c = nextc()) == '=') {
                         ph.setLexState(LexState.EXPR_BEG);
-                        yyVal = ph.newId('/');
+                        yyVal = "/"; // ph.newId('/');
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
@@ -1388,7 +1388,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 case '^' :
                     ph.setLexState(LexState.EXPR_BEG);
                     if ((c = nextc()) == '=') {
-                        yyVal = ph.newId('^');
+                        yyVal = "^"; //ph.newId('^');
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
@@ -1496,7 +1496,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             }
                         }
                         if ((c = nextc()) == '=') {
-                            yyVal = ph.newId('%');
+                            yyVal = "%"; //ph.newId('%');
                             return Token.tOP_ASGN;
                         }
                         if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
@@ -1524,7 +1524,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             c = '_';
                             // fall through
                         case '~' : // $~: match-data
-                            ph.local_cnt(c);
+                            ph.local_cnt(String.valueOf(c));
                             // fall through
                         case '*' : // $*: argv
                         case '$' : // $$: pid
@@ -1544,7 +1544,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             tokadd('$');
                             tokadd(c);
                             tokfix();
-                            yyVal = ruby.intern(tok());
+                            yyVal = tok(); // ruby.intern(tok());
                             return Token.tGVAR;
                         case '-' :
                             tokadd('$');
@@ -1552,7 +1552,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             c = nextc();
                             tokadd(c);
                             tokfix();
-                            yyVal = ruby.intern(tok());
+                            yyVal = tok(); // ruby.intern(tok());
                             /* xxx shouldn't check if valid option variable */
                             return Token.tGVAR;
                         case '&' : // $&: last match
@@ -1654,7 +1654,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             int state = ph.getLexState();
                             ph.setLexState(kw.state);
                             if (state == LexState.EXPR_FNAME) {
-                                yyVal = ruby.intern(kw.name);
+                                yyVal = kw.name; // ruby.intern(kw.name);
                             }
                             if (kw.id0 == Token.kDO) {
                                 if (COND_P()) {
@@ -1706,7 +1706,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             }
             tokfix();
 
-            yyVal = ruby.intern(tok());
+            yyVal = tok(); // ruby.intern(tok());
             return result;
         }
     }

@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class ClassNode extends Node {
-    public ClassNode(RubyId classNameId, Node bodyNode, Node superNode) {
+    public ClassNode(String classNameId, Node bodyNode, Node superNode) {
         super(Constants.NODE_CLASS, classNameId, bodyNode, superNode);
     }
     
@@ -64,7 +64,7 @@ public class ClassNode extends Node {
         }
         if (rubyClass != null) {
             if (!rubyClass.isClass()) {
-                throw new RubyTypeException(ruby, getClassNameId().toName() + " is not a class");
+                throw new RubyTypeException(ruby, getClassNameId() + " is not a class");
             }
             if (superClass != null) {
                 RubyModule tmp = rubyClass.getSuperClass();
@@ -80,9 +80,9 @@ public class ClassNode extends Node {
                     if (superClass == null) {
                         superClass = ruby.getClasses().getObjectClass();
                     }
-                    rubyClass = ruby.defineClassId(getClassNameId(), (RubyClass)superClass);
+                    rubyClass = ruby.defineClass(getClassNameId(), (RubyClass)superClass);
                     ruby.getRubyClass().setConstant(getClassNameId(), rubyClass);
-                    rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId().toName());
+                    rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId());
                     // end goto
                 }
             }
@@ -95,9 +95,9 @@ public class ClassNode extends Node {
             if (superClass == null) {
                 superClass = ruby.getClasses().getObjectClass();
             }
-            rubyClass = ruby.defineClassId(getClassNameId(), (RubyClass)superClass);
+            rubyClass = ruby.defineClass(getClassNameId(), (RubyClass)superClass);
             ruby.getRubyClass().setConstant(getClassNameId(), rubyClass);
-            rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId().toName());
+            rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId());
         }
         if (ruby.getWrapper() != null) {
             rubyClass.getSingletonClass().includeModule(ruby.getWrapper());

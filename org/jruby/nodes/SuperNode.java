@@ -51,7 +51,7 @@ public class SuperNode extends Node {
         
         if (ruby.getRubyFrame().getLastClass() == null) {
             throw new RubyNameException(ruby, "superclass method '" + 
-                    ruby.getRubyFrame().getLastFunc().toName() + "' disabled");
+                    ruby.getRubyFrame().getLastFunc() + "' disabled");
         }
         
         RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);

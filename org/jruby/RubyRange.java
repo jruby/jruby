@@ -47,7 +47,7 @@ public class RubyRange extends RubyObject {
     public void init(RubyObject begin, RubyObject end, RubyBoolean exclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
             try {
-                begin.funcall(getRuby().intern("<=>"), end);
+                begin.funcall("<=>", end);
             } catch (RaiseException rExcptn) {
                 throw new RubyArgumentException(getRuby(), "bad value for range");
             }
@@ -148,7 +148,7 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyObject initialize(RubyObject[] args) {
-        if (isInstanceVarDefined(getRuby().intern("begin"))) {
+        if (isInstanceVarDefined("begin")) {
             throw new RubyNameException(getRuby(), "'initialize' called twice.");
         }
         if (args.length == 3) {
@@ -170,8 +170,8 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyString inspect() {
-        RubyString begStr = (RubyString) getInstanceVar("begin").funcall(getRuby().intern("to_s"));
-        RubyString endStr = (RubyString) getInstanceVar("end").funcall(getRuby().intern("to_s"));
+        RubyString begStr = (RubyString) getInstanceVar("begin").funcall("to_s");
+        RubyString endStr = (RubyString) getInstanceVar("end").funcall("to_s");
 
         begStr.cat(getInstanceVar("excl").isTrue() ? "..." : "..");
         begStr.concat(endStr);
@@ -193,7 +193,7 @@ public class RubyRange extends RubyObject {
 
         long size = 0;
 
-        if (begin.funcall(getRuby().intern(">"), end).isTrue()) {
+        if (begin.funcall(">", end).isTrue()) {
             return new RubyFixnum(getRuby(), 0);
         }
 
@@ -241,13 +241,13 @@ public class RubyRange extends RubyObject {
                 }
             }
             return getRuby().getFalse();
-        } else if (beg.funcall(getRuby().intern("<="), obj).isTrue()) {
+        } else if (beg.funcall("<=", obj).isTrue()) {
             if (excl) {
-                if (end.funcall(getRuby().intern(">"), obj).isTrue()) {
+                if (end.funcall(">", obj).isTrue()) {
                     return getRuby().getTrue();
                 }
             } else {
-                if (end.funcall(getRuby().intern(">="), obj).isTrue()) {
+                if (end.funcall(">=", obj).isTrue()) {
                     return getRuby().getTrue();
                 }
             }
@@ -275,30 +275,30 @@ public class RubyRange extends RubyObject {
             ((RubyString) begin).upto(end, exclusive);
         } else if (begin.kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
             if (!exclusive) {
-                end = end.funcall(getRuby().intern("+"), RubyFixnum.one(getRuby()));
+                end = end.funcall("+", RubyFixnum.one(getRuby()));
             }
-            while (begin.funcall(getRuby().intern("<"), end).isTrue()) {
+            while (begin.funcall("<", end).isTrue()) {
                 getRuby().yield(begin);
-                begin = begin.funcall(getRuby().intern("+"), RubyFixnum.one(getRuby()));
+                begin = begin.funcall("+", RubyFixnum.one(getRuby()));
             }
         } else {
             RubyObject v = begin;
 
             if (exclusive) {
-                while (v.funcall(getRuby().intern("<"), end).isTrue()) {
+                while (v.funcall("<", end).isTrue()) {
                     if (v.equals(end)) {
                         break;
                     }
                     getRuby().yield(v);
-                    v = v.funcall(getRuby().intern("succ"));
+                    v = v.funcall("succ");
                 }
             } else {
-                while (v.funcall(getRuby().intern("<="), end).isTrue()) {
+                while (v.funcall("<=", end).isTrue()) {
                     getRuby().yield(v);
                     if (v.equals(end)) {
                         break;
                     }
-                    v = v.funcall(getRuby().intern("succ"));
+                    v = v.funcall("succ");
                 }
             }
         }

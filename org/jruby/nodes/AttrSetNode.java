@@ -42,9 +42,7 @@ import org.jruby.util.*;
  * @version
  */
 public class AttrSetNode extends Node implements CallableNode {
-    private RubyId vid;
-    
-    public AttrSetNode(RubyId vId) {
+    public AttrSetNode(String vId) {
         super(Constants.NODE_ATTRSET, vId, null, null);
     }
     
@@ -55,7 +53,7 @@ public class AttrSetNode extends Node implements CallableNode {
         return self.setInstanceVar(getVId(), (RubyObject)ruby.getRubyFrame().getArgs().get(0));
     }
     
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
 }

@@ -41,7 +41,7 @@ import org.jruby.runtime.*;
  */
 public class UndefNode extends Node {
     
-    public UndefNode(RubyId mId) {
+    public UndefNode(String mId) {
         super(Constants.NODE_UNDEF, null, mId, null);
     }
     

@@ -65,7 +65,7 @@ public class RubyComparable {
             return ruby.getTrue();
         } else {
             try {
-                RubyFixnum fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), other);
+                RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
                 return RubyBoolean.newBoolean(ruby, fn.getValue() == 0);
             } catch (RubyNameException rnExcptn) {
                 return ruby.getFalse();
@@ -74,32 +74,32 @@ public class RubyComparable {
     }
 
     public static RubyBoolean op_gt(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), other);
+        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
         return RubyBoolean.newBoolean(ruby, fn.getValue() > 0);
     }
 
     public static RubyBoolean op_ge(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), other);
+        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
         return RubyBoolean.newBoolean(ruby, fn.getValue() >= 0);
     }
 
     public static RubyBoolean op_lt(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), other);
+        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
         return RubyBoolean.newBoolean(ruby, fn.getValue() < 0);
     }
 
     public static RubyBoolean op_le(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), other);
+        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
         return RubyBoolean.newBoolean(ruby, fn.getValue() <= 0);
     }
 
     public static RubyBoolean between_p(Ruby ruby, RubyObject recv, RubyObject arg1, RubyObject arg2) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), arg1);
+        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", arg1);
         if (fn.getValue() < 0) {
             return ruby.getFalse();
         }
 
-        fn = (RubyFixnum) recv.funcall(ruby.intern("<=>"), arg2);
+        fn = (RubyFixnum) recv.funcall("<=>", arg2);
         if (fn.getValue() > 0) {
             return ruby.getFalse();
         }

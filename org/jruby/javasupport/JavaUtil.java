@@ -133,7 +133,7 @@ public class JavaUtil {
             if (rubyObject instanceof RubyString) {
                 return ((RubyString)rubyObject).getValue();
             } else {
-                return ((RubyString)rubyObject.funcall(ruby.intern("to_s"))).getValue();
+                return ((RubyString)rubyObject.funcall("to_s")).getValue();
             }
         }
         return ((RubyJavaObject)rubyObject).getValue();

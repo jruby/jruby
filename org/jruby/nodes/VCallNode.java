@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class VCallNode extends Node {
-    public VCallNode(RubyId mId) {
+    public VCallNode(String mId) {
         super(Constants.NODE_VCALL, null, mId, null);
     }
     

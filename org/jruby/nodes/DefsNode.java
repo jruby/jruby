@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class DefsNode extends Node {
-    public DefsNode(Node recvNode, RubyId mId, Node defnNode) {
+    public DefsNode(Node recvNode, String mId, Node defnNode) {
         super(Constants.NODE_DEFS, recvNode, mId, defnNode);
     }
     
@@ -75,7 +75,7 @@ public class DefsNode extends Node {
             rubyClass.addMethod(getMId(), defn, Constants.NOEX_PUBLIC | 
                     (body != null ? body.getNoex() & Constants.NOEX_UNDEF : 0));
             // rb_clear_cache_by_id(node.nd_mid());
-            recv.funcall(ruby.intern("singleton_method_added"), getMId().toSymbol());
+            recv.funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
         }
         return ruby.getNil();
     }

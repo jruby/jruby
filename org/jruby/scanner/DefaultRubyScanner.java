@@ -30,7 +30,7 @@ public class DefaultRubyScanner implements IRubyScanner {
                     return new StringToken(TokenTypes.TOKEN_LINE_COMMENT, comment);
                 case '=' :
                     char next = cs.readChar();
-                    if (cs.getColumn() == 2 && ScannerUtil.startsWithWord(cs, cmtBegin)) {
+                    if (cs.getColumn() == 2 && next == 'b' && ScannerUtil.startsWithWord(cs, cmtBegin)) {
                         ScannerUtil.skipLine(cs);
                         cs.skipEol();
 

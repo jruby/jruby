@@ -53,7 +53,7 @@ public class ZSuperNode extends Node implements CallableNode {
         
         if (ruby.getRubyFrame().getLastClass() == null) {
             throw new RubyNameException(ruby, "superclass method '" + 
-                    ruby.getRubyFrame().getLastFunc().toName() + "' disabled");
+                    ruby.getRubyFrame().getLastFunc() + "' disabled");
         }
         
         RubyPointer args = (RubyPointer)ruby.getRubyFrame().getArgs();
@@ -69,7 +69,7 @@ public class ZSuperNode extends Node implements CallableNode {
         return result;
     }
     
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
 }

@@ -42,7 +42,7 @@ import org.jruby.util.*;
  * @version
  */
 public class CallNode extends Node implements AssignableNode {
-    public CallNode(Node recvNode, RubyId mId, Node argsNode) {
+    public CallNode(Node recvNode, String mId, Node argsNode) {
         super(Constants.NODE_CALL, recvNode, mId, argsNode);
     }
     

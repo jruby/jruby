@@ -37,6 +37,7 @@ import org.jruby.exceptions.*;
 import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.util.collections.*;
 
 /**
  *
@@ -47,8 +48,8 @@ public class ScopeNode extends Node implements CallableNode {
     // private RubyPointer vars = null;
     // private RubyPointer localVarsList = null;
 
-    public ScopeNode(RubyIdPointer idTable, CRefNode refValue, Node nextNode) {
-        super(Constants.NODE_SCOPE, idTable, refValue, nextNode);
+    public ScopeNode(ExtendedList table, CRefNode refValue, Node nextNode) {
+        super(Constants.NODE_SCOPE, table, refValue, nextNode);
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
@@ -67,15 +68,15 @@ public class ScopeNode extends Node implements CallableNode {
         }
 
         if (getTable() != null) {
-            RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
-            vars.set(0, this);
-            vars.inc();
+            // RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
+            // vars.set(0, this);
+            // vars.inc();
 
-            ruby.getRubyScope().setLocalVars(vars);
-            ruby.getRubyScope().setLocalTbl(getTable());
+            ruby.getRubyScope().setLocalValues(new ExtendedList(getTable().size(), ruby.getNil()));
+            ruby.getRubyScope().setLocalNames(getTable());
         } else {
-            ruby.getRubyScope().setLocalVars(null);
-            ruby.getRubyScope().setLocalTbl(null);
+            ruby.getRubyScope().setLocalValues(null);
+            ruby.getRubyScope().setLocalNames(null);
         }
 
         RubyObject result = getNextNode().eval(ruby, self);
@@ -109,15 +110,15 @@ public class ScopeNode extends Node implements CallableNode {
         RubyVarmap.push(ruby);
 
         if (getTable() != null) {
-            RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
-            vars.set(0, this);
-            vars.inc();
+            // RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
+            // vars.set(0, this);
+            // vars.inc();
 
-            ruby.getRubyScope().setLocalVars(vars);
-            ruby.getRubyScope().setLocalTbl(getTable());
+            ruby.getRubyScope().setLocalValues(new ExtendedList(getTable().size(), ruby.getNil()));
+            ruby.getRubyScope().setLocalNames(getTable());
         } else {
-            ruby.getRubyScope().setLocalVars(null);
-            ruby.getRubyScope().setLocalTbl(null);
+            ruby.getRubyScope().setLocalValues(null);
+            ruby.getRubyScope().setLocalNames(null);
         }
 
         // +++
@@ -158,7 +159,7 @@ public class ScopeNode extends Node implements CallableNode {
         return result;
     }
 
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         if (args == null) {
             args = new RubyPointer();
         }
@@ -166,7 +167,7 @@ public class ScopeNode extends Node implements CallableNode {
 
         // RubyPointer argsList = new RubyPointer(args);
 
-        RubyPointer localVarsList = null;
+        ExtendedList valueList = null;
 
         ruby.getRubyScope().push();
 
@@ -177,17 +178,17 @@ public class ScopeNode extends Node implements CallableNode {
         }
 
         if (getTable() != null) {
-            localVarsList = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
-            localVarsList.set(0, this);
-            localVarsList.inc();
+            valueList = new ExtendedList(getTable().size(), ruby.getNil());
+            // localVarsList.set(0, this);
+            // localVarsList.inc();
 
-            ruby.getRubyScope().setLocalVars(localVarsList);
-            ruby.getRubyScope().setLocalTbl(getTable());
+            ruby.getRubyScope().setLocalValues(valueList);
+            ruby.getRubyScope().setLocalNames(getTable());
         } else {
-            localVarsList = ruby.getRubyScope().getLocalVars();
+            valueList = ruby.getRubyScope().getLocalValues();
 
-            ruby.getRubyScope().setLocalVars(null);
-            ruby.getRubyScope().setLocalTbl(null);
+            ruby.getRubyScope().setLocalValues(null);
+            ruby.getRubyScope().setLocalNames(null);
         }
 
         Node callBody = getNextNode();
@@ -230,16 +231,14 @@ public class ScopeNode extends Node implements CallableNode {
                         throw new RubyArgumentException(ruby, "wrong # of arguments(" + args.size() + " for " + opt + ")");
                     }
 
-                    ruby.getRubyFrame().setArgs(localVarsList != null ? localVarsList.getPointer(2) : null);
+                    ruby.getRubyFrame().setArgs(valueList != null ? new ExtendedList(valueList.getDelegate(), 2) : null);
                 }
 
-                if (localVarsList != null) {
+                if (valueList != null) {
                     if (i > 0) {
-                        localVarsList.inc(2);
                         for (int j = 0; j < i; j++) {
-                            localVarsList.set(j, args.get(j));
+                            valueList.set(j + 2, args.get(j));
                         }
-                        localVarsList.dec(2);
                     }
 
                     args.inc(i);
@@ -261,7 +260,7 @@ public class ScopeNode extends Node implements CallableNode {
                         } else {
                             array = RubyArray.newArray(ruby, 0);
                         }
-                        localVarsList.set(callNode.getRest(), array);
+                        valueList.set(callNode.getRest(), array);
                     }
                 }
             }

@@ -42,7 +42,7 @@ import org.jruby.util.*;
  */
 public class RubyObject {
     // A reference to the JRuby runtime.
-    private Ruby ruby;
+    private transient Ruby ruby;
 
     // The class of this object
     private RubyClass rubyClass;
@@ -97,7 +97,7 @@ public class RubyObject {
      * HashMap object underlying RubyHash.
      */
     public int hashCode() {
-        return RubyNumeric.fix2int(funcall(getRuby().intern("hash")));
+        return RubyNumeric.fix2int(funcall("hash"));
     }
 
     /**
@@ -106,7 +106,7 @@ public class RubyObject {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || (other instanceof RubyObject) && funcall(getRuby().intern("=="), (RubyObject) other).isTrue();
+        return other == this || (other instanceof RubyObject) && funcall("==", (RubyObject) other).isTrue();
     }
 
     public String toString() {
@@ -340,56 +340,42 @@ public class RubyObject {
     /** rb_funcall2
      *
      */
-    public RubyObject funcall(RubyId mid, RubyObject[] args) {
-        return funcall(mid, new RubyPointer(args));
+    public RubyObject funcall(String name, RubyObject[] args) {
+        return funcall(name, new RubyPointer(args));
     }
 
-    public RubyObject funcall(RubyId mid, RubyPointer args) {
-        return getRubyClass().call(this, mid, args, 1);
+    public RubyObject funcall(String name, RubyPointer args) {
+        return getRubyClass().call(this, name, args, 1);
     }
 
-    public RubyObject funcall(RubyId mid) {
-        return funcall(mid, (RubyPointer) null);
+    public RubyObject funcall(String name) {
+        return funcall(name, (RubyPointer) null);
     }
 
     /** rb_funcall3
      *
      */
-    public RubyObject funcall3(RubyId mid, RubyPointer args) {
-        return getRubyClass().call(this, mid, args, 0);
+    public RubyObject funcall3(String name, RubyPointer args) {
+        return getRubyClass().call(this, name, args, 0);
     }
 
-    public RubyObject funcall3(RubyId mid, RubyObject[] args) {
-        return funcall3(mid, new RubyPointer(args));
+    public RubyObject funcall3(String name, RubyObject[] args) {
+        return funcall3(name, new RubyPointer(args));
     }
 
     /** rb_funcall
      *
      */
-    public RubyObject funcall(RubyId mid, RubyObject arg) {
-        return funcall(mid, new RubyPointer(new RubyObject[] { arg }));
+    public RubyObject funcall(String name, RubyObject arg) {
+        return funcall(name, new RubyPointer(new RubyObject[] { arg }));
     }
 
-    /** rb_iv_get
+    /** rb_iv_get / rb_ivar_get
      *
      */
     public RubyObject getInstanceVar(String name) {
-        return getInstanceVar(getRuby().intern(name));
-    }
-
-    /** rb_iv_set
-     *
-     */
-    public void setInstanceVar(String name, RubyObject value) {
-        setInstanceVar(getRuby().intern(name), value);
-    }
-
-    /** rb_ivar_get
-     *
-     */
-    public RubyObject getInstanceVar(RubyId id) {
         if (getInstanceVariables() != null) {
-            RubyObject value = (RubyObject) getInstanceVariables().get(id);
+            RubyObject value = (RubyObject) getInstanceVariables().get(name);
             if (value != null) {
                 return value;
             }
@@ -398,19 +384,10 @@ public class RubyObject {
         return getRuby().getNil();
     }
 
-    public boolean isInstanceVarDefined(RubyId id) {
-        if (getInstanceVariables() != null) {
-            if (getInstanceVariables().get(id) != null) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** rb_ivar_set
+    /** rb_iv_set / rb_ivar_set
      *
      */
-    public RubyObject setInstanceVar(RubyId id, RubyObject value) {
+    public RubyObject setInstanceVar(String name, RubyObject value) {
         if (isTaint() && getRuby().getSecurityLevel() >= 4) {
             throw new RubySecurityException(getRuby(), "Insecure: can't modify instance variable");
         }
@@ -420,8 +397,18 @@ public class RubyObject {
         if (getInstanceVariables() == null) {
             setInstanceVariables(new RubyHashMap());
         }
-        getInstanceVariables().put(id, value);
+        getInstanceVariables().put(name, value);
+        
         return value;
+    }
+
+    public boolean isInstanceVarDefined(String name) {
+        if (getInstanceVariables() != null) {
+            if (getInstanceVariables().get(name) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** rb_cvar_singleton
@@ -452,7 +439,7 @@ public class RubyObject {
 
     public void callInit(RubyObject[] args) {
         ruby.getIter().push(ruby.isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
-        funcall(getRuby().intern("initialize"), args);
+        funcall("initialize", args);
         ruby.getIter().pop();
     }
 
@@ -463,7 +450,7 @@ public class RubyObject {
     /** rb_to_id
      *
      */
-    public RubyId toId() {
+    public String toId() {
         throw new RubyTypeException(getRuby(), inspect().getValue() + " is not a symbol");
     }
 
@@ -476,7 +463,7 @@ public class RubyObject {
         }
         RubyObject result = null;
         try {
-            result = funcall(getRuby().intern(method));
+            result = funcall(method);
         } catch (RubyNameException rnExcptn) {
             throw new RubyTypeException(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
             //        } catch (RubyS rnExcptn) {
@@ -500,7 +487,7 @@ public class RubyObject {
             if (args.length == 0) {
                 throw new RubyArgumentException(getRuby(), "block not supplied");
             } else if (args.length > 3) {
-                String lastFuncName = ruby.getRubyFrame().getLastFunc().toName();
+                String lastFuncName = ruby.getRubyFrame().getLastFunc();
                 throw new RubyArgumentException(
                     getRuby(),
                     "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
@@ -724,7 +711,7 @@ public class RubyObject {
      *
      */
     public RubyObject dup() {
-        RubyObject dup = funcall(getRuby().intern("clone"));
+        RubyObject dup = funcall("clone");
         if (!dup.getClass().equals(getClass())) {
             throw new RubyTypeException(getRuby(), "duplicated object must be same type");
         }
@@ -818,7 +805,7 @@ public class RubyObject {
         //     }
         //     return rb_funcall(obj, rb_intern("to_s"), 0, 0);
         // }
-        return (RubyString) funcall(getRuby().intern("to_s"));
+        return (RubyString) funcall("to_s");
     }
 
     /** rb_obj_is_instance_of
@@ -872,7 +859,7 @@ public class RubyObject {
         while (type != null && type.isSingleton()) {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
-                    RubyString name = RubyString.newString(getRuby(), ((RubyId) key).toName());
+                    RubyString name = RubyString.newString(getRuby(), (String)key);
                     if ((((MethodNode) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                         if (((RubyArray) arg).includes(name).isFalse()) {
                             if (((MethodNode) value).getBodyNode() == null) {
@@ -920,7 +907,7 @@ public class RubyObject {
         }
         // FIXME: Check_Type?
         for (int i = 0; i < args.length; i++) {
-            args[i].funcall(ruby.intern("extend_object"), this);
+            args[i].funcall("extend_object", this);
         }
         return this;
     }

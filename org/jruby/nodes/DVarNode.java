@@ -39,11 +39,11 @@ import org.jruby.runtime.*;
  * @version 
  */
 public class DVarNode extends Node {
-    public DVarNode(RubyId vId) {
+    public DVarNode(String vId) {
         super(Constants.NODE_DVAR, vId, null, null);
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return ruby.getDynamicVars().getRef(getVId());
+        return ruby.getDynamicVars().getRef(ruby, getVId());
     }
 }

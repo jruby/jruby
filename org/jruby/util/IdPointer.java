@@ -39,49 +39,65 @@ import org.jruby.*;
  * @author  jpetersen
  * @version 
  */
-public class RubyIdPointer extends DefaultPointer {
+public class IdPointer extends DefaultPointer {
+    private int count;
 
-    public RubyIdPointer() {
+    public IdPointer() {
         this(new ArrayList(), 0, true, null);
     }
     
-    public RubyIdPointer(int size) {
+    public IdPointer(int size) {
         this(new ArrayList(Collections.nCopies(size, null)), 0, true, null);
     }
     
-    public RubyIdPointer(boolean autoResize) {
+    public IdPointer(boolean autoResize) {
         this(new ArrayList(), 0, autoResize, null);
     }
     
-    public RubyIdPointer(Object autoResizeObject, int size) {
+    public IdPointer(Object autoResizeObject, int size) {
         this(new ArrayList(Collections.nCopies(size, autoResizeObject)), 0, true, autoResizeObject);
     }
     
-    public RubyIdPointer(ArrayList delegate) {
+    public IdPointer(ArrayList delegate) {
         this(delegate, 0, true, null);
     }
 
-    public RubyIdPointer(ArrayList delegate, Object autoResizeObject) {
+    public IdPointer(ArrayList delegate, Object autoResizeObject) {
         this(delegate, 0, true, autoResizeObject);
     }
 
-    public RubyIdPointer(ArrayList delegate, boolean autoResize) {
+    public IdPointer(ArrayList delegate, boolean autoResize) {
         this(delegate, 0, autoResize, null);
     }
 
-    protected RubyIdPointer(ArrayList delegate, int position, boolean autoResize, Object autoResizeObject) {
+    protected IdPointer(ArrayList delegate, int position, boolean autoResize, Object autoResizeObject) {
         super(delegate, position, autoResize, autoResizeObject);
     }
 
-    public RubyId getId(int index) {
-        return (RubyId)get(index);
+    public String getId(int index) {
+        return (String)get(index);
     }
     
-    public RubyId[] toIdArray() {
-        return (RubyId[])toArray(new RubyId[size()]);
+    public String[] toIdArray() {
+        return (String[])toArray(new String[size()]);
     }
 
-    public RubyId[] toIdArray(RubyId[] array) {
-        return (RubyId[])toArray(array);
+    public String[] toIdArray(String[] array) {
+        return (String[])toArray(array);
+    }
+    /**
+     * Gets the count.
+     * @return Returns a int
+     */
+    public int getCount() {
+        return count;
+    }
+
+    /**
+     * Sets the count.
+     * @param count The count to set
+     */
+    public void setCount(int count) {
+        this.count = count;
     }
 }

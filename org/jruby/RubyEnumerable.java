@@ -50,7 +50,7 @@ public class RubyEnumerable {
     }
 
     public static RubyObject each(Ruby ruby, RubyObject recv) {
-        return recv.funcall(ruby.intern("each"));
+        return recv.funcall("each");
     }
 
     public static RubyObject enum_all(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {

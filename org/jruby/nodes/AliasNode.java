@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class AliasNode extends Node {
-    public AliasNode(RubyId oldId, RubyId newId) {
+    public AliasNode(String oldId, String newId) {
         super(Constants.NODE_ALIAS, oldId, newId, null);
     }
     
@@ -49,7 +49,7 @@ public class AliasNode extends Node {
             throw new RubyTypeException(ruby, "no class to make alias");
         }
         ruby.getRubyClass().aliasMethod(getNewId(), getOldId());
-        ruby.getRubyClass().funcall(ruby.intern("method_added"), getNewId().toSymbol());
+        ruby.getRubyClass().funcall("method_added", RubySymbol.newSymbol(ruby, getNewId()));
         
         return ruby.getNil();
     }

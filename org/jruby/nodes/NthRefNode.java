@@ -39,8 +39,8 @@ import org.jruby.runtime.*;
  * @version 
  */
 public class NthRefNode extends Node {
-    public NthRefNode(int nth, int count) {
-        super(Constants.NODE_NTH_REF, null, nth, count);
+    public NthRefNode(int nth) {
+        super(Constants.NODE_NTH_REF, null, nth, null);
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {

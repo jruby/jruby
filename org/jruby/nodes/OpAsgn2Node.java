@@ -40,45 +40,42 @@ import org.jruby.util.*;
  * @version
  */
 public class OpAsgn2Node extends Node {
-    private RubyId vid;
-    private RubyId mid;
-    private RubyId aid;
-    
-    public OpAsgn2Node(Node recvNode, Node valueNode, RubyId vid, RubyId mid) {
+    private String vid;
+    private String mid;
+    private String aid;
+
+    public OpAsgn2Node(Node recvNode, Node valueNode, String vid, String mid) {
         super(Constants.NODE_OP_ASGN2, recvNode, valueNode, null);
 
         this.vid = vid;
         this.mid = mid;
-        this.aid = vid.toAttrSetId();
+        this.aid = vid + "=";
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject recv = getRecvNode().eval(ruby, self);
-        RubyObject val = recv.funcall(vid, (RubyObject[])null);
-        
-        switch (mid.intValue()) {
-            case 0: /* OR */
-                if (val.isTrue()) {
-                    return val;
-                } else {
-                    val = getValueNode().eval(ruby, self);
-                }
-                break;
-            case 1: /* AND */
-                if (val.isFalse()) {
-                    return val;
-                } else {
-                    val = getValueNode().eval(ruby, self);
-                }
-                break;
-            default:
-                val = val.funcall(getMId(), getValueNode().eval(ruby, self));
+        RubyObject val = recv.funcall(vid, (RubyObject[]) null);
+
+        if (mid.equals("||")) {
+            if (val.isTrue()) {
+                return val;
+            } else {
+                val = getValueNode().eval(ruby, self);
+            }
+        } else if (mid.equals("&&")) {
+            if (val.isFalse()) {
+                return val;
+            } else {
+                val = getValueNode().eval(ruby, self);
+            }
+        } else {
+            val = val.funcall(getMId(), getValueNode().eval(ruby, self));
         }
-        
+
         // HACK +++
         val = recv.funcall(aid, val); // &val
         // HACK ---
-        
+
         return val;
     }
 }

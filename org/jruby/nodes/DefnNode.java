@@ -41,7 +41,7 @@ import org.jruby.util.*;
  * @version
  */
 public class DefnNode extends Node {
-    public DefnNode(int noex, RubyId mId, Node defnNode) {
+    public DefnNode(int noex, String mId, Node defnNode) {
         super(Constants.NODE_DEFN, noex, mId, defnNode);
     }
     
@@ -74,7 +74,7 @@ public class DefnNode extends Node {
             
             int noex;
             
-            if (ruby.isScope(Constants.SCOPE_PRIVATE) || getMId().equals(ruby.intern("initialize"))) {
+            if (ruby.isScope(Constants.SCOPE_PRIVATE) || getMId().equals("initialize")) {
                 noex = Constants.NOEX_PRIVATE;
             } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
                 noex = Constants.NOEX_PROTECTED;
@@ -95,13 +95,13 @@ public class DefnNode extends Node {
             
             if (ruby.getActMethodScope() == Constants.SCOPE_MODFUNC) {
                 ruby.getRubyClass().getSingletonClass().addMethod(getMId(), defn, Constants.NOEX_PUBLIC);
-                ruby.getRubyClass().funcall(ruby.intern("singleton_method_added"), getMId().toSymbol());
+                ruby.getRubyClass().funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
             }
 
             if (ruby.getRubyClass().isSingleton()) {
-                ruby.getRubyClass().getInstanceVar("__attached__").funcall(ruby.intern("singleton_method_added"), getMId().toSymbol());
+                ruby.getRubyClass().getInstanceVar("__attached__").funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
             } else {
-                ruby.getRubyClass().funcall(ruby.intern("method_added"), getMId().toSymbol());
+                ruby.getRubyClass().funcall("method_added", RubySymbol.newSymbol(ruby, getMId()));
             }
         }
         return ruby.getNil();

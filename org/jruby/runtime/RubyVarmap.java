@@ -42,14 +42,14 @@ import org.jruby.util.*;
  * @version 
  */
 public class RubyVarmap {
-    private RubyId      id          = null;
+    private String      id          = null;
     private RubyObject  val         = null;
     private RubyVarmap  next        = null;
     
     private static Map oldMap       = new HashMap();
 
     /** Creates new RubyVarmap */
-    public RubyVarmap(RubyId id, RubyObject val, RubyVarmap next) {
+    public RubyVarmap(String id, RubyObject val, RubyVarmap next) {
         this.id             = id;
         this.val            = val;
         this.next           = next;
@@ -89,14 +89,14 @@ public class RubyVarmap {
     /** Getter for property id.
      * @return Value of property id.
      */
-    public RubyId getId() {
+    public String getId() {
         return id;
     }
     
     /** Setter for property id.
      * @param id New value of property id.
      */
-    public void setId(RubyId id) {
+    public void setId(String id) {
         this.id = id;
     }
     
@@ -131,11 +131,11 @@ public class RubyVarmap {
     /** rb_dvar_defined
      *
      */
-    public static boolean isDefined(Ruby ruby, RubyId rubyId) {
+    public static boolean isDefined(Ruby ruby, String rubyId) {
         RubyVarmap vars = ruby.getDynamicVars();
         
         while (vars != null) {
-            if (vars.id == rubyId) {
+            if (rubyId.equals(vars.id)) {
                 return true;
             }
             vars = vars.next;
@@ -147,11 +147,11 @@ public class RubyVarmap {
     /** rb_dvar_curr
      *
      */
-    public static boolean isCurrent(Ruby ruby, RubyId rubyId) {
+    public static boolean isCurrent(Ruby ruby, String rubyId) {
         RubyVarmap vars = ruby.getDynamicVars();
         
         while (vars != null) {
-            if (vars.id == null || vars.id.intValue() == 0) {
+            if (vars.id == null) {
                 break;
             }
             if (vars.id == rubyId) {
@@ -165,26 +165,26 @@ public class RubyVarmap {
     /** rb_dvar_ref
      *
      */
-    public RubyObject getRef(RubyId rubyId) {
+    public RubyObject getRef(Ruby ruby, String rubyId) {
         if (rubyId.equals(id)) {
             return getVal();
         } else if (next != null) {
-            return next.getRef(rubyId);
+            return next.getRef(ruby, rubyId);
         }
-        return rubyId.getRuby().getNil();
+        return ruby.getNil();
     }
     
     /** rb_dvar_push
      *
      */
-    public static void push(Ruby ruby, RubyId rubyId, RubyObject val) {
+    public static void push(Ruby ruby, String rubyId, RubyObject val) {
         ruby.setDynamicVars(new RubyVarmap(rubyId, val, ruby.getDynamicVars()));
     }
     
     /** dvar_asgn_internal
      *
      */
-    public static RubyVarmap assignInternal(RubyVarmap varMap, RubyId id, RubyObject value, boolean current) {
+    public static RubyVarmap assignInternal(RubyVarmap varMap, String id, RubyObject value, boolean current) {
         int n = 0;
         RubyVarmap tmpMap = varMap;
 
@@ -213,14 +213,14 @@ public class RubyVarmap {
     /** dvar_asgn
      *
      */
-    public static void assign(Ruby ruby, RubyId id, RubyObject value) {
+    public static void assign(Ruby ruby, String id, RubyObject value) {
         ruby.setDynamicVars(assignInternal(ruby.getDynamicVars(), id, value, false));
     }
     
     /** dvar_asgn_curr
      *
      */
-    public static void assignCurrent(Ruby ruby, RubyId id, RubyObject value) {
+    public static void assignCurrent(Ruby ruby, String id, RubyObject value) {
         ruby.setDynamicVars(assignInternal(ruby.getDynamicVars(), id, value, true));
     }
 }

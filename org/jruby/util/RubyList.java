@@ -34,6 +34,14 @@ public class RubyList extends AbstractList {
         this.delegate = delegate;
     }
 
+    public RubyList(int size, Object defaultValue) {
+        this(new ArrayList(size));
+        
+        for (int i = 0; i < size; i++) {
+            delegate.add(defaultValue);
+        }
+    }
+    
     public int size() {
         return delegate.size();
     }
@@ -52,5 +60,11 @@ public class RubyList extends AbstractList {
     
     public RubyObject[] toRubyArray() {
         return (RubyObject[])delegate.toArray(new RubyObject[delegate.size()]);
+    }
+    
+    public void copy(RubyList other, int len) {
+        for (int i = 0; i < len; i++) {
+            set(i, other.get(i));
+        }
     }
 }

@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class OpAsgnOrNode extends Node {
-    public OpAsgnOrNode(Node headNode, Node valueNode, RubyId aId) {
+    public OpAsgnOrNode(Node headNode, Node valueNode, String aId) {
         super(Constants.NODE_OP_ASGN_OR, headNode, valueNode, aId);
     }
     

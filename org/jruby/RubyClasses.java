@@ -156,8 +156,8 @@ public class RubyClasses {
      */
     private RubyClass defineBootClass(String name, RubyClass superClass) {
         RubyClass bootClass = RubyClass.newClass(ruby, superClass);
-        bootClass.setName(ruby.intern(name));
-        classMap.put(ruby.intern(name), bootClass);
+        bootClass.setName(name);
+        classMap.put(name, bootClass);
 
         return bootClass;
     }

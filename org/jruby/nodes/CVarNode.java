@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class CVarNode extends Node {
-    public CVarNode(RubyId vId) {
+    public CVarNode(String vId) {
         super(Constants.NODE_CVAR, vId, null, null);
     }
     

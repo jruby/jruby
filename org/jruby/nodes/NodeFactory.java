@@ -53,15 +53,15 @@ public class NodeFactory {
         return new MethodNode(body, noex);
     }
     
-    public Node newFBody(Node bodyNode, RubyId id, RubyModule origin) {
+    public Node newFBody(Node bodyNode, String id, RubyModule origin) {
         return new FBodyNode(bodyNode, id, origin);
     }
         
-    public Node newDefn(RubyId mid, Node a, Node d, int p) {
+    public Node newDefn(String mid, Node a, Node d, int p) {
         return new DefnNode(p, mid, newRFunc(a, d));
     }
     
-    public Node newDefs(Node recvNode, RubyId mid, Node a, Node d) {
+    public Node newDefs(Node recvNode, String mid, Node a, Node d) {
         return new DefsNode(recvNode, mid, newRFunc(a, d));
     }
     
@@ -185,43 +185,43 @@ public class NodeFactory {
         return new MAsgnNode(valueNode, argsNode);
     }
        
-    public Node newGAsgn(RubyId vid, Node valueNode) {
-        return new GAsgnNode(/*vid, */ valueNode, RubyGlobalEntry.getGlobalEntry(vid));
+    public Node newGAsgn(String vid, Node valueNode) {
+        return new GAsgnNode(/*vid, */ valueNode, RubyGlobalEntry.getGlobalEntry(ruby, vid));
     }
        
-    public Node newLAsgn(RubyId vid, Node valueNode) {
-        return new LAsgnNode(/*vid, */ valueNode, ph.local_cnt(vid));
+    public Node newLAsgn(String vid, Node valueNode) {
+        return new LAsgnNode(valueNode, ph.local_cnt(vid));
     }
 
-    public Node newDAsgn(RubyId vid, Node valueNode) {
+    public Node newDAsgn(String vid, Node valueNode) {
         return new DAsgnNode(vid, valueNode);
     }
 
-    public Node newDAsgnCurr(RubyId vid, Node valueNode) {
+    public Node newDAsgnCurr(String vid, Node valueNode) {
         return new DAsgnCurrNode(vid, valueNode);
     }
 
-    public Node newIAsgn(RubyId vid, Node valueNode) {
+    public Node newIAsgn(String vid, Node valueNode) {
         return new IAsgnNode(vid, valueNode);
     }
 
-    public Node newCDecl(RubyId vid, Node valueNode) {
+    public Node newCDecl(String vid, Node valueNode) {
         return new CDeclNode(vid, valueNode);
     }
 
-    public Node newCVAsgn(RubyId vid, Node valueNode) {
+    public Node newCVAsgn(String vid, Node valueNode) {
         return new CVAsgnNode(vid, valueNode);
     }
        
-    public Node newCVDecl(RubyId vid, Node valueNode) {
+    public Node newCVDecl(String vid, Node valueNode) {
         return new CVDeclNode(vid, valueNode);
     }
        
-    public Node newOpAsgn1(Node recvNode, RubyId mid, Node argsNode) {
+    public Node newOpAsgn1(Node recvNode, String mid, Node argsNode) {
         return new OpAsgn1Node(recvNode, mid, argsNode);
     }
        
-    public Node newOpAsgn2(Node recvNode, RubyId vid, RubyId mid, Node valueNode) {
+    public Node newOpAsgn2(Node recvNode, String vid, String mid, Node valueNode) {
         return new OpAsgn2Node(recvNode, valueNode, vid, mid);
     }
        
@@ -237,40 +237,40 @@ public class NodeFactory {
         return new OpAsgnAndNode(head, valueNode);
     }
        
-    public Node newGVar(RubyId id) {
-        return new GVarNode(RubyGlobalEntry.getGlobalEntry(id));
+    public Node newGVar(String id) {
+        return new GVarNode(RubyGlobalEntry.getGlobalEntry(ruby, id));
     }
        
-    public Node newLVar(RubyId vid) {
-        return new LVarNode(/*v,*/ ph.local_cnt(vid));
+    public Node newLVar(String vid) {
+        return new LVarNode(ph.local_cnt(vid));
     }
        
-    public Node newDVar(RubyId vid) {
+    public Node newDVar(String vid) {
         return new DVarNode(vid);
     }
        
-    public Node newIVar(RubyId vid) {
+    public Node newIVar(String vid) {
         return new IVarNode(vid);
     }
        
-    public Node newConst(RubyId vid) {
+    public Node newConst(String vid) {
         return new ConstNode(vid);
     }
        
-    public Node newCVar(RubyId vid) {
+    public Node newCVar(String vid) {
         return new CVarNode(vid);
     }
        
-    public Node newCVar2(RubyId vid) {
+    public Node newCVar2(String vid) {
         return new CVar2Node(vid);
     }
        
     public Node newNthRef(int nth)  {
-        return new NthRefNode(nth, ph.local_cnt('~'));
+        return new NthRefNode(nth);
     }
        
     public Node newBackRef(int nth) {
-        return new BackRefNode(nth, ph.local_cnt('~'));
+        return new BackRefNode(nth);
     }
        
     public Node newMatch(Node head) {
@@ -309,15 +309,15 @@ public class NodeFactory {
         return new EvStrNode(RubyString.newString(ruby, s, len));
     }
        
-    public Node newCall(Node recv, RubyId mid, Node args) {
+    public Node newCall(Node recv, String mid, Node args) {
         return new CallNode(recv, mid, args);
     }
     
-    public Node newFCall(RubyId mid, Node args) {
+    public Node newFCall(String mid, Node args) {
         return new FCallNode(mid, args);
     }
     
-    public Node newVCall(RubyId mid) {
+    public Node newVCall(String mid) {
         return new VCallNode(mid);
     }
     
@@ -345,7 +345,7 @@ public class NodeFactory {
         return new RestArgsNode(head);
     }
     
-    public Node newBlockArg(RubyId vid) {
+    public Node newBlockArg(String vid) {
         return new BlockArgNode(ph.local_cnt(vid));
     }
     
@@ -353,19 +353,19 @@ public class NodeFactory {
         return new BlockPassNode(bodyNode);
     }
     
-    public Node newAlias(RubyId newId, RubyId oldId) {
+    public Node newAlias(String newId, String oldId) {
         return new AliasNode(oldId, newId);
     }
     
-    public Node newVAlias(RubyId newId, RubyId oldId) {
+    public Node newVAlias(String newId, String oldId) {
         return new VAliasNode(oldId, newId);
     }
     
-    public Node newUndef(RubyId mid) {
+    public Node newUndef(String mid) {
         return new UndefNode(mid);
     }
     
-    public Node newClass(RubyId cnameId, Node body, Node superNode) {
+    public Node newClass(String cnameId, Node body, Node superNode) {
         return new ClassNode(cnameId, newScope(body), superNode);
     }
     
@@ -373,15 +373,15 @@ public class NodeFactory {
         return new SClassNode(receiverNode, newScope(body));
     }
     
-    public Node newModule(RubyId moduleName, Node body) {
+    public Node newModule(String moduleName, Node body) {
         return new ModuleNode(moduleName, newScope(body));
     }
 
-    public Node newColon2(Node head, RubyId mid) {
+    public Node newColon2(Node head, String mid) {
         return new Colon2Node(head, mid);
     }
 
-    public Node newColon3(RubyId mid) {
+    public Node newColon3(String mid) {
         return new Colon3Node(mid);
     }
 
@@ -397,7 +397,7 @@ public class NodeFactory {
         return new DotNode(begin, end, true);
     }
 
-    public Node newAttrSet(RubyId vid /*a*/) {
+    public Node newAttrSet(String vid /*a*/) {
         return new AttrSetNode(vid);
     }
 

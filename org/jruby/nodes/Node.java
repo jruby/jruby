@@ -33,6 +33,7 @@ package org.jruby.nodes;
 import org.jruby.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.util.collections.*;
 
 /**
  *
@@ -110,10 +111,13 @@ public class Node {
         Node copy = new ScopeNode(null, refValue.cloneCRefNode(), getNextNode());
         
         if (getTable() != null) {
-            RubyIdPointer newTable = new RubyIdPointer(getTable().getId(0).intValue() + 1);
-            newTable.set(getTable(), getTable().getId(0).intValue() + 1);
+            // ExtendedList newTable = new ExtendedList(getTable().size() + 1, null);
+            // newTable.copy(getTable(), getTable().size() + 1);
             
-            copy = new ScopeNode(newTable, refValue.cloneCRefNode(), getNextNode());
+            ExtendedList newTable = new ExtendedList(getTable().size(), null);
+            newTable.copy(getTable(), getTable().size());
+            
+            copy.setTable(newTable);
         }
         
         return copy;
@@ -185,8 +189,8 @@ public class Node {
         return (RubyGlobalEntry)u3;
     }
 
-    public RubyId getVId() {
-        return (RubyId)u1;
+    public String getVId() {
+        return (String)u1;
     }
 
     public int getCFlag() {
@@ -205,11 +209,11 @@ public class Node {
         return u3 == null ? 0 : ((Integer)u3).intValue();
     }
     
-    public RubyIdPointer getTable() {
-        return (RubyIdPointer)u1;
+    public ExtendedList getTable() {
+        return (ExtendedList)u1;
     }
 
-    public void setTable(RubyIdPointer newTable) {
+    public void setTable(ExtendedList newTable) {
         u1 = newTable;
     }
 
@@ -237,11 +241,11 @@ public class Node {
         u2 = newValueNode;
     }
 
-    public RubyId getAId() {
-        return (RubyId)u3;
+    public String getAId() {
+        return (String)u3;
     }
     
-    public void setAId(RubyId newAid) {
+    public void setAId(String newAid) {
         u3 = newAid;
     }
     
@@ -269,8 +273,8 @@ public class Node {
         return (Node)u1;
     }
     
-    public RubyId getMId() {
-        return (RubyId)u2;
+    public String getMId() {
+        return (String)u2;
     }
     
     public Node getArgsNode() {
@@ -293,12 +297,12 @@ public class Node {
         return (Node)u3;
     }
     
-    public RubyId getOldId() {
-        return (RubyId)u1;
+    public String getOldId() {
+        return (String)u1;
     }
     
-    public RubyId getNewId() {
-        return (RubyId)u2;
+    public String getNewId() {
+        return (String)u2;
     }
     
     public Callback getCallbackMethod() {
@@ -313,8 +317,8 @@ public class Node {
         return u2 == null ? 0 : ((Integer)u2).intValue();
     }
 
-    public RubyId getClassNameId() {
-        return (RubyId)u1;
+    public String getClassNameId() {
+        return (String)u1;
     }
     
     public Node getSuperNode() {
@@ -324,8 +328,8 @@ public class Node {
     /* 
      * ?
      */ 
-    public RubyId getModlId() {
-        return (RubyId)u1;
+    public String getModlId() {
+        return (String)u1;
     }
 
     /*
@@ -384,8 +388,8 @@ public class Node {
         u2 = newNth == 0 ? null : new Integer(newNth);
     }
     
-    public RubyId getTagId() {
-        return (RubyId)u1;
+    public String getTagId() {
+        return (String)u1;
     }
     
     public RubyObject getTValue() {

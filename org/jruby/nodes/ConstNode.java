@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
  * @version
  */
 public class ConstNode extends Node {
-    public ConstNode(RubyId vId) {
+    public ConstNode(String vId) {
         super(Constants.NODE_CONST, vId, null, null);
     }
     
@@ -47,7 +47,7 @@ public class ConstNode extends Node {
         return getConstant(ruby, self, ruby.getRubyFrame().getCbase(), getVId());
     }
     
-    protected RubyObject getConstant(Ruby ruby, RubyObject self, CRefNode cref, RubyId id) {
+    protected RubyObject getConstant(Ruby ruby, RubyObject self, CRefNode cref, String id) {
         CRefNode cbase = cref;
         
         // HACK +++

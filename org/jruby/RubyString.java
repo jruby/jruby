@@ -33,6 +33,7 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.util.PrintfFormat;
+import org.jruby.util.*;
 
 /**
  *
@@ -240,7 +241,7 @@ public class RubyString extends RubyObject {
         if (obj instanceof RubyString) {
             return (RubyString) obj;
         }
-        return (RubyString) obj.funcall(ruby.intern("to_s"));
+        return (RubyString) obj.funcall("to_s");
     }
 
     /** rb_str_cmp
@@ -254,8 +255,8 @@ public class RubyString extends RubyObject {
     /** rb_to_id
      *
      */
-    public RubyId toId() {
-        return getRuby().intern(getValue());
+    public String toId() {
+        return getValue();
     }
 
     /** Create a new String which uses the same Ruby runtime and the same
@@ -402,7 +403,7 @@ public class RubyString extends RubyObject {
         } else if (other instanceof RubyString) {
             return RubyRegexp.newRegexp(getRuby(), (RubyString) other, 0).match(this);
         }
-        return other.funcall(getRuby().intern("=~"), this);
+        return other.funcall("=~", this);
     }
 
     /** rb_str_match2
@@ -971,8 +972,8 @@ public class RubyString extends RubyObject {
                 throw new RubyBugException("couldn't find PrintfFormat class");
             }
         }
-        RubyObject pfObject = pfClass.funcall(getRuby().intern("new"), this);
-        return pfObject.funcall(getRuby().intern("sprintf"), arg);
+        RubyObject pfObject = pfClass.funcall("new", this);
+        return pfObject.funcall("sprintf", arg);
     }
 
     /** rb_str_succ
@@ -1655,6 +1656,6 @@ public class RubyString extends RubyObject {
      *
      */
     public RubySymbol intern() {
-        return getRuby().intern(getValue()).toSymbol();
+        return RubySymbol.newSymbol(getRuby(), getValue());
     }
 }

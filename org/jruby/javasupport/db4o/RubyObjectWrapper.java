@@ -18,7 +18,7 @@ public class RubyObjectWrapper {
 	    while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             
-            this.instanceVariables.put(((RubyId)entry.getKey()).toName(), entry.getValue());
+            this.instanceVariables.put(entry.getKey(), entry.getValue());
         }
 	}
 	

@@ -40,11 +40,7 @@ import org.jruby.runtime.*;
  * @version 
  */
 public class FBodyNode extends Node {
-    private Node bodyNode;
-    private RubyId mid;
-    private RubyModule origin;
-
-    public FBodyNode(Node bodyNode, RubyId mId, RubyModule origin) {
+    public FBodyNode(Node bodyNode, String mId, RubyModule origin) {
         super(Constants.NODE_FBODY, bodyNode, mId, origin);
     }
     

@@ -71,12 +71,12 @@ public class CaseNode extends Node {
                     }
 
                     for (int i = 0; i < ((RubyArray)obj).getLength(); i++) {
-                        RubyObject eqq = ((RubyArray)obj2).entry(i).funcall(ruby.intern("==="), obj);
+                        RubyObject eqq = ((RubyArray)obj2).entry(i).funcall("===", obj);
                         if (eqq.isTrue()) {
                             return getBodyNode().eval(ruby, self);
                         }
                     }
-                } else if (tag.getHeadNode().eval(ruby, self).funcall(ruby.intern("==="), obj).isTrue()) {
+                } else if (tag.getHeadNode().eval(ruby, self).funcall("===", obj).isTrue()) {
                     return getBodyNode().eval(ruby, self);
                 }
                 tag = tag.getNextNode();

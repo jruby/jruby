@@ -266,21 +266,21 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric op_uminus() {
         RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuby()));
         
-        return (RubyNumeric)coerce[1].funcall(getRuby().intern("-"), coerce[0]);
+        return (RubyNumeric)coerce[1].funcall("-", coerce[0]);
     }
     
     /** num_divmod
      *
      */
     public RubyArray divmod(RubyNumeric other) {
-        RubyNumeric div = (RubyNumeric)funcall(getRuby().intern("/"), other);
+        RubyNumeric div = (RubyNumeric)funcall("/", other);
         if (div instanceof RubyFloat) {
             double d = Math.floor(((RubyFloat)div).getValue());
             if (((RubyFloat)div).getValue() > d) {
                 div = RubyFloat.newFloat(getRuby(), d);
             }
         }
-        RubyNumeric mod = (RubyNumeric)funcall(getRuby().intern("%"), other);
+        RubyNumeric mod = (RubyNumeric)funcall("%", other);
         
         return RubyArray.newArray(getRuby(), div, mod);
     }
@@ -289,23 +289,23 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric modulo(RubyNumeric other) {
-        return (RubyNumeric)funcall(getRuby().intern("%"), other);
+        return (RubyNumeric)funcall("%", other);
     }
     
     /** num_remainder
      *
      */
     public RubyNumeric remainder(RubyNumeric other) {
-        RubyNumeric mod = (RubyNumeric)funcall(getRuby().intern("%"), other);
+        RubyNumeric mod = (RubyNumeric)funcall("%", other);
         
         final RubyNumeric zero = RubyFixnum.zero(getRuby());
         
-        if (funcall(getRuby().intern("<"), zero).isTrue() &&
-            other.funcall(getRuby().intern(">"), zero).isTrue() ||
-            funcall(getRuby().intern(">"), zero).isTrue() &&
-            other.funcall(getRuby().intern("<"), zero).isTrue()) {
+        if (funcall("<", zero).isTrue() &&
+            other.funcall(">", zero).isTrue() ||
+            funcall(">", zero).isTrue() &&
+            other.funcall("<", zero).isTrue()) {
                 
-            return (RubyNumeric)mod.funcall(getRuby().intern("-"), other);
+            return (RubyNumeric)mod.funcall("-", other);
         }
         
         return mod;
@@ -333,8 +333,8 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric abs() {
-        if (funcall(getRuby().intern("<"), RubyFixnum.zero(getRuby())).isTrue()) {
-            return (RubyNumeric)funcall(getRuby().intern("-@"));
+        if (funcall("<", RubyFixnum.zero(getRuby())).isTrue()) {
+            return (RubyNumeric)funcall("-@");
         } else {
             return this;
         }
@@ -358,7 +358,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyObject nonzero_p() {
-        if (funcall(getRuby().intern("zero?")).isTrue()) {
+        if (funcall("zero?").isTrue()) {
             return getRuby().getNil();
         }
         return this;

@@ -43,22 +43,22 @@ public class LAsgnNode extends Node implements AssignableNode {
     public LAsgnNode(Node valueNode, int count) {
         super(Constants.NODE_LASGN, null, valueNode, count);
     }
-    
-    public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
-        // if (getRuby().ruby_scope.local_vars == null) {
-        //    rb_bug( "unexpected local variable assignment" );
-        // }
 
-        ruby.getRubyScope().setLocalVars(getCount(), value);
-    }
-    
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        // if (ruby.ruby_scope.local_vars == null) {
-        //     rb_bug("unexpected local variable assignment");
-        // }
+        if (ruby.getRubyScope().getLocalValues() == null) {
+        	ruby.getRuntime().printBug("unexpected local variable assignment");
+        }
 
         RubyObject result = getValueNode().eval(ruby, self);
-        ruby.getRubyScope().setLocalVars(getCount(), result);
+        ruby.getRubyScope().setValue(getCount(), result);
         return result;
+    }
+
+    public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
+        if (ruby.getRubyScope().getLocalValues() == null) {
+        	ruby.getRuntime().printBug("unexpected local variable assignment");
+        }
+
+        ruby.getRubyScope().setValue(getCount(), value);
     }
 }

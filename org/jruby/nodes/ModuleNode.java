@@ -41,8 +41,8 @@ import org.jruby.runtime.*;
  */
 public class ModuleNode extends Node {
     
-    public ModuleNode(RubyId classNameId, Node bodyNode) {
-        super(Constants.NODE_MODULE, classNameId, bodyNode, null);
+    public ModuleNode(String className, Node bodyNode) {
+        super(Constants.NODE_MODULE, className, bodyNode, null);
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
@@ -68,9 +68,9 @@ public class ModuleNode extends Node {
                 throw new RubySecurityException(ruby, "extending module prohibited");
             }
         } else {
-            module = ruby.defineModuleId(getClassNameId());
+            module = ruby.defineModule(getClassNameId());
             ruby.getRubyClass().setConstant(getClassNameId(), module);
-            module.setClassPath(ruby.getRubyClass(), getClassNameId().toName());
+            module.setClassPath(ruby.getRubyClass(), getClassNameId());
         }
         if (ruby.getWrapper() != null) {
             module.getSingletonClass().includeModule(ruby.getWrapper());

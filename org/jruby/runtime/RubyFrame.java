@@ -47,7 +47,7 @@ public class RubyFrame {
     
     private RubyObject self         = null;
     private List args               = null;
-    private RubyId lastFunc         = null;
+    private String lastFunc         = null;
     private RubyModule lastClass    = null;
     private CRefNode cbase          = null;
     private RubyFrame prev          = null;
@@ -63,7 +63,7 @@ public class RubyFrame {
         this.ruby = ruby;
     }
     
-    public RubyFrame(Ruby ruby, RubyObject self, List args, RubyId lastFunc, 
+    public RubyFrame(Ruby ruby, RubyObject self, List args, String lastFunc, 
                      RubyModule lastClass, CRefNode cbase, RubyFrame prev,
                      RubyFrame tmp, String file, int line, int iter, int flags) {
         this(ruby);
@@ -168,14 +168,14 @@ public class RubyFrame {
     /** Getter for property lastFunc.
      * @return Value of property lastFunc.
      */
-    public RubyId getLastFunc() {
+    public String getLastFunc() {
         return lastFunc;
     }
     
     /** Setter for property lastFunc.
      * @param lastFunc New value of property lastFunc.
      */
-    public void setLastFunc(RubyId lastFunc) {
+    public void setLastFunc(String lastFunc) {
         this.lastFunc = lastFunc;
     }
     

@@ -99,7 +99,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
                 rubyArgs[i + 1] = JavaUtil.convertJavaToRuby(getRuby(), args[i], method.getParameterTypes()[i]);
             }
 
-            result = funcall(getRuby().intern("send"), rubyArgs);
+            result = funcall("send", rubyArgs);
         }
 
         return JavaUtil.convertRubyToJava(getRuby(), result, method.getReturnType());

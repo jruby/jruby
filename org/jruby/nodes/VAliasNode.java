@@ -39,12 +39,12 @@ import org.jruby.runtime.*;
  * @version
  */
 public class VAliasNode extends Node {
-    public VAliasNode(RubyId oldId, RubyId newId) {
+    public VAliasNode(String oldId, String newId) {
         super(Constants.NODE_VALIAS, oldId, newId, null);
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyGlobalEntry.getGlobalEntry(getOldId()).alias(getNewId());
+        RubyGlobalEntry.getGlobalEntry(ruby, getOldId()).alias(getNewId());
         
         return ruby.getNil();
     }

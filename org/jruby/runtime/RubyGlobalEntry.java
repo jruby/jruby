@@ -41,7 +41,7 @@ import org.jruby.exceptions.*;
 public class RubyGlobalEntry {
     private Ruby ruby = null;
 
-    private RubyId id = null;
+    private String id = null;
     private Object data = null;
 
     private GetterMethod getter = null;
@@ -51,7 +51,7 @@ public class RubyGlobalEntry {
     private static ValueMethods valueMethods = new ValueMethods();
     private static ReadonlySetter readonlySetter = new ReadonlySetter();
 
-    private RubyGlobalEntry(Ruby ruby, RubyId id) {
+    private RubyGlobalEntry(Ruby ruby, String id) {
         this.ruby = ruby;
         this.id = id;
 
@@ -62,14 +62,14 @@ public class RubyGlobalEntry {
     /** Getter for property id.
      * @return Value of property id.
      */
-    protected RubyId getId() {
+    protected String getId() {
         return id;
     }
 
     /** Setter for property id.
      * @param id New value of property id.
      */
-    protected void setId(RubyId id) {
+    protected void setId(String id) {
         this.id = id;
     }
 
@@ -144,12 +144,12 @@ public class RubyGlobalEntry {
     /** rb_alias_variable
      *
      */
-    public void alias(RubyId newId) {
+    public void alias(String newId) {
         if (ruby.getSecurityLevel() >= 4) {
             throw new RubySecurityException(ruby, "Insecure: can't alias global variable");
         }
 
-        RubyGlobalEntry entry = getGlobalEntry(newId);
+        RubyGlobalEntry entry = getGlobalEntry(ruby, newId);
         entry.data = data;
         entry.getter = getter;
         entry.setter = setter;
@@ -158,8 +158,8 @@ public class RubyGlobalEntry {
     /** rb_global_entry
      *
      */
-    public static RubyGlobalEntry getGlobalEntry(RubyId id) {
-        Ruby ruby = id.getRuby();
+    public static RubyGlobalEntry getGlobalEntry(Ruby ruby, String id) {
+        //Ruby ruby = id.getRuby();
 
         RubyGlobalEntry entry = (RubyGlobalEntry) ruby.getGlobalMap().get(id);
 
@@ -171,11 +171,11 @@ public class RubyGlobalEntry {
         return entry;
     }
 
-    public static RubyId getGlobalId(Ruby ruby, String name) {
+    public static String getGlobalId(Ruby ruby, String name) {
         if (name.charAt(0) != '$') {
-            name = '$' + name;
+            return '$' + name;
         }
-        return ruby.intern(name);
+        return name;
     }
 
     /** defines a global variable with getter and setter methods
@@ -187,9 +187,10 @@ public class RubyGlobalEntry {
         RubyObject value,
         GetterMethod getter,
         SetterMethod setter) {
-        RubyId id = RubyGlobalEntry.getGlobalId(ruby, name);
+            
+        String id = RubyGlobalEntry.getGlobalId(ruby, name);
 
-        RubyGlobalEntry globalEntry = getGlobalEntry(id);
+        RubyGlobalEntry globalEntry = getGlobalEntry(ruby, id);
         globalEntry.setData(value);
         globalEntry.setGetter(getter != null ? getter : valueMethods);
         globalEntry.setSetter(setter != null ? setter : valueMethods);
@@ -224,32 +225,31 @@ public class RubyGlobalEntry {
     }
 
     public interface GetterMethod {
-        public RubyObject get(RubyId id, RubyObject value, RubyGlobalEntry entry);
+        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry);
     }
 
     public interface SetterMethod {
         public void set(
             RubyObject value,
-            RubyId id,
+            String id,
             Object data,
             RubyGlobalEntry entry);
     }
 
     private static class UndefMethods implements GetterMethod, SetterMethod {
-        public RubyObject get(RubyId id, RubyObject value, RubyGlobalEntry entry) {
-            Ruby ruby = id.getRuby();
-            // +++ JAP
+        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
+            // +++ jpetersen
             /*if (ruby.isVerbose()) {
             	ruby.warn("global variable '" + id.toName() + "' not initialized");
             }*/
             // ---
 
-            return ruby.getNil();
+            return entry.ruby.getNil();
         }
 
         public void set(
             RubyObject value,
-            RubyId id,
+            String id,
             Object data,
             RubyGlobalEntry entry) {
             entry.setData(value);
@@ -260,13 +260,13 @@ public class RubyGlobalEntry {
     }
 
     private static class ValueMethods implements GetterMethod, SetterMethod {
-        public RubyObject get(RubyId id, RubyObject value, RubyGlobalEntry entry) {
+        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
             return value;
         }
 
         public void set(
             RubyObject value,
-            RubyId id,
+            String id,
             Object data,
             RubyGlobalEntry entry) {
             entry.setData(value);
@@ -276,10 +276,11 @@ public class RubyGlobalEntry {
     private static class ReadonlySetter implements SetterMethod {
         public void set(
             RubyObject value,
-            RubyId id,
+            String id,
             Object data,
             RubyGlobalEntry entry) {
-            throw new RubyNameException(id.getRuby(), "can't set variable " + id.toName());
+                
+            throw new RubyNameException(entry.ruby, "can't set variable " + id);
         }
     }
 }

@@ -488,7 +488,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyBoolean includes(RubyObject item) {
         for (int i = 0, n = getLength(); i < n; i++) {
-            if (item.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (item.funcall("==", entry(i)).isTrue()) {
                 return getRuby().getTrue();
             }
         }
@@ -623,7 +623,7 @@ public class RubyArray extends RubyObject {
             if (i > 0) {
                 result.append(sep);
             }
-            result.append(entry(i).funcall(getRuby().intern("inspect")));
+            result.append(entry(i).funcall("inspect"));
         }
         result.cat("]");
         return result;
@@ -753,9 +753,8 @@ public class RubyArray extends RubyObject {
         }
 
         for (long i = 0; i < length; i++) {
-            RubyBoolean result = (RubyBoolean) entry(i).funcall(getRuby().intern("=="), ary.entry(i));
-            if (result.isFalse()) {
-                return result;
+            if (entry(i).funcall("==", ary.entry(i)).isFalse()) {
+                return getRuby().getFalse();
             }
         }
         return getRuby().getTrue();
@@ -774,11 +773,10 @@ public class RubyArray extends RubyObject {
         if (length != ary.getLength()) {
             return getRuby().getFalse();
         }
-        RubyId equals = getRuby().intern("eql?");
+        
         for (long i = 0; i < length; i++) {
-            RubyBoolean result = (RubyBoolean) entry(i).funcall(equals, ary.entry(i));
-            if (result.isFalse()) {
-                return result;
+            if (entry(i).funcall("eql?", ary.entry(i)).isFalse()) {
+                return getRuby().getFalse();
             }
         }
         return getRuby().getTrue();
@@ -866,7 +864,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject index(RubyObject obj) {
         for (int i = 0, len = getLength(); i < len; i++) {
-            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (obj.funcall("==", entry(i)).isTrue()) {
                 return RubyFixnum.newFixnum(getRuby(), i);
             }
         }
@@ -878,7 +876,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject rindex(RubyObject obj) {
         for (int i = getLength() - 1; i >= 0; i--) {
-            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (obj.funcall("==", entry(i)).isTrue()) {
                 return RubyFixnum.newFixnum(getRuby(), i);
             }
         }
@@ -959,7 +957,7 @@ public class RubyArray extends RubyObject {
         modify();
         RubyObject retVal = getRuby().getNil();
         for (int i = getLength() - 1; i >= 0; i--) {
-            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (obj.funcall("==", entry(i)).isTrue()) {
                 retVal = (RubyObject) list.remove(i);
             }
         }
@@ -1025,7 +1023,7 @@ public class RubyArray extends RubyObject {
         int lesser = Math.min(len, otherLen);
         RubyFixnum result = RubyFixnum.zero(getRuby());
         for (int i = 0; i < lesser; i++) {
-            result = (RubyFixnum) entry(i).funcall(getRuby().intern("<=>"), ary.entry(i));
+            result = (RubyFixnum) entry(i).funcall("<=>", ary.entry(i));
             if (result.getValue() != 0) {
                 return result;
             }
@@ -1064,7 +1062,7 @@ public class RubyArray extends RubyObject {
                 continue;
             }
             RubyArray ary = (RubyArray) entry(i);
-            if (arg.funcall(getRuby().intern("=="), ary.entry(0)).isTrue()) {
+            if (arg.funcall("==", ary.entry(0)).isTrue()) {
                 return ary;
             }
         }
@@ -1080,7 +1078,7 @@ public class RubyArray extends RubyObject {
                 continue;
             }
             RubyArray ary = (RubyArray) entry(i);
-            if (arg.funcall(getRuby().intern("=="), ary.entry(1)).isTrue()) {
+            if (arg.funcall("==", ary.entry(1)).isTrue()) {
                 return ary;
             }
         }
@@ -1158,7 +1156,7 @@ public class RubyArray extends RubyObject {
             len2 = ary2.size();
             found = false;
             for (int j = 0; j < len2; j++) {
-                if (obj.funcall(getRuby().intern("=="), (RubyObject) ary1.get(j)).isTrue()) {
+                if (obj.funcall("==", (RubyObject) ary1.get(j)).isTrue()) {
                     found = true;
                     break;
                 }
@@ -1201,7 +1199,7 @@ public class RubyArray extends RubyObject {
         for (int i = ary1.size() - 1; i >= 0; i--) {
             RubyObject obj = (RubyObject) ary1.get(i);
             for (int j = 0; j < len2; j++) {
-                if (obj.funcall(getRuby().intern("=="), (RubyObject) ary2.get(j)).isTrue()) {
+                if (obj.funcall("==", (RubyObject) ary2.get(j)).isTrue()) {
                     ary1.remove(i);
                     break;
                 }
@@ -1222,7 +1220,7 @@ public class RubyArray extends RubyObject {
         for (int i = 0; i < len1; i++) {
             RubyObject obj = (RubyObject) ary1.get(i);
             for (int j = 0; j < len2; j++) {
-                if (obj.funcall(getRuby().intern("=="), (RubyObject) ary2.get(j)).isTrue()) {
+                if (obj.funcall("==", (RubyObject) ary2.get(j)).isTrue()) {
                     ary3.add(obj);
                     break;
                 }
@@ -1290,7 +1288,7 @@ public class RubyArray extends RubyObject {
                 return RubyNumeric.fix2int(((RubyString) o1).op_cmp((RubyObject) o2));
             }
 
-            return RubyNumeric.fix2int(obj1.funcall(getRuby().intern("<=>"), obj2));
+            return RubyNumeric.fix2int(obj1.funcall("<=>", obj2));
         }
 
         public boolean equals(Object other) {

@@ -108,7 +108,7 @@ public class DefaultRubyParser implements RubyParser {
 	k__LINE__
 	k__FILE__
 
-%token <RubyId>    tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR
+%token <String>    tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR
 %token <RubyObject> tINTEGER tFLOAT tSTRING tXSTRING tREGEXP
 %token <Node>  tDSTRING tDXSTRING tDREGEXP tNTH_REF tBACK_REF
 
@@ -123,33 +123,33 @@ public class DefaultRubyParser implements RubyParser {
 %type <Node>  assoc_list assocs assoc undef_list backref
 %type <Node>  block_var opt_block_var brace_block do_block lhs none
 %type <Node>  mlhs mlhs_head mlhs_basic mlhs_entry mlhs_item mlhs_node
-%type <RubyId>    fitem variable sym symbol operation operation2 operation3
-%type <RubyId>    cname fname op
+%type <String>    fitem variable sym symbol operation operation2 operation3
+%type <String>    cname fname op
 %type <Integer>   f_rest_arg f_norm_arg f_arg
-%token <RubyId> tUPLUS 	/* unary+ */
-%token <RubyId> tUMINUS 	/* unary- */
-%token <RubyId> tPOW		/* ** */
-%token <RubyId> tCMP  		/* <=> */
-%token <RubyId> tEQ  		/* == */
-%token <RubyId> tEQQ  		/* === */
-%token <RubyId> tNEQ  		/* != */
-%token <RubyId> tGEQ  		/* >= */
-%token <RubyId> tLEQ  		/* <= */
-%token <RubyId> tANDOP tOROP	/* && and || */
-%token <RubyId> tMATCH tNMATCH	/* =~ and !~ */
-%token <RubyId> tDOT2 tDOT3	/* .. and ... */
-%token <RubyId> tAREF tASET	/* [] and []= */
-%token <RubyId> tLSHFT tRSHFT	/* << and >> */
-%token <RubyId> tCOLON2	/* :: */
-%token <RubyId> tCOLON3	/* :: at EXPR_BEG */
-%token <RubyId> tOP_ASGN	/* +=, -=  etc. */
-%token <RubyId> tASSOC		/* => */
-%token <RubyId> tLPAREN	/* ( */
-%token <RubyId> tLBRACK	/* [ */
-%token <RubyId> tLBRACE	/* { */
-%token <RubyId> tSTAR		/* * */
-%token <RubyId> tAMPER		/* & */
-%token <RubyId> tSYMBEG
+%token <String> tUPLUS 	/* unary+ */
+%token <String> tUMINUS 	/* unary- */
+%token <String> tPOW		/* ** */
+%token <String> tCMP  		/* <=> */
+%token <String> tEQ  		/* == */
+%token <String> tEQQ  		/* === */
+%token <String> tNEQ  		/* != */
+%token <String> tGEQ  		/* >= */
+%token <String> tLEQ  		/* <= */
+%token <String> tANDOP tOROP	/* && and || */
+%token <String> tMATCH tNMATCH	/* =~ and !~ */
+%token <String> tDOT2 tDOT3	/* .. and ... */
+%token <String> tAREF tASET	/* [] and []= */
+%token <String> tLSHFT tRSHFT	/* << and >> */
+%token <String> tCOLON2	/* :: */
+%token <String> tCOLON3	/* :: at EXPR_BEG */
+%token <String> tOP_ASGN	/* +=, -=  etc. */
+%token <String> tASSOC		/* => */
+%token <String> tLPAREN	/* ( */
+%token <String> tLBRACK	/* [ */
+%token <String> tLBRACE	/* { */
+%token <String> tSTAR		/* * */
+%token <String> tAMPER		/* & */
+%token <String> tSYMBEG
 
 /*
  *	precedence table
@@ -241,10 +241,10 @@ stmt		: kALIAS fitem {ph.setLexState(LexState.EXPR_FNAME);} fitem
 		    }
 		| kALIAS tGVAR tBACK_REF
 		    {
-			    if (ph.isInDef() || ph.isInSingle())
+			    if (ph.isInDef() || ph.isInSingle()) {
 			        yyerror("alias within method");
-			    String buf = "$" + (char)$3.getNth();
-		        $$ = nf.newVAlias($2, ruby.intern(buf));
+                }
+			    $$ = nf.newVAlias($2, "$" + (char)$3.getNth());
 		    }
 		| kALIAS tGVAR tNTH_REF
 		    {
@@ -542,32 +542,32 @@ undef_list	: fitem
 			    $$ = ph.block_append($1, nf.newUndef($4));
 		    }
 
-op		: '|'		{ $$ = RubyId.newId(ruby, '|'); }
-		| '^'		{ $$ = RubyId.newId(ruby, '^'); }
-		| '&'		{ $$ = RubyId.newId(ruby, '&'); }
-		| tCMP		{ $$ = RubyId.newId(ruby, tCMP); }
-		| tEQ		{ $$ = RubyId.newId(ruby, tEQ); }
-		| tEQQ		{ $$ = RubyId.newId(ruby, tEQQ); }
-		| tMATCH	{ $$ = RubyId.newId(ruby, tMATCH); }
-		| '>'		{ $$ = RubyId.newId(ruby, '>'); }
-		| tGEQ		{ $$ = RubyId.newId(ruby, tGEQ); }
-		| '<'		{ $$ = RubyId.newId(ruby, '<'); }
-		| tLEQ		{ $$ = RubyId.newId(ruby, tLEQ); }
-		| tLSHFT	{ $$ = RubyId.newId(ruby, tLSHFT); }
-		| tRSHFT	{ $$ = RubyId.newId(ruby, tRSHFT); }
-		| '+'		{ $$ = RubyId.newId(ruby, '+'); }
-		| '-'		{ $$ = RubyId.newId(ruby, '-'); }
-		| '*'		{ $$ = RubyId.newId(ruby, '*'); }
-		| tSTAR		{ $$ = RubyId.newId(ruby, '*'); }
-		| '/'		{ $$ = RubyId.newId(ruby, '/'); }
-		| '%'		{ $$ = RubyId.newId(ruby, '%'); }
-		| tPOW		{ $$ = RubyId.newId(ruby, tPOW); }
-		| '~'		{ $$ = RubyId.newId(ruby, '~'); }
-		| tUPLUS	{ $$ = RubyId.newId(ruby, tUPLUS); }
-		| tUMINUS	{ $$ = RubyId.newId(ruby, tUMINUS); }
-		| tAREF		{ $$ = RubyId.newId(ruby, tAREF); }
-		| tASET		{ $$ = RubyId.newId(ruby, tASET); }
-		| '`'		{ $$ = RubyId.newId(ruby, '`'); }
+op		: '|'		{ $$ = "|"; }
+		| '^'		{ $$ = "^"; }
+		| '&'		{ $$ = "&"; }
+		| tCMP		{ $$ = "<=>"; }
+		| tEQ		{ $$ = "=="; }
+		| tEQQ		{ $$ = "==="; }
+		| tMATCH	{ $$ = "=~"; }
+		| '>'		{ $$ = ">"; }
+		| tGEQ		{ $$ = ">="; }
+		| '<'		{ $$ = "<"; }
+		| tLEQ		{ $$ = "<="; }
+		| tLSHFT	{ $$ = "<<"; }
+		| tRSHFT	{ $$ = ">>"; }
+		| '+'		{ $$ = "+"; }
+		| '-'		{ $$ = "-"; }
+		| '*'		{ $$ = "*"; }
+		| tSTAR		{ $$ = "*"; }
+		| '/'		{ $$ = "/"; }
+		| '%'		{ $$ = "%"; }
+		| tPOW		{ $$ = "**"; }
+		| '~'		{ $$ = "~"; }
+		| tUPLUS	{ $$ = "+@"; }
+		| tUMINUS	{ $$ = "-@"; }
+		| tAREF		{ $$ = "[]"; }
+		| tASET		{ $$ = "[]="; }
+		| '`'		{ $$ = "`"; }
 
 reswords	: k__LINE__ | k__FILE__  | klBEGIN | klEND
 		| kALIAS | kAND | kBEGIN | kBREAK | kCASE | kCLASS | kDEF
@@ -584,19 +584,19 @@ arg		: lhs '=' arg
 		    }
 		| variable tOP_ASGN {$$ = ph.assignable($1, null);} arg
 		    {
-			    if ($2.intValue() == tOROP) {
+			    if ($2.equals("||")) {
 			        $3.setValueNode($4);
 			        $$ = nf.newOpAsgnOr(ph.gettable($1), $<Node>3);
-			        if ($1.isInstanceId()) {
+			        if (IdUtil.isInstanceVariable($1)) {
 				        $<Node>$.setAId($1);
 			        }
-			    } else if ($2.intValue() == tANDOP) {
+			    } else if ($2.equals("&&")) {
 			        $3.setValueNode($4);
 			        $$ = nf.newOpAsgnAnd(ph.gettable($1), $<Node>3);
 			    } else {
 			        $$ = $3;
 			        if ($$ != null) {
-				        $<Node>$.setValueNode(ph.call_op(ph.gettable($1),$2.intValue(),1,$4));
+				        $<Node>$.setValueNode(ph.call_op(ph.gettable($1),$2,1,$4));
 			        }
 			    }
 			    ph.fixpos($$, $4);
@@ -607,42 +607,22 @@ arg		: lhs '=' arg
 
 			    ph.list_append($3, nf.newNil());
 			    ph.list_concat(args, $3);
-                if ($5.intValue() == Token.tOROP) {
-			        $<>5 = RubyId.newId(ruby, 0);
-			    } else if ($5.intValue() == Token.tANDOP) {
-			        $<>5 = RubyId.newId(ruby, 1);
-			    }
-			    $$ = nf.newOpAsgn1($1, $5, args);
+                $$ = nf.newOpAsgn1($1, $5, args);
 		        ph.fixpos($$, $1);
 		    }
 		| primary '.' tIDENTIFIER tOP_ASGN arg
 		    {
-                if ($4.intValue() == Token.tOROP) {
-			        $<>4 = RubyId.newId(ruby, 0);
-			    } else if ($4.intValue() == Token.tANDOP) {
-			        $<>4 = RubyId.newId(ruby, 1);
-			    }
-			    $$ = nf.newOpAsgn2($1, $3, $4, $5);
+                $$ = nf.newOpAsgn2($1, $3, $4, $5);
 		        ph.fixpos($$, $1);
 		    }
 		| primary '.' tCONSTANT tOP_ASGN arg
 		    {
-                if ($4.intValue() == Token.tOROP) {
-			        $<>4 = RubyId.newId(ruby, 0);
-			    } else if ($4.intValue() == Token.tANDOP) {
-			        $<>4 = RubyId.newId(ruby, 1);
-			    }
-			    $$ = nf.newOpAsgn2($1, $3, $4, $5);
+                $$ = nf.newOpAsgn2($1, $3, $4, $5);
 		        ph.fixpos($$, $1);
 		    }
 		| primary tCOLON2 tIDENTIFIER tOP_ASGN arg
 		    {
-			    if ($4.intValue() == Token.tOROP) {
-			        $<>4 = RubyId.newId(ruby, 0);
-			    } else if ($4.intValue() == Token.tANDOP) {
-			        $<>4 = RubyId.newId(ruby, 1);
-			    }
-			    $$ = nf.newOpAsgn2($1, $3, $4, $5);
+                $$ = nf.newOpAsgn2($1, $3, $4, $5);
 		        ph.fixpos($$, $1);
 		    }
 		| backref tOP_ASGN arg
@@ -686,8 +666,8 @@ arg		: lhs '=' arg
                     if ($1.getLiteral() instanceof RubyFixnum || 
                         $1.getLiteral() instanceof RubyFloat ||
                         $1.getLiteral() instanceof RubyBignum) {
-                        if ($1.getLiteral().funcall(ruby.intern("<"), RubyFixnum.zero(ruby)).isTrue()) {
-                            $1.setLiteral($1.getLiteral().funcall(ruby.intern("-@")));
+                        if ($1.getLiteral().funcall("<", RubyFixnum.zero(ruby)).isTrue()) {
+                            $1.setLiteral($1.getLiteral().funcall("-@"));
                             need_negate = true;
                         }
                     }
@@ -710,7 +690,7 @@ arg		: lhs '=' arg
 			    if ($2 != null && $2 instanceof LitNode && $2.getLiteral() instanceof RubyFixnum) {
 			        long i = ((RubyFixnum)$2.getLiteral()).getValue();
 
-			        $2.setLiteral(RubyFixnum.m_newFixnum(ruby, -i));
+			        $2.setLiteral(RubyFixnum.newFixnum(ruby, -i));
 			        $$ = $2;
 			    } else {
 			        $$ = ph.call_op($2, tUMINUS, 0, null);
@@ -1021,7 +1001,7 @@ primary		: literal
 		| primary '[' aref_args ']'
 		    {
 			    ph.value_expr($1);
-			    $$ = nf.newCall($1, ph.newId(tAREF), $3);
+			    $$ = nf.newCall($1, "[]", $3);
 		    }
 		| tLBRACK aref_args ']'
 		    {
@@ -1223,12 +1203,13 @@ primary		: literal
 		        /* NOEX_PRIVATE for toplevel */
 			    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? 
                                 Constants.NOEX_PUBLIC : Constants.NOEX_PRIVATE);
-			    if ($2.isAttrSetId())
+			    if (IdUtil.isAttrSet($2))
                     $<Node>$.setNoex(Constants.NOEX_PUBLIC);
 		        ph.fixpos($$, $4);
 		        ph.local_pop();
 			    ph.setInDef(ph.getInDef() - 1);
-			    ph.setCurMid($<RubyId>3);
+			    //+++ ph.setCurMid($3);
+                ph.setCurMid($2);
 		    }
 		| kDEF singleton dot_or_colon {ph.setLexState(LexState.EXPR_FNAME);} fname
 		    {
@@ -1441,7 +1422,7 @@ rescue		: kRESCUE exc_list exc_var then
 		  rescue
 		    {
 		        if ($3 != null) {
-		            $<>3 = ph.node_assign($3, nf.newGVar(ruby.intern("$!")));
+		            $<>3 = ph.node_assign($3, nf.newGVar("$!"));
 			        $<>5 = ph.block_append($3, $5);
 			    }
 			    $$ = nf.newResBody($2, $5, $6);
@@ -1462,7 +1443,7 @@ ensure		: none
 literal		: numeric
 		| symbol
 		    {
-			    $$ = $1.toSymbol();
+			    $$ = RubySymbol.newSymbol(ruby, $1);
 		    }
 		| tREGEXP
 
@@ -1476,7 +1457,7 @@ string		: tSTRING
 		        if ($1.getType() == Constants.NODE_DSTR) {
 			        ph.list_append($1, nf.newStr($2));
 			    } else {
-			        ((RubyString)$1.getLiteral()).m_concat((RubyString)$2);
+			        ((RubyString)$1.getLiteral()).concat((RubyString)$2);
 			    }
 			    $$ = $1;
 		    }
@@ -1512,12 +1493,12 @@ variable	: tIDENTIFIER
 		| tGVAR
 		| tCONSTANT
 		| tCVAR
-		| kNIL {$$ = ph.newId(kNIL);}
-		| kSELF {$$ = ph.newId(kSELF);}
-		| kTRUE {$$ = ph.newId(kTRUE);}
-		| kFALSE {$$ = ph.newId(kFALSE);}
-		| k__FILE__ {$$ = ph.newId(k__FILE__);}
-		| k__LINE__ {$$ = ph.newId(k__LINE__);}
+		| kNIL {$$ = "~~NIL";}
+		| kSELF {$$ = "~~SELF";}
+		| kTRUE {$$ = "~~TRUE";}
+		| kFALSE {$$ = "~~FALSE";}
+		| k__FILE__ {$$ = "~~__FILE__";}
+		| k__LINE__ {$$ = "~~__LINE__";}
 
 var_ref		: variable
 		    {
@@ -1606,7 +1587,7 @@ f_norm_arg	: tCONSTANT
 		    }
 		| tIDENTIFIER
 		    {
-			    if (!$1.isLocalId())
+			    if (!IdUtil.isLocal($1))
 			        yyerror("formal argument must be local variable");
 			    else if (ph.local_id($1))
 			        yyerror("duplicate argument name");
@@ -1622,7 +1603,7 @@ f_arg		: f_norm_arg
 
 f_opt		: tIDENTIFIER '=' arg
 		    {
-			    if (!$1.isLocalId())
+			    if (!IdUtil.isLocal($1))
 			        yyerror("formal argument must be local variable");
 			    else if (ph.local_id($1))
 			        yyerror("duplicate optional argument name");
@@ -1641,7 +1622,7 @@ f_optarg	: f_opt
 
 f_rest_arg	: tSTAR tIDENTIFIER
 		    {
-			    if (!$2.isLocalId())
+			    if (!IdUtil.isLocal($2))
 			        yyerror("rest argument must be local variable");
 			    else if (ph.local_id($2))
 			        yyerror("duplicate rest argument name");
@@ -1654,7 +1635,7 @@ f_rest_arg	: tSTAR tIDENTIFIER
 
 f_block_arg	: tAMPER tIDENTIFIER
 		    {
-			    if (!$2.isLocalId())
+			    if (!IdUtil.isLocal($2))
 			        yyerror("block argument must be local variable");
 			    else if (ph.local_id($2))
 			        yyerror("duplicate block argument name");
@@ -1816,7 +1797,7 @@ none		: /* none */
     }
 
     public Node compileJavaString(String f, String s, int len, int line) {
-        return compileString(f, RubyString.m_newString(ruby, s, len), line);
+        return compileString(f, RubyString.newString(ruby, s, len), line);
     }
 
     public Node compileFile(String f, RubyObject file, int start) {
@@ -1832,7 +1813,7 @@ none		: /* none */
     private void init_for_scanner(String s) {
         rs.setLexFileIo(false);
         rs.setLexGetsPtr(0);
-        rs.setLexInput(RubyString.m_newString(ruby, s));
+        rs.setLexInput(RubyString.newString(ruby, s));
         rs.setLexP(0);
         rs.setLexPEnd(0);
         ruby.setSourceLine(0);
@@ -1846,26 +1827,25 @@ none		: /* none */
      *
      */
     public Node yycompile(String f, int line) {
-        RubyId sl_id = ruby.intern("SCRIPT_LINES__");
-        if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined(sl_id)) {
-            RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant(sl_id);
-            RubyString fName = RubyString.m_newString(ruby, f);
+        if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined("SCRIPT_LINES__")) {
+            RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant("SCRIPT_LINES__");
+            RubyString fName = RubyString.newString(ruby, f);
             
             // XXX +++
             RubyObject debugLines = ruby.getNil(); // = rb_hash_aref(hash, fName);
             // XXX ---
             
             if (debugLines.isNil()) {
-                ph.setRubyDebugLines(RubyArray.m_newArray(ruby));
-                hash.m_aset(fName, ph.getRubyDebugLines());
+                ph.setRubyDebugLines(RubyArray.newArray(ruby));
+                hash.aset(fName, ph.getRubyDebugLines());
             } else {
                 ph.setRubyDebugLines((RubyArray)debugLines);
             }
             
             if (line > 1) {
-                RubyString str = RubyString.m_newString(ruby, null);
+                RubyString str = RubyString.newString(ruby, null);
                 while (line > 1) {
-                    ph.getRubyDebugLines().m_push(str);
+                    ph.getRubyDebugLines().push(str);
                     line--;
                 }
             }

@@ -34,6 +34,7 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.util.*;
+import org.jruby.util.collections.*;
 
 /**
  *
@@ -47,43 +48,47 @@ public class RubyScope {
     public static final int SCOPE_DONT_RECYCLE = 4;
 
     private RubyObject superObject = null;
-    private RubyIdPointer localTbl = null;
-    private RubyPointer localVars = null;
+    
     private int flags = 0;
-
+    
+    private ExtendedList localNames = null;
+	private ExtendedList localValues = null;
+    
     private int oldActMethodScope = Constants.NOEX_PRIVATE; // Same as default for top level...just in case
     private Ruby ruby = null;
 
     private RubyScope old = null;
 
     public RubyScope(Ruby ruby) {
-	this.ruby = ruby;
+        this.ruby = ruby;
     }
 
     public RubyScope(RubyScope scope, Ruby ruby) {
         this.superObject = scope.superObject;
-        this.localTbl = scope.localTbl;
-        this.localVars = scope.localVars;
+        this.localNames = scope.localNames;
+        this.localValues = scope.localValues;
         this.flags = scope.flags;
         this.old = scope.old;
-	this.ruby = ruby;
+        this.ruby = ruby;
     }
 
     public void push() {
-	oldActMethodScope = ruby.getActMethodScope();	
-	ruby.setActMethodScope(Constants.NOEX_PUBLIC);
+        oldActMethodScope = ruby.getActMethodScope();
+        ruby.setActMethodScope(Constants.NOEX_PUBLIC);
         old = new RubyScope(this, ruby);
 
-        localTbl = null;
-        localVars = null;
+		localNames = null;
+        localValues = null;
         flags = 0;
     }
 
     public void pop() {
-	ruby.setActMethodScope(oldActMethodScope);
+        ruby.setActMethodScope(oldActMethodScope);
         this.superObject = old.superObject;
-        this.localTbl = old.localTbl;
-        this.localVars = old.localVars;
+        
+        this.localNames = old.localNames;
+        this.localValues = old.localValues;
+        
         this.flags = old.flags;
         this.old = old.old;
     }
@@ -102,76 +107,6 @@ public class RubyScope {
         this.flags = flags;
     }
 
-    /** Indexed getter for property localTbl.
-     * @param index Index of the property.
-     * @return Value of the property at <CODE>index</CODE>.
-     */
-    public RubyId getLocalTbl(int index) {
-        return localTbl.getId(index);
-    }
-
-    /** Getter for property localTbl.
-     * @return Value of property localTbl.
-     */
-    public RubyIdPointer getLocalTbl() {
-        return localTbl;
-    }
-
-    /** Indexed setter for property localTbl.
-     * @param index Index of the property.
-     * @param localTbl New value of the property at <CODE>index</CODE>.
-     */
-    public void setLocalTbl(int index, RubyId newId) {
-        localTbl.set(index, newId);
-    }
-
-    /** Setter for property localTbl.
-     * @param localTbl New value of property localTbl.
-     */
-    public void setLocalTbl(RubyIdPointer localTbl) {
-        this.localTbl = localTbl;
-    }
-
-    /** Indexed getter for property localVars.
-     * @param index Index of the property.
-     * @return Value of the property at <CODE>index</CODE>.
-     */
-    public RubyObject getLocalVars(int index) {
-        return localVars.getRuby(index);
-    }
-
-    /** Getter for property localVars.
-     * @return Value of property localVars.
-     */
-    public RubyPointer getLocalVars() {
-        return localVars;
-    }
-
-    /** Indexed setter for property localVars.
-     * @param index Index of the property.
-     * @param localVars New value of the property at <CODE>index</CODE>.
-     */
-    public void setLocalVars(int index, RubyObject newValue) {
-        // HACK +++
-        /*if (localVars == null) {
-            localVars = new ShiftableList(new ArrayList());
-            localVars.shiftLeft(index + 1);
-        }*/
-        if (localVars == null) {
-            localVars = new RubyPointer(new ArrayList());
-            localVars.inc(index + 1);
-        }
-        // HACK ---
-        localVars.set(index, newValue);
-    }
-
-    /** Setter for property localVars.
-     * @param localVars New value of property localVars.
-     */
-    public void setLocalVars(RubyPointer localVars) {
-        this.localVars = localVars;
-    }
-
     /** Getter for property superObject.
      * @return Value of property superObject.
      */
@@ -185,4 +120,43 @@ public class RubyScope {
     public void setSuperObject(RubyObject superObject) {
         this.superObject = superObject;
     }
+    /**
+     * Gets the localNames.
+     * @return Returns a NameList
+     */
+    public ExtendedList getLocalNames() {
+        return localNames;
+    }
+
+    /**
+     * Sets the localNames.
+     * @param localNames The localNames to set
+     */
+    public void setLocalNames(ExtendedList localName) {
+        this.localNames = localName;
+    }
+
+    /**
+     * Gets the localValues.
+     * @return Returns a ArrayList
+     */
+    public ExtendedList getLocalValues() {
+        return localValues;
+    }
+
+    /**
+     * Sets the localValues.
+     * @param localValues The localValues to set
+     */
+    public void setLocalValues(ExtendedList localValue) {
+        this.localValues = localValue;
+    }
+
+	public RubyObject getValue(int count) {
+	    return (RubyObject)localValues.get(count);
+	}
+	
+	public void setValue(int count, RubyObject value) {
+	    localValues.set(count, value);
+	}
 }

@@ -41,41 +41,38 @@ import org.jruby.util.*;
  * @version
  */
 public class OpAsgn1Node extends Node {
-    public OpAsgn1Node(Node recvNode, RubyId mId, Node argsNode) {
+    public OpAsgn1Node(Node recvNode, String mId, Node argsNode) {
         super(Constants.NODE_OP_ASGN1, recvNode, mId, argsNode);
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // TMP_PROTECT;
-        
+
         RubyObject recv = getRecvNode().eval(ruby, self);
         Node rval = getArgsNode().getHeadNode();
-        
+
         RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode().getNextNode());
         args.remove(args.size() - 1);
 
-        RubyObject val = recv.funcall(ruby.intern("[]"), args);
+        RubyObject val = recv.funcall("[]", args);
 
-        switch (getMId().intValue()) {
-            case 0: /* OR */
-                if (val.isTrue()) {
-                    return val;
-                } else {
-                    val = rval.eval(ruby, self);
-                }
-                break;
-            case 1: /* AND */
-                if (val.isFalse()) {
-                    return val;
-                } else {
-                    val = rval.eval(ruby, self);
-                }
-                break;
-            default:
-                val = val.funcall(getMId(), rval.eval(ruby, self));
+        if (getMId().equals("||")) {
+            if (val.isTrue()) {
+                return val;
+            } else {
+                val = rval.eval(ruby, self);
+            }
+        } else if (getMId().equals("&&")) {
+            if (val.isFalse()) {
+                return val;
+            } else {
+                val = rval.eval(ruby, self);
+            }
+        } else {
+            val = val.funcall(getMId(), rval.eval(ruby, self));
         }
 
         args.set(args.size() - 1, val);
-        return recv.funcall(ruby.intern("[]="), args);
+        return recv.funcall("[]=", args);
     }
 }

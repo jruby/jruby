@@ -41,7 +41,7 @@ import org.jruby.util.*;
  * @version
  */
 public class FCallNode extends Node {
-    public FCallNode(RubyId mId, Node argsNode) {
+    public FCallNode(String mId, Node argsNode) {
         super(Constants.NODE_FCALL, null, mId, argsNode);
     }
     

@@ -183,8 +183,8 @@ public class RubyJavaObject extends RubyObject {
         try {
             return ruby.getJavaClassLoader().loadClass(className);
         } catch (ClassNotFoundException cnfExcptn) {
-        	if (ruby.getClasses().getJavaObjectClass().isClassVarDefined(ruby.intern("imports"))) {
-	            RubyArray imports = (RubyArray)ruby.getClasses().getJavaObjectClass().getClassVar(ruby.intern("imports"));
+        	if (ruby.getClasses().getJavaObjectClass().isClassVarDefined("imports")) {
+	            RubyArray imports = (RubyArray)ruby.getClasses().getJavaObjectClass().getClassVar("imports");
 
                 int len = imports.getLength();
                 for (int i = 0; i < len; i++) {
@@ -211,14 +211,14 @@ public class RubyJavaObject extends RubyObject {
     public static RubyObject rbImport(Ruby ruby, RubyObject recv, RubyString packageName) {
     	RubyArray imports;
     	
-    	if (((RubyClass)recv).isClassVarDefined(ruby.intern("imports"))) {
-        	imports = (RubyArray)((RubyClass)recv).getClassVar(ruby.intern("imports"));
+    	if (((RubyClass)recv).isClassVarDefined("imports")) {
+        	imports = (RubyArray)((RubyClass)recv).getClassVar("imports");
     	} else {
             imports = RubyArray.newArray(ruby);
-            ((RubyClass)recv).declareClassVar(ruby.intern("imports"), imports);
+            ((RubyClass)recv).declareClassVar("imports", imports);
         }
 
-        imports.funcall(ruby.intern("push"), packageName);
+        imports.funcall("push", packageName);
 
         return recv;
     }

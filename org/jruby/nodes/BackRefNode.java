@@ -40,8 +40,8 @@ import org.jruby.runtime.*;
  * @version
  */
 public class BackRefNode extends Node {
-    public BackRefNode(int nth, int count) {
-        super(Constants.NODE_BACK_REF, null, nth, count);
+    public BackRefNode(int nth) {
+        super(Constants.NODE_BACK_REF, null, nth, null);
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
