@@ -10,8 +10,11 @@ Block:
 
 Frame:
 
-    [What is it, and how does it differ from Scope?]
-
+	A Frame is used to represent the actual method (or block) context. Each method
+	(or block) call a new Frame will be pushed on a FrameStack. In a Frame stack
+	the name of the actual method, the class in which the method is implemented
+	and the arguments will be stored. For example it is used to create Exception
+	backtraces and to call the correct super method.
 
 Iter:
 
@@ -25,10 +28,14 @@ MRI (Matz' Ruby Interpreter):
 
 
 Scope:
-
-    [The extent of a Local Variable? What language constructs create new scopes?
-    How does it work internally?]
-
+	Scopes are used to store local variables and to store the actual method-
+	visibility which is used when a new method is created.
+	The scope of a local variable ranges from class, module, def or
+	do to the corresponding end.
+	It is implemented in JRuby as a stack (ScopeStack) of Scope objects.
+	Each Scope contains an array of IRubyObjects (localValues) which is used
+	to store the local variables and an array of Strings (localNames) which 
+	is used	to store the names of the local variables.
 
 Variable, Block:
 
