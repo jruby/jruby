@@ -63,6 +63,7 @@
     <target depends="init" name="src-gz">
         <tar basedir="${base.dir}" tarfile="${build.dir}/jruby-src.tar">
             <exclude name="${build.dir}/**/*"/>
+            <exclude name="**/*.class"/>
         </tar>
 
         <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
