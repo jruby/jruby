@@ -21,6 +21,7 @@ testString.rb
 testException.rb
 testException2.rb
 testFile.rb
+testFileTest.rb
 testIO.rb
 testThread.rb
 testMarshal.rb

@@ -44,6 +44,7 @@ import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
@@ -127,6 +128,13 @@ public class RubyFile extends RubyIO {
         fileClass.setConstant("NONBLOCK", 
         		runtime.newFixnum(IOModes.NONBLOCK));
 
+        // TODO Singleton Methods that should be on file
+        // TODO - blockdev?, chardev?, directory?, executable?, executable_real?
+        // TODO - exist? exists?, extname, fnmatch, fnmatch?
+        // TODO - ftype, grpowned?, lchmod, lchown, link, mtime, owned?, pipe?
+        // TODO - readable? readable_real? readlink, setgid?, setuid?, size
+        // TODO - size?, socket?, stat, sticky?, symlink, symlink?, umask
+        // TODO - utime, writable?, writable_real?, zero?
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFile.class);
 
         fileClass.extendObject(runtime.getClasses().getFileTestModule());
@@ -153,6 +161,8 @@ public class RubyFile extends RubyIO {
         // It broke when moved to indexed callbacks, so added this line:
         fileClass.defineMethod("print", callbackFactory.getOptSingletonMethod("print"));
 
+        callbackFactory = runtime.callbackFactory(RubyFileTest.class);
+        fileClass.defineSingletonMethod("file?", callbackFactory.getSingletonMethod("file_p", RubyString.class));
         return fileClass;
     }
     
@@ -393,4 +403,5 @@ public class RubyFile extends RubyIO {
     public String toString() {
         return "RubyFile(" + path + ", " + modes + ", " + fileno + ")";
     }
+
 }

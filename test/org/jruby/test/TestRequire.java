@@ -49,7 +49,8 @@ public class TestRequire extends TestRubyBase {
 		super.tearDown(); 
 	} 
 	
-	public void testRubyRequire() throws Exception { 
+	public void testRubyRequire() throws Exception {
+	    
 		String result = eval("require 'A/C'; puts A::C.new.meth"); 
 		assertEquals("ok", result); 
 		result = eval("$: << 'A'; require 'B'; puts B.new.meth"); 

@@ -55,6 +55,8 @@ public class RubyFileStat extends RubyObject {
         fileStatClass.defineMethod("mode", callbackFactory.getMethod("mode"));
         fileStatClass.defineMethod("size", callbackFactory.getMethod("size"));
         fileStatClass.defineMethod("writable?", callbackFactory.getMethod("writable"));
+
+        fileStatClass.defineMethod("file?", callbackFactory.getMethod("file_p"));
     	
         return fileStatClass;
     }
@@ -66,6 +68,10 @@ public class RubyFileStat extends RubyObject {
 
     public RubyBoolean directory_p() {
         return getRuntime().newBoolean(file.isDirectory());
+    }
+
+    public RubyBoolean file_p() {
+        return getRuntime().newBoolean(file.isFile());
     }
     
     public IRubyObject mode() {

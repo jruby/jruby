@@ -255,6 +255,8 @@ public class RubyClasses {
                 return RubyUnboundMethod.defineUnboundMethodClass(runtime);
             }
         });
+        
+        runtime.getClasses().getFileTestModule();
     }
 
     public void initBuiltinClasses() {

@@ -41,6 +41,7 @@ public class RubyFileTest {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 
+        fileTestModule.defineSingletonMethod("file?", callbackFactory.getSingletonMethod("file_p", RubyString.class));
         fileTestModule.defineSingletonMethod("directory?", callbackFactory.getSingletonMethod("directory_p", RubyString.class));
         fileTestModule.defineSingletonMethod("exist?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
         fileTestModule.defineSingletonMethod("exists?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
@@ -51,6 +52,7 @@ public class RubyFileTest {
         fileTestModule.defineSingletonMethod("writable_real?", callbackFactory.getSingletonMethod("writable_p", RubyString.class));
         fileTestModule.defineSingletonMethod("zero?", callbackFactory.getSingletonMethod("zero_p", RubyString.class));
         
+//        fileTestModule.defineMethod("file?", callbackFactory.getSingletonMethod("file_p", RubyString.class));
         fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod("directory_p", RubyString.class));
         fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
         fileTestModule.defineMethod("exists?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
@@ -102,6 +104,12 @@ public class RubyFileTest {
         File file = new File(filename.getValue());
         return filename.getRuntime().newBoolean(
                 file.exists() && file.length() == 0L);
+                
+    }
+
+    public static RubyBoolean file_p(IRubyObject recv, RubyString filename) {
+        File file = new File(filename.getValue());
+        return filename.getRuntime().newBoolean(file.isFile());
                 
     }
     
