@@ -1,4 +1,6 @@
+
 # Import Java packages
+require 'java'
 module JavaSwing
   include_package "javax.swing"
   include_package "java.awt.event"

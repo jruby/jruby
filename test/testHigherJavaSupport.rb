@@ -3,6 +3,8 @@ test_check "High-level Java Support"
 
 if defined? Java
 
+  require 'java'
+
   module TestJavaSupport
     include_package "java.util"
 

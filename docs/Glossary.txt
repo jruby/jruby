@@ -8,7 +8,7 @@ AST (Abstract Syntax Tree):
 
     A data structure representation of Ruby code, which is output from the
     parser. The current JRuby implementation does evaluation by running the
-    interpreter directly on an AST.
+    interpreter directly on an AST. Also known as a "parse tree".
 
 Block:
 

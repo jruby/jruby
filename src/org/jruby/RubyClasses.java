@@ -29,23 +29,19 @@
  */
 package org.jruby;
 
-import java.io.InputStream;
-import java.io.BufferedInputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.ablaf.ast.IAstDecoder;
-import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.javasupport.*;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.util.BuiltinScript;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -249,23 +245,10 @@ public class RubyClasses {
         });
     }
 
-    private void loadBuiltin(String name) {
-        String resourceName = "/builtin/" + name + ".rb.ast.ser";
-        InputStream in = getClass().getResourceAsStream(resourceName);
-        if (in == null) {
-            throw new IOError(runtime, "Resource not found: " + resourceName);
-        }
-        in = new BufferedInputStream(in);
-        IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
-        runtime.loadNode("init-builtin", decoder.readNode(), false);
-        decoder.close();
-    }
-
     public void initBuiltinClasses() {
-        loadBuiltin("FalseClass");
-        loadBuiltin("TrueClass");
-        loadBuiltin("Enumerable");
-        loadBuiltin("javasupport");
+        new BuiltinScript("FalseClass").load(runtime);
+        new BuiltinScript("TrueClass").load(runtime);
+        new BuiltinScript("Enumerable").load(runtime);
     }
 
     /**
