@@ -15,6 +15,9 @@
     <method name="optional_method">
       <arity optional="true">1</arity>
     </method>
+    <method name="&lt;=>">
+      <java>op_cmp</java>
+    </method>
     <method-alias name="op2" original="optional_method"/>
     <undefine-method name="whoah"/>
   </instance-methods>
@@ -24,5 +27,9 @@
       <arity>2</arity>
     </method>
     <method name="beta"/>
+    <method name="new">
+      <arity optional="true">0</arity>
+      <java>newInstance</java>
+    </method>
   </class-methods>
 </module>
