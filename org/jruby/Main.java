@@ -308,8 +308,9 @@ public class Main {
             ruby.getRuntime().getErrorStream().print(lBug.getMessage());
         }
         // ---
-        // to look nicer
-        ruby.getRuntime().getOutputStream().println("");
+        // to look nicer 
+        // That isn't Ruby compatible.
+        // ruby.getRuntime().getOutputStream().println("");
     }
 
     /**
