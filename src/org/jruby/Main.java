@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CommandlineParser;
 
@@ -128,10 +129,25 @@ public class Main {
         return result;
     }
 
-    private static void initializeRuntime(Ruby runtime, String filename) {
+    private static void initializeRuntime(final Ruby runtime, String filename) {
         IRubyObject argumentArray = RubyArray.newArray(runtime, JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
         runtime.setVerbose(commandline.verbose);
-        defineGlobal(runtime, "$VERBOSE", commandline.verbose);
+
+        // $VERBOSE will return true if it is set to a non-nil value.  Make 
+        // special accessor linked to runtimes value that behaves like this.
+        runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
+            public IRubyObject getValue() {
+            	return RubyBoolean.newBoolean(runtime, runtime.isVerbose());
+            }
+            
+            public IRubyObject setValue(IRubyObject newValue) {
+            	runtime.setVerbose(newValue.isNil() == false);
+            	
+            	return newValue;
+            }
+        });
+        runtime.getClasses().getObjectClass().setConstant("$VERBOSE", 
+        		commandline.verbose ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
 
         // I guess ENV is not a hash, but should support a to_hash, though
