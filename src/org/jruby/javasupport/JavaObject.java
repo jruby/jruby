@@ -53,8 +53,17 @@ public class JavaObject extends RubyObject implements IndexCallable {
         this.value = value;
     }
 
-    public JavaObject(Ruby ruby, Object value) {
+    protected JavaObject(Ruby ruby, Object value) {
         this(ruby, ruby.getClasses().getJavaObjectClass(), value);
+    }
+    
+    public static synchronized JavaObject wrap(Ruby runtime, Object value) {
+        JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
+        if (wrapper == null) {
+            wrapper = new JavaObject(runtime, value);
+            runtime.getJavaSupport().putJavaObjectIntoCache(wrapper);
+        }
+        return wrapper;
     }
 
     public Class getJavaClass() {

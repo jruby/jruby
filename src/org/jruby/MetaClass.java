@@ -22,6 +22,8 @@
  */
 package org.jruby;
 
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.util.Asserts;
 
 public class MetaClass extends RubyClass implements IMetaClass {
@@ -39,6 +41,16 @@ public class MetaClass extends RubyClass implements IMetaClass {
     }
     public boolean isSingleton() {
         return true;
+    }
+
+    protected RubyClass subclass() {
+        throw new TypeError(runtime, "can't make subclass of virtual class");
+    }
+
+    protected void testFrozen() {
+        if (isFrozen()) {
+            throw new FrozenError(getRuntime(), "object");
+        }
     }
 
 }

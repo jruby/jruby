@@ -209,17 +209,7 @@ public class JavaUtil {
         } else if (object instanceof RubyProxy) {
             return ((RubyProxy) object).getRubyObject();
         } else {
-            // Look if a RubyObject exists which already represents object.
-            Iterator iter = ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
-            while (iter.hasNext()) {
-                IRubyObject rubyObject = (IRubyObject) iter.next();
-                if (rubyObject instanceof JavaObject) {
-                    if (((JavaObject) rubyObject).getValue() == object) {
-                        return rubyObject;
-                    }
-                }
-            }
-            return new JavaObject(ruby, object);
+            return JavaObject.wrap(ruby, object);
         }
     }
 

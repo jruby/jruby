@@ -41,15 +41,25 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.IndexCallable;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyClass extends RubyModule {
+public class RubyClass extends RubyModule implements IndexCallable {
 
     private RubyClass(Ruby ruby) {
         this(ruby, null, null);
+    }
+
+    /**
+     * @mri rb_boot_class
+     */
+    protected RubyClass(RubyClass superClass) {
+        this(superClass.getRuntime(), superClass.getRuntime().getClasses().getClassClass(), superClass);
+
+        infectBy(superClass);
     }
 
     protected RubyClass(Ruby ruby, RubyClass superClass) {
@@ -64,21 +74,9 @@ public class RubyClass extends RubyModule {
         super(ruby, rubyClass, superClass, name);
     }
 
-    public static RubyClass nilClass(Ruby ruby) {
-        return new RubyClass(ruby) {
-            public boolean isNil() {
-                return true;
-            }
-        };
-    }
-
     protected void testFrozen() {
         if (isFrozen()) {
-            if (isSingleton()) {
-                throw new FrozenError(getRuntime(), "object");
-            } else {
-                throw new FrozenError(getRuntime(), "class");
-            }
+            throw new FrozenError(getRuntime(), "class");
         }
     }
 
@@ -100,7 +98,7 @@ public class RubyClass extends RubyModule {
 
         classClass.undefMethod("module_function");
     }
-    
+
     /** Invokes if  a class is inherited from an other  class.
      * 
      * MRI: rb_class_inherited
@@ -130,11 +128,11 @@ public class RubyClass extends RubyModule {
         Iterator iter = getMethods().entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
-            
-            ICallable value = (ICallable)entry.getValue();
-            
+
+            ICallable value = (ICallable) entry.getValue();
+
             clone.getMethods().put(entry.getKey(), value);
-        }      
+        }
 
         //clone.setMethods();
 
@@ -152,8 +150,8 @@ public class RubyClass extends RubyModule {
 
         return type != null ? type : getRuntime().getClasses().getClassClass();
     }
-    
-	public RubyClass getRealClass() {
+
+    public RubyClass getRealClass() {
         if (isSingleton() || isIncluded()) {
             return getSuperClass().getRealClass();
         }
@@ -173,7 +171,6 @@ public class RubyClass extends RubyModule {
 
     /** 
      *
-     *  @mri rb_class_boot
      */
     public RubyClass newSingletonClass() {
         MetaClass newClass = new MetaClass(getRuntime(), this);
@@ -181,21 +178,19 @@ public class RubyClass extends RubyModule {
         return newClass;
     }
 
-    // Methods of the Class class (rb_class_*):
-
-    /** rb_class_new
-     *
-     */
-    public static RubyClass newClass(Ruby ruby, RubyClass superClass) {
-        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass);
-    }
-
     public static RubyClass newClass(Ruby ruby, RubyClass superClass, String name) {
         return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass, name);
     }
 
-    public static RubyClass newClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
-        return new RubyClass(ruby, rubyClass, superClass);
+    /** Create a new subclass of this class.
+     * 
+     * @mri rb_class_new
+     */
+    protected RubyClass subclass() {
+        if (this == runtime.getClasses().getClassClass()) {
+            throw new TypeError(runtime, "can't make subclass of Class");
+        }
+        return new RubyClass(this);
     }
 
     /** rb_class_new_instance
@@ -215,20 +210,19 @@ public class RubyClass extends RubyModule {
      */
     public static RubyClass newClass(IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = recv.getRuntime();
+
         RubyClass superClass = runtime.getClasses().getObjectClass();
-
-        if (args.length >= 1) {
-            if (! (args[0] instanceof RubyClass)) {
-                throw new TypeError(runtime, args[0], runtime.getClasses().getClassClass());
+        if (args.length > 0) {
+            if (args[0] instanceof RubyClass) {
+                superClass = (RubyClass) args[0];
+            } else {
+                throw new TypeError(
+                    runtime,
+                    "wrong argument type " + superClass.getType().toName() + " (expected Class)");
             }
-            superClass = (RubyClass) args[0];
         }
 
-        if (superClass.isSingleton()) {
-            throw new TypeError(runtime, "Can't make subclass of virtual class.");
-        }
-
-        RubyClass newClass = newClass(runtime, superClass);
+        RubyClass newClass = superClass.subclass();
 
         newClass.makeMetaClass(superClass.getInternalClass());
 
@@ -246,13 +240,13 @@ public class RubyClass extends RubyModule {
      * rb_class_superclass
      *
      */
-    public RubyClass superclass() {
+    public IRubyObject superclass() {
         RubyClass superClass = getSuperClass();
         while (superClass != null && superClass.isIncluded()) {
             superClass = superClass.getSuperClass();
         }
 
-        return superClass != null ? superClass : nilClass(getRuntime());
+        return superClass != null ? superClass : getRuntime().getNil();
     }
 
     /** rb_class_s_inherited
@@ -262,7 +256,6 @@ public class RubyClass extends RubyModule {
         throw new TypeError(recv.getRuntime(), "can't make subclass of Class");
     }
 
-
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('c');
         output.dumpString(getClassname().toString());
@@ -271,7 +264,7 @@ public class RubyClass extends RubyModule {
     public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {
         return (RubyClass) RubyModule.unmarshalFrom(output);
     }
-    
+
     /**
      * Creates a new object of this class by calling the 'allocate' method.
      * This class must be the type of the new object.

@@ -25,23 +25,23 @@ public class ReflectionClassMap implements RubyToJavaClassMap {
         return name;
     }
 
-    public Class getJavaClassForRubyClass (RubyClass rubyClass)
-    {
+    public Class getJavaClassForRubyClass(RubyClass rubyClass) {
         while (rubyClass != null) {
             try {
                 String rubyClassName = rubyClass.getClassname();
                 String javaClassName = javaPackage + "." + rubyClassName;
                 return Class.forName(javaClassName);
-            } catch (ClassNotFoundException ex) { }
-
-            try {
-                rubyClass = rubyClass.superclass();
-            } catch (NullPointerException ex) {
-                rubyClass = null;
+            } catch (ClassNotFoundException ex) {
             }
 
-            if (rubyClass != null && rubyClass.getClassname() == null)
-              rubyClass = null;
+            if (rubyClass.superclass().isNil()) {
+                break;
+            }
+            rubyClass = (RubyClass) rubyClass.superclass();
+
+            if (rubyClass != null && rubyClass.getClassname() == null) {
+                break;
+            }
         }
         return null;
     }

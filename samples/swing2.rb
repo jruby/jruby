@@ -1,26 +1,28 @@
 # Import Java packages
-Java::import "java.awt.event"
-Java::import "javax.swing"
-
-extend ActionListener
+module JavaSwing
+  include_package "javax.swing"
+  include_package "java.awt.event"
+end
 
 # Create a frame with the title "HelloWorldSwing"
-frame = JFrame.new "HelloWorldSwing"
+frame = JavaSwing::JFrame.new()
 
 # Create a button with the text "Klick Me!"
-button = JButton.new "Klick Me!"
+button = JavaSwing::JButton.new("Klick Me!", nil)
 
 # Add an action to the button
-button.addActionListener actionPerformed { |evt| 
-  JOptionPane.showMessageDialog nil, 
-  "<html>Hello from JRuby.<br>The button was: <i>#{evt.actionCommand}</i>"
-
-}
+action = JavaSwing::ActionListener.new
+class << action
+  def actionPerformed(evt)
+    JavaSwing::JOptionPane.showMessageDialog (nil, "<html>Hello from <b><u>JRuby</u></b>.<br> Button '#{evt.getActionCommand()}' clicked.")
+  end
+end
+button.addActionListener(action)
 
 # Add the button to the frame
-frame.contentPane.add button
+frame.getContentPane().add(button)
 
 # Show frame
-frame.defaultCloseOperation = JFrame::EXIT_ON_CLOSE
-frame.pack
-frame.visible = true
+# frame.defaultCloseOperation = JFrame::EXIT_ON_CLOSE
+frame.pack()
+frame.setVisible(true)

@@ -74,7 +74,7 @@ public class JavaArray extends JavaObject implements IndexCallable {
         if (result == null) {
             return getRuntime().getNil();
         }
-        return new JavaObject(getRuntime(), result);
+        return JavaObject.wrap(getRuntime(), result);
     }
 
 

@@ -2,8 +2,12 @@ package org.jruby.javasupport;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -18,17 +22,16 @@ import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 
 public class JavaSupport {
-    private Ruby ruby;
+    private Ruby runtime;
 
-    private Map loadedJavaClasses = new HashMap();
-    private List importedPackages = new ArrayList();
-    private Map renamedJavaClasses = new HashMap();
     private Map exceptionHandlers = new HashMap();
 
     private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
 
+    private Map javaObjectMap = new HashMap();
+
     public JavaSupport(Ruby ruby) {
-        this.ruby = ruby;
+        this.runtime = ruby;
     }
 
     public Class loadJavaClass(String className) {
@@ -39,43 +42,12 @@ public class JavaSupport {
             }
             return result;
         } catch (ClassNotFoundException cnfExcptn) {
-            Iterator iter = importedPackages.iterator();
-            while (iter.hasNext()) {
-                String packageName = (String) iter.next();
-                try {
-                    return javaClassLoader.loadClass(packageName + "." + className);
-                } catch (ClassNotFoundException cnfExcptn_) {
-                }
-            }
+            throw new NameError(runtime, "cannot load Java class " + className);
         }
-        throw new NameError(ruby, "cannot load Java class: " + className);
     }
 
     public void addToClasspath(URL url) {
         javaClassLoader = new URLClassLoader(new URL[] { url }, javaClassLoader);
-    }
-
-    public void addImportPackage(String packageName) {
-        importedPackages.add(packageName);
-    }
-
-	public String getJavaName(String rubyName) {
-		return (String) renamedJavaClasses.get(rubyName);
-	}
-
-	public void rename(String rubyName, String javaName) {
-		renamedJavaClasses.put(rubyName, javaName);
-	}
-
-    public Class getJavaClass(RubyClass type) {
-        Iterator iter = loadedJavaClasses.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            if (entry.getValue() == type) {
-                return (Class)entry.getKey();
-            }
-        }
-        return null;
     }
 
     public void defineExceptionHandler(String exceptionClass, RubyProc handler) {
@@ -90,7 +62,7 @@ public class JavaSupport {
             excptnClass = excptnClass.getSuperclass();
         }
         if (handler != null) {
-            handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(ruby, exception)});
+            handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(runtime, exception)});
         } else {
             throw createRaiseException(exception);
         }
@@ -106,7 +78,7 @@ public class JavaSupport {
         sb.append(exception.getMessage());
         sb.append("; StackTrace: ");
         sb.append(stackTrace.getBuffer().toString());
-        RaiseException result = new RaiseException(ruby, "RuntimeError", sb.toString());
+        RaiseException result = new RaiseException(runtime, "RuntimeError", sb.toString());
         result.initCause(exception);
         return result;
     }
@@ -131,8 +103,48 @@ public class JavaSupport {
         }
         return null;
     }
+
     public ClassLoader getJavaClassLoader() {
         return javaClassLoader;
     }
-
+    
+    public JavaObject getJavaObjectFromCache(Object object) {
+        Integer hash = getHashFromObject(object);
+        List cached = (List)javaObjectMap.get(hash);
+        if (cached == null) {
+            return null;
+        } else {
+            Iterator iter = cached.iterator();
+            while (iter.hasNext()) {
+                Reference ref = (Reference) iter.next();
+                JavaObject javaObject = (JavaObject)ref.get();
+                if (javaObject == null) {
+                    iter.remove();
+                } else if (javaObject.getValue() == object) {
+                    return javaObject;
+                }
+            }
+            return null;
+        }
+    }
+    
+    public void putJavaObjectIntoCache(JavaObject object) {
+        Integer hash = getHashFromObject(object.getValue());
+        List cached = (List)javaObjectMap.get(hash);
+        if (cached == null) {
+            cached = new LinkedList();
+            javaObjectMap.put(hash, cached);
+        }
+        cached.add(new SoftReference(object));
+    }
+    
+    private Integer getHashFromObject(Object value) {
+        if (value == null) {
+            return new Integer(0);
+        } else if (value instanceof Proxy) {
+            return new Integer(value.getClass().hashCode());
+        } else {
+            return new Integer(value.hashCode());
+        }
+    }
 }

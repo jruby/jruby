@@ -45,7 +45,7 @@ public class Java {
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
         Ruby runtime = recv.getRuntime();
         Object javaObject = JavaUtil.convertRubyToJava(runtime, object);
-        return new JavaObject(runtime, javaObject);
+        return JavaObject.wrap(runtime, javaObject);
     }
 
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object) {
@@ -72,13 +72,14 @@ public class Java {
             interfaces[i] = args[i].getJavaClass();
         }
 
-        return new JavaObject(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
+        return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                IRubyObject rubyArgs[] = new IRubyObject[args.length + 2];
-                rubyArgs[0] = new JavaObject(recv.getRuntime(), proxy);
+                int length = args == null ? 0 : args.length;
+                IRubyObject rubyArgs[] = new IRubyObject[length + 2];
+                rubyArgs[0] = JavaObject.wrap(recv.getRuntime(), proxy);
                 rubyArgs[1] = new JavaMethod(recv.getRuntime(), method);
-                for (int i = 0, length = args.length; i < length; i++) {
-                    rubyArgs[i + 2] = new JavaObject(recv.getRuntime(), args[i]);
+                for (int i = 0; i < length; i++) {
+                    rubyArgs[i + 2] = JavaObject.wrap(recv.getRuntime(), args[i]);
                 }
                 return JavaUtil.convertArgument(proc.call(rubyArgs), method.getReturnType());
             }

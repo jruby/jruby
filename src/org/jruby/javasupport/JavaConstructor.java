@@ -75,7 +75,7 @@ public class JavaConstructor extends JavaCallable implements IndexCallable {
         }
         try {
             Object result = constructor.newInstance(constructorArguments);
-            return new JavaObject(getRuntime(), result);
+            return JavaObject.wrap(getRuntime(), result);
 
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect() +

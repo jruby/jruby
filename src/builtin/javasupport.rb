@@ -92,7 +92,7 @@ module JavaUtilities
       setup_proxy_class(java_class, proxy_class)
     end
 
-    def create_constructor(java_class, proxy_class)
+    def create_class_constructor(java_class, proxy_class)
       class << proxy_class
         def new(*args)
           # FIXME: take types into consideration, like the old javasupport,
@@ -112,14 +112,39 @@ module JavaUtilities
       end
     end
 
+    def create_interface_constructor(java_class, proxy_class)
+      class << proxy_class
+        def new
+	  Java.new_proxy_instance(@java_class) {
+	    |proxy, method, *java_args|
+	    java_args.collect! { |arg|
+	      Java.java_to_primitive(arg)
+	    }
+	    args = []
+	    java_args.each_with_index { |arg, idx|
+	      if arg.kind_of?(JavaObject)
+		arg = JavaUtilities.wrap(arg, method.argument_types[idx])
+              end
+	      args[idx] = arg
+	    }
+	    result = proxy.__send__(method.name, *args)
+	    result = result.java_object if result.kind_of?(JavaProxy)
+	    Java.primitive_to_java(result)
+	  }
+	end
+      end
+    end
+
     def setup_proxy_class(java_class, proxy_class)
 
       class << proxy_class
         alias_method(:new_proxy, :new)
       end
 
-      unless java_class.interface?
-        create_constructor(java_class, proxy_class)
+      if java_class.interface?
+	create_interface_constructor(java_class, proxy_class)
+      else
+        create_class_constructor(java_class, proxy_class)
       end
 
       def proxy_class.create_instance_methods(java_class)

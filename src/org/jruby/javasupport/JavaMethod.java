@@ -146,7 +146,7 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return new JavaObject(runtime, result);
+            return JavaObject.wrap(runtime, result);
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {
