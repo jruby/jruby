@@ -61,6 +61,8 @@ test_equal(0, (10 ** 70) ^ (10 ** 70))
 test_equal(1 + (10 ** 70), (10 ** 70) ^ 1)
 test_equal(10 ** 70, (10 ** 70) ^ 0)
 
+test_equal(-1, ~0)
+test_equal(-2, ~1)
 test_equal(1, 1 | 1)
 test_equal(1, 1 | 0)
 test_equal(10001, 10000 | 1)

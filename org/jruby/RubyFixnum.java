@@ -28,9 +28,12 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.*;
+import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexedCallback;
 import org.jruby.util.Asserts;
 
 /** Implementation of the Fixnum class.
@@ -73,6 +76,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     private static final int M_SIZE = 20;
     private static final int M_HASH = 100;
     private static final int M_ID2NAME = 101;
+    private static final int M_INVERT = 102;
 
     public static RubyClass createFixnumClass(Ruby ruby) {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
@@ -112,6 +116,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
         fixnumClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
         fixnumClass.defineMethod("id2name", IndexedCallback.create(M_ID2NAME, 0));
+        fixnumClass.defineMethod("~", IndexedCallback.create(M_INVERT, 0));
 
         return fixnumClass;
     }
@@ -158,6 +163,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
             return hash();
         case M_ID2NAME:
             return id2name();
+        case M_INVERT:
+            return invert();
         }
         Asserts.assertNotReached();
         return null;
@@ -414,6 +421,10 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
 
     public RubySymbol id2name() {
         return RubySymbol.getSymbol(runtime, value);
+    }
+
+    public RubyFixnum invert() {
+        return newFixnum(~value);
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
