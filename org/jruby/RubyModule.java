@@ -702,9 +702,7 @@ public class RubyModule extends RubyObject {
     /** rb_get_method_body
      *
      */
-    protected GetMethodBodyResult getMethodBody(String name, int noex) {
-        GetMethodBodyResult result = new GetMethodBodyResult(this, name, noex);
-
+    protected CacheEntry getMethodBody(String name, int noex) {
         ICallable method = searchMethod(name);
 
         if (method == null) {
@@ -715,31 +713,25 @@ public class RubyModule extends RubyObject {
             return null;
         }
 
-        CacheEntry ent = new CacheEntry(this, method.getNoex());
+        CacheEntry result = new CacheEntry(this, method.getNoex());
 
         if (method instanceof AliasMethod) {
-            ent.setName(name);
-            ent.setOrigin(((AliasMethod) method).getOrigin());
-            ent.setOriginalName(((AliasMethod) method).getOldName());
-            ent.setMethod(((AliasMethod) method).getOldMethod());
+            result.setName(name);
+            result.setOrigin(((AliasMethod) method).getOrigin());
+            result.setOriginalName(((AliasMethod) method).getOldName());
+            result.setMethod(((AliasMethod) method).getOldMethod());
 
             result.setRecvClass(((AliasMethod) method).getOrigin());
-            result.setId(((AliasMethod) method).getOldName());
-
-            method = ((AliasMethod) method).getOldMethod();
         } else {
-            ent.setName(name);
-            ent.setOriginalName(name);
-            ent.setOrigin(method.getImplementationClass());
-            ent.setMethod(method);
+            result.setName(name);
+            result.setOrigin(method.getImplementationClass());
+            result.setOriginalName(name);
+            result.setMethod(method);
 
             result.setRecvClass(method.getImplementationClass());
         }
 
-        getRuby().getMethodCache().saveEntry(this, name, ent);
-
-        result.setNoex(ent.getNoex());
-        result.setMethod(method);
+        getRuby().getMethodCache().saveEntry(this, name, result);
         return result;
     }
 
@@ -747,44 +739,36 @@ public class RubyModule extends RubyObject {
     /** rb_call
      *
      */
-    public final RubyObject call(final RubyObject recv, String name, RubyObject[] args, final int scope) {
+    public final RubyObject call(
+        final RubyObject recv,
+        String name,
+        RubyObject[] args,
+        final int scope) {
         if (args == null) {
             args = new RubyObject[0];
         }
 
         CacheEntry ent = getRuby().getMethodCache().getEntry(this, name);
 
-        RubyModule klass = this;
-        ICallable method;
-
-        if (ent != null) {
-            if (ent.getMethod() == null) {
-                RubyObject[] newArgs = new RubyObject[args.length + 1];
-                newArgs[0] = RubySymbol.newSymbol(getRuby(), name);
-                System.arraycopy(args, 0, newArgs, 1, args.length);
-                return recv.funcall("method_missing", newArgs);
-            }
-
-            klass = ent.getOrigin();
-            name = ent.getOriginalName();
-            method = ent.getMethod();
-        } else {
-            GetMethodBodyResult gmbr = getMethodBody(name, 0);
-
-            if (gmbr == null || gmbr.getMethod() == null) {
-                if (scope == 3) {
-                    throw new NameError(getRuby(), "super: no superclass method '" + name + "'");
-                }
-                RubyObject[] newArgs = new RubyObject[args.length + 1];
-                newArgs[0] = RubySymbol.newSymbol(getRuby(), name);
-                System.arraycopy(args, 0, newArgs, 1, args.length);
-                return recv.funcall("method_missing", newArgs);
-            }
-
-            klass = gmbr.getRecvClass();
-            name = gmbr.getId();
-            method = gmbr.getMethod();
+        if (ent == null) {
+            ent = getMethodBody(name, 0);
         }
+
+        if (ent == null || ent.getMethod() == null) {
+            if (scope == 3) {
+                throw new NameError(
+                    ruby,
+                    "super: no superclass method '" + name + "'");
+            }
+            RubyObject[] newArgs = new RubyObject[args.length + 1];
+            newArgs[0] = RubySymbol.newSymbol(getRuby(), name);
+            System.arraycopy(args, 0, newArgs, 1, args.length);
+            return recv.funcall("method_missing", newArgs);
+        }
+
+        RubyModule klass = ent.getOrigin();
+        name = ent.getOriginalName();
+        ICallable method = ent.getMethod();
 
         // if (mid != missing) {
         //     /* receiver specified form for private method */
@@ -1102,7 +1086,11 @@ public class RubyModule extends RubyObject {
      * 
      */
     public boolean isMethodBound(String name, int ex) {
-        CacheEntry entry = getRuby().getMethodCache().getEntry(this, name);
+        CacheEntry entry = ruby.getMethodCache().getEntry(this, name);
+        
+        if (entry == null) {
+            entry = getMethodBody(name, ex);
+        }
 
         if (entry != null) {
             if (ex != 0 && (entry.getNoex() & Constants.NOEX_PRIVATE) != 0) {
@@ -1114,15 +1102,6 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        GetMethodBodyResult gmbr = getMethodBody(name, ex);
-
-        if (gmbr != null) {
-            if (ex != 0 && (gmbr.getNoex() & Constants.NOEX_PRIVATE) != 0) {
-                return false;
-            } else {
-                return true;
-            }
-        }
         return false;
     }
 
@@ -1130,29 +1109,33 @@ public class RubyModule extends RubyObject {
         return isMethodBound(name, 1);
     }
 
-    public RubyObject newMethod(RubyObject recv, String name, RubyClass methodClass) {
+    public RubyObject newMethod(
+        RubyObject recv,
+        String name,
+        RubyClass methodClass) {
         RubyClass originalClass = (RubyClass) this;
         String originalName = name;
 
-        GetMethodBodyResult gmbr = getMethodBody(name, 0);
-        if (gmbr == null) {
+        CacheEntry ent = getMethodBody(name, 0);
+        if (ent == null) {
             // printUndef();
             return getRuby().getNil();
         }
 
-        while (gmbr.getMethod() instanceof EvaluateMethod && ((EvaluateMethod) gmbr.getMethod()).getNode() instanceof ZSuperNode) {
-            gmbr = gmbr.getRecvClass().getSuperClass().getMethodBody(gmbr.getId(), 0);
-            if (gmbr == null) {
+        while (ent.getMethod() instanceof EvaluateMethod &&
+              ((EvaluateMethod) ent.getMethod()).getNode() instanceof ZSuperNode) {
+            ent = ent.getOrigin().getSuperClass().getMethodBody(ent.getOriginalName(),  0);
+            if (ent == null) {
                 // printUndef();
                 return getRuby().getNil();
             }
         }
 
         RubyMethod newMethod = new RubyMethod(getRuby(), methodClass);
-        newMethod.setReceiverClass((RubyClass) gmbr.getRecvClass());
+        newMethod.setReceiverClass((RubyClass) ent.getOrigin());
         newMethod.setReceiver(recv);
-        newMethod.setMethodId(gmbr.getId());
-        newMethod.setMethod(gmbr.getMethod());
+        newMethod.setMethodId(ent.getOriginalName());
+        newMethod.setMethod(ent.getMethod());
         newMethod.setOriginalClass(originalClass);
         newMethod.setOriginalId(originalName);
 
@@ -1846,72 +1829,6 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public static class GetMethodBodyResult {
-        private ICallable method;
-        private RubyModule recvClass;
-        private String id;
-        private int noex;
 
-        public GetMethodBodyResult(RubyModule recvClass, String id, int noex) {
-            this.recvClass = recvClass;
-            this.id = id;
-            this.noex = noex;
-        }
-
-        /** Getter for property id.
-         * @return Value of property id.
-         */
-        public String getId() {
-            return id;
-        }
-
-        /** Setter for property id.
-         * @param id New value of property id.
-         */
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        /** Getter for property klass.
-         * @return Value of property klass.
-         */
-        public RubyModule getRecvClass() {
-            return recvClass;
-        }
-
-        /** Setter for property klass.
-         * @param recvClass New value of property klass.
-         */
-        public void setRecvClass(RubyModule recvClass) {
-            this.recvClass = recvClass;
-        }
-
-        /** Getter for property scope.
-         * @return Value of property scope.
-         */
-        public int getNoex() {
-            return noex;
-        }
-
-        public void setNoex(int noex) {
-            this.noex = noex;
-        }
-        /**
-         * Gets the method.
-         * @return Returns a IMethod
-         */
-        public ICallable getMethod() {
-            return method;
-        }
-
-        /**
-         * Sets the method.
-         * @param method The method to set
-         */
-        public void setMethod(ICallable method) {
-            this.method = method;
-        }
-
-    }
 
 }

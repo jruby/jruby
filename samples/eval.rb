@@ -35,7 +35,7 @@ while TRUE
     $! = 'exception raised' unless $!
     print "ERR: ", $!, "\n"
   end
-  break if not l
+  break unless l 
   line = ''
   print "ruby> "
 end
