@@ -88,6 +88,8 @@ public class RubyTime extends RubyObject {
 
         if (other instanceof RubyTime) {
             time -= ((RubyTime)other).cal.getTimeInMillis();
+
+            return RubyFloat.newFloat(ruby, time * 10e-4);
         } else {
             time -= (RubyNumeric.fix2long(other) * 1000);
         }

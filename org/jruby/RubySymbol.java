@@ -50,6 +50,14 @@ public class RubySymbol extends RubyObject {
     public String toId() {
         return symbol;
     }
+
+    public static RubySymbol nilSymbol(Ruby ruby) {
+        return new RubySymbol(ruby, null) {
+            public boolean isNil() {
+                return true;
+            }
+        };
+    }
     
     public static RubyClass createSymbolClass(Ruby ruby) {
         RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
@@ -73,7 +81,11 @@ public class RubySymbol extends RubyObject {
      */
     
     public static RubySymbol newSymbol(Ruby ruby, String name) {
-        return new RubySymbol(ruby, name);
+        if (name != null) {
+            return new RubySymbol(ruby, name);
+        } else {
+            return nilSymbol(ruby);
+        }
     }
 
     public RubyFixnum to_i() {

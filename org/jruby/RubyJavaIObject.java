@@ -101,7 +101,7 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
 
     public RubyObject initialize(RubyObject[] args) {
         if (args.length == 0) {
-            throw new RubyArgumentException(getRuby(), "");
+            throw new ArgumentError(getRuby(), "");
         }
 
         Class[] interfaces = new Class[args.length];

@@ -39,12 +39,26 @@ import org.jruby.runtime.*;
  * 
  * @author jpetersen
  * @version $Revision$
+ * @fixme autoload method needs to be implemented
  */
 public class RubyGlobal {
     public static void createGlobals(Ruby ruby) {
         StringSetter stringSetter = new StringSetter();
         LastlineAccessor lastlineAccessor = new LastlineAccessor();
         SafeAccessor safeAccessor = new SafeAccessor();
+
+        // Version information:
+        RubyObject version = RubyString.newString(ruby, Ruby.RUBY_VERSION).freeze();
+        RubyObject release = RubyString.newString(ruby, "$Date$").freeze(); // XXX
+        RubyObject platform = RubyString.newString(ruby, "java").freeze();
+
+        ruby.defineGlobalConstant("RUBY_VERSION", version);
+        ruby.defineGlobalConstant("RUBY_RELEASE_DATE", release);
+        ruby.defineGlobalConstant("RUBY_PLATFORM", platform);
+
+        ruby.defineGlobalConstant("VERSION", version);
+        ruby.defineGlobalConstant("RELEASE_DATE", release);
+        ruby.defineGlobalConstant("PLATFORM", platform);
 
         ruby.defineHookedVariable("$/", RubyString.newString(ruby, "\n"), null, stringSetter);
         ruby.defineHookedVariable("$\\", ruby.getNil(), null, stringSetter);
@@ -56,7 +70,7 @@ public class RubyGlobal {
         ruby.defineHookedVariable("$!", ruby.getNil(), null, new ErrorInfoSetter());
 
         ruby.defineVirtualVariable("$SAFE", safeAccessor, safeAccessor);
-        
+
         BacktraceAccessor btAccessor = new BacktraceAccessor();
         ruby.defineVirtualVariable("$@", btAccessor, btAccessor);
 
@@ -74,6 +88,14 @@ public class RubyGlobal {
         ruby.defineGlobalConstant("STDIN", stdin);
         ruby.defineGlobalConstant("STDOUT", stdout);
         ruby.defineGlobalConstant("STDERR", stderr);
+
+        ruby.defineReadonlyVariable("$\"", RubyArray.newArray(ruby));
+        ruby.defineReadonlyVariable("$*", RubyArray.newArray(ruby));
+
+        RubyArray loadPath = RubyArray.newArray(ruby);
+        ruby.defineReadonlyVariable("$:", loadPath);
+        ruby.defineReadonlyVariable("$-I", loadPath);
+        ruby.defineReadonlyVariable("$LOAD_PATH", loadPath);
 
         // ARGF, $< object
         RubyArgsFile argsFile = new RubyArgsFile(ruby);
@@ -108,7 +130,6 @@ public class RubyGlobal {
         ruby.defineGlobalFunction("scan", CallbackFactory.getSingletonMethod(RubyGlobal.class, "scan", RubyObject.class));
 
         ruby.defineGlobalFunction("load", CallbackFactory.getSingletonMethod(RubyGlobal.class, "load", RubyString.class));
-        //FIXME autoload method needs to be implemented
         //ruby.defineGlobalFunction("autoload", CallbackFactory.getSingletonMethod(RubyGlobal.class, "autoload", RubyString.class));
         ruby.defineGlobalFunction("raise", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "raise"));
         ruby.defineGlobalFunction("require", CallbackFactory.getSingletonMethod(RubyGlobal.class, "require", RubyString.class));
@@ -125,11 +146,16 @@ public class RubyGlobal {
 
         ruby.defineGlobalFunction("eval", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "eval", RubyString.class));
         ruby.defineGlobalFunction("caller", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "caller"));
-        
+
         ruby.defineGlobalFunction("catch", CallbackFactory.getSingletonMethod(RubyGlobal.class, "rbCatch", RubyObject.class));
         ruby.defineGlobalFunction("throw", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "rbThrow", RubyObject.class));
 
         ruby.defineGlobalFunction("singleton_method_added", CallbackFactory.getNilMethod());
+
+        ruby.defineGlobalFunction("set_trace_func", CallbackFactory.getSingletonMethod(RubyGlobal.class, "set_trace_func", RubyObject.class));
+        ruby.defineGlobalFunction("`", CallbackFactory.getSingletonMethod(RubyGlobal.class, "backquote", RubyString.class));
+
+        ruby.defineGlobalFunction("exit", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "exit"));
     }
 
     // Global functions.
@@ -148,7 +174,7 @@ public class RubyGlobal {
 
         RubyString line = argsFile.internalGets(args);
 
-        ruby.getParserHelper().setLastline(line);
+        ruby.setLastline(line);
 
         return line;
     }
@@ -162,6 +188,17 @@ public class RubyGlobal {
                 defout.funcall("write", RubyString.newString(ruby, "\n"));
             }
         }
+        return ruby.getNil();
+    }
+
+    public static RubyObject exit(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        int status = 0;
+        
+        if (args.length > 0) {
+            status = RubyNumeric.fix2int(args[0]);
+        }
+        
+        System.exit(status);
         return ruby.getNil();
     }
 
@@ -256,8 +293,8 @@ public class RubyGlobal {
 
         RubyVarmap dynamicVars = ruby.getDynamicVars();
         while (dynamicVars != null) {
-            if (dynamicVars.getId() != null) {
-                localVariables.push(RubyString.newString(ruby, dynamicVars.getId()));
+            if (dynamicVars.getName() != null) {
+                localVariables.push(RubyString.newString(ruby, dynamicVars.getName()));
             }
             dynamicVars = dynamicVars.getNext();
         }
@@ -271,7 +308,7 @@ public class RubyGlobal {
 
     public static RubyObject sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
-            throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
+            throw new ArgumentError(ruby, "sprintf must have at least one argument");
         }
 
         RubyString str = RubyString.stringValue(args[0]);
@@ -291,7 +328,7 @@ public class RubyGlobal {
                 RubyException excptn = (RubyException) args[0].funcall("exception", args[1]);
                 throw new RaiseException(excptn);
             default :
-                throw new RubyArgumentException(ruby, "wrong # of arguments");
+                throw new ArgumentError(ruby, "wrong # of arguments");
         }
     }
 
@@ -342,7 +379,7 @@ public class RubyGlobal {
      * @return value of $_ as String.
      */
     private static RubyString getLastlineString(Ruby ruby) {
-        RubyObject line = ruby.getParserHelper().getLastline();
+        RubyObject line = ruby.getLastline();
 
         if (line.isNil()) {
             throw new TypeError(ruby, "$_ value need to be String (nil given).");
@@ -361,7 +398,7 @@ public class RubyGlobal {
         RubyString str = (RubyString) getLastlineString(ruby).dup();
 
         if (!str.sub_bang(args).isNil()) {
-            ruby.getParserHelper().setLastline(str);
+            ruby.setLastline(str);
         }
 
         return str;
@@ -375,7 +412,7 @@ public class RubyGlobal {
         RubyString str = (RubyString) getLastlineString(ruby).dup();
 
         if (!str.gsub_bang(args).isNil()) {
-            ruby.getParserHelper().setLastline(str);
+            ruby.setLastline(str);
         }
 
         return str;
@@ -391,7 +428,7 @@ public class RubyGlobal {
         if (str.getValue().length() > 0) {
             str = (RubyString) str.dup();
             str.chop_bang();
-            ruby.getParserHelper().setLastline(str);
+            ruby.setLastline(str);
         }
 
         return str;
@@ -408,7 +445,7 @@ public class RubyGlobal {
         if (dup.chomp_bang(args).isNil()) {
             return str;
         } else {
-            ruby.getParserHelper().setLastline(dup);
+            ruby.setLastline(dup);
             return str;
         }
     }
@@ -440,19 +477,14 @@ public class RubyGlobal {
         src.checkSafeString();
         // ---
 
-        if (scope.isNil() && ruby.getRubyFrame().getPrev() != null) {
+        if (scope.isNil() && ruby.getFrameStack().getPrevious() != null) {
             try {
-                // +++
-                RubyFrame prev = new RubyFrame(ruby.getRubyFrame());
-                ruby.getRubyFrame().push();
-
-                ruby.setRubyFrame(prev.getPrev());
-                ruby.getRubyFrame().setPrev(prev);
-                // ---
+                // XXX
+                ruby.getFrameStack().push(ruby.getFrameStack().getPrevious());
 
                 return recv.eval(src, scope, file, line);
             } finally {
-                ruby.getRubyFrame().pop();
+                ruby.getFrameStack().pop();
             }
         }
 
@@ -461,32 +493,46 @@ public class RubyGlobal {
 
     public static RubyObject caller(Ruby ruby, RubyObject recv, RubyObject[] args) {
         int level = args.length > 0 ? RubyFixnum.fix2int(args[0]) : 1;
-        
+
         if (level < 0) {
-            throw new RubyArgumentException(ruby, "negative level(" + level + ')');
+            throw new ArgumentError(ruby, "negative level(" + level + ')');
         }
 
         return RaiseException.createBacktrace(ruby, level);
     }
 
-	public static RubyObject rbCatch(Ruby ruby, RubyObject recv, RubyObject tag) {
-	    try {
-	        return ruby.yield(tag);
-		} catch (ThrowJump throwJump) {
-		    if (throwJump.getTag().equals(tag.toId())) {
-		        return throwJump.getValue();
-		    } else {
-		        throw throwJump;
-		    }
-	    }
-	}
+    public static RubyObject rbCatch(Ruby ruby, RubyObject recv, RubyObject tag) {
+        try {
+            return ruby.yield(tag);
+        } catch (ThrowJump throwJump) {
+            if (throwJump.getTag().equals(tag.toId())) {
+                return throwJump.getValue();
+            } else {
+                throw throwJump;
+            }
+        }
+    }
 
     public static RubyObject rbThrow(Ruby ruby, RubyObject recv, RubyObject tag, RubyObject[] args) {
         throw new ThrowJump(tag.toId(), args.length > 0 ? args[0] : ruby.getNil());
     }
 
+    public static RubyObject set_trace_func(Ruby ruby, RubyObject recv, RubyObject trace_func) {
+        if (trace_func.isNil()) {
+            ruby.getRuntime().setTraceFunction(null);
+        } else if (!(trace_func instanceof RubyProc)) {
+            throw new TypeError(ruby, "trace_func needs to be Proc.");
+        }
+        ruby.getRuntime().setTraceFunction((RubyProc) trace_func);
+        return trace_func;
+    }
+
     public static RubyObject lambda(Ruby ruby, RubyObject recv) {
         return RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+    }
+
+    public static RubyObject proc(Ruby ruby, RubyObject recv) {
+        return lambda(ruby, recv);
     }
 
     public static RubyObject loop(Ruby ruby, RubyObject recv) {
@@ -494,6 +540,45 @@ public class RubyGlobal {
             ruby.yield(ruby.getNil());
 
             Thread.yield();
+        }
+    }
+
+    public static RubyObject backquote(Ruby ruby, RubyObject recv, RubyString aString) {
+        // XXX use other methods
+        try {
+            Process aProcess = Runtime.getRuntime().exec(new String[] { System.getProperty("jruby.shell"), "-c", aString.toString()});
+
+            final BufferedInputStream bin = new BufferedInputStream(aProcess.getInputStream());
+            final StringBuffer sb = new StringBuffer();
+
+            new Thread(new Runnable() {
+                /**
+                 * @see Runnable#run()
+                 */
+                public void run() {
+                    try {
+                        synchronized (sb) {
+                            int next = bin.read();
+                            while (next != -1) {
+                                sb.append((char) next);
+                                next = bin.read();
+                            }
+                        }
+                    } catch (IOException ioExcptn) {
+                    }
+                }
+
+            }).start();
+
+            aProcess.waitFor();
+
+            synchronized (sb) {
+                return RubyString.newString(ruby, sb.toString());
+            }
+        } catch (Exception excptn) {
+            excptn.printStackTrace();
+
+            return RubyString.newString(ruby, "");
         }
     }
 
@@ -521,7 +606,7 @@ public class RubyGlobal {
         }
     }
 
-    private static class StringSetter implements RubyGlobalEntry.SetterMethod {
+    public static class StringSetter implements RubyGlobalEntry.SetterMethod {
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
@@ -562,7 +647,7 @@ public class RubyGlobal {
          */
         public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
             RubyObject errorInfo = ruby.getGlobalVar("$!");
-            
+
             return errorInfo.isNil() ? ruby.getNil() : errorInfo.funcall("backtrace");
         }
 
@@ -571,7 +656,7 @@ public class RubyGlobal {
          */
         public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             if (ruby.getGlobalVar("$!").isNil()) {
-                throw new RubyArgumentException(ruby, "$! not set.");
+                throw new ArgumentError(ruby, "$! not set.");
             }
 
             ruby.getGlobalVar("$!").funcall("set_backtrace", value);
@@ -583,14 +668,30 @@ public class RubyGlobal {
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
          */
         public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
-            return ruby.getParserHelper().getLastline();
+            return ruby.getLastline();
         }
 
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
         public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
-            ruby.getParserHelper().setLastline(value);
+            ruby.setLastline(value);
+        }
+    }
+
+    private static class BackrefAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
+        /*
+         * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
+         */
+        public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
+            return ruby.getBackref();
+        }
+
+        /*
+         * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
+         */
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+            ruby.setBackref(value);
         }
     }
 

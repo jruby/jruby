@@ -54,7 +54,7 @@ public class RubyArray extends RubyObject {
     }
 
     public RubyArray(Ruby ruby, ArrayList array, boolean notCopy) {
-        super(ruby, ruby.getRubyClass("Array"));
+        super(ruby, ruby.getClasses().getArrayClass());
         this.list = array;
 
         // equals = ruby.intern("==");
@@ -325,7 +325,7 @@ public class RubyArray extends RubyObject {
             try {
                 return (RubyArray) other.convertType(RubyArray.class, "Array", "to_ary");
             } catch (Exception ex) {
-                throw new RubyArgumentException(other.getRuby(), "can't convert arg to Array: " + ex.getMessage());
+                throw new ArgumentError(other.getRuby(), "can't convert arg to Array: " + ex.getMessage());
             }
         }
     }
@@ -431,7 +431,7 @@ public class RubyArray extends RubyObject {
         int length = items.length;
 
         if (length == 0) {
-            throw new RubyArgumentException(getRuby(), "wrong # of arguments(at least 1)");
+            throw new ArgumentError(getRuby(), "wrong # of arguments(at least 1)");
         }
         modify();
         boolean taint = false;
@@ -478,7 +478,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyArray unshift(RubyObject[] items) {
         if (items.length == 0) {
-            throw new RubyArgumentException(getRuby(), "wrong # of arguments(at least 1)");
+            throw new ArgumentError(getRuby(), "wrong # of arguments(at least 1)");
         }
         modify();
         boolean taint = false;
@@ -519,10 +519,10 @@ public class RubyArray extends RubyObject {
         modify();
 
         if (len < 0) {
-            throw new RubyArgumentException(getRuby(), "negative array size");
+            throw new ArgumentError(getRuby(), "negative array size");
         }
         if (len > Integer.MAX_VALUE) {
-            throw new RubyArgumentException(getRuby(), "array size too big");
+            throw new ArgumentError(getRuby(), "array size too big");
         }
         list = new ArrayList((int) len);
         if (len > 0) {
@@ -618,9 +618,6 @@ public class RubyArray extends RubyObject {
         int length = getLength();
 
         // HACK +++
-	// FIXME: this String and the ", " should be instance variables or better
-	// instance variable of the interpreter to avoid creating them all the time.
-	// Benoit
         if (length == 0) {
             return RubyString.newString(getRuby(), "[]");
         }
@@ -1145,7 +1142,7 @@ public class RubyArray extends RubyObject {
 
         int len = (int) RubyNumeric.num2long(arg);
         if (len < 0) {
-            throw new RubyArgumentException(getRuby(), "negative argument");
+            throw new ArgumentError(getRuby(), "negative argument");
         }
         ArrayList newList = new ArrayList(getLength() * len);
         for (int i = 0; i < len; i++) {

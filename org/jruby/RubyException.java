@@ -129,7 +129,7 @@ public class RubyException extends RubyObject {
                 	return (RubyException) newInstance(getRuby(), getRubyClass(), args);
             	}
             default :
-                throw new RubyArgumentException(getRuby(), "Wrong argument count");
+                throw new ArgumentError(getRuby(), "Wrong argument count");
         }
 
     }

@@ -30,9 +30,10 @@ package org.jruby.runtime;
 
 import java.io.*;
 
+import org.ablaf.ast.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
-import org.jruby.nodes.*;
+import org.jruby.ast.*;
 import org.jruby.util.*;
 
 /**
@@ -45,8 +46,11 @@ public class RubyRuntime {
     private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
 
     private boolean printBugs = false;
-
+    
     private Ruby ruby;
+    
+    private RubyProc traceFunction;
+    private boolean tracing = false;
 
     public RubyRuntime(Ruby ruby) {
         this.ruby = ruby;
@@ -67,23 +71,23 @@ public class RubyRuntime {
      * @matz rb_call_super
      */
     public RubyObject callSuper(RubyObject[] args) {
-        if (ruby.getRubyFrame().getLastClass() == null) {
-            throw new NameError(ruby, "superclass method '" + ruby.getRubyFrame().getLastFunc() + "' must be enabled by enableSuper().");
+        if (ruby.getActFrame().getLastClass() == null) {
+            throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' must be enabled by enableSuper().");
         }
 
-        ruby.getIter().push();
+        ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
 
         RubyObject result = ruby.getNil();
 
         try {
             result =
-                ruby.getRubyFrame().getLastClass().getSuperClass().call(
-                    ruby.getRubyFrame().getSelf(),
-                    ruby.getRubyFrame().getLastFunc(),
+                ruby.getActFrame().getLastClass().getSuperClass().call(
+                    ruby.getActFrame().getSelf(),
+                    ruby.getActFrame().getLastFunc(),
                     new RubyPointer(args),
                     3);
         } finally {
-            ruby.getIter().pop();
+            ruby.getIterStack().pop();
         }
 
         return result;
@@ -108,48 +112,50 @@ public class RubyRuntime {
         // volatile ID last_func;
         // ruby_errinfo = Qnil; /* ensure */
         RubyVarmap.push(ruby);
-        ruby.pushClass();
 
         RubyModule wrapper = ruby.getWrapper();
         ruby.setNamespace(ruby.getTopNamespace());
 
         if (!wrap) {
             ruby.secure(4); /* should alter global state */
-            ruby.setRubyClass(ruby.getClasses().getObjectClass());
+            ruby.pushClass(ruby.getClasses().getObjectClass());
             ruby.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
             ruby.setWrapper(RubyModule.newModule(ruby));
-            ruby.setRubyClass(ruby.getWrapper());
+            ruby.pushClass(ruby.getWrapper());
             self = ruby.getRubyTopSelf().rbClone();
             self.extendObject(ruby.getRubyClass());
             ruby.setNamespace(new Namespace(ruby.getWrapper(), ruby.getNamespace()));
         }
-        ruby.getRubyFrame().push();
-        ruby.getRubyFrame().setLastFunc(null);
-        ruby.getRubyFrame().setLastClass(null);
-        ruby.getRubyFrame().setSelf(self);
-        ruby.getRubyFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
+
+        String last_func = ruby.getActFrame().getLastFunc();
+
+        ruby.getFrameStack().push();
+        ruby.getActFrame().setLastFunc(null);
+        ruby.getActFrame().setLastClass(null);
+        ruby.getActFrame().setSelf(self);
+        ruby.getActFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
         ruby.getScope().push();
 
         /* default visibility is private at loading toplevel */
         ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
 
-        String last_func = ruby.getRubyFrame().getLastFunc();
         try {
             // RubyId last_func = ruby.getRubyFrame().getLastFunc();
             // DEFER_INTS;
+            
+  			// FIXME
             ruby.setInEval(ruby.getInEval() + 1);
 
-            ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
+            INode node = ruby.compile(source.toString(), scriptName.getValue(), 0);
 
             // ---
             ruby.setInEval(ruby.getInEval() - 1);
 
-            self.evalNode(ruby.getParserHelper().getEvalTree());
-
+            self.evalNode(node);
         } finally {
-            ruby.getRubyFrame().setLastFunc(last_func);
+            ruby.getActFrame().setLastFunc(last_func);
 
             /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
                 if (ruby_scope->local_tbl)
@@ -157,7 +163,7 @@ public class RubyRuntime {
             	}*/
             ruby.setNamespace(savedNamespace);
             ruby.getScope().pop();
-            ruby.getRubyFrame().pop();
+            ruby.getFrameStack().pop();
             ruby.popClass();
             RubyVarmap.pop(ruby);
             ruby.setWrapper(wrapper);
@@ -198,6 +204,37 @@ public class RubyRuntime {
 
     public void loadFile(RubyString fname, boolean wrap) {
         loadFile(new File(fname.getValue()), wrap);
+    }
+
+    /** Call the traceFunction
+     * 
+     * MRI: eval.c - call_trace_func
+     * 
+     */
+    public synchronized void callTraceFunction(String event, String file, int line, RubyObject self, String name, RubyObject type) {
+        if (!tracing && traceFunction != null) {
+            tracing = true;
+
+            // XXX
+            
+            if (file == null) {
+                file = "(ruby)";
+            }
+
+            try {
+                traceFunction.call(new RubyObject[] {
+                                    RubyString.newString(ruby, event),
+                                    RubyString.newString(ruby, file),
+                                    RubyFixnum.newFixnum(ruby, line),
+                                    RubySymbol.newSymbol(ruby, name),
+                                    self, // XXX
+                                    type});
+            } finally {
+                tracing = false;
+
+                // XXX
+            }
+        }
     }
 
     /** Prints an error with backtrace to the error stream.
@@ -281,9 +318,9 @@ public class RubyRuntime {
 
     private void printErrorPos() {
         if (ruby.getSourceFile() != null) {
-            if (ruby.getRubyFrame().getLastFunc() != null) {
+            if (ruby.getActFrame().getLastFunc() != null) {
                 getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
-                getErrorStream().print(":in '" + ruby.getRubyFrame().getLastFunc() + '\'');
+                getErrorStream().print(":in '" + ruby.getActFrame().getLastFunc() + '\'');
             } else if (ruby.getSourceLine() != 0) {
                 getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
             } else {
@@ -357,5 +394,21 @@ public class RubyRuntime {
      */
     public void setPrintBugs(boolean printBugs) {
         this.printBugs = printBugs;
+    }
+
+    /**
+     * Gets the traceFunction.
+     * @return Returns a RubyProc
+     */
+    public RubyProc getTraceFunction() {
+        return traceFunction;
+    }
+
+    /**
+     * Sets the traceFunction.
+     * @param traceFunction The traceFunction to set
+     */
+    public void setTraceFunction(RubyProc traceFunction) {
+        this.traceFunction = traceFunction;
     }
 }

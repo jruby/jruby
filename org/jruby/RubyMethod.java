@@ -27,11 +27,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
-import org.jruby.nodes.*;
+import org.ablaf.ast.*;
+import org.jruby.ast.*;
+import org.jruby.internal.runtime.methods.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
 
 /** 
@@ -46,7 +48,7 @@ public class RubyMethod extends RubyObject {
     private RubyClass receiverClass;
     private RubyObject receiver;
     private String methodId;
-    private Node bodyNode;
+    private IMethod method;
     private RubyClass originalClass;
     private String originalId;
 
@@ -79,22 +81,8 @@ public class RubyMethod extends RubyObject {
         return methodClass;
     }
 
-    /**
-     * Gets the bodyNode
-     * @return Returns a Node
-     */
-    public Node getBodyNode() {
-        return bodyNode;
-    }
-
-    /**
-     * Sets the bodyNode
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(Node bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
+    
+    
     /**
      * Gets the methodId
      * @return Returns a RubyId
@@ -179,16 +167,16 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public RubyObject call(RubyObject[] args) {
-        getRuby().getIter().push(
-            getRuby().isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
+        getRuby().getIterStack().push(
+            getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         RubyObject result =
             getReceiverClass().call0(
                 getReceiver(),
                 getMethodId(),
                 new RubyPointer(args),
-                getBodyNode(),
+                getMethod(),
                 false);
-        getRuby().getIter().pop();
+        getRuby().getIterStack().pop();
 
         return result;
     }
@@ -198,17 +186,15 @@ public class RubyMethod extends RubyObject {
      * @return the number of arguments of a method.
      */
     public RubyFixnum arity() {
-        switch (bodyNode.getType()) {
-            case Constants.NODE_CFUNC:
-                return RubyFixnum.newFixnum(getRuby(), -1);
-            case Constants.NODE_ZSUPER:
-                return RubyFixnum.newFixnum(getRuby(), -1);
-            case Constants.NODE_ATTRSET:
+        if (method instanceof EvaluateMethod) {
+            if (((EvaluateMethod)method).getNode() instanceof AttrSetNode) {
                 return RubyFixnum.one(getRuby());
-            case Constants.NODE_IVAR:
+            } else if (((EvaluateMethod)method).getNode() instanceof InstVarNode) {
                 return RubyFixnum.zero(getRuby());
-            default:
-                Node body = bodyNode.getNextNode(); /* skip NODE_SCOPE */
+            }
+/*        } else if (method instanceof RubyMethod) {
+        		// FIXME
+                INode body = bodyNode.getNextNode(); 
                 if (body instanceof BlockNode) {
                     body = body.getHeadNode();
                 }
@@ -220,6 +206,24 @@ public class RubyMethod extends RubyObject {
                     n = -n-1;
                 }
                 return RubyFixnum.newFixnum(getRuby(), n);
+                */
         }
+        return RubyFixnum.newFixnum(getRuby(), -1);
+    }
+
+    /**
+     * Gets the method.
+     * @return Returns a IMethod
+     */
+    public IMethod getMethod() {
+        return method;
+    }
+
+    /**
+     * Sets the method.
+     * @param method The method to set
+     */
+    public void setMethod(IMethod method) {
+        this.method = method;
     }
 }

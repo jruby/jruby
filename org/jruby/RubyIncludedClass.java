@@ -48,7 +48,8 @@ public final class RubyIncludedClass extends RubyClass {
     }
 
     /** rb_cvar_singleton
-     *
+     * 
+     *@deprecated since Ruby 1.6.7
      */
     public RubyModule getClassVarSingleton() {
         return getDelegate();

@@ -33,8 +33,9 @@ package org.jruby;
 import java.util.*;
 
 import org.jruby.exceptions.*;
-import org.jruby.nodes.*;
+import org.jruby.ast.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.methods.*;
 
 /**
  *
@@ -96,6 +97,20 @@ public class RubyClass extends RubyModule {
 
         classClass.undefMethod("module_function");
     }
+    
+    /** Invokes if  a class is inherited from an other  class.
+     * 
+     * MRI: rb_class_inherited
+     * 
+     * @since Ruby 1.6.7
+     * 
+     */
+    public void inheritedBy(RubyClass superType) {
+        if (superType == null) {
+            superType = ruby.getClasses().getObjectClass();
+        }
+        superType.funcall("inherited", this);
+    }
 
     /** rb_singleton_class_clone
      *
@@ -114,9 +129,9 @@ public class RubyClass extends RubyModule {
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             
-            MethodNode value = (MethodNode)entry.getValue();
+            IMethod value = (IMethod)entry.getValue();
             
-            clone.getMethods().put(entry.getKey(), new MethodNode(value.getBodyNode(), value.getNoex()));
+            clone.getMethods().put(entry.getKey(), value);
         }      
 
         //clone.setMethods();
@@ -168,11 +183,11 @@ public class RubyClass extends RubyModule {
 
     // Methods of the Class class (rb_class_*):
 
-    /** rb_class_s_new
+    /** rb_class_new
      *
      */
     public static RubyClass newClass(Ruby ruby, RubyClass superClass) {
-        return new RubyClass(ruby, superClass);
+        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass);
     }
 
     public static RubyClass newClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
@@ -205,20 +220,18 @@ public class RubyClass extends RubyModule {
         }
 
         if (superClass.isSingleton()) {
-            throw new TypeError(ruby, "can't make subclass of virtual class");
+            throw new TypeError(ruby, "Can't make subclass of virtual class.");
         }
 
         RubyClass newClass = newClass(ruby, superClass);
 
-        // make metaclass
-        newClass.setRubyClass(superClass.getRubyClass().newSingletonClass());
-        newClass.getRubyClass().attachSingletonClass(newClass);
+        newClass.makeMetaClass(superClass.getRubyClass());
 
         // call "initialize" method
         newClass.callInit(args);
 
         // call "inherited" method of the superclass
-        superClass.funcall("inherited", newClass);
+        newClass.inheritedBy(superClass);
 
         return newClass;
     }

@@ -47,7 +47,7 @@ public class RubyRange extends RubyObject {
             try {
                 begin.funcall("<=>", end);
             } catch (RaiseException rExcptn) {
-                throw new RubyArgumentException(getRuby(), "bad value for range");
+                throw new ArgumentError(getRuby(), "bad value for range");
             }
         }
 
@@ -154,7 +154,7 @@ public class RubyRange extends RubyObject {
         } else if (args.length == 2) {
             init(args[0], args[1], getRuby().getFalse());
         } else {
-            throw new RubyArgumentException(getRuby(), "Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
+            throw new ArgumentError(getRuby(), "Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
         }
         return getRuby().getNil();
     }

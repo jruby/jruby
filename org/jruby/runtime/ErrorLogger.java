@@ -1,13 +1,10 @@
 /*
- * LexState.java - No description
- * Created on 10. September 2001, 17:51
+ * ErrorLogger.java - description
+ * Created on 21.02.2002, 00:02:18
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ *
  * JRuby - http://jruby.sourceforge.net
  * 
  * This file is part of JRuby
@@ -26,17 +23,19 @@
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
- */
-package org.jruby.parser;
+ */	
+package org.jruby.runtime;
 
-public interface LexState {
-    int EXPR_BEG    = 0;
-    int EXPR_END    = 1;
-    int EXPR_ARG    = 2;
-    int EXPR_CMDARG = 3;
-    int EXPR_ENDARG = 4;
-    int EXPR_MID    = 5;
-    int EXPR_FNAME  = 6;
-    int EXPR_DOT    = 7;
-    int EXPR_CLASS  = 8;
+/** Defines an interface which should used in JRuby to log error messages
+ * and warnings.
+ * 
+ * By default the messages are displayed in the error stream.
+ * 
+ * @author  jpetersen
+ * @version $Revision$
+ */
+public interface ErrorLogger {
+    public void warn(String message);
+    public void warning(String message);
+    public void error(String message);
 }

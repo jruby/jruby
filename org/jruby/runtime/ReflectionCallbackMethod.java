@@ -117,11 +117,11 @@ public class ReflectionCallbackMethod implements Callback {
     protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
         if (restArgs) {
             if (methodArgs.length < (args.length - 1)) {
-                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+                throw new ArgumentError(ruby, getExceptedArgsString(methodArgs));
             }
         } else {
             if (methodArgs.length != args.length) {
-                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+                throw new ArgumentError(ruby, getExceptedArgsString(methodArgs));
             }
         }
     }
@@ -208,7 +208,7 @@ public class ReflectionCallbackMethod implements Callback {
             } else if (itExcptn.getTargetException() instanceof RuntimeException) {
                 throw (RuntimeException) itExcptn.getTargetException();
             } else {
-                System.err.println("[ERROR] ReflectionCallback:");
+                System.err.println("[ERROR] Calling method: " + klass + "#" + method);
                 itExcptn.getTargetException().printStackTrace();
                 return ruby.getNil();
             }

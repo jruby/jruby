@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
 public class RubyProc extends RubyObject {
     // private originalThread = null
 
-    private RubyBlock block = null;
+    private Block block = null;
     private RubyModule wrapper = null;
 
     public RubyProc(Ruby ruby, RubyClass rubyClass) {
@@ -56,7 +56,7 @@ public class RubyProc extends RubyObject {
         return procClass;
     }
     
-    public RubyBlock getBlock() {
+    public Block getBlock() {
         return block;
     }
 
@@ -76,18 +76,18 @@ public class RubyProc extends RubyObject {
 
     public static RubyProc newProc(Ruby ruby, RubyClass rubyClass) {
         if (!ruby.isBlockGiven() && !ruby.isFBlockGiven()) {
-            throw new RubyArgumentException(ruby, "tried to create Proc object without a block");
+            throw new ArgumentError(ruby, "tried to create Proc object without a block");
         }
 
         RubyProc newProc = new RubyProc(ruby, rubyClass);
 
-        newProc.block = ruby.getBlock().cloneBlock();
+        newProc.block = ruby.getBlock().getAct().cloneBlock();
 
         newProc.wrapper = ruby.getWrapper();
-        newProc.block.iter = newProc.block.prev != null ? 1 : 0;
+        newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
 
-        newProc.block.frame = ruby.getRubyFrame();
-        newProc.block.scope = (Scope)ruby.getScope().getTop();
+        newProc.block.setFrame(ruby.getActFrame());
+        newProc.block.setScope((Scope)ruby.getScope().getTop());
         // +++
 
         return newProc;
@@ -95,24 +95,20 @@ public class RubyProc extends RubyObject {
 
     public RubyObject call(RubyObject[] args) {
         RubyModule oldWrapper = getRuby().getWrapper();
-        RubyBlock oldBlock = getRuby().getBlock();
+        Block oldBlock = getRuby().getBlock().getAct();
 
         getRuby().setWrapper(wrapper);
-        getRuby().setBlock(block);
+        getRuby().getBlock().setAct(block);
 
-        getRuby().getIter().push(RubyIter.ITER_CUR);
-        getRuby().getRubyFrame().setIter(RubyIter.ITER_CUR);
-
-        RubyObject result = getRuby().getNil();
+        getRuby().getIterStack().push(Iter.ITER_CUR);
+        getRuby().getActFrame().setIter(Iter.ITER_CUR);
 
         try {
-            result = getRuby().yield0(args != null ? RubyArray.create(getRuby(), null, args) : null, null, null, true);
+            return getRuby().yield0(args != null ? RubyArray.newArray(getRuby(), args) : null, null, null, true);
         } finally {
-            getRuby().getIter().pop();
-            getRuby().setBlock(oldBlock);
+            getRuby().getIterStack().pop();
+            getRuby().getBlock().setAct(oldBlock);
             getRuby().setWrapper(oldWrapper);
         }
-
-        return result;
     }
 }

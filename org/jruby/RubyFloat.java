@@ -2,9 +2,8 @@
  * RubyFloat.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,8 +26,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
+
+import java.text.*;
+import java.util.*;
 
 import org.jruby.runtime.*;
 
@@ -37,6 +38,8 @@ import org.jruby.runtime.*;
  * @author  jpetersen
  */
 public class RubyFloat extends RubyNumeric {
+    private static NumberFormat usFormat = NumberFormat.getInstance(Locale.US);
+    
     private double value;
 
     public RubyFloat(Ruby ruby) {
@@ -234,7 +237,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuby(), Double.toString(getValue()));
+        return RubyString.newString(getRuby(), usFormat.format(getValue()));
     }
 
     public RubyInteger to_i() {

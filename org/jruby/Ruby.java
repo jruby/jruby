@@ -27,21 +27,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import java.io.*;
 import java.util.*;
-//Benoit: this is not needed and adds a compile time dependency on xalan
-//import org.apache.xalan.templates.*;
+
+import org.ablaf.ast.*;
+import org.ablaf.lexer.*;
+import org.ablaf.parser.*;
+
+import org.jruby.ast.*;
+import org.jruby.common.*;
+import org.jruby.evaluator.*;
 import org.jruby.exceptions.*;
+import org.jruby.internal.runtime.methods.*;
 import org.jruby.javasupport.*;
-import org.jruby.nodes.*;
-import org.jruby.nodes.types.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.*;
-import org.jruby.runtime.Constants;
+import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
+import org.jruby.util.collections.*;
 
 /**
  * The jruby runtime.
@@ -49,15 +54,17 @@ import org.jruby.util.*;
  * @author  jpetersen
  * @version $Revision$
  * @since   0.1
+ * @fixme  a mechanism should be there to avoid creating several instances of the same
+ * 		   value objects with the same value (this would apply to String and number specifically)
  */
 public final class Ruby {
-    public static final String RUBY_VERSION = "1.6";
+	
+    public static final String RUBY_MAJOR_VERSION = "1.6";
+    public static final String RUBY_VERSION = "1.6.7";
 
-    public static final int FIXNUM_CACHE_MAX = 0xff;
-    public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
-    
-    private static final String[] REGEXP_ADAPTER = {"org.jruby.regexp.JDKRegexpAdapter", "org.jruby.regexp.GNURegexpAdapter", "org.jruby.regexp.ORORegexpAdapter"};
-    
+    private static final String[] REGEXP_ADAPTER =
+        { "org.jruby.regexp.JDKRegexpAdapter", "org.jruby.regexp.GNURegexpAdapter", "org.jruby.regexp.ORORegexpAdapter" };
+
     private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
@@ -68,6 +75,8 @@ public final class Ruby {
     private RubyMap globalMap;
 
     public LinkedList objectSpace = new LinkedList();
+
+    public HashMap fixnumMap = new HashMap();
 
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)
@@ -90,8 +99,6 @@ public final class Ruby {
     private RubyExceptions exceptions;
 
     //
-    private ParserHelper parserHelper = null;
-    private RubyParser rubyParser = null;
     private RubyRuntime runtime = new RubyRuntime(this);
 
     private RubyObject rubyTopSelf;
@@ -102,8 +109,8 @@ public final class Ruby {
     private RubyVarmap dynamicVars = null;
     private RubyModule rubyClass = null;
 
-    private RubyFrame rubyFrame;
-    private RubyFrame topFrame;
+    private FrameStack frameStack = new FrameStack(this);
+    private Frame topFrame;
 
     private Namespace namespace;
     private Namespace topNamespace;
@@ -116,8 +123,8 @@ public final class Ruby {
     private boolean verbose;
 
     // 
-    private RubyIter iter;
-    private RubyBlock block = new RubyBlock(this);
+    private IStack iterStack = CollectionFactory.getInstance().newStack();
+    private BlockStack block = new BlockStack(this);
 
     private RubyModule cBase;
 
@@ -136,6 +143,8 @@ public final class Ruby {
 
     // pluggable Regexp engine
     private Class regexpAdapterClass;
+    
+    private IParser parser;
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -160,30 +169,36 @@ public final class Ruby {
      */
     public static Ruby getDefaultInstance(Class regexpAdapterClass) {
         for (int i = 0; regexpAdapterClass == null && i < REGEXP_ADAPTER.length; i++) {
-			try {
-            	regexpAdapterClass = Class.forName(REGEXP_ADAPTER[i]);
-			} catch (ClassNotFoundException cnfExcptn) {
-			} catch (NoClassDefFoundError ncdfError) {
-			}
+            try {
+                regexpAdapterClass = Class.forName(REGEXP_ADAPTER[i]);
+            } catch (ClassNotFoundException cnfExcptn) {
+            } catch (NoClassDefFoundError ncdfError) {
+            }
         }
-        
+
         Ruby ruby = new Ruby();
         ruby.setRegexpAdapterClass(regexpAdapterClass);
         ruby.init();
-        ruby.setGlobalVar("$*", RubyArray.newArray(ruby));
         return ruby;
     }
 
     /**
-     * Evaluates a Java script. And return an object of class returnClass.
-     * 
+     * Evaluates a script and returns an instance of class returnClass.
+     *
      * @param script The script to evaluate
      * @param returnClass The class which should be returned
      * @return the result Object
      */
     public Object evalScript(String script, Class returnClass) {
-        RubyObject result = getRubyTopSelf().eval(getRubyParser().compileJavaString("<script>", script, script.length(), 1));
+        RubyObject result = evalScript(script);
         return JavaUtil.convertRubyToJava(this, result, returnClass);
+    }
+
+    /**
+     * Evaluates a script and returns a RubyObject.
+     */
+    public RubyObject evalScript(String script) {
+	return getRubyTopSelf().eval(compile(script, "<script>", 1));
     }
 
     /**
@@ -255,7 +270,9 @@ public final class Ruby {
         return (RubyClass) classes.getClassMap().get(name);
     }
 
-    /** rb_define_class / rb_define_class_id
+    /** Define a new class with name 'name' and super class 'superClass'.
+     * 
+     * MRI: rb_define_class / rb_define_class_id
      *
      */
     public RubyClass defineClass(String name, RubyClass superClass) {
@@ -265,11 +282,10 @@ public final class Ruby {
 
         RubyClass newClass = RubyClass.newClass(this, superClass);
         newClass.setName(name);
+        
+        newClass.makeMetaClass(superClass.getRubyClass());
 
-        newClass.setRubyClass(superClass.getRubyClass().newSingletonClass());
-        newClass.getRubyClass().attachSingletonClass(newClass);
-
-        superClass.funcall("inherited", newClass);
+        newClass.inheritedBy(superClass);
 
         classes.getClassMap().put(name, newClass);
 
@@ -311,7 +327,7 @@ public final class Ruby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw new RubySecurityException(this, "Insecure operation '" + getRubyFrame().getLastFunc() + "' at level " + safeLevel);
+            throw new RubySecurityException(this, "Insecure operation '" + getActFrame().getLastFunc() + "' at level " + safeLevel);
         }
     }
 
@@ -396,55 +412,49 @@ public final class Ruby {
 
     public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
         if (!isBlockGiven()) {
-            throw new RaiseException(this, "LocalJumpError", "yield called out of block");
+            throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
         }
 
         RubyVarmap.push(this);
-        pushClass();
-        RubyBlock tmpBlock = block.getTmp();
+        Block actBlock = block.getAct();
 
-        RubyFrame frame = new RubyFrame(tmpBlock.frame); // block.frame;
-        frame.setPrev(getRubyFrame());
-        setRubyFrame(frame);
+        getFrameStack().push(actBlock.getFrame());
 
-		Namespace oldNamespace = getNamespace();
-        setNamespace(getRubyFrame().getNamespace());
+        Namespace oldNamespace = getNamespace();
+        setNamespace(getActFrame().getNamespace());
 
         Scope oldScope = (Scope) getScope().getTop();
-        getScope().setTop(tmpBlock.scope);
+        getScope().setTop(actBlock.getScope());
         // getScope().push(tmpBlock.scope);
 
         // block.pop();
-        block = block.prev;
+        // XXX
+        block.pop(); // setAct((Block)actBlock.getNext());
 
-        if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
-            setDynamicVars(new RubyVarmap(null, null, tmpBlock.dynamicVars));
-        } else {
-            setDynamicVars(block.dynamicVars);
-        }
+        setDynamicVars(actBlock.getDynamicVars());
 
-        setRubyClass((klass != null) ? klass : tmpBlock.klass);
+        pushClass((klass != null) ? klass : actBlock.getKlass());
+
         if (klass == null) {
-            self = tmpBlock.self;
+            self = actBlock.getSelf();
         }
 
-        Node node = tmpBlock.body;
+        IMethod method = actBlock.getMethod(); // actBlock.body;
 
-        if (tmpBlock.var != null) {
+        if (actBlock.getVar() != null) {
             // try {
-            if (tmpBlock.var == Node.ONE) {
+            if (actBlock.getVar() instanceof ZeroArgNode) {
                 if (acheck && value != null && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
 
-                    throw new RubyArgumentException(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
+                    throw new ArgumentError(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
                 }
             } else {
-                if (!(tmpBlock.var instanceof MAsgnNode)) {
+                if (!(actBlock.getVar() instanceof MultipleAsgnNode)) {
                     if (acheck && value != null && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-
                         value = ((RubyArray) value).entry(0);
                     }
                 }
-                ((AssignableNode) tmpBlock.var).assign(this, self, value, acheck);
+                new AssignmentVisitor(this, self).assign(actBlock.getVar(), value, acheck);
             }
             // } catch () {
             //    goto pop_state;
@@ -457,26 +467,42 @@ public final class Ruby {
             }
         }
 
-        iter.push(tmpBlock.iter);
+        getIterStack().push(actBlock.getIter());
         try {
             while (true) {
                 try {
-                    if (node == null) {
+                    if (method == null) {
                         return getNil();
-                    } else if (node instanceof ExecutableNode) {
+                    } else {
                         if (value == null) {
                             value = RubyArray.newArray(this, 0);
                         }
-                        return ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
+
+                        RubyObject[] args = {value};
+
+                        // XXX
+                        if (value instanceof RubyArray) {
+                            args = ((RubyArray)value).toJavaArray();
+                        }
+                        // XXX
+                        
+                        return method.execute(this, self, null, args, false);
+                                      
+                        /*if (method instanceof ExecutableNode) {
+                        if (value == null) {
+                            value = RubyArray.newArray(this, 0);
+                        }
+                        // FIXME
+/*                        return ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
                     } else {
-                        return node.eval(this, self);
+                        return node.eval(this, self);*/
                     }
-                } catch (RedoException rExcptn) {
+                } catch (RedoJump rExcptn) {
                 }
             }
             //break;
 
-        } catch (NextException nExcptn) {
+        } catch (NextJump nExcptn) {
             return getNil();
             /*            } catch (BreakException bExcptn) {
                             throw bExcptn;*/
@@ -488,12 +514,12 @@ public final class Ruby {
                 throw new ReturnException(getNil());
                 // ---*/
         } finally {
-            iter.pop();
+            getIterStack().pop();
             popClass();
             RubyVarmap.pop(this);
 
-            block.setTmp(tmpBlock);
-            setRubyFrame(getRubyFrame().getPrev());
+            block.setAct(actBlock);
+            getFrameStack().pop();
 
             setNamespace(oldNamespace);
 
@@ -514,11 +540,9 @@ public final class Ruby {
      *
      */
     public RubyObject iterate(Callback iterateMethod, RubyObject data1, Callback blockMethod, RubyObject data2) {
-        Node node = new NodeFactory(this).newIFunc(blockMethod, data2);
-
         // VALUE self = ruby_top_self;
-        getIter().push(RubyIter.ITER_PRE);
-        getBlock().push(null, node, getRubyTopSelf());
+        getIterStack().push(Iter.ITER_PRE);
+        getBlock().push(null, new IterateMethod(blockMethod, data2), getRubyTopSelf());
 
         try {
             while (true) {
@@ -532,24 +556,9 @@ public final class Ruby {
                 }
             }
         } finally {
-            getIter().pop();
+            getIterStack().pop();
             getBlock().pop();
         }
-    }
-
-    private void callInits() {
-        classes = new RubyClasses(this);
-        classes.initCoreClasses();
-
-        exceptions = new RubyExceptions(this);
-        exceptions.initDefaultExceptionClasses();
-
-        rubyTopSelf = new RubyObject(this, classes.getObjectClass());
-        /*rubyTopSelf.defineSingletonMethod("to_s", new RubyCallbackMethod() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                return RubyString.m_newString(ruby, "main");
-            }
-        });*/
     }
 
     /** ruby_init
@@ -561,8 +570,9 @@ public final class Ruby {
         }
         initialized = true;
 
-        setIter(new RubyIter()); // ruby_iter = &iter;
-        rubyFrame = topFrame = new RubyFrame(this);
+        getIterStack().push(Iter.ITER_NOT);
+        getFrameStack().push();
+        topFrame = getActFrame();
 
         // rb_origenviron = environ;
 
@@ -575,17 +585,25 @@ public final class Ruby {
         setActMethodScope(Constants.SCOPE_PRIVATE);
 
         try {
-            callInits();
+			classes = new RubyClasses(this);
+			classes.initCoreClasses();
+
+			RubyGlobal.createGlobals(this);
+
+			exceptions = new RubyExceptions(this);
+			exceptions.initDefaultExceptionClasses();
+
+			rubyTopSelf = new RubyObject(this, classes.getObjectClass());
 
             rubyClass = getClasses().getObjectClass();
-            rubyFrame.setSelf(rubyTopSelf);
+            getActFrame().setSelf(rubyTopSelf);
             topNamespace = new Namespace(getClasses().getObjectClass());
             namespace = topNamespace;
-            rubyFrame.setNamespace(namespace);
+            getActFrame().setNamespace(namespace);
             // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
             // ruby_prog_init();
         } catch (Exception excptn) {
-            excptn.printStackTrace(getRuntime().getErrorStream());
+            excptn.printStackTrace();
         }
 
         getScope().pop();
@@ -642,15 +660,16 @@ public final class Ruby {
     }
 
     public boolean isBlockGiven() {
-        return getRubyFrame().getIter() != RubyIter.ITER_NOT;
+        return !getActFrame().getIter().isNot();
     }
 
     public boolean isFBlockGiven() {
-        return (getRubyFrame().getPrev() != null) && (getRubyFrame().getPrev().getIter() != RubyIter.ITER_NOT);
+        return (getFrameStack().getPrevious() != null) && (!getFrameStack().getPrevious().getIter().isNot());
     }
 
-    public void pushClass() {
+    public void pushClass(RubyModule newClass) {
         classStack.push(getRubyClass());
+        setRubyClass(newClass);
     }
 
     public void popClass() {
@@ -692,24 +711,6 @@ public final class Ruby {
         this.rubyClass = rubyClass;
     }
 
-    /** Getter for property parserHelper.
-     * @return Value of property parserHelper.
-     */
-    public ParserHelper getParserHelper() {
-        if (parserHelper == null) {
-            parserHelper = new ParserHelper(this);
-            parserHelper.init();
-        }
-        return parserHelper;
-    }
-
-    public RubyParser getRubyParser() {
-        if (rubyParser == null) {
-            rubyParser = new DefaultRubyParser(this);
-        }
-        return rubyParser;
-    }
-
     /** Getter for property inEval.
      * @return Value of property inEval.
      */
@@ -724,31 +725,25 @@ public final class Ruby {
         this.inEval = inEval;
     }
 
-    /** Getter for property rubyFrame.
-     * @return Value of property rubyFrame.
-     */
-    public RubyFrame getRubyFrame() {
-        return rubyFrame;
+    public FrameStack getFrameStack() {
+        return frameStack;
     }
 
-    /** Setter for property rubyFrame.
-     * @param rubyFrame New value of property rubyFrame.
-     */
-    public void setRubyFrame(RubyFrame rubyFrame) {
-        this.rubyFrame = rubyFrame;
+    public Frame getActFrame() {
+        return (Frame)getFrameStack().peek();
     }
 
     /** Getter for property topFrame.
      * @return Value of property topFrame.
      */
-    public RubyFrame getTopFrame() {
+    public Frame getTopFrame() {
         return topFrame;
     }
 
     /** Setter for property topFrame.
      * @param topFrame New value of property topFrame.
      */
-    public void setTopFrame(RubyFrame topFrame) {
+    public void setTopFrame(Frame topFrame) {
         this.topFrame = topFrame;
     }
 
@@ -771,43 +766,36 @@ public final class Ruby {
     /** Getter for property iter.
      * @return Value of property iter.
      */
-    public RubyIter getIter() {
-        return iter;
+    public IStack getIterStack() {
+        return iterStack;
     }
 
     /** Setter for property iter.
      * @param iter New value of property iter.
      */
-    public void setIter(RubyIter iter) {
-        this.iter = iter;
+    public Iter getActIter() {
+        return (Iter)getIterStack().peek();
     }
 
     /** Getter for property block.
      * @return Value of property block.
      */
-    public RubyBlock getBlock() {
+    public BlockStack getBlock() {
         return block;
-    }
-
-    /** Setter for property block.
-     * @param block New value of property block.
-     */
-    public void setBlock(RubyBlock block) {
-        this.block = block;
     }
 
     /** Getter for property cBase.
      * @return Value of property cBase.
      */
     public RubyModule getCBase() {
-        return (RubyModule) getRubyFrame().getNamespace().getNamespaceModule();
+        return getActFrame().getNamespace().getNamespaceModule();
     }
 
     /** Setter for property cBase.
      * @param cBase New value of property cBase.
      */
     public void setCBase(RubyModule cBase) {
-        getRubyFrame().getNamespace().setNamespaceModule(cBase);
+        getActFrame().getNamespace().setNamespaceModule(cBase);
     }
 
     public boolean isScope(int scope) {
@@ -865,11 +853,15 @@ public final class Ruby {
     }
 
     /** defines a global variable with getter and setter methods
-     * @param name name of the new variable, since it is a global it should normally start with a $
-	 * @param value starting value for this variable, this value is used by the default getter and 
-	 * 				setter implementation.
-	 * @param getter the getter method for this variable, if null a default method which reads the value is used
-	 * @param setter the setter method for this variable, if null a default method which writes the value is used
+     * 
+     * @param name name of the new variable, since it is a global it
+     *  should normally start with a $
+     * @param value starting value for this variable, this value is used
+     *  by the default getter and setter implementation.
+     * @param getter the getter method for this variable, if null a default
+     *  method which reads the value is used
+     * @param setter the setter method for this variable, if null a default
+     *  method which writes the value is used
      */
     public void defineHookedVariable(String name, RubyObject value, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
 
@@ -931,7 +923,9 @@ public final class Ruby {
      *   by the current directory (``.''). This variable may be set from within a program to alter
      *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
      *   Warning: the ioAdditionalDirectory list will be modified by this process!
-     *   @param ioAdditionalDirectory the directory specified on the command line
+	 *   @param ioAdditionalDirectory the directory specified on the command line
+     *   @fixme: use the version number in some other way than hardcoded here
+     *   @fixme: safe level pb here
      **/
     public void initLoad(ArrayList ioAdditionalDirectory) {
         //	don't know what this is used for in MRI, it holds the handle of all loaded libs
@@ -957,9 +951,9 @@ public final class Ruby {
             //FIXME: use the version number in some other way than hardcoded here
             String lRuby = lRubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
             String lSiteRuby = lRuby + "site_ruby";
-            String lSiteRubyVersion = lSiteRuby + File.separatorChar + RUBY_VERSION;
-            String lArch = File.separatorChar + "JAVA";
-            String lRubyVersion = lRuby + RUBY_VERSION;
+            String lSiteRubyVersion = lSiteRuby + File.separatorChar + RUBY_MAJOR_VERSION;
+            String lArch = File.separatorChar + "java";
+            String lRubyVersion = lRuby + RUBY_MAJOR_VERSION;
 
             ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
             ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
@@ -970,12 +964,9 @@ public final class Ruby {
 
         //FIXME: safe level pb here
         ioAdditionalDirectory.add(new RubyString(this, "."));
-        RubyArray rb_load_path = new RubyArray(this, ioAdditionalDirectory);
-        defineReadonlyVariable("$:", rb_load_path);
-        defineReadonlyVariable("$-I", rb_load_path);
-        defineReadonlyVariable("$LOAD_PATH", rb_load_path);
-        RubyArray rb_features = new RubyArray(this);
-        defineReadonlyVariable("$\"", rb_features);
+
+		RubyArray loadPath = (RubyArray) getGlobalVar("$:");
+		loadPath.getList().addAll(ioAdditionalDirectory);
     }
 
     /**
@@ -1005,5 +996,74 @@ public final class Ruby {
         } else {
             throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
         }
+    }
+    
+    /**
+	 * @fixme
+	 **/	
+    public INode compile(String content, String file, int line) {
+        // FIXME
+        RubyParserConfiguration config = new RubyParserConfiguration();
+
+        config.setLocalVariables(getScope().getLocalNames());
+        
+        getParser().init(config);
+
+        IRubyParserResult result = (IRubyParserResult)getParser().parse(LexerFactory.getInstance().getSource(file, content));
+        
+        if (result.getLocalVariables() != null) {
+            getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
+            if (getScope().getLocalNames() != null && getScope().getLocalNames().size() > 0) {
+                if (getScope().getLocalValues() == null) {
+                    getScope().setLocalValues(new ArrayList(Collections.nCopies(getScope().getLocalNames().size(), getNil())));
+                } else {
+                    getScope().getLocalValues().addAll(Collections.nCopies(getScope().getLocalNames().size() - getScope().getLocalValues().size(), getNil()));
+                }
+            }
+        }
+
+        return result.getAST();
+    }
+
+    public RubyObject getLastline() {
+        if (getScope().getLocalValues() != null) {
+            return getScope().getValue(0);
+        }
+        return RubyString.nilString(this);
+    }
+
+    public void setLastline(RubyObject value) {
+        if (getScope().getLocalValues() == null) {
+            getScope().setLocalValues(new ArrayList(Collections.nCopies(2, getNil())));
+            getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
+        }
+        getScope().setValue(0, value);
+    }
+
+    public RubyObject getBackref() {
+        if (getScope().getLocalValues() != null) {
+            return getScope().getValue(1);
+        }
+        return getNil();
+    }
+
+    public void setBackref(RubyObject match) {
+        if (getScope().getLocalValues() == null) {
+            getScope().setLocalValues(new ArrayList(Collections.nCopies(2, getNil())));
+            getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
+        }
+        getScope().setValue(1, match);
+    }
+
+    /**
+     * Gets the parser.
+     * @return Returns a IParser
+     */
+    public IParser getParser() {
+        if (parser == null) {
+            parser = new DefaultRubyParser();
+            parser.setErrorHandler(new RubyErrorHandler(this, verbose));
+        }
+        return parser;
     }
 }

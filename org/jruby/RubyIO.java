@@ -67,7 +67,7 @@ public class RubyIO extends RubyObject {
         ioClass.includeModule(ruby.getClasses().getEnumerableModule());
 
         ioClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyIO.class, "newInstance"));
-        ioClass.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", String.class));
+        ioClass.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", RubyString.class));
         ioClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyIO.class, "initialize"));
 
         ioClass.defineMethod("write", CallbackFactory.getMethod(RubyIO.class, "write", RubyObject.class));
@@ -188,7 +188,7 @@ public class RubyIO extends RubyObject {
         append = false;
 
         if (mode.length() == 0) {
-            throw new RubyArgumentException(getRuby(), "illegal access mode");
+            throw new ArgumentError(getRuby(), "illegal access mode");
         }
 
         switch (mode.charAt(0)) {
@@ -201,7 +201,7 @@ public class RubyIO extends RubyObject {
                 writeable = true;
                 break;
             default :
-                throw new RubyArgumentException(getRuby(), "illegal access mode " + mode);
+                throw new ArgumentError(getRuby(), "illegal access mode " + mode);
         }
 
         if (mode.length() > 1) {
@@ -212,7 +212,7 @@ public class RubyIO extends RubyObject {
                     readable = true;
                     writeable = true;
                 } else {
-                    throw new RubyArgumentException(getRuby(), "illegal access mode " + mode);
+                    throw new ArgumentError(getRuby(), "illegal access mode " + mode);
                 }
             }
         }
@@ -261,10 +261,14 @@ public class RubyIO extends RubyObject {
 
             if (newLine != null) {
                 lineNumber++;
-				//increase the global linenumber
-				ruby.setGlobalVar("$.", RubyFixnum.newFixnum(ruby, lineNumber));
+
+                // XXX
+                ruby.setGlobalVar("$.", RubyFixnum.newFixnum(ruby, lineNumber));
+                // XXX
+
                 RubyString result = RubyString.newString(getRuby(), newLine);
                 result.taint();
+
                 return result;
             }
         } catch (IOException ioExcptn) {
@@ -455,7 +459,7 @@ public class RubyIO extends RubyObject {
         RubyString result = internalGets(args);
 
         if (!result.isNil()) {
-            getRuby().getParserHelper().setLastline(result);
+            getRuby().setLastline(result);
         }
 
         return result;
@@ -563,7 +567,7 @@ public class RubyIO extends RubyObject {
      */
     public static RubyObject print(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
-            args = new RubyObject[] { ruby.getParserHelper().getLastline()};
+            args = new RubyObject[] { ruby.getLastline()};
         }
 
         RubyObject fs = ruby.getGlobalVar("$,");

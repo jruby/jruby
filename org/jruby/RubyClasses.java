@@ -139,6 +139,7 @@ public class RubyClasses {
     private RubyModule mathModule;
     private RubyModule objectSpaceModule;
     private RubyModule processModule;
+    private RubyModule precisionModule;
 
     private RubyMap classMap;
 
@@ -193,23 +194,13 @@ public class RubyClasses {
      *   + All metaclasses are instances of the class `Class'.
      */
     public void initCoreClasses() {
-        RubyClass metaClass;
-
         objectClass = defineBootClass("Object", null);
         moduleClass = defineBootClass("Module", objectClass);
         classClass = defineBootClass("Class", moduleClass);
 
-        metaClass = classClass.newSingletonClass();
-        objectClass.setRubyClass(metaClass);
-        metaClass.attachSingletonClass(objectClass);
-
-        metaClass = metaClass.newSingletonClass();
-        moduleClass.setRubyClass(metaClass);
-        metaClass.attachSingletonClass(moduleClass);
-
-        metaClass = metaClass.newSingletonClass();
-        classClass.setRubyClass(metaClass);
-        metaClass.attachSingletonClass(classClass);
+        RubyClass metaClass = objectClass.makeMetaClass(classClass);
+        metaClass = moduleClass.makeMetaClass(metaClass);
+        metaClass = classClass.makeMetaClass(metaClass);
 
         kernelModule = ruby.defineModule("Kernel");
         objectClass.includeModule(kernelModule);
@@ -231,6 +222,8 @@ public class RubyClasses {
 
         comparableModule = RubyComparable.createComparable(ruby);
         enumerableModule = RubyEnumerable.createEnumerableModule(ruby);
+        
+        precisionModule = RubyPrecision.createPrecisionModule(ruby);
 
         numericClass = RubyNumeric.createNumericClass(ruby);
         integerClass = RubyInteger.createIntegerClass(ruby);
@@ -252,6 +245,7 @@ public class RubyClasses {
         
         ioClass = RubyIO.createIOClass(ruby);
         fileClass = RubyFile.createFileClass(ruby);
+        dirClass = RubyDir.createDirClass(ruby);
 
         exceptionClass = RubyException.createExceptionClass(ruby);
 
@@ -263,8 +257,6 @@ public class RubyClasses {
         timeClass = RubyTime.createTimeClass(ruby);
         
         structClass = RubyStruct.createStructClass(ruby);
-        
-        RubyGlobal.createGlobals(ruby);
     }
 
     /** Returns the reference to the Binding class.
@@ -531,6 +523,10 @@ public class RubyClasses {
      */
     public RubyModule getEnumerableModule() {
         return enumerableModule;
+    }
+
+    public RubyModule getPrecisionModule() {
+        return precisionModule;
     }
 
     /** Returns the reference to the JavaObject class.

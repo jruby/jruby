@@ -31,78 +31,51 @@ package org.jruby.runtime;
 import java.util.*;
 
 import org.jruby.*;
-import org.jruby.nodes.*;
+import org.jruby.ast.*;
 import org.jruby.util.*;
+import org.jruby.util.collections.*;
+import org.jruby.util.collections.StackElement;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyFrame {
-    public static final int FRAME_ALLOCA = 0;
-    public static final int FRAME_MALLOC = 1;
-
+public class Frame {
     private RubyObject self = null;
     private List args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
     private Namespace namespace = null;
-    private RubyFrame prev = null;
-    private RubyFrame tmp = null;
+    private Frame tmp = null;
     private String file = null;
     private int line = 0;
-    private int iter = 0;
-    private int flags = 0;
+    private Iter iter = Iter.ITER_NOT;
 
-    private Ruby ruby = null;
-
-    public RubyFrame(Ruby ruby) {
-        this.ruby = ruby;
-    }
-
-    public RubyFrame(
-        Ruby ruby,
+    public Frame(
         RubyObject self,
         List args,
         String lastFunc,
         RubyModule lastClass,
         Namespace namespace,
-        RubyFrame prev,
-        RubyFrame tmp,
+        Frame tmp,
         String file,
         int line,
-        int iter,
-        int flags) {
-        this(ruby);
+        Iter iter) {
 
         this.self = self;
         this.args = args;
         this.lastFunc = lastFunc;
         this.lastClass = lastClass;
         this.namespace = namespace;
-        this.prev = prev;
         this.tmp = tmp;
         this.file = file;
         this.line = line;
         this.iter = iter;
-        this.flags = flags;
     }
 
-    public RubyFrame(RubyFrame frame) {
-        this(
-            frame.ruby,
-            frame.self,
-            frame.args,
-            frame.lastFunc,
-            frame.lastClass,
-            frame.namespace,
-            frame.prev,
-            frame.tmp,
-            frame.file,
-            frame.line,
-            frame.iter,
-            frame.flags);
+    public Frame(Frame frame) {
+        this(frame.self, frame.args, frame.lastFunc, frame.lastClass, frame.namespace, frame.tmp, frame.file, frame.line, frame.iter);
     }
 
     /** Getter for property args.
@@ -141,31 +114,17 @@ public class RubyFrame {
         this.file = file;
     }
 
-    /** Getter for property flags.
-     * @return Value of property flags.
-     */
-    public int getFlags() {
-        return flags;
-    }
-
-    /** Setter for property flags.
-     * @param flags New value of property flags.
-     */
-    public void setFlags(int flags) {
-        this.flags = flags;
-    }
-
     /** Getter for property iter.
      * @return Value of property iter.
      */
-    public int getIter() {
+    public Iter getIter() {
         return iter;
     }
 
     /** Setter for property iter.
      * @param iter New value of property iter.
      */
-    public void setIter(int iter) {
+    public void setIter(Iter iter) {
         this.iter = iter;
     }
 
@@ -211,20 +170,6 @@ public class RubyFrame {
         this.line = line;
     }
 
-    /** Getter for property prev.
-     * @return Value of property prev.
-     */
-    public RubyFrame getPrev() {
-        return prev;
-    }
-
-    /** Setter for property prev.
-     * @param prev New value of property prev.
-     */
-    public void setPrev(RubyFrame prev) {
-        this.prev = prev;
-    }
-
     /** Getter for property self.
      * @return Value of property self.
      */
@@ -242,14 +187,14 @@ public class RubyFrame {
     /** Getter for property tmp.
      * @return Value of property tmp.
      */
-    public RubyFrame getTmp() {
+    public Frame getTmp() {
         return tmp;
     }
 
     /** Setter for property tmp.
      * @param tmp New value of property tmp.
      */
-    public void setTmp(RubyFrame tmp) {
+    public void setTmp(Frame tmp) {
         this.tmp = tmp;
     }
 
@@ -258,10 +203,11 @@ public class RubyFrame {
      * 
      **/
     public void tmpPush() {
-        RubyFrame tmpFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, namespace, prev, tmp, file, line, iter, flags);
+        Frame tmpFrame = new Frame(self, args, lastFunc, lastClass, namespace, tmp, file, line, iter);
 
         tmp = tmpFrame;
     }
+
     /**
      * pops the top of the tmp stack
      **/
@@ -271,53 +217,9 @@ public class RubyFrame {
         lastFunc = tmp.lastFunc;
         lastClass = tmp.lastClass;
         namespace = tmp.namespace;
-        prev = tmp.prev;
         file = tmp.file;
         line = tmp.line;
         iter = tmp.iter;
-        flags = tmp.flags;
-        ruby = tmp.ruby; //like it really could be different, maybe with threads...
         tmp = tmp.tmp;
-    }
-
-    /** Push a new empty frame to the frame stack.
-     *
-     */
-    public void push() {
-        RubyFrame oldFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, namespace, prev, tmp, file, line, iter, flags);
-
-        prev = oldFrame;
-        tmp = null;
-        file = ruby.getSourceFile();
-        line = ruby.getSourceLine();
-        iter = ruby.getIter().getIter();
-        args = null;
-        flags = FRAME_ALLOCA;
-    }
-
-    /** Pop the frame.
-     *
-     */
-    public void pop() {
-		//Benoit: according to the POP_FRAME macro 
-		//(and to logic, poping should restore the
-		//previous state) the ruby sourcefile and 
-		//sourceline should be the one saved on the pushed 
-		//frame
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
-        self = prev.self;
-        args = prev.args;
-        lastFunc = prev.lastFunc;
-        lastClass = prev.lastClass;
-        namespace = prev.namespace;
-        tmp = prev.tmp;
-        file = prev.file;
-        line = prev.line;
-        iter = prev.iter;
-        flags = prev.flags;
-
-        prev = prev.prev;
-
     }
 }

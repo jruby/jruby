@@ -20,8 +20,12 @@ public class RubyFile extends RubyIO {
         fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
         fileClass.defineSingletonMethod("delete", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
+		fileClass.defineSingletonMethod("dirname", CallbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
+		fileClass.defineSingletonMethod("join", CallbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
+		fileClass.defineSingletonMethod("directory?", CallbackFactory.getSingletonMethod(RubyFile.class, "directory", RubyString.class));
+		fileClass.defineSingletonMethod("basename", CallbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
 
-        fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
+		fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
         
         return fileClass;
     }
@@ -45,6 +49,10 @@ public class RubyFile extends RubyIO {
         }
     }
 
+	private static String separator() {
+		return "/";
+	}
+
 	/*
 	 *  File class methods
 	 */
@@ -59,7 +67,7 @@ public class RubyFile extends RubyIO {
 	
 	public RubyObject initialize(RubyObject[] args) {
 	    if (args.length == 0) {
-	        throw new RubyArgumentException(getRuby(), "");
+	        throw new ArgumentError(getRuby(), "");
 	    }
 	    
 	    args[0].checkSafeString();
@@ -86,7 +94,7 @@ public class RubyFile extends RubyIO {
 	    RubyFile file = new RubyFile(ruby, (RubyClass)recv);
 	    
 	    if (args.length == 0) {
-	        throw new RubyArgumentException(ruby, "");
+	        throw new ArgumentError(ruby, "");
 	    }
 	    
 	    args[0].checkSafeString();
@@ -129,5 +137,41 @@ public class RubyFile extends RubyIO {
 
 	public static RubyObject exist(Ruby ruby, RubyObject recv, RubyString filename) {
 	    return RubyBoolean.newBoolean(ruby, new File(filename.toString()).exists());
+	}
+
+    public static RubyString dirname(Ruby ruby, RubyObject recv, RubyString filename) {
+		String name = filename.toString();
+		int index = name.lastIndexOf(separator());
+		if (index == -1) {
+			return RubyString.newString(ruby, ".");
+		} else if (index == 0) {
+			return RubyString.newString(ruby, separator());
+		}
+		return RubyString.newString(ruby, name.substring(0, index));
+	}
+
+    public static RubyString basename(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        if (args.length < 1 || args.length > 2) {
+            throw new ArgumentError(ruby, "This method expected 1 or 2 arguments."); // XXX
+        }
+
+		String name = args[0].toString();
+		
+		name = new File(name).getName();
+		
+		if (args.length == 2 && name.endsWith(args[1].toString())) {
+		    name = name.substring(0, name.length() - args[1].toString().length());
+		}
+
+		return RubyString.newString(ruby, name);
+	}
+
+    public static RubyString join(Ruby ruby, RubyObject recv, RubyObject[] args) {
+		RubyArray argArray = RubyArray.newArray(ruby, args);
+		return argArray.join(RubyString.newString(ruby, separator()));
+    }
+
+    public static RubyBoolean directory(Ruby ruby, RubyObject recv, RubyString filename) {
+		return RubyBoolean.newBoolean(ruby, new File(filename.toString()).isDirectory());
 	}
 }

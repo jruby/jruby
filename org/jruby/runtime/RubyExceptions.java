@@ -29,6 +29,8 @@ public class RubyExceptions {
     private RubyClass ioError = null;
     private RubyClass eofError = null;
     
+    private RubyClass localJumpError = null;
+    
     private Ruby ruby = null;
     
     public RubyExceptions(Ruby ruby) {
@@ -63,6 +65,8 @@ public class RubyExceptions {
         
         ioError = ruby.defineClass("IOError", standardError);
         eofError = ruby.defineClass("EOFError", ioError);
+
+        localJumpError = ruby.defineClass("LocalJumpError", standardError);
     }
     /**
      * Gets the argumentError
@@ -208,5 +212,14 @@ public class RubyExceptions {
      */
     public RubyClass getEOFError() {
         return eofError;
+    }
+
+    /**
+     * Returns the LocalJumpError class.
+     * 
+     * @return Returns a RubyClass
+     */
+    public RubyClass getLocalJumpError() {
+        return localJumpError;
     }
 }

@@ -2,8 +2,8 @@
  * RubyRegexp.java - No description
  * Created on 26. Juli 2001, 00:01
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -27,7 +27,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import org.jruby.exceptions.*;
@@ -136,7 +135,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else if (obj instanceof RubyString) {
             return newRegexp(obj.getRuby(), (RubyString) obj, 0);
         } else {
-            throw new RubyArgumentException(obj.getRuby(), "can't convert arg to Regexp");
+            throw new ArgumentError(obj.getRuby(), "can't convert arg to Regexp");
         }
     }
 
@@ -191,7 +190,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public static RubyObject last_match(Ruby ruby, RubyObject recv) {
-        return ruby.getParserHelper().getBackref();
+        return ruby.getBackref();
     }
 
     /** rb_reg_equal
@@ -219,7 +218,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public RubyObject match2() {
-        RubyObject target = getRuby().getParserHelper().getLastline();
+        RubyObject target = getRuby().getLastline();
         if (!(target instanceof RubyString)) {
             return getRuby().getNil();
         }
@@ -248,7 +247,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return target;
         }
         RubyObject result = match(target);
-        return result.isNil() ? result : ((RubyMatchData) result).rbClone();
+        return result.isNil() ? result : ((RubyMatchData) ruby.getBackref()).rbClone();
     }
 
     /** rb_reg_source
@@ -323,7 +322,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         // If nothing match then nil will be returned
         RubyObject result = matcher.search(getRuby(), str, pos);
-        getRuby().getParserHelper().setBackref(result);
+        getRuby().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;

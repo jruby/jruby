@@ -2,9 +2,8 @@
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
@@ -32,16 +31,22 @@ package org.jruby;
 
 import java.lang.ref.*;
 
+import org.ablaf.ast.*;
+
+import org.jruby.evaluator.*;
 import org.jruby.exceptions.*;
-import org.jruby.nodes.*;
+import org.jruby.internal.runtime.methods.*;
+import org.jruby.ast.*;
+import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyObject {
+public class RubyObject implements Cloneable {
     // A reference to the JRuby runtime.
     protected transient Ruby ruby;
 
@@ -87,6 +92,20 @@ public class RubyObject {
             };
         }
     }
+    
+    /**
+     * Create a new meta class.
+     * 
+     * This method is used by a lot of other methods.
+     * 
+     * @since Ruby 1.6.7
+     */
+    public RubyClass makeMetaClass(RubyClass type) {
+        type = type.newSingletonClass();
+        setRubyClass(type);
+        type.attachSingletonClass(this);
+        return type;
+    }
 
     public Class getJavaClass() {
         return RubyObject.class;
@@ -111,7 +130,7 @@ public class RubyObject {
     }
 
     public String toString() {
-        return to_s().getValue();
+        return ((RubyString)funcall("to_s")).getValue();
     }
 
     /** Getter for property ruby.
@@ -193,6 +212,9 @@ public class RubyObject {
         return isNil();
     }
 
+	/**
+	 * @todo convert to CallbackFactory invokes.
+	 **/
     public static void createObjectClass(RubyModule kernelModule) {
         // TODO: convert to CallbackFactory invokes.
         Callback clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
@@ -264,7 +286,7 @@ public class RubyObject {
     protected int argCount(RubyObject[] args, int min, int max) {
         int len = args.length;
         if (len < min || (max > -1 && len > max)) {
-            throw new RubyArgumentException(getRuby(), "Wrong # of arguments for method. " + args.length + " is not in Range " + min + ".." + max);
+            throw new ArgumentError(getRuby(), "Wrong # of arguments for method. " + args.length + " is not in Range " + min + ".." + max);
         }
         return len;
     }
@@ -273,23 +295,17 @@ public class RubyObject {
         return value ? ruby.getTrue() : ruby.getFalse();
     }
 
-    /** rb_special_const_p
-     *
-     */
-    public boolean isSpecialConst() {
-        //return (isImmediate() || isNil());
-        return isNil();
-    }
-
     /** SPECIAL_SINGLETON(x,c)
      *
      */
-    private RubyClass getSpecialSingleton() {
+    private RubyClass getNilSingletonClass() {
         RubyClass rubyClass = getRubyClass();
+
         if (!rubyClass.isSingleton()) {
             rubyClass = rubyClass.newSingletonClass();
             rubyClass.attachSingletonClass(this);
         }
+
         return rubyClass;
     }
 
@@ -297,27 +313,19 @@ public class RubyObject {
      *
      */
     public RubyClass getSingletonClass() {
-        //        if (getType() == Type.FIXNUM || isSymbol()) {
-        //            throw new RubyTypeException("can't define singleton");
-        //        }
-        if (isSpecialConst()) {
-            if (isNil() || isTrue() || isFalse()) {
-                return getSpecialSingleton();
-            }
-            throw new RubyBugException("unknown immediate " + toString());
+        if (isNil()) {
+            return getNilSingletonClass();
         }
-        //synchronize(this) {
+
         RubyClass type = null;
         if (getRubyClass().isSingleton()) {
             type = getRubyClass();
         } else {
-            type = getRubyClass().newSingletonClass();
-            setRubyClass(type);
-            type.attachSingletonClass(this);
+            type = makeMetaClass(getRubyClass());
         }
         type.setTaint(isTaint());
         type.setFrozen(isFrozen());
-        //}
+
         return type;
     }
 
@@ -427,7 +435,8 @@ public class RubyObject {
     }
 
     /** rb_cvar_singleton
-     *
+     * 
+     *@deprecated  since Ruby 1.6.7
      */
     public RubyModule getClassVarSingleton() {
         return getRubyClass();
@@ -436,16 +445,21 @@ public class RubyObject {
     /** rb_eval
      *
      */
-    public RubyObject eval(Node n) {
-        return n == null ? getRuby().getNil() : n.eval(getRuby(), this);
+    public RubyObject eval(INode n) {
+        return n == null ? getRuby().getNil() : 
+        new EvaluateVisitor(getRuby(), this).eval(n);
     }
 
-    public RubyObject evalNode(Node n) {
+	/**@fixme*/
+    public RubyObject evalNode(INode n) {
+        // FIXME:
+        /* 
         Node beginTree = ruby.getParserHelper().getEvalTreeBegin();
         ruby.getParserHelper().setEvalTreeBegin(null);
         if (beginTree != null) {
             eval(beginTree);
         }
+        */
         if (n == null) {
             return getRuby().getNil();
         }
@@ -453,9 +467,9 @@ public class RubyObject {
     }
 
     public void callInit(RubyObject[] args) {
-        ruby.getIter().push(ruby.isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
+        ruby.getIterStack().push(ruby.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         funcall("initialize", args);
-        ruby.getIter().pop();
+        ruby.getIterStack().pop();
     }
 
     public void extendObject(RubyModule module) {
@@ -468,33 +482,53 @@ public class RubyObject {
     public String toId() {
         throw new TypeError(getRuby(), inspect().getValue() + " is not a symbol");
     }
+    
+    public boolean isRespondTo(String name) {
+        return getRubyClass().isMethodBound(name, 0);
+    }
+
+    /** Converts this object to type 'targetType' using 'convertMethod' method.
+     * 
+     * MRI: convert_type
+     * 
+     * @since Ruby 1.6.7.
+     * @fixme error handling
+     */
+    public RubyObject convertToType(String targetType, String convertMethod, boolean raise) {
+        if (!isRespondTo(convertMethod)) {
+            if (raise) {
+                throw new TypeError(ruby, "Failed to convert " + getRubyClass().toName() + " into " + targetType + ".");
+                // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
+            } else {
+                return ruby.getNil();
+            }
+        }
+        return funcall(convertMethod);
+    }
 
     /** rb_convert_type
      *
      */
-    public RubyObject convertType(Class type, String className, String method) {
+    public RubyObject convertType(Class type, String targetType, String convertMethod) {
         if (type.isAssignableFrom(getClass())) {
             return this;
         }
-        RubyObject result = null;
-        try {
-            result = funcall(method);
-        } catch (NameError rnExcptn) {
-            throw new TypeError(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
-            //        } catch (RubyS rnExcptn) {
-        }
+
+        RubyObject result = convertToType(targetType, convertMethod, true);
+
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new TypeError(getRuby(), getRubyClass().toName() + "#" + method + " should return " + className);
+            throw new TypeError(ruby, getRubyClass().toName() + "#" + convertMethod + " should return " + targetType + ".");
         }
+
         return result;
     }
 
     public void checkSafeString() {
-        if (getRuby().getSafeLevel() > 0 && isTaint()) {
-            if (getRuby().getRubyFrame().getLastFunc() != null) {
-                throw new RubySecurityException(getRuby(), "Insecure operation - " + getRuby().getRubyFrame().getLastFunc());
+        if (ruby.getSafeLevel() > 0 && isTaint()) {
+            if (ruby.getActFrame().getLastFunc() != null) {
+                throw new RubySecurityException(ruby, "Insecure operation - " + ruby.getActFrame().getLastFunc());
             } else {
-                throw new RubySecurityException(getRuby(), "Insecure operation: -r");
+                throw new RubySecurityException(ruby, "Insecure operation: -r");
             }
         }
         getRuby().secure(4);
@@ -509,15 +543,15 @@ public class RubyObject {
     public RubyObject specificEval(RubyModule mod, RubyObject[] args) {
         if (getRuby().isBlockGiven()) {
             if (args.length > 0) {
-                throw new RubyArgumentException(getRuby(), "wrong # of arguments (" + args.length + " for 0)");
+                throw new ArgumentError(getRuby(), "wrong # of arguments (" + args.length + " for 0)");
             }
             return yieldUnder(mod);
         } else {
             if (args.length == 0) {
-                throw new RubyArgumentException(getRuby(), "block not supplied");
+                throw new ArgumentError(getRuby(), "block not supplied");
             } else if (args.length > 3) {
-                String lastFuncName = ruby.getRubyFrame().getLastFunc();
-                throw new RubyArgumentException(getRuby(), "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
+                String lastFuncName = ruby.getActFrame().getLastFunc();
+                throw new ArgumentError(getRuby(), "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
             }
             /*
             if (ruby.getSecurityLevel() >= 4) {
@@ -550,31 +584,32 @@ public class RubyObject {
     public RubyObject yieldUnder(RubyModule under) {
         return under.executeUnder(new Callback() {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
-                if ((ruby.getBlock().flags & RubyBlock.BLOCK_DYNAMIC) != 0) {
-                    RubyBlock oldBlock = ruby.getBlock();
-                    RubyBlock block = ruby.getBlock();
-                    /* copy the block to avoid modifying global data. */
-                    block.frame.setNamespace(ruby.getRubyFrame().getNamespace());
-                    ruby.setBlock(block);
-                    RubyObject result = null;
-                    try {
-                        result = ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
-                    } finally {
-                        ruby.setBlock(oldBlock);
-                    }
-                    return result;
+                // if () {             
+                Block oldBlock = ruby.getBlock().getAct().cloneBlock();
+
+                /* copy the block to avoid modifying global data. */
+                ruby.getBlock().getAct().getFrame().setNamespace(ruby.getActFrame().getNamespace());
+                RubyObject result = null;
+                try {
+                    result = ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
+                } finally {
+                    ruby.getBlock().setAct(oldBlock);
                 }
+                return result;
+                // }
                 /* static block, no need to restore */
-                ruby.getBlock().frame.setNamespace(ruby.getRubyFrame().getNamespace());
-                return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
+                // ruby.getBlock().frame.setNamespace(ruby.getRubyFrame().getNamespace());
+                // return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
             }
         }, new RubyObject[] { this });
     }
 
+
+	/**@fixme*/
     public RubyObject eval(RubyObject src, RubyObject scope, String file, int line) {
         String fileSave = ruby.getSourceFile();
         int lineSave = ruby.getSourceLine();
-        int iter = ruby.getRubyFrame().getIter();
+        Iter iter = ruby.getActFrame().getIter();
         if (file == null) {
             file = ruby.getSourceFile();
             line = ruby.getSourceLine();
@@ -608,12 +643,11 @@ public class RubyObject {
             ruby_frame->iter = data->iter;
             */
         } else {
-            if (ruby.getRubyFrame().getPrev() != null) {
-                ruby.getRubyFrame().setIter(ruby.getRubyFrame().getPrev().getIter());
+            if (ruby.getFrameStack().getPrevious() != null) {
+                ruby.getActFrame().setIter(ruby.getFrameStack().getPrevious().getIter());
             }
         }
-        getRuby().pushClass();
-        ruby.setRubyClass(ruby.getCBase());
+        getRuby().pushClass(ruby.getCBase());
         ruby.setInEval(ruby.getInEval() + 1);
         if (ruby.getRubyClass().isIncluded()) {
             ruby.setRubyClass(((RubyIncludedClass) ruby.getRubyClass()).getDelegate());
@@ -622,7 +656,10 @@ public class RubyObject {
         try {
             // result = ruby_errinfo;
             // ruby_errinfo = Qnil;
-            Node node = getRuby().getRubyParser().compileString(file, src, line);
+            
+            // FIXME
+            INode node = getRuby().compile(src.toString(), file, line);
+            
             // if (ruby_nerrs > 0) {
             // 	compile_error(0);
             //}
@@ -685,7 +722,7 @@ public class RubyObject {
                 }
                 */
             } else {
-                ruby.getRubyFrame().setIter(iter);
+                ruby.getActFrame().setIter(iter);
             }
             ruby.setSourceFile(fileSave);
             ruby.setSourceLine(lineSave);
@@ -705,9 +742,9 @@ public class RubyObject {
     /** rb_obj_respond_to
      *
      * "respond_to?"
+     * @fixme ...Need to change this to support the optional boolean arg
+     * And the associated access control on methods
      */
-    //FIXME...Need to change this to support the optional boolean arg
-    //And the associated access control on methods
     public RubyBoolean respond_to(RubySymbol sym) {
         //Look in cache
         CacheEntry ent = getRuby().getMethodCache().getEntry(getRubyClass(), sym.toId());
@@ -717,8 +754,8 @@ public class RubyObject {
             return ruby.getTrue();
         }
         //Get from instance
-        MethodNode meth = getRubyClass().searchMethod(sym.toId());
-        if (meth != null && !meth.equals(ruby.getNil())) {
+        IMethod method = getRubyClass().searchMethod(sym.toId());
+        if (method != null) {
             return ruby.getTrue();
         }
         return ruby.getFalse();
@@ -746,10 +783,15 @@ public class RubyObject {
      *
      */
     public RubyObject rbClone() {
-        RubyObject clone = new RubyObject(getRuby(), (RubyClass) getRubyClass());
-        clone.setupClone(this);
-        clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
-        return clone;
+        try {
+            RubyObject clone = (RubyObject)clone();
+            clone.setupClone(this);
+            clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
+            return clone;
+        } catch (CloneNotSupportedException cnsExcptn) {
+            // BUG
+            throw new RubyBugException(cnsExcptn.getMessage());
+        }
     }
 
     /** rb_obj_dup
@@ -760,10 +802,10 @@ public class RubyObject {
         if (!dup.getClass().equals(getClass())) {
             throw new TypeError(getRuby(), "duplicated object must be same type");
         }
-        if (!dup.isSpecialConst()) {
-            dup.setRubyClass(type());
-            dup.infectObject(this);
-        }
+
+        dup.setRubyClass(type());
+        dup.infectObject(this);
+
         return dup;
     }
 
@@ -905,14 +947,14 @@ public class RubyObject {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
                     RubyString name = RubyString.newString(getRuby(), (String) key);
-                    if ((((MethodNode) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
+                    if ((((IMethod) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                         if (((RubyArray) arg).includes(name).isFalse()) {
-                            if (((MethodNode) value).getBodyNode() == null) {
+                            if (((IMethod) value) == null) {
                                 ((RubyArray) arg).push(getRuby().getNil());
                             }
                             ((RubyArray) arg).push(name);
                         }
-                    } else if (((MethodNode) value).getBodyNode() instanceof ZSuperNode) {
+                    } else if (value instanceof EvaluateMethod && ((EvaluateMethod)value).getNode() instanceof ZSuperNode) {
                         ((RubyArray) arg).push(getRuby().getNil());
                         ((RubyArray) arg).push(name);
                     }
@@ -945,10 +987,13 @@ public class RubyObject {
     public RubyObject instance_eval(RubyObject[] args) {
         return specificEval(getSingletonClass(), args);
     }
-
+	
+	/**
+	 *  @fixme: Check_Type?
+	 **/
     public RubyObject extend(RubyObject args[]) {
         if (args.length == 0) {
-            throw new RubyArgumentException(ruby, "wrong # of arguments");
+            throw new ArgumentError(ruby, "wrong # of arguments");
         }
         // FIXME: Check_Type?
         for (int i = 0; i < args.length; i++) {
@@ -963,16 +1008,15 @@ public class RubyObject {
         // ---
 
         Ruby ruby = getRuby();
-        throw new NameError(ruby,
-            ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for '" + type().toName() + '\'');
+        throw new NameError(ruby, "Undefined method '" + symbol.toId() + "' for '" + type().toName() + '\'');
     }
 
     public RubyObject send(RubyObject method, RubyObject[] args) {
         try {
-            getRuby().getIter().push(getRuby().isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
+            getRuby().getIterStack().push(getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
             return getRubyClass().call(this, method.toId(), new RubyPointer(args), 1);
         } finally {
-            getRuby().getIter().pop();
+            getRuby().getIterStack().pop();
         }
     }
 }

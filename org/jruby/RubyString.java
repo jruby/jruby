@@ -30,10 +30,14 @@
 
 package org.jruby;
 
+import java.util.*;
+
 import org.jruby.exceptions.*;
+import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.*;
+import sun.text.resources.*;
 
 /**
  *
@@ -179,24 +183,8 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
         stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
         stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-        //    rb_define_method(rb_cString, "each_byte", rb_str_each_byte, 0);
 
         //    rb_define_method(rb_cString, "sum", rb_str_sum, -1);
-
-        //    rb_define_global_function("sub", rb_f_sub, -1);
-        //    rb_define_global_function("gsub", rb_f_gsub, -1);
-
-        //    rb_define_global_function("sub!", rb_f_sub_bang, -1);
-        //    rb_define_global_function("gsub!", rb_f_gsub_bang, -1);
-
-        //    rb_define_global_function("chop", rb_f_chop, 0);
-        //    rb_define_global_function("chop!", rb_f_chop_bang, 0);
-
-        //    rb_define_global_function("chomp", rb_f_chomp, -1);
-        //    rb_define_global_function("chomp!", rb_f_chomp_bang, -1);
-
-        //    rb_define_global_function("split", rb_f_split, -1);
-        //    rb_define_global_function("scan", rb_f_scan, 1);
 
         stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
         stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
@@ -587,11 +575,11 @@ public class RubyString extends RubyObject {
         long len = other.getLongValue();
 
         if (len < 0) {
-            throw new RubyArgumentException(getRuby(), "negative argument");
+            throw new ArgumentError(getRuby(), "negative argument");
         }
 
         if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
-            throw new RubyArgumentException(getRuby(), "argument too big");
+            throw new ArgumentError(getRuby(), "argument too big");
         }
         StringBuffer sb = new StringBuffer((int) (getValue().length() * len));
 
@@ -652,7 +640,7 @@ public class RubyString extends RubyObject {
             try {
                 return (RubyString) other.convertType(RubyString.class, "String", "to_str");
             } catch (Exception ex) {
-                throw new RubyArgumentException(other.getRuby(), "can't convert arg to String: " + ex.getMessage());
+                throw new ArgumentError(other.getRuby(), "can't convert arg to String: " + ex.getMessage());
             }
         }
     }
@@ -679,12 +667,12 @@ public class RubyString extends RubyObject {
         } else if (args.length == 2) {
             repl = args[1];
         } else {
-            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
+            throw new ArgumentError(getRuby(), "wrong number of arguments");
         }
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
         if (pat.search(this, 0) >= 0) {
-            RubyMatchData match = (RubyMatchData) getRuby().getParserHelper().getBackref();
+            RubyMatchData match = (RubyMatchData) getRuby().getBackref();
             RubyString newStr = (RubyString) match.pre_match();
             newStr.append((RubyString) (iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match)));
             newStr.append((RubyString) match.post_match());
@@ -723,7 +711,7 @@ public class RubyString extends RubyObject {
         } else if (args.length == 2) {
             repl = args[1];
         } else {
-            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
+            throw new ArgumentError(getRuby(), "wrong number of arguments");
         }
         boolean taint = repl.isTaint();
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
@@ -737,7 +725,7 @@ public class RubyString extends RubyObject {
         RubyObject newStr;
         int offset = 0;
         while (beg >= 0) {
-            match = (RubyMatchData) getRuby().getParserHelper().getBackref();
+            match = (RubyMatchData) getRuby().getBackref();
             sbuf.append(str.substring(offset, beg));
             newStr = iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match);
             taint |= newStr.isTaint();
@@ -770,11 +758,14 @@ public class RubyString extends RubyObject {
         return index(args, true);
     }
 
+    /**
+    *	@fixme may be a problem with pos when doing reverse searches
+    */
     private RubyObject index(RubyObject[] args, boolean reverse) {
-		//FIXME may be a problem with pos when doing reverse searches
+        //FIXME may be a problem with pos when doing reverse searches
         int pos = 0;
-		if (reverse)
-			pos = getValue().length();
+        if (reverse)
+            pos = getValue().length();
         if (argCount(args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
         }
@@ -799,9 +790,9 @@ public class RubyString extends RubyObject {
             pos = reverse ? getValue().lastIndexOf(sub, pos) : getValue().indexOf(sub, pos);
         } else if (args[0] instanceof RubyFixnum) {
             char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? getValue().lastIndexOf(c,pos) : getValue().indexOf(c,pos);
+            pos = reverse ? getValue().lastIndexOf(c, pos) : getValue().indexOf(c, pos);
         } else {
-            throw new RubyArgumentException(getRuby(), "wrong type of argument");
+            throw new ArgumentError(getRuby(), "wrong type of argument");
         }
 
         if (pos == -1) {
@@ -860,7 +851,7 @@ public class RubyString extends RubyObject {
         }
         if (args[0] instanceof RubyRegexp) {
             if (RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0) {
-                return RubyRegexp.last_match(getRuby().getParserHelper().getBackref());
+                return RubyRegexp.last_match(getRuby().getBackref());
             }
             return getRuby().getNil();
         }
@@ -967,14 +958,15 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject format(RubyObject arg) {
-        if (pfClass == null) {
-            try {
-                pfClass = getRuby().getJavaSupport().loadClass(Class.forName("org.jruby.util.PrintfFormat"), null);
-            } catch (ClassNotFoundException ex) {
-                throw new RubyBugException("couldn't find PrintfFormat class");
+        if (arg instanceof RubyArray) {
+            Object[] args = new Object[((RubyArray) arg).getLength()];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = JavaUtil.convertRubyToJava(ruby, ((RubyArray) arg).entry(i));
             }
+            return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(args));
+        } else {
+            return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(ruby, arg)));
         }
-        return pfClass.funcall("new", this).funcall("sprintf", arg);
     }
 
     /** rb_str_succ
@@ -1154,7 +1146,7 @@ public class RubyString extends RubyObject {
         if (pat != null) {
             while ((beg = pat.search(this, pos)) > -1) {
                 hits++;
-                int end = ((RubyMatchData) getRuby().getParserHelper().getBackref()).matchEndPosition();
+                int end = ((RubyMatchData) getRuby().getBackref()).matchEndPosition();
                 result.push(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
                 pos = (end == beg) ? beg + 1 : end;
                 if (hits + 1 == limit) {
@@ -1193,7 +1185,7 @@ public class RubyString extends RubyObject {
         if (!getRuby().isBlockGiven()) {
             RubyArray ary = RubyArray.newArray(getRuby());
             while (pat.search(this, start) != -1) {
-                RubyMatchData md = (RubyMatchData) getRuby().getParserHelper().getBackref();
+                RubyMatchData md = (RubyMatchData) getRuby().getBackref();
                 if (md.getSize() == 1) {
                     ary.push(md.group(0));
                 } else {
@@ -1209,7 +1201,7 @@ public class RubyString extends RubyObject {
         }
 
         while (pat.search(this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) getRuby().getParserHelper().getBackref();
+            RubyMatchData md = (RubyMatchData) getRuby().getBackref();
             if (md.getSize() == 1) {
                 getRuby().yield(md.group(0));
             } else {
@@ -1538,7 +1530,7 @@ public class RubyString extends RubyObject {
 
     private String tr(RubyObject[] args, boolean squeeze) {
         if (args.length != 2) {
-            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
+            throw new ArgumentError(getRuby(), "wrong number of arguments");
         }
         String srchSpec = stringValue(args[0]).getValue();
         String srch = expandTemplate(srchSpec, true);
@@ -1643,7 +1635,7 @@ public class RubyString extends RubyObject {
         RubyRegexp pat = RubyRegexp.newRegexp(getRuby(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE);
         int start = 0;
         while (pat.search(this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) getRuby().getParserHelper().getBackref();
+            RubyMatchData md = (RubyMatchData) getRuby().getBackref();
             getRuby().yield(md.group(0));
             start = md.matchEndPosition();
         }
@@ -1652,22 +1644,18 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
-	
 
-	
-	/**
-	 * rb_str_each_byte
-	 * 
-	 **/
-	public RubyString each_byte()
-	{
-		byte[]	lByteValue = value.getBytes();
-		int lLength = lByteValue.length;
-		for (int i = 0; i < lLength; i++)
-			ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
-		return this;
-	}
-	
+    /**
+     * rb_str_each_byte
+     */
+    public RubyString each_byte() {
+        byte[] lByteValue = value.getBytes();
+        int lLength = lByteValue.length;
+        for (int i = 0; i < lLength; i++)
+            ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+        return this;
+    }
+
     /** rb_str_intern
      *
      */
