@@ -1013,11 +1013,18 @@ public class ParserHelper {
      *@param  right  Description of Parameter
      *@return        Description of the Returned Value
      */
-    public Node logop(/*node_type*/ int type, Node left, Node right) {
+    public Node logop(int type, Node left, Node right) {
         value_expr(left);
         
+        switch (type) {
+        	case Constants.NODE_AND: 
+        		return new AndNode(cond1(left, 1), cond1(right, 1));
+       		case Constants.NODE_OR: 
+       			return new OrNode(cond1(left, 1), cond1(right, 1));
+       		default:
+	       		throw new RuntimeException("[BUG] ParserHelper#logop: Nodetype=" + type);
+        }
         // return nf.newDefaultNode(type, cond1(left, 1), cond1(right, 1), null);
-        throw new RuntimeException("[BUG] ParserHelper#logop: Nodetype=" + type);
     }
 
     /**
