@@ -202,7 +202,7 @@ if defined? Java
   test_equal("java.lang.String", method.return_type)
   test_equal(nil, string_class.java_method("notifyAll").return_type)
   test_equal(JavaObject,
-             method.invoke_static(Java.primitive_to_java(101)).type)
+             method.invoke_static(Java.primitive_to_java(101)).class)
 
   # Not arrays
   test_exception(TypeError) { random[0] }     # Not an array
