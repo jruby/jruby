@@ -79,6 +79,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int FIELD = 21;
     private static final int INTERFACES = 22;
     private static final int PRIMITIVE_P = 23;
+    private static final int ASSIGNABLE_FROM_P = 24;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -105,6 +106,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("field", IndexedCallback.create(FIELD, 1));
         javaClassClass.defineMethod("interfaces", IndexedCallback.create(INTERFACES, 0));
         javaClassClass.defineMethod("primitive?", IndexedCallback.create(PRIMITIVE_P, 0));
+        javaClassClass.defineMethod("assignable_from?", IndexedCallback.create(ASSIGNABLE_FROM_P, 1));
 
         javaClassClass.getMetaClass().undefMethod("new");
 
@@ -266,6 +268,36 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return RubyBoolean.newBoolean(getRuntime(), javaClass.isPrimitive());
     }
 
+    public RubyBoolean assignable_from_p(IRubyObject other) {
+        if (! (other instanceof JavaClass)) {
+            throw new TypeError(getRuntime(), "assignable_from requires JavaClass (" + other.getType() + " given)");
+        }
+        Class otherClass = ((JavaClass) other).getValue();
+
+        if (javaClass.isAssignableFrom(otherClass)) {
+            return getRuntime().getTrue();
+        }
+        otherClass = JavaUtil.primitiveToWrapper(otherClass);
+        Class thisJavaClass = JavaUtil.primitiveToWrapper(javaClass);
+        if (thisJavaClass.isAssignableFrom(otherClass)) {
+            return getRuntime().getTrue();
+        }
+        if (Number.class.isAssignableFrom(thisJavaClass)) {
+            if (Number.class.isAssignableFrom(otherClass)) {
+                return getRuntime().getTrue();
+            }
+            if (otherClass.equals(Character.class)) {
+                return getRuntime().getTrue();
+            }
+        }
+        if (thisJavaClass.equals(Character.class)) {
+            if (Number.class.isAssignableFrom(otherClass)) {
+                return getRuntime().getTrue();
+            }
+        }
+        return getRuntime().getFalse();
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -304,6 +336,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return interfaces();
             case PRIMITIVE_P :
                 return primitive_p();
+            case ASSIGNABLE_FROM_P :
+                return assignable_from_p(args[0]);
             default :
                 return super.callIndexed(index, args);
         }

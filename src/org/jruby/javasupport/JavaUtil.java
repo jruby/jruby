@@ -38,7 +38,6 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
-import java.util.Iterator;
 
 /**
  *
@@ -213,7 +212,7 @@ public class JavaUtil {
         }
     }
 
-    private static Class primitiveToWrapper(Class type) {
+    public static Class primitiveToWrapper(Class type) {
         if (type == Double.TYPE) {
             return Double.class;
         } else if (type == Float.TYPE) {

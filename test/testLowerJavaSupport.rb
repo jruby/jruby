@@ -191,7 +191,22 @@ if defined? Java
   test_ok($callback_invoked)
 
   # Primitive Java types
-  test_ok(Java::JavaClass.for_name("int").primitive?)
-  test_ok(Java::JavaClass.for_name("boolean").primitive?)
+  int_class = Java::JavaClass.for_name("int")
+  test_ok(int_class.primitive?)
+  boolean_class = Java::JavaClass.for_name("boolean")
+  test_ok(boolean_class.primitive?)
   test_ok(Java::JavaClass.for_name("char").primitive?)
+
+  # Assignability, non-primitives
+  object_class = Java::JavaClass.for_name("java.lang.Object")
+  test_ok(object_class.assignable_from?(string_class))
+  test_ok(! string_class.assignable_from?(object_class))
+
+  # Assignability, primitives
+  long_class = Java::JavaClass.for_name("long")
+  test_ok(int_class.assignable_from?(long_class))
+  test_ok(! int_class.assignable_from?(boolean_class))
+  character_class = Java::JavaClass.for_name("char")
+  test_ok(int_class.assignable_from?(character_class))
+  test_ok(character_class.assignable_from?(int_class))
 end
