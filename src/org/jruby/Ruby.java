@@ -37,8 +37,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -595,31 +593,15 @@ public final class Ruby {
     }
 
     public IRubyObject getLastline() {
-        if (getScope().hasLocalVariables()) {
-            return getScope().getValue(0);
-        }
-        return RubyString.nilString(this);
+        return getScope().getLastLine();
     }
 
     public void setLastline(IRubyObject value) {
-        if (! getScope().hasLocalVariables()) {
-            getScope().resetLocalVariables(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
-        }
-        getScope().setValue(0, value);
+        getScope().setLastLine(value);
     }
 
     public IRubyObject getBackref() {
-        if (getScope().hasLocalVariables()) {
-            return getScope().getValue(1);
-        }
-        return getNil();
-    }
-
-    public void setBackref(IRubyObject match) {
-        if (! getScope().hasLocalVariables()) {
-            getScope().resetLocalVariables(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
-        }
-        getScope().setValue(1, match);
+        return getScope().getBackref();
     }
 
     public Parser getParser() {

@@ -328,7 +328,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, IndexCallable {
 
         // If nothing match then nil will be returned
         IRubyObject result = matcher.search(getRuntime(), str, pos);
-        getRuntime().setBackref(result);
+        getRuntime().getScope().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;

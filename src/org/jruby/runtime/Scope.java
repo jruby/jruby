@@ -31,8 +31,10 @@ package org.jruby.runtime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Arrays;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
 
@@ -48,6 +50,11 @@ import org.jruby.util.collections.StackElement;
  * @version $Revision$
  */
 public class Scope implements StackElement {
+    private static final int LASTLINE_INDEX = 0;
+    private static final int BACKREF_INDEX = 1;
+    private static final String[] SPECIAL_VARIABLE_NAMES =
+            new String[] { "_", "~" };
+
 	private Ruby ruby;
 
     private IRubyObject superObject = null;
@@ -144,5 +151,33 @@ public class Scope implements StackElement {
 
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
+    }
+
+    public IRubyObject getLastLine() {
+        if (hasLocalVariables()) {
+            return getValue(LASTLINE_INDEX);
+        }
+        return RubyString.nilString(ruby);
+    }
+
+    public void setLastLine(IRubyObject value) {
+        if (! hasLocalVariables()) {
+            resetLocalVariables(new ArrayList(Arrays.asList(SPECIAL_VARIABLE_NAMES)));
+        }
+        setValue(LASTLINE_INDEX, value);
+    }
+
+    public IRubyObject getBackref() {
+        if (hasLocalVariables()) {
+            return getValue(BACKREF_INDEX);
+        }
+        return ruby.getNil();
+    }
+
+    public void setBackref(IRubyObject match) {
+        if (! hasLocalVariables()) {
+            resetLocalVariables(new ArrayList(Arrays.asList(SPECIAL_VARIABLE_NAMES)));
+        }
+        setValue(BACKREF_INDEX, match);
     }
 }

@@ -112,4 +112,22 @@ public class ScopeStack extends AbstractStack {
     public void setValue(int count, IRubyObject value) {
         current().setValue(count, value);
     }
+
+    public IRubyObject getLastLine() {
+        return current().getLastLine();
+    }
+
+    public void setLastLine(IRubyObject value) {
+        current().setLastLine(value);
+    }
+
+    public IRubyObject getBackref() {
+        return current().getBackref();
+    }
+
+    public void setBackref(IRubyObject match) {
+        current().setBackref(match);
+    }
+
+
 }
