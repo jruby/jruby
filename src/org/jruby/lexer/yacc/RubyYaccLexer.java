@@ -261,29 +261,6 @@ public class RubyYaccLexer {
     }
 
     /**
-	 * Do the next characters from the source match provided String.  If so,
-	 * then consume those characters and return true.  Otherwise, consume 
-	 * none of them.
-	 * 
-	 * @param string to be matched against
-     * @return true if string matches 
-     */ 
-    private boolean isNext(String string) {
-    	StringBuffer buf = new StringBuffer();
-    	
-        for (int i = 0; i < string.length(); i++) {
-        	char c = src.read();
-        	buf.append(c);
-            if (string.charAt(i) != c) {
-            	unreadMany(buf);
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
 	 * Do the next characters from the source match provided String in a case
 	 * insensitive manner.  If so, then consume those characters and return 
 	 * true.  Otherwise, consume none of them.
@@ -801,7 +778,6 @@ public class RubyYaccLexer {
         HereDocNode here = (HereDocNode) lex_strterm;
         char c;
         String eos = here.getValue();
-        long len = eos.length();
         int func = here.getFunc();
         boolean indent = (func & STR_FUNC_INDENT) != 0;
         StringBuffer str = new StringBuffer();
@@ -898,7 +874,6 @@ public class RubyYaccLexer {
         StrTermNode quote = (StrTermNode) lex_strterm;
         int func = quote.getFunc();
         int term = quote.getTerm();
-        int paren = quote.getParen();
         char c; 
         int space = 0;
 
