@@ -104,6 +104,10 @@ public class RubySymbol extends RubyObject {
 		return symbolClass;
     }
 
+    public boolean isImmediate() {
+    	return true;
+    }
+    
     public boolean singletonMethodsAllowed() {
         return false;
     }

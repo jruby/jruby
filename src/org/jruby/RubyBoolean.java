@@ -45,6 +45,10 @@ public class RubyBoolean extends RubyObject {
 		false); // Don't put in object space
 		this.value = value;
 	}
+	
+	public boolean isImmediate() {
+		return true;
+	}
 
 	public Class getJavaClass() {
 		return Boolean.TYPE;

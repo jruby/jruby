@@ -62,6 +62,10 @@ public class RubyNil {
         return nilClass;
     }
 
+    public boolean isImmediate() {
+    	return true;
+    }
+    
     // Methods of the Nil Class (nil_*):
         
     /** nil_to_i

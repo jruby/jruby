@@ -89,6 +89,10 @@ public class RubyFixnum extends RubyInteger {
 
         return fixnumClass;
     }
+    
+    public boolean isImmediate() {
+    	return true;
+    }
 
     public Class getJavaClass() {
         return Long.TYPE;

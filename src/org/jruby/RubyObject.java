@@ -99,9 +99,17 @@ public class RubyObject implements Cloneable, IRubyObject {
         this.frozen = false;
         this.taint = false;
 
-        if (useObjectSpace) {
+        // Do not store any immediate objects into objectspace.
+        if (useObjectSpace && isImmediate() == false) {
             ruby.objectSpace.add(this);
         }
+    }
+    
+    /*
+     *  Is object immediate (def: Fixnum, Symbol, true, false, nil?).
+     */
+    public boolean isImmediate() {
+    	return false;
     }
 
     public static IRubyObject nilObject(Ruby ruby) {
