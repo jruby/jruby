@@ -1790,7 +1790,7 @@ none		: /* none */
         rs.setLexP(0);
         rs.setLexPEnd(0);
         ruby.setSourceLine(line - 1);
-
+	ph.setLine(line);
         ph.setCompileForEval(ruby.getInEval());
 
         return yycompile(f, line);
@@ -1809,19 +1809,21 @@ none		: /* none */
 
         return yycompile(f, start);
     }
-    
-    private void init_for_scanner(String s) {
-        rs.setLexFileIo(false);
-        rs.setLexGetsPtr(0);
-        rs.setLexInput(RubyString.newString(ruby, s));
-        rs.setLexP(0);
-        rs.setLexPEnd(0);
-        ruby.setSourceLine(0);
-        ph.setCompileForEval(ruby.getInEval());
-        ph.setRubyEndSeen(false); // is there an __end__{} statement?
-        ph.setHeredocEnd(0);
-        ph.setRubyInCompile(true);
-    }
+
+//Benoit not used
+//FIXME: remove for true if it is never usefull
+//    private void init_for_scanner(String s) {
+//        rs.setLexFileIo(false);
+//        rs.setLexGetsPtr(0);
+//        rs.setLexInput(RubyString.newString(ruby, s));
+//        rs.setLexP(0);
+//        rs.setLexPEnd(0);
+//        ruby.setSourceLine(0);
+//        ph.setCompileForEval(ruby.getInEval());
+//        ph.setRubyEndSeen(false); // is there an __end__{} statement?
+//        ph.setHeredocEnd(0);
+//        ph.setRubyInCompile(true);
+//    }
     
     /** This function compiles a given String into a Node.
      *

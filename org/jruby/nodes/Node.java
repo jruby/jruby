@@ -101,7 +101,7 @@ public class Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(" at line " + line + " in file " + file + " the node class is " + this.getClass() + " the Node is " + toString()); 
     }
     
     /** copy_node_scope

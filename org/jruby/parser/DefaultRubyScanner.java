@@ -162,6 +162,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         int end = 0;
         while (end < s.length()) {
             if (s.charAt(end++) == '\n') {
+		    ph.incrementLine();
                 break;
             }
         }

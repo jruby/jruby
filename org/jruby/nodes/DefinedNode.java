@@ -43,7 +43,6 @@ public class DefinedNode extends Node{
     public DefinedNode(Node headNode) {
         super(Constants.NODE_DEFINED, headNode, null, null);
     }
-    
     /* public RubyObject eval(Ruby ruby, RubyObject self) {
         // String buf;
         // String desc = is_defined(self, node.nd_head(), buf);

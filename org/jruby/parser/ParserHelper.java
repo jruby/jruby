@@ -67,9 +67,29 @@ public class ParserHelper {
     private int heredocEnd;
     private boolean commandStart = true;
     // XXX is this really needed?
-
     private RubyArray rubyDebugLines; // separate a Ruby string into lines...
 
+	private int _line;
+
+	public String getFile()
+	{
+		return ruby.getSourceFile();
+	}
+
+	public void setLine(int iLine)
+	{
+		_line = iLine;
+	}
+	public int getLine()
+	{
+		return _line;
+	}
+	
+	public void incrementLine()
+	{
+		_line++;
+	}
+	
     public ParserHelper(Ruby ruby) {
         this.ruby = ruby;
     }
