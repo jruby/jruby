@@ -491,6 +491,9 @@ public class RubyKernel {
         // FIXME  special case in ruby
         // recv.checkArgumentCount(args, 0, 2); 
         Ruby runtime = recv.getRuntime();
+        RubyString string = null;
+        RubyException excptn = null;
+        
         switch (args.length) {
         case 0 :
             IRubyObject defaultException = runtime.getGlobalVariables().get("$!");
@@ -501,14 +504,24 @@ public class RubyKernel {
         case 1 :
             if (args[0] instanceof RubyException) {
                 throw new RaiseException((RubyException) args[0]);
+            } else if (args[0] instanceof RubyClass) {
+            	throw new RaiseException(RubyException.newInstance((RubyClass)args[0], new IRubyObject[0]));
             }
             throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
         case 2 :
             if (args[0] == runtime.getClasses().getExceptionClass()) {
                 throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
             }
-            RubyString string = (RubyString) args[1];
-            RubyException excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
+            string = (RubyString) args[1];
+            excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
+            throw new RaiseException(excptn);
+        case 3:
+            if (args[0] == runtime.getClasses().getExceptionClass()) {
+                throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
+            }
+            string = (RubyString) args[1];
+            excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
+            excptn.set_backtrace(args[2]);
             throw new RaiseException(excptn);
         default :
             throw new ArgumentError(runtime, "wrong number of arguments");
