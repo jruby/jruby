@@ -549,7 +549,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 ruby.getBlock().getCurrent().getFrame().setNamespace(ruby.getCurrentFrame().getNamespace());
                 RubyObject result = null;
                 try {
-                    result = ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
+                    result = ruby.yield(args[0], args[0], ruby.getRubyClass(), false);
                 } finally {
                     ruby.getBlock().setCurrent(oldBlock);
                 }

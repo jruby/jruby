@@ -1416,7 +1416,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getArgsNode() instanceof ExpandArrayNode && ((RubyArray) result).getLength() == 1) {
             result = ((RubyArray) result).entry(0);
         }
-        result = ruby.yield0(result.toRubyObject(), null, null, false);
+        result = ruby.yield(result.toRubyObject(), null, null, false);
     }
 
     /**

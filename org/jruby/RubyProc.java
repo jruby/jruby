@@ -104,7 +104,7 @@ public class RubyProc extends RubyObject {
         getRuby().getCurrentFrame().setIter(Iter.ITER_CUR);
 
         try {
-            return getRuby().yield0(args != null ? RubyArray.newArray(getRuby(), args) : null, null, null, true);
+            return getRuby().yield(args != null ? RubyArray.newArray(getRuby(), args) : null, null, null, true);
         } finally {
             getRuby().getIterStack().pop();
             getRuby().getBlock().setCurrent(oldBlock);

@@ -436,98 +436,11 @@ public final class Ruby {
     }
 
     public RubyObject yield(RubyObject value) {
-        return yield0(value, null, null, false);
+        return yield(value, null, null, false);
     }
 
-    public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean checkArguments) {
-        if (!isBlockGiven()) {
-            throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
-        }
-
-        RubyVarmap.push(this);
-        Block currentBlock = block.getCurrent();
-
-        getFrameStack().push(currentBlock.getFrame());
-
-        Namespace oldNamespace = getNamespace();
-        setNamespace(getCurrentFrame().getNamespace());
-
-        Scope oldScope = currentScope();
-        getScope().setTop(currentBlock.getScope());
-
-        block.pop();
-
-        setDynamicVars(currentBlock.getDynamicVars());
-
-        pushClass((klass != null) ? klass : currentBlock.getKlass());
-
-        if (klass == null) {
-            self = currentBlock.getSelf();
-        }
-
-        if (value == null) {
-            value = RubyArray.newArray(this, 0);
-        }
-
-        ICallable method = currentBlock.getMethod();
-
-        if (method == null) {
-            return getNil();
-        }
-
-        INode blockVar = currentBlock.getVar();
-
-        if (blockVar != null) {
-            if (blockVar instanceof ZeroArgNode) {
-                if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
-                    throw new ArgumentError(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
-                }
-            } else {
-                if (!(blockVar instanceof MultipleAsgnNode)) {
-                    if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                        value = ((RubyArray) value).entry(0);
-                    }
-                }
-                new AssignmentVisitor(this, self).assign(blockVar, value, checkArguments);
-            }
-        } else {
-            if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                value = ((RubyArray) value).entry(0);
-            }
-        }
-
-        getIterStack().push(currentBlock.getIter());
-
-        RubyObject[] args;
-        if (value instanceof RubyArray) {
-            args = ((RubyArray) value).toJavaArray();
-        } else {
-            args = new RubyObject[] { value };
-        }
-
-        try {
-            while (true) {
-                try {
-                    return method.call(this, self, null, args, false);
-                } catch (RedoJump rExcptn) {
-                }
-            }
-        } catch (NextJump nExcptn) {
-            return getNil();
-        } catch (ReturnException rExcptn) {
-            return rExcptn.getReturnValue();
-        } finally {
-            getIterStack().pop();
-            popClass();
-            RubyVarmap.pop(this);
-
-            block.setCurrent(currentBlock);
-            getFrameStack().pop();
-
-            setNamespace(oldNamespace);
-
-            getScope().setTop(oldScope);
-        }
+    public RubyObject yield(RubyObject value, RubyObject self, RubyModule klass, boolean checkArguments) {
+        return evaluator.yield(value, self, klass, checkArguments).toRubyObject();
     }
 
     public Scope currentScope() {
