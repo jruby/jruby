@@ -34,6 +34,7 @@ testHigherJavaSupport.rb
 testDir.rb
 testVisibility.rb
 testModule.rb
+#testRbConfig.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

@@ -44,6 +44,7 @@ import java.util.jar.Manifest;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.RbConfig;
 import org.jruby.util.BuiltinScript;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.LoadError;
@@ -104,16 +105,21 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#load(String)
      */
     public boolean load(String file) {
+        if (!file.endsWith(".rb")) {
+            file += ".rb";
+        }
+
         // FIXME: replace java thing with more generic mechanism
-        if (file.equals("java")) {
+        if (file.equals("java.rb")) {
             BuiltinScript javaSupport = new BuiltinScript("javasupport");
             javaSupport.load(runtime);
             return true;
         }
-
-        if (!file.endsWith(".rb")) {
-            file += ".rb";
+        if (file.equals("rbconfig.rb")) {
+            RbConfig.createRbConfig(runtime);
+            return true;
         }
+
         URL url = findFile(file);
         String name = url.toString();
         if (name.startsWith("file:")) {
