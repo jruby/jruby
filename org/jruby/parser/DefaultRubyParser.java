@@ -2208,7 +2208,7 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 // line 1614 "parse.y"
 						 {
 							 yyVal = nf.newBlock(((Node)yyVals[0+yyTop]));
-							 ((Node)yyVal).setEndNode(((Node)yyVal));
+//							 ((Node)yyVal).setEndNode(((Node)yyVal));  not needed anymore Benoit.
 						 }
 						 break;
 					 case 377:

@@ -35,11 +35,13 @@ goto cleanup
 
 if not "%JRUBY_HOME%" == "" goto gotHome
 set JRUBY_HOME=.
-if exist "%JRUBY_HOME%\jruby.bat" goto okHome
+if exist "%JRUBY_HOME%\jruby.jar" goto okHome
 set JRUBY_HOME=..
 :gotHome
-if exist "%JRUBY_HOME%\jruby.bat" goto okHome
-echo Cannot find jruby.bat in %JRUBY_HOME%
+if exist "%JRUBY_HOME%\jruby.jar" goto okHome
+set JRUBY_HOME=.\build
+if exist "%JRUBY_HOME%\jruby.jar" goto okHome
+echo Cannot find jruby.bat in %JRUBY_HOME% 
 echo Please check your JRUBY_HOME setting
 goto cleanup
 :okHome
@@ -52,14 +54,15 @@ set JRUBY_BASE=%JRUBY_HOME%
 rem ----- Prepare Appropriate Java Execution Commands -------------------------
 
 if not "%OS%" == "Windows_NT" goto noTitle
-set _STARTJAVA=start "JRuby" "%JAVA_HOME%\bin\java"
-set _RUNJAVA="%JAVA_HOME%\bin\java"
+rem set _STARTJAVA=start "JRuby" "%JAVA_HOME%\bin\java"
+set _STARTJAVA="%JAVA_HOME%\bin\java"
 goto gotTitle
 :noTitle
-set _STARTJAVA=start "%JAVA_HOME%\bin\java"
-set _RUNJAVA="%JAVA_HOME%\bin\java"
+rem set _STARTJAVA=start "%JAVA_HOME%\bin\java"
+set _STARTJAVA="%JAVA_HOME%\bin\java"
 :gotTitle
 
+set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
 set CP=%JRUBY_HOME%\jruby.jar;%JAVA_HOME%\lib\tools.jar

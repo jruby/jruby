@@ -1613,7 +1613,7 @@ f_opt		: tIDENTIFIER '=' arg
 f_optarg	: f_opt
 		    {
 			    $$ = nf.newBlock($1);
-			    $<Node>$.setEndNode($<Node>$);
+//			    $<Node>$.setEndNode($<Node>$);		not needed anymore Benoit
 		    }
 		| f_optarg ',' f_opt
 		    {
@@ -1790,7 +1790,7 @@ none		: /* none */
         rs.setLexP(0);
         rs.setLexPEnd(0);
         ruby.setSourceLine(line - 1);
-	ph.setLine(line);
+		ph.setLine(line);
         ph.setCompileForEval(ruby.getInEval());
 
         return yycompile(f, line);

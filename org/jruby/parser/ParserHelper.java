@@ -381,7 +381,7 @@ public class ParserHelper {
         if (node != null) {
             nl = nf.newNewline(node);
             fixpos(nl, node);
-            nl.setNth(node.getLine());
+//			nl.setNth(node.getLine());		not needed anymore Benoit
         }
         return nl;
     }
@@ -405,7 +405,7 @@ public class ParserHelper {
             end = ((BlockNode) head).getEndNode();
         } else {
             end = nf.newBlock(head);
-            end.setEndNode(end);
+//            end.setEndNode(end);  not needed anymore Benoit
             fixpos(end, head);
             head = end;
         }
@@ -433,7 +433,7 @@ public class ParserHelper {
 
         if (!(tail instanceof BlockNode)) {
             tail = nf.newBlock(tail);
-            tail.setEndNode(tail);
+//            tail.setEndNode(tail);    not needed anymore Benoit
         }
         end.setNextNode(tail);
         head.setEndNode(tail.getEndNode());
