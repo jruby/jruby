@@ -97,4 +97,4 @@ set _LIBJARS=
 set _RUNJAVA=
 set _STARTJAVA=
 :finish
-exit %E%
+exit /b %E%
