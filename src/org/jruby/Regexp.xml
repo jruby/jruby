@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Regexp</name>
+  <superclass>Object</superclass>
+  <implementation>org.jruby.RubyRegexp</implementation>
+
+  <instance-methods>
+    <method name="initialize">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="clone">
+      <java>rbClone</java>
+    </method>
+    <method name="==">
+      <arity>1</arity>
+      <java>equal</java>
+    </method>
+    <method name="match">
+      <arity>1</arity>
+      <java>match_m</java>
+    </method>
+    <method name="=~">
+      <arity>1</arity>
+      <java>match</java>
+    </method>
+    <method-alias name="===" original="=~"/>
+    <method name="~">
+      <java>match2</java>
+    </method>
+    <method name="inspect"/>
+    <method name="source"/>
+    <method name="casefold?">
+      <java>casefold</java>
+    </method>
+  </instance-methods>
+
+  <class-methods>
+    <method name="new">
+      <arity optional="true">0</arity>
+      <java>newInstance</java>
+    </method>
+    <method-alias name="compile" original="new"/>
+    <method name="quote">
+      <arity>1</arity>
+    </method>
+    <method-alias name="escape" original="quote"/>
+    <method name="last_match">
+      <java>last_match_s</java>
+    </method>
+  </class-methods>
+</module>

@@ -29,21 +29,23 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
 import org.jruby.parser.ReOptions;
-import org.jruby.runtime.regexp.*;
-import org.jruby.runtime.*;
+import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.IndexCallable;
+import org.jruby.internal.runtime.builtin.definitions.RegexpDefinition;
+import org.jruby.exceptions.TypeError;
+import org.jruby.exceptions.ArgumentError;
 
 /**
  *
  * @author  amoore
  * @version $Revision$
  */
-public class RubyRegexp extends RubyObject implements ReOptions {
+public class RubyRegexp extends RubyObject implements ReOptions, IndexCallable {
     private IRegexpAdapter matcher;
     private String pattern;
     private int options;
@@ -58,42 +60,39 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
 
-    public static RubyClass createRegexpClass(Ruby ruby) {
-        RubyClass regexpClass = ruby.defineClass("Regexp", ruby.getClasses().getObjectClass());
+    public static RubyClass createRegexpClass(Ruby runtime) {
+        RubyClass regexpClass = new RegexpDefinition(runtime).getType();
 
-        regexpClass.defineConstant("IGNORECASE", RubyFixnum.newFixnum(ruby, RE_OPTION_IGNORECASE));
-        regexpClass.defineConstant("EXTENDED", RubyFixnum.newFixnum(ruby, RE_OPTION_EXTENDED));
-        regexpClass.defineConstant("MULTILINE", RubyFixnum.newFixnum(ruby, RE_OPTION_MULTILINE));
-
-        regexpClass.defineSingletonMethod(
-            "new",
-            CallbackFactory.getOptSingletonMethod(RubyRegexp.class, "newInstance"));
-        regexpClass.defineSingletonMethod(
-            "compile",
-            CallbackFactory.getOptSingletonMethod(RubyRegexp.class, "newInstance"));
-        regexpClass.defineSingletonMethod(
-            "quote",
-            CallbackFactory.getSingletonMethod(RubyRegexp.class, "quote", RubyString.class));
-        regexpClass.defineSingletonMethod(
-            "escape",
-            CallbackFactory.getSingletonMethod(RubyRegexp.class, "quote", RubyString.class));
-        regexpClass.defineSingletonMethod(
-            "last_match",
-            CallbackFactory.getSingletonMethod(RubyRegexp.class, "last_match_s"));
-
-        regexpClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyRegexp.class, "initialize"));
-        regexpClass.defineMethod("clone", CallbackFactory.getMethod(RubyRegexp.class, "rbClone"));
-        regexpClass.defineMethod("==", CallbackFactory.getMethod(RubyRegexp.class, "equal", IRubyObject.class));
-        regexpClass.defineMethod("===", CallbackFactory.getMethod(RubyRegexp.class, "match", IRubyObject.class));
-        regexpClass.defineMethod("=~", CallbackFactory.getMethod(RubyRegexp.class, "match", IRubyObject.class));
-        regexpClass.defineMethod("~", CallbackFactory.getMethod(RubyRegexp.class, "match2"));
-        regexpClass.defineMethod("match", CallbackFactory.getMethod(RubyRegexp.class, "match_m", IRubyObject.class));
-        regexpClass.defineMethod("inspect", CallbackFactory.getMethod(RubyRegexp.class, "inspect"));
-        regexpClass.defineMethod("source", CallbackFactory.getMethod(RubyRegexp.class, "source"));
-        regexpClass.defineMethod("casefold?", CallbackFactory.getMethod(RubyRegexp.class, "casefold"));
-        //        regexpClass.defineMethod("kcode", getMethod("m_kcode"));
+        regexpClass.defineConstant("IGNORECASE", RubyFixnum.newFixnum(runtime, RE_OPTION_IGNORECASE));
+        regexpClass.defineConstant("EXTENDED", RubyFixnum.newFixnum(runtime, RE_OPTION_EXTENDED));
+        regexpClass.defineConstant("MULTILINE", RubyFixnum.newFixnum(runtime, RE_OPTION_MULTILINE));
 
         return regexpClass;
+    }
+
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+            case RegexpDefinition.INITIALIZE :
+                return initialize(args);
+            case RegexpDefinition.RBCLONE :
+                return rbClone();
+            case RegexpDefinition.EQUAL :
+                return equal(args[0]);
+            case RegexpDefinition.MATCH :
+                return match(args[0]);
+            case RegexpDefinition.MATCH2 :
+                return match2();
+            case RegexpDefinition.MATCH_M :
+                return match_m(args[0]);
+            case RegexpDefinition.INSPECT :
+                return inspect();
+            case RegexpDefinition.SOURCE :
+                return source();
+            case RegexpDefinition.CASEFOLD :
+                return casefold();
+            default :
+                return super.callIndexed(index, args);
+        }
     }
 
     public void initialize(String pat, int opts) {
@@ -188,8 +187,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /** rb_reg_s_quote
      * 
      */
-    public static RubyString quote(IRubyObject recv, RubyString str) {
-        String orig = str.getValue();
+    public static RubyString quote(IRubyObject recv, IRubyObject str) {
+        String orig = str.toString();
         RubyString newStr = RubyString.newString(recv.getRuntime(), quote(orig));
         newStr.infectBy(str);
         return newStr;
