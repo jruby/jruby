@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Thread</name>
+  <superclass>Object</superclass>
+  <implementation>org.jruby.ThreadClass</implementation>
+
+  <instance-methods>
+    <method name="[]">
+      <arity>1</arity>
+      <java>aref</java>
+    </method>
+    <method name="[]=">
+      <arity>2</arity>
+      <java>aset</java>
+    </method>
+    <method name="abort_on_exception"/>
+    <method name="abort_on_exception=">
+      <arity>1</arity>
+      <java>abort_on_exception_set</java>
+    </method>
+    <method name="alive?">
+      <java>is_alive</java>
+    </method>
+    <method name="exit"/>
+    <method name="join"/>
+    <method name="key?">
+      <arity>1</arity>
+      <java>is_key</java>
+    </method>
+    <method name="kill"/>
+    <method name="priority"/>
+    <method name="priority=">
+      <arity>1</arity>
+      <java>priority_set</java>
+    </method>
+    <method name="raise">
+      <arity optional="true">1</arity>
+    </method>
+    <method name="run"/>
+    <method name="safe_level"/>
+    <method name="status"/>
+    <method name="stop?">
+      <java>is_stop</java>
+    </method>
+    <method name="value"/>
+    <method name="wakeup"/>
+  </instance-methods>
+
+  <class-methods>
+<!--
+    <method name="abort_on_exception">
+      <java>s_abort_on_exception</java>
+    </method>
+    <method name="abort_on_exception=">
+      <arity>1</arity>
+      <java>s_abort_on_exception_set</java>
+    </method>
+-->
+    <method name="current"/>
+<!--
+    <method name="exit">
+      <java>s_exit</java>
+    </method>
+-->
+    <method name="fork">
+      <arity optional="true">0</arity>
+      <java>newInstance</java>
+    </method>
+    <method name="list"/>
+    <method-alias name="new" original="fork"/>
+    <method name="pass"/>
+    <method name="start">
+      <arity optional="true">0</arity>
+    </method>
+  </class-methods>
+
+</module>
