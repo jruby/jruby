@@ -131,9 +131,9 @@ public class RubyArray extends RubyObject {
         arrayClass.defineMethod("to_a", callbackFactory.getSelfMethod(0));
         arrayClass.defineMethod("to_ary", callbackFactory.getSelfMethod(0));
         arrayClass.defineMethod("frozen?", callbackFactory.getMethod(RubyArray.class, "frozen"));
-        arrayClass.defineMethod("==", callbackFactory.getMethod(RubyArray.class, "equal", IRubyObject.class));
+        arrayClass.defineMethod("==", callbackFactory.getMethod(RubyArray.class, "array_op_equal", IRubyObject.class));
         arrayClass.defineMethod("eql?", callbackFactory.getMethod(RubyArray.class, "eql", IRubyObject.class));
-        arrayClass.defineMethod("===", callbackFactory.getMethod(RubyArray.class, "equal", IRubyObject.class));
+        arrayClass.defineMethod("===", callbackFactory.getMethod(RubyArray.class, "array_op_equal", IRubyObject.class));
         arrayClass.defineMethod("hash", callbackFactory.getMethod(RubyArray.class, "hash"));
         arrayClass.defineMethod("[]", callbackFactory.getOptMethod(RubyArray.class, "aref"));
         arrayClass.defineMethod("[]=", callbackFactory.getOptMethod(RubyArray.class, "aset"));
@@ -480,6 +480,7 @@ public class RubyArray extends RubyObject {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
          */
+    	
         return new RubyArray(ruby, new ArrayList(16));
     }
 
@@ -613,12 +614,25 @@ public class RubyArray extends RubyObject {
      */
     public IRubyObject initialize(IRubyObject[] args) {
         int argc = argCount(args, 0, 2);
+        RubyArray arrayInitializer = null;
         long len = 0;
-        if (argc != 0)
-            len = RubyNumeric.fix2long(args[0]);
+        if (argc != 0) {
+        	if (args[0] instanceof RubyNumeric) {
+        		len = RubyNumeric.fix2long(args[0]);
+        	} else if (args[0] instanceof RubyArray) {
+        		arrayInitializer = (RubyArray)args[0];
+        	}
+        }
 
         modify();
 
+        // Array initializer is provided
+        if (arrayInitializer != null) {
+        	list = new ArrayList(arrayInitializer.list);
+        	return this;
+        }
+        
+        // otherwise, continue with Array.new(fixnum, obj)
         if (len < 0) {
             throw new ArgumentError(getRuntime(), "negative array size");
         }
@@ -627,8 +641,15 @@ public class RubyArray extends RubyObject {
         }
         list = new ArrayList((int) len);
         if (len > 0) {
-            IRubyObject obj = (argc == 2) ? args[1] : getRuntime().getNil();
-            Collections.fill(list, obj);
+        	if (runtime.isBlockGiven()) {
+        		// handle block-based array initialization
+                for (int i = 0; i < len; i++) {
+                    list.add(runtime.yield(new RubyFixnum(runtime, i)));
+                }
+        	} else {
+        		IRubyObject obj = (argc == 2) ? args[1] : getRuntime().getNil();
+        		list.addAll(Collections.nCopies((int)len, obj));
+        	}
         }
         return this;
     }
@@ -860,7 +881,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_equal
      *
      */
-    public IRubyObject equal(IRubyObject obj) {
+    public IRubyObject array_op_equal(IRubyObject obj) {
         if (this == obj) {
             return getRuntime().getTrue();
         }
@@ -1325,6 +1346,12 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject op_and(IRubyObject other) {
+    	RubyClass arrayClass = getRuntime().getClasses().getArrayClass();
+    	
+    	// & only works with array types
+    	if (!other.isKindOf(arrayClass)) {
+    		throw new TypeError(getRuntime(), other, arrayClass);
+    	}
         List ary1 = uniq(list);
         int len1 = ary1.size();
         List ary2 = arrayValue(other).getList();
