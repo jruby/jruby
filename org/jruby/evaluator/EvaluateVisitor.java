@@ -42,8 +42,10 @@ import org.jruby.internal.runtime.methods.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.IMethod;
+import org.jruby.util.Asserts;
 
-//TODO this visitor often leads to very deep stacks.  If it happens to be a real problem, the trampoline method of tail call elimination could be used.
+// TODO this visitor often leads to very deep stacks.  If it happens to be a
+// real problem, the trampoline method of tail call elimination could be used.
 /**
  *
  * @author  jpetersen
@@ -155,17 +157,17 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
     public void visitArgsNode(ArgsNode iVisited) {
+        Asserts.assertNotReached();
     }
 
     /**
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
-    public final void visitArrayNode(final ArrayNode iVisited) {
-        final ArrayList list = new ArrayList(iVisited.size());
+    public void visitArrayNode(ArrayNode iVisited) {
+        ArrayList list = new ArrayList(iVisited.size());
 
-        final Iterator iterator = iVisited.iterator();
-        final int size = iVisited.size();
-        for (int i = 0; i < size; i++) {
+        Iterator iterator = iVisited.iterator();
+        for (int i = 0, size = iVisited.size(); i < size; i++) {
             final INode node = (INode) iterator.next();
             if (node instanceof ExpandArrayNode) {
                 list.addAll(((RubyArray) eval(node)).getList());
@@ -219,19 +221,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockArgNode(BlockArgNode)
      */
     public void visitBlockArgNode(BlockArgNode iVisited) {
-        /*if (ruby.getScope().getLocalValues() == null) {
-          throw new RuntimeException("BUG: unexpected block argument");
-          } else*/
-        /*if (ruby.isBlockGiven()) {
-        // Create a new Proc object
-        result = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
-        
-        // +++ Seems to be the wrong block by default (this fix seems to help)
-        ((RubyProc) result).getBlock().setScope((Scope) ruby.getScope().getTop().getNext());
-        // ---
-        
-        ruby.getScope().setValue(iVisited.getCount(), result);
-        }*/
+        Asserts.assertNotReached();
         // XXX See org.jruby.internal.runtime.methods.DefaultMethod.
     }
 
@@ -351,7 +341,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             RubyObject expression = eval(iVisited.getCaseNode());
 
             Iterator iter = iVisited.getWhenNodes().iterator();
-            while (iter.hasNext()) {
+            for (int i = 0, size = iVisited.getWhenNodes().size(); i < size; i++) {
                 WhenNode whenNode = (WhenNode) iter.next();
 
                 ruby.setSourceLine(whenNode.getPosition().getLine());
@@ -368,8 +358,8 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                 RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
 
-                for (int i = 0; i < expressions.getLength(); i++) {
-                    if (expressions.entry(i).funcall("===", expression).isTrue()) {
+                for (int j = 0, len = expressions.getLength(); j < len; j++) {
+                    if (expressions.entry(j).funcall("===", expression).isTrue()) {
                         eval(whenNode);
                         return;
                     }
@@ -1616,10 +1606,10 @@ public final class EvaluateVisitor implements NodeVisitor {
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i].kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
+            if (args[i].isKindOf(ruby.getClasses().getModuleClass())) {
                 throw new TypeError(ruby, "class or module required for rescue clause");
             }
-            if (actExcptn.kind_of((RubyModule) args[i]).isTrue()) {
+            if (actExcptn.isKindOf((RubyModule) args[i])) {
                 return true;
             }
         }

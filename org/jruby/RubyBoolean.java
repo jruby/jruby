@@ -112,10 +112,10 @@ public class RubyBoolean extends RubyObject {
      *
      */
     public RubyString to_s() {
-        if (isFalse()) {
-            return RubyString.newString(getRuby(), "false");
-        } else {
+        if (value) {
             return RubyString.newString(getRuby(), "true");
+        } else {
+            return RubyString.newString(getRuby(), "false");
         }
     }
 

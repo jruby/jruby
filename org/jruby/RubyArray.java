@@ -90,7 +90,12 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	}
 
     public boolean includes(RubyObject item) {
-        return include_p(item).isTrue();
+        for (int i = 0, n = getLength(); i < n; i++) {
+            if (item.funcall("==", entry(i)).isTrue()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final int M_INSPECT = 2;
@@ -597,15 +602,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	}
 
 	public RubyBoolean include_p(RubyObject item) {
-		for (int i = 0, n = getLength(); i < n; i++) {
-			if (item.funcall("==", entry(i)).isTrue()) {
-				return getRuby().getTrue();
-			}
-		}
-		return getRuby().getFalse();
-	}
-
-	/** rb_ary_frozen_p
+		return RubyBoolean.newBoolean(ruby, includes(item));
+    }/** rb_ary_frozen_p
 	 *
 	 */
 	public RubyBoolean frozen() {
