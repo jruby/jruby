@@ -3,10 +3,12 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -41,7 +43,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.FrozenError;
-import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.builtin.definitions.ObjectDefinition;
@@ -338,15 +340,13 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         return (IRubyObject) getInstanceVariables().get(name);
     }
 
-    /** rb_iv_set / rb_ivar_set
-     *
-     */
-    public IRubyObject setInstanceVariable(String name, IRubyObject value) {
+    public IRubyObject setInstanceVariable(String name, IRubyObject value,
+            String taintError, String freezeError) {
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new SecurityError(getRuntime(), "Insecure: can't modify instance variable");
+            throw new SecurityError(getRuntime(), taintError);
         }
         if (isFrozen()) {
-            throw new FrozenError(getRuntime(), "");
+            throw new FrozenError(getRuntime(), freezeError);
         }
         if (getInstanceVariables() == null) {
             setInstanceVariables(new HashMap());
@@ -354,6 +354,14 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         getInstanceVariables().put(name, value);
 
         return value;
+    }
+    
+    /** rb_iv_set / rb_ivar_set
+     *
+     */
+    public IRubyObject setInstanceVariable(String name, IRubyObject value) {
+        return setInstanceVariable(name, value, 
+                "Insecure: can't modify instance variable", "");
     }
 
     public Iterator instanceVariableNames() {
@@ -880,7 +888,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             new PrintfFormat(format).sprintf(
                 new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().toName()});
 
-        throw new NameError(getRuntime(), msg);
+        throw new NoMethodError(getRuntime(), msg);
     }
 
     /**

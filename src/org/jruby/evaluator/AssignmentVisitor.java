@@ -3,7 +3,9 @@
  * Created on 13.03.2002, 15:54:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -122,7 +124,7 @@ public class AssignmentVisitor extends AbstractVisitor {
         if (ruby.isVerbose() && threadContext.getRubyClass().isSingleton()) {
             errorHandler.handleError(IErrors.WARN, "Declaring singleton class variable.");
         }
-        threadContext.getRubyClass().declareClassVar(iVisited.getName(), value);
+        threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
     }
 
     /**

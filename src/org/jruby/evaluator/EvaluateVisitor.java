@@ -390,7 +390,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(runtime, "no class/module to define class variable");
         }
         eval(iVisited.getValueNode());
-        threadContext.getRubyClass().declareClassVar(iVisited.getName(), result);
+        threadContext.getRubyClass().setClassVar(iVisited.getName(), result);
     }
 
     /**
@@ -622,7 +622,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             rubyClass.callMethod("singleton_method_added", builtins.toSymbol(name));
         }
 
-        rubyClass.methodAdded(builtins.toSymbol(name));
+        rubyClass.callMethod("method_added", builtins.toSymbol(name));
     }
 
     /**

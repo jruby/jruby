@@ -41,13 +41,12 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.IndexCallable;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyClass extends RubyModule implements IndexCallable {
+public class RubyClass extends RubyModule {
 
     /**
      * @mri rb_boot_class
@@ -130,7 +129,7 @@ public class RubyClass extends RubyModule implements IndexCallable {
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
 
-            ICallable value = (ICallable) entry.getValue();
+            ICallable value = ((ICallable) entry.getValue()).dup();
 
             clone.getMethods().put(entry.getKey(), value);
         }

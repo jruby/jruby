@@ -355,7 +355,11 @@ public class ThreadContext {
         Iterator iter = classStack.contents();
         while (iter.hasNext()) {
             RubyModule module = (RubyModule) iter.next();
-            if (! (module instanceof RubyClass)) {
+            // Do not include 'Object' as a module.  I would have
+            // though module.isModule() would work, but this expects
+            // the class the module is defined in (except if it is
+            // Object).
+            if (module.getClassname().equals("Object") == false) {
                  result.append(module);
             }
         }

@@ -3,7 +3,9 @@
  * Created on 19.02.2002, 16:31:56
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -339,13 +341,11 @@ public class DefinedVisitor extends AbstractVisitor {
 
     /**
      * @see AbstractVisitor#visitConstNode(ConstNode)
-     *
-     * @fixme Implement this method.
      */
     public void visitConstNode(ConstNode iVisited) {
-        // if (isConstant()) {
-        definition = "constant";
-        // }
+        if (ruby.getClasses().getModuleClass().isConstantDefined(iVisited.getName())) {
+            definition = "constant";
+        }
     }
 
     /**
