@@ -32,8 +32,7 @@
         <mkdir dir="${build.dest}"/>
         <javac excludes="org/jruby/javasupport/bsf/**/*.java" debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <!--<exclude name="org/jruby/javasupport/bsf/**/*.java" unless="${bsf}"/>-->
-            <exclude name="org/jruby/javasupport/bsf/**/*.java"/>
+            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="${bsf}"/>
             <exclude name="**/tars/**"/>
             <classpath>
                 <path path="${bsf.jar}"/>
