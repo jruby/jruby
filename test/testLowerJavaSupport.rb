@@ -57,8 +57,13 @@ if defined? Java
   test_ok(string_class_methods.detect {|m| m.name == "valueOf" })
   test_ok(string_class_methods.all? {|m| m.static? })
 
-  integer_constants = Java::JavaClass.for_name("java.lang.Integer").constants
+  # Constants
+  integer_class = Java::JavaClass.for_name("java.lang.Integer")
+  integer_constants = integer_class.constants
   test_ok(integer_constants.include?("MAX_VALUE"))
+  max_value = integer_class.get_constant(:MAX_VALUE)
+  test_ok(max_value.kind_of?(JavaObject))
+  test_equal(2147483647, Java.java_to_primitive(max_value))
 
   method = string_class.java_method(:toString)
   test_ok(method.kind_of?(Java::JavaMethod))

@@ -72,6 +72,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int CONSTRUCTOR = 16;
     private static final int ARRAY_CLASS = 17;
     private static final int NEW_ARRAY = 18;
+    private static final int GET_CONSTANT = 19;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -95,6 +96,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("constructor", IndexedCallback.createOptional(CONSTRUCTOR));
         javaClassClass.defineMethod("array_class", IndexedCallback.create(ARRAY_CLASS, 0));
         javaClassClass.defineMethod("new_array", IndexedCallback.create(NEW_ARRAY, 1));
+        javaClassClass.defineMethod("get_constant", IndexedCallback.create(GET_CONSTANT, 1));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -237,6 +239,19 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return new JavaArray(getRuntime(), Array.newInstance(javaClass, length));
     }
 
+    public JavaObject get_constant(IRubyObject name) {
+        String nameString = name.asSymbol();
+        Object result;
+        try {
+            result = javaClass.getField(nameString).get(null);
+        } catch (NoSuchFieldException nsfe) {
+            throw new NameError(getRuntime(), "undefined constant '" + nameString + "' for " + this);
+        } catch (IllegalAccessException iae) {
+            throw new TypeError(getRuntime(), "illegal access: " + iae.getMessage());
+        }
+        return new JavaObject(getRuntime(), result);
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -269,6 +284,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return array_class();
             case NEW_ARRAY :
                 return new_array(args[0]);
+            case GET_CONSTANT :
+                return get_constant(args[0]);
             default :
                 return super.callIndexed(index, args);
         }
