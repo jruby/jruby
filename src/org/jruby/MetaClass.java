@@ -62,6 +62,8 @@ public class MetaClass extends RubyClass {
     }
 
     public IRubyObject getAttachedObject() {
+    	// Though it may not be obvious, attachToObject is always called just after instance
+    	// creation.  Kind of a brittle arrangement here...
         return getInstanceVariable("__attached__");
     }
 

@@ -147,7 +147,8 @@ public class JRubyEngine extends BSFEngineImpl {
     private Object convertToJava(IRubyObject value, Class type) {
         runtime.getLoadService().require("java");
         if (value.isKindOf(runtime.getModule("JavaProxy"))) {
-            value = value.getInstanceVariable("@java_object");
+        	IRubyObject variable = value.getInstanceVariable("@java_object"); 
+            value = variable == null ? runtime.getNil() : variable;
         }
         value = Java.primitive_to_java(value, value);
         return JavaUtil.convertArgument(value, type);
@@ -229,7 +230,8 @@ public class JRubyEngine extends BSFEngineImpl {
         public IRubyObject setValue(IRubyObject value) {
             runtime.getLoadService().require("java");
             if (value.isKindOf(runtime.getModule("JavaProxy"))) {
-                value = value.getInstanceVariable("@java_object");
+            	IRubyObject variable = value.getInstanceVariable("@java_object"); 
+                value = variable == null ? runtime.getNil() : variable;
             }
             value = Java.primitive_to_java(value, value);
             bean.bean = JavaUtil.convertArgument(value, bean.type);

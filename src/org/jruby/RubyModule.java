@@ -245,7 +245,8 @@ public class RubyModule extends RubyObject {
     
     private RubyModule getModuleWithInstanceVar(String name) {
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-            if (p.hasInstanceVariable(name)) {
+        	IRubyObject variable = p.getInstanceVariable(name);
+            if (variable != null) {
                 return p;
             }
         }
@@ -276,7 +277,9 @@ public class RubyModule extends RubyObject {
         RubyModule module = getModuleWithInstanceVar(name);
         
         if (module != null) {
-            return module.getInstanceVariable(name);
+        	IRubyObject variable = module.getInstanceVariable(name); 
+        	
+            return variable == null ? getRuntime().getNil() : variable;
         }
         
         throw new NameError(getRuntime(), "uninitialized class variable " + name + " in " + getName());
@@ -314,37 +317,37 @@ public class RubyModule extends RubyObject {
     	// First look for constants in module hierachy
     	for (RubyModule p = this; p != p.parentModule; p = p.parentModule) {
             IRubyObject var = p.getInstanceVariable(name);
-            if (var != null && !var.isNil()) {
+            if (var != null) {
                 return var;
             }
         }
 
     	// Above loop does not check top of module hierchy
         IRubyObject var = getRuntime().getClasses().getObjectClass().getInstanceVariable(name);
-        if (var != null && !var.isNil()) {
+        if (var != null) {
         	return var;
         }
 
         // Second look for constants in the inheritance hierachy
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
         	var = p.getInstanceVariable(name);
-            if (var != null && !var.isNil()) {
+            if (var != null) {
                 return var;
             }
         }
-        
+
         // look for constants in module stack
         ArrayStack moduleStack = (ArrayStack)getRuntime().getCurrentContext().getClassStack().clone();
         for (RubyModule p = (RubyModule)moduleStack.peek(); !moduleStack.empty(); p = (RubyModule)moduleStack.pop()) {
         	var = p.getInstanceVariable(name);
-            if (var != null && !var.isNil()) {
+            if (var != null) {
                 return var;
             }
         }        	
 
         // Lastly look for constants in top constant
         var = getRuntime().getTopConstant(name);
-        if (var != null && !var.isNil()) {
+        if (var != null) {
         	return var;
         }
         
@@ -458,7 +461,7 @@ public class RubyModule extends RubyObject {
             if (c.isSingleton()) {
                 IRubyObject obj = getInstanceVariable("__attached__");
 
-                if (obj instanceof RubyModule) {
+                if (obj != null && obj instanceof RubyModule) {
                     c = (RubyModule) obj;
                     s0 = "";
                 }
@@ -489,7 +492,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject getConstantAt(String name) {
     	IRubyObject constant = getInstanceVariable(name);
     	
-    	if (!constant.isNil()) {
+    	if (constant != null) {
     		return constant;
     	} 
     	if (this == getRuntime().getClasses().getObjectClass()) {
@@ -1358,8 +1361,9 @@ public class RubyModule extends RubyObject {
         }
         testFrozen("class/module");
 
-        if (hasInstanceVariable(id)) {
-            return removeInstanceVariable(id);
+        IRubyObject variable = removeInstanceVariable(id); 
+        if (variable != null) {
+            return variable;
         }
 
         if (isClassVarDefined(id)) {
@@ -1379,7 +1383,8 @@ public class RubyModule extends RubyObject {
         }
         testFrozen("class/module");
 
-        if (hasInstanceVariable(id)) {
+        IRubyObject variable = getInstanceVariable(id);
+        if (variable != null) {
             return removeInstanceVariable(id);
         }
 

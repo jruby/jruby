@@ -416,13 +416,19 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
+    	RubyModule rubyClass = threadContext.getRubyClass();
+    	
+        if (rubyClass == null) {
             result = self.getMetaClass().getClassVar(iVisited.getName());
-        } else if (! threadContext.getRubyClass().isSingleton()) {
-                result = threadContext.getRubyClass().getClassVar(iVisited.getName());
-            } else {
-                result = ((RubyModule) threadContext.getRubyClass().getInstanceVariable("__attached__")).getClassVar(iVisited.getName());
+        } else if (! rubyClass.isSingleton()) {
+        	result = rubyClass.getClassVar(iVisited.getName());
+        } else {
+            RubyModule module = (RubyModule) rubyClass.getInstanceVariable("__attached__");
+            	
+            if (module != null) {
+                result = module.getClassVar(iVisited.getName());
             }
+        }
     }
 
     /**
@@ -933,7 +939,9 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitInstVarNode(InstVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
-        result = self.getInstanceVariable(iVisited.getName());
+    	IRubyObject variable = self.getInstanceVariable(iVisited.getName());
+    	
+        result = variable == null ? runtime.getNil() : variable;
     }
 
     /**

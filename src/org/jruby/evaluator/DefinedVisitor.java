@@ -335,10 +335,14 @@ public class DefinedVisitor extends AbstractVisitor {
         if (threadContext.getRubyClass() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
         } else if (!threadContext.getRubyClass().isSingleton() && threadContext.getRubyClass().isClassVarDefined(iVisited.getName())) {
-                definition = "class_variable";
-            } else if (((RubyModule)threadContext.getRubyClass().getInstanceVariable("__attached__")).isClassVarDefined(iVisited.getName())) {
-                definition = "class_variable";
+            definition = "class_variable";
+        } else {
+        	RubyModule module = (RubyModule) threadContext.getRubyClass().getInstanceVariable("__attached__");
+        	
+        	if (module != null && module.isClassVarDefined(iVisited.getName())) {
+        		definition = "class_variable";
             }
+        }
     }
 
     /**
@@ -363,7 +367,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitInstVarNode(InstVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
-        if (self.hasInstanceVariable(iVisited.getName())) {
+        if (self.getInstanceVariable(iVisited.getName()) != null) {
             definition = "instance-variable";
         }
     }

@@ -267,6 +267,35 @@ END
 
     def setup_instance_methods(java_class, proxy_class)
       def proxy_class.create_instance_methods(java_class)
+        if Java::JavaClass.for_name('java.util.Map').assignable_from? java_class
+          class_eval(<<END
+            def each(&block)
+              entrySet.each { |pair| block.call(pair.key, pair.value) }
+            end
+END
+          )
+        elsif Java::JavaClass.for_name('java.util.List').assignable_from? java_class
+          class_eval(<<END
+            def each(&block)
+              0.upto(size-1) { |index| block.call(get(index)) }
+            end
+            def <<(a); add(a); end
+END
+          )
+        elsif Java::JavaClass.for_name('java.util.Set').assignable_from? java_class
+          class_eval(<<END
+            def each(&block)
+              iter = iterator
+              while iter.hasNext
+                block.call(iter.next)
+              end
+            end
+END
+          )
+        end
+        if Java::JavaClass.for_name('java.lang.Comparable').assignable_from? java_class
+          class_eval('def <=>(a); compareTo(a); end')
+        end
         java_class.java_instance_methods.select { |m| 
           m.public? 
         }.group_by { |m| 

@@ -150,13 +150,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return metaClass.getRuntime();
     }
 
-    public boolean hasInstanceVariable(String name) {
-        if (getInstanceVariables() == null) {
-            return false;
-        }
-        return getInstanceVariables().containsKey(name);
-    }
-
     public IRubyObject removeInstanceVariable(String name) {
         if (getInstanceVariables() == null) {
             return null;
@@ -354,17 +347,16 @@ public class RubyObject implements Cloneable, IRubyObject {
     		throw new NameError(getRuntime(), "`" + varName + "' is not allowable as an instance variable name");
     	}
     	
-    	return getInstanceVariable(varName);
+    	IRubyObject variable = getInstanceVariable(varName); 
+    	
+    	// Pickaxe v2 says no var should show NameError, but ruby only sends back nil..
+    	return variable == null ? getRuntime().getNil() : variable; 
     }
 
-    /** rb_iv_get / rb_ivar_get
-     *
-     */
     public IRubyObject getInstanceVariable(String name) {
-        if (! hasInstanceVariable(name)) {
-            // todo: add warn if verbose
-            return getRuntime().getNil();
-        }
+    	if (getInstanceVariables() == null) {
+    		return null;
+    	}
         return (IRubyObject) getInstanceVariables().get(name);
     }
     
@@ -1019,13 +1011,17 @@ public class RubyObject implements Cloneable, IRubyObject {
             output.dumpInt(0);
         } else {
             output.dumpInt(getInstanceVariables().size());
-            Iterator iter = instanceVariableNames();
-            while (iter.hasNext()) {
+            
+            for (Iterator iter = instanceVariableNames(); iter.hasNext();) {
                 String name = (String) iter.next();
                 IRubyObject value = getInstanceVariable(name);
 
-                output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
-                output.dumpObject(value);
+                // Between getting name and retrieving value the instance variable could have been
+                // removed
+                if (value != null) {
+                	output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
+                	output.dumpObject(value);
+                }
             }
         }
     }

@@ -261,12 +261,6 @@ public interface IRubyObject {
      */
     IRubyObject rbClone();
 
-    /**
-     * RubyMethod isInstanceVarDefined.
-     * @param string
-     * @return boolean
-     */
-    boolean hasInstanceVariable(String string);
 
     public void callInit(IRubyObject[] args);
 
