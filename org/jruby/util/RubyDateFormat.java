@@ -27,49 +27,63 @@
 package org.jruby.util;
 
 import java.text.*;
+import java.text.DateFormatSymbols;
 import java.text.FieldPosition;
+import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.*;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyDateFormat extends DateFormat {
-    private String format;
+public class RubyDateFormat extends SimpleDateFormat {
 
     /**
      * Constructor for RubyDateFormat.
      */
-    public RubyDateFormat(String format) {
+    public RubyDateFormat() {
         super();
-        
-        this.format = format;
     }
 
     /**
-     * @see DateFormat#format(Date, StringBuffer, FieldPosition)
+     * Constructor for RubyDateFormat.
+     * @param pattern
      */
-    public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
-        return new SimpleDateFormat(getSimpleFormatString()).format(date, toAppendTo, fieldPosition);
+    public RubyDateFormat(String pattern) {
+        super(getSimpleDateFormatPattern(pattern));
     }
 
     /**
-     * @see DateFormat#parse(String, ParsePosition)
+     * Constructor for RubyDateFormat.
+     * @param pattern
+     * @param locale
      */
-    public Date parse(String source, ParsePosition pos) {
-        return new SimpleDateFormat(getSimpleFormatString()).parse(source, pos);
+    public RubyDateFormat(String pattern, Locale locale) {
+        super(getSimpleDateFormatPattern(pattern), locale);
     }
 
-    private String getSimpleFormatString() {
+    /**
+     * Constructor for RubyDateFormat.
+     * @param pattern
+     * @param formatSymbols
+     */
+    public RubyDateFormat(String pattern, DateFormatSymbols formatSymbols) {
+        super(getSimpleDateFormatPattern(pattern), formatSymbols);
+    }
+
+    private static String getSimpleDateFormatPattern(String pattern) {
         StringBuffer result = new StringBuffer(100);
 
-        int len = format.length();
+        int len = pattern.length();
         for (int i = 0; i < len;) {
-            if (format.charAt(i) == '%') {
+            if (pattern.charAt(i) == '%') {
                 i++;
-                switch (format.charAt(i)) {
+                switch (pattern.charAt(i)) {
                     case 'A' :
                         result.append("EEEE");
                         break;
@@ -116,7 +130,7 @@ public class RubyDateFormat extends DateFormat {
                         result.append("ww");
                         break;
                     case 'w':
-                        result.append("EE");
+                        result.append("E");
                         break;
                     case 'X':
                         result.append("HH:mm:ss");
@@ -144,22 +158,49 @@ public class RubyDateFormat extends DateFormat {
                         break;
                     default:
                         result.append("\'%");
-                        result.append(format.charAt(i));
+                        result.append(pattern.charAt(i));
                         result.append('\'');
                 }
                 i++;
             } else {
                 result.append('\'');
-                for (;i < len && format.charAt(i) != '%'; i++) {
-                    if (format.charAt(i) == '\'') {
+                for (;i < len && pattern.charAt(i) != '%'; i++) {
+                    if (pattern.charAt(i) == '\'') {
                         result.append('\\');
                     }
-                    result.append(format.charAt(i));
+                    result.append(pattern.charAt(i));
                 }
                 result.append('\'');
             }
         }
 
         return result.toString();
+    }
+    /**
+     * @see SimpleDateFormat#applyLocalizedPattern(String)
+     */
+    public void applyLocalizedPattern(String pattern) {
+        super.applyLocalizedPattern(getSimpleDateFormatPattern(pattern));
+    }
+
+    /**
+     * @see SimpleDateFormat#applyPattern(String)
+     */
+    public void applyPattern(String pattern) {
+        super.applyPattern(getSimpleDateFormatPattern(pattern));
+    }
+
+    /**
+     * @see SimpleDateFormat#toLocalizedPattern()
+     */
+    public String toLocalizedPattern() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @see SimpleDateFormat#toPattern()
+     */
+    public String toPattern() {
+        throw new UnsupportedOperationException();
     }
 }
