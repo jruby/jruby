@@ -51,6 +51,8 @@ test_equal([PushBoolean, IfFalse, PushFixnum,
              Goto, Label, PushString, Label],
            code.collect {|c| c.class})
 
+code = compile("begin; 123; end")
+test_equal([PushFixnum], code.collect {|c| c.class})
 
 module JRubyUtil
   include_package "org.jruby.util"
@@ -93,7 +95,7 @@ def test_compiled(expected, source)
   classgen.addMethod(methodgen.getMethod)
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
-#  classgen.getJavaClass.dump("/tmp/CompiledRuby.class")
+  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
 
   result = JRubyUtil::TestHelper.loadAndCall(:dummy,
                                              classgen.getClassName,
@@ -111,5 +113,9 @@ test_compiled(nil, "if false; 1; end")
 test_compiled("hello", "if false; 1 + 2; else; 'hello'; end")
 test_compiled(1, "if true; if true; 1; else; 2; end; end")
 test_compiled(3, "[1,2,3,4][2]")
+test_compiled(123, "begin; 123; end")
+test_compiled([1..2, 1...3], "[1..2, 1...3]")
+
+#test_compiled(6, "def hello(x); x * 2; end; hello(3)")
 
 test_print_report

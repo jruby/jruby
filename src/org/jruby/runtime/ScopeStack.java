@@ -27,6 +27,7 @@
 package org.jruby.runtime;
 
 import java.util.List;
+import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -43,6 +44,10 @@ public class ScopeStack extends AbstractStack {
 
     public ScopeStack(Ruby ruby) {
         this.ruby = ruby;
+    }
+
+    public void push(String[] localNames) {
+        push(Arrays.asList(localNames));
     }
 
     public void push(List localNames) {

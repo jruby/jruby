@@ -96,7 +96,7 @@ public class RubyRange extends RubyObject {
      * @param limit    the size of the object (e.g., a String or Array) that 
      *                 this range is being evaluated against.
      * @param truncate if true, result must fit within the range <i>(0..limit)</i>.
-     * @param strict   if true, raises an exception if the range can't be converted.
+     * @param isStrict   if true, raises an exception if the range can't be converted.
      * @return         a two-element array representing a start value and a length, 
      *                 or <b>null</b> if the conversion failed.
      */

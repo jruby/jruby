@@ -171,6 +171,45 @@ module JRuby
         end
       end
 
+      def visitBlockNode(node)
+        iter = node.iterator
+        while iter.hasNext
+          emit_bytecodes(iter.next)
+        end
+      end
+
+      def visitDefnNode(node)
+        # ... node.getArgsNode ..?
+
+        # ... change bytecode output to a new method
+
+        emit_bytecodes(node.getBodyNode)
+
+        # add the method to the system
+
+      end
+
+      def visitScopeNode(node)
+        @bytecodes << NewScope.new(node.getLocalNames)
+        emit_bytecodes(node.getBodyNode)
+
+        # ... finally
+        @bytecodes << RestoreScope.new
+      end
+
+      def visitLocalVarNode(node)
+        @bytecodes << PushLocal.new(node.getCount)
+      end
+
+      def visitBeginNode(node)
+        emit_bytecodes(node.getBodyNode)
+      end
+
+      def visitDotNode(node)
+        emit_bytecodes(node.getBeginNode)
+        emit_bytecodes(node.getEndNode)
+        @bytecodes << CreateRange.new(node.isExclusive)
+      end
     end
 
     # Since we can't subclass Java interfaces properly we have
