@@ -44,10 +44,12 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(Ruby ruby, RubyClass excptnClass, String msg) {
+		super(msg);
         setActException(RubyException.newException(ruby, excptnClass, msg));
     }
 
     public RaiseException(Ruby ruby, String excptnClassName, String msg) {
+		super(msg);
         RubyClass excptnClass = (RubyClass) ruby.getRubyModule(excptnClassName);
         if (excptnClass == null) {
             System.err.println(excptnClassName);

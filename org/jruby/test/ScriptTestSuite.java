@@ -104,30 +104,28 @@ public class ScriptTestSuite extends TestSuite {
     private static class ScriptTest extends TestCase {
         private final Ruby ruby;
         private final String filename;
-        private final File script;
 
         public ScriptTest(Ruby ruby, String filename) {
             super(filename);
             this.ruby = ruby;
             this.filename = filename;
-            this.script = new File(TEST_DIR + File.separator + filename);
         }
 
+		private String scriptName() {
+			return new File(TEST_DIR + File.separator + filename).getPath();
+		}
+
         public void runTest() throws Throwable {
-            StringBuffer scriptString = new StringBuffer((int) script.length());
-            BufferedReader br = new BufferedReader(new FileReader(script));
-            String line;
-            while ((line = br.readLine()) != null) {
-                scriptString.append(line).append('\n');
-            }
-            br.close();
+        	StringBuffer script = new StringBuffer();
+        	
+        	script.append("require 'minirunit'").append('\n');
+        	script.append("test_load('").append(scriptName()).append("')").append('\n');
+            script.append("test_get_last_failed()").append('\n');
 
-            // At the end of the tests we need a value to tell us if they failed.
-            scriptString.append("$curtestOK").append('\n');
-
-            RubyBoolean isOk = (RubyBoolean) ruby.evalScript(scriptString.toString());
-            if (isOk.isFalse()) {
-                fail(filename + " failed");
+            RubyObject lastFailed = ruby.evalScript(script.toString());
+            if (! lastFailed.isNil()) {
+				RubyString message = (RubyString) lastFailed.funcall("to_s");
+                fail(message.getValue());
             }
 
             System.out.flush(); // Without a flush Ant will miss some of our output

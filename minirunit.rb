@@ -62,6 +62,13 @@ def test_exception(type=Exception, &proc)
   test_ok(raised, "#{type} expected")
 end
 
+def test_get_last_failed
+  if $failed.empty?
+    return nil
+  end
+  return $failed.last
+end
+
 def test_print_report
   puts
   puts "-" * 80

@@ -50,8 +50,9 @@ public class TestRubyTime extends TestCase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(null);
-
+        if (ruby == null) {
+        	ruby = Ruby.getDefaultInstance(null);
+        }
         rubyTime = ruby.getClasses().getTimeClass();
         RubyObject[] args = new RubyObject[1];
         args[0] = RubyFixnum.newFixnum(ruby, 18000000);
@@ -66,7 +67,7 @@ public class TestRubyTime extends TestCase {
     public void testTimeNow() {
         RubyTime myTime = RubyTime.s_new(ruby, rubyTime);
         try {
-            Thread.sleep(1000);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             fail("Unexpected InterruptedException");
         }
