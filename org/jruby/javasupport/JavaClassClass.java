@@ -54,8 +54,9 @@ public class JavaClassClass extends RubyObject {
         javaClassClass.defineMethod("public?", CallbackFactory.getMethod(JavaClassClass.class, "public_p"));
         javaClassClass.defineMethod("final?", CallbackFactory.getMethod(JavaClassClass.class, "final_p"));
         javaClassClass.defineMethod("interface?", CallbackFactory.getMethod(JavaClassClass.class, "interface_p"));
-
-        javaClassClass.defineMethod("to_s", CallbackFactory.getMethod(JavaClassClass.class, "to_s"));
+        javaClassClass.defineMethod("name", CallbackFactory.getMethod(JavaClassClass.class, "name"));
+        javaClassClass.defineMethod("to_s", CallbackFactory.getMethod(JavaClassClass.class, "name"));
+        javaClassClass.defineMethod("super", CallbackFactory.getMethod(JavaClassClass.class, "rbSuper"));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -78,7 +79,11 @@ public class JavaClassClass extends RubyObject {
         return RubyBoolean.newBoolean(runtime, javaClass.isInterface());
     }
 
-    public RubyString to_s() {
+    public RubyString name() {
         return RubyString.newString(runtime, javaClass.getName());
+    }
+
+    public JavaClassClass rbSuper() {
+        return new JavaClassClass(runtime, javaClass.getSuperclass().getName());
     }
 }

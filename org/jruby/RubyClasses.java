@@ -233,7 +233,7 @@ public class RubyClasses {
 
         falseClass = RubyBoolean.createFalseClass(ruby);
         trueClass = RubyBoolean.createTrueClass(ruby);
-        
+
         threadClass = ThreadClass.createThreadClass(ruby);
     }
 
@@ -685,13 +685,6 @@ public class RubyClasses {
         return javaModule;
     }
 
-    public RubyClass getJavaClassClass() {
-        if (javaClassClass == null) {
-            javaClassClass = JavaClassClass.createJavaClassClass(ruby);
-        }
-        return javaClassClass;
-    }
-
     /**
      * Returns the reference to the JavaInterface class.
      *
@@ -751,7 +744,7 @@ public class RubyClasses {
         }
         return type;
     }
-    
+
     private RubyModule getAutoload(String name) {
         name = name.intern();
         if (name == "Array") {
@@ -786,8 +779,6 @@ public class RubyClasses {
             return getIoClass();
         } else if (name == "Java") {
             return getJavaModule();
-        } else if (name == "Java::JavaClass") {
-            return getJavaClassClass();
         } else if (name == "Marshal") {
             return getMarshalModule();
         } else if (name == "MatchData") {

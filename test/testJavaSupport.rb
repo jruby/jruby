@@ -47,4 +47,6 @@ if defined? Java
   test_ok(! runnable_class.final?)
   test_ok(runnable_class.interface?)
   test_ok(! string_class.interface?)
+
+  test_equal("java.lang.Object", string_class.super.name)
 end
