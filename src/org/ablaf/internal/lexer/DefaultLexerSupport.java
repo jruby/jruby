@@ -54,14 +54,13 @@ package org.ablaf.internal.lexer;
 
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.lexer.ILexerSource;
-import org.ablaf.lexer.ILexerSupport;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class DefaultLexerSupport implements ILexerSupport {
+public class DefaultLexerSupport {
     protected ILexerSource source;
     protected int[] lineOffset = new int[100];
 

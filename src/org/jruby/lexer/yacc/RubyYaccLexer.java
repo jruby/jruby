@@ -33,8 +33,6 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.lexer.ILexerSource;
-import org.ablaf.lexer.ILexerState;
-import org.ablaf.lexer.IYaccLexer;
 import org.jruby.ast.*;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.NthRefNode;
@@ -54,13 +52,13 @@ import java.math.BigInteger;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyYaccLexer implements IYaccLexer {
+public class RubyYaccLexer {
     // YaccLexer:
     private int token = 0;
     private Object yaccValue;
 
     // LexerSource:
-    private IRubyLexerSupport support;
+    private RubyLexerSupport support;
     
     private ParserSupport parserSupport = null;
 
@@ -2100,7 +2098,7 @@ public class RubyYaccLexer implements IYaccLexer {
         this.support = new RubyLexerSupport(source);
     }
 
-    public void setState(ILexerState state) {
+    public void setState(LexState state) {
         this.lex_state = (LexState) state;
     }
 

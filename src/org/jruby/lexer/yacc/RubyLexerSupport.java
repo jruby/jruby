@@ -35,7 +35,7 @@ import org.ablaf.lexer.ILexerSource;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerSupport {
+public class RubyLexerSupport extends DefaultLexerSupport {
     private String buffer = null;
     private int bufferPos = -1;
     private ISourcePosition startPosition = null;
@@ -49,7 +49,7 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
     }
 
     /**
-     * @see IRubyLexerSupport#setBuffer(String, ISourcePosition)
+     * 
      */
     public void setBuffer(String buffer, ISourcePosition startPosition) {
         this.buffer = buffer;

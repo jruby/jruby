@@ -50,14 +50,12 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.lexer.ILexerState;
-
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public final class LexState implements ILexerState {
+public final class LexState {
     public static final LexState EXPR_BEG    = new LexState("EXPR_BEG");
     public static final LexState EXPR_END    = new LexState("EXPR_END");
     public static final LexState EXPR_ARG    = new LexState("EXPR_ARG");

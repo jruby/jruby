@@ -251,7 +251,7 @@ public class DefaultRubyParser implements IParser {
       @return result of the last reduction, if any.
       @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (IYaccLexer yyLex, Object yydebug)
+  public Object yyparse (RubyYaccLexer yyLex, Object yydebug)
 				throws java.io.IOException, yyException {
     return yyparse(yyLex);
   }
@@ -278,7 +278,7 @@ public class DefaultRubyParser implements IParser {
       @return result of the last reduction, if any.
       @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (IYaccLexer yyLex)
+  public Object yyparse (RubyYaccLexer yyLex)
 				throws java.io.IOException, yyException {
     if (yyMax <= 0) yyMax = 256;			// initial size
     int yyState = 0, yyStates[] = new int[yyMax];	// state stack
