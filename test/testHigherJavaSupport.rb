@@ -9,6 +9,8 @@ if defined? Java
     include_package "org.jruby.util"
     include_package "java.util"
 
+    java_alias :JArray, :ArrayList
+    
     # call Java passing Class
     test_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
 
@@ -85,7 +87,7 @@ if defined? Java
     ConstantHolder  # class definition with "_" constant causes error
 
     # Using arrays
-    list = ArrayList.new
+    list = JArray.new
     list.add(10)
     list.add(20)
     array = list.toArray
@@ -159,6 +161,15 @@ if defined? Java
     test_equal("ABCDEFGH",   identity)
   end
 
+  module Foo
+ 	include_class("java.util.ArrayList")
+  end
 
+  include_class("java.lang.String") {|package,name| "J#{name}" }
+  include_class ["java.util.Hashtable", "java.util.Vector"]
 
+  test_ok(0, Foo::ArrayList.new.size)
+  test_ok("a", JString.new("a"))
+  test_ok(0, Vector.new.size)
+  test_ok(0, Hashtable.new.size)
 end
