@@ -103,23 +103,23 @@ public class RbString {
 
         stringClass.defineMethod("include?", getMethod("m_include", RubyObject.class));
 
-//    rb_define_method(rb_cString, "scan", rb_str_scan, 1);
+        stringClass.defineMethod("scan", getMethod("m_scan", RubyObject.class));
 
-//    rb_define_method(rb_cString, "ljust", rb_str_ljust, 1);
-//    rb_define_method(rb_cString, "rjust", rb_str_rjust, 1);
-//    rb_define_method(rb_cString, "center", rb_str_center, 1);
+        stringClass.defineMethod("ljust", getMethod("m_ljust", RubyObject.class));
+        stringClass.defineMethod("rjust", getMethod("m_rjust", RubyObject.class));
+        stringClass.defineMethod("center", getMethod("m_center", RubyObject.class));
 
         stringClass.defineMethod("sub", getMethod("m_sub", true));
         stringClass.defineMethod("gsub", getMethod("m_gsub", true));
-//    rb_define_method(rb_cString, "chop", rb_str_chop, 0);
-//    rb_define_method(rb_cString, "chomp", rb_str_chomp, -1);
-//    rb_define_method(rb_cString, "strip", rb_str_strip, 0);
+        stringClass.defineMethod("chop", getMethod("m_chop", false));
+        stringClass.defineMethod("chomp", getMethod("m_chomp", true));
+        stringClass.defineMethod("strip", getMethod("m_strip", false));
 
         stringClass.defineMethod("sub!", getMethod("m_sub_bang", true));
         stringClass.defineMethod("gsub!", getMethod("m_gsub_bang", true));
-//    rb_define_method(rb_cString, "strip!", rb_str_strip_bang, 0);
-//    rb_define_method(rb_cString, "chop!", rb_str_chop_bang, 0);
-//    rb_define_method(rb_cString, "chomp!", rb_str_chomp_bang, -1);
+        stringClass.defineMethod("chop!", getMethod("m_chop_bang", false));
+        stringClass.defineMethod("chomp!", getMethod("m_chomp_bang", true));
+        stringClass.defineMethod("strip!", getMethod("m_strip_bang", false));
 
 //    rb_define_method(rb_cString, "tr", rb_str_tr, 2);
 //    rb_define_method(rb_cString, "tr_s", rb_str_tr_s, 2);

@@ -407,7 +407,7 @@ public class RubyArray extends RubyObject {
             if (i > 0) {
                 sb.append(", ");
             }
-            sb.append(((RubyString)entry(i).funcall(getRuby().intern("to_s"))).getValue());
+            sb.append(((RubyString)entry(i).funcall(getRuby().intern("inspect"))).getValue());
         }
         sb.append("]");
         return RubyString.m_newString(getRuby(), sb.toString());

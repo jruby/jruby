@@ -63,9 +63,9 @@ public class RubyMatchData extends RubyObject {
             return RubyArray.m_newArray(getRuby());
         }
         
-        RubyArray arr = RubyArray.m_newArray(getRuby(), (int)len);
+        RubyArray arr = RubyArray.m_newArray(getRuby());
         for (long i = beg; i < beg + len; i++) {
-            arr.store(i, group(i));
+            arr.push(group(i));
         }
         return arr;
     }
