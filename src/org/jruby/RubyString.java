@@ -377,11 +377,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString reverse() {
-		StringBuffer sb = new StringBuffer(getValue().length());
-		for (int i = getValue().length() - 1; i >= 0; i--) {
-			sb.append(getValue().charAt(i));
-		}
-
+		StringBuffer sb = new StringBuffer(getValue());
+        sb.reverse();
 		return newString(sb.toString());
 	}
 
@@ -389,10 +386,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString reverse_bang() {
-		StringBuffer sb = new StringBuffer(getValue().length());
-		for (int i = getValue().length() - 1; i >= 0; i--) {
-			sb.append(getValue().charAt(i));
-		}
+		StringBuffer sb = new StringBuffer(getValue());
+        sb.reverse();
 		setValue(sb.toString());
 		return this;
 	}
@@ -496,7 +491,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public RubyString upcase_bang() {
 		setValue(getValue().toUpperCase());
-
 		return this;
 	}
 
@@ -512,7 +506,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public RubyString downcase_bang() {
 		setValue(getValue().toLowerCase());
-
 		return this;
 	}
 
@@ -521,7 +514,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public RubyString swapcase() {
 		RubyString newString = newString(getValue());
-
 		return newString.swapcase_bang();
 	}
 
@@ -607,11 +599,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public RubyString op_plus(IRubyObject other) {
 		RubyString str = stringValue(other);
-
 		RubyString newString = newString(getValue() + str.getValue());
-
 		newString.infectBy(str);
-
 		return newString;
 	}
 
@@ -1106,10 +1095,10 @@ public class RubyString extends RubyObject implements IndexCallable {
 	public RubyBoolean include(IRubyObject obj) {
 		if (obj instanceof RubyFixnum) {
 			char c = (char) RubyNumeric.fix2int(obj);
-			return getValue().indexOf(c) == -1 ? getRuntime().getFalse() : getRuntime().getTrue();
+			return RubyBoolean.newBoolean(getRuntime(), getValue().indexOf(c) != -1);
 		}
 		String str = stringValue(obj).getValue();
-		return getValue().indexOf(str) == -1 ? getRuntime().getFalse() : getRuntime().getTrue();
+		return RubyBoolean.newBoolean(getRuntime(), getValue().indexOf(str) != -1);
 	}
 
 	/** rb_str_to_i
