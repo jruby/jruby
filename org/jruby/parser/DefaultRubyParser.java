@@ -2055,7 +2055,7 @@ case 331:
                     /* $2.setHeadNode(nf.newStr($2.getLiteral()));*/
                     /* $2.nd_set_type(Constants.NODE_ARRAY);*/
                     /*+++ */
-                    yyVals[0+yyTop] = nf.newArray(nf.newStr(((Node)yyVals[0+yyTop]).getLiteral()));
+                    yyVals[0+yyTop] = nf.newArray((Node)yyVals[0+yyTop]);
                     /*---*/
                     ph.list_concat(((Node)yyVal), ((Node)yyVals[0+yyTop]));
                 }

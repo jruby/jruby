@@ -123,7 +123,7 @@ public class RubyFloat extends RubyNumeric {
 
     public RubyArray coerce(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyArray.newArray(getRuby(), this, newFloat(getRuby(), other.getDoubleValue()));
+        return RubyArray.newArray(getRuby(), newFloat(getRuby(), other.getDoubleValue()), this);
     }
 
     public RubyInteger ceil() {

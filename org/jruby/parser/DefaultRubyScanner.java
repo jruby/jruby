@@ -1972,7 +1972,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     pushback(c);
                     break;
                 case '{' :
-                    if (c == '{') {
+                    if (c == '{') {		// I wonder what is the point of this test, considering the switch variable is c and there is a break just above
                         brace = '}';
                     }
                     nest = 0;

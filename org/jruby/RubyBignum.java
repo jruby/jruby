@@ -259,9 +259,9 @@ public class RubyBignum extends RubyInteger {
 		RubyNumeric other = numericValue(iNum);
 		if (!(iNum instanceof RubyInteger)) {
 
-			return new RubyNumeric[]{this, other};	
+			return new RubyNumeric[]{other, this};	
 		}
-		return new RubyNumeric[] {RubyFloat.newFloat(getRuby(), getDoubleValue()), RubyFloat.newFloat(getRuby(), other.getDoubleValue())};
+		return new RubyNumeric[] {RubyFloat.newFloat(getRuby(), other.getDoubleValue()), RubyFloat.newFloat(getRuby(), getDoubleValue())};
 	}
 
 	public RubyBignum  op_lshift(RubyObject iNum)

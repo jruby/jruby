@@ -1282,7 +1282,8 @@ string        : tSTRING {
                     // $2.setHeadNode(nf.newStr($2.getLiteral()));
                     // $2.nd_set_type(Constants.NODE_ARRAY);
                     //+++ 
-                    $<>2 = nf.newArray(nf.newStr($2.getLiteral()));
+                    //$<>2 = nf.newArray(nf.newStr($2.getLiteral()));
+					$<>2 = nf.newArray(newDStr);
                     //---
                     ph.list_concat($<Node>$, $2);
                 }
