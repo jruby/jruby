@@ -69,7 +69,8 @@
 			<fileset dir="${src.dir}">
 				<include name="gnu/**/*.properties"/>
 				<include name="org/**/*.properties"/>
-                                <include name="**/test.rb"/>
+                <include name="**/test.rb"/>
+                <include name="builtin/*.rb"/>
             </fileset>
         </copy>
 		<copy todir="${build.dir}" >
