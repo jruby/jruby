@@ -242,6 +242,12 @@ public class RubyIO extends RubyObject {
             RubyIO ios = (RubyIO) arg1;
 
             int keepFileno = handler.getFileno();
+            
+            // close the old handler before it gets overwritten
+            if (handler.isOpen()) {
+            	handler.close();
+            }
+
             // When we reopen, we want our fileno to be preserved even
             // though we have a new IOHandler.
             // Note: When we clone we get a new fileno...then we replace it.
@@ -252,7 +258,7 @@ public class RubyIO extends RubyObject {
             // a particular way?)
             handler = ios.handler.cloneIOHandler();
             handler.setFileno(keepFileno);
-            
+
             // Update fileno list with our new handler
             registerIOHandler(handler);
         } else if (arg1.isKindOf(getRuntime().getClasses().getStringClass())) {

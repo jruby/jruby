@@ -14,7 +14,7 @@ test_exception(TypeError) { IO.foreach 3 }
 f = File.new(@file3, "w")
 f.print("A\n\n\nB\n")
 f.close
-f = File.new(@file3)
+f = File.new(@file3, "r")
 a = f.gets("\n\n")
 b = f.gets("\n\n")
 c = f.gets("\n\n")
@@ -66,8 +66,11 @@ test_exception(Errno::EBADF) { g.syswrite "" }
 # original IO
 f = File.new(@file2, "w")
 test_exception(Errno::EINVAL) { g = IO.new(f.fileno, "r") }
+f.close
+
 f = File.new(@file, "r")
 test_exception(Errno::EINVAL) { g = IO.new(f.fileno, "w") }
+f.close
 
 # However, you can open a second with less permissions
 f = File.new(@file, "r+")
@@ -76,6 +79,7 @@ g.gets
 f.puts "HEH"
 test_exception(IOError) { g.write "HOH" }
 test_equal(f.fileno, g.fileno)
+f.close
 
 f = File.new(@file)
 test_exception(Errno::EINVAL) { f.seek(-1) }
@@ -83,6 +87,7 @@ test_exception(Errno::EINVAL) { f.seek(-1) }
 # Advance one + single arg seek
 f.seek(1)
 test_equal(f.pos, 1)
+f.close
 
 test_exception(Errno::ESPIPE) { $stdin.seek(10) }
 
@@ -92,6 +97,7 @@ i = f.syswrite("")
 test_equal(i, 0)
 i = f.syswrite("heh")
 test_equal(i, 3)
+f.close
 
 test_exception(Errno::ENOENT) { File.foreach("nonexistent_file") {} }
 
@@ -103,6 +109,8 @@ i = i.reopen(f)
 test_equal(f.pos, i.pos)
 test_equal(t, i.fileno);
 test_ok(f.fileno != i.fileno);
+i.close
+f.close
 
 f = File.open(@file, "w")
 f.puts("line1");
@@ -113,4 +121,6 @@ f.close
 f = File.open(@file)
 test_equal(f.gets(), $_)
 test_equal(f.readline(), $_)
+f.close
 
+test_ok(File.delete(@file, @file2, @file3))

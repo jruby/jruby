@@ -36,9 +36,11 @@ f.close
 test_equal(["one", "two", "three"],
            IO.readlines("testFile_tmp").collect {|l| l.strip })
 
-File.delete("testFile_tmp")
+test_ok(File.delete("testFile_tmp"))
 
-if File.exists?("/tmp")
-  stat = File.lstat("/tmp")
-  test_ok(stat.directory?)
+begin
+  Dir.mkdir("dir_tmp")
+  test_ok(File.lstat("dir_tmp").directory?)
+ensure
+  Dir.rmdir("dir_tmp")
 end

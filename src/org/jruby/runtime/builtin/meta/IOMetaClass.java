@@ -126,16 +126,18 @@ public class IOMetaClass extends BuiltinClass {
         RubyIO io = (RubyIO) RubyFile.open(getRuntime().getClasses().getFileClass(), new IRubyObject[] { filename }, false);
 
         if (!io.isNil() && io.isOpen()) {
-            IRubyObject[] newArgs = new IRubyObject[count - 1];
-            System.arraycopy(args, 1, newArgs, 0, count - 1);
-
-            IRubyObject nextLine = io.internalGets(newArgs);
-            while (!nextLine.isNil()) {
-                getRuntime().yield(nextLine);
-                nextLine = io.internalGets(newArgs);
-            }
-
-            io.close();
+        	try {
+	            IRubyObject[] newArgs = new IRubyObject[count - 1];
+	            System.arraycopy(args, 1, newArgs, 0, count - 1);
+	
+	            IRubyObject nextLine = io.internalGets(newArgs);
+	            while (!nextLine.isNil()) {
+	                getRuntime().yield(nextLine);
+	                nextLine = io.internalGets(newArgs);
+	            }
+        	} finally {
+        		io.close();
+        	}
         }
         
         return getRuntime().getNil();
@@ -147,7 +149,10 @@ public class IOMetaClass extends BuiltinClass {
         IRubyObject[] fileArguments = new IRubyObject[] {args[0]};
         IRubyObject[] separatorArguments = count >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
         RubyIO file = (RubyIO) RubyKernel.open(this, fileArguments);
-
-        return file.readlines(separatorArguments);
+        try {
+        	return file.readlines(separatorArguments);
+        } finally {
+        	file.close();
+        }
     }
 }
