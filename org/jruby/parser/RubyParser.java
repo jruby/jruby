@@ -29,7 +29,7 @@
 package org.jruby.parser;
 
 import org.jruby.*;
-import org.jruby.original.*;
+import org.jruby.nodes.*;
 
 /**
  *
@@ -37,7 +37,7 @@ import org.jruby.original.*;
  * @version 
  */
 public interface RubyParser {
-    NODE compileString(String f, RubyObject s, int line);
+    Node compileString(String f, RubyObject s, int line);
 
     /**
      *  Compiles the given Java String "s"
@@ -48,7 +48,7 @@ public interface RubyParser {
      *@param  line  Description of Parameter
      *@return       Description of the Returned Value
      */
-    NODE compileJavaString(String f, String s, int len, int line);
+    Node compileJavaString(String f, String s, int len, int line);
     
     /**
      *  Compiles the given file "file"
@@ -58,5 +58,5 @@ public interface RubyParser {
      *@param  start  Description of Parameter
      *@return        Description of the Returned Value
      */
-    NODE compileFile(String f, RubyObject file, int start);
+    Node compileFile(String f, RubyObject file, int start);
 }

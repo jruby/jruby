@@ -31,8 +31,8 @@ package org.jruby.parser;
 import java.io.*;
 
 import org.jruby.*;
-import org.jruby.interpreter.nodes.*;
-import org.jruby.original.*;
+import org.jruby.nodes.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -524,7 +524,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         int nest = 0;
         int options = 0;
         int re_start = ruby.getSourceLine();
-        NODE list = null;
+        Node list = null;
 
         newtok();
         regx_end :
@@ -536,7 +536,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             switch (c) {
                 case '#':
                     list = str_extend(list, term);
-                    if (list == NODE.MINUS_ONE) {
+                    if (list == Node.MINUS_ONE) {
                         return 0;
                     }
                     continue;
@@ -607,14 +607,15 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         tokfix();
         ph.setLexState(LexState.EXPR_END);
         if (list != null) {
-            list.nd_set_line(re_start);
+            list.setLine(re_start);
             if (toklen() > 0) {
                 RubyObject ss = RubyString.m_newString(ruby, tok(), toklen());
                 ph.list_append(list, nf.newStr(ss));
             }
-            list.nd_set_type(once ? NODE.NODE_DREGX_ONCE : NODE.NODE_DREGX);
-            list.nd_cflag(ph.newId(options | kcode));
-            yyVal = (NODE)list;
+            new RuntimeException("Want to change " + list.getClass().getName() + "to DRegxNode").printStackTrace();
+            // list.nd_set_type(once ? NODE.NODE_DREGX_ONCE : NODE.NODE_DREGX);
+            list.setCFlag(options | kcode);
+            yyVal = list;
             return Token.tDREGEXP;
         } else {
             yyVal = rb_reg_new(tok(), toklen(), options | kcode);
@@ -628,7 +629,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     private int parse_string(int func, int term, int paren) {
         int c;
-        NODE list = null;
+        Node list = null;
         int strstart;
         int nest = 0;
 
@@ -663,7 +664,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
              */
                     if (c == '#') {
                 list = str_extend(list, term);
-                if (list == NODE.MINUS_ONE) {
+                if (list == Node.MINUS_ONE) {
                     //goto unterm_str;
                     ruby.setSourceLine(strstart);
                     ph.rb_compile_error("unterminated string meets end of file");
@@ -701,14 +702,15 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         ph.setLexState(LexState.EXPR_END);
 
         if (list != null) {
-            list.nd_set_line(strstart);
+            list.setLine(strstart);
             if (toklen() > 0) {
                 RubyObject ss = RubyString.m_newString(ruby, tok(), toklen());
                 ph.list_append(list, nf.newStr(ss));
             }
-            yyVal = (NODE) list;
+            yyVal = list;
             if (func == '`') {
-                list.nd_set_type(NODE.NODE_DXSTR);
+                new RuntimeException("[BUG] want to change " + list.getClass().getName() + " to DXStrNode").printStackTrace();
+                // list.nd_set_type(Constants.NODE_DXSTR);
                 return Token.tDXSTRING;
             } else {
                 return Token.tDSTRING;
@@ -767,7 +769,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     }
 
     private int parse_quotedwords(int term, int paren) {
-        NODE qwords = null;
+        Node qwords = null;
         int strstart;
         int c;
         int nest = 0;
@@ -808,10 +810,9 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         break;
                 }
             } else if (ISSPACE(c)) {
-                NODE str;
 
                 tokfix();
-                str = nf.newStr(RubyString.m_newString(ruby, tok(), toklen()));
+                Node str = nf.newStr(RubyString.m_newString(ruby, tok(), toklen()));
                 newtok();
                 if (qwords == null) {
                     qwords = nf.newList(str);
@@ -839,7 +840,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
         tokfix();
         if (toklen() > 0) {
-            NODE str = nf.newStr(RubyString.m_newString(ruby, tok(), toklen()));
+            Node str = nf.newStr(RubyString.m_newString(ruby, tok(), toklen()));
             if (qwords == null) {
                 qwords = nf.newList(str);
             } else {
@@ -849,7 +850,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         if (qwords == null) {
             qwords = nf.newZArray();
         }
-        yyVal = (NODE) qwords;
+        yyVal = qwords;
         ph.setLexState(LexState.EXPR_END);
         return Token.tDSTRING;
     }
@@ -860,7 +861,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     private int here_document(int term, int indent) {
         int c;
-        NODE list = null;
+        Node list = null;
         
         int linesave = ruby.getSourceLine();
         newtok();
@@ -938,7 +939,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         if (list == null) {
                             str.m_concat((RubyString)yyVal);
                         } else {
-                            ph.list_append(list, nf.newStr(yyVal));
+                            ph.list_append(list, nf.newStr((RubyObject)yyVal));
                         }
                         break;
                     case Token.tDSTRING:
@@ -950,11 +951,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         if (list == null) {
                             list = nf.newDXStr(str);
                         }
-                        ph.list_append((NODE)yyVal, nf.newStr(RubyString.m_newString(ruby, "\n")));
-                        ((NODE)yyVal).nd_set_type(NODE.NODE_STR);
-                        yyVal = nf.newList(yyVal);
-                        ((NODE)yyVal).nd_next(((NODE)yyVal).nd_head().nd_next());
-                        ph.list_concat(list, (NODE)yyVal);
+                        ph.list_append((Node)yyVal, nf.newStr(RubyString.m_newString(ruby, "\n")));
+                        
+                        new RuntimeException("[BUG] Want to convert" + yyVal.getClass().getName() + " to StrNode").printStackTrace();
+                        // ((NODE)yyVal).nd_set_type(NODE.NODE_STR);
+                        yyVal = nf.newList((Node)yyVal);
+                        ((Node)yyVal).setNextNode(((Node)yyVal).getHeadNode().getNextNode());
+                        ph.list_concat(list, (Node)yyVal);
                         break;
                     case 0:
                         // goto error;
@@ -979,7 +982,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         ruby.setSourceLine(linesave);
             
         if (list != null) {
-            list.nd_set_line(linesave + 1);
+            list.setLine(linesave + 1);
             yyVal = list;
         }
         switch (term) {
@@ -1779,7 +1782,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 } else if (seen_uc) {
                     return decode_num(c, is_float, seen_uc, true);
                 }
-                yyVal = (VALUE) rb_cstr2inum(tok(), 2);
+                yyVal = rb_cstr2inum(tok(), 2);
                 return Token.tINTEGER;
             }
             if (c >= '0' && c <= '7' || c == '_') {
@@ -1800,7 +1803,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 if (seen_uc) {
                     return decode_num(c, is_float, seen_uc, true);
                 }
-                yyVal = (VALUE) rb_cstr2inum(tok(), 8);
+                yyVal = rb_cstr2inum(tok(), 8);
                 return Token.tINTEGER;
             }
             if (c > '7' && c <= '9') {
@@ -1907,11 +1910,11 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
      *@param  term  Description of Parameter
      *@return       Description of the Returned Value
      */
-    private NODE str_extend(NODE list, int term) {
+    private Node str_extend(Node list, int term) {
         int c;
         int brace = -1;
-        VALUE ss;
-        NODE node;
+        RubyObject ss;
+        Node node;
         int nest;
 
         c = nextc();
@@ -1941,7 +1944,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     tokadd('$');
                     c = nextc();
                     if (c == -1) {
-                        return NODE.MINUS_ONE;
+                        return Node.MINUS_ONE;
                     }
                     switch (c) {
                         case '1': case '2': case '3':
@@ -2020,7 +2023,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                         newtok();
                                         return list;
                                     }
-                                    return NODE.MINUS_ONE;
+                                    return Node.MINUS_ONE;
                                 case '}':
                                     if (c == brace) {
                                         if (nest == 0) {
@@ -2033,7 +2036,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                 case '\\':
                                     c = nextc();
                                     if (c == -1) {
-                                        return NODE.MINUS_ONE;
+                                        return Node.MINUS_ONE;
                                     }
                                     if (c == term) {
                                         tokadd(c);

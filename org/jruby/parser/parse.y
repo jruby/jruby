@@ -32,9 +32,8 @@ import java.util.*;
 import java.io.*;
 
 import org.jruby.*;
-import org.jruby.interpreter.*;
-import org.jruby.interpreter.nodes.*;
-import org.jruby.original.*;
+import org.jruby.nodes.*;
+import org.jruby.runtime.*;
 import org.jruby.util.*;
 
 public class DefaultRubyParser implements RubyParser {
@@ -52,7 +51,7 @@ public class DefaultRubyParser implements RubyParser {
 
 /*
 %union {
-    NODE *node;
+    Node *node;
     VALUE val;
     ID id;
     int num;
@@ -110,20 +109,20 @@ public class DefaultRubyParser implements RubyParser {
 	k__FILE__
 
 %token <RubyId>    tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR
-%token <VALUE> tINTEGER tFLOAT tSTRING tXSTRING tREGEXP
-%token <NODE>  tDSTRING tDXSTRING tDREGEXP tNTH_REF tBACK_REF
+%token <RubyObject> tINTEGER tFLOAT tSTRING tXSTRING tREGEXP
+%token <Node>  tDSTRING tDXSTRING tDREGEXP tNTH_REF tBACK_REF
 
-%type <NODE>  singleton string
-%type <VALUE> literal numeric
-%type <NODE>  compstmt stmts stmt expr arg primary command command_call method_call
-%type <NODE>  if_tail opt_else case_body cases rescue exc_list exc_var ensure
-%type <NODE>  args ret_args when_args call_args paren_args opt_paren_args
-%type <NODE>  command_args aref_args opt_block_arg block_arg var_ref
-%type <NODE>  mrhs mrhs_basic superclass block_call block_command
-%type <NODE>  f_arglist f_args f_optarg f_opt f_block_arg opt_f_block_arg
-%type <NODE>  assoc_list assocs assoc undef_list backref
-%type <NODE>  block_var opt_block_var brace_block do_block lhs none
-%type <NODE>  mlhs mlhs_head mlhs_basic mlhs_entry mlhs_item mlhs_node
+%type <Node>  singleton string
+%type <RubyObject> literal numeric
+%type <Node>  compstmt stmts stmt expr arg primary command command_call method_call
+%type <Node>  if_tail opt_else case_body cases rescue exc_list exc_var ensure
+%type <Node>  args ret_args when_args call_args paren_args opt_paren_args
+%type <Node>  command_args aref_args opt_block_arg block_arg var_ref
+%type <Node>  mrhs mrhs_basic superclass block_call block_command
+%type <Node>  f_arglist f_args f_optarg f_opt f_block_arg opt_f_block_arg
+%type <Node>  assoc_list assocs assoc undef_list backref
+%type <Node>  block_var opt_block_var brace_block do_block lhs none
+%type <Node>  mlhs mlhs_head mlhs_basic mlhs_entry mlhs_item mlhs_node
 %type <RubyId>    fitem variable sym symbol operation operation2 operation3
 %type <RubyId>    cname fname op f_rest_arg
 %type <Integer>   f_norm_arg f_arg
@@ -192,14 +191,14 @@ compstmt
             {
                 if ($2 != null && !ph.isCompileForEval()) {
                     /* last expression should not be void */
-			        if ($2.nd_type() != NODE.NODE_BLOCK)
+			        if ($2.getType() != Constants.NODE_BLOCK)
                         ph.void_expr($2);
 			        else {
-                        NODE node = $2;
-				        while (node.nd_next() != null) {
-				            node = node.nd_next();
+                        Node node = $2;
+				        while (node.getNextNode() != null) {
+				            node = node.getNextNode();
 				        }
-				        ph.void_expr(node.nd_head());
+				        ph.void_expr(node.getHeadNode());
 			        }
 			    }
 			    ph.setEvalTree(ph.block_append(ph.getEvalTree(), $2));
@@ -244,7 +243,7 @@ stmt		: kALIAS fitem {ph.setLexState(LexState.EXPR_FNAME);} fitem
 		    {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("alias within method");
-			    String buf = "$" + (char)$3.nd_nth();
+			    String buf = "$" + (char)$3.getNth();
 		        $$ = nf.newVAlias($2, ruby.intern(buf));
 		    }
 		| kALIAS tGVAR tNTH_REF
@@ -273,19 +272,19 @@ stmt		: kALIAS fitem {ph.setLexState(LexState.EXPR_FNAME);} fitem
 		| stmt kWHILE_MOD expr
 		    {
 			    ph.value_expr($3);
-			    if ($1 != null && $1.nd_type() == NODE.NODE_BEGIN) {
-			        $$ = nf.newWhile(ph.cond($3), $1.nd_body(), 0);
+			    if ($1 != null && $1 instanceof BeginNode) {
+			        $$ = nf.newWhile(ph.cond($3), $1.getBodyNode()); // , 0
 			    } else {
-			        $$ = nf.newWhile(ph.cond($3), $1, 1);
+			        $$ = nf.newWhile(ph.cond($3), $1); // , 1
 			    }
 		    }
 		| stmt kUNTIL_MOD expr
 		    {
 			    ph.value_expr($3);
-			    if ($1 != null && $1.nd_type() == NODE.NODE_BEGIN) {
-			        $$ = nf.newUntil(ph.cond($3), $1.nd_body(), 0);
+			    if ($1 != null && $1 instanceof BeginNode) {
+			        $$ = nf.newUntil(ph.cond($3), $1.getBodyNode()); // , 0
 			    } else {
-			        $$ = nf.newUntil(ph.cond($3), $1, 1);
+			        $$ = nf.newUntil(ph.cond($3), $1); // , 1
 			    }
 		    }
 		| stmt kRESCUE_MOD stmt
@@ -321,7 +320,7 @@ stmt		: kALIAS fitem {ph.setLexState(LexState.EXPR_FNAME);} fitem
 		| mlhs '=' command_call
 		    {
 			    ph.value_expr($3);
-			    $1.nd_value($3);
+			    $1.setValueNode($3);
 			    $$ = $1;
 		    }
 		| lhs '=' mrhs_basic
@@ -333,7 +332,7 @@ stmt		: kALIAS fitem {ph.setLexState(LexState.EXPR_FNAME);} fitem
 expr	: mlhs '=' mrhs
 		    {
 			    ph.value_expr($3);
-			    $1.nd_value($3);
+			    $1.setValueNode($3);
 			    $$ = $1;
 		    }
 		| kRETURN call_args
@@ -345,11 +344,11 @@ expr	: mlhs '=' mrhs
 		| command_call
 		| expr kAND expr
 		    {
-			    $$ = ph.logop(NODE.NODE_AND, $1, $3);
+			    $$ = ph.logop(Constants.NODE_AND, $1, $3);
 		    }
 		| expr kOR expr
 		    {
-			    $$ = ph.logop(NODE.NODE_OR, $1, $3);
+			    $$ = ph.logop(Constants.NODE_OR, $1, $3);
 		    }
 		| kNOT expr
 		    {
@@ -433,7 +432,7 @@ mlhs_basic	: mlhs_head
 		    }
 		| mlhs_head tSTAR
 		    {
-			    $$ = nf.newMAsgn($1, NODE.MINUS_ONE);
+			    $$ = nf.newMAsgn($1, Node.MINUS_ONE);
 		    }
 		| tSTAR mlhs_node
 		    {
@@ -441,7 +440,7 @@ mlhs_basic	: mlhs_head
 		    }
 		| tSTAR
 		    {
-			    $$ = nf.newMAsgn(null, NODE.MINUS_ONE);
+			    $$ = nf.newMAsgn(null, Node.MINUS_ONE);
 		    }
 
 mlhs_item	: mlhs_node
@@ -586,25 +585,25 @@ arg		: lhs '=' arg
 		| variable tOP_ASGN {$$ = ph.assignable($1, null);} arg
 		    {
 			    if ($2.intValue() == tOROP) {
-			        $<NODE>3.nd_value($4);
-			        $$ = nf.newOpAsgnOr(ph.gettable($1), $<NODE>3);
-			        if ($1.is_instance_id()) {
-				        $<NODE>$.nd_aid($1);
+			        $3.setValueNode($4);
+			        $$ = nf.newOpAsgnOr(ph.gettable($1), $<Node>3);
+			        if ($1.isInstanceId()) {
+				        $<Node>$.setAId($1);
 			        }
 			    } else if ($2.intValue() == tANDOP) {
-			        $<NODE>3.nd_value($4);
-			        $$ = nf.newOpAsgnAnd(ph.gettable($1), $<NODE>3);
+			        $3.setValueNode($4);
+			        $$ = nf.newOpAsgnAnd(ph.gettable($1), $<Node>3);
 			    } else {
 			        $$ = $3;
 			        if ($$ != null) {
-				        $<NODE>$.nd_value(ph.call_op(ph.gettable($1),$2.intValue(),1,$4));
+				        $<Node>$.setValueNode(ph.call_op(ph.gettable($1),$2.intValue(),1,$4));
 			        }
 			    }
 			    ph.fixpos($$, $4);
 		    }
 		| primary '[' aref_args ']' tOP_ASGN arg
 		    {
-			    NODE args = nf.newList($6);
+			    ArrayNode args = nf.newList($6);
 
 			    ph.list_append($3, nf.newNil());
 			    ph.list_concat(args, $3);
@@ -683,24 +682,24 @@ arg		: lhs '=' arg
 		    {
 			    boolean need_negate = false;
 
-			    if ($1.nd_type() == NODE.NODE_LIT) {
-                    if ($1.nd_lit() instanceof RubyFixnum || 
-                        $1.nd_lit() instanceof RubyFloat ||
-                        $1.nd_lit() instanceof RubyBignum) {
-                        if ($1.nd_lit().funcall(ruby.intern("<"), RubyFixnum.zero(ruby)).isTrue()) {
-                            $1.nd_lit($1.nd_lit().funcall(ruby.intern("-@")));
+			    if ($1 instanceof LitNode) {
+                    if ($1.getLiteral() instanceof RubyFixnum || 
+                        $1.getLiteral() instanceof RubyFloat ||
+                        $1.getLiteral() instanceof RubyBignum) {
+                        if ($1.getLiteral().funcall(ruby.intern("<"), RubyFixnum.zero(ruby)).isTrue()) {
+                            $1.setLiteral($1.getLiteral().funcall(ruby.intern("-@")));
                             need_negate = true;
                         }
                     }
 			    }
 			    $$ = ph.call_op($1, tPOW, 1, $3);
 			    if (need_negate) {
-			        $$ = ph.call_op($<NODE>$, tUMINUS, 0, null);
+			        $$ = ph.call_op($<Node>$, tUMINUS, 0, null);
 			    }
 		    }
 		| tUPLUS arg
 		    {
-			    if ($2 != null && $2.nd_type() == NODE.NODE_LIT) {
+			    if ($2 != null && $2 instanceof LitNode) {
 			        $$ = $2;
 			    } else {
 			        $$ = ph.call_op($2, tUPLUS, 0, null);
@@ -708,10 +707,10 @@ arg		: lhs '=' arg
 		    }
 		| tUMINUS arg
 		    {
-			    if ($2 != null && $2.nd_type() == NODE.NODE_LIT && $2.nd_lit() instanceof RubyFixnum) {
-			        long i = ((RubyFixnum)$2.nd_lit()).getValue();
+			    if ($2 != null && $2 instanceof LitNode && $2.getLiteral() instanceof RubyFixnum) {
+			        long i = ((RubyFixnum)$2.getLiteral()).getValue();
 
-			        $2.nd_lit(RubyFixnum.m_newFixnum(ruby, -i));
+			        $2.setLiteral(RubyFixnum.m_newFixnum(ruby, -i));
 			        $$ = $2;
 			    } else {
 			        $$ = ph.call_op($2, tUMINUS, 0, null);
@@ -788,11 +787,11 @@ arg		: lhs '=' arg
 		    }
 		| arg tANDOP arg
 		    {
-			    $$ = ph.logop(NODE.NODE_AND, $1, $3);
+			    $$ = ph.logop(Constants.NODE_AND, $1, $3);
 		    }
 		| arg tOROP arg
 		    {
-			    $$ = ph.logop(NODE.NODE_OR, $1, $3);
+			    $$ = ph.logop(Constants.NODE_OR, $1, $3);
 		    }
 		| kDEFINED opt_nl { ph.setInDefined(true);} arg
 		    {
@@ -868,35 +867,35 @@ call_args	: command
 		    }
 		| args opt_block_arg
 		    {
-			    $$ = ph.arg_blk_pass($<NODE>1, $2);
+			    $$ = ph.arg_blk_pass($<Node>1, $2);
 		    }
 		| args ',' tSTAR arg opt_block_arg
 		    {
 			    ph.value_expr($4);
 			    $$ = ph.arg_concat($1, $4);
-			    $$ = ph.arg_blk_pass($<NODE>$, $5);
+			    $$ = ph.arg_blk_pass($<Node>$, $5);
 		    }
 		| assocs opt_block_arg
 		    {
 			    $$ = nf.newList(nf.newHash($1));
-			    $$ = ph.arg_blk_pass($<NODE>$, $2);
+			    $$ = ph.arg_blk_pass($<Node>$, $2);
 		    }
 		| assocs ',' tSTAR arg opt_block_arg
 		    {
 			    ph.value_expr($4);
 			    $$ = ph.arg_concat(nf.newList(nf.newHash($1)), $4);
-			    $$ = ph.arg_blk_pass($<NODE>$, $5);
+			    $$ = ph.arg_blk_pass($<Node>$, $5);
 		    }
 		| args ',' assocs opt_block_arg
 		    {
 			    $$ = ph.list_append($1, nf.newHash($3));
-			    $$ = ph.arg_blk_pass($<NODE>$, $4);
+			    $$ = ph.arg_blk_pass($<Node>$, $4);
 		    }
 		| args ',' assocs ',' tSTAR arg opt_block_arg
 		    {
 			    ph.value_expr($6);
 			    $$ = ph.arg_concat(ph.list_append($1, nf.newHash($3)), $6);
-			    $$ = ph.arg_blk_pass($<NODE>$, $7);
+			    $$ = ph.arg_blk_pass($<Node>$, $7);
 		    }
 		| tSTAR arg opt_block_arg
 		    {
@@ -961,9 +960,9 @@ ret_args	: call_args
 		    {
 			    $$ = $1;
 			    if ($1 != null) {
-			        if ($1.nd_type() == NODE.NODE_ARRAY && $1.nd_next() == null) {
-				        $$ = $1.nd_head();
-    			    } else if ($1.nd_type() == NODE.NODE_BLOCK_PASS) {
+			        if ($1.getType() == Constants.NODE_ARRAY && $1.getNextNode() == null) {
+				        $$ = $1.getHeadNode();
+    			    } else if ($1.getType() == Constants.NODE_BLOCK_PASS) {
 	    			    ph.rb_compile_error("block argument should not be given");
 		    	    }
 			    }
@@ -1075,16 +1074,16 @@ primary		: literal
 		    }
 		| operation brace_block
 		    {
-			    $2.nd_iter(nf.newFCall($1, null));
+			    $2.setIterNode(nf.newFCall($1, null));
 			    $$ = $2;
 		    }
 		| method_call
 		| method_call brace_block
 		    {
-			    if ($1 != null && $1.nd_type() == NODE.NODE_BLOCK_PASS) {
+			    if ($1 != null && $1.getType() == Constants.NODE_BLOCK_PASS) {
 			        ph.rb_compile_error("both block arg and actual block given");
 			    }
-			    $2.nd_iter($1);
+			    $2.setIterNode($1);
 			    $$ = $2;
 		        ph.fixpos($$, $1);
 		    }
@@ -1111,7 +1110,7 @@ primary		: literal
 		  kEND
 		    {
 			    ph.value_expr($3);
-			    $$ = nf.newWhile(ph.cond($3), $6, 1);
+			    $$ = nf.newWhile(ph.cond($3), $6); // , 1
 		        ph.fixpos($$, $3);
 		    }
 		| kUNTIL { rs.COND_PUSH(); } expr do { rs.COND_POP(); } 
@@ -1119,7 +1118,7 @@ primary		: literal
 		  kEND
 		    {
 			    ph.value_expr($3);
-			    $$ = nf.newUntil(ph.cond($3), $6, 1);
+			    $$ = nf.newUntil(ph.cond($3), $6); //, 1
 		        ph.fixpos($$, $3);
 		    }
 		| kCASE expr opt_terms
@@ -1154,7 +1153,7 @@ primary		: literal
 		  kEND
 		    {
 		        $$ = nf.newClass($2, $5, $3);
-		        $<NODE>$.nd_set_line($<Integer>4.intValue());
+		        $<Node>$.setLine($<Integer>4.intValue());
 		        ph.local_pop();
 			    ph.setClassNest(ph.getClassNest() - 1);
 		    }
@@ -1192,7 +1191,7 @@ primary		: literal
 		  kEND
 		    {
 		        $$ = nf.newModule($2, $4);
-		        $<NODE>$.nd_set_line($<Integer>3.intValue());
+		        $<Node>$.setLine($<Integer>3.intValue());
 		        ph.local_pop();
 			    ph.setClassNest(ph.getClassNest() - 1);
 		    }
@@ -1222,9 +1221,10 @@ primary		: literal
                     $<>5 = nf.newEnsure($5, $8);
 
 		        /* NOEX_PRIVATE for toplevel */
-			    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? NODE.NOEX_PUBLIC : NODE.NOEX_PRIVATE);
-			    if ($2.is_attrset_id())
-                    $<NODE>$.nd_noex(NODE.NOEX_PUBLIC);
+			    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? 
+                                Constants.NOEX_PUBLIC : Constants.NOEX_PRIVATE);
+			    if ($2.isAttrSetId())
+                    $<Node>$.setNoex(Constants.NOEX_PUBLIC);
 		        ph.fixpos($$, $4);
 		        ph.local_pop();
 			    ph.setInDef(ph.getInDef() - 1);
@@ -1303,11 +1303,11 @@ block_var	: lhs
 opt_block_var	: none
 		| '|' /* none */ '|'
 		    {
-		        $$ = new Integer(1); //XXX (NODE*)1;
+		        $$ = Node.ONE; // new Integer(1); //XXX (Node*)1;
 		    }
 		| tOROP
 		    {
-		        $$ = new Integer(1); //XXX (NODE*)1;
+		        $$ = Node.ONE; // new Integer(1); //XXX (Node*)1;
 		    }
 		| '|' block_var '|'
 		    {
@@ -1329,10 +1329,10 @@ do_block	: kDO_BLOCK
 
 block_call	: command do_block
 		    {
-			    if ($1 != null && $1.nd_type() == NODE.NODE_BLOCK_PASS) {
+			    if ($1 != null && $1.getType() == Constants.NODE_BLOCK_PASS) {
 			        ph.rb_compile_error("both block arg and actual block given");
 			    }
-			    $2.nd_iter($1);
+			    $2.setIterNode($1);
 			    $$ = $2;
 		        ph.fixpos($$, $2);
 		    }
@@ -1473,23 +1473,24 @@ string		: tSTRING
 		| tDSTRING
 		| string tSTRING
 		    {
-		        if ($1.nd_type() == NODE.NODE_DSTR) {
+		        if ($1.getType() == Constants.NODE_DSTR) {
 			        ph.list_append($1, nf.newStr($2));
 			    } else {
-			        ((RubyString)$1.nd_lit()).m_concat((RubyString)$2);
+			        ((RubyString)$1.getLiteral()).m_concat((RubyString)$2);
 			    }
 			    $$ = $1;
 		    }
 		| string tDSTRING
 		    {
-		        if ($1.nd_type() == NODE.NODE_STR) {
-			        $$ = nf.newDStr($1.nd_lit());
+		        if ($1.getType() == Constants.NODE_STR) {
+			        $$ = nf.newDStr($1.getLiteral());
 			    } else {
 			        $$ = $1;
 			    }
-			    $2.nd_head(nf.newStr($2.nd_lit()));
-			    $2.nd_set_type(NODE.NODE_ARRAY);
-			    ph.list_concat($<NODE>$, $2);
+			    $2.setHeadNode(nf.newStr($2.getLiteral()));
+                new RuntimeException("[BUG] Want to change " + $2.getClass().getName() + " to ArrayNode.").printStackTrace();
+			    // $2.nd_set_type(Constants.NODE_ARRAY);
+			    ph.list_concat($<Node>$, $2);
 		    }
 
 symbol		: tSYMBEG sym
@@ -1558,7 +1559,7 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		| f_arg ',' f_optarg opt_f_block_arg
 		    {
                 // +++
-			    $$ = ph.block_append(nf.newArgs($<>1, $3, new Integer(-1)), $4);
+			    $$ = ph.block_append(nf.newArgs($<>1, $3, RubyId.newId(ruby, -1)), $4);
 		    }
 		| f_arg ',' f_rest_arg opt_f_block_arg
 		    {
@@ -1568,7 +1569,7 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		| f_arg opt_f_block_arg
 		    {
                 // +++
-			    $$ = ph.block_append(nf.newArgs($<>1, null, new Integer(-1)), $2);
+			    $$ = ph.block_append(nf.newArgs($<>1, null, RubyId.newId(ruby, -1)), $2);
 		    }
 		| f_optarg ',' f_rest_arg opt_f_block_arg
 		    {
@@ -1576,7 +1577,7 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    }
 		| f_optarg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, $1, new Integer(-1)), $2);
+			    $$ = ph.block_append(nf.newArgs(null, $1, RubyId.newId(ruby, -1)), $2);
 		    }
 		| f_rest_arg opt_f_block_arg
 		    {
@@ -1584,11 +1585,11 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    }
 		| f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, null, new Integer(-1)), $1);
+			    $$ = ph.block_append(nf.newArgs(null, null, RubyId.newId(ruby, -1)), $1);
 		    }
 		| /* none */
 		    {
-			    $$ = nf.newArgs(null, null, new Integer(-1));
+			    $$ = nf.newArgs(null, null, RubyId.newId(ruby, -1));
 		    }
 
 f_norm_arg	: tCONSTANT
@@ -1609,7 +1610,7 @@ f_norm_arg	: tCONSTANT
 		    }
 		| tIDENTIFIER
 		    {
-			    if (!$1.is_local_id())
+			    if (!$1.isLocalId())
 			        yyerror("formal argument must be local variable");
 			    else if (ph.local_id($1))
 			        yyerror("duplicate argument name");
@@ -1625,7 +1626,7 @@ f_arg		: f_norm_arg
 
 f_opt		: tIDENTIFIER '=' arg
 		    {
-			    if (!$1.is_local_id())
+			    if (!$1.isLocalId())
 			        yyerror("formal argument must be local variable");
 			    else if (ph.local_id($1))
 			        yyerror("duplicate optional argument name");
@@ -1635,7 +1636,7 @@ f_opt		: tIDENTIFIER '=' arg
 f_optarg	: f_opt
 		    {
 			    $$ = nf.newBlock($1);
-			    $<NODE>$.nd_end($<NODE>$);
+			    $<Node>$.setEndNode($<Node>$);
 		    }
 		| f_optarg ',' f_opt
 		    {
@@ -1644,7 +1645,7 @@ f_optarg	: f_opt
 
 f_rest_arg	: tSTAR tIDENTIFIER
 		    {
-			    if (!$2.is_local_id())
+			    if (!$2.isLocalId())
 			        yyerror("rest argument must be local variable");
 			    else if (ph.local_id($2))
 			        yyerror("duplicate rest argument name");
@@ -1657,7 +1658,7 @@ f_rest_arg	: tSTAR tIDENTIFIER
 
 f_block_arg	: tAMPER tIDENTIFIER
 		    {
-			    if (!$2.is_local_id())
+			    if (!$2.isLocalId())
 			        yyerror("block argument must be local variable");
 			    else if (ph.local_id($2))
 			        yyerror("duplicate block argument name");
@@ -1672,7 +1673,7 @@ opt_f_block_arg	: ',' f_block_arg
 
 singleton	: var_ref
 		    {
-			    if ($1.nd_type() == NODE.NODE_SELF) {
+			    if ($1.getType() == Constants.NODE_SELF) {
 			        $$ = nf.newSelf();
 			    } else {
 			        $$ = $1;
@@ -1680,15 +1681,15 @@ singleton	: var_ref
 		    }
 		| '(' {ph.setLexState(LexState.EXPR_BEG);} expr opt_nl ')'
 		    {
-			    switch ($3.nd_type()) {
-			        case NODE.NODE_STR:
-			        case NODE.NODE_DSTR:
-			        case NODE.NODE_XSTR:
-			        case NODE.NODE_DXSTR:
-			        case NODE.NODE_DREGX:
-			        case NODE.NODE_LIT:
-			        case NODE.NODE_ARRAY:
-			        case NODE.NODE_ZARRAY:
+			    switch ($3.getType()) {
+			        case Constants.NODE_STR:
+			        case Constants.NODE_DSTR:
+			        case Constants.NODE_XSTR:
+			        case Constants.NODE_DXSTR:
+			        case Constants.NODE_DREGX:
+			        case Constants.NODE_LIT:
+			        case Constants.NODE_ARRAY:
+			        case Constants.NODE_ZARRAY:
 			            yyerror("can't define single method for literals.");
 			        default:
 			            break;
@@ -1703,9 +1704,9 @@ assoc_list	: none
 		    }
 		| args trailer
 		    {
-			    if ($1.nd_alen()%2 != 0) {
+			    /* if ($1.getLength() % 2 != 0) {
 			        yyerror("odd number list for Hash");
-			    }
+			    }*/
 			    $$ = $1;
 		    }
 
@@ -1805,7 +1806,7 @@ none		: /* none */
      *  }
      */
     
-    public NODE compileString(String f, RubyObject s, int line) {
+    public Node compileString(String f, RubyObject s, int line) {
         rs.setLexFileIo(false);
         rs.setLexGetsPtr(0);
         rs.setLexInput(s);
@@ -1818,11 +1819,11 @@ none		: /* none */
         return yycompile(f, line);
     }
 
-    public NODE compileJavaString(String f, String s, int len, int line) {
+    public Node compileJavaString(String f, String s, int len, int line) {
         return compileString(f, RubyString.m_newString(ruby, s, len), line);
     }
 
-    public NODE compileFile(String f, RubyObject file, int start) {
+    public Node compileFile(String f, RubyObject file, int start) {
         rs.setLexFileIo(true);
         rs.setLexInput(file);
         rs.setLexP(0);
@@ -1845,10 +1846,10 @@ none		: /* none */
         ph.setRubyInCompile(true);
     }
     
-    /** This function compiles a given String into a NODE.
+    /** This function compiles a given String into a Node.
      *
      */
-    public NODE yycompile(String f, int line) {
+    public Node yycompile(String f, int line) {
         RubyId sl_id = ruby.intern("SCRIPT_LINES__");
         if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined(sl_id)) {
             RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant(sl_id);
@@ -1875,7 +1876,7 @@ none		: /* none */
         }
 
         ph.setRubyEndSeen(false);   // is there an __end__{} statement?
-        ph.setEvalTree(null);       // parser stores NODEs here
+        ph.setEvalTree(null);       // parser stores Nodes here
         ph.setHeredocEnd(0);
         ruby.setSourceFile(f);      // source file name
         ph.setRubyInCompile(true);

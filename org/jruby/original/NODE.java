@@ -2,9 +2,11 @@
  * NODE.java - No description
  * Created on 23. Juli 2001, 19:25
  * 
- * Copyright (C) 2001 Stefan Matthias Aust, Jan Arne Petersen
+ * Copyright (C) 2001 Stefan Matthias Aust, Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Stefan Matthias Aust <sma@3plus4.de>
  * Jan Arne Petersen <japetersen@web.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -33,6 +35,9 @@ import org.jruby.*;
 import org.jruby.core.*;
 import org.jruby.util.*;
 
+/**
+ * @deprecated
+ */
 public class NODE implements node_type, VALUE, Scope {
 
     private NODE() {}
@@ -60,7 +65,7 @@ public class NODE implements node_type, VALUE, Scope {
 
     public VALUE nd_orig() { return (VALUE)u3; }
 
-    //NODE nd_resq() { return (NODE)u2; }
+    public NODE nd_resq() { return (NODE)u2; }
     public NODE nd_ensr() { return (NODE)u3; }
 
     public NODE nd_1st() { return (NODE)u1; }
