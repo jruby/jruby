@@ -12,7 +12,11 @@ if defined? Java
     test_equal(TestJavaSupport::Random, r.type)
     test_equal(Fixnum, r.nextInt.type)
     test_equal(Fixnum, r.nextInt(10).type)
+
+    # FIXME: easy method for importing java class with colliding name
+    # (Since String would be nice to test on)
+
+    #include_package "java.lang"
+    #test_equal(true, Boolean.valueOf("true"))
   end
 end
-
-test_print_report

@@ -127,6 +127,9 @@
       <fileset dir="${tmp.dir}/test">
         <include name="**/*.class"/>
       </fileset>
+      <fileset dir="${test.dir}">
+        <include name="org/**/*.rb"/>
+      </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
       </manifest>

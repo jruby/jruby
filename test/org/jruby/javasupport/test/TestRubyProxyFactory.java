@@ -1,6 +1,7 @@
 package org.jruby.javasupport.test;
 
 import java.io.IOException;
+import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -10,6 +11,7 @@ import java.util.HashMap;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
+import java.net.URL;
 
 import org.jruby.javasupport.RubyProxyFactory;
 import org.jruby.javasupport.RubyToJavaClassMap;
@@ -18,9 +20,9 @@ import org.jruby.Ruby;
 
 public class TestRubyProxyFactory extends RubyTestCase {
     private static final double EPSILON      = 0.0;
-    private static final String RUBY_FILE    = "test.rb";
     private static final String RUBY_PACKAGE = "org.jruby.javasupport.test";
-    
+    private static final String RUBY_FILE = "test.rb";
+
     private Ruby               ruby     = null;
     private RubyToJavaClassMap classMap = null;
     private RubyProxyFactory   factory  = null;
@@ -34,7 +36,11 @@ public class TestRubyProxyFactory extends RubyTestCase {
     public void setUp ()
         throws IOException
     {
-        ruby = createRuby(getClass().getResource(RUBY_FILE));
+        URL testFile = getClass().getResource(RUBY_FILE);
+        if (testFile == null) {
+            fail("Couldn't locate test file: " + RUBY_FILE);
+        }
+        ruby = createRuby(testFile);
         classMap = new ReflectionClassMap(RUBY_PACKAGE);
         factory = new RubyProxyFactory(ruby, classMap);
         test = (RubyTestObject)factory.newProxyObject(RubyTestObject.class);

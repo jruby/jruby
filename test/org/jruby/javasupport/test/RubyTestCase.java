@@ -24,6 +24,9 @@ public class RubyTestCase extends TestCase {
     }
 
     protected Ruby createRuby(URL url) throws IOException {
+        if (url == null) {
+            throw new NullPointerException("url was null");
+        }
         if (url.getProtocol().equalsIgnoreCase("file"))
             return createRuby(new File(url.getPath()));
         else
