@@ -55,16 +55,16 @@ public class BlockNamesElement implements StackElement {
     }
     
     public boolean isDefined(String name) {
-        return blockNames != null ? blockNames.contains(name) : false || (next != null && next.isDefined(name));
+        return (blockNames != null ? blockNames.contains(name) : false) || (next != null && next.isDefined(name));
     }
-    
+
     public void add(String name) {
         if (blockNames == null) {
             blockNames = new ArrayList();
         }
         blockNames.add(name);
     }
-    
+
     public List getNames() {
         return blockNames != null ? Collections.unmodifiableList(blockNames) : Collections.EMPTY_LIST;
     }

@@ -80,7 +80,7 @@
       </filterchain>
     </copy>
 	  
-    <javac destdir="${tmp.dir}/src">
+    <javac destdir="${tmp.dir}/src" debug="true">
       <classpath refid="build.classpath"/>
       <src path="${tmp.dir}/src"/>
       <patternset refid="java.src.pattern"/>
@@ -123,7 +123,7 @@
       </filterchain>
     </copy>
 
-    <javac destdir="${tmp.dir}/test">
+    <javac destdir="${tmp.dir}/test" debug="true">
       <classpath>
         <path refid="build.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
@@ -187,5 +187,11 @@
     <delete>
       <fileset dir="${tmp.dir}" excludes="eclipse-src/**"/>
     </delete>
+  </target>
+
+  <target name="clean-ast.ser" description="clean the ast.ser files" depends="init">
+     <delete>
+       <fileset dir="${tmp.dir}" includes="**/*.ast.ser"/>
+     </delete>
   </target>
 </project>

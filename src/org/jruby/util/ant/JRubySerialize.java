@@ -95,7 +95,7 @@ public class JRubySerialize extends Task {
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 try {
-                    ((File) entry.getValue()).mkdirs();
+                    ((File) entry.getValue()).getParentFile().mkdirs();
                     ASTSerializer.serialize((File) entry.getKey(), (File) entry.getValue());
                 } catch (IOException ioExcpn) {
                 }
