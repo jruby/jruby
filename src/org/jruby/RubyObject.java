@@ -210,6 +210,10 @@ public class RubyObject implements Cloneable, IRubyObject {
        }
    }
 
+   protected void checkFrozen() {
+       testFrozen("can't modify frozen " + getMetaClass().getName());
+   }
+
     /**
      * Gets the taint.
      * @return Returns a boolean
@@ -304,9 +308,12 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     /* rb_init_ccopy */
     public void initCopy(IRubyObject original) {
+        assert original != null;
         assert !isFrozen() : "frozen object (" + getMetaClass().getName() + ") allocated";
 
-        setInstanceVariables(new HashMap(original.getInstanceVariables()));
+        if (original.getInstanceVariables() != null) {
+            setInstanceVariables(new HashMap(original.getInstanceVariables()));
+        }
 
         callMethod("initialize_copy", original);        
     }
@@ -621,6 +628,17 @@ public class RubyObject implements Cloneable, IRubyObject {
     
 	public IRubyObject same(IRubyObject other) {
 		return this == other ? getRuntime().getTrue() : getRuntime().getFalse();
+	}
+	
+	public IRubyObject initialize_copy(IRubyObject original) {
+	    if (this != original) {
+	        checkFrozen();
+	        if (!getClass().equals(original.getClass()) || getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
+	            throw getRuntime().newTypeError("initialize_copy should take same class object");
+	        }
+	    }
+
+	    return this;
 	}
 
     /**
@@ -1035,6 +1053,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         module.defineMethod("extend", callbackFactory.getOptMethod("extend"));
         module.defineMethod("freeze", callbackFactory.getMethod("freeze"));
         module.defineMethod("frozen?", callbackFactory.getMethod("frozen"));
+        module.defineMethod("initialize_copy", new ReflectionCallback(RubyObject.class, "initialize_copy", Arity.fixed(1)));
         module.defineMethod("instance_eval", callbackFactory.getOptMethod("instance_eval"));
         module.defineMethod("instance_of?", callbackFactory.getMethod("instance_of", IRubyObject.class));
         module.defineMethod("instance_variables", callbackFactory.getMethod("instance_variables"));
