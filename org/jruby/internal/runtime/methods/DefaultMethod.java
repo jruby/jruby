@@ -16,7 +16,7 @@ import org.ablaf.common.ISourcePosition;
  * @author  jpetersen
  * @version $Revision$
  */
-public class DefaultMethod extends AbstractMethod {
+public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
     private Namespace namespace;
@@ -30,7 +30,7 @@ public class DefaultMethod extends AbstractMethod {
     /**
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      */
-    public RubyObject execute(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
+    final public RubyObject execute(final Ruby ruby, final RubyObject receiver, final String name, RubyObject[] args, final boolean noSuper) {
         if (args == null) {
             args = new RubyObject[0];
         }

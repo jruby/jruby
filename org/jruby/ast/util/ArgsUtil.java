@@ -36,9 +36,9 @@ import org.jruby.runtime.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ArgsUtil {
-    public static Block beginCallArgs(Ruby ruby) {
-        Block actBlock = ruby.getBlock().getAct();
+public final class ArgsUtil {
+    public final static Block beginCallArgs(final Ruby ruby) {
+        final Block actBlock = ruby.getBlock().getAct();
 
         if (ruby.getActIter().isPre()) {
             ruby.getBlock().pop();
@@ -47,7 +47,7 @@ public class ArgsUtil {
         return actBlock;
     }
 
-    public static void endCallArgs(Ruby ruby, Block actBlock) {
+    public final static void endCallArgs(final Ruby ruby, final Block actBlock) {
         if (actBlock != null) {
             // XXX
             ruby.getBlock().push(actBlock); // Refresh the next attribute.
@@ -55,15 +55,15 @@ public class ArgsUtil {
         ruby.getIterStack().pop();
     }
 
-    public static RubyObject[] setupArgs(Ruby ruby, EvaluateVisitor visitor, INode node) {
+    public final static RubyObject[] setupArgs(final Ruby ruby, final EvaluateVisitor visitor, final INode node) {
         if (node == null) {
             return new RubyObject[0];
         }
 
-        String file = ruby.getSourceFile();
-        int line = ruby.getSourceLine();
+        final String file = ruby.getSourceFile();
+        final int line = ruby.getSourceLine();
 
-        RubyObject args = visitor.eval(node);
+        final RubyObject args = visitor.eval(node);
 
         ruby.setSourceFile(file);
         ruby.setSourceLine(line);

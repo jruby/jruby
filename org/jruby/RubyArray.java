@@ -386,9 +386,13 @@ public class RubyArray extends RubyObject {
 		return new RubyArray(ruby, Arrays.asList(new RubyObject[] { car, cdr }));
 	}
 
-	public static RubyArray newArray(Ruby ruby, List list) {
+	public final static RubyArray newArray(Ruby ruby, List list) {
 		return new RubyArray(ruby, list);
 	}
+    
+    public final static RubyArray newArray(Ruby ruby, ArrayList list) {
+        return new RubyArray(ruby, list);
+    }
 
 	public static RubyArray newArray(Ruby ruby, RubyObject[] args) {
 		return new RubyArray(ruby, Arrays.asList(args));

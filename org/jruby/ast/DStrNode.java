@@ -41,7 +41,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class DStrNode extends AbstractNode implements IListNode, ILiteralNode {
+public final class DStrNode extends AbstractNode implements IListNode, ILiteralNode {
     private List nodeList;
 
     public DStrNode(ISourcePosition position) {

@@ -41,7 +41,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class CallNode extends AbstractNode {
+public final class CallNode extends AbstractNode {
     private INode receiverNode;
     private String name;
     private IListNode argsNode;

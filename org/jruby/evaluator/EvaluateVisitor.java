@@ -99,7 +99,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         ruby.getRuntime().callTraceFunction(event, file, line, self, name, type);
     }
 
-    public RubyObject eval(INode node) {
+    public final RubyObject eval(final INode node) {
         result = ruby.getNil();
         /*
         try {
@@ -160,12 +160,12 @@ public final class EvaluateVisitor implements NodeVisitor {
     /**
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
-    public void visitArrayNode(ArrayNode iVisited) {
-        ArrayList list = new ArrayList();
+    public final void visitArrayNode(final ArrayNode iVisited) {
+        final ArrayList list = new ArrayList();
 
-        Iterator iterator = iVisited.iterator();
+        final Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
-            INode node = (INode) iterator.next();
+            final INode node = (INode) iterator.next();
             if (node instanceof ExpandArrayNode) {
                 list.addAll(((RubyArray) eval(node)).getList());
             } else {
@@ -565,10 +565,10 @@ public final class EvaluateVisitor implements NodeVisitor {
     /**
      * @see NodeVisitor#visitDStrNode(DStrNode)
      */
-    public void visitDStrNode(DStrNode iVisited) {
-        StringBuffer sb = new StringBuffer();
+    public final void visitDStrNode(final DStrNode iVisited) {
+        final StringBuffer sb = new StringBuffer();
 
-        Iterator iterator = iVisited.iterator();
+        final Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
             INode node = (INode) iterator.next();
             sb.append(eval(node));
@@ -740,7 +740,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitEvStrNode(EvStrNode)
      * @fixme Move the variable stuff to a Runtime method
      */
-    public void visitEvStrNode(EvStrNode iVisited) {
+    public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {
             // FIXME Move the variable stuff to a Runtime method
 

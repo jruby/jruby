@@ -36,7 +36,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class FCallNode extends AbstractNode {
+public final class FCallNode extends AbstractNode {
     private String name;
     private INode argsNode;
 
