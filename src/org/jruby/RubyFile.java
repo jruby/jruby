@@ -265,8 +265,12 @@ public class RubyFile extends RubyIO {
 
     public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
         int length = recv.checkArgumentCount(args, 1, 2);
-
         String relativePath = RubyString.stringValue(args[0]).getValue();
+
+        if (new File(relativePath).isAbsolute()) {
+            return recv.getRuntime().newString(relativePath);
+        }
+
         String cwd = System.getProperty("user.dir");
         if (length == 2 && !args[1].isNil()) {
             cwd = RubyString.stringValue(args[1]).getValue();
