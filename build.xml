@@ -44,7 +44,7 @@
             </fileset>
         </copy>
         <!-- Create jar in build dir -->
-        <jar basedir="${build.dest}" compress="true" jarfile="jruby.jar" manifest="jruby.mf"/>
+        <jar basedir="${build.dest}" compress="true" jarfile="${build.dir}/jruby.jar" manifest="jruby.mf"/>
     </target>
 
     <target depends="compile" name="bin-gz">
