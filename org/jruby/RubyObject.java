@@ -257,6 +257,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         objectClass.defineMethod("public_methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
         objectClass.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send"));
         objectClass.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send"));
+        objectClass.defineMethod("singleton_methods", CallbackFactory.getMethod(RubyObject.class, "singleton_methods"));
         objectClass.defineMethod("taint", CallbackFactory.getMethod(RubyObject.class, "taint"));
         objectClass.defineMethod("tainted?", CallbackFactory.getMethod(RubyObject.class, "tainted"));
         objectClass.defineMethod("to_a", CallbackFactory.getMethod(RubyObject.class, "to_a"));
