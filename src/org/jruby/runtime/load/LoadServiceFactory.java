@@ -6,7 +6,7 @@ import org.jruby.util.BuiltinScript;
 import org.jruby.internal.runtime.load.LoadService;
 
 /**
- * 
+ *
  * @author jpetersen
  * @version $Revision$
  */
@@ -23,7 +23,7 @@ public final class LoadServiceFactory {
     public static ILoadService createLoadService(Ruby runtime) {
         ILoadService result = new LoadService(runtime);
 
-        result.registerBuiltin("java.rb", new BuiltinScript("javasupport"));
+        result.registerBuiltin("java", new BuiltinScript("javasupport"));
         result.registerBuiltin("rbconfig.rb", new RbConfig());
 
         return result;

@@ -35,7 +35,6 @@ import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.internal.runtime.ValueAccessor;
 
 /** This class initializes global variables and constants.
  * 

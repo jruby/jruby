@@ -86,7 +86,7 @@ public class LoadService implements ILoadService {
         addPath(runtime, rubyDir + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
 
         if (runtime.getSafeLevel() == 0) {
-            loadPath.add(RubyString.newString(runtime, "."));
+            addPath(runtime, ".");
         }
     }
 
@@ -98,27 +98,34 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#load(String)
      */
     public boolean load(String file) {
-        findLibrary(file).load(runtime);
+        String[] suffixes = new String[] { "", ".rb", ".jar" };
+        Library library = null;
+        for (int i = 0; i < suffixes.length; i++) {
+            library = findLibrary(file + suffixes[i]);
+            if (library != null) {
+                break;
+            }
+        }
+        if (library == null) {
+            throw new LoadError(runtime, "No such file to load -- " + file);
+        }
+        library.load(runtime);
         return true;
     }
 
     private Library findLibrary(String file) {
-        if (file.endsWith(".jar")) {
-            URL jarFile = findFile(file);
-            return new JarredScript(jarFile);
-        }
-        if (! file.endsWith(".rb")) {
-            file += ".rb";
-        }
         if (builtinLibraries.containsKey(file)) {
             return (Library) builtinLibraries.get(file);
         }
         URL url = findFile(file);
-        String name = url.toString();
-        if (name.startsWith("file:")) {
-            name = name.substring("file:".length());
+        if (url == null) {
+            return null;
         }
-        return new ExternalScript(url, name);
+        if (file.endsWith(".jar")) {
+            return new JarredScript(url);
+        } else {
+            return new ExternalScript(url, file);
+        }
     }
 
     /**
@@ -218,6 +225,6 @@ public class LoadService implements ILoadService {
             }
         } catch (MalformedURLException e) {
         }
-        throw new LoadError(runtime, "No such file to load -- " + name);
+        return null;
     }
 }
