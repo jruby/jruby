@@ -1163,7 +1163,7 @@ public class Pack {
             Converter converter = (Converter) converters.get(new Character(type));
 
             if (converter != null) {
-                idx += encode(ruby, occurrences, result, list, idx, converter);
+                idx = encode(ruby, occurrences, result, list, idx, converter);
                 type = next;
                 continue;
             }
