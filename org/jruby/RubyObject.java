@@ -1,31 +1,31 @@
 /*
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -38,18 +38,14 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RubyBugException;
 import org.jruby.exceptions.RubyFrozenException;
 import org.jruby.exceptions.RubySecurityException;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -112,9 +108,9 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     /**
      * Create a new meta class.
-     * 
+     *
      * This method is used by a lot of other methods.
-     * 
+     *
      * @since Ruby 1.6.7
      */
     public RubyClass makeMetaClass(RubyClass type) {
@@ -304,7 +300,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             return getNilSingletonClass();
         }
 
-        RubyClass type = getInternalClass().isSingleton() ? 
+        RubyClass type = getInternalClass().isSingleton() ?
             getInternalClass() : makeMetaClass(getInternalClass());
 
         type.setTaint(isTaint());
@@ -404,7 +400,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** rb_cvar_singleton
-     * 
+     *
      *@deprecated  since Ruby 1.6.7
      */
     public RubyModule getClassVarSingleton() {
@@ -436,9 +432,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** Converts this object to type 'targetType' using 'convertMethod' method.
-     * 
+     *
      * MRI: convert_type
-     * 
+     *
      * @since Ruby 1.6.7.
      * @fixme error handling
      */
@@ -494,7 +490,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** specific_eval
-     * 
+     *
      */
     public IRubyObject specificEval(RubyModule mod, IRubyObject[] args) {
         if (getRuntime().isBlockGiven()) {
@@ -550,7 +546,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject yieldUnder(RubyModule under) {
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                // if () {             
+                // if () {
                 Block oldBlock = runtime.getBlockStack().getCurrent().cloneBlock();
 
                 /* copy the block to avoid modifying global data. */
@@ -614,13 +610,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         return RubyBoolean.newBoolean(getRuntime(), this == obj);
     }
 
-    /** 
+    /**
      * respond_to?( aSymbol, includePriv=false ) -> true or false
-     * 
+     *
      * Returns true if this object responds to the given method. Private
      * methods are included in the search only if the optional second
      * parameter evaluates to true.
-     * 
+     *
      * @mri rb_obj_respond_to
      * @return true if this responds to the given method
      */
@@ -634,9 +630,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** Return the internal id of an object.
-     * 
+     *
      * <b>Warning:</b> In JRuby there is no guarantee that two objects have different ids.
-     * 
+     *
      * <i>CRuby function: rb_obj_id</i>
      *
      */
@@ -734,9 +730,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     /** Freeze an object.
-     * 
+     *
      * rb_obj_freeze
-     * 
+     *
      */
     public IRubyObject freeze() {
         if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
@@ -940,22 +936,22 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     /**
      * send( aSymbol  [, args  ]*   ) -> anObject
-     * 
+     *
      * Invokes the method identified by aSymbol, passing it any arguments
      * specified. You can use __send__ if the name send clashes with an
      * existing method in this object.
-     * 
+     *
      * <pre>
      * class Klass
      *   def hello(*args)
      *     "Hello " + args.join(' ')
      *   end
      * end
-     * 
+     *
      * k = Klass.new
      * k.send :hello, "gentle", "readers"
      * </pre>
-     * 
+     *
      * @mri rb_f_send
      * @return the result of invoking the method identified by aSymbol.
      */

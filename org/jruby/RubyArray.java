@@ -480,6 +480,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
                 isModified = true;
             }
         }
+        visited.remove(array);
         return isModified;
     }
 

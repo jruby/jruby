@@ -46,5 +46,10 @@ public class TestIdentitySet extends TestCase {
         assertTrue(set.contains(s1));
         assertTrue(set.contains(s2));
         assertTrue(! set.contains(s3));
+
+        set.remove(s2);
+        assertTrue(set.contains(s1));
+        assertTrue(! set.contains(s2));
+        assertTrue(! set.contains(s3));
     }
 }

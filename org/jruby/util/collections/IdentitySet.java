@@ -25,10 +25,20 @@ package org.jruby.util.collections;
 import java.util.*;
 
 public class IdentitySet {
-    Collection items = new ArrayList();
+    private Collection items = new ArrayList();
 
     public void add(Object item) {
         items.add(item);
+    }
+
+    public void remove(Object item) {
+        Iterator iter = items.iterator();
+        while (iter.hasNext()) {
+            Object storedItem = iter.next();
+            if (item == storedItem) {
+                iter.remove();
+            }
+        }
     }
 
     public boolean contains(Object item) {
