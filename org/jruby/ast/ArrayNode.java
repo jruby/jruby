@@ -46,10 +46,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public class ArrayNode extends AbstractNode implements IListNode, ILiteralNode {
     private List list;
 
-    public ArrayNode() {
-        this(null);
-    }
-
+   
     public ArrayNode(ISourcePosition position) {
         super(position);
     }

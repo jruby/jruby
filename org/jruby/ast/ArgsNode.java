@@ -32,6 +32,7 @@ import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
 
 /**
  * arguments for a function.
@@ -68,8 +69,8 @@ public class ArgsNode extends AbstractNode {
      * @param count number of regular arguments
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
-    public ArgsNode(int argsCount, IListNode optArgs, int restArg, BlockArgNode blockArgNode) {
-        super(null);
+    public ArgsNode(ISourcePosition iPosition, int argsCount, IListNode optArgs, int restArg, BlockArgNode blockArgNode) {
+        super(iPosition);
 
         this.argsCount = argsCount;
         this.optArgs = optArgs;

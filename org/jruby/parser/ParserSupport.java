@@ -96,7 +96,7 @@ public class ParserSupport {
     }
 
     public INode appendPrintToBlock(INode block) {
-        return appendToBlock(block, new FCallNode(null, "print", new ArrayNode().add(new GlobalVarNode(null, "$_"))));
+        return appendToBlock(block, new FCallNode(null, "print", new ArrayNode(block.getPosition()).add(new GlobalVarNode(block.getPosition(), "$_"))));
     }
 
     public INode appendWhileLoopToBlock(INode block, boolean chop, boolean split) {
@@ -117,25 +117,25 @@ public class ParserSupport {
      *@param id The name of the variable or constant.
      *@return   A node representing the access.
      */
-    public INode getAccessNode(String id) {
+    public INode getAccessNode(String id, ISourcePosition iPosition) {
         if (IdUtil.isLocal(id)) {
             if (blockNames.isInBlock() && blockNames.isDefined(id)) {
-                return new DVarNode(null, id);
+                return new DVarNode(iPosition, id);
             } else if (getLocalNames().isLocalRegistered(id)) {
-                return new LocalVarNode(null, getLocalNames().getLocalIndex(id));
+                return new LocalVarNode(iPosition, getLocalNames().getLocalIndex(id));
             }
-            return new VCallNode(null, id); // Method call without arguments.
+            return new VCallNode(iPosition, id); // Method call without arguments.
         } else if (IdUtil.isGlobal(id)) {
-            return new GlobalVarNode(null, id);
+            return new GlobalVarNode(iPosition, id);
         } else if (IdUtil.isInstanceVariable(id)) {
-            return new InstVarNode(null, id);
+            return new InstVarNode(iPosition, id);
         } else if (IdUtil.isConstant(id)) {
-            return new ConstNode(null, id);
+            return new ConstNode(iPosition, id);
         } else if (IdUtil.isClassVariable(id)) {
             /* [REMOVED 1.6.7] if (isInSingle()) {
-                return new CVar2Node(null, id);
+                return new CVar2Node(iPosition, id);
             }*/
-            return new ClassVarNode(null, id);
+            return new ClassVarNode(iPosition, id);
         }
         // XXX Should not reached
         return null;
@@ -152,35 +152,35 @@ public class ParserSupport {
      *@return A Node representing the assignment.
 	 * @fixme need to handle positions
      */
-    public INode getAssignmentNode(String id, INode valueNode) {
+    public INode getAssignmentNode(String id, INode valueNode, ISourcePosition iPosition) {
         checkExpression(valueNode);
 
         if (IdUtil.isLocal(id)) {
             if (blockNames.isCurrent(id)) {
-                return new DAsgnCurrNode(null, id, valueNode);
+                return new DAsgnCurrNode(iPosition, id, valueNode);
             } else if (blockNames.isDefined(id)) {
-                return new DAsgnNode(null, id, valueNode);
+                return new DAsgnNode(iPosition, id, valueNode);
             } else if (getLocalNames().isLocalRegistered(id) || !blockNames.isInBlock()) {
-                return new LocalAsgnNode(null, getLocalNames().getLocalIndex(id), valueNode);
+                return new LocalAsgnNode(iPosition, getLocalNames().getLocalIndex(id), valueNode);
             } else {
                 blockNames.add(id);
-                return new DAsgnCurrNode(null, id, valueNode);
+                return new DAsgnCurrNode(iPosition, id, valueNode);
             }
         } else if (IdUtil.isGlobal(id)) {
-            return new GlobalAsgnNode(null, id, valueNode);
+            return new GlobalAsgnNode(iPosition, id, valueNode);
         } else if (IdUtil.isInstanceVariable(id)) {
-            return new InstAsgnNode(null, id, valueNode);
+            return new InstAsgnNode(iPosition, id, valueNode);
         } else if (IdUtil.isConstant(id)) {
             if (isInDef() || isInSingle()) {
                 //FIXME: postition
                 errorHandler.handleError(IErrors.SYNTAX_ERROR, "Dynamic constant assignment.");
             }
-            return new ConstDeclNode(null, id, valueNode);
+            return new ConstDeclNode(iPosition, id, valueNode);
         } else if (IdUtil.isClassVariable(id)) {
             if (isInDef() || isInSingle()) {
-                return new ClassVarAsgnNode(null, id, valueNode);
+                return new ClassVarAsgnNode(iPosition, id, valueNode);
             }
-            return new ClassVarDeclNode(null, id, valueNode);
+            return new ClassVarDeclNode(iPosition, id, valueNode);
         } else {
             // BUG: "Id '" + id + "' not allowed for variable.";
             return null;
@@ -193,9 +193,10 @@ public class ParserSupport {
      *@param node 
      *@return a NewlineNode or null if node is null.
      */
-    public INode newline_node(INode node) {
+    public INode newline_node(INode node, ISourcePosition iPosition) {
         if (node != null) {
-            return new NewlineNode(node.getPosition(), node);
+//            return new NewlineNode(node.getPosition(), node);
+			return new NewlineNode(iPosition, node);
         } else {
             return null;
         }
@@ -235,7 +236,7 @@ public class ParserSupport {
         checkExpression(firstNode);
         checkExpression(secondNode);
 
-        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode().add(secondNode));
+        return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition()).add(secondNode));
     }
 
     public INode getMatchNode(INode firstNode, INode secondNode) {
@@ -292,7 +293,7 @@ public class ParserSupport {
 			IListNode lArgs = lCallLHS.getArgsNode();
 			if (lArgs == null)
 			{
-				lArgs = new ArrayNode();
+				lArgs = new ArrayNode(lhs.getPosition());
 				lCallLHS.setArgsNode(lArgs);
 			}
             lArgs.add(rhs);
@@ -425,20 +426,20 @@ public class ParserSupport {
         return new CallNode(receiverNode.getPosition(), receiverNode, name, (IListNode) args);
     }
 
-    public INode new_fcall(String name, INode args) {
+    public INode new_fcall(String name, INode args, ISourcePosition iPosition) {
         if (args != null && args instanceof BlockPassNode) {
             ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new FCallNode(args != null ? args.getPosition() : null, name, (IListNode) args);
+        return new FCallNode(iPosition, name, (IListNode) args);
     }
 
-    public INode new_super(INode args) {
+    public INode new_super(INode args, ISourcePosition iPosition) {
         if (args != null && args instanceof BlockPassNode) {
             ((BlockPassNode) args).setIterNode(new SuperNode(args.getPosition(), ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new SuperNode(args != null ? args.getPosition() : null, (IListNode) args);
+        return new SuperNode(iPosition, (IListNode) args);
     }
 
     /**

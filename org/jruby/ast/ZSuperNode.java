@@ -31,7 +31,7 @@ import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
- *
+ * a call to super in a method.
  * @author  jpetersen
  * @version $Revision$
  */

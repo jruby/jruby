@@ -21,7 +21,7 @@ public class ZeroArgNode extends AbstractNode {
      * @param position
      */
     public ZeroArgNode() {
-        super(null);
+        super();
     }
 
     /**

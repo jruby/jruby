@@ -172,11 +172,17 @@ public class JavaSupport {
         }
 
         iter = singletonMethodMap.entrySet().iterator();
+		RubyClass singletonClass = rubyClass.getSingletonClass();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             methods = (Method[]) ((List) entry.getValue()).toArray(new Method[((List) entry.getValue()).size()]);
-
-            rubyClass.defineSingletonMethod((String) entry.getKey(), new JavaMethod(methods, searchSuper, true));
+			String javaName = (String) entry.getKey();
+            String rubyName = toRubyName(javaName);
+            rubyClass.defineSingletonMethod(javaName, new JavaMethod(methods, searchSuper, true));
+			if(!singletonClass.isMethodDefined(rubyName))
+			{
+				singletonClass.defineAlias(rubyName, javaName);
+			}
         }
 
     }

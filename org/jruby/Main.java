@@ -272,10 +272,10 @@ public class Main {
         ruby.initLoad(sLoadDirectories);
         //require additional libraries
         int lNbRequire = sRequireFirst.size();
-        for (int i = 0; i < lNbRequire; i++)
-            RubyGlobal.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
-        // +++
         try {
+			for (int i = 0; i < lNbRequire; i++)
+				RubyGlobal.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
+        // +++
             INode lScript = ruby.compile(iString2Eval, iFileName, 0);
 
             //				DumpVisitor laVisitor = new DumpVisitor();

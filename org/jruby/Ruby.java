@@ -34,6 +34,8 @@ import java.util.*;
 
 import org.ablaf.ast.*;
 import org.ablaf.lexer.*;
+import org.ablaf.common.*;
+import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.ablaf.parser.*;
 
 import org.jruby.ast.*;
@@ -68,7 +70,6 @@ public final class Ruby {
     private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
-
     /** rb_global_tbl
      *
      */
@@ -115,6 +116,10 @@ public final class Ruby {
     private Namespace namespace;
     private Namespace topNamespace;
 
+	public ISourcePosition getPosition()
+	{
+		return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
+	}
     private String sourceFile;
     private int sourceLine;
 

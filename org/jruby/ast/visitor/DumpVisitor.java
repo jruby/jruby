@@ -31,7 +31,7 @@ import org.ablaf.ast.*;
 import org.ablaf.ast.INode;
 import org.jruby.ast.*;
 import org.jruby.runtime.Constants;
-import org.w3c.dom.views.*;
+//import org.w3c.dom.views.*;
 
 /**
  * Adapter for the NodeVisitor interface.

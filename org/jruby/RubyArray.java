@@ -518,8 +518,10 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject initialize(RubyObject[] args) {
-        int argc = argCount(args, 1, 2);
-        long len = RubyNumeric.fix2long(args[0]);
+        int argc = argCount(args, 0, 2);
+		long len = 0;
+		if (argc != 0)
+	        len = RubyNumeric.fix2long(args[0]);
 
         modify();
 

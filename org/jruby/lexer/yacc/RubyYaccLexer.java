@@ -536,7 +536,7 @@ public class RubyYaccLexer implements IYaccLexer {
 		}
 		pushback(c);
 
-		ArrayNode qwords = new ArrayNode(); // FIX
+		ArrayNode qwords = new ArrayNode(position); // FIX
 		int nest = 0;
 
 		StringBuffer stringToken = new StringBuffer();
@@ -565,7 +565,7 @@ public class RubyYaccLexer implements IYaccLexer {
 						break;
 				}
 			} else if (isSpace(c)) {
-				qwords.add(new StrNode(null, stringToken.toString()));
+				qwords.add(new StrNode(support.getPosition(), stringToken.toString()));
 				stringToken.setLength(0);	//Benoit: reset the buffer
 				// skip continuous spaces
 				c = nextc();
@@ -588,7 +588,7 @@ public class RubyYaccLexer implements IYaccLexer {
 		}
 
 		if (stringToken.length() > 0) {
-			qwords.add(new StrNode(null, stringToken.toString()));
+			qwords.add(new StrNode(support.getPosition(), stringToken.toString()));
 		}
 
 		lexState = LexState.EXPR_END;
@@ -669,24 +669,24 @@ public class RubyYaccLexer implements IYaccLexer {
 						if (list == null) {
 							sb.append(yaccValue);
 						} else {
-							list.add(new StrNode(null, (String) yaccValue));
+							list.add(new StrNode(support.getPosition(), (String) yaccValue));
 						}
 						break;
 					case Token.tDSTRING :
 						if (list == null) {
-							list = new DStrNode(null); // FIXME position
-							list.add(new StrNode(null, sb.toString()));
+							list = new DStrNode(support.getPosition()); // FIXME position
+							list.add(new StrNode(support.getPosition(), sb.toString()));
 						}
 						// fall through
 					case Token.tDXSTRING :
 						if (list == null) {
-							list = new DXStrNode(null); // FIXME position
-							list.add(new StrNode(null, sb.toString()));
+							list = new DXStrNode(support.getPosition()); // FIXME position
+							list.add(new StrNode(support.getPosition(), sb.toString()));
 						}
 
 						ListNodeUtil.addAll(list, (IListNode) yaccValue);
 
-						list.add(new StrNode(null, "\n")); //$NON-NLS-1$
+						list.add(new StrNode(support.getPosition(), "\n")); //$NON-NLS-1$
 
 						break;
 					case 0 :
@@ -1276,7 +1276,7 @@ public class RubyYaccLexer implements IYaccLexer {
 						case '`' : // $`: string before last match
 						case '\'' : // $': string after last match
 						case '+' : // $+: string matches last paren.
-							yaccValue = new BackRefNode(null, (char) c);
+							yaccValue = new BackRefNode(support.getPosition(), (char) c);
 							return Token.tBACK_REF;
 						case '1' :
 						case '2' :
@@ -1296,7 +1296,7 @@ public class RubyYaccLexer implements IYaccLexer {
 								break;
 							}
 							pushback(c);
-							yaccValue = new NthRefNode(null, Integer.parseInt(tok().substring(1)));
+							yaccValue = new NthRefNode(support.getPosition(), Integer.parseInt(tok().substring(1)));
 							return Token.tNTH_REF;
 						default :
 							if (!isIdentifierChar(c)) {

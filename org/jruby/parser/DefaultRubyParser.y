@@ -237,10 +237,10 @@ compstmt    : stmts opt_terms {
 
 stmts         : none
               | stmt {
-                    $$ = support.newline_node($1);
+                    $$ = support.newline_node($1, getPosition());
                 }
               | stmts terms stmt {
-                    $$ = support.appendToBlock($1, support.newline_node($3));
+                    $$ = support.appendToBlock($1, support.newline_node($3, getPosition()));
                 }
               | error stmt {
                     $$ = $2;
@@ -302,7 +302,7 @@ stmt          : kALIAS fitem {
                 }
               | stmt kRESCUE_MOD stmt
                 {
-                    $$ = new RescueNode(getPosition(), $1, new ArrayNode().add(new RescueBodyNode(getPosition(), null,$3)), null);
+                    $$ = new RescueNode(getPosition(), $1, new ArrayNode(getPosition())).add(new RescueBodyNode(getPosition(), null,$3)), null);
                 }
               | klBEGIN
                 {
@@ -378,7 +378,7 @@ block_command : block_call
                 }
 
 command       : operation command_args {
-                    $$ = support.new_fcall($1, $2); // .setPosFrom($2);
+                    $$ = support.new_fcall($1, $2, getPosition()); // .setPosFrom($2);
                 }
               | primary '.' operation2 command_args {
                     support.checkExpression($1);
@@ -393,7 +393,7 @@ command       : operation command_args {
                                                && support.isInSingle()){
                         yyerror("super called outside of method");
                     }
-		    $$ = support.new_super($2); // .setPosFrom($2);
+		    $$ = support.new_super($2, getPosition()); // .setPosFrom($2);
 		}
               | kYIELD ret_args {
 	            $$ = new YieldNode(getPosition(), $2); // .setPosFrom($2);
@@ -406,7 +406,7 @@ mlhs          : mlhs_basic
 
 mlhs_entry    : mlhs_basic
               | tLPAREN mlhs_entry ')' {
-	            $$ = new MultipleAsgnNode(getPosition(), new ArrayNode().add($2), null);
+	            $$ = new MultipleAsgnNode(getPosition(), new ArrayNode(getPosition()).add($2), null);
                 }
 
 mlhs_basic    : mlhs_head {
@@ -434,14 +434,14 @@ mlhs_item     : mlhs_node
                 }
 
 mlhs_head     : mlhs_item ',' {
-                    $$ = new ArrayNode().add($1);
+                    $$ = new ArrayNode(getPosition()).add($1);
                 }
               | mlhs_head mlhs_item ',' {
                     $$ = $1.add($2);
                 }
 
 mlhs_node     : variable {
-                    $$ = support.getAssignmentNode($1, null);
+                    $$ = support.getAssignmentNode($1, null,  getPosition());
                 }
               | primary '[' aref_args ']' {
                     $$ = support.getElementAssignmentNode($1, $3);
@@ -461,7 +461,7 @@ mlhs_node     : variable {
                 }
 
 lhs           : variable {
-                    $$ = support.getAssignmentNode($1, null);
+                    $$ = support.getAssignmentNode($1, null,  getPosition());
                 }
               | primary '[' aref_args ']' {
                     $$ = support.getElementAssignmentNode($1, $3);
@@ -583,22 +583,22 @@ arg           : lhs '=' arg {
                     $$ = support.node_assign($1, $3);
                 }
               | variable tOP_ASGN {
-                    $$ = support.getAssignmentNode($1, null);
+                    $$ = support.getAssignmentNode($1, null,  getPosition());
                 } arg {
                     if ($2.equals("||")) {
 	                $<IAssignableNode>3.setValueNode($4);
-	                $$ = new OpAsgnOrNode(getPosition(), support.getAccessNode($1), $<INode>3);
+	                $$ = new OpAsgnOrNode(getPosition(), support.getAccessNode($1, getPosition()), $<INode>3);
                         // FIXME
 			// if (IdUtil.isInstanceVariable($1)) {
                         //    $<Node>$.setAId($1);
                         // }
                     } else if ($2.equals("&&")) {
                         $<IAssignableNode>3.setValueNode($4);
-                        $$ = new OpAsgnAndNode(getPosition(), support.getAccessNode($1), $<INode>3);
+                        $$ = new OpAsgnAndNode(getPosition(), support.getAccessNode($1, getPosition()), $<INode>3);
                     } else {
                         $$ = $3;
                         if ($$ != null) {
-                            $<IAssignableNode>$.setValueNode(support.getOperatorCallNode(support.getAccessNode($1), $2, $4));
+                            $<IAssignableNode>$.setValueNode(support.getOperatorCallNode(support.getAccessNode($1, getPosition()), $2, $4));
                         }
                     }
                     // $<Node>$.setPosFrom($4);
@@ -740,7 +740,7 @@ aref_args     : /* none */ {
                     $$ = null;
                 }
               | command_call opt_nl {
-                    $$ = new ArrayNode().add($1);
+                    $$ = new ArrayNode(getPosition()).add($1);
                 }
               | args ',' command_call opt_nl {
                     $$ = $1.add($3);
@@ -753,12 +753,12 @@ aref_args     : /* none */ {
                     $$ = $1.add(new ExpandArrayNode($4));
                 }
               | assocs trailer {
-                    $$ = new ArrayNode().add(new HashNode($1));
+                    $$ = new ArrayNode(getPosition()).add(new HashNode($1));
                 }
               | tSTAR arg opt_nl {
                     support.checkExpression($2);
 
-                    $$ = new ArrayNode().add(new ExpandArrayNode($2));
+                    $$ = new ArrayNode(getPosition()).add(new ExpandArrayNode($2));
                 }
 
 paren_args    : '(' none ')' {
@@ -768,7 +768,7 @@ paren_args    : '(' none ')' {
                     $$ = $2;
                 }
               | '(' block_call opt_nl ')' {
-                    $$ = new ArrayNode().add($2);
+                    $$ = new ArrayNode(getPosition()).add($2);
                 }
               | '(' args ',' block_call opt_nl ')' {
                     $$ = $2.add($4);
@@ -778,7 +778,7 @@ opt_paren_args: none
               | paren_args
 
 call_args     : command {
-                    $$ = new ArrayNode().add($1);
+                    $$ = new ArrayNode(getPosition()).add($1);
                 }
               | args ',' command {
                     $$ = $1.add($3);
@@ -791,7 +791,7 @@ call_args     : command {
                     $$ = support.arg_blk_pass($1.add(new ExpandArrayNode($4)), $5);
                 }
               | assocs opt_block_arg {
-                    $$ = support.arg_blk_pass(new ArrayNode().add(new HashNode($1)), $2);
+                    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new HashNode($1)), $2);
                 }
               | assocs ',' tSTAR arg opt_block_arg {
                     support.checkExpression($4);
@@ -808,7 +808,7 @@ call_args     : command {
                     support.checkExpression($2);
 		    // FIXME
                     // $$ = support.arg_blk_pass(new RestArgsNode(getPosition(), $2), $3);
-		    $$ = support.arg_blk_pass(new ArrayNode().add(new ExpandArrayNode($2)), $3);
+		    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new ExpandArrayNode($2)), $3);
                 }
               | block_arg {
 	            $$ = $1;
@@ -835,7 +835,7 @@ opt_block_arg : ',' block_arg {
 
 args          : arg {
                     support.checkExpression($1);
-                    $$ = new ArrayNode().add($1);
+                    $$ = new ArrayNode(getPosition()).add($1);
                 }
               | args ',' arg {
                     support.checkExpression($3);
@@ -921,7 +921,7 @@ primary       : literal
                 }
               | tLBRACK aref_args ']' {
                     if ($2 == null) {
-                        $$ = new ArrayNode(); /* zero length array*/
+                        $$ = new ArrayNode(getPosition()); /* zero length array*/
                     } else {
                         $$ = $2;
                     }
@@ -1181,7 +1181,7 @@ block_call    : command do_block {
                 }
 
 method_call   : operation paren_args {
-                    $$ = support.new_fcall($1, $2); // .setPosFrom($2);
+                    $$ = support.new_fcall($1, $2, getPosition()); // .setPosFrom($2);
                 }
               | primary '.' operation2 opt_paren_args {
                     support.checkExpression($1);
@@ -1200,7 +1200,7 @@ method_call   : operation paren_args {
                                     && !support.isInSingle() && !support.isInDefined()) {
                         yyerror("super called outside of method");
                     }
-                    $$ = support.new_super($2);
+                    $$ = support.new_super($2, getPosition());
                 }
               | kSUPER {
                     if (!support.isCompileForEval() && !support.isInDef()
@@ -1234,14 +1234,14 @@ when_args     : args
                 }
               | tSTAR arg {
                     support.checkExpression($2);
-                    $$ = new ArrayNode().add(new ExpandArrayNode($2));
+                    $$ = new ArrayNode(getPosition()).add(new ExpandArrayNode($2));
                 }
 
 cases         : cases case_body {
                     $$ = $1.add($2);
                 }
               | case_body {
-	            $$ = new ArrayNode().add($1);
+	            $$ = new ArrayNode(getPosition()).add($1);
 	        }
 
 exc_list      : /* none */ {
@@ -1260,7 +1260,7 @@ rescue        : rescue kRESCUE exc_list exc_var then compstmt {
                         $<>6 = support.appendToBlock($4, $6);
                     }
 		    if ($1 == null) {
-		    	$<>1 = new ArrayNode();
+		    	$<>1 = new ArrayNode(getPosition());
 		    }
                     $$ = $1.add(new RescueBodyNode(getPosition(), $3, $6));
                 }
@@ -1347,7 +1347,7 @@ global_var    : tGVAR {
                 }
 
 var_ref       : variable {
-                    $$ = support.getAccessNode($1);
+                    $$ = support.getAccessNode($1, getPosition());
                 }
               | kNIL { 
                     $$ = new NilNode(getPosition());
@@ -1397,31 +1397,31 @@ f_arglist     : '(' f_args opt_nl ')' {
                 }
 
 f_args        : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = new ArgsNode($1.intValue(), $3, $5.intValue(), $6);
+                    $$ = new ArgsNode(getPosition(),$1.intValue(), $3, $5.intValue(), $6);
                 }
               | f_arg ',' f_optarg opt_f_block_arg {
-                    $$ = new ArgsNode($1.intValue(), $3, -1, $4);
+                    $$ = new ArgsNode(getPosition(),$1.intValue(), $3, -1, $4);
                 }
               | f_arg ',' f_rest_arg opt_f_block_arg {
-                    $$ = new ArgsNode($1.intValue(), null, $3.intValue(), $4);
+                    $$ = new ArgsNode(getPosition(),$1.intValue(), null, $3.intValue(), $4);
                 }
               | f_arg opt_f_block_arg {
-                    $$ = new ArgsNode($1.intValue(), null, -1, $2);
+                    $$ = new ArgsNode(getPosition(),$1.intValue(), null, -1, $2);
                 }
               | f_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = new ArgsNode(0, $1, $3.intValue(), $4);
+                    $$ = new ArgsNode(getPosition(),0, $1, $3.intValue(), $4);
                 }
               | f_optarg opt_f_block_arg {
-                    $$ = new ArgsNode(0, $1, -1, $2);
+                    $$ = new ArgsNode(getPosition(),0, $1, -1, $2);
                 }
               | f_rest_arg opt_f_block_arg {
-                    $$ = new ArgsNode(0, null, $1.intValue(), $2);
+                    $$ = new ArgsNode(getPosition(),0, null, $1.intValue(), $2);
                 }
               | f_block_arg {
-                    $$ = new ArgsNode(0, null, -1, $1);
+                    $$ = new ArgsNode(getPosition(),0, null, -1, $1);
                 }
               | /* none */ {
-                    $$ = new ArgsNode(0, null, -1, null);
+                    $$ = new ArgsNode(getPosition(),0, null, -1, null);
                 }
 
 f_norm_arg    : tCONSTANT {
@@ -1458,11 +1458,11 @@ f_opt         : tIDENTIFIER '=' arg {
                         yyerror("duplicate optional argument name");
                     }
 		    support.getLocalNames().getLocalIndex($1);
-                    $$ = support.getAssignmentNode($1, $3);
+                    $$ = support.getAssignmentNode($1, $3,  getPosition());
                 }
 
 f_optarg      : f_opt {
-                    $$ = new ArrayNode().add($1);
+                    $$ = new ArrayNode(getPosition()).add($1);
                 }
               | f_optarg ',' f_opt {
                     $$ = $1.add($3);
@@ -1537,7 +1537,7 @@ assocs        : assoc
                 }
 
 assoc         : arg tASSOC arg {
-                    $$ = new ArrayNode().add($1).add($3);
+                    $$ = new ArrayNode(getPosition()).add($1).add($3);
                 }
 
 operation     : tIDENTIFIER

@@ -1027,13 +1027,13 @@ public class RubyModule extends RubyObject {
         String attrIV = "@" + name;
 
         if (read) {
-            addMethod(name, new EvaluateMethod(new InstVarNode(null, attrIV)), noex);
+            addMethod(name, new EvaluateMethod(new InstVarNode(getRuby().getPosition(), attrIV)), noex);
             funcall("method_added", RubySymbol.newSymbol(getRuby(), name));
         }
 
         if (write) {
             name = name + "=";
-            addMethod(name, new EvaluateMethod(new AttrSetNode(null, attrIV)), noex);
+            addMethod(name, new EvaluateMethod(new AttrSetNode(getRuby().getPosition(), attrIV)), noex);
             funcall("method_added", RubySymbol.newSymbol(getRuby(), name));
         }
     }
@@ -1133,7 +1133,7 @@ public class RubyModule extends RubyObject {
             if (this == method.getImplementationClass()) {
                 method.setNoex(noex);
             } else {
-                addMethod(name, new EvaluateMethod(new ZSuperNode(null)), noex);
+                addMethod(name, new EvaluateMethod(new ZSuperNode(getRuby().getPosition())), noex);
             }
         }
     }

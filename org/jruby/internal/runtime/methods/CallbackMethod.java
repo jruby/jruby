@@ -54,12 +54,12 @@ public class CallbackMethod extends AbstractMethod {
                 line = ruby.getSourceLine();
             }
 
-            ruby.getRuntime().callTraceFunction("c-call", file, line, receiver, name, null); // XXX
+            ruby.getRuntime().callTraceFunction("c-call", file, line, receiver, name, getImplementationClass()); // XXX
             try {
                 return callback.execute(receiver, args, ruby);
             } finally {
                 if (ruby.getRuntime().getTraceFunction() != null) {
-                    ruby.getRuntime().callTraceFunction("c-return", file, line, receiver, name, null); // XXX
+                    ruby.getRuntime().callTraceFunction("c-return", file, line, receiver, name, getImplementationClass()); // XXX
                 }
             }
         } else {

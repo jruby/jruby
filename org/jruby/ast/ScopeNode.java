@@ -53,7 +53,9 @@ public class ScopeNode extends AbstractNode {
     private INode bodyNode;
 
     public ScopeNode(List table, INode bodyNode) {
-        this(null, table, bodyNode);
+		super();
+		this.localNames = table;
+		this.bodyNode = bodyNode;
     }
 
     public ScopeNode(ISourcePosition position, List table, INode bodyNode) {

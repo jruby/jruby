@@ -16,7 +16,7 @@ public class StarNode extends AbstractNode {
      * @param position
      */
     public StarNode() {
-        super(null);
+        super();
     }
 
     /**
