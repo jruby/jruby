@@ -75,7 +75,8 @@ echo Using Args:       %*
 
 rem ----- Execute The Requested Command ---------------------------------------
 
-%_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" org.jruby.Main %JRUBY_OPTS% %*
+rem %_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
+ %_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
 
 rem ----- Restore Environment Variables ---------------------------------------
 

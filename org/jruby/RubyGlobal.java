@@ -548,10 +548,20 @@ public class RubyGlobal {
         try {
             String lShellProp = System.getProperty("jruby.shell");
             Process aProcess;
+			String lCommand = aString.toString();
+			String lSwitch = "-c";
             if (lShellProp != null)
-                aProcess = Runtime.getRuntime().exec(new String[] { System.getProperty("jruby.shell"), "-c", aString.toString()});
+			{
+				if (!lShellProp.endsWith("sh"))	//case windowslike
+					lSwitch = "/c";
+				System.out.println("command: " + lShellProp + " " + lSwitch +  " " + lCommand);
+				aProcess = Runtime.getRuntime().exec(new String[] { lShellProp, lSwitch, lCommand});
+			}
             else
-                aProcess = Runtime.getRuntime().exec(aString.toString());
+			{
+				System.out.println("command: " + lCommand);
+                aProcess = Runtime.getRuntime().exec(lCommand);
+			}
 
             final StringBuffer sb = new StringBuffer();
             final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));

@@ -12,6 +12,7 @@ RUBY_VERSION.scan(/(\d+)\.(\d+)\.(\d+)/) {
 Java::import "java.lang"
 Java::name "java.io.File", "JavaFile"
 $bindir = JavaFile.new(System.getProperty("jruby.home")).getCanonicalPath();
+$bindir.gsub!(/\\/, '/')
 $ruby_install_name = System.getProperty("jruby.script");
 $osname = System.getProperty("os.name");
 config = open("#{System.getProperty('jruby.home')}/lib/ruby/#$version_major.#$version_minor/java/rbconfig.rb", "w")

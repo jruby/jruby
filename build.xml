@@ -70,6 +70,7 @@
         </copy>
 		<copy todir="${build.dir}" >
 			<fileset dir="${src.dir}" includes="lib/**/*"/>
+			<fileset dir="${src.dir}" includes="*.bat"/>
 		</copy>
         <mkdir dir="${build.dir}/lib/ruby/1.6/java"/>
         <!-- Create jar in build dir -->
