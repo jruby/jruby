@@ -78,6 +78,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int FIELDS = 20;
     private static final int FIELD = 21;
     private static final int INTERFACES = 22;
+    private static final int PRIMITIVE_P = 23;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -103,6 +104,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("fields", IndexedCallback.create(FIELDS, 0));
         javaClassClass.defineMethod("field", IndexedCallback.create(FIELD, 1));
         javaClassClass.defineMethod("interfaces", IndexedCallback.create(INTERFACES, 0));
+        javaClassClass.defineMethod("primitive?", IndexedCallback.create(PRIMITIVE_P, 0));
 
         javaClassClass.getMetaClass().undefMethod("new");
 
@@ -260,6 +262,10 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return result;
     }
 
+    public RubyBoolean primitive_p() {
+        return RubyBoolean.newBoolean(getRuntime(), javaClass.isPrimitive());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -296,6 +302,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return field(args[0]);
             case INTERFACES :
                 return interfaces();
+            case PRIMITIVE_P :
+                return primitive_p();
             default :
                 return super.callIndexed(index, args);
         }

@@ -27,6 +27,7 @@ if defined? Java
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
   test_ok(string_class.public?)
   test_ok(string_class.final?)
+  test_ok(! string_class.primitive?)
   runnable_class = Java::JavaClass.for_name("java.lang.Runnable")
   test_ok(! runnable_class.final?)
   test_ok(runnable_class.interface?)
@@ -188,4 +189,9 @@ if defined? Java
   $callback_invoked = false
   action_performed.invoke(action_listener_instance, Java.primitive_to_java(nil))
   test_ok($callback_invoked)
+
+  # Primitive Java types
+  test_ok(Java::JavaClass.for_name("int").primitive?)
+  test_ok(Java::JavaClass.for_name("boolean").primitive?)
+  test_ok(Java::JavaClass.for_name("char").primitive?)
 end
