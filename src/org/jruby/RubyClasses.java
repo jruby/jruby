@@ -45,6 +45,7 @@ import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.builtin.meta.ProcMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
@@ -627,7 +628,7 @@ public class RubyClasses {
      */
     public RubyClass getFileClass() {
         if (fileClass == null) {
-            fileClass = RubyFile.createFileClass(runtime);
+            fileClass = new FileMetaClass(runtime);
         }
         return fileClass;
     }

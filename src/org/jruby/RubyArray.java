@@ -837,7 +837,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_join
      *
      */
-    RubyString join(RubyString sep) {
+    public RubyString join(RubyString sep) {
         int length = getLength();
         if (length == 0) {
             getRuntime().newString("");

@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Iterator;
 
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NoMethodError;
@@ -52,6 +53,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.FileMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.util.PrintfFormat;
@@ -218,7 +220,7 @@ public class RubyKernel {
         	}
         } 
 
-        return RubyFile.open(recv.getRuntime().getClass("File"), args);
+        return ((FileMetaClass) recv.getRuntime().getClasses().getFileClass()).open(args);
     }
 
     public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
@@ -262,16 +264,20 @@ public class RubyKernel {
 
     public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
+        // TODO: $> requires 'write' to be defined, but we implement via 'print' method. Resolve.
+        RubyIO io = (RubyIO) defout.convertToType("IO", "to_io", true); 
 
-        RubyIO.puts(defout, args);
+        io.puts(args);
 
         return recv.getRuntime().getNil();
     }
 
     public static IRubyObject print(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
+        // TODO: $> requires 'write' to be defined, but we implement via 'print' method. Resolve.
+        RubyIO io = (RubyIO) defout.convertToType("IO", "to_io", true); 
 
-        RubyIO.print(defout, args);
+        io.print(args);
 
         return recv.getRuntime().getNil();
     }
@@ -281,14 +287,11 @@ public class RubyKernel {
             IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
             if (!(args[0] instanceof RubyString)) {
-                defout = args[0];
-
-                IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                System.arraycopy(args, 1, newArgs, 0, args.length - 1);
-                args = newArgs;
+            	defout = args[0];
+            	args = ArgsUtil.popArray(args);
             }
 
-            RubyIO.printf(defout, args);
+            defout.callMethod("write", RubyKernel.sprintf(recv, args));
         }
 
         return recv.getRuntime().getNil();

@@ -915,6 +915,10 @@ public final class Ruby {
     	return RubyBoolean.newBoolean(this, value);
     }
     
+    public RubyFileStat newRubyFileStat(File file) {
+    	return new RubyFileStat(this, file);
+    }
+    
     public RubyFixnum newFixnum(long value) {
     	return RubyFixnum.newFixnum(this, value);
     }

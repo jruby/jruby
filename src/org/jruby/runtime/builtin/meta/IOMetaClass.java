@@ -13,6 +13,7 @@
  *
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -33,10 +34,7 @@ import java.io.IOException;
 import org.jruby.BuiltinClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyFile;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
@@ -44,18 +42,25 @@ import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.ThreadError;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
 
 public class IOMetaClass extends BuiltinClass {
 
     public IOMetaClass(Ruby runtime) {
-        super("IO", RubyIO.class, runtime.getClasses().getObjectClass());
+        this("IO", RubyIO.class, runtime.getClasses().getObjectClass());
     }
 
     public IOMetaClass(String name, RubyClass superClass, RubyModule parentModule) {
-        super(name, RubyIO.class, superClass, parentModule);
+        this(name, RubyIO.class, superClass, parentModule);
+    }
+    
+    public IOMetaClass(String name, Class clazz, RubyClass superClass) {
+    	super(name, clazz, superClass);
+    }
+
+    public IOMetaClass(String name, Class clazz, RubyClass superClass, RubyModule parentModule) {
+    	super(name, clazz, superClass, parentModule);
     }
 
     protected void initializeClass() {
@@ -66,50 +71,50 @@ public class IOMetaClass extends BuiltinClass {
         // we could invoke jruby differently to allow stdin to return true
         // on this.  This would allow things like cgi.rb to work properly.
 
-        defineSingletonMethod("foreach", Arity.optional(), "foreach");
-        defineSingletonMethod("readlines", Arity.optional(), "readlines");
-        defineSingletonMethod("popen", Arity.optional(), "popen");
+        defineSingletonMethod("foreach", Arity.optional());
+        defineSingletonMethod("readlines", Arity.optional());
+        defineSingletonMethod("popen", Arity.optional());
 
-        CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyIO.class);
-        defineMethod("<<", callbackFactory.getMethod("addString", IRubyObject.class));
-        defineMethod("clone", callbackFactory.getMethod("clone_IO"));
-        defineMethod("close", callbackFactory.getMethod("close"));
-        defineMethod("closed?", callbackFactory.getMethod("closed"));
-        defineMethod("each", callbackFactory.getOptMethod("each_line"));
-        defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
-        defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
-        defineMethod("eof", callbackFactory.getMethod("eof"));
-        defineMethod("eof?", callbackFactory.getMethod("eof"));
-        defineMethod("fileno", callbackFactory.getMethod("fileno"));
-        defineMethod("flush", callbackFactory.getMethod("flush"));
-        defineMethod("fsync", callbackFactory.getMethod("fsync"));
-        defineMethod("getc", callbackFactory.getMethod("getc"));
-        defineMethod("gets", callbackFactory.getOptMethod("gets"));
-        defineMethod("initialize", Arity.optional(), "initialize");
-        defineMethod("lineno", callbackFactory.getMethod("lineno"));
-        defineMethod("lineno=", callbackFactory.getMethod("lineno_set", RubyFixnum.class));
-        defineMethod("pid", callbackFactory.getMethod("pid"));
-        defineMethod("pos", callbackFactory.getMethod("pos"));
-        defineMethod("pos=", callbackFactory.getMethod("pos_set", RubyFixnum.class));
-        defineMethod("print", callbackFactory.getOptSingletonMethod("print"));
-        defineMethod("printf", callbackFactory.getOptSingletonMethod("printf"));
-        defineMethod("putc", callbackFactory.getMethod("putc", IRubyObject.class));
-        defineMethod("puts", callbackFactory.getOptSingletonMethod("puts"));
-        defineMethod("read", callbackFactory.getOptMethod("read"));
-        defineMethod("readchar", callbackFactory.getMethod("readchar"));
-        defineMethod("readline", callbackFactory.getOptMethod("readline"));
-        defineMethod("readlines", callbackFactory.getOptMethod("readlines"));
-        defineMethod("reopen", callbackFactory.getOptMethod("reopen", IRubyObject.class));
-        defineMethod("rewind", callbackFactory.getMethod("rewind"));        
-        defineMethod("seek", callbackFactory.getOptMethod("seek"));
-        defineMethod("sync", callbackFactory.getMethod("sync"));
-        defineMethod("sync=", callbackFactory.getMethod("sync_set", RubyBoolean.class));
-        defineMethod("sysread", callbackFactory.getMethod("sysread", RubyFixnum.class));
-        defineMethod("syswrite", callbackFactory.getMethod("syswrite", IRubyObject.class));
-        defineMethod("tell", callbackFactory.getMethod("pos"));
-        defineMethod("to_i", callbackFactory.getMethod("fileno"));
-        defineMethod("ungetc", callbackFactory.getMethod("ungetc", RubyFixnum.class));
-        defineMethod("write", callbackFactory.getMethod("write", IRubyObject.class));
+        defineMethod("<<", Arity.singleArgument(), "addString");
+        defineMethod("clone", Arity.noArguments(), "clone_IO");
+        defineMethod("close", Arity.noArguments());
+        defineMethod("closed?", Arity.noArguments(), "closed");
+        defineMethod("each", Arity.optional(), "each_line");
+        defineMethod("each_byte", Arity.noArguments());
+        defineMethod("each_line", Arity.optional());
+        defineMethod("eof", Arity.noArguments());
+        defineAlias("eof?", "eof");
+        defineMethod("fileno", Arity.noArguments());
+        defineMethod("flush", Arity.noArguments());
+        defineMethod("fsync", Arity.noArguments());
+        defineMethod("getc", Arity.noArguments());
+        defineMethod("gets", Arity.optional());
+        defineMethod("initialize", Arity.optional());
+        defineMethod("lineno", Arity.noArguments());
+        defineMethod("lineno=", Arity.singleArgument(), "lineno_set");
+        defineMethod("pid", Arity.noArguments());
+        defineMethod("pos", Arity.noArguments());
+        defineMethod("pos=", Arity.singleArgument(), "pos_set");
+        defineMethod("print", Arity.optional());
+        defineMethod("printf", Arity.optional());
+        defineMethod("putc", Arity.singleArgument());
+        defineMethod("puts", Arity.optional());
+        defineMethod("read", Arity.optional());
+        defineMethod("readchar", Arity.noArguments());
+        defineMethod("readline", Arity.optional());
+        defineMethod("readlines", Arity.optional());
+        defineMethod("reopen", Arity.optional());
+        defineMethod("rewind", Arity.noArguments());        
+        defineMethod("seek", Arity.optional());
+        defineMethod("sync", Arity.noArguments());
+        defineMethod("sync=", Arity.singleArgument(), "sync_set");
+        defineMethod("sysread", Arity.singleArgument());
+        defineMethod("syswrite", Arity.singleArgument());
+        defineAlias("tell", "pos");
+        defineAlias("to_i", "fileno");
+        defineMethod("to_io", Arity.noArguments());
+        defineMethod("ungetc", Arity.singleArgument());
+        defineMethod("write", Arity.singleArgument());
         
         // Constants for seek
         setConstant("SEEK_SET", getRuntime().newFixnum(IOHandler.SEEK_SET));
@@ -132,7 +137,7 @@ public class IOMetaClass extends BuiltinClass {
         int count = checkArgumentCount(args, 1, -1);
         IRubyObject filename = args[0].convertToString();
         filename.checkSafeString();
-        RubyIO io = (RubyIO) RubyFile.open(getRuntime().getClasses().getFileClass(), new IRubyObject[] { filename }, false);
+        RubyIO io = (RubyIO) ((FileMetaClass) getRuntime().getClasses().getFileClass()).open(new IRubyObject[] { filename }, false);
 
         if (!io.isNil() && io.isOpen()) {
         	try {
