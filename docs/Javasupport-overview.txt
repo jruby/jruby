@@ -23,7 +23,7 @@ Java support was split into two halves, "low-level" and
 "high-level". The low-level is implemented in Java and provides a thin
 wrapper over Java's reflection classes (java.lang.reflection.* and
 java.lang.Class). The high-level is built on top of this, implemented
-entirely in Ruby(*).
+entirely in Ruby.
 
 Low-level:
 
@@ -67,17 +67,28 @@ class or module:
 
     end
 
-The 'int' returned from the Java method nextInt() is automatically
-converted into a Fixnum. These conversions are automatically done for
-numbers, booleans and strings, both to and from Java. However, it does
-*not* convert collection and array types like the old Java support
+As of ruby 0.8, it is possible to rewrite the following exmaple as follows:
+
+    require 'java'
+
+    include_class 'java.util.Random'
+
+    r = Random.new
+
+    puts r.nextInt
+
+
+In both examples the 'int' returned from the Java method nextInt() is 
+automatically converted into a Fixnum. These conversions are automatically 
+done for numbers, booleans and strings, both to and from Java. However, it 
+does *not* convert collection and array types like the old Java support
 did.
+
+Unlike the first example, the second example is importing Random directly
+into the top-level (whereas, the first requires you import a whole package
+into a non-top-level module)..
 
 
 Copyright (c) Anders Bengtsson 2002
+Copyright (c) Thomas E Enebo 2005
 
----------------------
-
-*) We have used one method, Module.const_missing, that isn't (yet) in
- the standard Ruby version. Also the utility method
- Enumerable#group_by, implemented in pure Ruby.

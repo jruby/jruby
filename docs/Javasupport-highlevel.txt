@@ -43,6 +43,28 @@ Module:
 
             MyModule::JavaInteger.new(123) # -> a java.lang.Integer
 
+Object:
+
+    instance methods:
+
+    include_class ( aString | anArray ) {|package,className| ... }
+
+        Includes a single (or multiple in array case) class into the
+        current namespace as a constant of the same name.  Optionally,
+        a block can be supplied which allows you to choose another name.
+
+        Example:
+
+           include_class "java.util.Random"
+           include_class "java.lang.String" { |p,name| "J" + name }
+
+           s = JString.new("My random number is #{Random.nextInt}")
+
+        Example2:
+   
+           include_class ["Vector", "Hashtable"].map {|e| "javax.util." + e}
+
+	   h = Hashtable.new
 
 The Java classes made available through include_package have the
 following properties:
