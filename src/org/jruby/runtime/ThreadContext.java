@@ -45,6 +45,8 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
 
+import java.util.List;
+
 /**
  * @author jpetersen
  * @version $Revision$
@@ -93,6 +95,11 @@ public class ThreadContext {
     public void popDynamicVars() {
         dynamicVarsStack.pop();
     }
+
+    public List getDynamicNames() {
+        return getCurrentDynamicVars().names();
+    }
+
     /**
      * Returns the currentThread.
      * @return RubyThread

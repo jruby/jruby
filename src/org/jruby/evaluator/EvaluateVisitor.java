@@ -742,7 +742,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {
-            INode node = runtime.getParser().parse("#{}", iVisited.getValue(), runtime.getDynamicNames());
+            INode node = runtime.getParser().parse("#{}", iVisited.getValue(), threadContext.getDynamicNames());
             iVisited.setEvaluatedNode(node);
         }
         eval(iVisited.getEvaluatedNode());

@@ -59,7 +59,7 @@ public class LoadService implements ILoadService {
 
     private Map autoloadMap = new HashMap();
 
-    private Ruby runtime;
+    private final Ruby runtime;
     /**
      * Constructor for LoadService.
      */
@@ -73,26 +73,26 @@ public class LoadService implements ILoadService {
      */
     public void init(Ruby runtime, List additionalDirectories) {
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
-            addPath(runtime, (String)iter.next());
+            addPath((String)iter.next());
         }
         if (runtime.getSafeLevel() == 0) {
-            addPath(runtime, System.getProperty("jruby.lib"));
+            addPath(System.getProperty("jruby.lib"));
         }
 
         String rubyDir = System.getProperty("jruby.home") + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
 
-        addPath(runtime, rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION);
-        addPath(runtime, rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
-        addPath(runtime, rubyDir + "site_ruby");
-        addPath(runtime, rubyDir + Constants.RUBY_MAJOR_VERSION);
-        addPath(runtime, rubyDir + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+        addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION);
+        addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+        addPath(rubyDir + "site_ruby");
+        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
 
         if (runtime.getSafeLevel() == 0) {
-            addPath(runtime, ".");
+            addPath(".");
         }
     }
 
-    private void addPath(Ruby runtime, String path) {
+    private void addPath(String path) {
         loadPath.add(RubyString.newString(runtime, path));
     }
 

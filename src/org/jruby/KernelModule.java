@@ -286,20 +286,21 @@ public class KernelModule {
      *
      */
     public static RubyArray local_variables(IRubyObject recv) {
-        RubyArray localVariables = RubyArray.newArray(recv.getRuntime());
+        final Ruby runtime = recv.getRuntime();
+        RubyArray localVariables = RubyArray.newArray(runtime);
 
-        if (recv.getRuntime().getScope().getLocalNames() != null) {
-            for (int i = 2; i < recv.getRuntime().getScope().getLocalNames().size(); i++) {
-                if (recv.getRuntime().getScope().getLocalNames().get(i) != null) {
-                    localVariables.append(RubyString.newString(recv.getRuntime(), (String) recv.getRuntime().getScope().getLocalNames().get(i)));
+        if (runtime.getScope().getLocalNames() != null) {
+            for (int i = 2; i < runtime.getScope().getLocalNames().size(); i++) {
+                if (runtime.getScope().getLocalNames().get(i) != null) {
+                    localVariables.append(RubyString.newString(runtime, (String) runtime.getScope().getLocalNames().get(i)));
                 }
             }
         }
 
-        Iterator dynamicNames = recv.getRuntime().getDynamicNames().iterator();
+        Iterator dynamicNames = runtime.getDynamicNames().iterator();
         while (dynamicNames.hasNext()) {
             String name = (String) dynamicNames.next();
-            localVariables.append(RubyString.newString(recv.getRuntime(), name));
+            localVariables.append(RubyString.newString(runtime, name));
         }
 
         return localVariables;
