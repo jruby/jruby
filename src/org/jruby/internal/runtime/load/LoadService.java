@@ -225,7 +225,7 @@ public class LoadService implements ILoadService {
                     }
                 } else {
                     File current = new File(entry, name);
-                    if (current.exists()) {
+                    if (current.exists() && current.isFile()) {
                         return current.toURL();
                     }
                 }
