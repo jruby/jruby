@@ -31,8 +31,6 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
-import org.jruby.util.Asserts;
-import org.jruby.util.IdUtil;
 import org.jruby.Ruby;
 import org.jruby.ThreadClass;
 import org.jruby.RubyModule;
@@ -340,17 +338,17 @@ public class ThreadContext {
     }
 
     public IRubyObject getConstant(IRubyObject self, String name) {
-        Asserts.isTrue(IdUtil.isConstant(name));
+        Namespace initial = getCurrentFrame().getNamespace();
 
         // First search the current class hierarchy (the class-stack/namespace stack) ..?
-        Namespace initial = getCurrentFrame().getNamespace();
         for (Namespace ns = initial; ns != null && ns.getParent() != null; ns = ns.getParent()) {
             if (ns.getModule().hasInstanceVariable(name)) {
                 return ns.getModule().getInstanceVariable(name);
             }
         }
+
         // Then search the inheritance hierarchy ..?
-        return initial.getModule().getConstant(name);
+        return getRubyClass().getConstant(name);
     }
 
     public RubyArray moduleNesting() {

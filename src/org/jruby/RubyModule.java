@@ -1293,18 +1293,6 @@ public class RubyModule extends RubyObject {
         return getRuntime().getNil();
     }
 
-    /** rb_module_s_new
-     *
-     */
-    public static RubyModule newModule(IRubyObject recv) {
-        RubyModule mod = RubyModule.newModule(recv.getRuntime());
-
-        mod.setMetaClass((RubyClass) recv);
-        recv.getRuntime().getClasses().getModuleClass().callInit(null);
-
-        return mod;
-    }
-
     /** Return an array of nested modules or classes.
      *
      * rb_mod_nesting

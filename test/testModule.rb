@@ -49,3 +49,15 @@ module A
 end
 test_equal([], Module.nesting)
 test_equal([A::B::C, A::B, A], $nest)
+
+
+module TestModule_A
+  A_CONSTANT = 123
+  class TestModule_B
+    attr_reader :a
+    def initialize
+      @a = A_CONSTANT
+    end
+  end
+end
+test_equal(123, TestModule_A::TestModule_B.new.a)
