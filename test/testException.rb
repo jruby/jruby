@@ -25,3 +25,10 @@ rescue Exception => boom
   }
   test_equal([10,13,13] , result.slice(0..2))
 end
+
+test_no_exception {
+	begin
+		raise "X"
+	rescue NoMethodError,RuntimeError =>e
+	end
+}

@@ -1603,8 +1603,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (! args[i].isKindOf(runtime.getClasses().getModuleClass())) {
                 throw new TypeError(runtime, "class or module required for rescue clause");
             }
-            RubyBoolean handled = (RubyBoolean) (args[i].callMethod("===", currentException));
-            return handled.isTrue();
+            if (args[i].callMethod("===", currentException).isTrue())
+                return true;
         }
         return false;
     }
