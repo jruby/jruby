@@ -479,6 +479,7 @@ public class RubyHash extends RubyObject {
 	}
 
     public RubyHash update(RubyObject freshElements) {
+        modify();
         RubyHash freshElementsHash =
             (RubyHash) freshElements.convertType(RubyHash.class, "Hash", "to_hash");
         valueMap.putAll(freshElementsHash.valueMap);
@@ -486,6 +487,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyHash replace(RubyObject replacement) {
+        modify();
         RubyHash replacementHash =
             (RubyHash) replacement.convertType(RubyHash.class, "Hash", "to_hash");
         valueMap.clear();
