@@ -389,10 +389,10 @@ public class KernelModule {
 
         if (dup.chomp_bang(args).isNil()) {
             return str;
-        } else {
-            recv.getRuntime().setLastline(dup);
-            return str;
-        }
+        } 
+
+        recv.getRuntime().setLastline(dup);
+        return dup;
     }
 
     public static IRubyObject split(IRubyObject recv, IRubyObject[] args) {
