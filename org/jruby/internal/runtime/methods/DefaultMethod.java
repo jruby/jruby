@@ -75,8 +75,8 @@ public final class DefaultMethod extends AbstractMethod {
 
                 if (ruby.getScope().hasLocalValues()) {
                     if (expectedArgsCount > 0) {
-                        for (int j = 0; j < expectedArgsCount; j++) {
-                            ruby.getScope().setValue(j + 2, args[j]);
+                        for (int i = 0; i < expectedArgsCount; i++) {
+                            ruby.getScope().setValue(i + 2, args[i]);
                         }
                     }
 
@@ -96,15 +96,9 @@ public final class DefaultMethod extends AbstractMethod {
                     }
 
                     if (argsNode.getRestArg() >= 0) {
-                        RubyArray array = null;
-                        if (args.length > expectedArgsCount) {
-                            ArrayList list = new ArrayList(args.length - expectedArgsCount);
-                            for (int j = expectedArgsCount; j < args.length; j++) {
-                                list.add(args[j]);
-                            }
-                            array = RubyArray.newArray(ruby, list);
-                        } else {
-                            array = RubyArray.newArray(ruby, 0);
+                        RubyArray array = RubyArray.newArray(ruby, args.length - expectedArgsCount);
+                        for (int i = expectedArgsCount; i < args.length; i++) {
+                            array.append(args[i]);
                         }
                         ruby.getScope().setValue(argsNode.getRestArg(), array);
                     }
@@ -116,34 +110,7 @@ public final class DefaultMethod extends AbstractMethod {
                 ruby.getScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
 
-            if (ruby.getRuntime().getTraceFunction() != null) {
-                //a lot of complication to try to get a line number and a file name
-                //without a NullPointerException
-                ISourcePosition lPos = null;
-                if (body != null)
-                    if (body.getBodyNode() != null)
-                        if(body.getBodyNode().getPosition() != null)
-                            lPos = body.getBodyNode().getPosition();
-                        else
-                            ;
-                    else
-                        if (body.getPosition() != null)
-                            lPos = body.getPosition();
-                        else
-                            ;
-                else
-                    if (argsNode != null)
-                        lPos = argsNode.getPosition();
-
-                String lFile = ruby.getSourceFile();
-                int lLine = ruby.getSourceLine();
-                if (lPos != null)
-                {
-                    lFile = lPos.getFile();
-                    lLine = lPos.getLine();
-                }
-                ruby.getRuntime().callTraceFunction("call", lFile, lLine, receiver, name, getImplementationClass()); // XXX
-            }
+            traceCall(ruby, receiver, name);
 
             return receiver.eval(body.getBodyNode()); // skip scope assignment
         } catch (ReturnException rExcptn) {
@@ -157,18 +124,56 @@ public final class DefaultMethod extends AbstractMethod {
                 ruby.setNamespace(savedNamespace);
             }
 
-            if (ruby.getRuntime().getTraceFunction() != null) {
-                String file = ruby.getFrameStack().getPrevious().getFile();
-                int line = ruby.getFrameStack().getPrevious().getLine();
-
-                if (file == null) {
-                    file = ruby.getSourceFile();
-                    line = ruby.getSourceLine();
-                }
-
-                ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, getImplementationClass()); // XXX
-            }
+            traceReturn(ruby, receiver, name);
         }
+    }
+
+    private void traceReturn(final Ruby ruby, final RubyObject receiver, final String name) {
+        if (ruby.getRuntime().getTraceFunction() == null) {
+            return;
+        }
+
+        String file = ruby.getFrameStack().getPrevious().getFile();
+        int line = ruby.getFrameStack().getPrevious().getLine();
+
+        if (file == null) {
+            file = ruby.getSourceFile();
+            line = ruby.getSourceLine();
+        }
+
+        ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, getImplementationClass()); // XXX
+    }
+
+    private void traceCall(final Ruby ruby, final RubyObject receiver, final String name) {
+        if (ruby.getRuntime().getTraceFunction() == null) {
+            return;
+        }
+        //a lot of complication to try to get a line number and a file name
+        //without a NullPointerException
+        ISourcePosition lPos = null;
+        if (body != null)
+            if (body.getBodyNode() != null)
+                if(body.getBodyNode().getPosition() != null)
+                    lPos = body.getBodyNode().getPosition();
+                else
+                    ;
+            else
+                if (body.getPosition() != null)
+                    lPos = body.getPosition();
+                else
+                    ;
+        else
+            if (argsNode != null)
+                lPos = argsNode.getPosition();
+
+        String lFile = ruby.getSourceFile();
+        int lLine = ruby.getSourceLine();
+        if (lPos != null)
+        {
+            lFile = lPos.getFile();
+            lLine = lPos.getLine();
+        }
+        ruby.getRuntime().callTraceFunction("call", lFile, lLine, receiver, name, getImplementationClass()); // XXX
     }
 
     /**
