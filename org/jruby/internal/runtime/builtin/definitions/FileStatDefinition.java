@@ -31,7 +31,8 @@ import org.jruby.RubyClass;
 import org.jruby.util.Asserts;
 
 public class FileStatDefinition extends ClassDefinition {
-    private static final int FILE_STAT = 0x1200; // todo: what constant should i use?
+    private static final int FILE_STAT = 0x1600;
+
     public static final int DIRECTORY_P = FILE_STAT | 0x01;
 
     public FileStatDefinition(Ruby runtime) {
