@@ -377,7 +377,7 @@ public class RubyKernel {
             if (args[0] instanceof RubyException) {
                 throw new RaiseException((RubyException) args[0]);
             } else {
-                throw new RaiseException(RubyException.newInstance(recv.getRuntime(), recv.getRuntime().getExceptions().getRuntimeError(), args));
+                throw new RaiseException(RubyException.newInstance(recv.getRuntime().getExceptions().getRuntimeError(), args));
             }
         case 2 :
             RubyException excptn = (RubyException) args[0].callMethod("exception", args[1]);

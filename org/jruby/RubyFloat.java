@@ -46,7 +46,9 @@ public class RubyFloat extends RubyNumeric {
     static {
         usFormat = NumberFormat.getInstance(Locale.US);
         usFormat.setMinimumFractionDigits(1);
-    }    private double value;
+    }
+
+    private double value;
 
     public RubyFloat(Ruby ruby) {
         this(ruby, 0.0);
@@ -280,10 +282,4 @@ public class RubyFloat extends RubyNumeric {
 		}
 		output.dumpString(strValue);
 	}
-    static {
-        usFormat = NumberFormat.getInstance(Locale.US);
-        usFormat.setMinimumFractionDigits(1);
-    }    static {
-        usFormat = NumberFormat.getInstance(Locale.US);
-        usFormat.setMinimumFractionDigits(1);
-    }}
+}

@@ -295,7 +295,7 @@ public class RubyThread extends RubyObject {
         while (iter.hasNext()) {
             list.add(iter.next());
         }
-        return new RubyArray(recv.getRuntime(), list);
+        return RubyArray.newArray(recv.getRuntime(), list);
     }
 
     /**
