@@ -39,33 +39,34 @@ import org.jruby.exceptions.*;
  */
 public class RbFixnum {
     public static RubyClass createFixnum(Ruby ruby) {
-        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
-        
+        RubyClass fixnumClass =
+            ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
+
         fixnumClass.defineMethod("to_i", getMethod("m_to_i"));
         fixnumClass.defineMethod("to_s", getMethod("m_to_s"));
         fixnumClass.defineMethod("to_str", getMethod("m_to_s"));
-        
+
         fixnumClass.defineMethod("+", getMethod("op_plus", RubyNumeric.class));
         fixnumClass.defineMethod("-", getMethod("op_minus", RubyNumeric.class));
         fixnumClass.defineMethod("*", getMethod("op_mul", RubyNumeric.class));
         fixnumClass.defineMethod("/", getMethod("op_div", RubyNumeric.class));
         fixnumClass.defineMethod("%", getMethod("op_mod", RubyNumeric.class));
         fixnumClass.defineMethod("**", getMethod("op_pow", RubyNumeric.class));
-        
-        fixnumClass.defineMethod("==", getMethod("op_equal", RubyNumeric.class));
+
+        fixnumClass.defineMethod("==", getMethod("op_equal", RubyObject.class));
         fixnumClass.defineMethod("<=>", getMethod("op_cmp", RubyNumeric.class));
         fixnumClass.defineMethod(">", getMethod("op_gt", RubyNumeric.class));
         fixnumClass.defineMethod(">=", getMethod("op_ge", RubyNumeric.class));
         fixnumClass.defineMethod("<", getMethod("op_lt", RubyNumeric.class));
         fixnumClass.defineMethod("<=", getMethod("op_le", RubyNumeric.class));
-        
+
         return fixnumClass;
     }
-    
+
     private static RubyCallbackMethod getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyFixnum.class, methodName);
     }
-    
+
     private static RubyCallbackMethod getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyFixnum.class, methodName, arg1);
     }
