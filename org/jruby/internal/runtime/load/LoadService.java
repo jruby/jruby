@@ -42,15 +42,12 @@ public class LoadService implements ILoadService {
     private Map autoloadMap = new HashMap();
 
     private Ruby runtime;
-    private File builtinDir;
-
     /**
      * Constructor for LoadService.
      */
     public LoadService(Ruby runtime) {
         super();
         this.runtime = runtime;
-        this.builtinDir = new File(System.getProperty("jruby.home"), "lib");
     }
 
     /**
@@ -201,9 +198,6 @@ public class LoadService implements ILoadService {
         try {
             if (name.startsWith("jar:")) {
                 return new URL(name);
-            }
-            if (name.endsWith(".jar") && new File(builtinDir, name).exists()) {
-                return new File(builtinDir, name).toURL();
             }
             for (int i = 0, size = loadPath.size(); i < size; i++) {
                 String entry = loadPath.get(i).toString();

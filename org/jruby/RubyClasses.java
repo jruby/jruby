@@ -29,15 +29,20 @@
  */
 package org.jruby;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Iterator;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
-import org.jruby.javasupport.JavaClassClass;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -237,8 +242,19 @@ public class RubyClasses {
         threadClass = ThreadClass.createThreadClass(runtime);
     }
 
+    private void loadBuiltin(String name) {
+        InputStream in = getClass().getResourceAsStream("/builtin/" + name + ".rb");
+        Reader reader = new BufferedReader(new InputStreamReader(in));
+        runtime.loadScript("init-builtin", reader, false);
+        try {
+            reader.close();
+        } catch (IOException e) {
+            Asserts.notReached("IOException: " + e.getMessage());
+        }
+    }
+
     public void initBuiltinClasses() {
-        runtime.getLoadService().require("Enumerable.jar");
+        loadBuiltin("Enumerable");
     }
 
     /**
