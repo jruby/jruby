@@ -570,9 +570,10 @@ public class RubyYaccLexer implements IYaccLexer {
         }
 
         if ((func & STR_FUNC_EXPAND) == 0) {
+            /*
             if (c == '\n') {
                 support.unread();
-            }
+            }*/
             
             // Something missing here...
             /*
@@ -611,8 +612,7 @@ public class RubyYaccLexer implements IYaccLexer {
                 tokadd('#');
             }
 
-            if (c != '\n')
-                support.unread();
+            support.unread();
             
             do {
                 if ((c = tokadd_string(new StrTermNode(support.getPosition(), func, '\n', 0))) == EOF) {
@@ -636,6 +636,7 @@ public class RubyYaccLexer implements IYaccLexer {
                 // lose a char during last EOF
                 support.unread();
             } while (!whole_match_p(eos, indent));
+            support.read(); // EAT EOL
             str = new StringBuffer(tok());
         }
         heredoc_restore();
@@ -753,9 +754,6 @@ public class RubyYaccLexer implements IYaccLexer {
             support.unread();
         }
 
-        // TODO: Adding a newline onto line make assertions in unit/test pass,
-        // but then our <<A,<<B test case fails.  For now, make our internal test
-        // pass..
         String line = support.readLine() + "\n";
         String tok = tok();
         lex_strterm = new HereDocNode(support.getPosition(), tok, func, line);
@@ -884,7 +882,7 @@ public class RubyYaccLexer implements IYaccLexer {
         	default: System.err.print("'" + (char)token + "',"); break;
         }
     }
-    
+
     /*
      * DEBUGGING HELP
     private int yylex() {
