@@ -258,6 +258,7 @@ public class RubyThread extends RubyObject
         return val;
     }
 
+
     /**
      * Description of the Method
      *
