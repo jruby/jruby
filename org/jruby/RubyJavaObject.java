@@ -76,7 +76,7 @@ public class RubyJavaObject extends RubyObject {
         javaObjectClass.defineMethod("==", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
 		javaObjectClass.defineMethod("hash", CallbackFactory.getMethod(RubyJavaObject.class, "hash"));
 
-        javaObjectClass.getRubyClass().undefMethod("new");
+        javaObjectClass.getInternalClass().undefMethod("new");
 
         return javaObjectClass;
     }

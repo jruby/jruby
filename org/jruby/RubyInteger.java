@@ -77,9 +77,9 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyInteger induced_from(Ruby ruby, RubyObject recv, RubyObject number) {
         if (number instanceof RubyNumeric) {
-            return (RubyInteger) number.funcall("to_i");
+            return (RubyInteger) number.callMethod("to_i");
         } else {
-            throw new TypeError(ruby, "failed to convert " + number.getRubyClass() + " into Integer");
+            throw new TypeError(ruby, "failed to convert " + number.getInternalClass() + " into Integer");
         }
     }
 
@@ -93,11 +93,11 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyObject downto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (((RubyBoolean) i.funcall("<", to)).isTrue()) {
+            if (((RubyBoolean) i.callMethod("<", to)).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall("-", RubyFixnum.one(getRuby()));
+            i = (RubyNumeric) i.callMethod("-", RubyFixnum.one(getRuby()));
         }
         return this;
     }
@@ -113,16 +113,16 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         String cmp = "<";
-        if (((RubyBoolean) step.funcall("<", RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
+        if (((RubyBoolean) step.callMethod("<", RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
             cmp = ">";
         }
 
         while (true) {
-            if (((RubyBoolean) i.funcall(cmp, to)).isTrue()) {
+            if (((RubyBoolean) i.callMethod(cmp, to)).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall("+", step);
+            i = (RubyNumeric) i.callMethod("+", step);
         }
         return this;
     }
@@ -130,27 +130,27 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyObject times() {
         RubyNumeric i = RubyFixnum.zero(getRuby());
         while (true) {
-            if (i.funcall("<", this).isFalse()) {
+            if (i.callMethod("<", this).isFalse()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall("+", RubyFixnum.one(getRuby()));
+            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuby()));
         }
         return this;
     }
 
     public RubyObject succ() {
-        return funcall("+", RubyFixnum.one(getRuby()));
+        return callMethod("+", RubyFixnum.one(getRuby()));
     }
 
     public RubyObject upto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (i.funcall(">", to).isTrue()) {
+            if (i.callMethod(">", to).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric) i.funcall("+", RubyFixnum.one(getRuby()));
+            i = (RubyNumeric) i.callMethod("+", RubyFixnum.one(getRuby()));
         }
         return this;
     }

@@ -83,11 +83,11 @@ public class AssignmentVisitor extends AbstractVisitor {
         RubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.getRubyClass().call(receiver, iVisited.getName(), new RubyObject[] {value}, 0);
+            receiver.getInternalClass().call(receiver, iVisited.getName(), new RubyObject[] {value}, 0);
         } else { // element set
             RubyArray args = (RubyArray) evaluator.eval(iVisited.getArgsNode());
             args.append(value);
-            receiver.getRubyClass().call(receiver, iVisited.getName(), args.toJavaArray(), 0);
+            receiver.getInternalClass().call(receiver, iVisited.getName(), args.toJavaArray(), 0);
         }
     }
 
@@ -140,7 +140,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitInstAsgnNode(InstAsgnNode)
      */
     public void visitInstAsgnNode(InstAsgnNode iVisited) {
-        self.setInstanceVar(iVisited.getName(), value);
+        self.setInstanceVariable(iVisited.getName(), value);
     }
 
     /**

@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface INumber extends IObject {
+public interface INumber extends IRubyObject {
 
 }

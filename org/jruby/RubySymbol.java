@@ -78,7 +78,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     public static RubyClass createSymbolClass(Ruby ruby) {
         RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
         
-        symbolClass.getRubyClass().undefMethod("new");
+        symbolClass.getInternalClass().undefMethod("new");
 
         symbolClass.defineMethod("to_i", IndexedCallback.create(M_TO_I, 0));
         symbolClass.defineMethod("to_int", IndexedCallback.create(M_TO_I, 0));

@@ -170,6 +170,6 @@ public class UnmarshalStream extends FilterInputStream {
         String className = ((RubySymbol) unmarshalObject()).toId();
         String marshaled = unmarshalString();
         RubyModule classInstance = ruby.getRubyModule(className);
-        return classInstance.funcall("_load", RubyString.newString(ruby, marshaled));
+        return classInstance.callMethod("_load", RubyString.newString(ruby, marshaled));
     }
 }

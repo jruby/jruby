@@ -116,10 +116,10 @@ public class DefinedVisitor extends AbstractVisitor {
             try {
                 RubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
                 
-                int noex = receiver.getRubyClass().getMethodNoex(iVisited.getName());
+                int noex = receiver.getInternalClass().getMethodNoex(iVisited.getName());
 
-                if ((noex & Constants.NOEX_PRIVATE) == 0 && ((noex & Constants.NOEX_PROTECTED) == 0 || self.isKindOf(receiver.getRubyClass().getRealClass()))) {
-                    if (receiver.getRubyClass().isMethodBound(iVisited.getName(), 0)) {
+                if ((noex & Constants.NOEX_PRIVATE) == 0 && ((noex & Constants.NOEX_PROTECTED) == 0 || self.isKindOf(receiver.getInternalClass().getRealClass()))) {
+                    if (receiver.getInternalClass().isMethodBound(iVisited.getName(), 0)) {
                         definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
                         return;
                     }
@@ -134,7 +134,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
     public void visitFCallNode(FCallNode iVisited) {
-        if (self.getRubyClass().isMethodBound(iVisited.getName(), 0)) {
+        if (self.getInternalClass().isMethodBound(iVisited.getName(), 0)) {
             definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
         }
     }
@@ -143,7 +143,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
-        if (self.getRubyClass().isMethodBound(iVisited.getMethodName(), 0)) {
+        if (self.getInternalClass().isMethodBound(iVisited.getMethodName(), 0)) {
             definition = "method";
         }
     }
@@ -300,11 +300,11 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        if (ruby.getCBase() == null && self.getRubyClass().isClassVarDefined(iVisited.getName())) {
+        if (ruby.getCBase() == null && self.getInternalClass().isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
         } else if (!ruby.getCBase().isSingleton() && ruby.getCBase().isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
-        } else if (((RubyModule)ruby.getCBase().getInstanceVar("__attached__")).isClassVarDefined(iVisited.getName())) {
+        } else if (((RubyModule)ruby.getCBase().getInstanceVariable("__attached__")).isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
         }
     }
@@ -348,7 +348,7 @@ public class DefinedVisitor extends AbstractVisitor {
                 if (((RubyModule)left).isConstantDefinedAt(iVisited.getName())) {
                     definition = "constant";
                 }
-            } else if (left.getRubyClass().isMethodBound(iVisited.getName(), 1)) {
+            } else if (left.getInternalClass().isMethodBound(iVisited.getName(), 1)) {
                 definition = "method";
             }
         } catch (JumpException excptn) {

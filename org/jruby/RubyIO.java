@@ -179,7 +179,7 @@ public class RubyIO extends RubyObject {
      * 
      */
     public RubyObject callWrite(RubyObject anObject) {
-        return funcall("write", anObject);
+        return callMethod("write", anObject);
     }
 
     /** rb_io_mode_flags
@@ -315,7 +315,7 @@ public class RubyIO extends RubyObject {
             try {
                 io.funcall("each", args);
             } finally {
-                io.funcall("close");
+                io.callMethod("close");
             }
         }
         return ruby.getNil();
@@ -543,7 +543,7 @@ public class RubyIO extends RubyObject {
 
     public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
-            recv.funcall("write", RubyString.newString(ruby, "\n"));
+            recv.callMethod("write", RubyString.newString(ruby, "\n"));
             return ruby.getNil();
         }
 
@@ -557,9 +557,9 @@ public class RubyIO extends RubyObject {
             } else {
                 line = args[i].toString();
             }
-            recv.funcall("write", RubyString.newString(ruby, line));
+            recv.callMethod("write", RubyString.newString(ruby, line));
             if (!line.endsWith("\n")) {
-                recv.funcall("write", RubyString.newString(ruby, "\n"));
+                recv.callMethod("write", RubyString.newString(ruby, "\n"));
             }
         }
         return ruby.getNil();
@@ -578,23 +578,23 @@ public class RubyIO extends RubyObject {
 
         for (int i = 0; i < args.length; i++) {
             if (i > 0 && !fs.isNil()) {
-                recv.funcall("write", fs);
+                recv.callMethod("write", fs);
             }
             if (args[i].isNil()) {
-                recv.funcall("write", RubyString.newString(ruby, "nil"));
+                recv.callMethod("write", RubyString.newString(ruby, "nil"));
             } else {
-                recv.funcall("write", args[i]);
+                recv.callMethod("write", args[i]);
             }
         }
         if (!rs.isNil()) {
-            recv.funcall("write", rs);
+            recv.callMethod("write", rs);
         }
 
         return ruby.getNil();
     }
 
     public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        recv.funcall("write", RubyKernel.sprintf(ruby, recv, args));
+        recv.callMethod("write", RubyKernel.sprintf(ruby, recv, args));
 
         return ruby.getNil();
     }

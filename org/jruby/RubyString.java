@@ -325,7 +325,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		if (obj instanceof RubyString) {
 			return (RubyString) obj;
 		}
-		return (RubyString) obj.funcall("to_s");
+		return (RubyString) obj.callMethod("to_s");
 	}
 
 	/** rb_str_cmp
@@ -350,7 +350,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString newString(String s) {
-		RubyClass type = getRubyClass();
+		RubyClass type = getInternalClass();
 		while (type.isIncluded() || type.isSingleton()) {
 			type = type.getSuperClass();
 		}
@@ -492,7 +492,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		} else if (other instanceof RubyString) {
 			return RubyRegexp.newRegexp(getRuby(), (RubyString) other, 0).match(this);
 		}
-		return other.funcall("=~", this);
+		return other.callMethod("=~", this);
 	}
 
 	/** rb_str_match2

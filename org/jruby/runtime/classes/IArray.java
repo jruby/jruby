@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IArray extends IObject {
+public interface IArray extends IRubyObject {
 
 }

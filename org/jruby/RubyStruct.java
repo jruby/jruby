@@ -84,7 +84,7 @@ public class RubyStruct extends RubyObject {
 
         while (type != null && type != structClass) {
             if (type.isInstanceVarDefined(name)) {
-                return type.getInstanceVar(name);
+                return type.getInstanceVariable(name);
             }
 
             type = type.getSuperClass();
@@ -94,7 +94,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private RubyClass classOf() {
-        return getRubyClass().isSingleton() ? getRubyClass().getSuperClass() : getRubyClass();
+        return getInternalClass().isSingleton() ? getInternalClass().getSuperClass() : getInternalClass();
     }
 
     private void modify() {
@@ -172,8 +172,8 @@ public class RubyStruct extends RubyObject {
             newStruct = ((RubyClass) recv).defineClassUnder(name, ((RubyClass) recv));
         }
 
-        newStruct.setInstanceVar("__size__", member.length());
-        newStruct.setInstanceVar("__member__", member);
+        newStruct.setInstanceVariable("__size__", member.length());
+        newStruct.setInstanceVariable("__member__", member);
 
         newStruct.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyStruct.class, "newStruct"));
         newStruct.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyStruct.class, "newStruct"));
@@ -209,7 +209,7 @@ public class RubyStruct extends RubyObject {
     public RubyObject initialize(RubyObject[] args) {
         modify();
 
-        int size = RubyFixnum.fix2int(getInstanceVariable(getRubyClass(), "__size__"));
+        int size = RubyFixnum.fix2int(getInstanceVariable(getInternalClass(), "__size__"));
 
         if (args.length > size) {
             throw new ArgumentError(ruby, "struct size differs (" + args.length +" for " + size + ")");
@@ -287,7 +287,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyObject rbClone() {
-        RubyStruct clone = new RubyStruct(ruby, getRubyClass());
+        RubyStruct clone = new RubyStruct(ruby, getInternalClass());
 
         clone.values = new RubyObject[values.length];
         System.arraycopy(values, 0, clone.values, 0, values.length);
@@ -300,7 +300,7 @@ public class RubyStruct extends RubyObject {
             return ruby.getTrue();
         } else if (!(other instanceof RubyStruct)) {
             return ruby.getFalse();
-        } else if (getRubyClass() != other.getRubyClass()) {
+        } else if (getInternalClass() != other.getInternalClass()) {
             return ruby.getFalse();
         } else {
             for (int i = 0; i < values.length; i++) {
@@ -313,7 +313,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(ruby, "#<" + getRubyClass().toName() + ">");
+        return RubyString.newString(ruby, "#<" + getInternalClass().toName() + ">");
     }
 
     public RubyString inspect() {
@@ -324,7 +324,7 @@ public class RubyStruct extends RubyObject {
 
         StringBuffer sb = new StringBuffer(100);
 
-        sb.append("#<").append(getRubyClass().toName()).append(' ');
+        sb.append("#<").append(getInternalClass().toName()).append(' ');
 
         for (int i = 0; i < member.getLength(); i++) {
             if (i > 0) {
@@ -332,7 +332,7 @@ public class RubyStruct extends RubyObject {
             }
 
             sb.append(member.entry(i).toId()).append("=");
-            sb.append(values[i].funcall("inspect"));
+            sb.append(values[i].callMethod("inspect"));
         }
 
         sb.append('>');
@@ -396,7 +396,7 @@ public class RubyStruct extends RubyObject {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('S');
 
-        String className = getRubyClass().getClassname();
+        String className = getInternalClass().getClassname();
         if (className == null) {
             throw new ArgumentError(ruby, "can't dump anonymous class");
         }

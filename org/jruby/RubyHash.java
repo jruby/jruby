@@ -260,9 +260,9 @@ public class RubyHash extends RubyObject {
                 if (!firstEntry) {
                     sb.append(sep);
                 }
-                sb.append(((RubyObject) key).funcall("inspect"));
+                sb.append(((RubyObject) key).callMethod("inspect"));
                 sb.append(arrow);
-                sb.append(((RubyObject) value).funcall("inspect"));
+                sb.append(((RubyObject) value).callMethod("inspect"));
                 firstEntry = false;
                 return RubyMapMethod.CONTINUE;
             }

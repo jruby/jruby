@@ -100,10 +100,10 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userMarshal(RubyObject value) throws IOException {
         out.write('u');
-        dumpObject(RubySymbol.newSymbol(ruby, value.getRubyClass().getClassname()));
+        dumpObject(RubySymbol.newSymbol(ruby, value.getInternalClass().getClassname()));
 
         RubyInteger depth = RubyFixnum.newFixnum(ruby, depthLimit);
-        RubyString marshaled = (RubyString) value.funcall("_dump", depth);
+        RubyString marshaled = (RubyString) value.callMethod("_dump", depth);
         dumpString(marshaled.getValue());
     }
 

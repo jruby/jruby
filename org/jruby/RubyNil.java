@@ -51,7 +51,7 @@ public class RubyNil {
         nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", RubyObject.class));
         nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod(0));
         
-        nilClass.getRubyClass().undefMethod("new");
+        nilClass.getInternalClass().undefMethod("new");
         
         ruby.defineGlobalConstant("NIL", ruby.getNil());
         

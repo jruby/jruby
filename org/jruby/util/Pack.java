@@ -154,7 +154,7 @@ public class Pack {
 
     private static String convert2String(RubyObject l2Conv) {
         Ruby ruby = l2Conv.getRuby();
-        if (l2Conv.getRubyClass() != ruby.getClasses().getStringClass()) {
+        if (l2Conv.getInternalClass() != ruby.getClasses().getStringClass()) {
             l2Conv = l2Conv.convertToType("String", "to_s", true);	//we may need a false here, not sure
         }
         return ((RubyString) l2Conv).getValue();

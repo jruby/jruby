@@ -214,7 +214,7 @@ public class RubyArgsFile extends RubyObject {
         
         while (line.isNil() && next_p != -1) {
         	next_p = 1;
-            currentFile.funcall("close");
+            currentFile.callMethod("close");
             
             if (!nextArgsFile()) {
             	return line;

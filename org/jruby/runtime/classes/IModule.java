@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IModule extends IObject {
+public interface IModule extends IRubyObject {
 
 }

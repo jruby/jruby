@@ -63,7 +63,7 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         RubyObject result = getRuby().getNil();
 
-        RubyHash interfaceProcs = (RubyHash) getInstanceVar("interfaceProcs");
+        RubyHash interfaceProcs = (RubyHash) getInstanceVariable("interfaceProcs");
 
         RubyString methodName = RubyString.newString(getRuby(), method.getName());
 
@@ -116,13 +116,13 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
         } catch (IllegalArgumentException iaExcptn) {
         }
         
-        setInstanceVar("interfaceProcs", RubyHash.newHash(getRuby()));
+        setInstanceVariable("interfaceProcs", RubyHash.newHash(getRuby()));
 
         return this;
     }
     
     public RubyObject assign(RubyString methodName, RubyProc proc) {
-    	((RubyHash) getInstanceVar("interfaceProcs")).aset(methodName, proc);
+    	((RubyHash) getInstanceVariable("interfaceProcs")).aset(methodName, proc);
     	
     	return this;
     }

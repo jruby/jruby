@@ -156,14 +156,14 @@ public class RubyGlobal {
         }
         public RubyObject get() {
             RubyObject errorInfo = ruby.getGlobalVar("$!");
-            return errorInfo.isNil() ? ruby.getNil() : errorInfo.funcall("backtrace");
+            return errorInfo.isNil() ? ruby.getNil() : errorInfo.callMethod("backtrace");
         }
 
         public RubyObject set(RubyObject value) {
             if (ruby.getGlobalVar("$!").isNil()) {
                 throw new ArgumentError(ruby, "$! not set.");
             }
-            ruby.getGlobalVar("$!").funcall("set_backtrace", value);
+            ruby.getGlobalVar("$!").callMethod("set_backtrace", value);
             return value;
         }
     }

@@ -67,7 +67,7 @@ public class RubyEnumerable {
     }
 
     public static RubyObject each(Ruby ruby, RubyObject recv) {
-        return recv.funcall("each");
+        return recv.callMethod("each");
     }
 
     private static void iterateEach(Ruby ruby, RubyObject recv, String iter_method, RubyObject arg1) {
@@ -120,7 +120,7 @@ public class RubyEnumerable {
         RubyObject matcher = ((RubyArray) arg1).entry(0);
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
-        if (matcher.funcall("===", blockArg).isTrue()) {
+        if (matcher.callMethod("===", blockArg).isTrue()) {
             resultArray.append(blockArg);
         }
 
@@ -131,7 +131,7 @@ public class RubyEnumerable {
         RubyObject matcher = ((RubyArray) arg1).entry(0);
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
-        if (matcher.funcall("===", blockArg).isTrue()) {
+        if (matcher.callMethod("===", blockArg).isTrue()) {
             resultArray.append(ruby.yield(blockArg));
         }
 
@@ -143,7 +143,7 @@ public class RubyEnumerable {
 
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(blockArg.funcall("<=>", maxItem)) > 0) {
+        } else if (RubyFixnum.fix2int(blockArg.callMethod("<=>", maxItem)) > 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);
@@ -167,7 +167,7 @@ public class RubyEnumerable {
     }
 
     public static RubyObject member_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        if (blockArg.funcall("==", ((RubyArray) arg1).entry(0)).isTrue()) {
+        if (blockArg.callMethod("==", ((RubyArray) arg1).entry(0)).isTrue()) {
             ((RubyArray) arg1).append(ruby.getTrue());
             throw new BreakJump();
         }
@@ -179,7 +179,7 @@ public class RubyEnumerable {
         RubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(blockArg.funcall("<=>", maxItem)) < 0) {
+        } else if (RubyFixnum.fix2int(blockArg.callMethod("<=>", maxItem)) < 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);

@@ -64,7 +64,7 @@ public class RubyInvocationHandler
         } else if (respondsTo(rubyObject, methodName)) {
             out = rubyObject.send(rubyMethodName, rubyArgs);
         } else if (methodName.equals("toString")) {
-            out = rubyObject.funcall("to_s");
+            out = rubyObject.callMethod("to_s");
         } else if (methodName.equals("equals")) {
             out = rubyObject.funcall("equal", rubyArgs); // ?
         } else if (methodName.indexOf("get") == 0) {

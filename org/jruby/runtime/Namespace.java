@@ -123,8 +123,8 @@ public class Namespace {
     public RubyObject getConstant(RubyObject self, String name) {
         for (Namespace ns = this; ns != null && ns.getParent() != null; ns = ns.getParent()) {
             if (ns.getNamespaceModule() == null) {
-                return self.getRubyClass().getConstant(name);
-            } else if (! ns.getNamespaceModule().getInstanceVar(name).isNil()) {
+                return self.getInternalClass().getConstant(name);
+            } else if (! ns.getNamespaceModule().getInstanceVariable(name).isNil()) {
                 return (RubyObject) ns.getNamespaceModule().getInstanceVariables().get(name);
             }
         }

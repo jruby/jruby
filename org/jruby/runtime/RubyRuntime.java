@@ -249,7 +249,7 @@ public class RubyRuntime {
 			return;
 		}
 
-		RubyArray backtrace = (RubyArray) excp.funcall("backtrace");
+		RubyArray backtrace = (RubyArray) excp.callMethod("backtrace");
 
 		if (backtrace.isNil()) {
 			if (ruby.getSourceFile() != null) {
@@ -269,7 +269,7 @@ public class RubyRuntime {
 			}
 		}
 
-		RubyClass type = excp.getRubyClass();
+		RubyClass type = excp.getInternalClass();
 		String info = excp.toString();
 
 		if (type == ruby.getExceptions().getRuntimeError() && (info == null || info.length() == 0)) {

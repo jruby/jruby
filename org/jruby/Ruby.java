@@ -333,7 +333,7 @@ public final class Ruby {
         RubyClass newClass = RubyClass.newClass(this, superClass);
         newClass.setName(name);
 
-        newClass.makeMetaClass(superClass.getRubyClass());
+        newClass.makeMetaClass(superClass.getInternalClass());
 
         newClass.inheritedBy(superClass);
 

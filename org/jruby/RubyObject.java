@@ -52,6 +52,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.classes.IRubyObject;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyMapMethod;
@@ -60,7 +61,7 @@ import org.jruby.util.RubyMapMethod;
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable {
+public class RubyObject implements Cloneable, IRubyObject {
 
     // A reference to the JRuby runtime.
     protected transient Ruby ruby;
@@ -130,11 +131,11 @@ public class RubyObject implements Cloneable {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || (other instanceof RubyObject) && funcall("==", (RubyObject) other).isTrue();
+        return other == this || (other instanceof RubyObject) && callMethod("==", (RubyObject) other).isTrue();
     }
 
     public String toString() {
-        return ((RubyString)funcall("to_s")).getValue();
+        return ((RubyString)callMethod("to_s")).getValue();
     }
 
     /** Getter for property ruby.
@@ -156,7 +157,7 @@ public class RubyObject implements Cloneable {
      * Gets the rubyClass.
      * @return Returns a RubyClass
      */
-    public RubyClass getRubyClass() {
+    public RubyClass getInternalClass() {
         if (isNil()) {
             return getRuby().getClasses().getNilClass();
         }
@@ -274,7 +275,7 @@ public class RubyObject implements Cloneable {
     }
 
     public boolean isKindOf(RubyModule type) {
-        RubyClass currType = getRubyClass();
+        RubyClass currType = getInternalClass();
         while (currType != null) {
             if (currType == type || currType.getMethods().keySet().containsAll(type.getMethods().keySet())) {
                 return true;
@@ -288,7 +289,7 @@ public class RubyObject implements Cloneable {
      *
      */
     private RubyClass getNilSingletonClass() {
-        RubyClass rubyClass = getRubyClass();
+        RubyClass rubyClass = getInternalClass();
 
         if (!rubyClass.isSingleton()) {
             rubyClass = rubyClass.newSingletonClass();
@@ -307,10 +308,10 @@ public class RubyObject implements Cloneable {
         }
 
         RubyClass type = null;
-        if (getRubyClass().isSingleton()) {
-            type = getRubyClass();
+        if (getInternalClass().isSingleton()) {
+            type = getInternalClass();
         } else {
-            type = makeMetaClass(getRubyClass());
+            type = makeMetaClass(getInternalClass());
         }
         type.setTaint(isTaint());
         type.setFrozen(isFrozen());
@@ -329,8 +330,8 @@ public class RubyObject implements Cloneable {
      *
      */
     protected void setupClone(RubyObject obj) {
-        setRubyClass(obj.getRubyClass().getSingletonClassClone());
-        getRubyClass().attachSingletonClass(this);
+        setRubyClass(obj.getInternalClass().getSingletonClassClone());
+        getInternalClass().attachSingletonClass(this);
 		frozen = obj.frozen;
 		taint = obj.taint;
     }
@@ -348,10 +349,10 @@ public class RubyObject implements Cloneable {
      *
      */
     public RubyObject funcall(String name, RubyObject[] args) {
-        return getRubyClass().call(this, name, args, 1);
+        return getInternalClass().call(this, name, args, 1);
     }
 
-    public RubyObject funcall(String name) {
+    public RubyObject callMethod(String name) {
         return funcall(name, new RubyObject[0]);
     }
 
@@ -359,20 +360,20 @@ public class RubyObject implements Cloneable {
      *
      */
     public RubyObject funcall3(String name, RubyObject[] args) {
-        return getRubyClass().call(this, name, args, 0);
+        return getInternalClass().call(this, name, args, 0);
     }
 
     /** rb_funcall
      *
      */
-    public RubyObject funcall(String name, RubyObject arg) {
+    public RubyObject callMethod(String name, RubyObject arg) {
         return funcall(name, new RubyObject[] { arg });
     }
 
     /** rb_iv_get / rb_ivar_get
      *
      */
-    public RubyObject getInstanceVar(String name) {
+    public RubyObject getInstanceVariable(String name) {
         if (getInstanceVariables() != null) {
             RubyObject value = (RubyObject) getInstanceVariables().get(name);
             if (value != null) {
@@ -386,7 +387,7 @@ public class RubyObject implements Cloneable {
     /** rb_iv_set / rb_ivar_set
      *
      */
-    public RubyObject setInstanceVar(String name, RubyObject value) {
+    public RubyObject setInstanceVariable(String name, RubyObject value) {
         if (isTaint() && getRuby().getSafeLevel() >= 4) {
             throw new RubySecurityException(getRuby(), "Insecure: can't modify instance variable");
         }
@@ -415,7 +416,7 @@ public class RubyObject implements Cloneable {
      *@deprecated  since Ruby 1.6.7
      */
     public RubyModule getClassVarSingleton() {
-        return getRubyClass();
+        return getInternalClass();
     }
 
     /** rb_eval
@@ -453,13 +454,13 @@ public class RubyObject implements Cloneable {
     public RubyObject convertToType(String targetType, String convertMethod, boolean raise) {
         if (! respondsTo(convertMethod)) {
             if (raise) {
-                throw new TypeError(ruby, "Failed to convert " + getRubyClass().toName() + " into " + targetType + ".");
+                throw new TypeError(ruby, "Failed to convert " + getInternalClass().toName() + " into " + targetType + ".");
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
             } else {
                 return ruby.getNil();
             }
         }
-        return funcall(convertMethod);
+        return callMethod(convertMethod);
     }
 
     /** rb_convert_type
@@ -473,7 +474,7 @@ public class RubyObject implements Cloneable {
         RubyObject result = convertToType(targetType, convertMethod, true);
 
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new TypeError(ruby, getRubyClass().toName() + "#" + convertMethod + " should return " + targetType + ".");
+            throw new TypeError(ruby, getInternalClass().toName() + "#" + convertMethod + " should return " + targetType + ".");
         }
 
         return result;
@@ -489,7 +490,7 @@ public class RubyObject implements Cloneable {
         }
         getRuby().secure(4);
         if (!(this instanceof RubyString)) {
-            throw new TypeError(getRuby(), "wrong argument type " + getRubyClass().toName() + " (expected String)");
+            throw new TypeError(getRuby(), "wrong argument type " + getInternalClass().toName() + " (expected String)");
         }
     }
 
@@ -718,14 +719,14 @@ public class RubyObject implements Cloneable {
         String name = args[0].toId();
 
         //Look in cache
-        CacheEntry ent = getRuby().getMethodCache().getEntry(getRubyClass(), name);
+        CacheEntry ent = getRuby().getMethodCache().getEntry(getInternalClass(), name);
         if (ent != null) {
             //Check to see if it's private and we're not including privates(return false)
             //otherwise return true
             return ruby.getTrue();
         }
         //Get from instance
-        ICallable method = getRubyClass().searchMethod(name);
+        ICallable method = getInternalClass().searchMethod(name);
         if (method != null) {
             return ruby.getTrue();
         }
@@ -752,14 +753,14 @@ public class RubyObject implements Cloneable {
  	* Ruby objects can be used in Java collections.
 	*/
 	public final int hashCode() {
-		return RubyNumeric.fix2int(funcall("hash"));
+		return RubyNumeric.fix2int(callMethod("hash"));
 	}
 
     /** rb_obj_type
      *
      */
     public RubyClass type() {
-        return getRubyClass().getRealClass();
+        return getInternalClass().getRealClass();
     }
 
     /** rb_obj_clone
@@ -783,7 +784,7 @@ public class RubyObject implements Cloneable {
      *
      */
     public RubyObject dup() {
-        RubyObject dup = funcall("clone");
+        RubyObject dup = callMethod("clone");
         if (!dup.getClass().equals(getClass())) {
             throw new TypeError(getRuby(), "duplicated object must be same type");
         }
@@ -877,7 +878,7 @@ public class RubyObject implements Cloneable {
         //     }
         //     return rb_funcall(obj, rb_intern("to_s"), 0, 0);
         // }
-        return (RubyString) funcall("to_s");
+        return (RubyString) callMethod("to_s");
     }
 
     /** rb_obj_is_instance_of
@@ -911,21 +912,21 @@ public class RubyObject implements Cloneable {
      *
      */
     public RubyObject methods() {
-        return getRubyClass().instance_methods(new RubyObject[] { getRuby().getTrue()});
+        return getInternalClass().instance_methods(new RubyObject[] { getRuby().getTrue()});
     }
 
     /** rb_obj_protected_methods
      *
      */
     public RubyObject protected_methods() {
-        return getRubyClass().protected_instance_methods(new RubyObject[] { getRuby().getTrue()});
+        return getInternalClass().protected_instance_methods(new RubyObject[] { getRuby().getTrue()});
     }
 
     /** rb_obj_private_methods
      *
      */
     public RubyObject private_methods() {
-        return getRubyClass().private_instance_methods(new RubyObject[] { getRuby().getTrue()});
+        return getInternalClass().private_instance_methods(new RubyObject[] { getRuby().getTrue()});
     }
 
     /** rb_obj_singleton_methods
@@ -933,7 +934,7 @@ public class RubyObject implements Cloneable {
      */
     public RubyArray singleton_methods() {
         RubyArray ary = RubyArray.newArray(getRuby());
-        RubyClass type = getRubyClass();
+        RubyClass type = getInternalClass();
         while (type != null && type.isSingleton()) {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
@@ -959,7 +960,7 @@ public class RubyObject implements Cloneable {
     }
 
     public RubyObject method(RubyObject symbol) {
-        return getRubyClass().newMethod(this, symbol.toId(), getRuby().getClasses().getMethodClass());
+        return getInternalClass().newMethod(this, symbol.toId(), getRuby().getClasses().getMethodClass());
     }
 
     public RubyArray to_a() {
@@ -967,7 +968,7 @@ public class RubyObject implements Cloneable {
     }
 
     public RubyString to_s() {
-        String cname = getRubyClass().toName();
+        String cname = getInternalClass().toName();
         RubyString str = RubyString.newString(getRuby(), "");
         /* 6:tags 16:addr 1:eos */
         str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
@@ -988,7 +989,7 @@ public class RubyObject implements Cloneable {
         }
         // FIXME: Check_Type?
         for (int i = 0; i < args.length; i++) {
-            args[i].funcall("extend_object", this);
+            args[i].callMethod("extend_object", this);
         }
         return this;
     }
@@ -1002,7 +1003,7 @@ public class RubyObject implements Cloneable {
     public RubyObject send(RubyObject method, RubyObject[] args) {
         try {
             getRuby().getIterStack().push(getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-            return getRubyClass().call(this, method.toId(), args, 1);
+            return getInternalClass().call(this, method.toId(), args, 1);
         } finally {
             getRuby().getIterStack().pop();
         }
@@ -1010,7 +1011,7 @@ public class RubyObject implements Cloneable {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('o');
-        RubySymbol classname = RubySymbol.newSymbol(ruby,  getRubyClass().getClassname());
+        RubySymbol classname = RubySymbol.newSymbol(ruby,  getInternalClass().getClassname());
         output.dumpObject(classname);
 
         if (getInstanceVariables() == null) {
@@ -1028,4 +1029,13 @@ public class RubyObject implements Cloneable {
             }
         }
     }
+    /**
+     * REMOVE THIS METHOD
+     * 
+     * @see org.jruby.runtime.classes.IRubyObject#cast()
+     */
+    public RubyObject toRubyObject() {
+        return this;
+    }
+
 }

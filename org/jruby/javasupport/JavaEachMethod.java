@@ -16,11 +16,11 @@ public class JavaEachMethod implements Callback {
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)
      */
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        while (recv.funcall(hasNextMethod).isTrue()) {
+        while (recv.callMethod(hasNextMethod).isTrue()) {
             if (nextMethod == null) {
                 ruby.yield(recv);
             } else {
-                ruby.yield(recv.funcall(nextMethod));
+                ruby.yield(recv.callMethod(nextMethod));
             }
         }
 

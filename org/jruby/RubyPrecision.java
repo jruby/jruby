@@ -49,7 +49,7 @@ public class RubyPrecision {
     }
 
     public static RubyObject induced_from(Ruby ruby, RubyObject receiver, RubyObject source) {
-        throw new TypeError(ruby, "Undefined conversion from " + source.getRubyClass().toName() + " into " + ((RubyClass)receiver).toName());
+        throw new TypeError(ruby, "Undefined conversion from " + source.getInternalClass().toName() + " into " + ((RubyClass)receiver).toName());
     }
 
     public static RubyObject append_features(Ruby ruby, RubyObject receiver, RubyObject include) {
@@ -62,14 +62,14 @@ public class RubyPrecision {
     }
     
     public static RubyObject prec(Ruby ruby, RubyObject receiver, RubyObject type) {
-        return type.funcall("induced_from", receiver);
+        return type.callMethod("induced_from", receiver);
     }
 
     public static RubyObject prec_i(Ruby ruby, RubyObject receiver) {
-        return ruby.getClasses().getIntegerClass().funcall("induced_from", receiver);
+        return ruby.getClasses().getIntegerClass().callMethod("induced_from", receiver);
     }
 
     public static RubyObject prec_f(Ruby ruby, RubyObject receiver) {
-        return ruby.getClasses().getFloatClass().funcall("induced_from", receiver);
+        return ruby.getClasses().getFloatClass().callMethod("induced_from", receiver);
     }
 }

@@ -48,7 +48,7 @@ public class RubyRange extends RubyObject {
     public void init(RubyObject begin, RubyObject end, RubyBoolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
             try {
-                begin.funcall("<=>", end);
+                begin.callMethod("<=>", end);
             } catch (RaiseException rExcptn) {
                 throw new ArgumentError(getRuby(), "bad value for range");
             }
@@ -176,8 +176,8 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyString inspect() {
-        RubyString begStr = (RubyString) begin.funcall("to_s");
-        RubyString endStr = (RubyString) end.funcall("to_s");
+        RubyString begStr = (RubyString) begin.callMethod("to_s");
+        RubyString endStr = (RubyString) end.callMethod("to_s");
 
         begStr.cat(isExclusive ? "..." : "..");
         begStr.concat(endStr);
@@ -191,7 +191,7 @@ public class RubyRange extends RubyObject {
     public RubyFixnum length() {
         long size = 0;
 
-        if (begin.funcall(">", end).isTrue()) {
+        if (begin.callMethod(">", end).isTrue()) {
             return RubyFixnum.newFixnum(getRuby(), 0);
         }
 
@@ -234,13 +234,13 @@ public class RubyRange extends RubyObject {
                 }
             }
             return getRuby().getFalse();
-        } else if (begin.funcall("<=", obj).isTrue()) {
+        } else if (begin.callMethod("<=", obj).isTrue()) {
             if (isExclusive) {
-                if (end.funcall(">", obj).isTrue()) {
+                if (end.callMethod(">", obj).isTrue()) {
                     return getRuby().getTrue();
                 }
             } else {
-                if (end.funcall(">=", obj).isTrue()) {
+                if (end.callMethod(">=", obj).isTrue()) {
                     return getRuby().getTrue();
                 }
             }
@@ -264,30 +264,30 @@ public class RubyRange extends RubyObject {
             ((RubyString) begin).upto(end, isExclusive);
         } else if (begin.isKindOf(getRuby().getClasses().getNumericClass())) {
             if (!isExclusive) {
-                end = end.funcall("+", RubyFixnum.one(getRuby()));
+                end = end.callMethod("+", RubyFixnum.one(getRuby()));
             }
-            while (begin.funcall("<", end).isTrue()) {
+            while (begin.callMethod("<", end).isTrue()) {
                 getRuby().yield(begin);
-                begin = begin.funcall("+", RubyFixnum.one(getRuby()));
+                begin = begin.callMethod("+", RubyFixnum.one(getRuby()));
             }
         } else {
             RubyObject v = begin;
 
             if (isExclusive) {
-                while (v.funcall("<", end).isTrue()) {
+                while (v.callMethod("<", end).isTrue()) {
                     if (v.equals(end)) {
                         break;
                     }
                     getRuby().yield(v);
-                    v = v.funcall("succ");
+                    v = v.callMethod("succ");
                 }
             } else {
-                while (v.funcall("<=", end).isTrue()) {
+                while (v.callMethod("<=", end).isTrue()) {
                     getRuby().yield(v);
                     if (v.equals(end)) {
                         break;
                     }
-                    v = v.funcall("succ");
+                    v = v.callMethod("succ");
                 }
             }
         }

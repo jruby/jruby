@@ -91,7 +91,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 
     public boolean includes(RubyObject item) {
         for (int i = 0, n = getLength(); i < n; i++) {
-            if (item.funcall("==", entry(i)).isTrue()) {
+            if (item.callMethod("==", entry(i)).isTrue()) {
                 return true;
             }
         }
@@ -730,7 +730,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 			if (i > 0) {
 				result.append(sep);
 			}
-			result.append(entry(i).funcall("inspect"));
+			result.append(entry(i).callMethod("inspect"));
 		}
 		result.cat("]");
 		return result;
@@ -863,7 +863,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		}
 
 		for (long i = 0; i < length; i++) {
-			if (entry(i).funcall("==", ary.entry(i)).isFalse()) {
+			if (entry(i).callMethod("==", ary.entry(i)).isFalse()) {
 				return getRuby().getFalse();
 			}
 		}
@@ -885,7 +885,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		}
 
 		for (long i = 0; i < length; i++) {
-			if (entry(i).funcall("eql?", ary.entry(i)).isFalse()) {
+			if (entry(i).callMethod("eql?", ary.entry(i)).isFalse()) {
 				return getRuby().getFalse();
 			}
 		}
@@ -975,7 +975,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	 */
 	public RubyObject index(RubyObject obj) {
 		for (int i = 0, len = getLength(); i < len; i++) {
-			if (obj.funcall("==", entry(i)).isTrue()) {
+			if (obj.callMethod("==", entry(i)).isTrue()) {
 				return RubyFixnum.newFixnum(getRuby(), i);
 			}
 		}
@@ -987,7 +987,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	 */
 	public RubyObject rindex(RubyObject obj) {
 		for (int i = getLength() - 1; i >= 0; i--) {
-			if (obj.funcall("==", entry(i)).isTrue()) {
+			if (obj.callMethod("==", entry(i)).isTrue()) {
 				return RubyFixnum.newFixnum(getRuby(), i);
 			}
 		}
@@ -1001,7 +1001,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 			result[i] = entry(RubyNumeric.fix2int(args[i]));
 			taint |= result[i].isTaint();
 		}
-		RubyArray ary = create(getRuby(), getRubyClass(), result);
+		RubyArray ary = create(getRuby(), getInternalClass(), result);
 		ary.setTaint(taint);
 		return ary;
 	}
@@ -1068,7 +1068,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		modify();
 		RubyObject retVal = getRuby().getNil();
 		for (int i = getLength() - 1; i >= 0; i--) {
-			if (obj.funcall("==", entry(i)).isTrue()) {
+			if (obj.callMethod("==", entry(i)).isTrue()) {
 				retVal = (RubyObject) list.remove(i);
 			}
 		}
@@ -1137,7 +1137,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		}
 
 		for (int i = 0; i < len; i++) {
-			RubyFixnum result = (RubyFixnum) entry(i).funcall("<=>", ary.entry(i));
+			RubyFixnum result = (RubyFixnum) entry(i).callMethod("<=>", ary.entry(i));
 			if (result.getLongValue() != 0) {
 				return result;
 			}
@@ -1174,7 +1174,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 				continue;
 			}
 			RubyArray ary = (RubyArray) entry(i);
-			if (arg.funcall("==", ary.entry(0)).isTrue()) {
+			if (arg.callMethod("==", ary.entry(0)).isTrue()) {
 				return ary;
 			}
 		}
@@ -1190,7 +1190,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 				continue;
 			}
 			RubyArray ary = (RubyArray) entry(i);
-			if (arg.funcall("==", ary.entry(1)).isTrue()) {
+			if (arg.callMethod("==", ary.entry(1)).isTrue()) {
 				return ary;
 			}
 		}
@@ -1268,7 +1268,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 			boolean found = false;
 			int newLength = newList.size();
 			for (int j = 0; j < newLength; j++) {
-				if (obj.funcall("==", (RubyObject)newList.get(j)).isTrue()) {
+				if (obj.callMethod("==", (RubyObject)newList.get(j)).isTrue()) {
 					found = true;
 					break;
 				}
@@ -1312,7 +1312,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		for (int i = ary1.size() - 1; i >= 0; i--) {
 			RubyObject obj = (RubyObject) ary1.get(i);
 			for (int j = 0; j < len2; j++) {
-				if (obj.funcall("==", (RubyObject) ary2.get(j)).isTrue()) {
+				if (obj.callMethod("==", (RubyObject) ary2.get(j)).isTrue()) {
 					ary1.remove(i);
 					break;
 				}
@@ -1333,7 +1333,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		for (int i = 0; i < len1; i++) {
 			RubyObject obj = (RubyObject) ary1.get(i);
 			for (int j = 0; j < len2; j++) {
-				if (obj.funcall("==", (RubyObject) ary2.get(j)).isTrue()) {
+				if (obj.callMethod("==", (RubyObject) ary2.get(j)).isTrue()) {
 					ary3.add(obj);
 					break;
 				}
@@ -1431,7 +1431,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 				return RubyNumeric.fix2int(((RubyString) o1).op_cmp((RubyObject) o2));
 			}
 
-			return RubyNumeric.fix2int(obj1.funcall("<=>", obj2));
+			return RubyNumeric.fix2int(obj1.callMethod("<=>", obj2));
 		}
 
 		public boolean equals(Object other) {

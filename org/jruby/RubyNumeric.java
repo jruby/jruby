@@ -233,7 +233,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyArray coerce(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        if (getRubyClass() == other.getRubyClass()) {
+        if (getInternalClass() == other.getInternalClass()) {
             return RubyArray.newArray(getRuby(), other, this);
         } else {
             return RubyArray.newArray(
@@ -247,7 +247,7 @@ public abstract class RubyNumeric extends RubyObject {
      * !!!
      */
     public RubyNumeric[] getCoerce(RubyNumeric other) {
-        if (getRubyClass() == other.getRubyClass()) {
+        if (getInternalClass() == other.getInternalClass()) {
             return new RubyNumeric[] { this, other };
         } else {
             return new RubyNumeric[] { RubyFloat.newFloat(getRuby(), getDoubleValue()), RubyFloat.newFloat(getRuby(), other.getDoubleValue())};
@@ -274,7 +274,7 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric op_uminus() {
         RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuby()));
 
-        return (RubyNumeric) coerce[1].funcall("-", coerce[0]);
+        return (RubyNumeric) coerce[1].callMethod("-", coerce[0]);
     }
 
     /** num_divmod
@@ -283,14 +283,14 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyArray divmod(RubyObject val) {
         RubyNumeric other = numericValue(val);
 
-        RubyNumeric div = (RubyNumeric) funcall("/", other);
+        RubyNumeric div = (RubyNumeric) callMethod("/", other);
         if (div instanceof RubyFloat) {
             double d = Math.floor(((RubyFloat) div).getValue());
             if (((RubyFloat) div).getValue() > d) {
                 div = RubyFloat.newFloat(getRuby(), d);
             }
         }
-        RubyNumeric mod = (RubyNumeric) funcall("%", other);
+        RubyNumeric mod = (RubyNumeric) callMethod("%", other);
 
         return RubyArray.newArray(getRuby(), div, mod);
     }
@@ -301,7 +301,7 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric modulo(RubyObject val) {
         RubyNumeric other = numericValue(val);
 
-        return (RubyNumeric) funcall("%", other);
+        return (RubyNumeric) callMethod("%", other);
     }
 
     /** num_remainder
@@ -310,13 +310,13 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric remainder(RubyObject val) {
         RubyNumeric other = numericValue(val);
         
-        RubyNumeric mod = (RubyNumeric) funcall("%", other);
+        RubyNumeric mod = (RubyNumeric) callMethod("%", other);
 
         final RubyNumeric zero = RubyFixnum.zero(getRuby());
 
-        if (funcall("<", zero).isTrue() && other.funcall(">", zero).isTrue() || funcall(">", zero).isTrue() && other.funcall("<", zero).isTrue()) {
+        if (callMethod("<", zero).isTrue() && other.callMethod(">", zero).isTrue() || callMethod(">", zero).isTrue() && other.callMethod("<", zero).isTrue()) {
 
-            return (RubyNumeric) mod.funcall("-", other);
+            return (RubyNumeric) mod.callMethod("-", other);
         }
 
         return mod;
@@ -333,7 +333,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean eql(RubyObject other) {
-        if (getRubyClass() != other.getRubyClass()) {
+        if (getInternalClass() != other.getInternalClass()) {
             return getRuby().getFalse();
         } else {
             return super.equal(other); // +++ rb_equal
@@ -344,8 +344,8 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric abs() {
-        if (funcall("<", RubyFixnum.zero(getRuby())).isTrue()) {
-            return (RubyNumeric) funcall("-@");
+        if (callMethod("<", RubyFixnum.zero(getRuby())).isTrue()) {
+            return (RubyNumeric) callMethod("-@");
         } else {
             return this;
         }
@@ -369,7 +369,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyObject nonzero_p() {
-        if (funcall("zero?").isTrue()) {
+        if (callMethod("zero?").isTrue()) {
             return getRuby().getNil();
         }
         return this;

@@ -119,8 +119,8 @@ public class RubyKernel {
 
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                defout.funcall("write", args[i].funcall("inspect"));
-                defout.funcall("write", RubyString.newString(ruby, "\n"));
+                defout.callMethod("write", args[i].callMethod("inspect"));
+                defout.callMethod("write", RubyString.newString(ruby, "\n"));
             }
         }
         return ruby.getNil();
@@ -198,7 +198,7 @@ public class RubyKernel {
         if (line.isNil()) {
             throw new TypeError(ruby, "$_ value need to be String (nil given).");
         } else if (!(line instanceof RubyString)) {
-            throw new TypeError(ruby, "$_ value need to be String (" + line.getRubyClass().toName() + " given).");
+            throw new TypeError(ruby, "$_ value need to be String (" + line.getInternalClass().toName() + " given).");
         } else {
             return (RubyString) line;
         }
@@ -356,7 +356,7 @@ public class RubyKernel {
         case 1 :
             throw new RaiseException(RubyException.newInstance(ruby, ruby.getExceptions().getRuntimeError(), args));
         case 2 :
-            RubyException excptn = (RubyException) args[0].funcall("exception", args[1]);
+            RubyException excptn = (RubyException) args[0].callMethod("exception", args[1]);
             throw new RaiseException(excptn);
         default :
             throw new ArgumentError(ruby, "wrong # of arguments");

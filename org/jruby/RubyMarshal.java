@@ -102,7 +102,7 @@ public class RubyMarshal {
             if (in instanceof RubyIO) {
                 throw new NotImplementedError();
             } else if (in.respondsTo("to_str")) {
-                RubyString inString = (RubyString) in.funcall("to_str");
+                RubyString inString = (RubyString) in.callMethod("to_str");
                 rawInput = new ByteArrayInputStream(inString.toByteArray());
             } else {
                 throw new TypeError(ruby, "instance of IO needed");

@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface INilClass extends IArray, IClass, IFalseClass, IFixnum, IInteger, IModule, INumber, IObject, IString, ISymbol, ITrueClass {
+public interface INilClass extends IArray, IClass, IFalseClass, IFixnum, IInteger, IModule, INumber, IRubyObject, IString, ISymbol, ITrueClass {
 
 }

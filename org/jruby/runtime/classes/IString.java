@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IString extends IObject {
+public interface IString extends IRubyObject {
 
 }

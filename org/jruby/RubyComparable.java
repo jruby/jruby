@@ -58,7 +58,7 @@ public class RubyComparable {
             if (recv == other) {
                 return ruby.getTrue();
             } else {
-                return (RubyNumeric.fix2int(recv.funcall("<=>", other)) == 0) ? ruby.getTrue() : ruby.getFalse();
+                return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? ruby.getTrue() : ruby.getFalse();
             }
         } catch (NameError rnExcptn) {
             return ruby.getFalse();
@@ -66,25 +66,25 @@ public class RubyComparable {
     }
 
     public static RubyBoolean op_gt(Ruby ruby, RubyObject recv, RubyObject other) {
-        return RubyNumeric.fix2int(recv.funcall("<=>", other)) > 0 ? ruby.getTrue() : ruby.getFalse();
+        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) > 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean op_ge(Ruby ruby, RubyObject recv, RubyObject other) {
-        return RubyNumeric.fix2int(recv.funcall("<=>", other)) >= 0 ? ruby.getTrue() : ruby.getFalse();
+        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) >= 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean op_lt(Ruby ruby, RubyObject recv, RubyObject other) {
-        return RubyNumeric.fix2int(recv.funcall("<=>", other)) < 0 ? ruby.getTrue() : ruby.getFalse();
+        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) < 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean op_le(Ruby ruby, RubyObject recv, RubyObject other) {
-        return RubyNumeric.fix2int(recv.funcall("<=>", other)) <= 0 ? ruby.getTrue() : ruby.getFalse();
+        return RubyNumeric.fix2int(recv.callMethod("<=>", other)) <= 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean between_p(Ruby ruby, RubyObject recv, RubyObject first, RubyObject second) {
-        if (RubyNumeric.fix2int(recv.funcall("<=>", first)) < 0) {
+        if (RubyNumeric.fix2int(recv.callMethod("<=>", first)) < 0) {
             return ruby.getFalse();
-        } else if (RubyNumeric.fix2int(recv.funcall("<=>", second)) > 0) {
+        } else if (RubyNumeric.fix2int(recv.callMethod("<=>", second)) > 0) {
             return ruby.getFalse();
         } else {
             return ruby.getTrue();

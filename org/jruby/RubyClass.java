@@ -112,7 +112,7 @@ public class RubyClass extends RubyModule {
         if (superType == null) {
             superType = ruby.getClasses().getObjectClass();
         }
-        superType.funcall("inherited", this);
+        superType.callMethod("inherited", this);
     }
 
     /** rb_singleton_class_clone
@@ -123,7 +123,7 @@ public class RubyClass extends RubyModule {
             return (RubyClass) this;
         }
 
-        RubyClass clone = newClass(getRuby(), getRubyClass(), getSuperClass());
+        RubyClass clone = newClass(getRuby(), getInternalClass(), getSuperClass());
         clone.setupClone(this);
         clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
         
@@ -150,8 +150,8 @@ public class RubyClass extends RubyModule {
         return this.singleton;
     }
 
-    public RubyClass getRubyClass() {
-        RubyClass type = super.getRubyClass();
+    public RubyClass getInternalClass() {
+        RubyClass type = super.getInternalClass();
 
         return type != null ? type : getRuby().getClasses().getClassClass();
     }
@@ -168,7 +168,7 @@ public class RubyClass extends RubyModule {
      */
     public void attachSingletonClass(RubyObject object) {
         if (isSingleton()) {
-            setInstanceVar("__atached__", object);
+            setInstanceVariable("__atached__", object);
         } else {
             getRuby().getRuntime().printBug("attachSingletonClass called on a non singleton class.");
         }
@@ -228,7 +228,7 @@ public class RubyClass extends RubyModule {
 
         RubyClass newClass = newClass(ruby, superClass);
 
-        newClass.makeMetaClass(superClass.getRubyClass());
+        newClass.makeMetaClass(superClass.getInternalClass());
 
         // call "initialize" method
         newClass.callInit(args);

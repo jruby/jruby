@@ -412,8 +412,8 @@ public class RubyModule extends RubyObject {
 
         while (true) {
             while (tmp != null) {
-                if (! tmp.getInstanceVar(name).isNil()) {
-                    return tmp.getInstanceVar(name);
+                if (! tmp.getInstanceVariable(name).isNil()) {
+                    return tmp.getInstanceVariable(name);
                 }
                 if (tmp == getRuby().getClasses().getObjectClass() && getRuby().getTopConstant(name) != null) {
                     return getRuby().getTopConstant(name);
@@ -467,7 +467,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(arg instanceof RubyModule)) {
-            throw new TypeError(ruby, "Wrong argument type " + arg.getRubyClass().toName() + " (expected Module).");
+            throw new TypeError(ruby, "Wrong argument type " + arg.getInternalClass().toName() + " (expected Module).");
         }
 
         RubyModule module = (RubyModule) arg;
@@ -512,11 +512,11 @@ public class RubyModule extends RubyObject {
         if (isFrozen()) {
             throw new RubyFrozenException(getRuby(), "class/module");
         }
-        if (constant && (! getInstanceVar(name).isNil())) {
+        if (constant && (! getInstanceVariable(name).isNil())) {
             //getRuby().warn("already initialized " + dest + " " + name);
         }
 
-        setInstanceVar(name, value);
+        setInstanceVariable(name, value);
     }
 
     /** rb_add_method
@@ -604,7 +604,7 @@ public class RubyModule extends RubyObject {
             RubyModule c = this;
 
             if (c.isSingleton()) {
-                RubyObject obj = getInstanceVar("__attached__");
+                RubyObject obj = getInstanceVariable("__attached__");
 
                 if (obj instanceof RubyModule) {
                     c = (RubyModule) obj;
@@ -648,7 +648,7 @@ public class RubyModule extends RubyObject {
      */
     public boolean isConstantDefined(String name) {
         for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
-            if (! tmp.getInstanceVar(name).isNil()) {
+            if (! tmp.getInstanceVariable(name).isNil()) {
                 return true;
             }
         }
@@ -670,7 +670,7 @@ public class RubyModule extends RubyObject {
      * 
      */
     public boolean isConstantDefinedAt(String name) {
-        if (! getInstanceVar(name).isNil()) {
+        if (! getInstanceVariable(name).isNil()) {
             return true;
         } else if (this == ruby.getClasses().getObjectClass()) {
             return isConstantDefined(name);
@@ -901,7 +901,7 @@ public class RubyModule extends RubyObject {
         if (isConstantDefinedAt(name)) {
             RubyObject module = getConstant(name);
             if (!(module instanceof RubyModule)) {
-                throw new TypeError(ruby, toName() + "::" + module.getRubyClass().toName() + " is not a module.");
+                throw new TypeError(ruby, toName() + "::" + module.getInternalClass().toName() + " is not a module.");
             } else {
                 return (RubyModule) module;
             }
@@ -1007,13 +1007,13 @@ public class RubyModule extends RubyObject {
 
         if (read) {
             addMethod(name, new EvaluateMethod(new InstVarNode(getRuby().getPosition(), attrIV)), noex);
-            funcall("method_added", RubySymbol.newSymbol(getRuby(), name));
+            callMethod("method_added", RubySymbol.newSymbol(getRuby(), name));
         }
 
         if (write) {
             name = name + "=";
             addMethod(name, new EvaluateMethod(new AttrSetNode(getRuby().getPosition(), attrIV)), noex);
-            funcall("method_added", RubySymbol.newSymbol(getRuby(), name));
+            callMethod("method_added", RubySymbol.newSymbol(getRuby(), name));
         }
     }
 
@@ -1244,7 +1244,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject dup() {
         RubyModule dup = (RubyModule) rbClone();
-        dup.setRubyClass(getRubyClass());
+        dup.setRubyClass(getInternalClass());
 
         // +++ jpetersen
         // dup.setSingleton(isSingleton());
@@ -1362,7 +1362,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(obj instanceof RubyModule)) {
-            throw new TypeError(getRuby(), "<=> requires Class or Module (" + getRubyClass().toName() + " given)");
+            throw new TypeError(getRuby(), "<=> requires Class or Module (" + getInternalClass().toName() + " given)");
         }
 
         if (op_le(obj).isTrue()) {
@@ -1620,7 +1620,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule include(RubyObject[] modules) {
         for (int i = 0; i < modules.length; i++) {
-            modules[i].funcall("append_features", this);
+            modules[i].callMethod("append_features", this);
         }
 
         return this;
@@ -1697,7 +1697,7 @@ public class RubyModule extends RubyObject {
                     throw new RubyBugException("undefined method '" + name + "'; can't happen");
                 }
                 getSingletonClass().addMethod(name, method, Constants.NOEX_PUBLIC);
-                funcall("singleton_method_added", RubySymbol.newSymbol(getRuby(), name));
+                callMethod("singleton_method_added", RubySymbol.newSymbol(getRuby(), name));
             }
         }
 
@@ -1709,13 +1709,13 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule public_class_method(RubyObject[] args) {
-        getRubyClass().setMethodVisibility(args, Constants.NOEX_PUBLIC);
+        getInternalClass().setMethodVisibility(args, Constants.NOEX_PUBLIC);
 
         return this;
     }
 
     public RubyModule private_class_method(RubyObject[] args) {
-        getRubyClass().setMethodVisibility(args, Constants.NOEX_PRIVATE);
+        getInternalClass().setMethodVisibility(args, Constants.NOEX_PRIVATE);
 
         return this;
     }

@@ -72,10 +72,10 @@ public class RubyErrorHandler implements IErrorHandler {
                 message = position.getFile() + ": [" + position.getLine() + ", " + position.getColumn() + "] " + message;
             }
 
-            ruby.getGlobalVar("$stderr").funcall("write", RubyString.newString(ruby, message + "\n"));
+            ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, message + "\n"));
 
             if (type == IErrors.SYNTAX_ERROR) {
-                ruby.getGlobalVar("$stderr").funcall("write", RubyString.newString(ruby, "\tExpecting:"));
+                ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, "\tExpecting:"));
 				String[] lExpected = {};
 				String lFound = "";
                 if (args instanceof String[]) {
@@ -89,9 +89,9 @@ public class RubyErrorHandler implements IErrorHandler {
 				}
 				for (int i = 0; i < lExpected.length; i++) {
 					String msg = lExpected[i];
-					ruby.getGlobalVar("$stderr").funcall("write", RubyString.newString(ruby, " " + msg));
+					ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, " " + msg));
 				}
-				ruby.getGlobalVar("$stderr").funcall("write", RubyString.newString(ruby, " but found " + lFound + " instead\n"));
+				ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, " but found " + lFound + " instead\n"));
             }
         }
     }

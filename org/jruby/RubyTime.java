@@ -258,7 +258,7 @@ public class RubyTime extends RubyObject {
         } else {
             time += ((RubyNumeric) other).getDoubleValue() * 1000;
 
-            RubyTime newTime = new RubyTime(ruby, getRubyClass());
+            RubyTime newTime = new RubyTime(ruby, getInternalClass());
             newTime.cal = Calendar.getInstance();
             newTime.cal.setTime(new Date(time));
 
@@ -276,7 +276,7 @@ public class RubyTime extends RubyObject {
         } else {
             time -= ((RubyNumeric) other).getDoubleValue() * 1000;
 
-            RubyTime newTime = new RubyTime(ruby, getRubyClass());
+            RubyTime newTime = new RubyTime(ruby, getInternalClass());
             newTime.cal = Calendar.getInstance();
             newTime.cal.setTime(new Date(time));
 

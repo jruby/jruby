@@ -124,7 +124,7 @@ public class ScriptTestSuite extends TestSuite {
 
             RubyObject lastFailed = ruby.evalScript(script.toString());
             if (! lastFailed.isNil()) {
-				RubyString message = (RubyString) lastFailed.funcall("to_s");
+				RubyString message = (RubyString) lastFailed.callMethod("to_s");
                 fail(message.getValue());
             }
 

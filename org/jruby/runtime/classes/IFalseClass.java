@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IFalseClass extends IObject {
+public interface IFalseClass extends IRubyObject {
 
 }

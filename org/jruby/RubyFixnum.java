@@ -390,14 +390,14 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
 
     public RubyInteger op_or(RubyInteger other) {
         if (other instanceof RubyBignum) {
-            return (RubyInteger) other.funcall("|", this);
+            return (RubyInteger) other.callMethod("|", this);
         }
         return newFixnum(value | other.getLongValue());
     }
 
     public RubyInteger op_xor(RubyInteger other) {
         if (other instanceof RubyBignum) {
-            return (RubyInteger) other.funcall("^", this);
+            return (RubyInteger) other.callMethod("^", this);
         }
         return newFixnum(value ^ other.getLongValue());
     }

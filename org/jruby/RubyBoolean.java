@@ -51,7 +51,7 @@ public class RubyBoolean extends RubyObject {
         return Boolean.TYPE;
     }
 
-    public RubyClass getRubyClass() {
+    public RubyClass getInternalClass() {
         return value ? getRuby().getClasses().getTrueClass() : getRuby().getClasses().getFalseClass();
     }
 
@@ -73,7 +73,7 @@ public class RubyBoolean extends RubyObject {
         falseClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", RubyObject.class));
         falseClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", RubyObject.class));
 
-        falseClass.getRubyClass().undefMethod("new");
+        falseClass.getInternalClass().undefMethod("new");
 
         ruby.defineGlobalConstant("FALSE", ruby.getFalse());
 
@@ -90,7 +90,7 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", RubyObject.class));
         trueClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", RubyObject.class));
 
-        trueClass.getRubyClass().undefMethod("new");
+        trueClass.getInternalClass().undefMethod("new");
 
         ruby.defineGlobalConstant("TRUE", ruby.getTrue());
 
@@ -124,7 +124,7 @@ public class RubyBoolean extends RubyObject {
      *
      */
     public RubyClass type() {
-        return getRubyClass();
+        return getInternalClass();
     }
 
     /** false_and

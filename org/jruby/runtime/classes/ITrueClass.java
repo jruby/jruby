@@ -31,6 +31,6 @@ package org.jruby.runtime.classes;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface ITrueClass extends IObject {
+public interface ITrueClass extends IRubyObject {
 
 }
