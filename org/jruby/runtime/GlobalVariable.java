@@ -55,12 +55,7 @@ public class GlobalVariable {
     }
 
     public RubyObject set(RubyObject value) {
-        setInternalData(value);
-        return value;
-    }
-
-    // FIXME: rename to setInternal
-    public void setInternalData(RubyObject value) {
         this.value = value;
+        return value;
     }
 }

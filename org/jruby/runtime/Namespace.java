@@ -125,7 +125,7 @@ public class Namespace {
         for (Namespace ns = this; ns != null && ns.getParent() != null; ns = ns.getParent()) {
             if (ns.getNamespaceModule() == null) {
                 return self.getRubyClass().getConstant(name);
-            } else if (ns.getNamespaceModule().getInstanceVariables().get(name) != null) {
+            } else if (! ns.getNamespaceModule().getInstanceVar(name).isNil()) {
                 return (RubyObject) ns.getNamespaceModule().getInstanceVariables().get(name);
             }
         }

@@ -74,7 +74,6 @@ public class RubyObject implements Cloneable {
     public RubyObject(Ruby ruby, RubyClass rubyClass, boolean objectSpace) {
         this.ruby = ruby;
         this.rubyClass = rubyClass;
-        this.instanceVariables = new RubyHashMap();
         this.frozen = false;
         this.taint = false;
 
@@ -773,7 +772,9 @@ public class RubyObject implements Cloneable {
         try {
             RubyObject clone = (RubyObject)clone();
             clone.setupClone(this);
-            clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
+            if (getInstanceVariables() != null) {
+                clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
+            }
             return clone;
         } catch (CloneNotSupportedException cnsExcptn) {
             // BUG
@@ -1022,15 +1023,19 @@ public class RubyObject implements Cloneable {
         RubySymbol classname = getRubyClass().getClassname().intern();
         output.dumpObject(classname);
 
-        output.dumpInt(getInstanceVariables().size());
-        Iterator iter = getInstanceVariables().entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            String name = (String) entry.getKey();
-            RubyObject value = (RubyObject) entry.getValue();
+        if (getInstanceVariables() == null) {
+            output.dumpInt(0);
+        } else {
+            output.dumpInt(getInstanceVariables().size());
+            Iterator iter = getInstanceVariables().entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String name = (String) entry.getKey();
+                RubyObject value = (RubyObject) entry.getValue();
 
-            output.dumpObject(RubySymbol.newSymbol(ruby, name));
-            output.dumpObject(value);
+                output.dumpObject(RubySymbol.newSymbol(ruby, name));
+                output.dumpObject(value);
+            }
         }
     }
 }

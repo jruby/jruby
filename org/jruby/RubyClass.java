@@ -166,7 +166,7 @@ public class RubyClass extends RubyModule {
      */
     public void attachSingletonClass(RubyObject object) {
         if (isSingleton()) {
-            getInstanceVariables().put("__atached__", object);
+            setInstanceVar("__atached__", object);
         } else {
             getRuby().getRuntime().printBug("attachSingletonClass called on a non singleton class.");
         }

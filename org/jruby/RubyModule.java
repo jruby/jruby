@@ -50,6 +50,9 @@ public class RubyModule extends RubyObject {
     // The (virtual) super class.
     private RubyClass superClass;
 
+    private String classId;
+    private RubyString classPath;
+
     // The methods.
     private RubyMap methods = new RubyHashMap();
 
@@ -230,14 +233,13 @@ public class RubyModule extends RubyObject {
             module = getRuby().getClasses().getObjectClass();
         }
 
-        path = (RubyString) getInstanceVariables().get("__classpath__");
+        path = classPath;
         if (path == null) {
-            if (getInstanceVariables().get("__classid__") != null) {
-                path = RubyString.newString(getRuby(), (String) getInstanceVariables().get("__classid__"));
+            if (classId != null) {
+                path = RubyString.newString(getRuby(), classId);
                 // todo: convert from symbol to string
-
-                getInstanceVariables().put("__classpath__", path);
-                getInstanceVariables().remove("__classid__");
+                classPath = path;
+                classId = null;
             }
         }
 
@@ -270,7 +272,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (arg.name != null) {
-            getInstanceVariables().put("__classpath__", arg.path);
+            classPath = arg.path;
             return arg.path;
         }
         return RubyString.nilString(getRuby());
@@ -284,7 +286,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void setName(String name) {
-        getInstanceVariables().put("__classid__", name);
+        classId = name;
     }
 
     /** rb_set_class_path
@@ -301,7 +303,7 @@ public class RubyModule extends RubyObject {
             value.cat(name);
         }
 
-        getInstanceVariables().put("__classpath__", value);
+        classPath = value;
     }
 
     /** rb_class_path
@@ -410,8 +412,8 @@ public class RubyModule extends RubyObject {
 
         while (true) {
             while (tmp != null) {
-                if (tmp.getInstanceVariables().get(name) != null) {
-                    return (RubyObject) tmp.getInstanceVariables().get(name);
+                if (! tmp.getInstanceVar(name).isNil()) {
+                    return tmp.getInstanceVar(name);
                 }
                 if (tmp == getRuby().getClasses().getObjectClass() && getRuby().getTopConstant(name) != null) {
                     return getRuby().getTopConstant(name);
@@ -510,7 +512,7 @@ public class RubyModule extends RubyObject {
         if (isFrozen()) {
             throw new RubyFrozenException(getRuby(), "class/module");
         }
-        if (constant && (getInstanceVariables().get(name) != null)) {
+        if (constant && (! getInstanceVar(name).isNil())) {
             //getRuby().warn("already initialized " + dest + " " + name);
         }
 
@@ -672,7 +674,7 @@ public class RubyModule extends RubyObject {
      * 
      */
     public boolean isConstantDefinedAt(String name) {
-        if (getInstanceVariables().containsKey(name)) {
+        if (! getInstanceVar(name).isNil()) {
             return true;
         } else if (this == ruby.getClasses().getObjectClass()) {
             return isConstantDefined(name);

@@ -35,7 +35,7 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
-/** This class initializes all global functions, variables and constants.
+/** This class initializes global variables and constants.
  * 
  * @author jpetersen
  * @version $Revision$
