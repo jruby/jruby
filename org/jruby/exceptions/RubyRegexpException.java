@@ -30,26 +30,21 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.*;
+
 /**
  *
  * @author  jpetersen
  * @version 
  */
-public class RubyRegexpException extends RubyException {
-
-    /**
-     * Creates new <code>RubyRegexpException</code> without detail message.
-     */
-    public RubyRegexpException() {
-    }
-
+public class RubyRegexpException extends RaiseException {
 
     /**
      * Constructs an <code>RubyRegexpException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyRegexpException(String msg) {
-        super(msg);
+    public RubyRegexpException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getRegexpError(), msg);
     }
 }
 

@@ -43,7 +43,7 @@ public abstract class IRegexpAdapter
     /**
      * Compile the regex.
      */
-    public abstract void compile(String pattern) throws RubyRegexpException;
+    public abstract void compile(Ruby ruby, String pattern) throws RubyRegexpException;
 
     /**
      * Set whether matches should be case-insensitive or not

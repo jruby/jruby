@@ -38,6 +38,36 @@ import org.jruby.*;
  * @version 
  */
 public class RaiseException extends RuntimeException {
-    public RaiseException() {
-    }
+	private RubyException actException;
+
+	public RaiseException(RubyException actException) {
+		this.actException = actException;
+	}
+
+	public RaiseException(Ruby ruby, RubyClass excptnClass, String msg) {
+		this.actException = RubyException.newException(ruby, excptnClass, msg);
+	}
+
+	public RaiseException(Ruby ruby, String excptnClass, String msg) {
+		this.actException =
+			RubyException.newException(
+				ruby,
+				(RubyClass) ruby.getRubyClass(excptnClass),
+				msg);
+	}
+	/**
+	 * Gets the actException
+	 * @return Returns a RubyException
+	 */
+	public RubyException getActException() {
+		return actException;
+	}
+	/**
+	 * Sets the actException
+	 * @param actException The actException to set
+	 */
+	public void setActException(RubyException actException) {
+		this.actException = actException;
+	}
+
 }

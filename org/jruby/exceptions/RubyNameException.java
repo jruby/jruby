@@ -30,21 +30,19 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.*;
+
 /**
  *
  * @author  jpetersen
  */
-public class RubyNameException extends RubyException {
-
-    public RubyNameException() {
-    }
-
+public class RubyNameException extends RaiseException {
 
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyNameException(String msg) {
-        super(msg);
+    public RubyNameException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getNameError(), msg);
     }
 }

@@ -123,7 +123,7 @@ public class RubyGlobalEntry {
      */
     public RubyObject set(RubyObject value) {
         if (ruby.getSecurityLevel() >= 4) {
-            throw new RubySecurityException("Insecure: can't change global variable value");
+            throw new RubySecurityException(ruby, "Insecure: can't change global variable value");
         }
         
         getSetter().set(value, getId(), (RubyObject)getData(), this);
@@ -140,7 +140,7 @@ public class RubyGlobalEntry {
      */
     public void alias(RubyId newId) {
         if (ruby.getSecurityLevel() >= 4) {
-            throw new RubySecurityException("Insecure: can't alias global variable");
+            throw new RubySecurityException(ruby, "Insecure: can't alias global variable");
         }
         
         RubyGlobalEntry entry = getGlobalEntry(newId);

@@ -30,26 +30,20 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.*;
+
 /**
  *
  * @author  jpetersen
  * @version 
  */
-public class RubyIndexException extends RubyException {
-
-    /**
-     * Creates new <code>RubyIndexException</code> without detail message.
-     */
-    public RubyIndexException() {
-    }
-
-
+public class RubyIndexException extends RaiseException {
     /**
      * Constructs an <code>RubyIndexException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyIndexException(String msg) {
-        super(msg);
+    public RubyIndexException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getIndexError(), msg);
     }
 }
 

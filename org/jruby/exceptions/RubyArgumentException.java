@@ -30,21 +30,18 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.Ruby;
+
 /**
  *
  * @author  jpetersen
  */
-public class RubyArgumentException extends RubyException {
-
-    public RubyArgumentException() {
-    }
-
-
+public class RubyArgumentException extends RaiseException {
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyArgumentException(String msg) {
-        super(msg);
+    public RubyArgumentException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getArgumentError(), msg);
     }
 }

@@ -49,11 +49,11 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
     /**
      * Compile the regex.
      */
-    public void compile(String regex) throws RubyRegexpException {
+    public void compile(Ruby ruby, String regex) throws RubyRegexpException {
         try {
             pattern = Pattern.compile(regex, cflags);
         } catch (PatternSyntaxException e) {
-            throw new RubyRegexpException(e.getMessage());
+            throw new RubyRegexpException(ruby, e.getMessage());
         }
     }
 

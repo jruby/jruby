@@ -30,25 +30,20 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.*;
+
 /**
  *
  * @author  jpetersen
  */
-public class RubyTypeException extends RubyException {
-
-    /**
-     * Creates new <code>RubyTypeException</code> without detail message.
-     */
-    public RubyTypeException() {
-    }
-
+public class RubyTypeException extends RaiseException {
 
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyTypeException(String msg) {
-        super(msg);
+    public RubyTypeException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getTypeError(), msg);
     }
 }
 

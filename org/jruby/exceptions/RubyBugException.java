@@ -34,12 +34,7 @@ package org.jruby.exceptions;
  *
  * @author  jpetersen
  */
-public class RubyBugException extends RubyException {
-
-    public RubyBugException() {
-    }
-
-
+public class RubyBugException extends RuntimeException {
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.

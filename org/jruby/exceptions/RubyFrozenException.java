@@ -30,21 +30,18 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.*;
+
 /**
  *
  * @author  jpetersen
  */
-public class RubyFrozenException extends RubyException {
-
-    public RubyFrozenException() {
-    }
-
-
+public class RubyFrozenException extends RaiseException {
     /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
+     * Constructs a <code>RubyFrozenException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyFrozenException(String msg) {
-        super(msg);
+    public RubyFrozenException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getStandardError(), msg);
     }
 }

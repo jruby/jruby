@@ -34,7 +34,6 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.nodes.*;
-import org.jruby.original.*;
 import org.jruby.util.*;
 
 /**

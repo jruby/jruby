@@ -30,21 +30,19 @@
 
 package org.jruby.exceptions;
 
+import org.jruby.*;
+
 /**
  *
  * @author  jpetersen
  */
-public class RubySecurityException extends RubyException {
-
-    public RubySecurityException() {
-    }
-
+public class RubySecurityException extends RaiseException {
 
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubySecurityException(String msg) {
-        super(msg);
+    public RubySecurityException(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getSecurityError(),  msg);
     }
 }

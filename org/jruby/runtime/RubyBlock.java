@@ -31,7 +31,6 @@
 package org.jruby.runtime;
 
 import org.jruby.*;
-import org.jruby.original.*;
 import org.jruby.nodes.*;
 
 /**
@@ -55,7 +54,7 @@ public class RubyBlock {
     public int vmode;
     public int flags;
     public RubyVarmap dynamicVars;
-    public VALUE origThread;
+    public RubyObject origThread;
     public RubyBlock prev;
     
     private Ruby ruby;
@@ -66,7 +65,7 @@ public class RubyBlock {
     
     protected RubyBlock(Node var, Node body, RubyObject self, RubyFrame frame, RubyScope scope, 
                         RubyModule klass, int iter, int vmode, int flags, RubyVarmap dynamicVars,
-                        VALUE origThread, RubyBlock prev, Ruby ruby) {
+                        RubyObject origThread, RubyBlock prev, Ruby ruby) {
         this(ruby);
                             
         this.var = var;
