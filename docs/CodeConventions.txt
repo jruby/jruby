@@ -22,6 +22,8 @@ File Organization:
 
  Let your IDE spell out all imports, do not use ".*" for imports.
  
+ Remove unused imports.
+ 
  Use this order
  
   - file comment
@@ -42,7 +44,7 @@ Indentation:
 
  Indent by 4 spaces - do not use tab
  
- Do not use lines longer than 80 chars if possible.
+ Do not use lines longer than 100 chars if possible.
  
 
 Comments:
@@ -152,5 +154,4 @@ Best practices:
  "if (expr)" or "if (!expr)".  The same goes for "if (expr) { return true; }
  else { return false; }".  This can always be expressed as "return expr;"
  
- Use small methods. 10-20 lines should be always enough.
- 
+ Use small methods. 10-20 lines should be a good target.
