@@ -33,29 +33,33 @@ import org.jruby.ThreadClass;
 public class ThreadService {
     private Ruby runtime;
     private ThreadContext mainContext = new ThreadContext(runtime);
-    private ThreadContextLocal threadContext = new ThreadContextLocal(mainContext);
+    private ThreadContextLocal localContext = new ThreadContextLocal(mainContext);
 
     public ThreadService(Ruby runtime) {
         this.runtime = runtime;
         this.mainContext = new ThreadContext(runtime);
-        this.threadContext = new ThreadContextLocal(mainContext);
+        this.localContext = new ThreadContextLocal(mainContext);
     }
 
-    public void dispose() {
-        threadContext.dereferenceMainContext();
+    public void disposeCurrentThread() {
+        localContext.dispose();
     }
 
     public ThreadContext getCurrentContext() {
-        return (ThreadContext) threadContext.get();
+        return (ThreadContext) localContext.get();
     }
 
-    public ThreadContext getMainContext() {
-        return mainContext;
+    public ThreadClass getMainThread() {
+        return mainContext.getThread();
     }
 
-    public void registerNewContext(ThreadClass thread) {
-        threadContext.set(new ThreadContext(runtime));
-        getCurrentContext().setCurrentThread(thread);
+    public void setMainThread(ThreadClass thread) {
+        mainContext.setThread(thread);
+    }
+
+    public void registerNewThread(ThreadClass thread) {
+        localContext.set(new ThreadContext(runtime));
+        getCurrentContext().setThread(thread);
     }
 
     private static class ThreadContextLocal extends ThreadLocal {
@@ -72,7 +76,7 @@ public class ThreadService {
             return this.mainContext;
         }
 
-        public void dereferenceMainContext() {
+        public void dispose() {
             this.mainContext = null;
             set(null);
         }

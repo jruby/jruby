@@ -49,7 +49,7 @@ public class ThreadContext {
     private BlockStack blockStack;
     private ArrayStack dynamicVarsStack;
 
-    private ThreadClass currentThread;
+    private ThreadClass thread;
 
     private ArrayStack classStack;
     private ScopeStack scopeStack;
@@ -96,16 +96,12 @@ public class ThreadContext {
         return getCurrentDynamicVars().names();
     }
 
-    /**
-     * Returns the currentThread.
-     * @return RubyThread
-     */
-    public ThreadClass getCurrentThread() {
-        return currentThread;
+    public ThreadClass getThread() {
+        return thread;
     }
 
-    public void setCurrentThread(ThreadClass thread) {
-        this.currentThread = thread;
+    public void setThread(ThreadClass thread) {
+        this.thread = thread;
     }
 
     public IRubyObject eval(INode node) {
@@ -300,7 +296,7 @@ public class ThreadContext {
     }
 
     public void pollThreadEvents() {
-        getCurrentThread().pollThreadEvents();
+        getThread().pollThreadEvents();
     }
 
     public void pushClass(RubyModule newClass) {

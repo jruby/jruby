@@ -60,17 +60,17 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     private boolean abortOnException;
     private RaiseException exitingException = null;
     private IRubyObject receivedException = null;
-    
+
     private ThreadService threadService;
     private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
 
     public static RubyClass createThreadClass(Ruby runtime) {
         RubyClass threadClass = new ThreadDefinition(runtime).getType();
-        
+
         ThreadClass currentThread = new ThreadClass(runtime, threadClass);
         currentThread.jvmThread = Thread.currentThread();
-        runtime.getThreadService().getMainContext().setCurrentThread(currentThread);
+        runtime.getThreadService().setMainThread(currentThread);
 
         return threadClass;
     }
@@ -123,7 +123,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
             public void run() {
                 thread.notifyStarted();
 
-                runtime.getThreadService().registerNewContext(thread);
+                runtime.getThreadService().registerNewThread(thread);
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
                 context.getBlockStack().setCurrent(currentBlock);
@@ -182,7 +182,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     public static ThreadClass current(IRubyObject recv) {
-        return recv.getRuntime().getCurrentContext().getCurrentThread();
+        return recv.getRuntime().getCurrentContext().getThread();
     }
 
     public static IRubyObject pass(IRubyObject recv) {
@@ -320,8 +320,9 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         if (abortOnException()) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
-            threadService.getMainContext().getCurrentThread().raise(RubyException.newException(getRuntime(),
-                                                                                         getRuntime().getExceptions().getSystemExit(), ""));
+            threadService.getMainThread().raise(RubyException.newException(getRuntime(),
+                                                                           getRuntime().getExceptions().getSystemExit(),
+                                                                           ""));
         } else {
             exitingException = exception;
         }
@@ -332,7 +333,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     public static ThreadClass mainThread(IRubyObject receiver) {
-        return receiver.getRuntime().getThreadService().getMainContext().getCurrentThread();
+        return receiver.getRuntime().getThreadService().getMainThread();
     }
 
     /**

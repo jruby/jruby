@@ -584,10 +584,6 @@ public final class Ruby {
         return threadService;
     }
 
-    public void disposeCurrentThread() {
-        threadService.dispose();
-    }
-
     public ThreadContext getCurrentContext() {
         return threadService.getCurrentContext();
     }
