@@ -42,6 +42,10 @@ public class GlobalVariable {
     private final String name;
     private IRubyObject value;
 
+    public static String variableName(String name) {
+        return "$" + name;
+    }
+
     public GlobalVariable(Ruby ruby, String name, IRubyObject value) {
         Asserts.assertExpression(name.startsWith("$"));
         this.ruby = ruby;
