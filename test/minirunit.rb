@@ -11,7 +11,7 @@ module MiniRUnit
     end
 
     def to_s
-      sprintf("not ok %s %d %s-- %s\n", @what, @testnum, @msg, @where)
+      sprintf("FAILED %s %d %s-- %s\n", @what, @testnum, @msg, @where)
     end
   end
 
@@ -21,7 +21,7 @@ module MiniRUnit
     end
 
     def to_s
-      sprintf("exception raised %s %d -- \n\tException: %s\n\t%s",
+      sprintf("EXCEPTION raised %s %d -- \n\tException: %s\n\t%s",
               @what, @testnum, @boom.to_s, @boom.backtrace.join("\n\t"))
     end
   end
@@ -29,7 +29,7 @@ end
 
 
 def test_check(what)
-  printf "\n%s : ", what
+  printf "%s : ", what
   $what = what
   $testnum = 0
 end

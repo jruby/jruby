@@ -46,6 +46,4 @@ open(TEST_INDEX) {|test_index|
   }
 }
 
-puts
-
 test_print_report

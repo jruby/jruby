@@ -139,7 +139,7 @@
   <target name="test" description="runs junit tests" depends="create-test-jar">
     <mkdir dir="${test.dir}/report"/>
     <mkdir dir="${tmp.dir}/test-results"/>
-    <junit printsummary="yes" haltonfailure="no">
+    <junit haltonfailure="yes">
       <classpath>
         <path refid="build.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
@@ -149,8 +149,12 @@
       <sysproperty key="jruby.home" value="${base.dir}"/>
       <sysproperty key="jruby.lib" value="${lib.dir}"/>
       <formatter type="xml"/>
+      <formatter type="brief" usefile="false"/>
       <test name="org.jruby.test.MainTestSuite" todir="${tmp.dir}/test-results"/>
     </junit>
+  </target>
+
+  <target name="test-report" description="creates a html test report" depends="test">
     <junitreport todir="${tmp.dir}/test-results">
       <fileset dir="${tmp.dir}/test-results">
         <include name="TEST-*.xml"/>
