@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.marshal.MarshalStream;
 
 /**

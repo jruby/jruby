@@ -35,7 +35,6 @@ import java.util.Map;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.javasupport.JavaArray;
