@@ -6314,7 +6314,7 @@ case 432:
     /** Creates a new regular expression from "s" */
     VALUE rb_reg_new(String s, int len, int options) {
         //XXX well...
-        return new RubyRegex(ruby, (RubyString)rb_str_new(s, len), options);
+        return new RubyRegexp(ruby, (RubyString)rb_str_new(s, len), options);
     }
 
     /** Creates a new integer object (Fixnum or Bignum) from "s" */
@@ -6390,7 +6390,7 @@ case 432:
 
     int TYPE(VALUE v) {
         if (v instanceof RubyFixnum) return T_FIXNUM;
-        if (v instanceof RubyRegex) return T_REGEXP;
+        if (v instanceof RubyRegexp) return T_REGEXP;
 	if (v instanceof RubyFloat) return T_FLOAT;
         throw missing();
     }
