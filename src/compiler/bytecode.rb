@@ -283,6 +283,12 @@ module JRuby
         end
       end
 
+      class PushConstant
+        def initialize(name)
+          @name = name
+        end
+      end
+
       class IfFalse
         attr_writer :target
 

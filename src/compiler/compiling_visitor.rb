@@ -214,6 +214,14 @@ module JRuby
       def visitSymbolNode(node)
         @bytecodes << PushSymbol.new(node.getName)
       end
+
+      def visitConstNode(node)
+        @bytecodes << PushConstant.new(node.getName)
+      end
+
+      def visitNilNode(node)
+        @bytecodes << PushNil.new
+      end
     end
 
     # Since we can't subclass Java interfaces properly we have
