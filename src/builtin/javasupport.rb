@@ -413,15 +413,27 @@ class Module
     @included_packages = [package_name]
 
     def self.const_missing(constant)
+      if defined? @java_aliases and @java_aliases.has_key?(constant)
+        real_name = @java_aliases[constant]
+      else
+        real_name = constant
+      end
       java_class = nil
       @included_packages.detect {|package|
-        java_class = get_java_class(package + '.' + constant.to_s)
+          java_class = get_java_class(package + '.' + real_name.to_s)
       }
       if java_class.nil?
         return super
       end
       JavaUtilities.create_proxy_class(constant, java_class, self)
     end
+  end
+
+  def java_alias(new_id, old_id)
+    unless defined? @java_aliases
+      @java_aliases = {}
+    end
+    @java_aliases[new_id] = old_id
   end
 
   def get_java_class(name)

@@ -11,7 +11,13 @@ if defined? Java
     # Java class loading
     test_exception(NameError) { System }
     include_package "java.lang"
-    test_no_exception {System}
+    test_no_exception { System }
+
+    # Class name collisions
+    java_alias :JavaInteger, :Integer
+    test_equal(10, JavaInteger.new(10).intValue)
+    test_exception(NameError) { Integer.new(10) }
+
     # Constructors
     r = Random.new
     test_equal(Random, r.type)
@@ -39,6 +45,12 @@ if defined? Java
     include_package "org.jruby.util"
     sb = TestHelper.getInterfacedInstance()
     test_equal(nil , sb.dispatchObject(nil))
+
+    # Calling with ruby array arguments
+    a = [104, 101, 108, 108, 111]
+#    test_equal("hello", String.new(a))   # (char[]) matches here
+    test_equal("104101108108111",        # append(Object) triumphs here
+               StringBuffer.new.append(a).toString) 
 
     # FIXME: easy method for importing java class with colliding name
     # (Since String would be nice to test on)

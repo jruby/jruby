@@ -29,6 +29,20 @@ Module:
               random.nextInt(10)              # -> some Fixnum (0..9)
             end
 
+    java_alias( newId, oldId )
+
+        Defines an alternative name for a Java class, so that Java
+        classes with names colliding with Ruby classes can be accessed.
+
+        Example:
+
+            module MyModule
+              include_package 'java.lang'
+              java_alias :JavaInteger, :Integer
+            end
+
+            MyModule::JavaInteger.new(123) # -> a java.lang.Integer
+
 
 The Java classes made available through include_package have the
 following properties:
