@@ -55,7 +55,6 @@
 		<mkdir dir="${classes.dir}"/>
 		<mkdir dir="${jruby.classes.dir}"/>
     	<mkdir dir="${test.classes.dir}"/>
-		<mkdir dir="${gen-src.dir}"/>
 		<mkdir dir="${test.results.dir}"/>
 		<mkdir dir="${html.test.results.dir}"/>
 		<mkdir dir="${docs.dir}"/>
@@ -67,6 +66,8 @@
           	depends="init">
     	<available property="jdk1.4+"
                	classname="java.lang.CharSequence"/>
+  		<available property="jdk1.5+"
+  				classname="java.lang.StringBuilder"/>
     	<available property="bsf.present"
                	classname="org.apache.bsf.BSFManager"
                	classpathref="build.classpath"/>
@@ -82,7 +83,7 @@
 		description="Builds the Ant tasks that we need later on in the build">
     	<javac destdir="${jruby.classes.dir}" debug="true"
 			srcdir="${src.dir}"
-      		includes="org/jruby/util/ant/**/*.java" source="1.4">
+      		includes="org/jruby/util/ant/**/*.java" source="${javac.version}">
       		<classpath refid="build.classpath"/>
     	</javac>
 
@@ -95,22 +96,11 @@
 		</copy>
 	</target>
 
-	<!--<target name="copy.with.expansion" depends="compile.tasks, check-for-optional-packages"
-		description="Copy those files who need variables expanded">
-		<copy todir="${gen-src.dir}">
-			<fileset dir="${src.dir}" includes="**/Constants.java"/>
-			<filterchain>
-				<expandproperties/>
-			</filterchain>
-		</copy>
-	</target>-->
-
   	<target name="compile" depends="compile.tasks, check-for-optional-packages"
 		description="Compile the source files for the project.">
-        <javac destdir="${jruby.classes.dir}" debug="true" source="1.4">
+        <javac destdir="${jruby.classes.dir}" debug="true" source="${javac.version}">
 			<classpath refid="build.classpath"/>
 			<src path="${src.dir}"/>
-			<src path="${gen-src.dir}"/>
 			<patternset refid="java.src.pattern"/>
         </javac>
   	</target>
@@ -154,7 +144,7 @@
   
   	<target name="compile-test" depends="jar" 
 		description="Compile the unit tests">
-    	<javac destdir="${test.classes.dir}" deprecation="true" debug="true" source="1.4">
+    	<javac destdir="${test.classes.dir}" deprecation="true" debug="true" source="${javac.version}">
       		<classpath>
         		<path refid="build.classpath"/>
 				<pathelement path="${jruby.classes.dir}"/>
