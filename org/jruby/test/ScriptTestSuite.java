@@ -41,7 +41,6 @@ import org.jruby.*;
  * @author Anders
  * @version $Revision$
  */
-
 public class ScriptTestSuite extends TestSuite {
 
     private static final String TEST_DIR = "test";
