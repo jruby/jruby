@@ -36,7 +36,6 @@ import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.RubyBugException;
 import org.jruby.exceptions.RubyFrozenException;
 import org.jruby.exceptions.RubySecurityException;
 import org.jruby.exceptions.TypeError;
@@ -49,15 +48,15 @@ import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Namespace;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -1721,9 +1720,7 @@ public class RubyModule extends RubyObject {
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].toId();
                 ICallable method = searchMethod(name);
-                if (method.isUndefined()) {
-                    throw new RubyBugException("undefined method '" + name + "'; can't happen");
-                }
+                Asserts.assertTrue(!method.isUndefined(), "undefined method '" + name + "'");
                 getSingletonClass().addMethod(name, new WrapperCallable(method, Visibility.PUBLIC));
                 callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }

@@ -43,7 +43,6 @@ import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.RubyBugException;
 import org.jruby.exceptions.RubySecurityException;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
@@ -143,6 +142,7 @@ public final class Ruby {
     private Namespace topNamespace;
 
     private ISourcePosition sourcePosition = new DefaultLexerPosition(null, 0, 0);
+
 
     private boolean isVerbose;
 
@@ -287,9 +287,7 @@ public final class Ruby {
 
     public RubyClass defineClass(String name, String superName) {
         RubyClass superClass = getRubyClass(superName);
-        if (superClass == null) {
-            throw new RubyBugException("Error defining class: Unknown superclass '" + superName + "'");
-        }
+        Asserts.assertTrue(superClass != null, "can't find superclass '" + superName + "'");
         return defineClass(name, superClass);
     }
 
@@ -491,12 +489,16 @@ public final class Ruby {
         return sourcePosition.getFile();
     }
 
+
+
     /** Getter for property sourceLine.
      * @return Value of property sourceLine.
      */
     public int getSourceLine() {
         return sourcePosition.getLine();
     }
+
+
 
     /** Getter for property isVerbose.
      * @return Value of property isVerbose.
@@ -716,9 +718,7 @@ public final class Ruby {
 
     public void setPosition(String file, int line) {
         setPosition(new DefaultLexerPosition(file, line, 0));
-    }
-
-    public void setPosition(ISourcePosition position) {
+    }    public void setPosition(ISourcePosition position) {
         sourcePosition = position;
     }
 

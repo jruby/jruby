@@ -33,6 +33,7 @@ import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.*;
+import org.jruby.util.Asserts;
 
 /**
  *
@@ -143,7 +144,7 @@ public class RubyBignum extends RubyInteger {
 
     static public BigInteger bigIntValue(RubyNumeric other) {
         if (other instanceof RubyFloat) {
-            throw new RubyBugException("argument must be an integer");
+            Asserts.assertNotReached("argument must be an integer");
         }
         return (other instanceof RubyBignum) ? ((RubyBignum) other).getValue() : BigInteger.valueOf(other.getLongValue());
     }

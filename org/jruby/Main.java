@@ -297,8 +297,6 @@ public class Main {
             ruby.getRuntime().printError(rExcptn.getException());
         } catch (ThrowJump throwJump) {
             ruby.getRuntime().printError(throwJump.getNameError());
-        } catch (RubyBugException lBug) {
-            ruby.getRuntime().getErrorStream().print(lBug.getMessage());
         }
     }
 

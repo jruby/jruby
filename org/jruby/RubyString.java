@@ -28,14 +28,21 @@
  */
 package org.jruby;
 
-import java.util.*;
+import java.util.Locale;
 
-import org.jruby.exceptions.*;
-import org.jruby.javasupport.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RubyIndexException;
+import org.jruby.exceptions.TypeError;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.*;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Asserts;
+import org.jruby.util.Pack;
+import org.jruby.util.PrintfFormat;
 
 /**
  *
@@ -88,7 +95,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 		try {
 			return new String(bytes, encoding);
 		} catch (java.io.UnsupportedEncodingException e) {
-			throw new RubyBugException("unsupported encoding " + e);
+			Asserts.assertNotReached("unsupported encoding " + e);
+            return null;
 		}
 	}
 
@@ -96,7 +104,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 		try {
 			return string.getBytes(encoding);
 		} catch (java.io.UnsupportedEncodingException e) {
-			throw new RubyBugException("unsupported encoding " + e);
+			Asserts.assertNotReached("unsupported encoding " + e);
+            return null;
 		}
 	}
 

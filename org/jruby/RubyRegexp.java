@@ -33,6 +33,7 @@ import org.jruby.exceptions.*;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.regexp.*;
 import org.jruby.runtime.*;
+import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -53,7 +54,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             matcher = (IRegexpAdapter) ruby.getRegexpAdapterClass().newInstance();
         } catch (Exception ex) {
             // can't happen if JRuby is invoked via Main class
-            throw new RubyBugException("Couldn't create regexp adapter");
+            Asserts.assertNotReached("Couldn't create regexp adapter");
         }
     }
 
