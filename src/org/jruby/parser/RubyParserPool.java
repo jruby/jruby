@@ -60,10 +60,9 @@ public class RubyParserPool implements IParserPool {
             Iterator iter = pool.iterator();
             while (iter.hasNext()) {
                 IParser parser = (IParser) ((Reference) iter.next()).get();
+                iter.remove();
                 if (parser != null) {
                     return parser;
-                } else {
-                    iter.remove();
                 }
             }
         }
