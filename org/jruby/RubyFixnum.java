@@ -78,7 +78,7 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod(">=", CallbackFactory.getMethod(RubyFixnum.class, "op_ge", RubyObject.class));
         fixnumClass.defineMethod("<", CallbackFactory.getMethod(RubyFixnum.class, "op_lt", RubyObject.class));
         fixnumClass.defineMethod("<=", CallbackFactory.getMethod(RubyFixnum.class, "op_le", RubyObject.class));
-
+        fixnumClass.defineMethod("&", CallbackFactory.getMethod(RubyFixnum.class, "op_and", RubyObject.class));
         fixnumClass.defineMethod("size", CallbackFactory.getMethod(RubyFixnum.class, "size"));
 
         return fixnumClass;
@@ -306,6 +306,12 @@ public class RubyFixnum extends RubyInteger {
         if (width < 0)
             return op_lshift(other.op_uminus());
         return newFixnum(value >>> width);
+    }
+
+    public RubyNumeric op_and(RubyObject other) {
+        RubyNumeric otherNumeric = numericValue(other);
+        long otherLong = otherNumeric.getTruncatedLongValue();
+        return newFixnum(value & otherLong);
     }
 
     /**

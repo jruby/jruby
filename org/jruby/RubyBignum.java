@@ -57,11 +57,15 @@ public class RubyBignum extends RubyInteger {
     }
 
     public long getLongValue() {
-        long result = value.longValue();
-        if (! (BigInteger.valueOf(result).equals(value))) {
+        long result = getTruncatedLongValue();
+        if (! BigInteger.valueOf(result).equals(value)) {
             throw new RangeError(ruby, "bignum too big to convert into 'int'");
         }
         return result;
+    }
+
+    public long getTruncatedLongValue() {
+        return value.longValue();
     }
 
     /** Getter for property value.
@@ -111,6 +115,7 @@ public class RubyBignum extends RubyInteger {
         bignumClass.defineMethod("*", CallbackFactory.getMethod(RubyBignum.class, "op_mul", RubyObject.class));
         bignumClass.defineMethod("/", CallbackFactory.getMethod(RubyBignum.class, "op_div", RubyObject.class));
         bignumClass.defineMethod("%", CallbackFactory.getMethod(RubyBignum.class, "op_mod", RubyObject.class));
+        bignumClass.defineMethod("&", CallbackFactory.getMethod(RubyBignum.class, "op_and", RubyObject.class));
         bignumClass.defineMethod("**", CallbackFactory.getMethod(RubyBignum.class, "op_pow", RubyObject.class));
 
         bignumClass.defineMethod("<<", CallbackFactory.getMethod(RubyBignum.class, "op_lshift", RubyObject.class));
@@ -182,6 +187,17 @@ public class RubyBignum extends RubyInteger {
         }
 
         return bigNorm(getRuby(), result);
+    }
+
+    public RubyNumeric op_and(RubyObject other) {
+        RubyNumeric otherNumeric = numericValue(other);
+        if (otherNumeric instanceof RubyBignum) {
+            return bigNorm(getRuby(),
+                           value.and(((RubyBignum) other).value));
+        } else {
+            return RubyFixnum.newFixnum(getRuby(),
+                                        getTruncatedLongValue() & otherNumeric.getLongValue());
+        }
     }
 
     public RubyNumeric op_uminus() {

@@ -778,7 +778,7 @@ public class RubyObject implements Cloneable {
      * <i>CRuby function: rb_obj_id</i>
      *
      */
-    public RubyObject id() {
+    public RubyFixnum id() {
         return RubyFixnum.newFixnum(getRuby(), System.identityHashCode(this));
     }
 

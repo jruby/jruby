@@ -66,6 +66,7 @@ public class RubySymbol extends RubyObject {
         
         symbolClass.getRubyClass().undefMethod("new");
         
+        symbolClass.defineMethod("id", CallbackFactory.getMethod(RubySymbol.class, "id"));
         symbolClass.defineMethod("to_i", CallbackFactory.getMethod(RubySymbol.class, "to_i"));
         symbolClass.defineMethod("to_int", CallbackFactory.getMethod(RubySymbol.class, "to_i"));
         symbolClass.defineMethod("id2name", CallbackFactory.getMethod(RubySymbol.class, "to_s"));
@@ -94,6 +95,10 @@ public class RubySymbol extends RubyObject {
         }
     }
 
+    public RubyFixnum id() {
+        return RubyFixnum.newFixnum(getRuby(), symbol.hashCode());
+    }
+
     public RubyFixnum to_i() {
         return hash();
     }
@@ -107,7 +112,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuby(), symbol.hashCode());
+        return id();
     }
 
     public RubyBoolean equal(RubyObject other) {

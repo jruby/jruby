@@ -50,6 +50,10 @@ public abstract class RubyNumeric extends RubyObject {
     public abstract double getDoubleValue();
     public abstract long getLongValue();
 
+    public long getTruncatedLongValue() {
+        return getLongValue();
+    }
+
     public static RubyClass createNumericClass(Ruby ruby) {
         RubyClass numericClass = ruby.defineClass("Numeric", ruby.getClasses().getObjectClass());
 
