@@ -209,6 +209,9 @@ public class DefaultLexerSupport implements ILexerSupport {
                 return false;
             }
         }
+        for (int i = s.length(); i > 0; i--) {
+            unread();
+        }
         return true;
     }
 
