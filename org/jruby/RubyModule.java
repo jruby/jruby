@@ -282,30 +282,12 @@ public class RubyModule extends RubyObject {
         RubyMap instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
         if (instanceVariables != null) {
             Iterator iter = instanceVariables.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                int ret = findClassPathMap(entry.getKey(), entry.getValue(), arg);
-                switch (ret) {
-                    case RubyMapMethod.CONTINUE:
-                        continue;
-                    case RubyMapMethod.STOP:
-                        break;
-                }
-            }
+            findClassPathMap(iter, arg);
         }
 
         if (arg.name == null) {
             Iterator iter = getRuntime().getClasses().getClassMap().entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                int ret = findClassPathMap(entry.getKey(), entry.getValue(), arg);
-                switch (ret) {
-                    case RubyMapMethod.CONTINUE:
-                        continue;
-                    case RubyMapMethod.STOP:
-                        break;
-                }
-            }
+            findClassPathMap(iter, arg);
         }
 
         if (arg.name != null) {
@@ -1786,15 +1768,7 @@ public class RubyModule extends RubyObject {
         public FindClassPathResult prev;
     }
 
-    private int findClassPathMap(Object _key, Object _value, Object _res) {
-        // Cast the values.
-        String key = (String) _key;
-        if (_value instanceof String || _value == null) {
-            return RubyMapMethod.CONTINUE;
-        }
-        IRubyObject value = (IRubyObject) _value;
-        FindClassPathResult res = (FindClassPathResult) _res;
-
+    private int findClassPathMapInner(String key, IRubyObject value, FindClassPathResult res) {
         String path = null;
 
         if (!IdUtil.isConstant(key)) {
@@ -1836,16 +1810,7 @@ public class RubyModule extends RubyObject {
             arg.prev = res;
 
             Iterator iter = value.getInstanceVariables().entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                int ret = findClassPathMap(entry.getKey(), entry.getValue(), arg);
-                switch (ret) {
-                    case RubyMapMethod.CONTINUE:
-                        continue;
-                    case RubyMapMethod.STOP:
-                        break;
-                }
-            }
+            findClassPathMap(iter, arg);
 
             if (arg.name != null) {
                 res.name = arg.name;
@@ -1854,5 +1819,18 @@ public class RubyModule extends RubyObject {
             }
         }
         return RubyMapMethod.CONTINUE;
+    }
+
+    private void findClassPathMap(Iterator iter, FindClassPathResult arg) {
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry)iter.next();
+            int ret = findClassPathMapInner((String) entry.getKey(), (IRubyObject) entry.getValue(), arg);
+            switch (ret) {
+                case RubyMapMethod.CONTINUE:
+                    continue;
+                case RubyMapMethod.STOP:
+                    break;
+            }
+        }
     }
 }
