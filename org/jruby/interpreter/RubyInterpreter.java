@@ -146,7 +146,9 @@ public class RubyInterpreter implements node_type, Scope {
         
         RubyBoolean cond = null;
         RubyObject[] args = null;
+        RubyObject value = null;
         RubyObject result = null;
+        RubyModule rubyClass = null;
         // int state;
         
         // RubyOriginalMethods rom = getRuby().getOriginalMethods();
@@ -199,31 +201,23 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 /* node for speed-up(top-level loop for -n/-p) */
                 case NODE_OPT_N:
-/*                PUSH_TAG(PROT_NONE);
-                switch (state = EXEC_TAG()) {
-                    case 0:
-                        opt_n_next:
-                            while (!NIL_P(rb_gets())) {
-                                opt_n_redo:
-                            rb_eval(self, node->nd_body);
-                          }
-                    break;
- 
-                    case TAG_REDO:
-                        state = 0;
-            goto opt_n_redo;
-          case TAG_NEXT:
-            state = 0;
-            goto opt_n_next;
-          case TAG_BREAK:
-            state = 0;
-          default:
-            break;
-        }
-        POP_TAG();
-        if (state) JUMP_TAG(state);
-        RETURN(Qnil);*/
-                    
+                    while (true) {
+                        try {
+                            // while (!rb_gets().isNil() false) {
+                            // HACK +++
+                            if (true) {
+                            // HACK ---
+                                try {
+                                    eval(self, node.nd_body());
+                                } catch (RedoException rExcptn) {
+                                }
+                            }
+                            break;
+                        } catch (NextException nExcptn) {
+                        } catch (BreakException bExcptn) {
+                            break;
+                        }
+                    }
                     return getRuby().getNil();
                     
                 case NODE_SELF:
@@ -544,40 +538,40 @@ public class RubyInterpreter implements node_type, Scope {
                     return result;
                     
                 case NODE_FLIP2:		/* like AWK */
-                    //RubyBoolean result;
-/*                if (ruby_scope->local_vars == 0) {
-                    rb_bug("unexpected local variable");
-                }
-                if (!RTEST(ruby_scope->local_vars[node->nd_cnt])) {
-                    if (RTEST(rb_eval(self, node->nd_beg))) {
-                        ruby_scope->local_vars[node->nd_cnt] =
-                        RTEST(rb_eval(self, node->nd_end))?Qfalse:Qtrue;
-                        result = Qtrue;
+                    /*if (ruby_scope->local_vars == 0) {
+                        rb_bug("unexpected local variable");
+                    }*/
+                    
+                    if (ruby.rubyScope.getLocalVars(node.nd_cnt()).isFalse()) {
+                        if (eval(self, node.nd_beg()).isTrue()) {
+                            ruby.rubyScope.setLocalVars(node.nd_cnt(), 
+                                eval(self, node.nd_end()).isTrue() ? ruby.getFalse() : ruby.getTrue());
+                            result = ruby.getTrue();
+                        } else {
+                            result = ruby.getFalse();
+                        }
                     } else {
-                        result = Qfalse;
+                        if (eval(self, node.nd_end()).isTrue()) {
+                            ruby.rubyScope.setLocalVars(node.nd_cnt(), ruby.getFalse());
+                        }
+                        result = ruby.getTrue();
                     }
-                } else {
-                    if (RTEST(rb_eval(self, node->nd_end))) {
-                        ruby_scope->local_vars[node->nd_cnt] = Qfalse;
-                    }
-                    result = Qtrue;
-                }*/
                     return result;
                     
                 case NODE_FLIP3:		/* like SED */
-                    //RubyBoolean result;
-/*                if (ruby_scope->local_vars == 0) {
-                    rb_bug("unexpected local variable");
-                }
-                if (!RTEST(ruby_scope->local_vars[node->nd_cnt])) {
-                    result = RTEST(rb_eval(self, node->nd_beg)) ? Qtrue : Qfalse;
-                    ruby_scope->local_vars[node->nd_cnt] = result;
-                } else {
-                    if (RTEST(rb_eval(self, node->nd_end))) {
-                        ruby_scope->local_vars[node->nd_cnt] = Qfalse;
+                    /*if (ruby_scope->local_vars == 0) {
+                        rb_bug("unexpected local variable");
+                    }*/
+                    
+                    if (ruby.rubyScope.getLocalVars(node.nd_cnt()).isFalse()) {
+                        result = eval(self, node.nd_beg()).isTrue() ? ruby.getFalse() : ruby.getTrue();
+                        ruby.rubyScope.setLocalVars(node.nd_cnt(), result);
+                    } else {
+                        if (eval(self, node.nd_end()).isTrue()) {
+                            ruby.rubyScope.setLocalVars(node.nd_cnt(), ruby.getFalse());
+                        }
+                        result = ruby.getTrue();
                     }
-                    result = Qtrue;
-                }*/
                     return result;
                     
                 case NODE_RETURN:
@@ -639,22 +633,23 @@ public class RubyInterpreter implements node_type, Scope {
                     rubyIter.push(rubyIter.getIter() != Iter.ITER_NOT ? Iter.ITER_PRE : Iter.ITER_NOT);
                     result = rubyFrame.getLastClass().getSuperClass().call(rubyFrame.getSelf(), rubyFrame.getLastFunc(), args, 3);
                     rubyIter.pop();
+                    
                     return result;
                     
                 case NODE_SCOPE:
-                    /*NODE saved_cref = null;
- 
-                    FRAME frame = ruby_frame;
-                    frame.tmp = ruby_frame;
-                    ruby_frame = frame;
- 
-                    PUSH_SCOPE();
-                    PUSH_TAG(PROT_NONE);
-                    if (node->nd_rval) {
+                    NODE saved_cref = null;
+                    
+                    Frame frame = rubyFrame;
+                    frame.setTmp(rubyFrame);
+                    rubyFrame = frame;
+                    
+                    ruby.rubyScope.push();
+                    
+                    if (node.nd_rval() != null) {
                         saved_cref = ruby_cref;
-                        ruby_cref = (NODE*)node->nd_rval;
-                        ruby_frame->cbase = node->nd_rval;
-                    }*/
+                        ruby_cref = (NODE)node.nd_rval();
+                        rubyFrame.setCbase(node.nd_rval());
+                    }
                     
                     if (node.nd_tbl() != null) {
                         List tmp = Collections.nCopies(node.nd_tbl()[0].intValue() + 1, ruby.getNil());
@@ -667,18 +662,18 @@ public class RubyInterpreter implements node_type, Scope {
                         getRuby().rubyScope.setLocalVars(null);
                         getRuby().rubyScope.setLocalTbl(null);
                     }
-/*            if ((state = EXEC_TAG()) == 0) {
-                result = rb_eval(self, node->nd_next);
-            }
-            POP_TAG();
-            POP_SCOPE();
-            ruby_frame = frame.tmp;
-            if (saved_cref)
-                ruby_cref = saved_cref;
-            if (state) JUMP_TAG(state);
-        }
-        break;
- */
+                    
+                    result = eval(self, node.nd_next());
+                    
+                    ruby.rubyScope.pop();
+                    rubyFrame = frame.getTmp();
+                    
+                    if (saved_cref != null) {
+                        ruby_cref = saved_cref;
+                    }
+                    
+                    return result;
+
                 case NODE_OP_ASGN1:
                     //                TMP_PROTECT;
                     
@@ -733,7 +728,10 @@ public class RubyInterpreter implements node_type, Scope {
                             val = (RubyBoolean)val.funcall((RubyId)node.nd_mid(), eval(self, node.nd_value()));
                     }
                     
-                    // rom.rb_funcall2(recv, node.nd_next().nd_aid(), 1, &val);
+                    // HACK +++
+                    val = (RubyBoolean)recv.funcall((RubyId)node.nd_next().nd_aid(), val);
+                    // HACK ---
+                    
                     return val;
                     
                 case NODE_OP_ASGN_AND:
@@ -855,15 +853,12 @@ public class RubyInterpreter implements node_type, Scope {
                     }
                     
                 case NODE_COLON2:
-                    RubyModule rubyClass = (RubyModule)eval(self, node.nd_head());
-/*                    switch (TYPE(klass)) {
-                        case T_CLASS:
-                        case T_MODULE:
-                            break;
-                        default:
-                            return rom.rb_funcall(klass, node.nd_mid(), 0, 0);
-                    }*/
-                    return rubyClass.getConstant((RubyId)node.nd_mid());
+                    value = eval(self, node.nd_head());
+                    if (value instanceof RubyModule) {
+                        return ((RubyModule)value).getConstant((RubyId)node.nd_mid());
+                    } else {
+                        return value.funcall((RubyId)node.nd_mid());
+                    }
                     
                 case NODE_COLON3:
                     return getRuby().getObjectClass().getConstant((RubyId)node.nd_mid());
@@ -891,21 +886,23 @@ public class RubyInterpreter implements node_type, Scope {
                     }*/
                     
                 case NODE_HASH:
-/*                    RubyHash hash = RubyHash.m_newHash();
-                    RubyObject key, val;
+                    RubyHash hash = RubyHash.m_newHash(ruby);
                     
                     NODE list = node.nd_head();
-                    while (list != null) {
-                        key = eval(self, list.nd_head());
+                    while(list != null) {
+                        RubyObject key = eval(self, list.nd_head());
                         list = list.nd_next();
                         if (list == null) {
-                            rom.rb_bug("odd number list for Hash");
+                            // HACK +++
+                            throw new RubyArgumentException("odd number list for Hash");
+                            // HACK ---
                         }
-                        val = eval(self, list.nd_head());
+                        value = eval(self, list.nd_head());
+                        hash.m_aset(key, value);
+                        
                         list = list.nd_next();
-                        hash.aset(key, val);
                     }
-                    return hash;*/
+                    return hash;
                     
                 case NODE_ZARRAY:		/* zero length list */
                     return RubyArray.m_newArray(getRuby());
@@ -1039,7 +1036,7 @@ public class RubyInterpreter implements node_type, Scope {
                         if (ruby_class.isSingleton()) {
                             ruby_class.getInstanceVar("__attached__").funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         } else {
-                            // ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                            ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         }
                     }
                     return getRuby().getNil();
@@ -1091,12 +1088,12 @@ public class RubyInterpreter implements node_type, Scope {
                         throw new RubyTypeException("no class to make alias");
                     }
                     ruby_class.aliasMethod((RubyId)node.nd_new(), (RubyId)node.nd_old());
-                    // ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                    ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
                     
                     return getRuby().getNil();
                     
                 case NODE_VALIAS:
-                    //rb_alias_variable(node.nd_new(), node.nd_old());
+                    RubyGlobalEntry.getGlobalEntry((RubyId)node.nd_old()).alias((RubyId)node.nd_new());
                     
                     return getRuby().getNil();
                     

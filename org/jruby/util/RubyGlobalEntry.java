@@ -134,6 +134,20 @@ public class RubyGlobalEntry implements global_entry {
         return !(getter instanceof UndefMethods);
     }
     
+    /** rb_alias_variable
+     *
+     */
+    public void alias(RubyId newId) {
+        if (ruby.getSecurityLevel() >= 4) {
+            throw new RubySecurityException("Insecure: can't alias global variable");
+        }
+        
+        RubyGlobalEntry entry = getGlobalEntry(newId);
+        entry.data = data;
+        entry.getter = getter;
+        entry.setter = setter;
+    }
+    
     /** rb_global_entry
      *
      */

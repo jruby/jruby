@@ -47,7 +47,7 @@ public class RubyHash extends RubyObject {
     }
     
     public RubyHash(Ruby ruby, RubyMap valueMap, RubyObject defaultValue) {
-        super(ruby);
+        super(ruby, ruby.getRubyClass("Hash"));
         this.valueMap = valueMap;
         this.defautValue = defautValue;
     }
@@ -66,5 +66,39 @@ public class RubyHash extends RubyObject {
     
     public void setValueMap(RubyMap valueMap) {
         this.valueMap = valueMap;
+    }
+    
+    // Hash methods
+    
+    public static RubyHash m_newHash(Ruby ruby) {
+        return m_new(ruby, (RubyClass)ruby.getRubyClass("Hash"), null);
+    }
+    
+    public static RubyHash m_new(Ruby ruby, RubyClass rubyClass, RubyObject[] args) {
+        RubyHash hash = new RubyHash(ruby);
+        hash.setRubyClass(rubyClass);
+        
+        hash.callInit(args);
+        
+        return hash;
+    }
+    
+    public RubyObject m_initialize(RubyObject[] args) {
+        if (args.length > 0) {
+            // modify();
+            
+            setDefautValue(args[0]);
+        }
+        return this;
+    }
+    
+    public RubyObject m_aset(RubyObject key, RubyObject value) {
+        // modify();
+        
+        // HACK +++
+        valueMap.put(key, value);
+        // HACK ---
+            
+        return this;
     }
 }

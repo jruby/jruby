@@ -125,8 +125,8 @@ public class RubyScope {
      * @param index Index of the property.
      * @return Value of the property at <CODE>index</CODE>.
      */
-    public VALUE getLocalVars(int index) {
-        return (VALUE)localVars.get(index);
+    public RubyObject getLocalVars(int index) {
+        return (RubyObject)localVars.get(index);
     }
     
     /** Getter for property localVars.
@@ -140,7 +140,7 @@ public class RubyScope {
      * @param index Index of the property.
      * @param localVars New value of the property at <CODE>index</CODE>.
      */
-    public void setLocalVars(int index, VALUE newValue) {
+    public void setLocalVars(int index, RubyObject newValue) {
         // HACK +++
         if (localVars == null) {
             localVars = new ShiftableList(new ArrayList());
