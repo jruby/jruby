@@ -20,3 +20,14 @@ str3 = "regnad kcin".reverse
 str3.gsub!(/\w+/) { |m| m.capitalize }
 test_ok('Nick Danger' == str3)
 
+#########    test6   #################
+str4 =  'B'
+test_ok(0 == (str4 =~ /^(?:(A):)?(B)/))
+test_ok(nil == $1)
+test_ok(str4 == $2)
+
+#########    test7   #################
+test_ok("(?-mix:pattern)" == /pattern/.to_s)
+test_ok("(?m-ix:pattern)" == /pattern/m.to_s)
+test_ok("(?mix:pattern)" == /pattern/mix.to_s)
+

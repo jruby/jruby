@@ -2,11 +2,12 @@
  * RubyRegexp.java - No description
  * Created on 26. Juli 2001, 00:01
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002, 2004 Jan Arne Petersen, Alan Moore, Benoit Cerrina, David Corbin
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * David Corbin <dcorbin@users.sourceforge.net>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -43,7 +44,6 @@ import org.jruby.util.PrintfFormat;
 /**
  *
  * @author  amoore
- * @version $Revision$
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
 	/** Class which represents the multibyte character set code.
@@ -51,7 +51,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * 
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
-        private static final class Code {
+	private static final class Code {
 		private static final Code NIL = new Code(null);
 		private static final Code NONE = new Code("none");
 		private static final Code UTF8 = new Code("utf8");
@@ -63,7 +63,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			this.kcode = kcode;
 		}
 
-		public static Code create(String lang) {
+		public static Code create(Ruby runtime, String lang) {
 			if (lang == null) {
 				return NIL;
 			} else if (lang.charAt(0) == 'n' || lang.charAt(0) == 'N') {
@@ -71,6 +71,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			} else if (lang.charAt(0) == 'u' || lang.charAt(0) == 'U') {
 				return UTF8;
 			} else if (lang.charAt(0) == 's' || lang.charAt(0) == 'S') {
+				runtime.getErrorHandler().warn("JRuby supports only Unicode regexp.");
 				return SJIS;
 			}
 			return NIL;
@@ -117,6 +118,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         regexpClass.defineMethod("source", callbackFactory.getMethod(RubyRegexp.class, "source"));
         regexpClass.defineMethod("casefold?", callbackFactory.getMethod(RubyRegexp.class, "casefold"));
         regexpClass.defineMethod("kcode", callbackFactory.getMethod(RubyRegexp.class, "kcode"));
+        regexpClass.defineMethod("to_s", callbackFactory.getMethod(RubyRegexp.class, "to_s"));
 
         regexpClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyRegexp.class, "newInstance"));
         regexpClass.defineSingletonMethod("compile", callbackFactory.getOptSingletonMethod(RubyRegexp.class, "newInstance"));
@@ -181,7 +183,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public static RubyRegexp newRegexp(Ruby runtime, String str, int options, String kcode) {
         RubyRegexp re = new RubyRegexp(runtime);
-        re.code = Code.create(kcode);
+        re.code = Code.create(runtime, kcode);
         re.initialize(str, options);
         return re;
     }
@@ -207,9 +209,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
         if (args.length > 2) {
-        	code = Code.create(RubyString.stringValue(args[2]).getValue());
+        	code = Code.create(runtime, RubyString.stringValue (args[2]).getValue());
         } else {
-        	code = Code.create(null);
+        	code = Code.create(runtime, null);
         }
 
         initialize(pat, opts);
@@ -492,21 +494,65 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
         sb.append('/');
-
+  
         if ((pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
             sb.append('i');
         }
+  
         if ((pattern.flags() & Pattern.DOTALL) > 0) {
             sb.append('m');
         }
+        
         if ((pattern.flags() & Pattern.COMMENTS) > 0) {
             sb.append('x');
         }
 
         return RubyString.newString(getRuntime(), sb.toString());
     }
+    
+    
+    public RubyString to_s() {
+      return new RubyString(getRuntime(), toString());
+    }
+    
+    public String toString() {
+    	StringBuffer buffer = new StringBuffer(100);
+    	StringBuffer off = new StringBuffer(3);
+    	
+    	buffer.append("(?");
+    	
+    	flagToString(buffer, off, Pattern.DOTALL, 'm');
+    	flagToString(buffer, off, Pattern.CASE_INSENSITIVE, 'i');
+    	flagToString(buffer, off, Pattern.COMMENTS, 'x');
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
+		if (off.length() > 0) {
+			buffer.append('-').append(off);
+		}
+
+    	buffer.append(':');
+    	buffer.append(pattern.pattern());
+		buffer.append(')');
+
+    	return buffer.toString();
+    }
+
+    /** Helper method for the {@link #toString() toString} method which creates
+     * an <i>on-off</i> pattern of {@link Pattern Pattern} flags. 
+     * 
+	 * @param buffer the default buffer for the output
+	 * @param off temporary buffer for the off flags
+	 * @param flag a Pattern flag
+	 * @param c the char which represents the flag
+	 */
+	private void flagToString(StringBuffer buffer, StringBuffer off, int flag, char c) {
+		if ((pattern.flags() & flag) != 0) {
+    		buffer.append(c);
+    	} else {
+    		off.append(c);
+    	}
+	}
+
+	public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('/');
         output.dumpString(pattern.pattern());
         output.dumpInt(pattern.flags());

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="org/jruby/runtime/Constants.java" kind="src" path="src"/>
 	<classpathentry excluding="**/CVS/*" output="build/classes/test" kind="src" path="test"/>
-	<classpathentry excluding="**/Constants.java" kind="src" path="build/gen-src"/>
+	<classpathentry kind="src" path="build/gen-src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/bsf.jar"/>
 	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.6.jar"/>

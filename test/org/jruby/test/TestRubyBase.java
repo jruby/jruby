@@ -44,6 +44,9 @@ public class TestRubyBase extends TestCase {
     protected Ruby runtime;
     private PrintStream out;
 
+    public TestRubyBase() {
+    }
+    
     public TestRubyBase(String name) {
         super(name);
     }
