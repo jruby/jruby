@@ -284,12 +284,7 @@ public class RubyThread extends RubyObject {
             if (jvmThread == Thread.currentThread()) {
                 throw new ThreadError(getRuntime(), "thread tried to join itself");
             }
-            while (! hasStarted) {
-                // The JVM's join() may return directly if it is called
-                // on a not-yet started thread. We give the thread
-                // a chance to start before we proceed.
-                Thread.sleep(10);
-            }
+            ensureStarted();
 
             jvmThread.join();
             if (exitingException != null) {
@@ -300,6 +295,8 @@ public class RubyThread extends RubyObject {
         }
         return this;
     }
+
+
 
     public RubyBoolean has_key(IRubyObject key) {
         String name = keyName(key);
@@ -320,6 +317,7 @@ public class RubyThread extends RubyObject {
     }
 
     public IRubyObject status() {
+        ensureStarted();
         if (jvmThread.isAlive()) {
             return RubyString.newString(getRuntime(), "run");
         } else if (exitingException != null) {
@@ -328,5 +326,21 @@ public class RubyThread extends RubyObject {
             return RubyBoolean.newBoolean(getRuntime(), false);
         }
     }
-}
 
+    private void ensureStarted() {
+        // Note: If this is required in too many places we can always
+        // wait when we start a thread instead. But i imagine that
+        // performance is more important there. -Anders
+
+        while (! hasStarted) {
+            // The JVM's join() may return directly if it is called
+            // on a not-yet started thread. We give the thread
+            // a chance to start before we proceed.
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                // FIXME: output warning
+            }
+        }
+    }
+}
