@@ -39,11 +39,11 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class WhenNode extends Node {
     static final long serialVersionUID = 9099987602002276708L;
 
-    private final ListNode expressionNodes;
+    private final Node expressionNodes;
     private final Node bodyNode;
     private final Node nextCase;
 
-    public WhenNode(SourcePosition position, ListNode expressionNodes, Node bodyNode, Node nextCase) {
+    public WhenNode(SourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
         super(position);
         this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;
@@ -74,10 +74,9 @@ public class WhenNode extends Node {
     }
 
     /**
-     * Gets the expressionNodes.
-     * @return Returns a IListNode
+     * Get the expressionNode(s).
      */
-    public ListNode getExpressionNodes() {
+    public Node getExpressionNodes() {
         return expressionNodes;
     }
 }

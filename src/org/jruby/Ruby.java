@@ -21,7 +21,7 @@
  * (at your option) any later version.
  *
  * JRuby is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * but WITHOUT ANY WARRANTY; witout even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -127,7 +127,7 @@ public final class Ruby {
 
     private IRubyObject topSelf;
 
-    private boolean isVerbose = false;
+    private IRubyObject verbose;
 
     // Java support
     private JavaSupport javaSupport;
@@ -152,6 +152,8 @@ public final class Ruby {
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
 
+        verbose = falseObject;
+        
         javaSupport = new JavaSupport(this);
     }
 
@@ -414,8 +416,8 @@ public final class Ruby {
     /** Getter for property isVerbose.
      * @return Value of property isVerbose.
      */
-    public boolean isVerbose() {
-        return isVerbose;
+    public IRubyObject getVerbose() {
+        return verbose;
     }
 
     public boolean isBlockGiven() {
@@ -433,9 +435,8 @@ public final class Ruby {
     /** Setter for property isVerbose.
      * @param verbose New value of property isVerbose.
      */
-    public void setVerbose(boolean verbose) {
-        this.isVerbose = verbose;
-        errorHandler.setVerbose(verbose);
+    public void setVerbose(IRubyObject verbose) {
+        this.verbose = verbose;
     }
 
     /** Getter for property dynamicVars.

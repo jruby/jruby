@@ -33,7 +33,6 @@ package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.LocalJumpError;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;

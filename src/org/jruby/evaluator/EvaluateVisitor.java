@@ -361,29 +361,61 @@ public final class EvaluateVisitor implements NodeVisitor {
             expression = eval(iVisited.getCaseNode());
         }
         
-        Node aNode = iVisited.getFirstWhenNode();
-        
-        while (aNode != null) {
-            if (!(aNode instanceof WhenNode)) {
-                eval(aNode);
+        Node node = iVisited.getFirstWhenNode();
+        while (node != null) {
+            if (!(node instanceof WhenNode)) {
+                eval(node);
                 break;
-            } 
-
-            WhenNode whenNode = (WhenNode) aNode;
-            threadContext.setPosition(whenNode.getPosition());
-            if (isTrace()) {
-                callTraceFunction("line", self);
             }
-            RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
-            for (int i = 0; i < expressions.getLength(); i++) {
-                if ((expression != null && expressions.entry(i).callMethod("===", expression).isTrue())
-                || (expression == null && expressions.entry(i).isTrue())) {
-                    eval(whenNode.getBodyNode());
+
+            WhenNode whenNode = (WhenNode) node;
+
+            if (whenNode.getExpressionNodes() instanceof ArrayNode) {
+		        for (Iterator iter = ((ArrayNode) whenNode.getExpressionNodes()).iterator(); iter.hasNext(); ) {
+		            Node tag = (Node) iter.next();
+
+                    threadContext.setPosition(tag.getPosition());
+                    if (isTrace()) {
+                        callTraceFunction("line", self);
+                    }
+
+                    // Ruby grammar has nested whens in a case body because of
+                    // productions case_body and when_args.
+            	    if (tag instanceof WhenNode) {
+            		    RubyArray expressions = (RubyArray) eval(((WhenNode) tag).getExpressionNodes());
+                    
+                        for (int j = 0; j < expressions.getLength(); j++) {
+                    	    IRubyObject condition = expressions.entry(j);
+                    	
+                            if ((expression != null && 
+                        	    condition.callMethod("===", expression).isTrue()) || 
+							    (expression == null && condition.isTrue())) {
+                                 eval(((WhenNode) node).getBodyNode());
+                                 return;
+                            }
+                        }
+                        continue;
+            	    }
+
+                    eval(tag);
+                    
+                    if ((expression != null && result.callMethod("===", expression).isTrue()) ||
+                        (expression == null && result.isTrue())) {
+                        eval(whenNode.getBodyNode());
+                        return;
+                    }
+                }
+	        } else {
+                eval(whenNode.getExpressionNodes());
+
+                if ((expression != null && result.callMethod("===", expression).isTrue())
+                    || (expression == null && result.isTrue())) {
+                    eval(((WhenNode) node).getBodyNode());
                     return;
                 }
             }
             
-            aNode = whenNode.getNextCase();
+            node = whenNode.getNextCase();
         }
     }
 

@@ -101,16 +101,9 @@ public class RubyErrorHandler implements IRubyErrorHandler {
      * @return Returns a boolean
      */
     public boolean isVerbose() {
-        return verbose;
+        return runtime.getVerbose().isTrue();
     }
 
-    /**
-     * Sets the verbose.
-     * @param verbose The verbose to set
-     */
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
     /**
      * @see org.jruby.common.IRubyErrorHandler#warn(String)
      */

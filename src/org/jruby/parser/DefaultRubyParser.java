@@ -233,7 +233,7 @@ public class DefaultRubyParser {
           ok[token] = true;
         }
 
-    String[] result = new String[len];
+    String result[] = new String[len];
     for (n = token = 0; n < len;  ++ token)
       if (ok[token]) result[n++] = YyNameClass.yyName[token];
     return result;
@@ -246,7 +246,8 @@ public class DefaultRubyParser {
       @return result of the last reduction, if any.
       @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (RubyYaccLexer yyLex, Object yydebug) throws yyException {
+  public Object yyparse (RubyYaccLexer yyLex, Object yydebug)
+				throws java.io.IOException, yyException {
     return yyparse(yyLex);
   }
 
@@ -272,12 +273,11 @@ public class DefaultRubyParser {
       @return result of the last reduction, if any.
       @throws yyException on irrecoverable parse error.
     */
-  public Object yyparse (RubyYaccLexer yyLex) throws yyException {
+  public Object yyparse (RubyYaccLexer yyLex)
+				throws java.io.IOException, yyException {
     if (yyMax <= 0) yyMax = 256;			// initial size
-    int yyState = 0;	// state stack
-    int[] yyStates = new int[yyMax];
-    Object yyVal = null; 	// value stack
-    Object[] yyVals = new Object[yyMax];
+    int yyState = 0, yyStates[] = new int[yyMax];	// state stack
+    Object yyVal = null, yyVals[] = new Object[yyMax];	// value stack
     int yyToken = -1;					// current input
     int yyErrorFlag = 0;				// #tks to shift
 
@@ -1956,7 +1956,7 @@ case 307:
 case 308:
 					// line 1189 "DefaultRubyParser.y"
   {
-                    yyVal = Boolean.valueOf(support.isInDef());
+                    yyVal = new Boolean(support.isInDef());
                     support.setInDef(false);
                 }
   break;
@@ -2216,13 +2216,13 @@ case 355:
 case 357:
 					// line 1365 "DefaultRubyParser.y"
   {
-                    yyVal = ((ListNode)yyVals[-3+yyTop]).add(new WhenNode(getPosition(), new ArrayNode(getPosition()).add(((Node)yyVals[0+yyTop])), null, null));
+                    yyVal = ((ListNode)yyVals[-3+yyTop]).add(new WhenNode(getPosition(), ((Node)yyVals[0+yyTop]), null, null));
                 }
   break;
 case 358:
 					// line 1368 "DefaultRubyParser.y"
   {
-                    yyVal = new ArrayNode(getPosition()).add(new WhenNode(getPosition(), new ArrayNode(getPosition()).add(((Node)yyVals[0+yyTop])), null, null));
+                    yyVal = new ArrayNode(getPosition()).add(new WhenNode(getPosition(), ((Node)yyVals[0+yyTop]), null, null));
                 }
   break;
 case 361:
@@ -2322,7 +2322,7 @@ case 378:
 		    } else if (node instanceof StrNode) {
 		      yyVal = new RegexpNode(getPosition(), ((StrNode) node).getValue(), options & ~ReOptions.RE_OPTION_ONCE);
 		    } else {
-		        if (!(node instanceof DStrNode)) {
+		        if (node instanceof DStrNode == false) {
 			    node = new DStrNode(getPosition()).add(new ArrayNode(getPosition()).add(node));
 		        } 
 
@@ -2670,8 +2670,7 @@ case 435:
 case 436:
 					// line 1689 "DefaultRubyParser.y"
   {
-	int h = ((Integer)yyVals[-1+yyTop]).intValue();
-                    yyVal = new ArgsNode(getPosition(), h, null, -1, ((BlockArgNode)yyVals[0+yyTop]));
+                    yyVal = new ArgsNode(getPosition(), ((Integer)yyVals[-1+yyTop]).intValue(), null, -1, ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
 case 437:
@@ -2921,7 +2920,7 @@ case 494:
 
   protected static final class YyLhsClass {
 
-    public static final short[] yyLhs  = {              -1,
+    public static final short yyLhs [] = {              -1,
          97,    0,   18,   17,   19,   19,   19,   19,  100,   20,
          20,   20,   20,   20,   20,   20,   20,   20,   20,  101,
          20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
@@ -2977,7 +2976,7 @@ case 494:
 
   protected static final class YyLenClass {
 
-    public static final short[] yyLen  = {           2,
+    public static final short yyLen [] = {           2,
           0,    2,    4,    2,    1,    1,    3,    2,    0,    4,
           3,    3,    3,    2,    3,    3,    3,    3,    3,    0,
           5,    4,    3,    3,    3,    6,    5,    5,    5,    3,
@@ -3033,7 +3032,7 @@ case 494:
 
   protected static final class YyDefRedClass {
 
-    public static final short[] yyDefRed  = {            1,
+    public static final short yyDefRed [] = {            1,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,  294,  297,    0,    0,    0,  320,  321,    0,    0,
           0,  418,  417,  419,  420,    0,    0,    0,   20,    0,
@@ -3128,7 +3127,7 @@ case 494:
 
   protected static final class YyDgotoClass {
 
-    public static final short[] yyDgoto  = {             1,
+    public static final short yyDgoto [] = {             1,
         187,   60,   61,   62,   63,   64,  287,  284,  457,   65,
          66,  465,   67,   68,   69,  108,  205,  206,   71,   72,
          73,   74,   75,   76,   77,   78,  293,  291,  209,  258,
@@ -3148,7 +3147,7 @@ case 494:
 
   protected static final class YySindexClass {
 
-    public static final short[] yySindex  = {            0,
+    public static final short yySindex [] = {            0,
           0,14064,14483,18684,18972,17554,17256,14064,15827,15827,
        6926,    0,    0,18780,14675,14675,    0,    0,14675,   14,
          65,    0,    0,    0,    0,15827,17166,  100,    0,   27,
@@ -3243,7 +3242,7 @@ case 494:
 
   protected static final class YyRindexClass {
 
-    public static final short[] yyRindex  = {            0,
+    public static final short yyRindex [] = {            0,
           0,  210,    0,    0,    0,    0,    0,  726,    0,    0,
         343,    0,    0,    0,13267,13352,    0,    0,13455, 4233,
        3689,    0,    0,    0,    0,    0,    0,16595,    0,    0,
@@ -3338,7 +3337,7 @@ case 494:
 
   protected static final class YyGindexClass {
 
-    public static final short[] yyGindex  = {            0,
+    public static final short yyGindex [] = {            0,
           0,    0,    0,  935,    0,    0,    0,  631, -205,    0,
           0,    0,    0,    0,    0,  992,   28, -359,    0,   66,
        1042,  -15,   57,    2,  -23,    0,    0,    0,   36,  460,
@@ -3371,7 +3370,7 @@ case 494:
 
   protected static final class YyNameClass {
 
-    public static final String[] yyName  = {
+    public static final String yyName [] = {    
     "end-of-file",null,null,null,null,null,null,null,null,null,"'\\n'",
     null,null,null,null,null,null,null,null,null,null,null,null,null,null,
     null,null,null,null,null,null,null,"' '","'!'",null,null,null,"'%'",

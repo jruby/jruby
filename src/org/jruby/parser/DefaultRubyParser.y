@@ -1363,10 +1363,10 @@ case_body     : kWHEN when_args then
 
 when_args     : args
               | args ',' tSTAR arg_value {
-                    $$ = $1.add(new WhenNode(getPosition(), new ArrayNode(getPosition()).add($4), null, null));
+                    $$ = $1.add(new WhenNode(getPosition(), $4, null, null));
                 }
               | tSTAR arg_value {
-                    $$ = new ArrayNode(getPosition()).add(new WhenNode(getPosition(), new ArrayNode(getPosition()).add($2), null, null));
+                    $$ = new ArrayNode(getPosition()).add(new WhenNode(getPosition(), $2, null, null));
                 }
 
 cases         : opt_else 

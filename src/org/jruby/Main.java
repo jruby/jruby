@@ -131,19 +131,22 @@ public class Main {
 
     private static void initializeRuntime(final Ruby runtime, String filename) {
         IRubyObject argumentArray = RubyArray.newArray(runtime, JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
-        runtime.setVerbose(commandline.verbose);
+        runtime.setVerbose(RubyBoolean.newBoolean(runtime, commandline.verbose));
 
-        // $VERBOSE will return true if it is set to a non-nil value.  Make 
-        // special accessor linked to runtimes value that behaves like this.
+        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
         runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
             public IRubyObject getValue() {
-            	return RubyBoolean.newBoolean(runtime, runtime.isVerbose());
+                return runtime.getVerbose();
             }
             
             public IRubyObject setValue(IRubyObject newValue) {
-            	runtime.setVerbose(!newValue.isNil());
+                if (newValue.isNil()) {
+                    runtime.setVerbose(newValue);
+                } else {
+                    runtime.setVerbose(RubyBoolean.newBoolean(runtime, newValue != runtime.getFalse()));
+                }
             	
-            	return newValue;
+                return newValue;
             }
         });
         runtime.getClasses().getObjectClass().setConstant("$VERBOSE", 
