@@ -27,7 +27,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class Mutex extends RubyObject implements IndexCallable {

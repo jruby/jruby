@@ -24,9 +24,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.runtime;
+package org.jruby.runtime.callback;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.util.AssertError;
 import org.jruby.util.Asserts;
 import org.jruby.Ruby;

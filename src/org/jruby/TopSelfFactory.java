@@ -1,6 +1,6 @@
 package org.jruby;
 
-import org.jruby.runtime.Callback;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -23,14 +23,14 @@ public final class TopSelfFactory {
         
         topSelf.defineSingletonMethod("to_s", new Callback() {
             /**
-             * @see org.jruby.runtime.Callback#execute(IRubyObject, IRubyObject[])
+             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
                 return RubyString.newString(runtime, "main");
             }
 
             /**
-             * @see org.jruby.runtime.Callback#getArity()
+             * @see org.jruby.runtime.callback.Callback#getArity()
              */
             public Arity getArity() {
                 return Arity.noArguments();
@@ -39,7 +39,7 @@ public final class TopSelfFactory {
         
         topSelf.defineSingletonMethod("include", new Callback() {
             /**
-             * @see org.jruby.runtime.Callback#execute(IRubyObject, IRubyObject[])
+             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
                 runtime.secure(4);
@@ -47,7 +47,7 @@ public final class TopSelfFactory {
             }
 
             /**
-             * @see org.jruby.runtime.Callback#getArity()
+             * @see org.jruby.runtime.callback.Callback#getArity()
              */
             public Arity getArity() {
                 return Arity.optional();
@@ -56,14 +56,14 @@ public final class TopSelfFactory {
         
         topSelf.defineSingletonMethod("public", new Callback() {
             /**
-             * @see org.jruby.runtime.Callback#execute(IRubyObject, IRubyObject[])
+             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
                 return runtime.getClasses().getObjectClass().rbPublic(args);
             }
 
             /**
-             * @see org.jruby.runtime.Callback#getArity()
+             * @see org.jruby.runtime.callback.Callback#getArity()
              */
             public Arity getArity() {
                 return Arity.optional();
@@ -72,14 +72,14 @@ public final class TopSelfFactory {
         
         topSelf.defineSingletonMethod("private", new Callback() {
             /**
-             * @see org.jruby.runtime.Callback#execute(IRubyObject, IRubyObject[])
+             * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
                 return runtime.getClasses().getObjectClass().rbPrivate(args);
             }
 
             /**
-             * @see org.jruby.runtime.Callback#getArity()
+             * @see org.jruby.runtime.callback.Callback#getArity()
              */
             public Arity getArity() {
                 return Arity.optional();

@@ -21,10 +21,13 @@
  * Boston, MA  02111-1307 USA
  */
 
-package org.jruby.runtime;
+package org.jruby.runtime.callback;
 
 import org.jruby.util.Asserts;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.IndexCallable;
 
 /**
  * Implements callback on built-in Ruby methods using an integer index.

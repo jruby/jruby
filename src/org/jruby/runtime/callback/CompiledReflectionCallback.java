@@ -1,7 +1,9 @@
 
-package org.jruby.runtime;
+package org.jruby.runtime.callback;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.Arity;
 import org.jruby.Ruby;
 import org.jruby.util.Asserts;
 

@@ -31,7 +31,7 @@
 package org.jruby.javasupport;
 
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyObject;
 import org.jruby.Ruby;

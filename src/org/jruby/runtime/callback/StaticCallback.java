@@ -1,7 +1,10 @@
-package org.jruby.runtime;
+package org.jruby.runtime.callback;
 
 import org.jruby.util.Asserts;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.IStaticCallable;
+import org.jruby.runtime.Arity;
 
 /**
  * 
@@ -48,7 +51,7 @@ public final class StaticCallback implements Callback {
 
 
     /**
-     * @see org.jruby.runtime.Callback#execute(IRubyObject, IRubyObject[])
+     * @see org.jruby.runtime.callback.Callback#execute(org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.builtin.IRubyObject[])
      */
     public IRubyObject execute(IRubyObject receiver, IRubyObject[] args) {
         arity.checkArity(receiver.getRuntime(), args);

@@ -24,7 +24,7 @@ package org.jruby;
 
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

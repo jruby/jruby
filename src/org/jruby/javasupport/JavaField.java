@@ -29,7 +29,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 

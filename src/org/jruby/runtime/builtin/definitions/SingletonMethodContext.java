@@ -2,7 +2,7 @@ package org.jruby.runtime.builtin.definitions;
 
 import org.jruby.RubyObject;
 import org.jruby.runtime.IStaticCallable;
-import org.jruby.runtime.StaticCallback;
+import org.jruby.runtime.callback.StaticCallback;
 
 /**
  * 

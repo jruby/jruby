@@ -60,7 +60,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.BlockStack;
-import org.jruby.runtime.Callback;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;

@@ -36,7 +36,7 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;

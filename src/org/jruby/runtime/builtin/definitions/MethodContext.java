@@ -1,7 +1,7 @@
 package org.jruby.runtime.builtin.definitions;
 
 import org.jruby.RubyModule;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 
 /**
  * 

@@ -1,7 +1,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.runtime.Callback;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

@@ -49,7 +49,7 @@ import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.Callback;
+import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Visibility;

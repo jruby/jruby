@@ -28,7 +28,7 @@ import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 

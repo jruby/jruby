@@ -1,6 +1,8 @@
 package org.jruby.runtime;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callback.ReflectionCallback;
 
 /**
  * Helper class to build Callback method.

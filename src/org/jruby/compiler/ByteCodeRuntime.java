@@ -1,8 +1,8 @@
 
 package org.jruby.compiler;
 
-import org.jruby.runtime.Callback;
-import org.jruby.runtime.CompiledReflectionCallback;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callback.CompiledReflectionCallback;
 import org.jruby.runtime.Visibility;
 import org.jruby.Ruby;
 import org.jruby.internal.runtime.methods.CallbackMethod;
