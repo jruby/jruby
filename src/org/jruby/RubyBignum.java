@@ -44,15 +44,10 @@ public class RubyBignum extends RubyInteger {
     private final static BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     private final static BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
-    private BigInteger value;
-
-    public RubyBignum(Ruby ruby) {
-        this(ruby, BigInteger.ZERO);
-    }
+    private final BigInteger value;
 
     public RubyBignum(Ruby ruby, BigInteger value) {
         super(ruby, ruby.getClasses().getBignumClass());
-
         this.value = value;
     }
 
@@ -79,16 +74,8 @@ public class RubyBignum extends RubyInteger {
         return value;
     }
 
-    /** Setter for property value.
-     * @param value New value of property value.
-     */
-    public void setValue(BigInteger value) {
-        this.value = value;
-    }
-
     public static RubyClass createBignumClass(Ruby ruby) {
         RubyClass bignumClass = ruby.defineClass("Bignum", ruby.getClasses().getIntegerClass());
-        //rb_define_method(rb_cBignum, "-@", rb_big_uminus, 0);
         //rb_define_method(rb_cBignum, "divmod", rb_big_divmod, 1);
         //rb_define_method(rb_cBignum, "modulo", rb_big_modulo, 1);
         //rb_define_method(rb_cBignum, "remainder", rb_big_remainder, 1);
@@ -100,6 +87,7 @@ public class RubyBignum extends RubyInteger {
         //    rb_define_method(rb_cBignum, "eql?", rb_big_eq, 1);
 
         bignumClass.defineMethod("-@", CallbackFactory.getMethod(RubyBignum.class, "op_uminus"));
+        bignumClass.defineMethod("~", CallbackFactory.getMethod(RubyBignum.class, "op_invert"));
 
         bignumClass.defineMethod("modulo", CallbackFactory.getMethod(RubyBignum.class, "op_mod", IRubyObject.class));
         bignumClass.defineMethod("remainder", CallbackFactory.getMethod(RubyBignum.class, "remainder", IRubyObject.class));
@@ -209,6 +197,10 @@ public class RubyBignum extends RubyInteger {
 
     public RubyNumeric op_uminus() {
         return bigNorm(getRuntime(), getValue().negate());
+    }
+
+    public RubyNumeric op_invert() {
+        return bigNorm(getRuntime(), getValue().not());
     }
 
     public RubyNumeric remainder(IRubyObject num) {

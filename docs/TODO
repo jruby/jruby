@@ -16,6 +16,7 @@ Items marked '-' are done and will be available in the next release.
     * Move Ruby class creation and method init into classes separate from
       method implementation.
     * Convert all callbacks to IndexedCallback.
+    * Generate class creation code from XML specifications.
 
 * Java support
     * Loading classes with colliding names.
