@@ -67,9 +67,9 @@ module Enumerable
   end
   
   def detect (nothing_found = nil)
-    each { |element| return element if yield(element) }
-    nothing_found.call unless nothing_found.nil?
-    nil
+    result = each { |element| return element if yield(element) } 
+    (result = nothing_found.call) unless result or nothing_found.nil?
+    result
   end
   alias find detect
 
@@ -133,6 +133,7 @@ module Enumerable
       yield(item, index)
       index += 1
     end
+    self
   end
 
   def include? (value)
