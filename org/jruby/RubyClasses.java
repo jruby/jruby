@@ -225,55 +225,10 @@ public class RubyClasses {
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);
 
-        symbolClass = RubySymbol.createSymbolClass(ruby);
-
         nilClass = RubyNil.createNilClass(ruby);
 
         falseClass = RubyBoolean.createFalseClass(ruby);
         trueClass = RubyBoolean.createTrueClass(ruby);
-
-        comparableModule = RubyComparable.createComparable(ruby);
-        enumerableModule = RubyEnumerable.createEnumerableModule(ruby);
-
-        precisionModule = RubyPrecision.createPrecisionModule(ruby);
-
-        numericClass = RubyNumeric.createNumericClass(ruby);
-        integerClass = RubyInteger.createIntegerClass(ruby);
-        fixnumClass = RubyFixnum.createFixnumClass(ruby);
-        bignumClass = RubyBignum.createBignumClass(ruby);
-        floatClass = RubyFloat.createFloatClass(ruby);
-
-        stringClass = RubyString.createStringClass(ruby);
-        regExpClass = RubyRegexp.createRegexpClass(ruby);
-        matchDataClass = RubyMatchData.createMatchDataClass(ruby);
-
-        arrayClass = RubyArray.createArrayClass(ruby);
-        hashClass = RubyHash.createHashClass(ruby);
-        rangeClass = RubyRange.createRangeClass(ruby);
-
-        javaModule = RubyJava.createJavaModule(ruby);
-        javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
-        javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
-
-        ioClass = RubyIO.createIOClass(ruby);
-        fileClass = RubyFile.createFileClass(ruby);
-        dirClass = RubyDir.createDirClass(ruby);
-
-        exceptionClass = RubyException.createExceptionClass(ruby);
-
-        methodClass = RubyMethod.createMethodClass(ruby);
-        procClass = RubyProc.createProcClass(ruby);
-
-        objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
-        marshalModule = RubyMarshal.createMarshalModule(ruby);
-        mathModule = RubyMath.createMathModule(ruby);
-        timeClass = RubyTime.createTimeClass(ruby);
-
-        structClass = RubyStruct.createStructClass(ruby);
-
-        gcModule = RubyGC.createGCModule(ruby);
-
-        threadClass = RubyThread.createThreadClass(ruby);
     }
 
     /**
@@ -309,6 +264,9 @@ public class RubyClasses {
      * @return The Struct class.
      */
     public RubyClass getStructClass() {
+        if (structClass == null) {
+            structClass = RubyStruct.createStructClass(ruby);
+        }
         return structClass;
     }
 
@@ -318,6 +276,9 @@ public class RubyClasses {
      * @return The Comparable module.
      */
     public RubyModule getComparableModule() {
+        if (comparableModule == null) {
+            comparableModule = RubyComparable.createComparable(ruby);
+        }
         return comparableModule;
     }
 
@@ -327,6 +288,9 @@ public class RubyClasses {
      * @return The Hash class.
      */
     public RubyClass getHashClass() {
+        if (hashClass == null) {
+            hashClass = RubyHash.createHashClass(ruby);
+        }
         return hashClass;
     }
 
@@ -336,6 +300,9 @@ public class RubyClasses {
      * @return The Math module.
      */
     public RubyModule getMathModule() {
+        if (mathModule == null) {
+            mathModule = RubyMath.createMathModule(ruby);
+        }
         return mathModule;
     }
 
@@ -345,6 +312,9 @@ public class RubyClasses {
      * @return The RegExp class.
      */
     public RubyClass getRegExpClass() {
+        if (regExpClass == null) {
+            regExpClass = RubyRegexp.createRegexpClass(ruby);
+        }
         return regExpClass;
     }
 
@@ -363,6 +333,9 @@ public class RubyClasses {
      * @return The IO class.
      */
     public RubyClass getIoClass() {
+        if (ioClass == null) {
+            ioClass = RubyIO.createIOClass(ruby);
+        }
         return ioClass;
     }
 
@@ -381,6 +354,9 @@ public class RubyClasses {
      * @return The Bignum class.
      */
     public RubyClass getBignumClass() {
+        if (bignumClass == null) {
+            bignumClass = RubyBignum.createBignumClass(ruby);
+        }
         return bignumClass;
     }
 
@@ -399,6 +375,9 @@ public class RubyClasses {
      * @return The Range class.
      */
     public RubyClass getRangeClass() {
+        if (rangeClass == null) {
+            rangeClass = RubyRange.createRangeClass(ruby);
+        }
         return rangeClass;
     }
 
@@ -408,6 +387,9 @@ public class RubyClasses {
      * @return The GC module.
      */
     public RubyModule getGcModule() {
+        if (gcModule == null) {
+            gcModule = RubyGC.createGCModule(ruby);
+        }
         return gcModule;
     }
 
@@ -417,6 +399,9 @@ public class RubyClasses {
      * @return The Symbol class.
      */
     public RubyClass getSymbolClass() {
+        if (symbolClass == null) {
+            symbolClass = RubySymbol.createSymbolClass(ruby);
+        }
         return symbolClass;
     }
 
@@ -426,6 +411,9 @@ public class RubyClasses {
      * @return The Proc class.
      */
     public RubyClass getProcClass() {
+        if (procClass == null) {
+            procClass = RubyProc.createProcClass(ruby);
+        }
         return procClass;
     }
 
@@ -453,6 +441,9 @@ public class RubyClasses {
      * @return The Float class.
      */
     public RubyClass getFloatClass() {
+        if (floatClass == null) {
+            floatClass = RubyFloat.createFloatClass(ruby);
+        }
         return floatClass;
     }
 
@@ -462,6 +453,9 @@ public class RubyClasses {
      * @return The Method class.
      */
     public RubyClass getMethodClass() {
+        if (methodClass == null) {
+            methodClass = RubyMethod.createMethodClass(ruby);
+        }
         return methodClass;
     }
 
@@ -471,6 +465,9 @@ public class RubyClasses {
      * @return The MatchData class.
      */
     public RubyClass getMatchDataClass() {
+        if (matchDataClass == null) {
+            matchDataClass = RubyMatchData.createMatchDataClass(ruby);
+        }
         return matchDataClass;
     }
 
@@ -480,6 +477,9 @@ public class RubyClasses {
      * @return The Marshal module.
      */
     public RubyModule getMarshalModule() {
+        if (marshalModule == null) {
+            marshalModule = RubyMarshal.createMarshalModule(ruby);
+        }
         return marshalModule;
     }
 
@@ -489,6 +489,9 @@ public class RubyClasses {
      * @return The Fixnum class.
      */
     public RubyClass getFixnumClass() {
+        if (fixnumClass == null) {
+            fixnumClass = RubyFixnum.createFixnumClass(ruby);
+        }
         return fixnumClass;
     }
 
@@ -507,6 +510,9 @@ public class RubyClasses {
      * @return The ObjectSpace module.
      */
     public RubyModule getObjectSpaceModule() {
+        if (objectSpaceModule == null) {
+            objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
+        }
         return objectSpaceModule;
     }
 
@@ -516,6 +522,9 @@ public class RubyClasses {
      * @return The Dir class.
      */
     public RubyClass getDirClass() {
+        if (dirClass == null) {
+            dirClass = RubyDir.createDirClass(ruby);
+        }
         return dirClass;
     }
 
@@ -525,6 +534,9 @@ public class RubyClasses {
      * @return The Exception class.
      */
     public RubyClass getExceptionClass() {
+        if (exceptionClass == null) {
+            exceptionClass = RubyException.createExceptionClass(ruby);
+        }
         return exceptionClass;
     }
 
@@ -534,6 +546,9 @@ public class RubyClasses {
      * @return The String class.
      */
     public RubyClass getStringClass() {
+        if (stringClass == null) {
+            stringClass = RubyString.createStringClass(ruby);
+        }
         return stringClass;
     }
 
@@ -552,6 +567,9 @@ public class RubyClasses {
      * @return The Integer class.
      */
     public RubyClass getIntegerClass() {
+        if (integerClass == null) {
+            integerClass = RubyInteger.createIntegerClass(ruby);
+        }
         return integerClass;
     }
 
@@ -570,6 +588,9 @@ public class RubyClasses {
      * @return The Thread class.
      */
     public RubyClass getThreadClass() {
+        if (threadClass == null) {
+            threadClass = RubyThread.createThreadClass(ruby);
+        }
         return threadClass;
     }
 
@@ -579,6 +600,9 @@ public class RubyClasses {
      * @return The File class.
      */
     public RubyClass getFileClass() {
+        if (fileClass == null) {
+            fileClass = RubyFile.createFileClass(ruby);
+        }
         return fileClass;
     }
 
@@ -597,6 +621,9 @@ public class RubyClasses {
      * @return The Array class.
      */
     public RubyClass getArrayClass() {
+        if (arrayClass == null) {
+            arrayClass = RubyArray.createArrayClass(ruby);
+        }
         return arrayClass;
     }
 
@@ -615,6 +642,9 @@ public class RubyClasses {
      * @return The Enumerable module.
      */
     public RubyModule getEnumerableModule() {
+        if (enumerableModule == null) {
+            enumerableModule = RubyEnumerable.createEnumerableModule(ruby);
+        }
         return enumerableModule;
     }
 
@@ -624,6 +654,9 @@ public class RubyClasses {
      * @return The precisionModule value
      */
     public RubyModule getPrecisionModule() {
+        if (precisionModule == null) {
+            precisionModule = RubyPrecision.createPrecisionModule(ruby);
+        }
         return precisionModule;
     }
 
@@ -633,6 +666,9 @@ public class RubyClasses {
      * @return The JavaObject class.
      */
     public RubyClass getJavaObjectClass() {
+        if (javaObjectClass == null) {
+            javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
+        }
         return javaObjectClass;
     }
 
@@ -642,6 +678,9 @@ public class RubyClasses {
      * @return The Java module.
      */
     public RubyModule getJavaModule() {
+        if (javaModule == null) {
+            javaModule = RubyJava.createJavaModule(ruby);
+        }
         return javaModule;
     }
 
@@ -651,6 +690,9 @@ public class RubyClasses {
      * @return The JavaInterface class.
      */
     public RubyClass getJavaInterfaceClass() {
+        if (javaInterfaceClass == null) {
+            javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
+        }
         return javaInterfaceClass;
     }
 
@@ -660,6 +702,9 @@ public class RubyClasses {
      * @return The Numeric class.
      */
     public RubyClass getNumericClass() {
+        if (numericClass == null) {
+            numericClass = RubyNumeric.createNumericClass(ruby);
+        }
         return numericClass;
     }
 
@@ -669,6 +714,9 @@ public class RubyClasses {
      * @return The Time class.
      */
     public RubyClass getTimeClass() {
+        if (timeClass == null) {
+            timeClass = RubyTime.createTimeClass(ruby);
+        }
         return timeClass;
     }
 
@@ -689,7 +737,83 @@ public class RubyClasses {
      * @return The class value
      */
     public RubyModule getClass(String name) {
-        return (RubyModule) classMap.get(name);
+        RubyModule type = (RubyModule) classMap.get(name);
+        if (type == null) {
+            type = getAutoload(name);
+        }
+        return type;
+    }
+    
+    private RubyModule getAutoload(String name) {
+        String intern = name.intern();
+        if (name == "Array") {
+            return getArrayClass();
+        } else if (name == "Bignum") {
+            return getBignumClass();
+        } else if (name == "Binding") {
+            return getBindingClass();
+        } else if (name == "Comparable") {
+            return getComparableModule();
+        } else if (name == "Continuation") {
+            return getContinuationClass();
+        } else if (name == "Dir") {
+            return getDirClass();
+        } else if (name == "Enumerable") {
+            return getEnumerableModule();
+        } else if (name == "Exception") {
+            return getExceptionClass();
+        } else if (name == "File") {
+            return getFileClass();
+        } else if (name == "Fixnum") {
+            return getFixnumClass();
+        } else if (name == "Float") {
+            return getFloatClass();
+        } else if (name == "GC") {
+            return getGcModule();
+        } else if (name == "Hash") {
+            return getHashClass();
+        } else if (name == "Integer") {
+            return getIntegerClass();
+        } else if (name == "IO") {
+            return getIoClass();
+        } else if (name == "Java") {
+            return getJavaModule();
+        } else if (name == "Marshal") {
+            return getMarshalModule();
+        } else if (name == "MatchData") {
+            return getMatchDataClass();
+        } else if (name == "Math") {
+            return getMathModule();
+        } else if (name == "Method") {
+            return getMethodClass();
+        } else if (name == "Numeric") {
+            return getNumericClass();
+        } else if (name == "ObjectSpace") {
+            return getObjectSpaceModule();
+        } else if (name == "Precision") {
+            return getPrecisionModule();
+        } else if (name == "Proc") {
+            return getProcClass();
+        } else if (name == "Process") {
+            return getProcessModule();
+        } else if (name == "Range") {
+            return getRangeClass();
+        } else if (name == "Regexp") {
+            return getRegExpClass();
+        } else if (name == "String") {
+            return getStringClass();
+        } else if (name == "Struct") {
+            return getStructClass();
+        } else if (name == "Symbol") {
+            return getSymbolClass();
+        } else if (name == "Thread") {
+            return getThreadClass();
+        } else if (name == "ThreadGroup") {
+            return getThreadGroupClass();
+        } else if (name == "Time") {
+            return getTimeClass();
+        }
+        return null;
     }
 
     /**
