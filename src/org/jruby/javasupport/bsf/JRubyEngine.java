@@ -185,4 +185,13 @@ public class JRubyEngine extends BSFEngineImpl {
             return value;
         }
     }
+    /**
+     * @see com.ibm.bsf.BSFEngine#terminate()
+     */
+    public void terminate() {
+        ruby.dispose();
+        ruby = null;
+        super.terminate();
+    }
+
 }
