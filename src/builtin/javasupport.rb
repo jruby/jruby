@@ -176,6 +176,17 @@ module JavaUtilities
                                "end")
       }
 
+      java_class.constants.each {|name|
+        proxy_class.class_eval("def self. " + name + ";" +
+                               "result = @java_class.get_constant('" + name + "');" +
+                               "result = Java.java_to_primitive(result);" +
+                               "if result.kind_of?(JavaObject);" +
+                               "  result = JavaUtilities.wrap(result, method.return_type);" +
+                               "end;" +
+                               "result;" +
+                               "end")
+      }
+
       def proxy_class.const_missing(constant)
         inner_class = nil
         begin

@@ -28,6 +28,9 @@ if defined? Java
     result = System.currentTimeMillis()
     test_equal(Fixnum, result.type)
 
+    # Constants
+    test_equal(9223372036854775807, Long.MAX_VALUE)
+
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",
                Character::UnicodeBlock.class_eval("@java_class.name"))
