@@ -1146,8 +1146,9 @@ public class RubyArray extends RubyObject {
         }
 
         for (int i = 0; i < len; i++) {
-            RubyFixnum result = (RubyFixnum) entry(i).callMethod("<=>", ary.entry(i));
-            if (result.getLongValue() != 0) {
+        	IRubyObject result = entry(i).callMethod("<=>", ary.entry(i));
+        	
+        	if (result.isNil() || ((RubyFixnum)result).getLongValue() != 0) {
                 return result;
             }
         }
@@ -1330,7 +1331,7 @@ public class RubyArray extends RubyObject {
         for (int i = 0; i < len1; i++) {
             IRubyObject obj = (IRubyObject) ary1.get(i);
             for (int j = 0; j < len2; j++) {
-                if (obj.callMethod("==", (IRubyObject) ary2.get(j)).isTrue()) {
+                if (obj.callMethod("eql?", (IRubyObject) ary2.get(j)).isTrue()) {
                     ary3.add(obj);
                     break;
                 }
