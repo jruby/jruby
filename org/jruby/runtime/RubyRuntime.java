@@ -67,7 +67,6 @@ public class RubyRuntime {
 
 	/** Call the current method in the superclass of the current object
 	 *
-	 * @matz rb_call_super
 	 */
 	public RubyObject callSuper(RubyObject[] args) {
 		if (ruby.getCurrentFrame().getLastClass() == null) {
@@ -101,15 +100,6 @@ public class RubyRuntime {
 		RubyObject self = ruby.getRubyTopSelf();
 		Namespace savedNamespace = ruby.getNamespace();
 
-		// TMP_PROTECT;
-		if (wrap && ruby.getSafeLevel() >= 4) {
-			// Check_Type(fname, T_STRING);
-		} else {
-			// Check_SafeStr(fname);
-		}
-
-		// volatile ID last_func;
-		// ruby_errinfo = Qnil; /* ensure */
 		ruby.pushDynamicVars();
 
 		RubyModule wrapper = ruby.getWrapper();
@@ -331,8 +321,8 @@ public class RubyRuntime {
 	 * Sets the errorStream
 	 * @param errorStream The errorStream to set
 	 */
-	public void setErrorStream(PrintStream errStream) {
-		ruby.setGlobalVar("$stderr", RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), errStream));
+	public void setErrorStream(PrintStream errorStream) {
+		ruby.setGlobalVar("$stderr", RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), errorStream));
 	}
 
 	/**
@@ -347,8 +337,8 @@ public class RubyRuntime {
 	 * Sets the inputStream
 	 * @param inputStream The inputStream to set
 	 */
-	public void setInputStream(InputStream inStream) {
-		ruby.setGlobalVar("$stdin", RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), inStream));
+	public void setInputStream(InputStream inputStream) {
+		ruby.setGlobalVar("$stdin", RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), inputStream));
 	}
 
 	/**
@@ -361,7 +351,7 @@ public class RubyRuntime {
 
 	/**
 	 * Sets the outputStream
-	 * @param outputStream The outputStream to set
+	 * @param outStream The outputStream to set
 	 */
 	public void setOutputStream(PrintStream outStream) {
 		RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), outStream);

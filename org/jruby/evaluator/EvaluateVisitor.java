@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 import org.ablaf.ast.INode;
-import org.ablaf.common.IErrorHandler;
 import org.jruby.Builtins;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -143,7 +142,6 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.IListNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.common.IErrors;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.NameError;
@@ -178,8 +176,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     private Evaluator evaluator;
     private Builtins builtins;
 
-    private IErrorHandler errorHandler;
-
     private IRubyObject self;
     private IRubyObject result;
 
@@ -193,7 +189,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     public static EvaluateVisitor createVisitor(RubyObject self) {
         Ruby ruby = self.getRuby();
-        return new EvaluateVisitor(ruby, null, self);
+        return new EvaluateVisitor(ruby, ruby.getCurrentEvaluator(), self);
     }
 
     /**
@@ -369,7 +365,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitCVAsgnNode(CVAsgnNode)
+     * @see NodeVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
         eval(iVisited.getValueNode());
@@ -377,23 +373,18 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitCVDeclNode(CVDeclNode)
+     * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
         if (ruby.getCBase() == null) {
             throw new TypeError(ruby, "no class/module to define class variable");
         }
-
         eval(iVisited.getValueNode());
-
-        if (ruby.isVerbose() && ruby.getCBase().isSingleton()) {
-            errorHandler.handleError(IErrors.WARN, iVisited.getPosition(), "Declaring singleton class variable.");
-        }
         ruby.getCBase().declareClassVar(iVisited.getName(), result.toRubyObject());
     }
 
     /**
-     * @see NodeVisitor#visitCVarNode(CVarNode)
+     * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
         if (ruby.getCBase() == null) {
@@ -613,7 +604,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         eval(iVisited.getValueNode());
-        ruby.assignVarmap(iVisited.getName(), result.toRubyObject());
+        ruby.setDynamicVariable(iVisited.getName(), result.toRubyObject());
     }
 
     /**
@@ -621,7 +612,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        ruby.assignVarmap(iVisited.getName(), result.toRubyObject());
+        ruby.setDynamicVariable(iVisited.getName(), result.toRubyObject());
     }
 
     /**
@@ -1654,17 +1645,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                     ruby.getCurrentFrame().getLastClass());
             }
         }
-    }
-
-    private ScopeNode copyNodeScope(ScopeNode node, Namespace namespace) {
-        // node.getNamespace().cloneNamespace()
-        ScopeNode copy = new ScopeNode(node.getPosition(), null, node.getBodyNode());
-
-        if (node.getLocalNames() != null) {
-            copy.setLocalNames(new ArrayList(node.getLocalNames()));
-        }
-
-        return copy;
     }
 
     private boolean isRescueHandled(RubyException actExcptn, IListNode exceptionNodes) {

@@ -133,14 +133,14 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        ruby.assignVarmap(iVisited.getName(), value);
+        ruby.setDynamicVariable(iVisited.getName(), value);
     }
 
     /**
      * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
-        ruby.assignVarmap(iVisited.getName(), value);
+        ruby.setDynamicVariable(iVisited.getName(), value);
     }
 
     /**

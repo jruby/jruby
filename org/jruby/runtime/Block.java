@@ -26,7 +26,6 @@
  */
 package org.jruby.runtime;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.ablaf.ast.INode;

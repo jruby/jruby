@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -727,13 +726,6 @@ public final class Ruby {
         return getCurrentFrame().getNamespace().getNamespaceModule();
     }
 
-    /** Setter for property cBase.
-     * @param cBase New value of property cBase.
-     */
-    public void setCBase(RubyModule cBase) {
-        getCurrentFrame().getNamespace().setNamespaceModule(cBase);
-    }
-
     public boolean isScope(int scope) {
         return (getCurrentMethodScope() & scope) != 0;
     }
@@ -875,9 +867,7 @@ public final class Ruby {
         if (i2find.exists()) {
             return i2find;
         } else {
-            //try to load the file from a resource
             throw new LoadError(ruby, "No such file to load -- " + i2find.getPath());
-            // throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
         }
     }
 
@@ -941,8 +931,8 @@ public final class Ruby {
         getCurrentContext().getDynamicVarsStack().pop();
     }
 
-    public void assignVarmap(String id, RubyObject value) {
-        getDynamicVars().put(id, value);
+    public void setDynamicVariable(String name, RubyObject value) {
+        getDynamicVars().put(name, value);
     }
 
     public List getDynamicNames() {
