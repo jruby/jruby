@@ -28,14 +28,19 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyArray;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 
-public class JavaClassClass extends RubyObject {
+public class JavaClassClass extends RubyObject implements IndexCallable {
     private Class javaClass;
 
     private JavaClassClass(Ruby runtime, String name) {
@@ -47,20 +52,31 @@ public class JavaClassClass extends RubyObject {
         }
     }
 
+    private static final int PUBLIC_P = 1;
+    private static final int FINAL_P = 2;
+    private static final int INTERFACE_P = 3;
+    private static final int NAME = 5;
+    private static final int SUPERCLASS = 7;
+    private static final int OP_GT = 8;
+    private static final int OP_LT = 9;
+    private static final int INSTANCE_METHODS = 10;
+    private static final int CONSTANTS = 11;
+
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
                 javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass());
 
         javaClassClass.defineSingletonMethod("for_name", CallbackFactory.getSingletonMethod(JavaClassClass.class, "for_name", IRubyObject.class));
-        javaClassClass.defineMethod("public?", CallbackFactory.getMethod(JavaClassClass.class, "public_p"));
-        javaClassClass.defineMethod("final?", CallbackFactory.getMethod(JavaClassClass.class, "final_p"));
-        javaClassClass.defineMethod("interface?", CallbackFactory.getMethod(JavaClassClass.class, "interface_p"));
-        javaClassClass.defineMethod("primitive?", CallbackFactory.getMethod(JavaClassClass.class, "primitive_p"));
-        javaClassClass.defineMethod("name", CallbackFactory.getMethod(JavaClassClass.class, "name"));
-        javaClassClass.defineMethod("to_s", CallbackFactory.getMethod(JavaClassClass.class, "name"));
-        javaClassClass.defineMethod("superclass", CallbackFactory.getMethod(JavaClassClass.class, "superclass"));
-        javaClassClass.defineMethod(">", CallbackFactory.getMethod(JavaClassClass.class, "op_gt", IRubyObject.class));
-        javaClassClass.defineMethod("<", CallbackFactory.getMethod(JavaClassClass.class, "op_lt", IRubyObject.class));
+        javaClassClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
+        javaClassClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
+        javaClassClass.defineMethod("interface?", IndexedCallback.create(INTERFACE_P, 0));
+        javaClassClass.defineMethod("name", IndexedCallback.create(NAME, 0));
+        javaClassClass.defineMethod("to_s", IndexedCallback.create(NAME, 0));
+        javaClassClass.defineMethod("superclass", IndexedCallback.create(SUPERCLASS, 0));
+        javaClassClass.defineMethod(">", IndexedCallback.create(OP_GT, 1));
+        javaClassClass.defineMethod("<", IndexedCallback.create(OP_LT, 1));
+        javaClassClass.defineMethod("instance_methods", IndexedCallback.create(INSTANCE_METHODS, 0));
+        javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -109,5 +125,54 @@ public class JavaClassClass extends RubyObject {
         }
         boolean result = ((JavaClassClass) other).javaClass.isAssignableFrom(javaClass);
         return RubyBoolean.newBoolean(runtime, result);
+    }
+
+    public RubyArray instance_methods() {
+        Method[] methods = javaClass.getMethods();
+        RubyArray result = RubyArray.newArray(runtime, methods.length);
+        for (int i = 0; i < methods.length; i++) {
+            result.append(RubyString.newString(runtime, methods[i].getName()));
+        }
+        return result;
+    }
+
+    public RubyArray constants() {
+        Field[] fields = javaClass.getFields();
+        RubyArray result = RubyArray.newArray(runtime);
+        for (int i = 0; i < fields.length; i++) {
+            if (isClassConstant(fields[i])) {
+                result.append(RubyString.newString(runtime, fields[i].getName()));
+            }
+        }
+        return result;
+    }
+
+    private boolean isClassConstant(Field field) {
+        int modifiers = field.getModifiers();
+        return Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers);
+    }
+
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+            case PUBLIC_P :
+                return public_p();
+            case FINAL_P :
+                return final_p();
+            case INTERFACE_P :
+                return interface_p();
+            case NAME :
+                return name();
+            case SUPERCLASS :
+                return superclass();
+            case OP_GT :
+                return op_gt(args[0]);
+            case OP_LT :
+                return op_lt(args[0]);
+            case INSTANCE_METHODS :
+                return instance_methods();
+            case CONSTANTS :
+                return constants();
+        }
+        return super.callIndexed(index, args);
     }
 }

@@ -56,6 +56,13 @@ if defined? Java
   test_ok(! (string_class > object_class))
   test_ok(object_class > string_class)
   test_ok(! (object_class < string_class))
+
+  string_methods = string_class.instance_methods
+  test_ok(string_methods.include?("charAt"))
+  test_ok(string_methods.include?("substring"))
+
+  integer_constants = Java::JavaClass.for_name("java.lang.Integer").constants
+  test_ok(integer_constants.include?("MAX_VALUE"))
 end
 
 test_print_report
