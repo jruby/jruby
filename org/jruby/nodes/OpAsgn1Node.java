@@ -72,7 +72,7 @@ public class OpAsgn1Node extends Node {
             val = val.funcall(getMId(), rval.eval(ruby, self));
         }
 
-        args.set(args.size() - 1, val);
+        args.add(val);
         return recv.funcall("[]=", args);
     }
 	/**

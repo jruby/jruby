@@ -31,6 +31,7 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
+import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 
 /**
@@ -89,7 +90,7 @@ public class DefinedNode extends Node{
 		return "true";
 	} else if (head instanceof FalseNode) {
 		return "false";
-	} else if (head instanceof org.jruby.nodes.types.AssignableNode || head instanceof AttrSetNode || head instanceof OpAsgn1Node || head instanceof OpAsgn2Node) {
+	} else if (head instanceof AssignableNode || head instanceof AttrSetNode || head instanceof OpAsgn1Node || head instanceof OpAsgn2Node) {
 		return "assignment";
 	} else if (head instanceof LVarNode) {
 		return "local-variable";

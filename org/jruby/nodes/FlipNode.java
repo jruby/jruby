@@ -36,35 +36,52 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
+ * @version $Revision: 1.8 $
  */
-public class DotNode extends Node {
+public class FlipNode extends Node {
     private boolean exclusive;
 
-    private boolean cannotCached = false;
-    private RubyObject cachedValue = null;
-
-    public DotNode(Node beginNode, Node endNode, boolean exclusive) {
-        super(exclusive ? Constants.NODE_DOT3 : Constants.NODE_DOT2, beginNode, endNode, null);
+    public FlipNode(Node beginNode, Node endNode, boolean exclusive) {
+        super(exclusive ? Constants.NODE_FLIP3 : Constants.NODE_FLIP2, beginNode, endNode, null);
         this.exclusive = exclusive;
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        if (cachedValue != null) {
-            return cachedValue;
-        }
-
-        RubyObject result = RubyRange.newRange(ruby, self.eval(getBeginNode()), self.eval(getEndNode()), exclusive);
-
-        if (cannotCached) {
-            return result;
-        } else if (getBeginNode().getLiteral() instanceof RubyFixnum && getEndNode().getLiteral() instanceof RubyFixnum) {
-            cachedValue = result;
+        if (exclusive) {
+            return evalFlip3(ruby, self);
         } else {
-            cannotCached = true;
+            return evalFlip2(ruby, self);
+        }
+    }
+
+    private RubyObject evalFlip2(Ruby ruby, RubyObject self) {
+        if (ruby.getScope().getValue(getCount()).isFalse()) {
+            if (getBeginNode().eval(ruby, self).isTrue()) {
+                ruby.getScope().setValue(getCount(), getEndNode().eval(ruby, self).isTrue() ? ruby.getFalse() : ruby.getTrue());
+                return ruby.getTrue();
+            } else {
+                return ruby.getFalse();
+            }
+        } else {
+            if (getEndNode().eval(ruby, self).isTrue()) {
+                ruby.getScope().setValue(getCount(), ruby.getFalse());
+            }
+            return ruby.getTrue();
+        }
+    }
+
+    private RubyObject evalFlip3(Ruby ruby, RubyObject self) {
+        if (ruby.getScope().getValue(getCount()).isFalse()) {
+            RubyObject result = getBeginNode().eval(ruby, self).isTrue() ? ruby.getFalse() : ruby.getTrue();
+            ruby.getScope().setValue(getCount(), result);
+            return result;
+        } else {
+            if (getEndNode().eval(ruby, self).isTrue()) {
+                ruby.getScope().setValue(getCount(), ruby.getFalse());
+            }
+            return ruby.getTrue();
         }
 
-        return result;
     }
 
     /**
@@ -72,6 +89,6 @@ public class DotNode extends Node {
      * @param iVisitor the visitor
      **/
     public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDotNode(this);
+        iVisitor.visitFlip2Node(this);
     }
 }
