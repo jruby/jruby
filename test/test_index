@@ -38,9 +38,9 @@ mri/testAssignment.rb
 mri/testCondition.rb
 mri/testCase.rb
 mri/testIfUnless.rb
-##mri/testWhileUntil.rb
+mri/testWhileUntil.rb
 mri/testException.rb
-##mri/testArray.rb
+mri/testArray.rb
 mri/testHash.rb
 mri/testIterator.rb
 mri/testFloat.rb
