@@ -98,7 +98,7 @@ public class ExpressionVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitBreakNode(BreakNode)
      */
     public void visitBreakNode(BreakNode iVisited) {
-        expression = false;
+	acceptNode(iVisited.getValueNode());
     }
 
     /**
