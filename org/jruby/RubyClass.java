@@ -75,10 +75,61 @@ public class RubyClass extends RubyModule {
         
         RubyObject obj = new RubyObject(getRuby(), this);
         
-        // PUSH_ITER(rb_block_given_p()?ITER_PRE:ITER_NOT);
-        obj.funcall(getRuby().intern("initialize"), args);
-        // POP_ITER();
+        obj.callInit( args);
         
         return obj;
+    }
+    
+    /** rb_class_s_new
+     *
+     */
+    public static RubyClass m_new(Ruby ruby, RubyObject[] args) {
+        RubyClass superClass = ruby.getObjectClass();
+
+        if (args.length >= 1) {
+            superClass = (RubyClass)args[0];
+        }
+
+        if (superClass.isSingleton()) {
+            throw new RubyTypeException("can't make subclass of virtual class");
+        }
+
+        RubyClass newClass = m_newClass(ruby, superClass);
+        
+        // make metaclass
+        newClass.setRubyClass(superClass.getRubyClass().newSingletonClass());
+        newClass.getRubyClass().attachSingletonClass(newClass);
+        
+        // call "initialize" method
+        newClass.callInit(args);
+        
+        // call "inherited" method of the superclass
+        superClass.funcall(ruby.intern("inherited"), newClass);
+
+        return newClass;
+    }
+    
+    /** rb_class_superclass
+     *
+     */
+    public RubyObject m_superclass() {
+        RubyModule superClass = getSuperClass();
+        
+        while (superClass.isIncluded()) {
+            superClass = superClass.getSuperClass();
+        }
+        
+        if (superClass == null) {
+            return getRuby().getNil();
+        }
+        
+        return superClass;
+    }
+    
+    /** rb_class_s_inherited
+     *
+     */
+    public static RubyObject m_inherited(Ruby ruby, RubyClass subClass) {
+        throw new RubyTypeException("can't make subclass of Class");
     }
 }

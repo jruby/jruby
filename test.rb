@@ -23,6 +23,37 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # 
 
+#Class test
+
+class Top
+  def Top.inherited(sub)
+    print "New subclass: ", sub, "\n"
+  end
+end
+
+class Middle < Top
+end
+
+class Bottom < Middle
+end
+
+#Array test
+
+arr = ["zero", "first"]
+
+arr.unshift "second", "third"
+
+puts arr[1..4].inspect
+
+arr << "fourth"
+
+puts arr.pop();
+puts arr.shift();
+
+puts ["zero", "first"].type
+
+puts
+
 # test variables and method calls
 
 a = String.new("Hello World")
@@ -75,7 +106,7 @@ def testMethod
 end
 
 puts testMethod
-puts ""
+puts
 
 # test global variable.
 
@@ -86,7 +117,7 @@ def testGlobalVariable
 end
 testGlobalVariable
 
-puts ""
+puts
 
 # test classes
 

@@ -36,25 +36,42 @@ import org.jruby.*;
  * @version 
  */
 public class RBKernel {
-    private static RubyCallbackMethod methodToS = null;
-    
     public static RubyModule createKernelModule(Ruby ruby) {
         RubyModule kernelModule = ruby.defineModule("Kernel");
         
-        kernelModule.defineMethod("puts", new ReflectionCallbackMethod(RBKernel.class, "m_puts", RubyObject[].class, true, true));
-        kernelModule.defineMethod("print", new ReflectionCallbackMethod(RBKernel.class, "m_print", RubyObject[].class, true, true));
-        kernelModule.defineMethod("to_s", getMethodToS());
+        kernelModule.defineMethod("puts", getKernelMethod("m_puts"));
+        kernelModule.defineMethod("print", getKernelMethod("m_print"));
+        kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
+        
+        kernelModule.defineModuleFunction("singleton_method_added", getDummyMethod());
         
         return kernelModule;
+    }
+    
+    public static RubyCallbackMethod getDummyMethod() {
+        return new RubyCallbackMethod() {
+            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                return ruby.getNil();
+            }
+        };
+    }
+    
+    public static RubyCallbackMethod getKernelMethod(String methodName) {
+        return new ReflectionCallbackMethod(RBKernel.class, methodName, RubyObject[].class, true, true);
+    }
+    
+    public static RubyCallbackMethod getObjectMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyObject.class, methodName);
     }
     
     public static RubyObject m_puts(Ruby ruby, RubyObject args[]) {
         if (args.length == 0) {
             System.out.println();
-        }
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] != null) {
-                System.out.println(((RubyString)args[i].funcall(ruby.intern("to_s"))).getString());
+        } else {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] != null) {
+                    System.out.println(((RubyString)args[i].funcall(ruby.intern("to_s"))).getString());
+                }
             }
         }
         return ruby.getNil();
@@ -67,17 +84,5 @@ public class RBKernel {
             }
         }
         return ruby.getNil();
-    }
-    
-    public static RubyCallbackMethod getMethodToS() {
-        if (methodToS == null) {
-            methodToS = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    return recv.m_to_s();
-                }
-            };
-        }
-        
-        return methodToS;
     }
 }

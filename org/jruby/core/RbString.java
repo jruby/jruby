@@ -42,13 +42,13 @@ public class RbString {
     private static RubyCallbackMethod methodReverse = null;
 
     public static RubyClass createStringClass(Ruby ruby) {
-        org.jruby.RubyClass stringClass = ruby.defineClass("String", ruby.getObjectClass());
+        RubyClass stringClass = ruby.defineClass("String", ruby.getObjectClass());
         
-        // stringClass.includeModule(ruby.getModules().getComparable());
+        stringClass.includeModule(ruby.getRubyClass("Comparable"));
         // stringClass.includeModule(ruby.getModules().getEnumerable());
         
-        stringClass.defineSingletonMethod("new", getSingletonMethodNew());
-        stringClass.defineMethod("initialize", getMethodInitialize());
+        stringClass.defineSingletonMethod("new", getSingletonMethod("m_new", true));
+        stringClass.defineMethod("initialize", getMethod("m_replace", RubyString.class));
 /*    rb_define_method(rb_cString, "clone", rb_str_clone, 0);
     rb_define_method(rb_cString, "dup", rb_str_dup, 0);
     rb_define_method(rb_cString, "<=>", rb_str_cmp_m, 1);
@@ -59,7 +59,7 @@ public class RbString {
     rb_define_method(rb_cString, "+", rb_str_plus, 1);
     rb_define_method(rb_cString, "*", rb_str_times, 1);
     rb_define_method(rb_cString, "%", rb_str_format, 1); */
-        stringClass.defineMethod("[]", getMethodSlice());
+        stringClass.defineMethod("[]", getMethod("m_slice", true));
     /*rb_define_method(rb_cString, "[]=", rb_str_aset_m, -1);
     rb_define_method(rb_cString, "length", rb_str_length, 0);
     rb_define_method(rb_cString, "size", rb_str_length, 0);
@@ -76,9 +76,12 @@ public class RbString {
     rb_define_method(rb_cString, "replace", rb_str_replace_m, 1);
 
     rb_define_method(rb_cString, "to_i", rb_str_to_i, 0);
-    rb_define_method(rb_cString, "to_f", rb_str_to_f, 0);
-    rb_define_method(rb_cString, "to_s", rb_str_to_s, 0);
-    rb_define_method(rb_cString, "to_str", rb_str_to_s, 0);
+    */
+        
+        stringClass.defineMethod("to_s", getMethod("m_to_s", false));
+        stringClass.defineMethod("to_str", getMethod("m_to_s", false));
+
+    /*
     rb_define_method(rb_cString, "inspect", rb_str_inspect, 0);
     rb_define_method(rb_cString, "dump", rb_str_dump, 0);
 
@@ -95,7 +98,7 @@ public class RbString {
     rb_define_method(rb_cString, "hex", rb_str_hex, 0);
     rb_define_method(rb_cString, "oct", rb_str_oct, 0);
     rb_define_method(rb_cString, "split", rb_str_split_m, -1);*/
-        stringClass.defineMethod("reverse", getMethodReverse());
+        stringClass.defineMethod("reverse", getMethod("m_reverse", false));
     /*rb_define_method(rb_cString, "reverse!", rb_str_reverse_bang, 0);
     rb_define_method(rb_cString, "concat", rb_str_concat, 1);
     rb_define_method(rb_cString, "<<", rb_str_concat, 1);
@@ -154,7 +157,7 @@ public class RbString {
     rb_define_global_function("split", rb_f_split, -1);
     rb_define_global_function("scan", rb_f_scan, 1);
 */
-    stringClass.defineMethod("slice", getMethodSlice());
+    stringClass.defineMethod("slice", getMethod("m_slice", true));
     /*rb_define_method(rb_cString, "slice!", rb_str_slice_bang, -1);
 
     id_to_s = rb_intern("to_s");
@@ -166,55 +169,27 @@ public class RbString {
         return stringClass;
     }
     
-    public static RubyCallbackMethod getSingletonMethodNew() {
-        if (singletonMethodNew == null) {
-            singletonMethodNew = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return RubyString.sm_new(ruby, args);
-                }
-            };
+    public static RubyCallbackMethod getMethod(String methodName, boolean restArgs) {
+        if (restArgs) {
+            return new ReflectionCallbackMethod(RubyString.class, methodName, RubyObject[].class, true);
+        } else {
+            return new ReflectionCallbackMethod(RubyString.class, methodName);
         }
-        
-        return singletonMethodNew;
     }
     
-    public static RubyCallbackMethod getMethodInitialize() {
-        if (methodInitialize == null) {
-            methodInitialize = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new org.jruby.exceptions.RubyArgumentException();
-                    }
-                    
-                    return ((RubyString)recv).m_replace((RubyString)args[0]);
-                }
-            };
-        }
-        
-        return methodInitialize;
-    }
-
-    public static RubyCallbackMethod getMethodReverse() {
-        if (methodReverse == null) {
-            methodReverse = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return ((RubyString)recv).m_reverse();
-                }
-            };
-        }
-        
-        return methodReverse;
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyString.class, methodName, arg1);
     }
     
-    public static RubyCallbackMethod getMethodSlice() {
-        if (methodSlice == null) {
-            methodSlice = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return ((RubyString)recv).m_slice(args);
-                }
-            };
+    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
+        if (restArgs) {
+            return new ReflectionCallbackMethod(RubyString.class, methodName, RubyObject[].class, true, true);
+        } else {
+            return new ReflectionCallbackMethod(RubyString.class, methodName, false, true);
         }
-        
-        return methodSlice;
+    }
+    
+    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyString.class, methodName, arg1, false, true);
     }
 }

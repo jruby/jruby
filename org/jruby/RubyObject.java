@@ -32,7 +32,7 @@ import java.util.*;
 
 import org.jruby.core.*;
 import org.jruby.exceptions.*;
-import org.jruby.interpreter.nodes.*;
+import org.jruby.interpreter.*;
 import org.jruby.original.*;
 import org.jruby.util.*;
 
@@ -335,9 +335,9 @@ public class RubyObject implements VALUE {
     
     /** rb_eval
      *
-     *  future version
+     *  future versions
      */
-    public RubyObject eval(NODE n) {
+    /*public RubyObject eval(NODE n) {
         NODE node = n;
         
         while (true) {
@@ -351,6 +351,13 @@ public class RubyObject implements VALUE {
                 return ((ResultNode)node).interpret(this);
             }
         }
+    }*/
+    
+    public void callInit(RubyObject[] args) {
+        RubyInterpreter intprtr = getRuby().getInterpreter();
+        intprtr.getRubyIter().push(intprtr.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        funcall(getRuby().intern("initialize"), args);
+        intprtr.getRubyIter().pop();
     }
     
     // Methods of the Object class (rb_obj_*):
@@ -510,8 +517,8 @@ public class RubyObject implements VALUE {
         //     }
         //     return rb_funcall(obj, rb_intern("to_s"), 0, 0);
         // }
-        //return (RubyString)invokeMethod(getRuby().intern("to_s"), null, null);
-        return null;
+        return (RubyString)funcall(getRuby().intern("to_s"));
+        //return null;
     }
     
     /** rb_obj_is_instance_of

@@ -119,7 +119,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         path = (RubyString)getInstanceVariables().get("__classpath__");
-        if (path != null) {
+        if (path == null) {
             if (getInstanceVariables().get("__classid__") != null) {
                 path = RubyString.m_newString(getRuby(), ((RubyId)getInstanceVariables().get("__classid__")).toName()); // todo: convert from symbol to string
                 
@@ -129,13 +129,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (path == null) {
-            path = rbModule.findClassPath();
+            RubyObject tmp = rbModule.findClassPath();
             
-            /* if (path.isNil()) {
+            if (tmp.isNil()) {
                 return null;
-            }*/
+            }
             
-            return path;
+            return (RubyString)tmp;
         }
         
         /*if (!(path instanceof RubyString)) {
@@ -145,11 +145,97 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         return path;
     }
     
-    /**
+    private static class FindClassPathResult {
+        public RubyId name;
+        public RubyModule klass;
+        public RubyString path;
+        public RubyObject track;
+        public FindClassPathResult prev;
+    }
+    
+    private class FindClassPathMapMethod implements RubyMapMethod {
+        public int execute(Object _key, Object _value, Object _res) {
+            // Cast the values.
+            RubyId key = (RubyId)_key;
+            RubyObject value = (RubyObject)_value;
+            FindClassPathResult res = (FindClassPathResult)_res;
+            
+            RubyString path = null;
+            
+            if (!key.isConstId()) {
+                return RubyMapMethod.CONTINUE;
+            }
+            
+            String name = key.toName();
+            if (res.path != null) {
+                path = (RubyString)res.path.m_dup();
+                path.m_cat("::");
+                path.m_cat(name);
+            } else {
+                path = RubyString.m_newString(getRuby(), name);
+            }
+            
+            if (value == res.klass) {
+                res.name = key;
+                res.path = path;
+                return RubyMapMethod.STOP;
+            }
+            
+            if (value.m_kind_of(getRuby().getModuleClass()).isTrue()) {
+                if (value.getInstanceVariables() == null) {
+                    return RubyMapMethod.CONTINUE;
+                }
+                
+                FindClassPathResult list = res;
+                
+                while (list != null) {
+                    if (list.track == value) {
+                        return RubyMapMethod.CONTINUE;
+                    }
+                    list = list.prev;
+                }
+                
+                FindClassPathResult arg = new FindClassPathResult();
+                arg.name = null;
+                arg.path = path;
+                arg.klass = res.klass;
+                arg.track = value;
+                arg.prev = res;
+                
+                value.getInstanceVariables().foreach(this, arg);
+                
+                if (arg.name != null) {
+                    res.name = arg.name;
+                    res.path = arg.path;
+                    return RubyMapMethod.STOP;
+                }
+            }
+            return RubyMapMethod.CONTINUE;
+        }
+    }
+    
+    /** findclasspath
      *
      */
-    public RubyString findClassPath() {
-        return null;
+    public RubyObject findClassPath() {
+        FindClassPathResult arg = new FindClassPathResult();
+        arg.klass = this;
+        arg.track = getRuby().getObjectClass();
+        arg.prev = null;
+        
+        if (getRuby().getObjectClass().getInstanceVariables() != null) {
+            getRuby().getObjectClass().getInstanceVariables().foreach(new FindClassPathMapMethod(), arg);
+        }
+        
+        if (arg.name == null) {
+            getRuby().getClassMap().foreach(new FindClassPathMapMethod(), arg);
+        }
+        
+        if (arg.name != null) {
+            getInstanceVariables().put(getRuby().intern("__classpath__"), arg.path);
+            return arg.path;
+        }
+        return getRuby().getNil();
     }
     
     /** include_class_new

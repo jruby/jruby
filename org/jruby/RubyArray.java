@@ -43,7 +43,7 @@ public class RubyArray extends RubyObject {
     }
 
     public RubyArray(Ruby ruby, List array) {
-        super(ruby);
+        super(ruby, ruby.getRubyClass("Array"));
         this.array = new ArrayList(array);
     }
     
@@ -99,8 +99,7 @@ public class RubyArray extends RubyObject {
             if (idx < 0) {
                 throw new RubyIndexException("index " + (idx - array.size()) + " out of array");
             }
-        }
-        if (idx > array.size()) {
+        } else if (idx > array.size()) {
             array.ensureCapacity((int)idx + 1);
             for (int i = array.size(); i < idx; i++) {
                 array.add(getRuby().getNil());
@@ -108,8 +107,9 @@ public class RubyArray extends RubyObject {
         }
         if (idx == array.size()) {
             array.add(value);
+        } else {
+            array.set((int)idx, value);
         }
-        array.set((int)idx, value);
     }
 
 
@@ -177,13 +177,6 @@ public class RubyArray extends RubyObject {
         return ary2;
     }
     
-    /**
-     *
-     
-    public int length() {
-        return array.size();
-    }
-    
     //
     // Methods of the Array Class (rb_ary_*):
     //
@@ -199,7 +192,10 @@ public class RubyArray extends RubyObject {
      *
      */
     public static RubyArray m_newArray(Ruby ruby) {
-        return new RubyArray(ruby, new ArrayList(0));
+        /* Ruby arrays default to holding 16 elements, so we create an
+         * ArrayList of the same size if we're not told otherwise
+         */
+        return new RubyArray(ruby, new ArrayList(16));
     }
     
     /** 
@@ -219,6 +215,24 @@ public class RubyArray extends RubyObject {
     public static RubyArray m_newArray(Ruby ruby, List list) {
         return new RubyArray(ruby, list);
     }
+
+    /** rb_ary_s_new
+     *
+     */
+    public static RubyArray m_new(Ruby ruby, RubyObject[] args) {
+        RubyArray array = m_newArray(ruby);
+        
+        array.callInit(args);
+        
+        return array;
+    }
+    
+    /** rb_ary_s_create
+     *
+     */
+    public static RubyArray m_create(Ruby ruby, RubyObject[] args) {
+        return m_newArray(ruby, Arrays.asList(args));
+    }
     
     /** rb_ary_push_m
      *
@@ -228,9 +242,19 @@ public class RubyArray extends RubyObject {
             throw new RubyArgumentException("wrong # of arguments(at least 1)");
         }
         
+        modify();
+        
         for (int i = 0; i < items.length; i++) {
             array.add(items[i]);
         }
+        return this;
+    }
+    
+    public RubyArray m_push(RubyObject value) {
+        modify();
+        
+        array.add(value);
+        
         return this;
     }
 
@@ -291,7 +315,13 @@ public class RubyArray extends RubyObject {
     /** rb_ary_initialize
      *
      */
-    public RubyObject m_initialize(RubyFixnum size, RubyObject value) {
+    public RubyObject m_initialize(RubyObject[] args) {
+        if (args.length < 2) {
+            return this;
+        }
+        
+        RubyFixnum size = (RubyFixnum)args[0];
+        
         modify();
         
         long len = size.getValue();
@@ -301,9 +331,9 @@ public class RubyArray extends RubyObject {
         if (len > Integer.MAX_VALUE) {
             throw new RubyArgumentException("array size too big");
         }
-        Collections.fill(array, value);
+        Collections.fill(array, args[1]);
         for (int i = array.size(); i < len; i++) {
-            array.add(value);
+            array.add(args[1]);
         }
         return this;
     }
@@ -324,12 +354,17 @@ public class RubyArray extends RubyObject {
             if (args[0] instanceof RubyFixnum) {
                 return entry(((RubyFixnum)args[0]).getValue());
             }
-/*            if (args[0] instanceof RubyBignum) {
+            if (args[0] instanceof RubyBignum) {
                 throw new RubyIndexException("index too big");
             }
             if (args[0] instanceof RubyRange) {
-                
-            }*/
+                long[] begLength = ((RubyRange)args[0]).getBeginLength(length());
+                if (begLength == null) {
+                    return getRuby().getNil();
+                } else {
+                    return subseq(begLength[0], begLength[1]);
+                }
+            }
         }
         return getRuby().getNil();
     }
@@ -348,5 +383,23 @@ public class RubyArray extends RubyObject {
         // obj.toArray();
         
         return this;
+    }
+    
+    /** rb_ary_inspect
+     *
+     */
+    public RubyString m_inspect() {
+        // HACK +++
+        StringBuffer sb = new StringBuffer(100);
+        sb.append("[");
+        for (int i = 0; i < length(); i++)  {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(((RubyString)entry(i).funcall(getRuby().intern("to_s"))).getString());
+        }
+        sb.append("]");
+        return RubyString.m_newString(getRuby(), sb.toString());
+        // HACK ---
     }
 }

@@ -149,10 +149,10 @@ public class RubyString extends RubyObject {
     /** rb_str_s_new
      *
      */
-    public static RubyString sm_new(Ruby ruby, RubyObject[] args) {
+    public static RubyString m_new(Ruby ruby, RubyObject[] args) {
         RubyString newString = m_newString(ruby, "");
         
-        ruby.getInterpreter().callInit(newString, args);
+        newString.callInit(args);
         
         return newString;
     }

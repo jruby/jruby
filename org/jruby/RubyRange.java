@@ -55,6 +55,37 @@ public class RubyRange extends RubyObject {
         setInstanceVar("excl", exclusive);
     }
     
+    /** rb_range_beg_len
+     *
+     */
+    public long[] getBeginLength(long length) {
+        long begin = ((RubyNumeric)getInstanceVar("begin")).getLongValue();
+        long end = ((RubyNumeric)getInstanceVar("end")).getLongValue();
+        end -= getInstanceVar("excl").isTrue() ? 1 : 0;
+        
+        if (begin < 0) {
+            begin += length;
+        }
+        
+        if (begin < 0 || begin > length) {
+            return null;
+        }
+        
+        if (end > length) {
+            end = length;
+        }
+        
+        if (end < 0) {
+            end += length;
+        }
+        
+        if (end < 0) {
+            return null;
+        }
+        
+        return new long[] {begin, end - begin};
+    }
+    
     // public Range methods
     
     public static RubyRange m_newRange(Ruby ruby, RubyObject begin, RubyObject end, boolean exclusive) {

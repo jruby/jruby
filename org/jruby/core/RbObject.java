@@ -33,21 +33,11 @@ import org.jruby.*;
  * @author  jpetersen
  */
 public class RbObject {
-    private static RubyCallbackMethod methodType = null;
-    
     public static void initObjectClass(RubyClass objectClass) {
-        objectClass.defineMethod("type", getMethodType());
+        objectClass.defineMethod("type", getMethod("m_type"));
     }
     
-    public static RubyCallbackMethod getMethodType() {
-        if (methodType == null) {
-            methodType = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return recv.m_type();
-                }
-            };
-        }
-        
-        return methodType;
+    public static RubyCallbackMethod getMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyObject.class, methodName);
     }
 }

@@ -33,21 +33,32 @@ import org.jruby.*;
  * @author  jpetersen
  */
 public class RbClass {
-    private static RubyCallbackMethod methodNew = null;
-
     public static void initClassClass(RubyClass classClass) {
-        classClass.defineMethod("new", getMethodNew());
+        classClass.defineSingletonMethod("new", getSingletonMethod("m_new", true));
+        
+        classClass.defineMethod("new", getMethod("m_new", true));
+        classClass.defineMethod("superclass", getMethod("m_superclass", false));
+        
+        classClass.defineSingletonMethod("inherited", getSingletonMethod("m_superclass", RubyClass.class));
     }
     
-    public static RubyCallbackMethod getMethodNew() {
-        if (methodNew == null) {
-            methodNew = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return ((RubyClass)recv).m_new(args);
-                }
-            };
+    public static RubyCallbackMethod getMethod(String methodName, boolean restArgs) {
+        if (restArgs) {
+            return new ReflectionCallbackMethod(RubyClass.class, methodName, RubyObject[].class, true);
+        } else {
+            return new ReflectionCallbackMethod(RubyClass.class, methodName);
         }
-        
-        return methodNew;
+    }
+    
+    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
+        if (restArgs) {
+            return new ReflectionCallbackMethod(RubyClass.class, methodName, RubyObject[].class, true, true);
+        } else {
+            return new ReflectionCallbackMethod(RubyClass.class, methodName, false, true);
+        }
+    }
+    
+    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyClass.class, methodName, arg1, false, true);
     }
 }

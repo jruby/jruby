@@ -33,4 +33,26 @@ import org.jruby.*;
  * @author  jpetersen
  */
 public class RbModule {
+    public static void initModuleClass(RubyClass moduleClass) {
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName, boolean restArgs) {
+        if (restArgs) {
+            return new ReflectionCallbackMethod(RubyModule.class, methodName, RubyObject[].class, true);
+        } else {
+            return new ReflectionCallbackMethod(RubyModule.class, methodName);
+        }
+    }
+    
+    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
+        if (restArgs) {
+            return new ReflectionCallbackMethod(RubyModule.class, methodName, RubyObject[].class, true, true);
+        } else {
+            return new ReflectionCallbackMethod(RubyModule.class, methodName, false, true);
+        }
+    }
+    
+    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyModule.class, methodName, arg1, false, true);
+    }
 }

@@ -42,7 +42,7 @@ public final class Ruby implements token {
     /** rb_class_tbl
      *
      */
-    private Map classMap;
+    private RubyMap classMap;
     
     /** rb_global_tbl
      *
@@ -95,7 +95,7 @@ public final class Ruby implements token {
         originalMethods = new RubyOriginalMethods(this);
         
         globalMap = new RubyHashMap();
-        classMap = new HashMap();
+        classMap = new RubyHashMap();
 
         nilObject = new RubyNil(this);
         trueObject = new RubyBoolean(this, true);
@@ -225,6 +225,7 @@ public final class Ruby implements token {
         
         stringClass = RbString.createStringClass(this);
         
+        RbArray.createArrayClass(this);
         RbRange.createRangeClass(this);
     }
     
@@ -499,4 +500,19 @@ public final class Ruby implements token {
     public RubyObject yield(RubyObject value) {
         return getInterpreter().yield0(value, null, null, false);
     }
+    
+    /** Getter for property classMap.
+     * @return Value of property classMap.
+     */
+    public org.jruby.util.RubyMap getClassMap() {
+        return classMap;
+    }
+    
+    /** Setter for property classMap.
+     * @param classMap New value of property classMap.
+     */
+    public void setClassMap(org.jruby.util.RubyMap classMap) {
+        this.classMap = classMap;
+    }
+    
 }
