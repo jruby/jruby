@@ -26,23 +26,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
+ * Backtick string
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class XStrNode extends AbstractNode implements ILiteralNode {    
-    private String value;
+public class XStrNode extends AbstractNode implements ILiteralNode {
+    private final String value;
 
     public XStrNode(ISourcePosition position, String value) {
         super(position);
-
         this.value = value;
     }
 
@@ -60,13 +59,5 @@ public class XStrNode extends AbstractNode implements ILiteralNode {
      */
     public String getValue() {
         return value;
-    }
-
-    /**
-     * Sets the value.
-     * @param value The value to set
-     */
-    public void setValue(String value) {
-        this.value = value;
     }
 }

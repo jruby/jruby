@@ -39,11 +39,10 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ReturnNode extends AbstractNode {
-    private INode valueNode;
+    private final INode valueNode;
 
     public ReturnNode(ISourcePosition position, INode valueNode) {
         super(position);
-
         this.valueNode = valueNode;
     }
 
@@ -61,13 +60,5 @@ public class ReturnNode extends AbstractNode {
      */
     public INode getValueNode() {
         return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

@@ -44,14 +44,13 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class OpElementAsgnNode extends AbstractNode {
-    private INode receiverNode;
-    private String operatorName;
-    private INode argsNode;
-    private INode valueNode;
+    private final INode receiverNode;
+    private final String operatorName;
+    private final INode argsNode;
+    private final INode valueNode;
 
     public OpElementAsgnNode(ISourcePosition position, INode receiverNode, String operatorName, INode argsNode, INode valueNode) {
         super(position);
-
         this.receiverNode = receiverNode;
         this.operatorName = operatorName;
         this.argsNode = argsNode;
@@ -75,27 +74,11 @@ public class OpElementAsgnNode extends AbstractNode {
     }
 
     /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(INode argsNode) {
-        this.argsNode = argsNode;
-    }
-
-    /**
      * Gets the operatorName.
      * @return Returns a String
      */
     public String getOperatorName() {
         return operatorName;
-    }
-
-    /**
-     * Sets the operatorName.
-     * @param operatorName The operatorName to set
-     */
-    public void setOperatorName(String operatorName) {
-        this.operatorName = operatorName;
     }
 
     /**
@@ -107,26 +90,10 @@ public class OpElementAsgnNode extends AbstractNode {
     }
 
     /**
-     * Sets the receiverNode.
-     * @param receiverNode The receiverNode to set
-     */
-    public void setReceiverNode(INode receiverNode) {
-        this.receiverNode = receiverNode;
-    }
-
-    /**
      * Gets the valueNode.
      * @return Returns a INode
      */
     public INode getValueNode() {
         return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

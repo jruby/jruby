@@ -28,10 +28,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents an until statement.
  *
@@ -39,12 +39,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class UntilNode extends AbstractNode {
-    private INode conditionNode;
-    private INode bodyNode;
+    private final INode conditionNode;
+    private final INode bodyNode;
 
     public UntilNode(ISourcePosition position, INode conditionNode, INode bodyNode) {
         super(position);
-
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
     }
@@ -66,26 +65,10 @@ public class UntilNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the conditionNode.
      * @return Returns a INode
      */
     public INode getConditionNode() {
         return conditionNode;
-    }
-
-    /**
-     * Sets the conditionNode.
-     * @param conditionNode The conditionNode to set
-     */
-    public void setConditionNode(INode conditionNode) {
-        this.conditionNode = conditionNode;
     }
 }

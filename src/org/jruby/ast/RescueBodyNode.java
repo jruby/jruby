@@ -26,14 +26,16 @@
  */
 package org.jruby.ast;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Collections;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -41,14 +43,13 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class RescueBodyNode extends AbstractNode implements IListNode {
+    private final IListNode exceptionNodes;
+    private final INode bodyNode;
+
     private List list = null;
-    
-    private IListNode exceptionNodes;
-    private INode bodyNode;
 
     public RescueBodyNode(ISourcePosition position, IListNode exceptionNodes, INode bodyNode) {
         super(position);
-        
         this.exceptionNodes = exceptionNodes;
         this.bodyNode = bodyNode;
     }
@@ -61,7 +62,6 @@ public class RescueBodyNode extends AbstractNode implements IListNode {
             list = new ArrayList();
         }
         list.add(node);
-
         return this;
     }
 
@@ -103,27 +103,10 @@ public class RescueBodyNode extends AbstractNode implements IListNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the exceptionNodes.
      * @return Returns a IListNode
      */
     public IListNode getExceptionNodes() {
         return exceptionNodes;
     }
-
-    /**
-     * Sets the exceptionNodes.
-     * @param exceptionNodes The exceptionNodes to set
-     */
-    public void setExceptionNodes(IListNode exceptionNodes) {
-        this.exceptionNodes = exceptionNodes;
-    }
-
 }

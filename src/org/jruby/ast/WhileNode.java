@@ -47,12 +47,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class WhileNode extends AbstractNode {
-    private INode conditionNode;
-    private INode bodyNode;
+    private final INode conditionNode;
+    private final INode bodyNode;
 
     public WhileNode(ISourcePosition position, INode conditionNode, INode bodyNode) {
         super(position);
-
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
     }
@@ -73,26 +72,10 @@ public class WhileNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the conditionNode.
      * @return Returns a INode
      */
     public INode getConditionNode() {
         return conditionNode;
-    }
-
-    /**
-     * Sets the conditionNode.
-     * @param conditionNode The conditionNode to set
-     */
-    public void setConditionNode(INode conditionNode) {
-        this.conditionNode = conditionNode;
     }
 }

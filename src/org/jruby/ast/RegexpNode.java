@@ -26,11 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a simple regular expression literal.
  *
@@ -38,8 +37,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class RegexpNode extends AbstractNode implements ILiteralNode {
-    private String value;
-    private int options;
+    private final String value;
+    private final int options;
     
     public RegexpNode(ISourcePosition position, String value, int options) {
         super(position);
@@ -61,26 +60,10 @@ public class RegexpNode extends AbstractNode implements ILiteralNode {
     }
 
     /**
-     * Sets the options.
-     * @param options The options to set
-     */
-    public void setOptions(int options) {
-        this.options = options;
-    }
-
-    /**
      * Gets the value.
      * @return Returns a String
      */
     public String getValue() {
         return value;
-    }
-
-    /**
-     * Sets the value.
-     * @param value The value to set
-     */
-    public void setValue(String value) {
-        this.value = value;
     }
 }

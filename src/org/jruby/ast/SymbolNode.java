@@ -26,11 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a symbol (:symbol_name).
  *
@@ -38,11 +37,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class SymbolNode extends AbstractNode implements ILiteralNode {
-	private String name;
+	private final String name;
 
 	public SymbolNode(ISourcePosition position, String name) {
 	    super(position);
-
 	    this.name = name;
 	}
 
@@ -56,13 +54,5 @@ public class SymbolNode extends AbstractNode implements ILiteralNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

@@ -36,11 +36,10 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class UndefNode extends AbstractNode {
-    private String name;
+    private final String name;
 
     public UndefNode(ISourcePosition position, String name) {
         super(position);
-
         this.name = name;
     }
 
@@ -58,13 +57,5 @@ public class UndefNode extends AbstractNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

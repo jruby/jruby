@@ -28,10 +28,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -39,11 +39,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class RestArgsNode extends AbstractNode {
-    private INode argumentNode;
+    private final INode argumentNode;
 
     public RestArgsNode(ISourcePosition position, INode argumentNode) {
         super(position);
-        
         this.argumentNode = argumentNode;
     }
 
@@ -61,13 +60,5 @@ public class RestArgsNode extends AbstractNode {
      */
     public INode getArgumentNode() {
         return argumentNode;
-    }
-
-    /**
-     * Sets the argumentNode.
-     * @param argumentNode The argumentNode to set
-     */
-    public void setArgumentNode(INode argumentNode) {
-        this.argumentNode = argumentNode;
     }
 }

@@ -26,12 +26,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -39,12 +38,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class WhenNode extends AbstractNode {
-    private IListNode expressionNodes;
-    private INode bodyNode;
+    private final IListNode expressionNodes;
+    private final INode bodyNode;
 
     public WhenNode(ISourcePosition position, IListNode expressionNodes, INode bodyNode) {
         super(position);
-
         this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;
     }
@@ -66,26 +64,10 @@ public class WhenNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the expressionNodes.
      * @return Returns a IListNode
      */
     public IListNode getExpressionNodes() {
         return expressionNodes;
-    }
-
-    /**
-     * Sets the expressionNodes.
-     * @param expressionNodes The expressionNodes to set
-     */
-    public void setExpressionNodes(IListNode expressionNodes) {
-        this.expressionNodes = expressionNodes;
     }
 }

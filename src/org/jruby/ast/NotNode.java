@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -37,11 +37,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class NotNode extends AbstractNode {
-    private INode conditionNode;
+    private final INode conditionNode;
 
     public NotNode(ISourcePosition position, INode conditionNode) {
         super(position);
-
         this.conditionNode = conditionNode;
     }
 
@@ -60,13 +59,4 @@ public class NotNode extends AbstractNode {
     public INode getConditionNode() {
         return conditionNode;
     }
-
-    /**
-     * Sets the conditionNode.
-     * @param conditionNode The conditionNode to set
-     */
-    public void setConditionNode(INode conditionNode) {
-        this.conditionNode = conditionNode;
-    }
-
 }

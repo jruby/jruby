@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -37,14 +37,13 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class OpAsgnNode extends AbstractNode {
-    private INode receiverNode;
-    private INode valueNode;
-    private String variableName;
-    private String operatorName;
+    private final INode receiverNode;
+    private final INode valueNode;
+    private final String variableName;
+    private final String operatorName;
 
     public OpAsgnNode(ISourcePosition position, INode receiverNode, INode valueNode, String variableName, String methodName) {
         super(position);
-
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
         this.variableName = variableName;
@@ -68,27 +67,11 @@ public class OpAsgnNode extends AbstractNode {
     }
 
     /**
-     * Sets the methodName.
-     * @param methodName The methodName to set
-     */
-    public void setOperatorName(String methodName) {
-        this.operatorName = methodName;
-    }
-
-    /**
      * Gets the receiverNode.
      * @return Returns a INode
      */
     public INode getReceiverNode() {
         return receiverNode;
-    }
-
-    /**
-     * Sets the receiverNode.
-     * @param receiverNode The receiverNode to set
-     */
-    public void setReceiverNode(INode receiverNode) {
-        this.receiverNode = receiverNode;
     }
 
     /**
@@ -100,27 +83,10 @@ public class OpAsgnNode extends AbstractNode {
     }
 
     /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
-    }
-
-    /**
      * Gets the varibaleName.
      * @return Returns a String
      */
     public String getVariableName() {
         return variableName;
     }
-
-    /**
-     * Sets the varibaleName.
-     * @param varibaleName The varibaleName to set
-     */
-    public void setVariableName(String varibaleName) {
-        this.variableName = varibaleName;
-    }
-
 }

@@ -36,12 +36,11 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class VAliasNode extends AbstractNode {
-    private String oldName;
-    private String newName;
+    private final String oldName;
+    private final String newName;
 
     public VAliasNode(ISourcePosition position, String newName, String oldName) {
         super(position);
-
         this.oldName = oldName;
         this.newName = newName;
     }
@@ -63,26 +62,10 @@ public class VAliasNode extends AbstractNode {
     }
 
     /**
-     * Sets the newName.
-     * @param newName The newName to set
-     */
-    public void setNewName(String newName) {
-        this.newName = newName;
-    }
-
-    /**
      * Gets the oldName.
      * @return Returns a String
      */
     public String getOldName() {
         return oldName;
-    }
-
-    /**
-     * Sets the oldName.
-     * @param oldName The oldName to set
-     */
-    public void setOldName(String oldName) {
-        this.oldName = oldName;
     }
 }

@@ -43,12 +43,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class SClassNode extends AbstractNode {
-    private INode receiverNode;
-    private ScopeNode bodyNode;
+    private final INode receiverNode;
+    private final ScopeNode bodyNode;
 
     public SClassNode(ISourcePosition position, INode recvNode, ScopeNode bodyNode) {
         super(position);
-        
         this.receiverNode = recvNode;
         this.bodyNode = bodyNode;
     }
@@ -70,26 +69,10 @@ public class SClassNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(ScopeNode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the receiverNode.
      * @return Returns a INode
      */
     public INode getReceiverNode() {
         return receiverNode;
-    }
-
-    /**
-     * Sets the receiverNode.
-     * @param receiverNode The receiverNode to set
-     */
-    public void setReceiverNode(INode receiverNode) {
-        this.receiverNode = receiverNode;
     }
 }

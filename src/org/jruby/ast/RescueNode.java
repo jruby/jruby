@@ -26,12 +26,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -45,7 +44,6 @@ public class RescueNode extends AbstractNode {
     
     public RescueNode(ISourcePosition position, INode bodyNode, IListNode rescueNodes, INode elseNode) {
         super(position);
-        
         this.bodyNode = bodyNode;
         this.rescueNodes = rescueNodes;
         this.elseNode = elseNode;
@@ -68,27 +66,11 @@ public class RescueNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the elseNode.
      * @return Returns a INode
      */
     public INode getElseNode() {
         return elseNode;
-    }
-
-    /**
-     * Sets the elseNode.
-     * @param elseNode The elseNode to set
-     */
-    public void setElseNode(INode elseNode) {
-        this.elseNode = elseNode;
     }
 
     /**
@@ -98,13 +80,4 @@ public class RescueNode extends AbstractNode {
     public IListNode getRescueNodes() {
         return rescueNodes;
     }
-
-    /**
-     * Sets the rescueNodes.
-     * @param rescueNodes The rescueNodes to set
-     */
-    public void setRescueNodes(IListNode rescueNodes) {
-        this.rescueNodes = rescueNodes;
-    }
-
 }

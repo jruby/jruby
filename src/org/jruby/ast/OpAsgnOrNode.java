@@ -28,10 +28,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -39,14 +39,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class OpAsgnOrNode extends AbstractNode {
-    // private String instanceVarName; XXX
-    private INode firstNode;
-    private INode secondNode;
+    private final INode firstNode;
+    private final INode secondNode;
 
     public OpAsgnOrNode(ISourcePosition position, INode headNode, INode valueNode) {
-        // XXX , String instanceName
         super(position);
-
         firstNode = headNode;
         secondNode = valueNode;
     }
@@ -68,26 +65,10 @@ public class OpAsgnOrNode extends AbstractNode {
     }
 
     /**
-     * Sets the firstNode.
-     * @param firstNode The firstNode to set
-     */
-    public void setFirstNode(INode firstNode) {
-        this.firstNode = firstNode;
-    }
-
-    /**
      * Gets the secondNode.
      * @return Returns a INode
      */
     public INode getSecondNode() {
         return secondNode;
-    }
-
-    /**
-     * Sets the secondNode.
-     * @param secondNode The secondNode to set
-     */
-    public void setSecondNode(INode secondNode) {
-        this.secondNode = secondNode;
     }
 }
