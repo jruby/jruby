@@ -212,14 +212,27 @@ module JavaUtilities
     end
 
     def matching_method(methods, args)
-      argument_types = args.collect {|a| a.java_class.name }
+      argument_types = args.collect {|a| a.java_class }
+      type_names = argument_types.collect {|t| t.name }
+
       exact_match = methods.detect {|m|
-        m.argument_types == argument_types
+        m.argument_types == type_names
       }
       return exact_match unless exact_match.nil?
-      # FIXME: look for not exact, but matching, argument types
+      compatible_match = methods.detect {|m|
+        types = m.argument_types.collect {|t| Java::JavaClass.for_name(t) }
+        match = true
+        0.upto(types.length - 1) {|i|
+          unless types[i].assignable_from?(argument_types[i])
+            match = false
+          end
+        }
+        match
+      }
+      return compatible_match unless compatible_match.nil?
+
       raise NameError.new("no method '" + methods.first.name +
-                          "' with argument types exactly matching " +
+                          "' with argument types matching " +
                           argument_types.inspect)
     end
 

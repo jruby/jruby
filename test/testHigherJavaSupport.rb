@@ -26,7 +26,9 @@ if defined? Java
     # Instance methods differing only on argument type
     l1 = Long.new(1234)
     l2 = Long.new(1000)
-    test_equal(1, l1.compareTo(l2))
+    test_ok(l1.compareTo(l2) > 0)
+    s1 = Short.new(1234)
+    test_ok(s1.compareTo(l2) > 0)
 
     # FIXME: easy method for importing java class with colliding name
     # (Since String would be nice to test on)
