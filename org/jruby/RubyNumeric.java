@@ -26,6 +26,9 @@
 
 package org.jruby;
 
+import org.jruby.exceptions.*;
+
+
 /**
  *
  * @author  jpetersen
@@ -51,6 +54,22 @@ public abstract class RubyNumeric extends RubyObject {
     public abstract double getDoubleValue();
     
     public abstract long getLongValue();
+    
+    public static long fix2long(RubyObject arg) {
+        if (arg instanceof RubyFixnum) {
+            return ((RubyFixnum)arg).getLongValue();
+        }
+        throw new RubyTypeException("argument is not a Fixnum");
+    }
+        
+    public static int fix2int(RubyObject arg) {
+        long val = fix2long(arg);
+        if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
+            throw new RubyTypeException("argument value is too big to convert to int");
+        }
+        return (int)val;
+    }
+        
     
     /* Numeric methods. (num_*)
      *

@@ -28,17 +28,17 @@
         <mkdir dir="${build.src}"/>
         <mkdir dir="${build.dest}"/>
         <mkdir dir="${build.docs}"/>
-		<mkdir dir="${build.docs}/support"/>
+        <mkdir dir="${build.docs}/support"/>
     </target>
 
-	<target depends="init" name="compile">
-		<!--replace the javac task start tag by the next one if using jdk1.4 -->
-		<!--<javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}" exclude="JDKRegexpAdapter.java"/>-->
-		<javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}" excludes="**/JDKRegexpAdapter.java"/>
+    <target depends="init" name="compile">
+        <!--replace the javac task start tag by the next one if using jdk1.4 -->
+        <!--<javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}"/>-->
+        <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}" excludes="**/JDKRegexpAdapter.java"/>
         <copy todir="${build.dest}">
-          <fileset dir="${src.dir}">
-            <include name="**/*.properties" />
-          </fileset>
+            <fileset dir="${src.dir}">
+                <include name="**/*.properties" />
+            </fileset>
         </copy>
         <jar basedir="${build.dest}" compress="true" jarfile="${base.dir}/jruby.jar" manifest="${base.dir}/jruby.mf"/>
     </target>
@@ -78,7 +78,7 @@
 
     <target depends="init" name="javadocs">
         <javadoc destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
-		<javadoc destdir="${build.docs}/support" doctitle="${javadoc.title}" packagenames="gnu.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
+        <javadoc destdir="${build.docs}/support" doctitle="${javadoc.title}" packagenames="gnu.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
     </target>
 	
     <target depends="init,bin-gz,src-gz" description="Build everything." name="all">

@@ -174,7 +174,7 @@ public class RubyString extends RubyObject {
             return this;
         }
         
-        setString(other.getValue());
+        setValue(other.getValue());
         
         // The other stuff isn't needed?
         
@@ -191,22 +191,6 @@ public class RubyString extends RubyObject {
         }
         
         return newString(sb.toString());
-    }
-    
-    /**
-     *
-     */
-    public RubyObject m_slice(RubyObject args[]) {
-        if (args.length > 1) {
-            RubyFixnum beg = (RubyFixnum)args[0];
-            RubyFixnum len = (RubyFixnum)args[1];
-            
-            return slice((int)beg.getValue(), (int)len.getValue());
-        } else {
-            // ...
-        }
-        
-        return getRuby().getNil();
     }
     
     /** rb_str_s_new
@@ -291,7 +275,7 @@ public class RubyString extends RubyObject {
             sb.append(getValue().toLowerCase().substring(1));
         }
         
-        setString(sb.toString());
+        setValue(sb.toString());
         
         return this;
     }
@@ -307,7 +291,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_upcase_bang() {
-        setString(getValue().toUpperCase());
+        setValue(getValue().toUpperCase());
         
         return this;
     }
@@ -323,7 +307,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_downcase_bang() {
-        setString(getValue().toLowerCase());
+        setValue(getValue().toLowerCase());
         
         return this;
     }
@@ -353,7 +337,7 @@ public class RubyString extends RubyObject {
                 sb.append(Character.toLowerCase(chars[i]));
             }
         }
-        setString(getValue().toLowerCase());
+        setValue(getValue().toLowerCase());
         
         return this;
     }
@@ -647,5 +631,55 @@ public class RubyString extends RubyObject {
             return getRuby().getNil();
         }
         return RubyFixnum.m_newFixnum(getRuby(), pos);
+    }
+    
+    private RubyObject substr(int beg, int len) {
+        int strLen = getValue().length();
+        if (len < 0 || beg >= strLen) {
+            return getRuby().getNil();
+        }
+        if (beg < 0) {
+            beg += strLen;
+            if (beg < 0) {
+                return getRuby().getNil();
+            }
+        }
+        int end = Math.min(strLen, beg + len);
+        return newString(getValue().substring(beg, end));
+    }
+    
+    public RubyObject m_aref(RubyObject[] args) {
+        if (count_args(args, 1, 2) == 2) {
+            int beg = RubyNumeric.fix2int(args[0]);
+            int len = RubyNumeric.fix2int(args[1]);
+            return substr(beg, len);
+        }
+        if (args[0] instanceof RubyFixnum) { // RubyNumeric?
+            int idx = RubyNumeric.fix2int(args[0]); // num2int?
+            if (idx < 0) {
+                idx += getValue().length();
+            }
+            if (idx < 0 || idx >= getValue().length()) {
+                return getRuby().getNil();
+            }
+            return new RubyFixnum(getRuby(), getValue().charAt(idx));
+        }
+        if (args[0] instanceof RubyRegexp) {
+            if (get_pat(args[0]).m_search(this, 0) >= 0) {
+                return RubyRegexp.m_last_match(getRuby().getBackRef());
+            }
+            return getRuby().getNil();
+        }
+        if (args[0] instanceof RubyString) {
+            if (getValue().indexOf(get_str(args[0]).getValue()) != -1) {
+                return args[0];
+            }
+            return getRuby().getNil();
+        }
+        if (args[0] instanceof RubyRange) {
+            long[] idxs = ((RubyRange)args[0]).getBeginLength(getValue().length());
+            return substr((int)idxs[0], (int)idxs[1]);
+        }
+        throw new RubyTypeException("wrong argument type");
     }
 }

@@ -32,34 +32,34 @@ import org.jruby.exceptions.RubyRegexpException;
 interface IRegexpAdapter
 {
 
-	/**
-	 * Compile the regex.
-	 */
-	public void compile(String pattern) throws org.jruby.exceptions.RubyRegexpException;
+    /**
+     * Compile the regex.
+     */
+    public void compile(String pattern) throws org.jruby.exceptions.RubyRegexpException;
 
-	/**
-	 * Set whether matches should be case-insensitive or not
-	 */
-	public void setCasefold(boolean set) ;
+    /**
+     * Set whether matches should be case-insensitive or not
+     */
+    public void setCasefold(boolean set) ;
 
-	/**
-	 * Get whether matches are case-insensitive or not
-	 */
-	public boolean getCasefold() ;
+    /**
+     * Get whether matches are case-insensitive or not
+     */
+    public boolean getCasefold() ;
 
-	/**
-	 * Set whether patterns can contain comments and extra whitespace
-	 */
-	public void setExtended(boolean set) ;
+    /**
+     * Set whether patterns can contain comments and extra whitespace
+     */
+    public void setExtended(boolean set) ;
 
-	/**
-	 * Set whether the dot metacharacter should match newlines
-	 */
-	public void setMultiline(boolean set) ;
+    /**
+     * Set whether the dot metacharacter should match newlines
+     */
+    public void setMultiline(boolean set) ;
 
-	/**
-	 * Does the given argument match the pattern?
-	 */
-	public RubyObject search(Ruby ruby, String target, int startPos) ;
+    /**
+     * Does the given argument match the pattern?
+     */
+    public RubyObject search(Ruby ruby, String target, int startPos) ;
 }
 

@@ -57,7 +57,7 @@ public class RbString {
         stringClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
         stringClass.defineMethod("*", getMethod("op_mul", RubyInteger.class));
 //    rb_define_method(rb_cString, "%", rb_str_format, 1);
-        stringClass.defineMethod("[]", getMethod("m_slice", true));
+        stringClass.defineMethod("[]", getMethod("m_aref", true));
 //    rb_define_method(rb_cString, "[]=", rb_str_aset_m, -1);
         stringClass.defineMethod("length", getMethod("m_length", false));
         stringClass.defineMethod("size", getMethod("m_length", false));
@@ -96,8 +96,8 @@ public class RbString {
 //    rb_define_method(rb_cString, "split", rb_str_split_m, -1);*/
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));
 //    rb_define_method(rb_cString, "reverse!", rb_str_reverse_bang, 0);
-        stringClass.defineMethod("concat", getMethod("m_concat", RubyString.class));
-        stringClass.defineMethod("<<", getMethod("m_concat", RubyString.class));
+        stringClass.defineMethod("concat", getMethod("m_concat", RubyObject.class));
+        stringClass.defineMethod("<<", getMethod("m_concat", RubyObject.class));
 //    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
 //    rb_define_method(rb_cString, "intern", rb_str_intern, 0);
 
@@ -153,7 +153,7 @@ public class RbString {
 //    rb_define_global_function("split", rb_f_split, -1);
 //    rb_define_global_function("scan", rb_f_scan, 1);
 
-    stringClass.defineMethod("slice", getMethod("m_slice", true));
+    stringClass.defineMethod("slice", getMethod("m_aref", true));
 //    rb_define_method(rb_cString, "slice!", rb_str_slice_bang, -1);
 
 //    id_to_s = rb_intern("to_s");

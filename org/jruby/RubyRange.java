@@ -61,7 +61,7 @@ public class RubyRange extends RubyObject {
     public long[] getBeginLength(long length) {
         long begin = ((RubyNumeric)getInstanceVar("begin")).getLongValue();
         long end = ((RubyNumeric)getInstanceVar("end")).getLongValue();
-        end -= getInstanceVar("excl").isTrue() ? 1 : 0;
+        end += getInstanceVar("excl").isTrue() ? 0 : 1;
         
         if (begin < 0) {
             begin += length;
