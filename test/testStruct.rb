@@ -32,7 +32,7 @@ s2 = s.new(1, 2)
 test_equal(1, s2.x)
 test_equal(2, s2.y)
 
-#test_exception(ArgumentError) { s.new(1,2,3,4,5,6,7) }
+test_exception(ArgumentError) { s.new(1,2,3,4,5,6,7) }
 
 # Anonymous Struct
 a = Struct.new(:x, :y)

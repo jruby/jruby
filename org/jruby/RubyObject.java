@@ -574,35 +574,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             file = ruby.getSourceFile();
             line = ruby.getSourceLine();
         }
-        if (!scope.isNil()) {
-            /*
-            if (!rb_obj_is_block(scope)) {
-            	rb_raise(rb_eTypeError, "wrong argument type %s (expected Proc/Binding)", rb_class2name(CLASS_OF(scope)));
-            }
-            
-            Data_Get_Struct(scope, struct BLOCK, data);
-            
-            // PUSH BLOCK from data
-            frame = data->frame;
-            frame.tmp = ruby_frame;	// gc protection
-            ruby_frame = &(frame);
-            old_scope = ruby_scope;
-            ruby_scope = data->scope;
-            old_block = ruby_block;
-            ruby_block = data->prev;
-            old_dyna_vars = ruby_dyna_vars;
-            ruby_dyna_vars = data->dyna_vars;
-            old_vmode = scope_vmode;
-            scope_vmode = data->vmode;
-            old_cref = (VALUE)ruby_cref;
-            ruby_cref = (NODE*)ruby_frame->cbase;
-            old_wrapper = ruby_wrapper;
-            ruby_wrapper = data->wrapper;
-            
-            self = data->self;
-            ruby_frame->iter = data->iter;
-            */
-        } else {
+        if (scope.isNil()) {
             if (ruby.getFrameStack().getPrevious() != null) {
                 ruby.getCurrentFrame().setIter(ruby.getFrameStack().getPrevious().getIter());
             }
@@ -613,73 +585,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         RubyObject result = getRuby().getNil();
         try {
-            // result = ruby_errinfo;
-            // ruby_errinfo = Qnil;
-            
-            // FIXME
             INode node = getRuby().parse(src.toString(), file);
-            
-            // if (ruby_nerrs > 0) {
-            // 	compile_error(0);
-            //}
-            // if (!result.isNil()) {
-            //	ruby_errinfo = result;
-            //}
             result = eval(node);
-        } catch (RaiseException rExcptn) {
-            /*
-            VALUE err;
-            VALUE errat;
-            
-            if (strcmp(file, "(eval)") == 0) {
-            	if (ruby_sourceline > 1) {
-            			errat = get_backtrace(ruby_errinfo);
-            		err = RARRAY(errat)->ptr[0];
-            		rb_str_cat2(err, ": ");
-            		rb_str_append(err, ruby_errinfo);
-            	} else {
-            	err = rb_str_dup(ruby_errinfo);
-            	}
-            	errat = Qnil;
-            	rb_exc_raise(rb_exc_new3(CLASS_OF(ruby_errinfo), err));
-            }
-            rb_exc_raise(ruby_errinfo);
-            */
         } finally {
             ruby.popClass();
-            if (!scope.isNil()) {
-                /*
-                int dont_recycle = ruby_scope->flag & SCOPE_DONT_RECYCLE;
-                
-                ruby_wrapper = old_wrapper;
-                ruby_cref  = (NODE*)old_cref;
-                ruby_frame = frame.tmp;
-                ruby_scope = old_scope;
-                ruby_block = old_block;
-                ruby_dyna_vars = old_dyna_vars;
-                data->vmode = scope_vmode; // write back visibility mode
-                scope_vmode = old_vmode;
-                if (dont_recycle) {
-                	struct tag *tag;
-                	struct RVarmap *vars;
-                
-                	scope_dup(ruby_scope);
-                	for (tag=prot_tag; tag; tag=tag->prev) {
-                		scope_dup(tag->scope);
-                	}
-                	if (ruby_block) {
-                		struct BLOCK *block = ruby_block;
-                		while (block) {
-                			block->tag->flags |= BLOCK_DYNAMIC;
-                			block = block->prev;
-                		}
-                	}
-                	for (vars = ruby_dyna_vars; vars; vars = vars->next) {
-                		FL_SET(vars, DVAR_DONT_RECYCLE);
-                	}
-                }
-                */
-            } else {
+            if (scope.isNil()) {
                 ruby.getCurrentFrame().setIter(iter);
             }
             ruby.setSourceFile(fileSave);

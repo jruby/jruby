@@ -105,9 +105,7 @@ public final class Ruby {
     private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
-    /** rb_global_tbl
-     *
-     */
+
     private RubyMap globalMap;
 
     public ObjectSpace objectSpace = new ObjectSpace();
@@ -128,8 +126,6 @@ public final class Ruby {
     */
     private int safeLevel = 0;
 
-    // private RubyInterpreter rubyInterpreter = null;
-
     // Default objects
     private RubyObject nilObject;
     private RubyBoolean trueObject;
@@ -139,11 +135,9 @@ public final class Ruby {
     private RubyClasses classes;
     private RubyExceptions exceptions;
 
-    //
     private RubyRuntime runtime = new RubyRuntime(this);
 
     private RubyObject rubyTopSelf;
-
 
 
     private Scope topScope = null;
@@ -155,16 +149,10 @@ public final class Ruby {
     private Namespace namespace;
     private Namespace topNamespace;
 
-	public ISourcePosition getPosition()
-	{
-		return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
-	}
     private String sourceFile;
     private int sourceLine;
 
     private boolean isVerbose;
-
-
 
     private int currentMethodScope;
 
@@ -325,8 +313,6 @@ public final class Ruby {
         return newModule;
     }
 
-
-
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
      */
@@ -419,7 +405,7 @@ public final class Ruby {
         return yield(value, null, null, false);
     }
 
-        public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
+    public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
         if (!isBlockGiven()) {
             throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
         }
@@ -634,11 +620,15 @@ public final class Ruby {
     }
 
     public boolean isBlockGiven() {
-        return !getCurrentFrame().getIter().isNot();
+        return getCurrentFrame().isBlockGiven();
     }
 
     public boolean isFBlockGiven() {
-        return (getFrameStack().getPrevious() != null) && (!getFrameStack().getPrevious().getIter().isNot());
+        Frame previous = getFrameStack().getPrevious();
+        if (previous == null) {
+            return false;
+        }
+        return previous.isBlockGiven();
     }
 
     public void pushClass(RubyModule newClass) {
@@ -822,9 +812,7 @@ public final class Ruby {
      *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
      *   Warning: the ioAdditionalDirectory list will be modified by this process!
      *   @param ioAdditionalDirectory the directory specified on the command line
-     *   @fixme: use the version number in some other way than hardcoded here
-     *   @fixme: safe level pb here
-     **/
+     */
     public void initLoad(List ioAdditionalDirectory) {
         //	don't know what this is used for in MRI, it holds the handle of all loaded libs
         //		ruby_dln_librefs = rb_ary_new();
@@ -946,5 +934,7 @@ public final class Ruby {
         return getCurrentContext().getEvaluator();
     }
     
-    
+    public ISourcePosition getPosition() {
+        return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
+    }
 }

@@ -54,7 +54,11 @@ public final class Iter {
         return this == ITER_CUR;
     }
 
-	/**
+    public boolean isBlockGiven() {
+        return ! isNot();
+    }
+
+    /**
      * @see Object#equals(Object)
      */
     public final boolean equals(final Object obj) {

@@ -122,6 +122,10 @@ public class Frame {
         this.iter = iter;
     }
 
+    public boolean isBlockGiven() {
+        return iter.isBlockGiven();
+    }
+
     /** Getter for property lastClass.
      * @return Value of property lastClass.
      */
