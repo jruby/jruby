@@ -183,7 +183,7 @@ public class RbKernel {
             throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
         }
         RubyString str = RubyString.stringValue(args[0]);
-        RubyArray newArgs = RubyArray.m_create(ruby, args);
+        RubyArray newArgs = RubyArray.m_create(ruby, null, args);
         newArgs.m_shift();
         return str.m_format(newArgs);
     }

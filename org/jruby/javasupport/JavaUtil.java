@@ -166,7 +166,7 @@ public class JavaUtil {
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, Array.get(object, i), arrayClass);
             }
-            return RubyArray.m_create(ruby, items);
+            return RubyArray.m_create(ruby, null, items);
         }
         return new RubyJavaObject(ruby, RubyJavaObject.loadClass(ruby, javaClass, null), object);
     }

@@ -18,7 +18,8 @@ public class RubyProc extends RubyObject {
     	RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
     	
     	RubyCallbackMethod call = new ReflectionCallbackMethod(RubyProc.class, "call", true);
-    	RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyProc.class, "s_new", RubyObject[].class, true, true);
+    	RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
+                                                                RubyObject[].class, true, true);
     	
     	procClass.defineMethod("call", call);
     	
@@ -27,13 +28,13 @@ public class RubyProc extends RubyObject {
     	return procClass;
     }
 
-	public static RubyProc s_new(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
-		RubyProc proc = newProc(ruby, ruby.getClasses().getProcClass());
-		
-		proc.callInit(args);
-		
-		return proc;
-	}
+    public static RubyProc s_new(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
+        RubyProc proc = newProc(ruby, ruby.getClasses().getProcClass());
+        
+        proc.callInit(args);
+        
+        return proc;
+    }
 
     public static RubyProc newProc(Ruby ruby, RubyClass rubyClass) {
         if (!ruby.isBlockGiven() && !ruby.isFBlockGiven()) {
@@ -47,8 +48,8 @@ public class RubyProc extends RubyObject {
         newProc.wrapper = ruby.getWrapper();
         newProc.block.iter = newProc.block.prev != null ? 1 : 0;
 
-		newProc.block.frame = ruby.getRubyFrame();
-		newProc.block.scope = ruby.getRubyScope();
+        newProc.block.frame = ruby.getRubyFrame();
+        newProc.block.scope = ruby.getRubyScope();
         // +++
 
         return newProc;
@@ -67,7 +68,9 @@ public class RubyProc extends RubyObject {
         RubyObject result = getRuby().getNil();
 
         try {
-            result = getRuby().yield0(args != null ? RubyArray.m_create(getRuby(), args) : null, null, null, true);
+            result = getRuby().yield0(
+                args != null ? RubyArray.m_create(getRuby(), null, args) : null,
+                null, null, true);
         } finally {
             getRuby().getIter().pop();
             getRuby().setBlock(oldBlock);

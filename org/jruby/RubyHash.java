@@ -85,19 +85,37 @@ public class RubyHash extends RubyObject {
         }
     }
 
+    public int length() {
+        return valueMap.size();
+    }
+
     // Hash methods
     
     public static RubyHash m_newHash(Ruby ruby) {
         return m_new(ruby, (RubyClass)ruby.getRubyClass("Hash"), new RubyObject[0]);
     }
     
-    public static RubyHash m_new(Ruby ruby, RubyClass rubyClass, RubyObject[] args) {
+    public static RubyHash m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyHash hash = new RubyHash(ruby);
-        hash.setRubyClass(rubyClass);
+        hash.setRubyClass((RubyModule)recv);
         
         hash.callInit(args);
         
         return hash;
+    }
+    
+    public static RubyHash m_create(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        RubyHash hsh = new RubyHash(ruby);
+        if (args.length == 1) {
+            hsh.setValueMap(new RubyHashMap(((RubyHash)args[0]).getValueMap()));
+        } else if (args.length % 2 != 0) {
+            throw new RubyArgumentException(ruby, "odd number of args for Hash");
+        } else {
+            for (int i = 0; i < args.length; i += 2) {
+                hsh.m_aset(args[i], args[i+1]);
+            }
+        }
+        return hsh;
     }
     
     public RubyObject m_initialize(RubyObject[] args) {
@@ -108,14 +126,69 @@ public class RubyHash extends RubyObject {
         }
         return this;
     }
-    
+
+    public RubyString m_inspect() {
+        final RubyString sep = RubyString.m_newString(getRuby(), ", ");
+        final RubyString arrow = RubyString.m_newString(getRuby(), "=>");
+        RubyString result = RubyString.m_newString(getRuby(), "{");
+
+        valueMap.foreach(new RubyMapMethod() {
+            boolean firstEntry = true;
+            public int execute(Object key, Object value, Object arg) {
+                RubyString str = RubyString.stringValue((RubyObject) arg);
+                if (!firstEntry) {
+                    str.m_append(sep);
+                }
+                str.m_append(((RubyObject)key).m_inspect());
+                str.m_append(arrow);
+                str.m_append(((RubyObject)value).m_inspect());
+                firstEntry = false;
+                return RubyMapMethod.CONTINUE;
+            }
+        }, result);
+
+        result.m_append(RubyString.m_newString(getRuby(), "}"));
+        return result;
+    }
+
+    public RubyFixnum m_size() {
+        return RubyFixnum.m_newFixnum(getRuby(), length());
+    }
+
+    public RubyBoolean m_empty_p() {
+        return length() == 0 ? getRuby().getTrue() : getRuby().getFalse();
+    }
+
+    public RubyArray m_to_a() {
+        RubyArray result = RubyArray.m_newArray(getRuby(), length());
+        valueMap.foreach(new RubyMapMethod() {
+            public int execute(Object key, Object value, Object arg) {
+                RubyArray ary = RubyArray.arrayValue((RubyObject) arg);
+                ary.push(RubyArray.m_newArray(getRuby(), (RubyObject)key, (RubyObject)value));
+                return RubyMapMethod.CONTINUE;
+            }
+        }, result);
+        return result;
+    }
+
+    public RubyString m_to_s() {
+        return m_to_a().m_to_s();
+    }
+
+    public RubyHash m_to_hash() {
+        return this;
+    }
+
     public RubyObject m_aset(RubyObject key, RubyObject value) {
         modify();
-        
-        // HACK +++
-        valueMap.put(key, value);
-        // HACK ---
-            
+
+        if (!(key instanceof RubyString) || valueMap.get(key) != null) {
+            valueMap.put(key, value);
+        } else {
+            RubyObject realKey = ((RubyString)key).m_dup();
+            realKey.setFrozen(true);
+            valueMap.put(realKey, value);
+        }
         return this;
     }
     

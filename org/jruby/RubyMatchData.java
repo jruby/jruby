@@ -166,7 +166,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyArray.m_create(getRuby(), new RubyObject[] { m_begin(index), m_end(index) });
+        return RubyArray.m_create(getRuby(), null, new RubyObject[] { m_begin(index), m_end(index) });
     }
 
     /** match_pre_match

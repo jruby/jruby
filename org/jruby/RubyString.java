@@ -452,7 +452,7 @@ public class RubyString extends RubyObject {
             throw new RubyArgumentException(getRuby(), "negative argument");
         }
 
-        if (Long.MAX_VALUE / len < getValue().length()) {
+        if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
             throw new RubyArgumentException(getRuby(), "argument too big");
         }
         StringBuffer sb = new StringBuffer((int)(getValue().length() * len));

@@ -282,8 +282,9 @@ public class RubyArray extends RubyObject {
     /** rb_ary_s_new
      *
      */
-    public static RubyArray m_new(Ruby ruby, RubyObject[] args) {
+    public static RubyArray m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyArray array = m_newArray(ruby);
+        array.setRubyClass((RubyModule)recv);
         
         array.callInit(args);
         
@@ -293,7 +294,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_s_create
      *
      */
-    public static RubyArray m_create(Ruby ruby, RubyObject[] args) {
+    public static RubyArray m_create(Ruby ruby, RubyObject recv, RubyObject[] args) {
         return m_newArray(ruby, Arrays.asList(args));
     }
     
@@ -789,7 +790,7 @@ public class RubyArray extends RubyObject {
             result[i] = entry(RubyNumeric.fix2int(args[i]));
             taint |= result[i].isTaint();
         }
-        RubyArray ary = m_create(getRuby(), result);
+        RubyArray ary = m_create(getRuby(), this, result);
         ary.setTaint(taint);
         return ary;
     }
