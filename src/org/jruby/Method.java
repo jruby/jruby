@@ -33,7 +33,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.MethodDefinition;
 
 /** 
  * The RubyMethod class represents a Method object.
@@ -59,7 +58,22 @@ public class Method extends RubyObject {
      * 
      */
     public static RubyClass createMethodClass(Ruby ruby) {
-        return new MethodDefinition(ruby).getType();
+		RubyClass methodClass = ruby.defineClass("Method", ruby.getClasses().getObjectClass());
+    	
+		CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+		methodClass.defineMethod("arity", 
+				callbackFactory.getMethod(Method.class, "arity"));
+		methodClass.defineMethod("to_proc", 
+				callbackFactory.getMethod(Method.class, "to_proc"));
+		methodClass.defineMethod("unbind", 
+				callbackFactory.getMethod(Method.class, "unbind"));
+		methodClass.defineMethod("call", 
+				callbackFactory.getOptMethod(Method.class, "call"));
+		methodClass.defineMethod("[]", 
+				callbackFactory.getOptMethod(Method.class, "call"));
+
+		return methodClass;
     }
 
     public static Method newMethod(
@@ -97,7 +111,7 @@ public class Method extends RubyObject {
         }
     }
 
-    /**Returns the number of arguments a method accepted.
+    /** Returns the number of arguments a method accepted.
      * 
      * @return the number of arguments of a method.
      */
@@ -147,27 +161,11 @@ public class Method extends RubyObject {
 
     public UnboundMethod unbind() {
         UnboundMethod unboundMethod =
-                UnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        	UnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
         unboundMethod.receiver = this;
         unboundMethod.infectBy(this);
+        
         return unboundMethod;
     }
+}
 
-    /**
-     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
-     */
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case MethodDefinition.ARITY :
-                return arity();
-            case MethodDefinition.CALL :
-                return call(args);
-            case MethodDefinition.TO_PROC :
-                return to_proc();
-            case MethodDefinition.UNBIND :
-                return unbind();
-            default:
-                return super.callIndexed(index, args);
-        }
-    }
-    }

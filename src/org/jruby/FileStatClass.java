@@ -26,7 +26,6 @@ import java.io.File;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.FileStatDefinition;
 
 /**
  * Implements File::Stat
