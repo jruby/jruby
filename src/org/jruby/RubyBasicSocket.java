@@ -11,8 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -27,36 +25,34 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.runtime.load;
+package org.jruby;
 
-import org.jruby.Ruby;
-import org.jruby.internal.runtime.load.LoadService;
-import org.jruby.libraries.RbConfig;
-import org.jruby.util.BuiltinScript;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-/**
- *
- * @author jpetersen
- * @version $Revision$
- */
-public final class LoadServiceFactory {
+import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.builtin.IRubyObject;
 
-    /**
-     * Constructor for LoadServiceFactory is private. It isn't possible
-     * to create an instance of LoadServiceFactory.
-     */
-    private LoadServiceFactory() {
-        super();
+
+public class RubyBasicSocket extends RubyIO {
+
+    public RubyBasicSocket(Ruby runtime, RubyClass type) {
+        super(runtime, type);
     }
-
-    public static ILoadService createLoadService(Ruby runtime) {
-        ILoadService result = new LoadService(runtime);
-
-        result.registerBuiltin("java", new BuiltinScript("javasupport"));
-        result.registerBuiltin("socket", new SocketLibrary());
-//        result.registerBuiltin("thread.rb", new ThreadLibrary());
-        result.registerBuiltin("rbconfig.rb", new RbConfig());
-
-        return result;
+    
+    public IRubyObject initialize(IRubyObject[] args) {
+        IRubyObject input 	= args[0];
+        IRubyObject output 	= args[1];
+        
+        InputStream inputStream = (InputStream) extractStream(input);
+        OutputStream outputStream = (OutputStream) extractStream(output);
+        bindStreams(inputStream, outputStream);
+        
+        return this;
+    }
+    
+    private Object extractStream(IRubyObject proxyObject) {
+        IRubyObject javaObject = proxyObject.getInstanceVariable("@java_object");
+        return ((JavaObject)javaObject).getValue();
     }
 }

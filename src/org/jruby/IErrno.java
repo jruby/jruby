@@ -79,4 +79,5 @@ public interface IErrno
     int    EACCES       = 68;
     int    ENOEXEC      = 69;
     int    ESRCH        = 70;
+    int    ECONNREFUSED = 71;
 }

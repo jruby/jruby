@@ -11,8 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -29,34 +27,20 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import java.io.IOException;
+
 import org.jruby.Ruby;
-import org.jruby.internal.runtime.load.LoadService;
-import org.jruby.libraries.RbConfig;
+import org.jruby.RubyClasses;
+import org.jruby.runtime.builtin.meta.BasicSocketMetaClass;
 import org.jruby.util.BuiltinScript;
 
-/**
- *
- * @author jpetersen
- * @version $Revision$
- */
-public final class LoadServiceFactory {
 
-    /**
-     * Constructor for LoadServiceFactory is private. It isn't possible
-     * to create an instance of LoadServiceFactory.
-     */
-    private LoadServiceFactory() {
-        super();
+public class SocketLibrary implements Library {
+
+    public void load(Ruby runtime) throws IOException {
+        RubyClasses rubyClasses = runtime.getClasses();
+        rubyClasses.putClass("BasicSocket", new BasicSocketMetaClass(runtime), rubyClasses.getObjectClass());
+        new BuiltinScript("socket").load(runtime);
     }
 
-    public static ILoadService createLoadService(Ruby runtime) {
-        ILoadService result = new LoadService(runtime);
-
-        result.registerBuiltin("java", new BuiltinScript("javasupport"));
-        result.registerBuiltin("socket", new SocketLibrary());
-//        result.registerBuiltin("thread.rb", new ThreadLibrary());
-        result.registerBuiltin("rbconfig.rb", new RbConfig());
-
-        return result;
-    }
 }

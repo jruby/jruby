@@ -805,4 +805,9 @@ public class RubyIO extends RubyObject {
         }
     }
     
+    protected void bindStreams(InputStream inputStream, OutputStream outputStream) {
+        handler = new IOHandlerUnseekable(getRuntime(), inputStream, outputStream);
+        registerIOHandler(handler);
+        modes = handler.getModes();
+    }
 }
