@@ -1822,7 +1822,7 @@ public class RubyModule extends RubyObject {
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
         Ruby ruby = input.getRuby();
-        RubyModule result = ruby.getClasses().getClass(name);
+        RubyModule result = ruby.getClasses().getClassFromPath(name);
         if (result == null) {
             throw new NameError(ruby, "uninitialized constant " + name);
         }

@@ -434,6 +434,7 @@ public class RubyStruct extends RubyObject {
 
     private static RubyClass pathToClass(Ruby ruby, String path) {
         // FIXME: Throw the right ArgumentError's if the class is missing
-        return (RubyClass) ruby.evalScript(path);
+        // or if it's a module.
+        return (RubyClass) ruby.getClasses().getClassFromPath(path);
     }
 }

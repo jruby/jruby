@@ -27,6 +27,11 @@ test_marshal("\"\nhello", "hello")
 test_marshal("[\010i\006i\ai\010", [1,2,3])
 test_marshal("{\006i\006i\a", {1=>2})
 test_marshal("c\013Object", Object)
+module Foo
+  class Bar
+  end
+end
+test_marshal("c\rFoo::Bar", Foo::Bar)
 test_marshal("m\017Enumerable", Enumerable)
 test_marshal("/\013regexp\000", /regexp/)
 test_marshal("l+\n\000\000\000\000\000\000\000\000@\000", 2 ** 70)
@@ -115,6 +120,7 @@ test_equal([1, 2, 3], Marshal.load(MARSHAL_HEADER + "[\010i\006i\ai\010"))
 test_equal({1=>2}, Marshal.load(MARSHAL_HEADER + "{\006i\006i\a"))
 test_equal(String, Marshal.load(MARSHAL_HEADER + "c\013String"))
 #test_equal(Enumerable, Marshal.load(MARSHAL_HEADER + "m\017Enumerable"))
+test_equal(Foo::Bar, Marshal.load(MARSHAL_HEADER + "c\rFoo::Bar"))
 
 s = Marshal.load(MARSHAL_HEADER + "S:\023Struct::Froboz\a:\006xi\n:\006yi\f")
 test_equal(Struct::Froboz, s.class)

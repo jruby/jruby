@@ -581,6 +581,19 @@ public class RubyClasses {
         return (RubyModule) classMap.get(name);
     }
 
+    public RubyModule getClassFromPath(String path) {
+        RubyModule result = getClass(path);
+        if (result != null) {
+            return result;
+        }
+        RubyObject evaluatedPath = ruby.evalScript(path);
+        RubyClass type = evaluatedPath.type();
+        if (type != getClassClass() && type != getModuleClass()) {
+            return null;
+        }
+        return (RubyModule) evaluatedPath;
+    }
+
     public void putClass(String name, RubyModule rbClass) {
         classMap.put(name, rbClass);
     }
