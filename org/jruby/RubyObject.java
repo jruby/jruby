@@ -913,9 +913,14 @@ public class RubyObject implements Cloneable {
     /**
      *
      */
-    public RubyObject instance_variables(RubyModule type) {
-        Set variableNames = instanceVariables.keySet();
-        return RubyArray.newArray(ruby, new ArrayList(variableNames));
+    public RubyArray instance_variables() {
+        List names = new ArrayList();
+        Iterator iter = instanceVariables.keySet().iterator();
+        while (iter.hasNext()) {
+            String name = (String) iter.next();
+            names.add(RubyString.newString(getRuby(), name));
+        }
+        return RubyArray.newArray(ruby, names);
     }
 
     /** rb_obj_is_kind_of
