@@ -2,8 +2,9 @@
  * RubyFileTest.java - No description
  * Created on 04.05.2004, 18:00:54
  *
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Thomas E Enebo <enebo@acm.rog>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
