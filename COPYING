@@ -7,4 +7,5 @@ redistribute it and/or modify it under the terms of the:
 
 Some additional libraries distributed with JRuby are not covered by
 JRuby's licence. See the licence files for the respective libraries in
-the 'lib' directory for more information.
+the 'lib' directory for more information and also LICENSE.RUBY for most
+files found in src/lib/ruby/1.8.
