@@ -15,7 +15,24 @@ org.jruby.runtime.builtin.definitions.ModuleFunctionsContext
 org.jruby.util.Asserts
 )
 
-class MethodDescription
+
+class AbstractMethodDescription
+
+  def generate_constant(output)
+    # no-op
+  end
+
+  def generate_creation(output)
+    # no-op
+  end
+
+  def generate_switch_case(output)
+    # no-op
+  end
+end
+
+
+class MethodDescription < AbstractMethodDescription
 
   attr :arity, true
   attr :java_name, true
@@ -82,20 +99,12 @@ class StaticMethodDescription < MethodDescription
 end
 
 
-class Alias
+class Alias < AbstractMethodDescription
 
   attr :name
 
   def initialize(name, original)
     @name, @original = name, original
-  end
-
-  def generate_constant(output)
-    # no-op
-  end
-
-  def generate_switch_case(output)
-    # no-op
   end
 
   def generate_creation(output)
@@ -118,24 +127,16 @@ class Alias
 end
 
 
-class UndefineMethod
+class UndefineMethod < AbstractMethodDescription
 
   def initialize(name)
     @name = name
-  end
-
-  def generate_constant(output)
-    # no-op
   end
 
   def generate_creation(output)
     output.write('context.undefineMethod("')
     output.write(@name)
     output.write('");' + "\n")
-  end
-
-  def generate_switch_case(output)
-    # no-op
   end
 end
 
@@ -167,7 +168,7 @@ class MethodGenerator
   def generate(output)
     read_input
 
-    output.write("/* Generated - do not edit! */\n")
+    output.write("/* Generated code - do not edit! */\n")
     output.write("\n")
 
     if @package
@@ -265,63 +266,94 @@ class MethodGenerator
     methods = nil
     method_description_class = nil
 
-    parser = REXML::SAX2Parser.new(@input)
-    parser.listen(:start_element, ["module"]) {|uri, localname, qname, attributes|
+    parser = Parser.new(@input)
+    parser.on_tag_start("module") {|name, attributes|
       if attributes['type'] == "module"
         @is_module = true
       end
     }
-    parser.listen(:characters, ['^name$']) {|text|
+    parser.on_tag_content("name") {|text|
       @name = text
     }
-    parser.listen(:characters, ['^superclass$']) {|text|
+    parser.on_tag_content("superclass") {|text|
       if text == 'none'
         @superclass = :none
       else
         @superclass = text
       end
     }
-    parser.listen(:characters, ['^implementation$']) {|text|
+    parser.on_tag_content("implementation") {|text|
       @implementation = text
     }
-    parser.listen(:start_element, ['^instance\-methods$']) {
+    parser.on_tag_start("instance-methods") {|name, attributes|
       methods = @methods
       method_count = 0
       method_description_class = MethodDescription
     }
-    parser.listen(:start_element, ['^class\-methods$']) {
+    parser.on_tag_start("class-methods") {|name, attributes|
       methods = @class_methods
       method_count = 0
       method_description_class = StaticMethodDescription
     }
-    parser.listen(:start_element, ['^method$']) {|uri, localname, qname, attributes|
+    parser.on_tag_start("method") {|name, attributes|
       method_count += 1
-      methods << method_description_class.new(self, attributes['name'], method_count)
+      methods << method_description_class.new(self,
+                                              attributes['name'],
+                                              method_count)
     }
-    parser.listen(:start_element, ['^arity$']) {|uri, localname, qname, attributes|
+    parser.on_tag_start("arity") {|name, attributes|
       if attributes.has_key?('optional')
         methods.last.optional = (attributes['optional'] == 'true')
       end
     }
-    parser.listen(:characters, ['^arity$']) {|text|
+    parser.on_tag_content("arity") {|text|
       methods.last.arity = text.to_i
     }
-    parser.listen(:characters, ['^java$']) {|text|
+    parser.on_tag_content("java") {|text|
       methods.last.java_name = text
     }
-    parser.listen(:start_element, ['^method\-alias$']) {|uri, localname, qname, attributes|
+    parser.on_tag_start("method-alias") {|name, attributes|
       original_name = attributes['original']
       original = methods.detect {|m| m.name == original_name }
       name = attributes['name']
       methods << Alias.new(name, original)
     }
-    parser.listen(:start_element, ['^undefine-method$']) {|uri, localname, qname, attributes|
+    parser.on_tag_start("undefine-method") {|name, attributes|
       name = attributes['name']
       methods << UndefineMethod.new(name)
     }
     parser.parse
   end
 end
+
+class Parser
+
+  def initialize(input)
+    @saxparser = REXML::SAX2Parser.new(input)
+  end
+
+  def on_tag_start(name, &block)
+    name.gsub!(/\-/, '\-')
+    @saxparser.listen(:start_element, ['^' + name + '$']) {
+      |uri, localname, qname, attributes|
+      block.call(localname, attributes)
+    }
+  end
+
+  def on_tag_content(name, &block)
+    @saxparser.listen(:characters, ['^' + name + '$']) {
+      |text|
+      block.call(text)
+    }
+  end
+
+  def parse
+    @saxparser.parse
+  end
+end
+
+
+
 
 if $0 == __FILE__
   generator = MethodGenerator.new(STDIN)
