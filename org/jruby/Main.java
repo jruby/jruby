@@ -30,10 +30,13 @@
 
 package org.jruby;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
-import org.jruby.javasupport.*;
-import org.jruby.parser.*;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.JavaUtil;
 
 /**
  * Class used to launch the interpreter.
@@ -148,7 +151,13 @@ public class Main {
 
         ruby.defineGlobalConstant("ARGV", JavaUtil.convertJavaToRuby(ruby, args, String[].class));
 
-        ruby.getRubyTopSelf().eval(ruby.getRubyParser().compileString(iFileName, rs, 0));
+		// +++
+		try {
+			ruby.getRubyTopSelf().eval(ruby.getRubyParser().compileString(iFileName, rs, 0));
+		} catch (RaiseException rExcptn) {
+			System.out.println(rExcptn.getActException().m_to_s().getValue());
+		}
+		// ---
     }
 
     /**
