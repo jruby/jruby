@@ -31,7 +31,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Implements callback on built-in Ruby methods using an integer index.
  *
  */
-public class IndexedCallback implements Callback {
+public final class IndexedCallback implements Callback {
     private final int index;
     private final int arity;
 
