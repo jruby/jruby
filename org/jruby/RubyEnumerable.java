@@ -212,9 +212,9 @@ public class RubyEnumerable {
     /* methods of the Enumerable module. */
 
     public static RubyObject collect(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, ruby.isBlockGiven() ? "collect_i" : "enum_all_i", ary);
-        return ary;
+        RubyArray result = RubyArray.newArray(ruby);
+        iterateEach(ruby, recv, ruby.isBlockGiven() ? "collect_i" : "enum_all_i", result);
+        return result;
     }
 
     public static RubyObject each_with_index(Ruby ruby, RubyObject recv) {
@@ -233,22 +233,22 @@ public class RubyEnumerable {
     }
 
     public static RubyObject find_all(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, "find_all_i", ary);
-        return ary;
+        RubyArray result = RubyArray.newArray(ruby);
+        iterateEach(ruby, recv, "find_all_i", result);
+        return result;
     }
 
     public static RubyObject grep(Ruby ruby, RubyObject recv, RubyObject matcher) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        ary.append(matcher);
-        ary.append(RubyArray.newArray(ruby));
+        RubyArray result = RubyArray.newArray(ruby);
+        result.append(matcher);
+        result.append(RubyArray.newArray(ruby));
         if (ruby.isBlockGiven()) {
-            iterateEach(ruby, recv, "grep_iter_i", ary);
+            iterateEach(ruby, recv, "grep_iter_i", result);
         } else {
-            iterateEach(ruby, recv, "grep_i", ary);
+            iterateEach(ruby, recv, "grep_i", result);
         }
 
-        return ary.pop();
+        return result.pop();
     }
 
     public static RubyObject max(Ruby ruby, RubyObject recv) {
@@ -283,15 +283,15 @@ public class RubyEnumerable {
     }
 
     public static RubyObject reject(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.newArray(ruby);
-        iterateEach(ruby, recv, "reject_i", ary);
-        return ary;
+        RubyArray result = RubyArray.newArray(ruby);
+        iterateEach(ruby, recv, "reject_i", result);
+        return result;
     }
 
     public static RubyObject sort(Ruby ruby, RubyObject recv) {
-        RubyArray ary = (RubyArray) to_a(ruby, recv);
-        ary.sort_bang();
-        return ary;
+        RubyArray result = (RubyArray) to_a(ruby, recv);
+        result.sort_bang();
+        return result;
     }
 
     public static RubyObject to_a(Ruby ruby, RubyObject recv) {

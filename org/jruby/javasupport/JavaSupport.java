@@ -17,7 +17,8 @@ public class JavaSupport {
     private Map renamedJavaClasses = new HashMap();
     private Map exceptionHandlers = new HashMap();
 
-    private ClassLoader javaClassLoader = new ClassLoader() {};
+    //    private ClassLoader javaClassLoader = new ClassLoader() {};
+    private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
 
     public JavaSupport(Ruby ruby) {
         this.ruby = ruby;

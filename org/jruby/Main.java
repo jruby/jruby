@@ -182,13 +182,6 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /*
-           System.out.println();
-           System.out.println("----------------------------------------------------");
-           System.out.println("--- WARNING this is an ALPHA version of JRuby!!! ---");
-           System.out.println("----------------------------------------------------");
-           System.out.println();
-         */
 
         // Benchmark
         long now = -1;
@@ -306,10 +299,6 @@ public class Main {
         } catch (RubyBugException lBug) {
             ruby.getRuntime().getErrorStream().print(lBug.getMessage());
         }
-        // ---
-        // to look nicer
-        // That isn't Ruby compatible.
-        // ruby.getRuntime().getOutputStream().println("");
     }
 
     /**

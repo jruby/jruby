@@ -410,7 +410,6 @@ public final class Ruby {
      *
      */
     public RubyObject iterate(Callback iterateMethod, RubyObject data1, Callback blockMethod, RubyObject data2) {
-        // VALUE self = ruby_top_self;
         getIterStack().push(Iter.ITER_PRE);
         getBlockStack().push(null, new IterateMethod(blockMethod, data2), getRubyTopSelf());
 
