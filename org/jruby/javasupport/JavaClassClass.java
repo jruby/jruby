@@ -29,6 +29,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -54,9 +55,12 @@ public class JavaClassClass extends RubyObject {
         javaClassClass.defineMethod("public?", CallbackFactory.getMethod(JavaClassClass.class, "public_p"));
         javaClassClass.defineMethod("final?", CallbackFactory.getMethod(JavaClassClass.class, "final_p"));
         javaClassClass.defineMethod("interface?", CallbackFactory.getMethod(JavaClassClass.class, "interface_p"));
+        javaClassClass.defineMethod("primitive?", CallbackFactory.getMethod(JavaClassClass.class, "primitive_p"));
         javaClassClass.defineMethod("name", CallbackFactory.getMethod(JavaClassClass.class, "name"));
         javaClassClass.defineMethod("to_s", CallbackFactory.getMethod(JavaClassClass.class, "name"));
-        javaClassClass.defineMethod("super", CallbackFactory.getMethod(JavaClassClass.class, "rbSuper"));
+        javaClassClass.defineMethod("superclass", CallbackFactory.getMethod(JavaClassClass.class, "superclass"));
+        javaClassClass.defineMethod(">", CallbackFactory.getMethod(JavaClassClass.class, "op_gt", IRubyObject.class));
+        javaClassClass.defineMethod("<", CallbackFactory.getMethod(JavaClassClass.class, "op_lt", IRubyObject.class));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -83,7 +87,27 @@ public class JavaClassClass extends RubyObject {
         return RubyString.newString(runtime, javaClass.getName());
     }
 
-    public JavaClassClass rbSuper() {
-        return new JavaClassClass(runtime, javaClass.getSuperclass().getName());
+    public IRubyObject superclass() {
+        Class superclass = javaClass.getSuperclass();
+        if (superclass == null) {
+            return runtime.getNil();
+        }
+        return new JavaClassClass(runtime, superclass.getName());
+    }
+
+    public RubyBoolean op_gt(IRubyObject other) {
+        if (! (other instanceof JavaClassClass)) {
+            throw new TypeError(runtime, "compared with non-javaclass");
+        }
+        boolean result = javaClass.isAssignableFrom(((JavaClassClass) other).javaClass);
+        return RubyBoolean.newBoolean(runtime, result);
+    }
+
+    public RubyBoolean op_lt(IRubyObject other) {
+        if (! (other instanceof JavaClassClass)) {
+            throw new TypeError(runtime, "compared with non-javaclass");
+        }
+        boolean result = ((JavaClassClass) other).javaClass.isAssignableFrom(javaClass);
+        return RubyBoolean.newBoolean(runtime, result);
     }
 }

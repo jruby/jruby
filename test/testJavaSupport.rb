@@ -48,5 +48,14 @@ if defined? Java
   test_ok(runnable_class.interface?)
   test_ok(! string_class.interface?)
 
-  test_equal("java.lang.Object", string_class.super.name)
+  object_class = string_class.superclass
+  test_equal("java.lang.Object", object_class.name)
+  test_equal(nil, object_class.superclass)
+
+  test_ok(string_class < object_class)
+  test_ok(! (string_class > object_class))
+  test_ok(object_class > string_class)
+  test_ok(! (object_class < string_class))
 end
+
+test_print_report
