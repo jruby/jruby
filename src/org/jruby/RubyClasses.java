@@ -146,6 +146,7 @@ public class RubyClasses {
 
     private RubyModule comparableModule;
     private RubyModule enumerableModule;
+    private RubyModule fileTestModule;
     private RubyModule gcModule;
     private RubyModule javaModule;
     private RubyModule kernelModule;
@@ -656,6 +657,18 @@ public class RubyClasses {
         return enumerableModule;
     }
 
+    /**
+     * Returns the reference to the Enumerable module.
+     *
+     * @return The Enumerable module.
+     */
+    public RubyModule getFileTestModule() {
+        if (fileTestModule == null) {
+            fileTestModule = RubyFileTest.createFileTestModule(runtime);
+        }
+        return fileTestModule;
+    }
+    
     /**
      * Gets the precisionModule attribute of the RubyClasses object
      *

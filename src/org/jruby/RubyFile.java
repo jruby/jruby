@@ -87,19 +87,18 @@ public class RubyFile extends RubyIO {
 
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
+        fileClass.extendObject(ruby.getClasses().getFileTestModule());
+        
         fileClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
         fileClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
         fileClass.defineSingletonMethod("chmod", callbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
         fileClass.defineSingletonMethod("lstat", callbackFactory.getSingletonMethod(RubyFile.class, "lstat", RubyString.class));
-
-        fileClass.defineSingletonMethod("exist?", callbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
-        fileClass.defineSingletonMethod("exists?", callbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
+        fileClass.defineSingletonMethod("expand_path", callbackFactory.getOptSingletonMethod(RubyFile.class, "expand_path"));
         fileClass.defineSingletonMethod("unlink", callbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
         fileClass.defineSingletonMethod("rename", callbackFactory.getSingletonMethod(RubyFile.class, "rename", IRubyObject.class, IRubyObject.class));
         fileClass.defineSingletonMethod("delete", callbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
 		fileClass.defineSingletonMethod("dirname", callbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
 		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
-		fileClass.defineSingletonMethod("directory?", callbackFactory.getSingletonMethod(RubyFile.class, "directory", RubyString.class));
 		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
 
 		fileClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyFile.class, "initialize"));
@@ -229,10 +228,30 @@ public class RubyFile extends RubyIO {
         return RubyFixnum.zero(recv.getRuntime());
     }
 
-    public static IRubyObject exist(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).exists());
+    public static IRubyObject expand_path(IRubyObject recv, IRubyObject[] args) {
+        if (args.length <= 0) {
+        }
+        
+        String relativePath = RubyString.stringValue(args[0]).getValue();
+        String cwd = args.length == 2 ?
+           args[1].isNil() ? System.getProperty("user.dir") :
+           RubyString.stringValue(args[1]).getValue() :
+           System.getProperty("user.dir");
+                                      
+           // Something wrong we don't know the cwd...
+           if (cwd == null) {
+               return recv.getRuntime().getNil();
+           }
+                                      
+           File expandedPath = new File(cwd, relativePath);
+                                      
+           try {
+               return RubyString.newString(recv.getRuntime(), expandedPath.getCanonicalPath());
+           } catch (IOException e) {}
+           
+           return RubyString.newString(recv.getRuntime(), expandedPath.getAbsolutePath());
     }
-
+    
 	public static RubyString dirname(IRubyObject recv, RubyString filename) {
 		String name = filename.toString();
 		
@@ -286,10 +305,6 @@ public class RubyFile extends RubyIO {
 		RubyArray argArray = RubyArray.newArray(recv.getRuntime(), args);
 		return argArray.join(RubyString.newString(recv.getRuntime(), separator()));
     }
-
-    public static RubyBoolean directory(IRubyObject recv, RubyString filename) {
-		return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).isDirectory());
-	}
     
     public String toString() {
         return "RubyFile(" + path + ", " + modes.getModeString() + ", " +
