@@ -36,13 +36,24 @@ if defined? Java
                Character::UnicodeBlock.class_eval("@java_class.name"))
     test_ok(Character::UnicodeBlock.methods.include?("of"))
 
+    # Subclasses, return types and casting
+    l = ArrayList.new
+    r = Random.new
+    l.add(10)
+    test_equal(10, l.get(0))
+    l.add(r)
+    r_returned = l.get(1)
+    # Since Random is a public class we should get the value casted as that
+    test_equal("java.util.Random", r_returned.java_class.name)
+    test_ok(r_returned.nextInt.kind_of?(Fixnum))
+
+    # Private classes, return types and casting
     h = HashMap.new
     test_equal(HashMap, h.type)
     h.put("a", 1)
     iter = h.entrySet.iterator
     test_equal("java.util.Iterator", iter.type.class_eval("@java_class.name"))
     inner_instance_entry = iter.next
-    #FIXME: Need to downcast to MapEntry before the test below works...
     #test_equal("a", inner_instance_entry.getKey)
   end
 end

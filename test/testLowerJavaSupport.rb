@@ -117,6 +117,24 @@ if defined? Java
   result = Java.java_to_primitive(result)
   test_ok(result.kind_of?(Fixnum))
 
+  # Converting primitives
+  java_string = random_class.java_method(:toString).invoke(random)
+  test_equal("java.lang.String", java_string.java_type)
+  test_ok(Java.java_to_primitive(java_string).kind_of?(String))
+  test_ok(Java.java_to_primitive(random).kind_of?(JavaObject))
+  test_ok(Java.primitive_to_java(random) == random)
+  test_ok(Java.primitive_to_java("hello").kind_of?(JavaObject))
+
+  # Putting and getting objects back
+  integer_zero = Java.primitive_to_java(0)
+  arraylist_class = Java::JavaClass.for_name("java.util.ArrayList")
+  list = arraylist_class.constructor().new_instance()
+  add_method = arraylist_class.java_method(:add, "java.lang.Object")
+  add_method.invoke(list, random)
+  returned_random = arraylist_class.java_method(:get, "int").invoke(list, integer_zero)
+  test_equal("java.util.Random", returned_random.java_type)
+  random_class.java_method(:nextInt).invoke(returned_random)
+
   test_equal("java.lang.Long", Java.primitive_to_java(10).java_type)
   method = random_class.java_method(:nextInt, "int")
   test_equal(["int"], method.argument_types)

@@ -28,7 +28,12 @@ module JavaProxy
   attr :java_object, true
 
   def JavaProxy.convert_arguments(arguments)
-    arguments.collect {|v| Java.primitive_to_java(v) }
+    arguments.collect {|v|
+      if v.kind_of?(JavaProxy)
+        v = v.java_object
+      end
+      Java.primitive_to_java(v)
+    }
   end
 
   def convert_arguments(arguments)
@@ -46,8 +51,15 @@ module JavaUtilities
       setup_proxy_class(java_class, proxy_class)
     end
 
-    def wrap(java_object, java_class_name)
-      java_class = Java::JavaClass.for_name(java_class_name)
+    def wrap(java_object, return_type_name)
+      return_type = Java::JavaClass.for_name(return_type_name)
+      real_type = Java::JavaClass.for_name(java_object.java_type)
+
+      if real_type.public?
+        java_class = real_type
+      else
+        java_class = return_type
+      end
 
       proxy_class = new_proxy_class(java_class.name)
       proxy = proxy_class.new_proxy
@@ -138,7 +150,8 @@ module JavaUtilities
                   m = methods_by_arity[args.length].first
                   return_type = m.return_type
                   args = convert_arguments(args)
-                  result = Java.java_to_primitive(m.invoke(self.java_object, *args))
+                  result = m.invoke(self.java_object, *args)
+                  result = Java.java_to_primitive(result)
                   if result.kind_of?(JavaObject)
                     result = JavaUtilities.wrap(result, m.return_type)
                   end
