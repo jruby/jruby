@@ -12,8 +12,8 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.2.4"/>
-    <property name="version.file" value="0_2_4"/>
+    <property name="version" value="0.2.5"/>
+    <property name="version.file" value="0_2_5"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <property name="build.dest" value="${build.dir}/classes"/>
@@ -35,10 +35,13 @@
         <available property="junit.present"
                    classname="junit.framework.TestCase"
                    classpathref="classpath" />
+		<available property="db4o.present"
+                   classname="com.db4o.Db4o"
+                   classpathref="classpath" />
     </target>
 
     <target name="test" depends="compile">
-        <junit printsummary="yes">
+		<junit printsummary="yes">
             <formatter type="plain"/>
             <test name="org.jruby.test.MainTestSuite"/>
             <classpath>
@@ -53,9 +56,10 @@
         <mkdir dir="${build.dest}"/>
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <classpath refid="classpath" />
-            <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf.present"/>
-            <exclude name="**/test/**" unless="junit.present"/>
+            <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
+            <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
+            <exclude unless="junit.present" name="**/test/**"/>
+            <exclude unless="db4o.present" name="org/jruby/javasupport/db4o/**"/>
             <exclude name="**/tars/**"/>
         </javac>
         <copy todir="${build.dest}">
