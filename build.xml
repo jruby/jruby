@@ -41,7 +41,12 @@
     	</tstamp>
   		<property environment="env"/>
     	<property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
-  		<property name="ruby.home" value="${ruby.home}"/>
+  		<!-- if ruby.home is not set, use env var -->
+  		<condition property="ruby.home" value="${env.RUBY_HOME}">
+  			<not>
+  				<isset property="ruby.home"/>
+  			</not>
+  		</condition>
   	</target>
 
 	<target name="prepare" depends="init" 
