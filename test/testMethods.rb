@@ -48,3 +48,6 @@ end
 x = TestMethods_X.new
 test_equal("TestMethods_X", "#{x.class}")
 test_equal("yeah", "#{x.hello}")
+
+p = Proc.new {|z| "#{z.size}"}
+test_equal("hello".size.to_s, p.call("hello"))

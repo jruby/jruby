@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.common.RubyErrorHandler;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.io.Reader;
 import java.io.StringReader;
 
@@ -54,15 +55,25 @@ public class Parser {
         return parse(file, content, new RubyParserConfiguration());
     }
 
-    public INode parse(String file, String content, RubyParserConfiguration config) {
+    public INode parse(String file, String content, List blockVariableNames) {
+        RubyParserConfiguration config = new RubyParserConfiguration();
+        config.setBlockVariables(blockVariableNames);
         return parse(file, new StringReader(content), config);
     }
 
-    public INode parse(String file, Reader content, RubyParserConfiguration config) {
+    private INode parse(String file, Reader content, RubyParserConfiguration config) {
         config.setLocalVariables(ruby.getScope().getLocalNames());
         internalParser.init(config);
         ILexerSource lexerSource = LexerFactory.getInstance().getSource(file, content);
         IRubyParserResult result = (IRubyParserResult) internalParser.parse(lexerSource);
+
+        if (hasNewLocalVariables(result)) {
+            ruby.getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
+        }
+        return result.getAST();
+    }
+
+    private boolean hasNewLocalVariables(IRubyParserResult result) {
         int newSize = 0;
         if (result.getLocalVariables() != null) {
             newSize = result.getLocalVariables().size();
@@ -71,9 +82,6 @@ public class Parser {
         if (ruby.getScope().getLocalNames() != null) {
             oldSize = ruby.getScope().getLocalNames().size();
         }
-        if (newSize > oldSize) {
-            ruby.getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
-        }
-        return result.getAST();
+        return newSize > oldSize;
     }
 }

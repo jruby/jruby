@@ -810,9 +810,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {
-            RubyParserConfiguration config = new RubyParserConfiguration();
-            config.setBlockVariables(ruby.getDynamicNames());
-            INode node = ruby.getParser().parse("#{}", iVisited.getValue(), config);
+            INode node = ruby.getParser().parse("#{}", iVisited.getValue(), ruby.getDynamicNames());
             iVisited.setEvaluatedNode(node);
         }
         eval(iVisited.getEvaluatedNode());
