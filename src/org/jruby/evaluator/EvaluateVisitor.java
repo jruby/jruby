@@ -1483,6 +1483,14 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitYieldNode(YieldNode iVisited) {
         eval(iVisited.getArgsNode());
+
+	// Special Hack...We cannot tell between no args and a nil one.
+	// Change it back to null for now until a better solution is 
+	// found
+	// TODO: Find better way of differing...
+	if (iVisited.getArgsNode() == null) {
+	    result = null;
+	}
         
         result = threadContext.yield(result, null, null, false, iVisited.getCheckState());
     }

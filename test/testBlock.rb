@@ -55,3 +55,5 @@ test_equal(-1, Proc.new { 1 }.arity)
 #test_equal(0, Proc.new{|| 1 }.arity)
 #test_equal(2, Proc.new {|x,y| 1}.arity)
 test_equal(-1, Proc.new{|*x| 1}.arity)
+
+def f; yield; end; f {|*a| test_ok(a == []) }
