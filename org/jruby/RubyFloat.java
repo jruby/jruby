@@ -123,7 +123,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, new Double(value).hashCode());
+        return RubyFixnum.newFixnum(runtime, new Double(value).hashCode());
     }
 
     // Float methods (flo_*)

@@ -106,11 +106,11 @@ public class RubyStruct extends RubyObject {
 
     private void modify() {
         if (isFrozen()) {
-            throw new RubyFrozenException(ruby, "Struct is frozen.");
+            throw new RubyFrozenException(runtime, "Struct is frozen.");
         }
 
-        if (!isTaint() && ruby.getSafeLevel() >= 4) {
-            throw new RubySecurityException(ruby, "Insecure: can't modify struct");
+        if (!isTaint() && runtime.getSafeLevel() >= 4) {
+            throw new RubySecurityException(runtime, "Insecure: can't modify struct");
         }
     }
 
@@ -129,7 +129,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(ruby, name + " is not struct member");
+        throw new NameError(runtime, name + " is not struct member");
     }
 
     private IRubyObject getByName(String name) {
@@ -145,7 +145,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(ruby, name + " is not struct member");
+        throw new NameError(runtime, name + " is not struct member");
     }
 
     // Struct methods
@@ -219,7 +219,7 @@ public class RubyStruct extends RubyObject {
         int size = RubyFixnum.fix2int(getInstanceVariable(getInternalClass(), "__size__"));
 
         if (args.length > size) {
-            throw new ArgumentError(ruby, "struct size differs (" + args.length +" for " + size + ")");
+            throw new ArgumentError(runtime, "struct size differs (" + args.length +" for " + size + ")");
         }
 
         for (int i = 0; i < args.length; i++) {
@@ -227,10 +227,10 @@ public class RubyStruct extends RubyObject {
         }
 
         for (int i = args.length; i < size; i++) {
-            values[i] = ruby.getNil();
+            values[i] = runtime.getNil();
         }
 
-        return ruby.getNil();
+        return runtime.getNil();
     }
 
     public static RubyArray members(IRubyObject recv) {
@@ -253,7 +253,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject set(IRubyObject value) {
-        String name = ruby.getCurrentFrame().getLastFunc();
+        String name = runtime.getCurrentFrame().getLastFunc();
         if (name.endsWith("=")) {
             name = name.substring(0, name.length() - 1);
         }
@@ -272,11 +272,11 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(ruby, name + " is not struct member");
+        throw new NameError(runtime, name + " is not struct member");
     }
 
     public IRubyObject get() {
-        String name = ruby.getCurrentFrame().getLastFunc();
+        String name = runtime.getCurrentFrame().getLastFunc();
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
@@ -290,11 +290,11 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new NameError(ruby, name + " is not struct member");
+        throw new NameError(runtime, name + " is not struct member");
     }
 
     public IRubyObject rbClone() {
-        RubyStruct clone = new RubyStruct(ruby, getInternalClass());
+        RubyStruct clone = new RubyStruct(runtime, getInternalClass());
 
         clone.values = new IRubyObject[values.length];
         System.arraycopy(values, 0, clone.values, 0, values.length);
@@ -304,23 +304,23 @@ public class RubyStruct extends RubyObject {
 
     public RubyBoolean equal(IRubyObject other) {
         if (this == other) {
-            return ruby.getTrue();
+            return runtime.getTrue();
         } else if (!(other instanceof RubyStruct)) {
-            return ruby.getFalse();
+            return runtime.getFalse();
         } else if (getInternalClass() != other.getInternalClass()) {
-            return ruby.getFalse();
+            return runtime.getFalse();
         } else {
             for (int i = 0; i < values.length; i++) {
                 if (!values[i].equals(((RubyStruct) other).values[i])) {
-                    return ruby.getFalse();
+                    return runtime.getFalse();
                 }
             }
-            return ruby.getTrue();
+            return runtime.getTrue();
         }
     }
 
     public RubyString to_s() {
-        return RubyString.newString(ruby, "#<" + getInternalClass().toName() + ">");
+        return RubyString.newString(runtime, "#<" + getInternalClass().toName() + ">");
     }
 
     public RubyString inspect() {
@@ -344,20 +344,20 @@ public class RubyStruct extends RubyObject {
 
         sb.append('>');
 
-        return RubyString.newString(ruby, sb.toString()); // OBJ_INFECT
+        return RubyString.newString(runtime, sb.toString()); // OBJ_INFECT
     }
 
     public RubyArray to_a() {
-        return RubyArray.newArray(ruby, values);
+        return RubyArray.newArray(runtime, values);
     }
 
     public RubyFixnum size() {
-        return RubyFixnum.newFixnum(ruby, values.length);
+        return RubyFixnum.newFixnum(runtime, values.length);
     }
 
     public IRubyObject each() {
         for (int i = 0; i < values.length; i++) {
-            ruby.yield(values[i]);
+            runtime.yield(values[i]);
         }
 
         return this;
@@ -373,9 +373,9 @@ public class RubyStruct extends RubyObject {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
-            throw new RubyIndexException(ruby, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         } else if (idx >= values.length) {
-            throw new RubyIndexException(ruby, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         }
 
         return values[idx];
@@ -391,9 +391,9 @@ public class RubyStruct extends RubyObject {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
-            throw new RubyIndexException(ruby, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         } else if (idx >= values.length) {
-            throw new RubyIndexException(ruby, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         }
 
         modify();
@@ -405,9 +405,9 @@ public class RubyStruct extends RubyObject {
 
         String className = getInternalClass().getClassname();
         if (className == null) {
-            throw new ArgumentError(ruby, "can't dump anonymous class");
+            throw new ArgumentError(runtime, "can't dump anonymous class");
         }
-        output.dumpObject(RubySymbol.newSymbol(ruby, className));
+        output.dumpObject(RubySymbol.newSymbol(runtime, className));
 
         List members = ((RubyArray) getInstanceVariable(classOf(), "__member__")).getList();
         output.dumpInt(members.size());

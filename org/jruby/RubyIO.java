@@ -267,7 +267,7 @@ public class RubyIO extends RubyObject {
                 lineNumber++;
 
                 // XXX
-                ruby.setGlobalVar("$.", RubyFixnum.newFixnum(ruby, lineNumber));
+                runtime.setGlobalVar("$.", RubyFixnum.newFixnum(runtime, lineNumber));
                 // XXX
 
                 RubyString result = RubyString.newString(getRuntime(), newLine);
@@ -365,7 +365,7 @@ public class RubyIO extends RubyObject {
             throw new IOError(getRuntime(), ioExcptn.getMessage());
         }
 
-        return RubyFixnum.newFixnum(ruby, str.length());
+        return RubyFixnum.newFixnum(runtime, str.length());
     }
 
     /** rb_io_addstr
@@ -420,13 +420,13 @@ public class RubyIO extends RubyObject {
             int c = inStream.read();
 
             if (c == -1) {
-                return ruby.getTrue();
+                return runtime.getTrue();
             } else {
                 inStream.unread(c);
-                return ruby.getFalse();
+                return runtime.getFalse();
             }
         } catch (IOException ioExcptn) {
-            throw new IOError(ruby, ioExcptn.getMessage());
+            throw new IOError(runtime, ioExcptn.getMessage());
         }
     }
 
@@ -450,7 +450,7 @@ public class RubyIO extends RubyObject {
         try {
             outStream.flush();
         } catch (IOException ioExcptn) {
-            throw new IOError(ruby, ioExcptn.getMessage());
+            throw new IOError(runtime, ioExcptn.getMessage());
         }
 
         return this;
@@ -476,7 +476,7 @@ public class RubyIO extends RubyObject {
         RubyString line = gets(args);
 
         if (line.isNil()) {
-            throw new EOFError(ruby);
+            throw new EOFError(runtime);
         } else {
             return line;
         }
@@ -490,9 +490,9 @@ public class RubyIO extends RubyObject {
 
         try {
             int c = inStream.read();
-            return c != -1 ? RubyFixnum.newFixnum(ruby, c & 0xff) : ruby.getNil();
+            return c != -1 ? RubyFixnum.newFixnum(runtime, c & 0xff) : runtime.getNil();
         } catch (IOException ioExcptn) {
-            throw new IOError(ruby, ioExcptn.getMessage());
+            throw new IOError(runtime, ioExcptn.getMessage());
         }
     }
 
@@ -503,7 +503,7 @@ public class RubyIO extends RubyObject {
         IRubyObject obj = getc();
 
         if (obj.isNil()) {
-            throw new EOFError(ruby);
+            throw new EOFError(runtime);
         } else {
             return obj;
         }
@@ -519,13 +519,13 @@ public class RubyIO extends RubyObject {
 
         try {
             while ((c = inStream.read()) != -1) {
-                ruby.yield(RubyFixnum.newFixnum(ruby, c & 0xff));
+                runtime.yield(RubyFixnum.newFixnum(runtime, c & 0xff));
             }
         } catch (IOException ioExcptn) {
-            throw new IOError(ruby, ioExcptn.getMessage());
+            throw new IOError(runtime, ioExcptn.getMessage());
         }
 
-        return ruby.getNil();
+        return runtime.getNil();
     }
 
     /** Invoke a block for each line.
@@ -603,15 +603,15 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (! args[0].isKindOf(ruby.getClasses().getStringClass())) {
-                throw new TypeError(ruby, args[0], ruby.getClasses().getStringClass());
+            if (! args[0].isKindOf(runtime.getClasses().getStringClass())) {
+                throw new TypeError(runtime, args[0], runtime.getClasses().getStringClass());
             }
             separatorArgument = new IRubyObject[] { args[0] };
         } else {
             separatorArgument = new IRubyObject[0];
         }
 
-        RubyArray result = RubyArray.newArray(ruby);
+        RubyArray result = RubyArray.newArray(runtime);
         IRubyObject line;
         while (! (line = internalGets(separatorArgument)).isNil()) {
             result.append(line);

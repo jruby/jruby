@@ -72,7 +72,7 @@ public abstract class RubyInteger extends RubyNumeric {
     
     // conversion
     protected RubyFloat toFloat() {
-        return RubyFloat.newFloat(ruby, getDoubleValue());
+        return RubyFloat.newFloat(runtime, getDoubleValue());
     }
     
     

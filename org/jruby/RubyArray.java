@@ -320,7 +320,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, list.hashCode());
+        return RubyFixnum.newFixnum(runtime, list.hashCode());
     }
 
     /** rb_ary_modify
@@ -619,7 +619,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     }
 
     public RubyBoolean include_p(IRubyObject item) {
-        return RubyBoolean.newBoolean(ruby, includes(item));
+        return RubyBoolean.newBoolean(runtime, includes(item));
     } /** rb_ary_frozen_p
     	 *
     	 */
@@ -1033,7 +1033,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public RubyArray reverse_bang() {
         if (list.size() <= 1) {
-            return nilArray(ruby);
+            return nilArray(runtime);
         }
         modify();
         Collections.reverse(list);

@@ -112,7 +112,7 @@ public class RubyRange extends RubyObject {
             beginLong += limit;
             if (beginLong < 0) {
                 if (isStrict) {
-                    throw new RangeError(ruby, inspect().toString() + " out of range.");
+                    throw new RangeError(runtime, inspect().toString() + " out of range.");
                 }
                 return null;
             }
@@ -120,7 +120,7 @@ public class RubyRange extends RubyObject {
 
         if (truncate && beginLong > limit) {
             if (isStrict) {
-                throw new RangeError(ruby, inspect().toString() + " out of range.");
+                throw new RangeError(runtime, inspect().toString() + " out of range.");
             }
             return null;
         }
@@ -133,7 +133,7 @@ public class RubyRange extends RubyObject {
 			endLong += limit;
 			if (endLong < 0) {
 				if (isStrict) {
-					throw new RangeError(ruby, inspect().toString() + " out of range.");
+					throw new RangeError(runtime, inspect().toString() + " out of range.");
 				}
 				return null;
 			}
@@ -141,7 +141,7 @@ public class RubyRange extends RubyObject {
 
         if (beginLong > endLong) {
             if (isStrict) {
-                throw new RangeError(ruby, inspect().toString() + " out of range.");
+                throw new RangeError(runtime, inspect().toString() + " out of range.");
             }
 			return null;
         }

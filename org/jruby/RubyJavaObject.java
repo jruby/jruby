@@ -82,7 +82,7 @@ public class RubyJavaObject extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, value.hashCode());
+        return RubyFixnum.newFixnum(runtime, value.hashCode());
     }
 
     // JavaObject methods

@@ -146,7 +146,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     }
 
     public RubyFixnum to_i() {
-        return RubyFixnum.newFixnum(ruby, id);
+        return RubyFixnum.newFixnum(runtime, id);
     }
 
     public RubyString inspect() {
@@ -160,11 +160,11 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     public RubyBoolean equal(IRubyObject other) {
         // Symbol table ensures only one instance for every name,
         // so object identity is enough to compare symbols.
-        return RubyBoolean.newBoolean(ruby, this == other);
+        return RubyBoolean.newBoolean(runtime, this == other);
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, symbol.hashCode());
+        return RubyFixnum.newFixnum(runtime, symbol.hashCode());
     }
 
     public IRubyObject rbClone() {

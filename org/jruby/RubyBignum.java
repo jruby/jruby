@@ -62,7 +62,7 @@ public class RubyBignum extends RubyInteger {
     public long getLongValue() {
         long result = getTruncatedLongValue();
         if (! BigInteger.valueOf(result).equals(value)) {
-            throw new RangeError(ruby, "bignum too big to convert into 'int'");
+            throw new RangeError(runtime, "bignum too big to convert into 'int'");
         }
         return result;
     }
@@ -159,7 +159,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, value.hashCode());
+        return RubyFixnum.newFixnum(runtime, value.hashCode());
     }
 
     // Bignum methods
@@ -177,7 +177,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyBignum newBignum(BigInteger value) {
-        return newBignum(ruby, value);
+        return newBignum(runtime, value);
     }
 
     public RubyNumeric op_mod(IRubyObject num) {
@@ -325,15 +325,15 @@ public class RubyBignum extends RubyInteger {
     public RubyBignum op_lshift(IRubyObject iNum) {
         long shift = numericValue(iNum).getLongValue();
         if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE)
-            throw new RangeError(ruby, "bignum too big to convert into `int'");
-        return new RubyBignum(ruby, value.shiftLeft((int) shift));
+            throw new RangeError(runtime, "bignum too big to convert into `int'");
+        return new RubyBignum(runtime, value.shiftLeft((int) shift));
     }
 
     public RubyBignum op_rshift(IRubyObject iNum) {
         long shift = numericValue(iNum).getLongValue();
         if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE)
-            throw new RangeError(ruby, "bignum too big to convert into `int'");
-        return new RubyBignum(ruby, value.shiftRight((int) shift));
+            throw new RangeError(runtime, "bignum too big to convert into `int'");
+        return new RubyBignum(runtime, value.shiftRight((int) shift));
     }
 
     public RubyFixnum size() {
@@ -341,7 +341,7 @@ public class RubyBignum extends RubyInteger {
         if (value.bitLength() % 8 != 0) {
             byteLength++;
         }
-        return RubyFixnum.newFixnum(ruby, byteLength);
+        return RubyFixnum.newFixnum(runtime, byteLength);
     }
 
     public void marshalTo(MarshalStream output) throws IOException {

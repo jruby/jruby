@@ -309,7 +309,7 @@ public class RubyThread extends RubyObject {
             throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
         }
 
-        IRubyObject result = (IRubyObject) ruby.getCurrentContext().getLocalVariables().get(key);
+        IRubyObject result = (IRubyObject) runtime.getCurrentContext().getLocalVariables().get(key);
         if (result == null) {
             result = getRuntime().getNil();
         }
@@ -328,7 +328,7 @@ public class RubyThread extends RubyObject {
             throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
         }
 
-        ruby.getCurrentContext().getLocalVariables().put(key, val);
+        runtime.getCurrentContext().getLocalVariables().put(key, val);
         return val;
     }
 
@@ -381,7 +381,7 @@ public class RubyThread extends RubyObject {
      * @return Description of the Return Value
      */
     public RubyBoolean has_key(IRubyObject key) {
-        return ruby.getCurrentContext().getLocalVariables().containsKey(key)
+        return runtime.getCurrentContext().getLocalVariables().containsKey(key)
             ? getRuntime().getTrue()
             : getRuntime().getFalse();
     }

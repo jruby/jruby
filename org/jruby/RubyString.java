@@ -316,7 +316,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	}
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, getValue().hashCode());
+        return RubyFixnum.newFixnum(runtime, getValue().hashCode());
     }
 
 	/** rb_obj_as_string
@@ -1052,11 +1052,11 @@ public class RubyString extends RubyObject implements IndexCallable {
 		if (arg instanceof RubyArray) {
 			Object[] args = new Object[((RubyArray) arg).getLength()];
 			for (int i = 0; i < args.length; i++) {
-				args[i] = JavaUtil.convertRubyToJava(ruby, ((RubyArray) arg).entry(i));
+				args[i] = JavaUtil.convertRubyToJava(runtime, ((RubyArray) arg).entry(i));
 			}
-			return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(args));
+			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(args));
 		} else {
-			return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(ruby, arg)));
+			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(runtime, arg)));
 		}
 	}
 
@@ -1743,7 +1743,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		byte[] lByteValue = toByteArray();
 		int lLength = lByteValue.length;
 		for (int i = 0; i < lLength; i++) {
-			ruby.yield(RubyFixnum.newFixnum(ruby, lByteValue[i]));
+			runtime.yield(RubyFixnum.newFixnum(runtime, lByteValue[i]));
 		}
 		return this;
 	}

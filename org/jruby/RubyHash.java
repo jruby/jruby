@@ -270,7 +270,7 @@ public class RubyHash extends RubyObject {
         }, null);
 
         sb.append("}");
-        return RubyString.newString(ruby, sb.toString());
+        return RubyString.newString(runtime, sb.toString());
     }
 
     public RubyFixnum size() {
@@ -298,7 +298,7 @@ public class RubyHash extends RubyObject {
     }
 
 	public IRubyObject rbClone() {
-		RubyHash result = newHash(ruby, getValueMap(), getDefaultValue());
+		RubyHash result = newHash(runtime, getValueMap(), getDefaultValue());
 		result.setupClone(this);
 		return result;
 	}
@@ -328,17 +328,17 @@ public class RubyHash extends RubyObject {
 
     public IRubyObject fetch(IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(ruby, args.length, 1);
+            throw new ArgumentError(runtime, args.length, 1);
         }
         IRubyObject key = args[0];
         IRubyObject result = (IRubyObject) valueMap.get(key);
         if (result == null) {
             if (args.length > 1) {
                 return args[1];
-            } else if (ruby.isBlockGiven()) {
-                return ruby.yield(key);
+            } else if (runtime.isBlockGiven()) {
+                return runtime.yield(key);
             } else {
-                throw new RubyIndexException(ruby, "key not found");
+                throw new RubyIndexException(runtime, "key not found");
             }
         }
         return result;
@@ -346,18 +346,18 @@ public class RubyHash extends RubyObject {
 
 
     public RubyBoolean has_key(IRubyObject key) {
-        return RubyBoolean.newBoolean(ruby, valueMap.containsKey(key));
+        return RubyBoolean.newBoolean(runtime, valueMap.containsKey(key));
     }
 
     public RubyBoolean has_value(IRubyObject value) {
-        return RubyBoolean.newBoolean(ruby, valueMap.containsValue(value));
+        return RubyBoolean.newBoolean(runtime, valueMap.containsValue(value));
     }
 
     public RubyHash each() {
         Iterator iter = entryIterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
-			ruby.yield(RubyArray.newArray(ruby, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
+			runtime.yield(RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
         }
         return this;
     }
@@ -366,7 +366,7 @@ public class RubyHash extends RubyObject {
 		Iterator iter = valueIterator();
 		while (iter.hasNext()) {
 			IRubyObject value = (IRubyObject) iter.next();
-			ruby.yield(value);
+			runtime.yield(value);
 		}
 		return this;
 	}
@@ -375,7 +375,7 @@ public class RubyHash extends RubyObject {
 		Iterator iter = keyIterator();		//the block may modify the hash so we need the iterator on a copy
 		while (iter.hasNext()) {
 			IRubyObject key = (IRubyObject) iter.next();
-			ruby.yield(key);
+			runtime.yield(key);
 		}
 		return this;
 	}
@@ -393,24 +393,24 @@ public class RubyHash extends RubyObject {
             values.add(aref(indices[i]));
         }
         
-        return RubyArray.newArray(ruby, values);
+        return RubyArray.newArray(runtime, values);
     }
 
     public RubyArray keys() {
-        return RubyArray.newArray(ruby, new ArrayList(valueMap.keySet()));
+        return RubyArray.newArray(runtime, new ArrayList(valueMap.keySet()));
     }
 
     public RubyArray values() {
-        return RubyArray.newArray(ruby, new ArrayList(valueMap.values()));
+        return RubyArray.newArray(runtime, new ArrayList(valueMap.values()));
     }
 
     public RubyBoolean equal(IRubyObject other) {
         if (this == other) {
-            return ruby.getTrue();
+            return runtime.getTrue();
         } else if (!(other instanceof RubyHash)) {
-            return ruby.getFalse();
+            return runtime.getFalse();
         } else if (length() != ((RubyHash)other).length()) {
-            return ruby.getFalse();
+            return runtime.getFalse();
         }
 
         // +++
@@ -420,10 +420,10 @@ public class RubyHash extends RubyObject {
             
             Object value = ((RubyHash)other).valueMap.get(entry.getKey());
             if (value == null || !entry.getValue().equals(value)) {
-                return ruby.getFalse();
+                return runtime.getFalse();
             }
         }
-        return ruby.getTrue();
+        return runtime.getTrue();
         // ---
     }
 
@@ -432,7 +432,7 @@ public class RubyHash extends RubyObject {
         Iterator iter = modifiableEntryIterator();		//we want to modify the map so we need this iterator
         Map.Entry entry = (Map.Entry)iter.next();
         iter.remove();
-		return RubyArray.newArray(ruby, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
+		return RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
     }
 
 	public IRubyObject delete(IRubyObject key) {
@@ -440,8 +440,8 @@ public class RubyHash extends RubyObject {
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
 		if (result != null) {
 			return result;
-		} else if (ruby.isBlockGiven()) {
-			return ruby.yield(key);
+		} else if (runtime.isBlockGiven()) {
+			return runtime.yield(key);
 		} else {
 			return getDefaultValue();
 		}
@@ -466,7 +466,7 @@ public class RubyHash extends RubyObject {
 		while (iter.hasNext()) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = ruby.yield(RubyArray.newArray(ruby, key, value));
+			IRubyObject shouldDelete = runtime.yield(RubyArray.newArray(runtime, key, value));
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;
@@ -475,7 +475,7 @@ public class RubyHash extends RubyObject {
 		if (isModified) {
 			return this;
 		} else {
-			return nilHash(ruby);
+			return nilHash(runtime);
 		}
 	}
 
@@ -486,7 +486,7 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash invert() {
-		RubyHash result = newHash(ruby);
+		RubyHash result = newHash(runtime);
 		Iterator iter = modifiableEntryIterator();		//this is ok since nobody will modify the map
 		while (iter.hasNext()) {
 			Map.Entry entry = (Map.Entry) iter.next();

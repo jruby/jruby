@@ -220,7 +220,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public RubyFixnum newFixnum(long value) {
-        return newFixnum(ruby, value);
+        return newFixnum(runtime, value);
     }
 
     public static RubyInteger induced_from(IRubyObject recv, IRubyObject number) {
@@ -369,7 +369,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         if (width < 0)
             return op_rshift(other.op_uminus());
         if (width > BIT_SIZE || value >>> (BIT_SIZE - width) > 0) {
-            RubyBignum lBigValue = new RubyBignum(ruby, RubyBignum.bigIntValue(this));
+            RubyBignum lBigValue = new RubyBignum(runtime, RubyBignum.bigIntValue(this));
             return lBigValue.op_lshift(other);
         }
         return newFixnum(value << width);
@@ -413,7 +413,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public RubySymbol id2name() {
-        return RubySymbol.getSymbol(ruby, value);
+        return RubySymbol.getSymbol(runtime, value);
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
@@ -421,7 +421,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
             output.write('i');
             output.dumpInt((int) value);
         } else {
-            output.dumpObject(RubyBignum.newBignum(ruby, value));
+            output.dumpObject(RubyBignum.newBignum(runtime, value));
         }
     }
 

@@ -111,7 +111,7 @@ public class RubyClass extends RubyModule {
      */
     public void inheritedBy(RubyClass superType) {
         if (superType == null) {
-            superType = ruby.getClasses().getObjectClass();
+            superType = runtime.getClasses().getObjectClass();
         }
         superType.callMethod("inherited", this);
     }
