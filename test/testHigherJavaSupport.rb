@@ -11,8 +11,7 @@ if defined? Java
     # Java class loading
     test_exception(NameError) { System }
     include_package "java.lang"
-    System
-
+	test_no_exception {System}
     # Constructors
     r = Random.new
     test_equal(Random, r.type)
@@ -37,11 +36,10 @@ if defined? Java
     test_ok(s1.compareTo(l2) > 0)
 
     # Dispatching on nil
-    sb = StringBuffer.new
-#	sb.append(nil)  #Benoit: this test cannot be done until a java method which does not result in an exception when passed nil is found.
-	sb.append("x")
-	test_equal("x", sb.toString)
-#	test_equal("nullx", sb.toString)		
+	include_package "org.jruby.test"
+    sb = TestHigherJava.new
+	test_equal(nil , sb.testNilDispatch(nil))
+
 
     # FIXME: easy method for importing java class with colliding name
     # (Since String would be nice to test on)
