@@ -1,28 +1,28 @@
 /*
  * AssignmentVisitor.java - description
  * Created on 13.03.2002, 15:54:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.evaluator;
 
@@ -49,6 +49,7 @@ import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.common.IErrors;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
@@ -59,6 +60,7 @@ import org.jruby.util.Asserts;
  */
 public class AssignmentVisitor extends AbstractVisitor {
     private Ruby ruby;
+    private ThreadContext threadContext;
     private IRubyObject self;
 
     private IErrorHandler errorHandler;
@@ -70,6 +72,7 @@ public class AssignmentVisitor extends AbstractVisitor {
     public AssignmentVisitor(Ruby ruby, IRubyObject self) {
         this.ruby = ruby;
         this.self = self;
+        this.threadContext = ruby.getCurrentContext();
     }
 
     public IRubyObject assign(INode node, IRubyObject value, boolean check) {
@@ -126,14 +129,14 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
-        ruby.getRubyClass().defineConstant(iVisited.getName(), value);
+        threadContext.getRubyClass().defineConstant(iVisited.getName(), value);
     }
 
     /**
      * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
-        ruby.getDynamicVars().set(iVisited.getName(), value);
+        threadContext.getCurrentDynamicVars().set(iVisited.getName(), value);
     }
 
     /**
@@ -154,7 +157,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        ruby.getScope().setValue(iVisited.getCount(), value);
+        threadContext.getScopeStack().setValue(iVisited.getCount(), value);
     }
 
     /**
@@ -171,11 +174,11 @@ public class AssignmentVisitor extends AbstractVisitor {
             }
             value = newValue;
         }
-        
+
         // Assign the values.
         int valueLen = ((RubyArray)value).getLength();
         int varLen = ListNodeUtil.getLength(iVisited.getHeadNode());
-        
+
         Iterator iter = iVisited.getHeadNode() != null ? iVisited.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
             new AssignmentVisitor(ruby, self).assign((INode)iter.next(), ((RubyArray)value).entry(i), check);

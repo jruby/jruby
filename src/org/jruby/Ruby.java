@@ -368,7 +368,7 @@ public final class Ruby {
         return getCurrentContext().yield(value, self, klass, checkArguments);
     }
 
-    public Scope currentScope() {
+    private Scope currentScope() {
         return getScope().current();
     }
 
@@ -490,14 +490,6 @@ public final class Ruby {
      */
     public DynamicVariableSet getDynamicVars() {
         return getCurrentContext().getCurrentDynamicVars();
-    }
-
-    public IRubyObject getDynamicValue(String name) {
-        IRubyObject result = getDynamicVars().get(name);
-        if (result == null) {
-            return getNil();
-        }
-        return result;
     }
 
     public RubyModule getRubyClass() {
@@ -882,7 +874,7 @@ public final class Ruby {
             context.setWrapper(wrapper);
         }
     }
-    
+
     public void loadNode(String scriptName, INode node, boolean wrap) {
         IRubyObject self = getTopSelf();
         Namespace savedNamespace = getNamespace();

@@ -547,7 +547,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        runtime.getDynamicVars().set(iVisited.getName(), result);
+        threadContext.getCurrentDynamicVars().set(iVisited.getName(), result);
     }
 
     /**
@@ -584,7 +584,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDVarNode(DVarNode)
      */
     public void visitDVarNode(DVarNode iVisited) {
-        result = runtime.getDynamicValue(iVisited.getName());
+        result = threadContext.getDynamicValue(iVisited.getName());
     }
 
     /**

@@ -63,7 +63,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
             // set global variables
             for (int i = 0, size = args.size(); i < size; i++) {
-                runtime.currentScope().setValue(i, convertToRuby(args.get(i)));
+                threadContext.currentScope().setValue(i, convertToRuby(args.get(i)));
             }
 
             runtime.setPosition(file, line);
@@ -143,7 +143,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 GlobalVariable.variableName(bean.name),
                 new BeanGlobalVariable(runtime, bean));
         }
-        
+
         runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(mgr, this)));
     }
 
@@ -210,7 +210,7 @@ public class JRubyEngine extends BSFEngineImpl {
             return value;
         }
     }
-    
+
     private static class FunctionsGlobalVariable implements IAccessor {
         private Ruby runtime;
         private BSFFunctions functions;
@@ -231,7 +231,7 @@ public class JRubyEngine extends BSFEngineImpl {
             }
             return result;
         }
-        
+
         public IRubyObject setValue(IRubyObject value) {
             return value;
         }

@@ -66,6 +66,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** This visitor is used to evaluate a defined? statement.
@@ -76,12 +77,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class DefinedVisitor extends AbstractVisitor {
     private Ruby ruby;
     private IRubyObject self;
+    private ThreadContext threadContext;
 
     private String definition;
 
     public DefinedVisitor(Ruby ruby, IRubyObject self) {
         this.ruby = ruby;
         this.self = self;
+        this.threadContext = ruby.getCurrentContext();
     }
 
     public String getDefinition(INode expression) {
@@ -123,8 +126,8 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
-        String lastMethod = ruby.getCurrentFrame().getLastFunc();
-        RubyModule lastClass = ruby.getCurrentFrame().getLastClass();
+        String lastMethod = threadContext.getCurrentFrame().getLastFunc();
+        RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
         if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
             definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
         }
@@ -134,8 +137,8 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
-        String lastMethod = ruby.getCurrentFrame().getLastFunc();
-        RubyModule lastClass = ruby.getCurrentFrame().getLastClass();
+        String lastMethod = threadContext.getCurrentFrame().getLastFunc();
+        RubyModule lastClass = threadContext.getCurrentFrame().getLastClass();
         if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
             definition = "super";
         }
@@ -233,7 +236,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitYieldNode(YieldNode)
      */
     public void visitYieldNode(YieldNode iVisited) {
-        if (ruby.isBlockGiven()) {
+        if (threadContext.isBlockGiven()) {
             definition = "yield";
         }
     }

@@ -140,6 +140,10 @@ public class ThreadContext {
         return getPosition().getFile();
     }
 
+    public Scope currentScope() {
+        return getScopeStack().current();
+    }
+
     public int getSourceLine() {
         return getPosition().getLine();
     }
@@ -190,7 +194,7 @@ public class ThreadContext {
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
-        if (! runtime.isBlockGiven()) {
+        if (! isBlockGiven()) {
             throw new RaiseException(runtime, runtime.getExceptions().getLocalJumpError(), "yield called out of block");
         }
 
@@ -251,6 +255,10 @@ public class ThreadContext {
             getScopeStack().setTop(oldScope);
             dynamicVarsStack.pop();
         }
+    }
+
+    public boolean isBlockGiven() {
+        return getCurrentFrame().isBlockGiven();
     }
 
     private IRubyObject[] prepareArguments(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
@@ -322,4 +330,13 @@ public class ThreadContext {
     public void setWrapper(RubyModule wrapper) {
         this.wrapper = wrapper;
     }
+
+    public IRubyObject getDynamicValue(String name) {
+        IRubyObject result = ((DynamicVariableSet) dynamicVarsStack.peek()).get(name);
+        if (result == null) {
+            return runtime.getNil();
+        }
+        return result;
+    }
+
 }

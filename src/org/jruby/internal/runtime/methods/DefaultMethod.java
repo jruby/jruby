@@ -41,12 +41,12 @@ public final class DefaultMethod extends AbstractMethod {
      * @see AbstractMethod#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = ruby.getCurrentContext();
+
         RubyProc optionalBlockArg = null;
-        if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
+        if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
             optionalBlockArg = RubyProc.newProc(ruby);
         }
-
-        ThreadContext context = ruby.getCurrentContext();
 
         context.getScopeStack().push();
 

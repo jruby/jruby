@@ -53,7 +53,15 @@ public class Block implements StackElement {
 
     public static Block createBlock(INode var, ICallable method, IRubyObject self) {
         Ruby ruby = self.getRuntime();
-        return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars());
+        ThreadContext context = ruby.getCurrentContext();
+        return new Block(var,
+                         method,
+                         self,
+                         context.getCurrentFrame(),
+                         context.currentScope(),
+                         context.getRubyClass(),
+                         context.getCurrentIter(),
+                         context.getCurrentDynamicVars());
     }
 
     private Block(
@@ -82,19 +90,20 @@ public class Block implements StackElement {
 
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         Ruby ruby = self.getRuntime();
-        Block oldBlock = ruby.getBlockStack().getCurrent();
+        ThreadContext context = ruby.getCurrentContext();
+        Block oldBlock = context.getBlockStack().getCurrent();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
             newBlock.self = replacementSelf;
         }
-        ruby.getBlockStack().setCurrent(newBlock);
-        ruby.getIterStack().push(Iter.ITER_CUR);
-        ruby.getCurrentFrame().setIter(Iter.ITER_CUR);
+        context.getBlockStack().setCurrent(newBlock);
+        context.getIterStack().push(Iter.ITER_CUR);
+        context.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
             return ruby.yield(args != null ? RubyArray.newArray(ruby, args) : null, null, null, true);
         } finally {
-            ruby.getIterStack().pop();
-            ruby.getBlockStack().setCurrent(oldBlock);
+            context.getIterStack().pop();
+            context.getBlockStack().setCurrent(oldBlock);
         }
     }
 
