@@ -95,6 +95,9 @@ public class RubyIO extends RubyObject {
         ioClass.defineMethod("printf", CallbackFactory.getOptSingletonMethod(RubyIO.class, "printf"));
         ioClass.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
 
+        ioClass.defineMethod("readlines", CallbackFactory.getOptMethod(RubyIO.class, "readlines"));
+//         ioClass.defineMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
+
         return ioClass;
     }
 
@@ -594,5 +597,45 @@ public class RubyIO extends RubyObject {
         recv.funcall("write", RubyKernel.sprintf(ruby, recv, args));
 
         return ruby.getNil();
+    }
+
+    public RubyArray readlines(RubyObject[] args) {
+        RubyObject[] separatorArgument;
+        if (args.length > 0) {
+            if (! args[0].isKindOf(ruby.getClasses().getStringClass())) {
+                throw new TypeError(ruby, args[0], ruby.getClasses().getStringClass());
+            }
+            separatorArgument = new RubyObject[] { args[0] };
+        } else {
+            separatorArgument = new RubyObject[0];
+        }
+
+        RubyArray result = RubyArray.newArray(ruby);
+        RubyObject line;
+        while (! (line = internalGets(separatorArgument)).isNil()) {
+            result.push(line);
+        }
+        return result;
+    }
+
+    public static RubyArray readlines(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length < 1) {
+            throw new ArgumentError(ruby, args.length, 1);
+        }
+        if (! args[0].isKindOf(ruby.getClasses().getStringClass())) {
+            throw new TypeError(ruby, args[0], ruby.getClasses().getStringClass());
+        }
+        RubyString fileName = (RubyString) args[0];
+
+        RubyObject[] separatorArguments;
+        if (args.length >= 2) {
+            separatorArguments = new RubyObject[] { args[1] };
+        } else {
+            separatorArguments = new RubyObject[0];
+        }
+
+        RubyIO file = (RubyIO) RubyKernel.open(ruby, recv, new RubyObject[] { fileName });
+
+        return file.readlines(separatorArguments);
     }
 }

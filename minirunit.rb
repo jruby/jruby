@@ -53,13 +53,13 @@ def test_load(test)
 	$curtestOK=true
 	load(test)
   rescue Exception => boom
-	puts 'KO'
+	puts 'ERROR'
 	$failed.push(sprintf("exception raised %s %d -- \n\tException: %s\n\t%s", $what, $testnum, boom.to_s, boom.backtrace.join "\n\t"))
   else
 	if $curtestOK
 		puts 'OK'
 	else
-		puts 'KO'
+		puts 'FAILED'
 	end
   end
 end

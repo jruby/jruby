@@ -39,7 +39,7 @@ import junit.framework.*;
  */
 public class MainTestSuite extends TestSuite {
 
-    public static Test suite() {
+    public static Test suite() throws Throwable {
         TestSuite suite = new TestSuite();
         suite.addTest(new TestSuite(TestRubyObject.class));
         suite.addTest(new TestSuite(TestRubyNil.class));

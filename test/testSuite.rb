@@ -24,52 +24,27 @@
 # 
 require 'minirunit'
 
-test_load('test/testRegexp.rb')
-test_load('test/testStringEval.rb')
-test_load('test/testHereDocument.rb')
-test_load('test/testClass.rb')
-test_load('test/testArray.rb')
-test_load('test/testVariableAndMethod.rb')
-test_load('test/testIf.rb')
-test_load('test/testLoops.rb')
-test_load('test/testMethods.rb')
-test_load('test/testGlobalVars.rb')
-test_load('test/testClasses.rb')
-test_load('test/testNumber.rb')
-test_load('test/testFloat.rb')
-test_load('test/testBlock.rb')
-test_load('test/testRange.rb')
-test_load('test/testString.rb')
-test_load('test/testException.rb')
-test_load('test/testSpecialVar.rb')
-test_load('test/testFile.rb')
-test_load('test/testThread.rb')
-test_load('test/testMarshal.rb')
-test_load('test/testRequire.rb')
-test_load('test/testBackquote.rb')
-test_load('test/testHash.rb')
-test_load('test/testSymbol.rb')
-test_load('test/testPackUnpack.rb')
-test_load('test/testRandom.rb')
-test_load('test/testStruct.rb')
-test_load('test/testGC.rb')
+TEST_INDEX = "test/test_index"
 
-# MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
+def valid?(line)
+  if /^\#/ =~ line
+    # Commented
+    return false
+  end
+  if line.empty?
+    return false
+  end
+  return true
+end
 
-test_load('test/mri/testAssignment.rb')
-test_load('test/mri/testCondition.rb')
-test_load('test/mri/testCase.rb')
-test_load('test/mri/testIfUnless.rb')
-test_load('test/mri/testWhileUntil.rb')
-test_load('test/mri/testException.rb')
-test_load('test/mri/testArray.rb')
-test_load('test/mri/testHash.rb')
-test_load('test/mri/testIterator.rb')
-test_load('test/mri/testFloat.rb')
-test_load('test/mri/testBignum.rb')
-test_load('test/mri/testString.rb')
-test_load('test/mri/testAssignment2.rb')
-test_load('test/mri/testCall.rb')
+open(TEST_INDEX) {|test_index|
+  test_index.readlines.each {|line|
+    line.strip!
+    if valid?(line)
+      test_load('test/' + line)
+    end
+  }
+}
 
 puts
 

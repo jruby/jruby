@@ -46,75 +46,86 @@ import org.ablaf.ast.INode;
 
 public class ScriptTestSuite extends TestSuite {
 
+    private static final String TEST_DIR = "test";
+    private static final String TEST_INDEX = "test" + File.separator + "test_index";
+
     public ScriptTestSuite(String name) {
 		super(name);
     }
 
-    public static Test suite() {
+    public static Test suite() throws java.io.IOException {
         TestSuite suite = new TestSuite();
 
-		Ruby ruby = Ruby.getDefaultInstance(null);
-		ruby.initLoad(new ArrayList());
+        Ruby ruby = Ruby.getDefaultInstance(null);
+        ruby.initLoad(new ArrayList());
 
-		suite.addTest(new ScriptTest(ruby, "testRegexp"));
-		suite.addTest(new ScriptTest(ruby, "testStringEval"));
-		suite.addTest(new ScriptTest(ruby, "testHereDocument"));
-		suite.addTest(new ScriptTest(ruby, "testClass"));
-//      suite.addTest(new ScriptTest(ruby, "testArray"));
-		suite.addTest(new ScriptTest(ruby, "testVariableAndMethod"));
-		suite.addTest(new ScriptTest(ruby, "testIf"));
-		suite.addTest(new ScriptTest(ruby, "testLoops"));
-		suite.addTest(new ScriptTest(ruby, "testMethods"));
-		suite.addTest(new ScriptTest(ruby, "testGlobalVars"));
-		suite.addTest(new ScriptTest(ruby, "testClasses"));
-		suite.addTest(new ScriptTest(ruby, "testNumber"));
-		suite.addTest(new ScriptTest(ruby, "testFloat"));
-		suite.addTest(new ScriptTest(ruby, "testBlock"));
-		suite.addTest(new ScriptTest(ruby, "testRange"));
-		suite.addTest(new ScriptTest(ruby, "testString"));
-//  	suite.addTest(new ScriptTest(ruby, "testException"));
-//  	suite.addTest(new ScriptTest(ruby, "testSpecialVar"));
-        suite.addTest(new ScriptTest(ruby, "testFile"));
-        suite.addTest(new ScriptTest(ruby, "testMarshal"));
-        suite.addTest(new ScriptTest(ruby, "testHash"));
-        suite.addTest(new ScriptTest(ruby, "testSymbol"));
-        suite.addTest(new ScriptTest(ruby, "testRandom"));
-        suite.addTest(new ScriptTest(ruby, "testStruct"));
-        suite.addTest(new ScriptTest(ruby, "testGC"));
+        File testIndex = new File("test/test_index");
+        if (! testIndex.canRead()) {
+            suite.addTest(new FailingTest("ScriptTestSuite",
+                                          "Couldn't locate " + TEST_INDEX +
+                                          ". Make sure you run the tests from the base " +
+                                          "directory of the JRuby sourcecode."));
+            return suite;
+        }
+
+        BufferedReader testFiles =
+            new BufferedReader(new InputStreamReader(new FileInputStream(testIndex)));
+        String line;
+        while ((line = testFiles.readLine()) != null) {
+            line = line.trim();
+            if (line.startsWith("#") || line.length() == 0) {
+                continue;
+            }
+            suite.addTest(new ScriptTest(ruby, line));
+        }
 
         return suite;
     }
 
+    private static class FailingTest extends TestCase {
+        private final String message;
+
+        public FailingTest(String name, String message) {
+            super(name);
+            this.message = message;
+        }
+
+        public void runTest() throws Throwable {
+            fail(message);
+        }
+    }
+
+
     private static class ScriptTest extends TestCase {
-		private final Ruby ruby;
-		private final String filename;
-		private final File script;
+        private final Ruby ruby;
+        private final String filename;
+        private final File script;
 
-		public ScriptTest(Ruby ruby, String filename) {
-			super(filename);
-			this.ruby = ruby;
-			this.filename = filename;
-			this.script = new File("test/" + filename + ".rb");
-		}
+        public ScriptTest(Ruby ruby, String filename) {
+            super(filename);
+            this.ruby = ruby;
+            this.filename = filename;
+            this.script = new File(TEST_DIR + File.separator + filename);
+        }
 
-		public void runTest() throws Throwable {
-			StringBuffer scriptString = new StringBuffer((int) script.length());
-			BufferedReader br = new BufferedReader(new FileReader(script));
-			String line;
-			while ((line = br.readLine()) != null) {
-				scriptString.append(line).append('\n');
-			}
-			br.close();
+        public void runTest() throws Throwable {
+            StringBuffer scriptString = new StringBuffer((int) script.length());
+            BufferedReader br = new BufferedReader(new FileReader(script));
+            String line;
+            while ((line = br.readLine()) != null) {
+                scriptString.append(line).append('\n');
+            }
+            br.close();
 
-			// At the end of the tests we need a value to tell us if they failed.
-			scriptString.append("$curtestOK").append('\n');
+            // At the end of the tests we need a value to tell us if they failed.
+            scriptString.append("$curtestOK").append('\n');
 
-			RubyBoolean isOk = (RubyBoolean) ruby.evalScript(scriptString.toString());
-			if (isOk.isFalse()) {
-				fail(filename + " failed");
-			}
+            RubyBoolean isOk = (RubyBoolean) ruby.evalScript(scriptString.toString());
+            if (isOk.isFalse()) {
+                fail(filename + " failed");
+            }
 
-			System.out.flush(); // Without a flush Ant will miss some of our output
-		}
+            System.out.flush(); // Without a flush Ant will miss some of our output
+        }
     }
 }
