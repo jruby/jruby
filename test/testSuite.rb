@@ -5,9 +5,8 @@
 #
 # Created on 10 jan 2002
 # 
-# Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Benoit Cerrina
-# Jan Arne Petersen <japetersen@web.de>
-# Stefan Matthias Aust <sma@3plus4.de>
+# Copyright (C) 2001 Jan Arne Petersen, Benoit Cerrina
+# Jan Arne Petersen <jpetersen@uni-bonn.de>
 # Benoit Cerrina <benoit.cerrina@writeme.com>
 # 
 # JRuby - http://jruby.sourceforge.net
@@ -27,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # 
 require 'minirunit'
+
 load('test/testRegexp.rb')
 load('test/testStringEval.rb')
 load('test/testHereDocument.rb')
@@ -40,5 +40,9 @@ load('test/testGlobalVars.rb')
 load('test/testClasses.rb')
 load('test/testNumber.rb')
 
-
-
+#MRI Ruby tests:
+load('test/mri/testAssignment.rb')
+load('test/mri/testCondition.rb')
+load('test/mri/testCase.rb')
+load('test/mri/testIfUnless.rb')
+load('test/mri/testWhileUntil')
