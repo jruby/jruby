@@ -41,11 +41,9 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
 
           # klass
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          generator.java_class_name))
+          generator.appendPush(generator.java_class_name)
           klass =
             generator.addLocalVariable("klass",
                                        BCEL::Type::STRING,
@@ -55,8 +53,7 @@ module JRuby
           generator.append(BCEL::ASTORE.new(klass.getIndex))
 
           # methodName
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @name))
+          generator.appendPush(@name)
           methodName =
             generator.addLocalVariable("methodName",
                                        BCEL::Type::STRING,
@@ -66,8 +63,7 @@ module JRuby
           generator.append(BCEL::ASTORE.new(methodName.getIndex))
 
           # arity
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @arity))
+          generator.appendPush(@arity)
           arity = generator.addLocalVariable("arity",
                                              BCEL::Type::INT,
                                              nil,
@@ -76,10 +72,11 @@ module JRuby
           generator.append(BCEL::ISTORE.new(arity.getIndex))
 
           # Create a callback
+          factory = generator.factory
           generator.append(factory.createNew("org.jruby.runtime.CompiledReflectionCallback"))
           generator.append(BCEL::DUP.new)
 
-          generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(generator)
           generator.append(BCEL::ALOAD.new(klass.getIndex))
           generator.append(BCEL::ALOAD.new(methodName.getIndex))
           generator.append(BCEL::ILOAD.new(arity.getIndex))
@@ -126,15 +123,14 @@ module JRuby
           # Register it to the runtime
 
           # Get the current class
-          generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          push_runtime(generator)
           generator.appendInvoke("org.jruby.Ruby",
                                  "getRubyClass",
                                  BCEL::ObjectType.new("org.jruby.RubyModule"),
                                  BCEL::Type[].new(0),
                                  BCEL::Constants::INVOKEVIRTUAL)
 
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @name))
+          generator.appendPush(@name)
           generator.append(BCEL::ALOAD.new(callbackMethod.getIndex))
 
           # addMethod(name, callback)
@@ -165,11 +161,8 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
-
           push_runtime(generator)
-
-          generator.append(BCEL::PUSH.new(generator.getConstantPool, @value))
+          generator.appendPush(@value)
           generator.append(BCEL::I2L.new())
 
           arg_types = BCEL::Type[].new(2)
@@ -196,10 +189,8 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
           push_scope_stack(generator) # ... why do we do this?
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                     @index))
+          generator.appendPush(@index)
           arg_types = BCEL::Type[].new(1)
           arg_types[0] = BCEL::Type::INT
           generator.appendInvoke("org.jruby.runtime.ScopeStack",
@@ -215,7 +206,6 @@ module JRuby
       end
 
       def push_scope_stack(generator)
-        factory = generator.factory
         push_runtime(generator)
         generator.appendInvoke(RUBY_TYPE.getClassName,
                                "getScope",
@@ -225,7 +215,6 @@ module JRuby
       end
 
       def push_frame_stack(generator)
-        factory = generator.factory
         push_runtime(generator)
         generator.appendInvoke(RUBY_TYPE.getClassName,
                                "getFrameStack",
@@ -256,8 +245,7 @@ module JRuby
 
           factory = generator.factory
 
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @arity))
+          generator.appendPush(@arity)
           generator.append(factory.createNewArray(IRUBYOBJECT_TYPE, 1))
           args_array.setStart(generator.getEnd())
 
@@ -270,14 +258,14 @@ module JRuby
             generator.append(BCEL::InstructionFactory.createLoad(args_array.getType,
                                                                  args_array.getIndex))
             generator.append(BCEL::SWAP.new)
-            generator.append(BCEL::PUSH.new(generator.getConstantPool, i))
+            generator.appendPush(i)
             generator.append(BCEL::SWAP.new)
             generator.append(BCEL::AASTORE.new())
           end
 
           generator.append(BCEL::InstructionFactory.createLoad(args_array.getType,
                                                           args_array.getIndex))
-          generator.append(BCEL::PUSH.new(factory.getConstantPool, @name))
+          generator.appendPush(@name)
           generator.append(BCEL::SWAP.new)
 
           arg_types = BCEL::Type[].new(2)
@@ -299,9 +287,8 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
           push_runtime(generator)
-          generator.append(BCEL::PUSH.new(factory.getConstantPool, @value))
+          generator.appendPush(@value)
 
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = RUBY_TYPE
@@ -320,9 +307,8 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
           push_runtime(generator)
-          generator.append(BCEL::PUSH.new(factory.getConstantPool, @name))
+          generator.appendPush(@name)
 
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = RUBY_TYPE
@@ -341,7 +327,6 @@ module JRuby
 
       class PushNil
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
           push_runtime(generator)
           generator.appendInvoke(RUBY_TYPE.getClassName,
                                  "getNil",
@@ -357,8 +342,6 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
-
           push_runtime(generator)
           if @value
             methodname = "getTrue"
@@ -379,9 +362,8 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
           push_runtime(generator)
-          generator.append(BCEL::PUSH.new(generator.getConstantPool, @size))
+          generator.appendPush(@size)
           generator.append(BCEL::I2L.new)
 
           args_array = BCEL::Type[].new(2)
@@ -409,8 +391,6 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
-
           generator.appendInvoke(IRUBYOBJECT_TYPE.getClassName,
                                  "isTrue",
                                  BCEL::Type::BOOLEAN,
@@ -429,8 +409,6 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
-
           # runtime.getFrameStack().pushCopy()
           push_frame_stack(generator)
           generator.appendInvoke("org.jruby.runtime.FrameStack",
@@ -442,8 +420,8 @@ module JRuby
           # runtime.getScopeStack().push(localnames)
           push_scope_stack(generator)
           # FIXME: store this array instead of creating it on the fly!
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @local_names.size))
+          generator.appendPush(@local_names.size)
+          factory = generator.factory
           generator.append(factory.createNewArray(BCEL::Type::STRING, 1))
 
           iter = @local_names.iterator
@@ -451,11 +429,9 @@ module JRuby
           while iter.hasNext
             generator.append(BCEL::DUP.new)
             name = iter.next
-            generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                            index))
+            generator.appendPush(index)
             index += 1
-            generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                            name))
+            generator.appendPush(name)
             generator.append(BCEL::AASTORE.new)
           end
           # Stack: ..., scopestack, namesarray
@@ -471,8 +447,6 @@ module JRuby
 
       class RestoreScope
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
-
           # getScopeStack.pop()
           push_scope_stack(generator)
           generator.appendInvoke("org.jruby.runtime.ScopeStack",
@@ -498,7 +472,6 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          factory = generator.factory
 
           # Inserting 'runtime' before the two range arguments
 
@@ -509,8 +482,7 @@ module JRuby
           # Stack: ..., runtime, begin, end, runtime
           generator.append(BCEL::POP.new)
           # Stack: ..., runtime, begin, end
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @exclusive))
+          generator.appendPush(@exclusive)
           # Stack: ..., runtime, begin, end, isexclusive
 
           arg_types = BCEL::Type[].new(4)
@@ -534,7 +506,6 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          list = generator.getInstructionList
           goto = BCEL::GOTO.new(nil)
           @target.add_listener(goto)
           generator.append(goto)

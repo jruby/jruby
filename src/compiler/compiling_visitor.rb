@@ -68,6 +68,10 @@ module JRuby
         append(factory.createInvoke(*invoke_arguments))
       end
 
+      def appendPush(value)
+        append(BCEL::PUSH.new(getConstantPool, value))
+      end
+
       def getInstructionList
         method.getInstructionList
       end
