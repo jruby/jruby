@@ -785,7 +785,7 @@ public final class Ruby {
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
-            setNamespace(new Namespace(context.getWrapper(), getNamespace()));
+            setNamespace(new Namespace(context.getWrapper()));
         }
 
         String last_func = context.getCurrentFrame().getLastFunc();
@@ -794,7 +794,7 @@ public final class Ruby {
         context.getCurrentFrame().setLastFunc(null);
         context.getCurrentFrame().setLastClass(null);
         context.getCurrentFrame().setSelf(self);
-        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass(), null));
+        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass()));
         context.getScopeStack().push();
 
         /* default visibility is private at loading toplevel */
@@ -836,7 +836,7 @@ public final class Ruby {
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
-            setNamespace(new Namespace(context.getWrapper(), getNamespace()));
+            setNamespace(new Namespace(context.getWrapper()));
         }
 
         String last_func = getCurrentFrame().getLastFunc();
@@ -845,7 +845,7 @@ public final class Ruby {
         context.getCurrentFrame().setLastFunc(null);
         context.getCurrentFrame().setLastClass(null);
         context.getCurrentFrame().setSelf(self);
-        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass(), null));
+        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass()));
         context.getScopeStack().push();
 
         /* default visibility is private at loading toplevel */

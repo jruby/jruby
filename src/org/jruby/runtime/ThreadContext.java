@@ -341,7 +341,7 @@ public class ThreadContext {
         return result;
     }
 
-    public IRubyObject getConstant(IRubyObject self, String name) {
+    public IRubyObject getConstant(String name) {
         // First search the module hierarchy
         RubyModule current = getRubyClass();
         while (current != runtime.getTopSelf().getType() && current != null) {

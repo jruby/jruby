@@ -539,7 +539,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        result = threadContext.getConstant(self, iVisited.getName());
+        result = threadContext.getConstant(iVisited.getName());
     }
 
     /**
@@ -635,7 +635,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             visibility = iVisited.getVisibility();
         }
 
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), runtime.getNamespace(), visibility);
+        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
+                                                    (ArgsNode) iVisited.getArgsNode(),
+                                                    runtime.getNamespace(),
+                                                    visibility);
 
         rubyClass.addMethod(name, newMethod);
 
@@ -1449,8 +1452,10 @@ public final class EvaluateVisitor implements NodeVisitor {
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         threadContext.pushDynamicVars();
 
-        runtime.setNamespace(new Namespace(type, runtime.getNamespace()));
-        threadContext.getCurrentFrame().setNamespace(runtime.getNamespace());
+        Namespace savedNamespace = runtime.getNamespace();
+        Namespace newNamespace = new Namespace(type);
+        runtime.setNamespace(newNamespace);
+        threadContext.getCurrentFrame().setNamespace(newNamespace);
 
         IRubyObject oldSelf = self;
 
@@ -1464,7 +1469,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             self = oldSelf;
 
-            runtime.setNamespace(runtime.getNamespace().getParent());
+            runtime.setNamespace(savedNamespace);
             threadContext.popDynamicVars();
             threadContext.getScopeStack().pop();
             threadContext.popClass();

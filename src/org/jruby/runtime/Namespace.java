@@ -52,51 +52,17 @@ package org.jruby.runtime;
 
 import org.jruby.RubyModule;
 
-/** Represents an element in the nested module/class namespace hierarchy.
+/**
+ * (This class is beeing replaced by the parent-hierarchy in
+ * the RubyModule's themselves)
  *
- * Example:
- *
- * <pre>
- * module JRuby
- *    class ExampleClass
- *       #1
- *    end
- * end
- * </pre>
- *
- * At point #1 there is the Namespace structure:
- *
- * <pre>
- * Namespace -> module = ExampleClass
- *           -> parent = Namespace -> mdoule = JRuby
- *                                 -> parent = Namespace -> module = Object
- *                                                       -> parent = null
- * </pre>
- *
- * Replaces CRefNode.
- *
- * @author  jpetersen
  * @version $Revision$
  */
 public class Namespace {
-    private final Namespace parent;
     private final RubyModule module;
 
     public Namespace(RubyModule namespaceModule) {
-        this(namespaceModule, null);
-    }
-
-    public Namespace(RubyModule namespaceModule, Namespace parent) {
         this.module = namespaceModule;
-        this.parent = parent;
-    }
-
-    public Namespace cloneNamespace() {
-        return new Namespace(module, parent != null ? parent.cloneNamespace() : null);
-    }
-
-    public Namespace getParent() {
-        return parent;
     }
 
     public RubyModule getModule() {

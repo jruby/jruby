@@ -1097,12 +1097,13 @@ public class RubyModule extends RubyObject {
         threadContext.getCurrentFrame().setLastFunc(frame.getLastFunc());
         threadContext.getCurrentFrame().setLastClass(frame.getLastClass());
         threadContext.getCurrentFrame().setArgs(frame.getArgs());
-        runtime.setNamespace(new Namespace(this, runtime.getNamespace()));
+        Namespace savedNamespace = runtime.getNamespace();
+        runtime.setNamespace(new Namespace(this));
 
         try {
             return method.execute(this, args);
         } finally {
-            runtime.setNamespace(runtime.getNamespace().getParent());
+            runtime.setNamespace(savedNamespace);
             threadContext.getFrameStack().pop();
             threadContext.popClass();
         }
