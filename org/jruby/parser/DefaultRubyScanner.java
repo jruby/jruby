@@ -34,6 +34,7 @@ import java.io.*;
 
 import org.jruby.*;
 import org.jruby.nodes.*;
+import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 
 /**
@@ -948,8 +949,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         }
                         ph.list_append((Node) yyVal, nf.newStr(RubyString.newString(ruby, "\n")));
 
-                        new RuntimeException("[BUG] Want to convert" + yyVal.getClass().getName() + " to StrNode").printStackTrace();
-                        // ((NODE)yyVal).nd_set_type(NODE.NODE_STR);
+                        ((StrNodeConvertable)yyVal).convertToStrNode();
+                        
                         yyVal = nf.newList((Node) yyVal);
                         ((Node) yyVal).setNextNode(((Node) yyVal).getHeadNode().getNextNode());
                         ph.list_concat(list, (Node) yyVal);

@@ -40,19 +40,29 @@ import org.jruby.runtime.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class DStrNode extends Node implements StringEvaluableNode {
+public class DStrNode extends Node implements StringEvaluableNode, StrNodeConvertable {
+    private boolean simple = false;
     
     protected DStrNode(RubyObject literal) {
         super(Constants.NODE_DSTR, literal, null, null);
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return StringEvaluate.eval(ruby, self, this);
+        if (simple) {
+            return getLiteral().to_s();
+        } else {
+        	return StringEvaluate.eval(ruby, self, this);
+        }
     }
     
     public RubyObject evalString(Ruby ruby, RubyObject self, RubyString str) {
         return str;
     }
+    
+    public void convertToStrNode() {
+        simple = true;
+    }
+
 	/**
 	 * Accept for the visitor pattern.
 	 * @param iVisitor the visitor
