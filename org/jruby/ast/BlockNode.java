@@ -43,7 +43,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class BlockNode extends AbstractNode implements IListNode {
-    private List list;
+    private ArrayList list;
 
     /**
      * Builds a BlockNode with a given head.
@@ -72,6 +72,16 @@ public class BlockNode extends AbstractNode implements IListNode {
      */
     public Iterator iterator() {
         return list != null ? list.iterator() : Collections.EMPTY_LIST.iterator();
+    }
+    
+    /**
+     * @see org.jruby.ast.types.IListNode#size()
+     */
+    public int size() {
+        if (list == null) {
+            return 0;
+        }
+        return list.size();
     }
 
     /**

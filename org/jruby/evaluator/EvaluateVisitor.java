@@ -161,10 +161,11 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
     public final void visitArrayNode(final ArrayNode iVisited) {
-        final ArrayList list = new ArrayList();
+        final ArrayList list = new ArrayList(iVisited.size());
 
         final Iterator iterator = iVisited.iterator();
-        while (iterator.hasNext()) {
+        final int size = iVisited.size();
+        for (int i = 0; i < size; i++) {
             final INode node = (INode) iterator.next();
             if (node instanceof ExpandArrayNode) {
                 list.addAll(((RubyArray) eval(node)).getList());

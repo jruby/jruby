@@ -40,7 +40,8 @@ public final class ListNodeUtil {
     public static final IListNode addAll(IListNode self, IListNode other) {
         if (other != null) {
             Iterator iter = other.iterator();
-            while (iter.hasNext()) {
+            int size = other.size();
+            for (int i = 0; i < size; i++) {
                 self.add((INode) iter.next());
             }
         }
@@ -63,13 +64,7 @@ public final class ListNodeUtil {
         if (self == null) {
             return 0;
         } else {
-            int result = 0;
-
-            for (Iterator iterator = self.iterator(); iterator.hasNext(); result++) {
-                iterator.next();
-            }
-
-            return result;
+            return self.size();
         }
     }
 }

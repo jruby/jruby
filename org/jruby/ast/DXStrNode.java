@@ -70,6 +70,16 @@ public class DXStrNode extends AbstractNode implements IListNode, ILiteralNode {
         	return list.iterator();
         }
     }
+    
+    /**
+     * @see org.jruby.ast.types.IListNode#size()
+     */
+    public int size() {
+        if (list == null) {
+            return 0;
+        }
+        return list.size();
+    }
 
     /**
      * Accept for the visitor pattern.

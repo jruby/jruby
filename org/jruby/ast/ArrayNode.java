@@ -42,7 +42,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ArrayNode extends AbstractNode implements IListNode, ILiteralNode {
-    private List list;
+    private ArrayList list;
 
    
     public ArrayNode(ISourcePosition position) {
@@ -79,4 +79,14 @@ public class ArrayNode extends AbstractNode implements IListNode, ILiteralNode {
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitArrayNode(this);
     }
+    /**
+     * @see org.jruby.ast.types.IListNode#size()
+     */
+    public int size() {
+        if (list == null) {
+            return 0;
+        }
+        return list.size();
+    }
+
 }

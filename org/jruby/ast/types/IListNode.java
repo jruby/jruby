@@ -38,4 +38,5 @@ import org.ablaf.ast.*;
 public interface IListNode extends INode {
 	public IListNode add(INode node);
 	public Iterator iterator();
+    public int size();
 }

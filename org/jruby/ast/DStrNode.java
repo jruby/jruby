@@ -42,27 +42,37 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public final class DStrNode extends AbstractNode implements IListNode, ILiteralNode {
-    private List nodeList;
+    private List list;
 
     public DStrNode(ISourcePosition position) {
         super(position);
     }
 
     public IListNode add(INode node) {
-        if (nodeList == null) {
-            nodeList = new LinkedList();
+        if (list == null) {
+            list = new LinkedList();
         }
-        nodeList.add(node);
+        list.add(node);
         
         return this;
     }
 
     public Iterator iterator() {
-        if (nodeList == null) {
+        if (list == null) {
             return Collections.EMPTY_LIST.iterator();
         } else {
-            return nodeList.iterator();
+            return list.iterator();
         }
+    }
+    
+    /**
+     * @see org.jruby.ast.types.IListNode#size()
+     */
+    public int size() {
+        if (list == null) {
+            return 0;
+        }
+        return list.size();
     }
 
     /**
