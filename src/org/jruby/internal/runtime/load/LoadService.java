@@ -265,6 +265,10 @@ public class LoadService implements ILoadService {
     /* Directories and unavailable resources are not able to open a stream. */
     private boolean isRequireable(URL loc) {
         if (loc != null) {
+        	if (loc.getProtocol().equals("file") && new File(loc.getFile()).isDirectory()) {
+        		return false;
+        	}
+        	
         	try {
             	loc.openStream().close();
             	return true;
