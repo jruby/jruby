@@ -695,10 +695,14 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public int getMethodNoex(String name) {
+        return getMethodBody(name, 0).getNoex();
+    }
+
     /** rb_get_method_body
      *
      */
-    public GetMethodBodyResult getMethodBody(String name, int noex) {
+    protected GetMethodBodyResult getMethodBody(String name, int noex) {
         GetMethodBodyResult result = new GetMethodBodyResult(this, name, noex);
 
         IMethod method = searchMethod(name);

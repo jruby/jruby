@@ -96,7 +96,7 @@ public class RubyIO extends RubyObject {
         ioClass.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
 
         ioClass.defineMethod("readlines", CallbackFactory.getOptMethod(RubyIO.class, "readlines"));
-//         ioClass.defineMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
+        ioClass.defineSingletonMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
 
         return ioClass;
     }
