@@ -19,44 +19,27 @@ public class RubyTestCase extends TestCase {
         super(name);
     }
 
-    protected Ruby createRuby(String fileName) throws IOException {
-        return createRuby(new File(fileName));
-    }
-
     protected Ruby createRuby(URL url) throws IOException {
         if (url == null) {
             throw new NullPointerException("url was null");
         }
-        if (url.getProtocol().equalsIgnoreCase("file"))
-            return createRuby(new File(url.getPath()));
-        else
-            return createRuby(url.openStream());
-    }
-
-    protected Ruby createRuby(InputStream in) throws IOException {
+        InputStream in = url.openStream();
         File f = File.createTempFile("rtc", ".rb");
         FileOutputStream out = new FileOutputStream(f);
 
-        int l;
+        int length;
         byte[] buf = new byte[8096];
-        while ((l = in.read(buf, 0, buf.length)) >= 0) {
-            out.write(buf, 0, l);
+        while ((length = in.read(buf, 0, buf.length)) >= 0) {
+            out.write(buf, 0, length);
         }
-
         in.close();
         out.close();
 
-        return createRuby(f);
-    }
-
-    protected Ruby createRuby(File file) throws IOException {
-        String filePath = file.getAbsolutePath();
+        String filePath = f.getAbsolutePath();
         Ruby ruby = Ruby.getDefaultInstance("JDK");
-
         initRuby(ruby);
-
         KernelModule.require(ruby.getTopSelf(), new RubyString(ruby, filePath));
-
+        f.delete();
         return ruby;
     }
 
