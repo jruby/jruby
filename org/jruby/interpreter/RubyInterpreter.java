@@ -237,9 +237,10 @@ public class RubyInterpreter implements node_type, Scope {
                             call_trace_func("line", tag->nd_file, nd_line(tag), self,
                                                 ruby_frame->last_func,
                                                 ruby_frame->last_class);
-                        }
-                    ruby_sourcefile = tag->nd_file;
-                    ruby_sourceline = nd_line(tag);*/
+                        }*/
+                            
+                            ruby.setSourceFile(tag.nd_file);
+                            ruby.setSourceLine(tag.nd_line());
                             
                             if (tag.nd_head().nd_type() == NODE_WHEN) {
                                 RubyObject obj2 = eval(self, tag.nd_head().nd_head());
@@ -859,8 +860,8 @@ public class RubyInterpreter implements node_type, Scope {
                     list = node.nd_next();
                     
                     RubyString str = (RubyString)node.nd_lit();
-                    RubyString str2 = null;
-//                    RubyString str2 = (RubyString)node.nd_next().nd_head().nd_lit();
+//                    RubyString str2 = null;
+                    RubyString str2 = (RubyString)node.nd_next().nd_head().nd_lit();
                     
                     while (list != null) {
                         if (list.nd_head() != null) {
@@ -869,21 +870,21 @@ public class RubyInterpreter implements node_type, Scope {
                                     str2 = (RubyString)list.nd_head().nd_lit();
                                     break;
                                     
-//                                case NODE_EVSTR:
-//                                    result = ruby_errinfo;
-//                                    ruby_errinfo = Qnil;
-//                                    ruby_sourceline = nd_line(node);
-//                                    ruby_in_eval++;
-//                                    list.nd_head(compile(list.nd_head().nd_lit(), ruby_sourcefile,ruby_sourceline));
-//                                    ruby_eval_tree = 0;
-//                                    ruby_in_eval--;
-//                                    if (ruby_nerrs > 0) {
-//                                        compile_error("string expansion");
-//                                    }
-//                                    if (!NIL_P(result)) ruby_errinfo = result;
-//                                /* fall through */
+                                case NODE_EVSTR:
+                                    // result = ruby_errinfo;
+                                    // ruby_errinfo = Qnil;
+                                    ruby.setSourceLine(node.nd_line());
+                                    ruby.setInEval(ruby.getInEval() + 1);
+                                    list.nd_head(ruby.getRubyParser().compileString(ruby.getSourceFile(), list.nd_head().nd_lit(), ruby.getSourceLine()));
+                                    ruby.getParserHelper().setEvalTree(null);
+                                    ruby.setInEval(ruby.getInEval() - 1);
+                                    // if (ruby_nerrs > 0) {
+                                    //    compile_error("string expansion");
+                                    // }
+                                    // if (!NIL_P(result)) ruby_errinfo = result;
+                                /* fall through */
                                 default:
-                                    str2 = (RubyString)eval(self, list.nd_head()).convertType(RubyString.class, "String", "to_str");
+                                    str2 = (RubyString)eval(self, list.nd_head()).convertType(RubyString.class, "String", "to_s"); // to_s -> to_str 
                                     break;
                             }
                             
@@ -902,8 +903,8 @@ public class RubyInterpreter implements node_type, Scope {
                             node.nd_lit(regex);
                             return regex;
                             
-//                        case NODE_DXSTR:
-//                            return rom.rb_funcall(this, '`', 1, str);
+                        case NODE_DXSTR:
+                            return self.funcall(ruby.intern("`"), str);
                             
                         default:
                             return str;
@@ -1161,8 +1162,8 @@ public class RubyInterpreter implements node_type, Scope {
                     // }
                     
                 case NODE_NEWLINE:
-                    // ruby_sourcefile = node.nd_file;
-                    // ruby_sourceline = node.nd_nth();
+                    ruby.setSourceFile(node.nd_file);
+                    ruby.setSourceLine(node.nd_nth());
                     // if (trace_func) {
                     //     call_trace_func("line", ruby_sourcefile, ruby_sourceline, self,
                     //     ruby_frame.last_func(),
@@ -1172,7 +1173,7 @@ public class RubyInterpreter implements node_type, Scope {
                     break;
                     
                 default:
-                   // rom.rb_bug("unknown node type %d", nd_type(node));
+                    throw new RubyBugException("unknown node type " + node.nd_type());
             }
         }
     }

@@ -23,6 +23,37 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # 
 
+# Test string evaluation
+
+puts "Test string evaluation:"
+puts
+puts "Seconds/day: #{24*60*60}"
+puts "#{'Ho! '*3}Merry Christmas"
+puts 
+
+# Test here documents
+
+puts "Test here documents:"
+puts
+
+aString = <<END_OF_STRING
+    The body of the string
+    is the input lines up to
+    one ending with the same
+    text that followed the '<<'
+END_OF_STRING
+
+puts aString
+puts
+
+print <<-STRING1, <<-STRING2
+   Concat
+   STRING1
+      enate
+      STRING2
+
+puts
+
 #Class test
 
 class Top

@@ -212,7 +212,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 }
                 ruby.setSourceLine(ruby.getSourceLine() + 1);
                 lex_curline = ((RubyString)v).getValue();
-                lex_p = 0;
+                lex_p = lex_pbeg = 0;
                 lex_pend = lex_curline.length();
                 if (lex_curline.startsWith("__END__") && (lex_pend == 7 || lex_curline.charAt(7) == '\n' || lex_curline.charAt(7) == '\r')) {
                     ph.setRubyEndSeen(true);
@@ -303,14 +303,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 return '\007';
             case 'e':  // escape
                 return '\033';
-            case '0':
-            case '1':
-            case '2':
-            case '3': // octal constant
-            case '4':
-            case '5':
-            case '6':
-            case '7':
+            case '0': case '1': case '2': case '3': // octal constant
+            case '4': case '5': case '6': case '7':
             {
                 int cc = 0;
 
@@ -568,15 +562,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             nest--;
                         }
                     }
-                    /*
-                     *  if (ismbchar(c)) {
-                     *  int i, len = mbclen(c)-1;
-                     *  for (i = 0; i < len; i++) {
-                     *  tokadd(c);
-                     *  c = nextc();
-                     *  }
-                     *  }
-                     */
                     break;
             }
             tokadd(c);
@@ -747,17 +732,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 ph.rb_compile_error("unterminated string meets end of file");
                 return 0;
             }
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  tokadd(c);
-             *  c = nextc();
-             *  }
-             *  }
-             *  else
-             */
-                    if (c == '\\') {
+            if (c == '\\') {
                 c = nextc();
                 switch (c) {
                     case '\n':
@@ -814,17 +789,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 ph.rb_compile_error("unterminated string meets end of file");
                 return 0;
             }
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  tokadd(c);
-             *  c = nextc();
-             *  }
-             *  }
-             *  else
-             */
-                    if (c == '\\') {
+            if (c == '\\') {
                 c = nextc();
                 switch (c) {
                     case '\n':
@@ -889,136 +854,152 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         return Token.tDSTRING;
     }
 
-    private int here_document(int term, int indent) {
+    /*private int here_document(int term, int indent) {
         throw new Error("not supported yet");
-    }
+    }*/
 
-    /*
-     *  private int here_document(int term, int indent) {
-     *  int c;
-     *  /char *eos, *p;
-     *  int len;
-     *  VALUE str;
-     *  VALUE line = 0;
-     *  VALUE lastline_save;
-     *  int offset_save;
-     *  NODE *list = 0;
-     *  int linesave = ruby_sourceline;
-     *  newtok();
-     *  switch (term) {
-     *  case '\'':
-     *  case '"':
-     *  case '`':
-     *  while ((c = nextc()) != term) {
-     *  tokadd(c);
-     *  }
-     *  if (term == '\'') term = 0;
-     *  break;
-     *  default:
-     *  c = term;
-     *  term = '"';
-     *  if (!is_identchar(c)) {
-     *  rb_warn("use of bare << to mean <<\"\" is deprecated");
-     *  break;
-     *  }
-     *  while (is_identchar(c)) {
-     *  tokadd(c);
-     *  c = nextc();
-     *  }
-     *  pushback(c);
-     *  break;
-     *  }
-     *  tokfix();
-     *  lastline_save = lex_lastline;
-     *  offset_save = lex_p - lex_pbeg;
-     *  eos = strdup(tok());
-     *  len = strlen(eos);
-     *  str = rb_str_new(0,0);
-     *  for (;;) {
-     *  lex_lastline = line = lex_getline();
-     *  if (NIL_P(line)) {
-     *  /error:
-     *  ruby_sourceline = linesave;
-     *  rb_compile_error("can't find string \"%s\" anywhere before EOF", eos);
-     *  free(eos);
-     *  return 0;
-     *  }
-     *  ruby_sourceline++;
-     *  p = RSTRING(line).ptr;
-     *  if (indent) {
-     *  while (*p && (*p == ' ' || *p == '\t')) {
-     *  p++;
-     *  }
-     *  }
-     *  if (strncmp(eos, p, len) == 0) {
-     *  if (p[len] == '\n' || p[len] == '\r')
-     *  break;
-     *  if (len == RSTRING(line).len)
-     *  break;
-     *  }
-     *  lex_pbeg = lex_p = RSTRING(line).ptr;
-     *  lex_pend = lex_p + RSTRING(line).len;
-     *  retry:for(;;) {
-     *  switch (parse_string(term, '\n', '\n')) {
-     *  case tSTRING:
-     *  case tXSTRING:
-     *  rb_str_cat2((VALUE)yyVal, "\n");
-     *  if (!list) {
-     *  rb_str_append(str, (VALUE)yyVal);
-     *  }
-     *  else {
-     *  list_append(list, NEW_STR((VALUE)yyVal));
-     *  }
-     *  break;
-     *  case tDSTRING:
-     *  if (!list) list = NEW_DSTR(str);
-     *  / fall through
-     *  case tDXSTRING:
-     *  if (!list) list = NEW_DXSTR(str);
-     *  list_append((NODE)yyVal, NEW_STR(rb_str_new2("\n")));
-     *  nd_set_type((NODE)yyVal, NODE_STR);
-     *  yyVal = (NODE)NEW_LIST((NODE)yyVal);
-     *  ((NODE)yyVal).nd_next(((NODE)yyVal).nd_head().nd_next());
-     *  list_concat(list, (NODE)yyVal);
-     *  break;
-     *  case 0:
-     *  ruby_sourceline = linesave;
-     *  rb_compile_error("can't find string \"%s\" anywhere before EOF", eos);
-     *  free(eos);
-     *  return 0;
-     *  }
-     *  if (lex_p != lex_pend) {
-     *  continue retry;
-     *  }
-     *  break retry;}
-     *  }
-     *  free(eos);
-     *  lex_lastline = lastline_save;
-     *  lex_pbeg = RSTRING(lex_lastline).ptr;
-     *  lex_pend = lex_pbeg + RSTRING(lex_lastline).len;
-     *  lex_p = lex_pbeg + offset_save;
-     *  lex_state = EXPR_END;
-     *  heredoc_end = ruby_sourceline;
-     *  ruby_sourceline = linesave;
-     *  if (list) {
-     *  nd_set_line(list, linesave+1);
-     *  yyVal = (NODE)list;
-     *  }
-     *  switch (term) {
-     *  case '\0':
-     *  case '\'':
-     *  case '"':
-     *  if (list) return tDSTRING;
-     *  yyVal = (VALUE)str;
-     *  return tSTRING;
-     *  case '`':
-     *  if (list) return tDXSTRING;
-     *  yyVal = (VALUE)str;
-     *  return tXSTRING;
-     *  }
-     *  return 0;
-     *  }
-     */
+    private int here_document(int term, int indent) {
+        int c;
+        NODE list = null;
+        
+        int linesave = ruby.getSourceLine();
+        newtok();
+ 
+        switch (term) {
+            case '\'':
+            case '"':
+            case '`':
+                while ((c = nextc()) != term) {
+                    tokadd(c);
+                }
+                if (term == '\'') {
+                    term = 0;
+                }
+                break;
+            default:
+                c = term;
+                term = '"';
+                if (!is_identchar(c)) {
+                    ph.rb_warn("use of bare << to mean <<\"\" is deprecated");
+                    break;
+                }
+                
+                while (is_identchar(c)) {
+                    tokadd(c);
+                    c = nextc();
+                }
+                pushback(c);
+                break;
+        }
+        tokfix();
+        RubyObject lastline_save = lex_lastline;
+        int offset_save = lex_p - lex_pbeg;
+        String eos = tok();
+        int len = eos.length();
+        RubyString str = RubyString.m_newString(ruby, "");
+        
+        RubyObject line;
+        
+        while (true) {
+            lex_lastline = line = lex_getline();
+            if (line.isNil()) {
+                // error:
+                ruby.setSourceLine(linesave);
+                ph.rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
+                return 0;
+            }
+            ruby.setSourceLine(ruby.getSourceLine());
+            String p = ((RubyString)line).getValue();
+            if (indent != 0) {
+                while (Character.isWhitespace(p.charAt(0))) {
+                    p = p.substring(1);
+                }
+                //  while (*p && (*p == ' ' || *p == '\t')) {
+		//      p++;
+                //  } 
+            }
+            if (p/*.trim()*/.startsWith(eos)) {
+                if (p.charAt(len) == '\n' || p.charAt(len) == '\r') {
+                    break;
+                }
+                if (len == ((RubyString)line).getValue().length()) {
+                    break;
+                }
+            }
+            lex_curline = ((RubyString)line).getValue();
+            lex_pbeg = lex_p = 0;
+            lex_pend = lex_curline.length();
+
+            while (true) {
+                switch (parse_string(term, '\n', '\n')) {
+                    case Token.tSTRING:
+                    case Token.tXSTRING:
+                        ((RubyString)yyVal).m_cat("\n");
+                        if (list == null) {
+                            str.m_concat((RubyString)yyVal);
+                        } else {
+                            ph.list_append(list, nf.newStr(yyVal));
+                        }
+                        break;
+                    case Token.tDSTRING:
+                        if (list == null) {
+                            list = nf.newDStr(str);
+                        }
+                        /* fall through */
+                    case Token.tDXSTRING:
+                        if (list == null) {
+                            list = nf.newDXStr(str);
+                        }
+                        ph.list_append((NODE)yyVal, nf.newStr(RubyString.m_newString(ruby, "\n")));
+                        ((NODE)yyVal).nd_set_type(NODE.NODE_STR);
+                        yyVal = nf.newList(yyVal);
+                        ((NODE)yyVal).nd_next(((NODE)yyVal).nd_head().nd_next());
+                        ph.list_concat(list, (NODE)yyVal);
+                        break;
+                    case 0:
+                        // goto error;
+                        ruby.setSourceLine(linesave);
+                        ph.rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
+                        return 0;
+                }
+                if (lex_p == lex_pend) {
+                    break;
+                }
+            }
+        }
+        
+        lex_lastline = lastline_save;
+        
+        lex_curline = ((RubyString)lex_lastline).getValue();
+        lex_pbeg = 0;
+        lex_pend = lex_pbeg + lex_curline.length();
+        lex_p = lex_pbeg + offset_save;
+        ph.setLexState(LexState.EXPR_END);
+        ph.setHeredocEnd(ruby.getSourceLine());
+        ruby.setSourceLine(linesave);
+            
+        if (list != null) {
+            list.nd_set_line(linesave + 1);
+            yyVal = list;
+        }
+        switch (term) {
+            case '\0':
+            case '\'':
+            case '"':
+                if (list != null) {
+                    return Token.tDSTRING;
+                }
+                yyVal = str;
+                return Token.tSTRING;
+            case '`':
+                if (list != null) {
+                    return Token.tDXSTRING;
+                }
+                yyVal = str;
+                return Token.tXSTRING;
+        }
+        return 0;
+    }
 
     private void arg_ambiguous() {
         ph.rb_warning("ambiguous first argument; make sure");
@@ -1038,11 +1019,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     private int yylex() {
         int c;
         int space_seen = 0;
-        // boolean cmd_state;
         kwtable kw;
 
-        // cmd_state = ph.isCommandStart();
-        // ph.setCommandStart(false);
         retry :
         for (; ; ) {
             switch (c = nextc()) {
@@ -1075,7 +1053,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         default:
                             break;
                     }
-                    // ph.setCommandStart(true);
                     ph.setLexState(LexState.EXPR_BEG);
                     return '\n';
                 case '*':
@@ -1359,15 +1336,9 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
                 //start_num:
                 case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
+                case '1': case '2': case '3':
+                case '4': case '5': case '6':
+                case '7': case '8': case '9':
                     return start_num(c);
                 case ']':
                 case '}':
@@ -1425,7 +1396,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     return '^';
                 case ',':
                 case ';':
-                    // ph.setCommandStart(true);
                     ph.setLexState(LexState.EXPR_BEG);
                     return c;
                 case '~':
@@ -1440,7 +1410,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     if (cond_nest > 0) {
 	                    cond_stack = (cond_stack << 1 ) | 0;
 	                }
-                    // ph.setCommandStart(true);
                     if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
                         c = Token.tLPAREN;
                     } else if (ph.getLexState() == LexState.EXPR_ARG && space_seen != 0) {
@@ -1655,15 +1624,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
         while (is_identchar(c)) {
             tokadd(c);
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  c = nextc();
-             *  tokadd(c);
-             *  }
-             *  }
-             */
             c = nextc();
         }
         if ((c == '!' || c == '?') && is_identchar(tok().charAt(0)) && !peek('=')) {
@@ -1775,9 +1735,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         if (c == '0') {
             c = nextc();
             if (c == 'x' || c == 'X') {
-                /*
-                 *  hexadecimal
-                 */
+                //  hexadecimal
                 c = nextc();
                 do {
                     if (c == '_') {
@@ -1905,10 +1863,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         continue;
                     }
                     break;
-                case '_':
-                    /*
-                     *  `_' in number just ignored
-                     */
+                case '_': //  '_' in number just ignored
                     seen_uc = true;
                     break;
                 default:
@@ -1918,27 +1873,10 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  c         Description of Parameter
-     *@param  is_float  Description of Parameter
-     *@param  seen_uc   Description of Parameter
-     *@return           Description of the Returned Value
-     */
     private int decode_num(int c, boolean is_float, boolean seen_uc) {
         return decode_num(c, is_float, seen_uc, false);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  c            Description of Parameter
-     *@param  is_float     Description of Parameter
-     *@param  seen_uc      Description of Parameter
-     *@param  trailing_uc  Description of Parameter
-     *@return              Description of the Returned Value
-     */
     private int decode_num(int c, boolean is_float, boolean seen_uc, boolean trailing_uc) {
         if (!trailing_uc) {
             pushback(c);
@@ -2049,15 +1987,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
                     while (is_identchar(c)) {
                         tokadd(c);
-                        /*
-                         *  if (ismbchar(c)) {
-                         *  int i, len = mbclen(c)-1;
-                         *  for (i = 0; i < len; i++) {
-                         *  c = nextc();
-                         *  tokadd(c);
-                         *  }
-                         *  }
-                         */
                         c = nextc();
                     }
                     pushback(c);
@@ -2071,15 +2000,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     while (is_identchar(c)) {
                         tokadd(c);
-                        /*
-                         *  if (ismbchar(c)) {
-                         *  int i, len = mbclen(c)-1;
-                         *  for (i = 0; i < len; i++) {
-                         *  c = nextc();
-                         *  tokadd(c);
-                         *  }
-                         *  }
-                         */
                         c = nextc();
                     }
                     pushback(c);
