@@ -32,6 +32,7 @@ import java.text.*;
 import java.util.*;
 
 import org.jruby.runtime.*;
+import org.jruby.marshal.MarshalStream;
 
 /**
  *

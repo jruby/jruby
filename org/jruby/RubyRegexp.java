@@ -34,6 +34,7 @@ import org.jruby.parser.ReOptions;
 import org.jruby.regexp.*;
 import org.jruby.runtime.*;
 import org.jruby.util.PrintfFormat;
+import org.jruby.marshal.MarshalStream;
 
 /**
  *

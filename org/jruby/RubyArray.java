@@ -34,6 +34,7 @@ import java.util.*;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.marshal.*;
 
 /**
  *
@@ -1291,6 +1292,15 @@ public class RubyArray extends RubyObject {
 	while (iter.hasNext()) {
 	    output.dumpObject((RubyObject) iter.next());
 	}
+    }
+
+    public static RubyArray unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        RubyArray result = newArray(input.getRuby());
+        int size = input.unmarshalInt();
+        for (int i = 0; i < size; i++) {
+            result.push(input.unmarshalObject());
+        }
+        return result;
     }
 
 

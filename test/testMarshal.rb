@@ -11,7 +11,7 @@ test_equal(MARSHAL_HEADER + "i\006", Marshal.dump(1))
 test_equal(MARSHAL_HEADER + "iú", Marshal.dump(-1))
 test_equal(MARSHAL_HEADER + "i\002Ð\a", Marshal.dump(2000))
 test_equal(MARSHAL_HEADER + "iþ0ø", Marshal.dump(-2000))
-# FIXME: Test bigger numeric values
+# FIXME: Test limits of fixnum
 test_equal(MARSHAL_HEADER + ":\017somesymbol", Marshal.dump(:somesymbol))
 test_equal(MARSHAL_HEADER + "f\n2.002", Marshal.dump(2.002))
 test_equal(MARSHAL_HEADER + "f\013-2.002", Marshal.dump(-2.002))
@@ -22,7 +22,7 @@ test_equal(MARSHAL_HEADER + "c\013Object", Marshal.dump(Object))
 test_equal(MARSHAL_HEADER + "m\017Enumerable", Marshal.dump(Enumerable))
 test_equal(MARSHAL_HEADER + "/\013regexp\000", Marshal.dump(/regexp/))
 
-# FIXME: bignum,  ...
+# FIXME: bignum, usermarshal, ...
 
 test_equal(MARSHAL_HEADER + "o:\013Object\000", Marshal.dump(Object.new))
 class MarshalTestClass
@@ -42,3 +42,23 @@ class MarshalTestClass
 end
 test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo@\000",
 	   Marshal.dump(MarshalTestClass.new))
+
+
+test_equal(true, Marshal.load(MARSHAL_HEADER + "T"))
+test_equal(false, Marshal.load(MARSHAL_HEADER + "F"))
+test_equal(nil, Marshal.load(MARSHAL_HEADER + "0"))
+test_equal("hello", Marshal.load(MARSHAL_HEADER + "\"\nhello"))
+test_equal(1, Marshal.load(MARSHAL_HEADER + "i\006"))
+test_equal(-1, Marshal.load(MARSHAL_HEADER + "iú"))
+test_equal(-2, Marshal.load(MARSHAL_HEADER + "iù"))
+test_equal(2000, Marshal.load(MARSHAL_HEADER + "i\002Ð\a"))
+test_equal(-2000, Marshal.load(MARSHAL_HEADER + "iþ0ø"))
+test_equal([1, 2, 3], Marshal.load(MARSHAL_HEADER + "[\010i\006i\ai\010"))
+test_equal({1=>2}, Marshal.load(MARSHAL_HEADER + "{\006i\006i\a"))
+
+object = Marshal.load(MARSHAL_HEADER + "o:\013Object\000")
+test_equal(Object, object.class)
+
+
+# FIXME: remove me ....
+test_print_report

@@ -39,6 +39,7 @@ import org.jruby.ast.types.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
+import org.jruby.marshal.MarshalStream;
 import org.ablaf.ast.visitor.INodeVisitor;
 
 /**

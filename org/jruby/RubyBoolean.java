@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
+import org.jruby.marshal.MarshalStream;
 
 /**
  *
@@ -162,6 +163,7 @@ public class RubyBoolean extends RubyObject {
 
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-		output.write(isTrue() ? 'T' : 'F');
-	}
+        output.write(isTrue() ? 'T' : 'F');
+    }
 }
+

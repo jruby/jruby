@@ -75,6 +75,7 @@ public class ScriptTestSuite extends TestSuite {
 //  	suite.addTest(new ScriptTest(ruby, "testException"));
 //  	suite.addTest(new ScriptTest(ruby, "testSpecialVar"));
 		suite.addTest(new ScriptTest(ruby, "testFile"));
+        suite.addTest(new ScriptTest(ruby, "testMarshal"));
 
         return suite;
     }

@@ -34,6 +34,7 @@ import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.marshal.*;
 
 /**
  *
@@ -1657,7 +1658,11 @@ public class RubyString extends RubyObject {
 
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-		output.write('"');
-		output.dumpString(getValue());
+        output.write('"');
+        output.dumpString(getValue());
+    }
+
+    public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        return RubyString.newString(input.getRuby(), input.unmarshalString());
     }
 }

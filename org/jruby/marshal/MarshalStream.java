@@ -28,10 +28,11 @@
  * 
  */
 
-package org.jruby;
+package org.jruby.marshal;
 
 import java.io.*;
 import java.util.*;
+import org.jruby.*;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -52,7 +53,6 @@ public class MarshalStream extends FilterOutputStream {
 
     public MarshalStream(OutputStream out) throws IOException {
 		super(out);
-
 		out.write(MARSHAL_MAJOR);
 		out.write(MARSHAL_MINOR);
     }
@@ -64,10 +64,9 @@ public class MarshalStream extends FilterOutputStream {
 		}
 
 		if (dumpedObjects.containsKey(value)) {
-			writeLink(value);
+			writeLink('@', dumpedObjects, value);
 		} else {
-			dumpedObjects.put(value, new Integer(objectCounter));
-			objectCounter++;
+            dumpedObjects.put(value, new Integer(dumpedObjects.size()));
 			value.marshalTo(this);
 		}
     }
@@ -79,22 +78,16 @@ public class MarshalStream extends FilterOutputStream {
 		}
 
 		if (dumpedSymbols.containsKey(value)) {
-			writeSymlink(value);
+			writeLink(';', dumpedSymbols, value);
 		} else {
-			dumpedSymbols.put(value, new Integer(symbolCounter));
-			symbolCounter++;
+			dumpedSymbols.put(value, new Integer(dumpedSymbols.size()));
 			value.marshalTo(this);
 		}
 	}
 
-	private void writeLink(RubyObject value) throws IOException {
-		out.write('@');
-		dumpInt(((Integer) dumpedObjects.get(value)).intValue());
-	}
-
-	private void writeSymlink(RubySymbol value) throws IOException {
-		out.write(';');
-		dumpInt(((Integer) dumpedSymbols.get(value)).intValue());
+	private void writeLink(char linkType, Map objectMap, RubyObject value) throws IOException {
+		out.write(linkType);
+		dumpInt(((Integer) objectMap.get(value)).intValue());
 	}
 
     public void dumpString(String value) throws IOException {

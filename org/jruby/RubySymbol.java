@@ -31,7 +31,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
-import java.io.IOException;
+import org.jruby.marshal.*;
 
 /**
  *
@@ -113,8 +113,13 @@ public class RubySymbol extends RubyObject {
         }
     }
 
-    public void marshalTo(MarshalStream output) throws IOException {
-		output.write(':');
-		output.dumpString(symbol);
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+        output.write(':');
+        output.dumpString(symbol);
+    }
+
+    public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        return RubySymbol.newSymbol(input.getRuby(),
+                                    input.unmarshalString());
     }
 }

@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
+import org.jruby.marshal.*;
 
 /** Implementation of the Fixnum class.
  *
@@ -303,7 +304,12 @@ public class RubyFixnum extends RubyInteger {
 
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-		output.write('i');
-		output.dumpInt((int) value);
+        output.write('i');
+        output.dumpInt((int) value);
+    }
+
+    public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        return RubyFixnum.newFixnum(input.getRuby(),
+                                    input.unmarshalInt());
     }
 }

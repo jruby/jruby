@@ -34,6 +34,7 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.marshal.*;
 
 /** Implementation of the Hash class.
  *
@@ -483,4 +484,15 @@ public class RubyHash extends RubyObject {
 			output.dumpObject(value);
 		}
 	}
+
+    public static RubyHash unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        RubyHash result = newHash(input.getRuby());
+        int size = input.unmarshalInt();
+        for (int i = 0; i < size; i++) {
+            RubyObject key = input.unmarshalObject();
+            RubyObject value = input.unmarshalObject();
+            result.aset(key, value);
+        }
+        return result;
+    }
 }

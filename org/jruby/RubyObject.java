@@ -42,12 +42,13 @@ import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
+import org.jruby.marshal.MarshalStream;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable, Marshalable {
+public class RubyObject implements Cloneable {
 
     // A reference to the JRuby runtime.
     protected transient Ruby ruby;
@@ -1008,12 +1009,9 @@ public class RubyObject implements Cloneable, Marshalable {
     }
 
     public RubyObject method_missing(RubyObject symbol, RubyObject[] args) {
-        // +++
-        // IMPLEMENT THIS METHOD
-        // ---
-
-        Ruby ruby = getRuby();
-        throw new NameError(ruby, "Undefined method '" + symbol.toId() + "' for '" + type().toName() + '\'');
+        throw new NameError(getRuby(),
+                            "Undefined local variable or method '" + symbol.toId()
+                            + "' for " + inspect().getValue());
     }
 
     public RubyObject send(RubyObject method, RubyObject[] args) {
@@ -1026,19 +1024,19 @@ public class RubyObject implements Cloneable, Marshalable {
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-		output.write('o');
-		RubySymbol classname = getRubyClass().getClassname().intern();
-		output.dumpObject(classname);
+        output.write('o');
+        RubySymbol classname = getRubyClass().getClassname().intern();
+        output.dumpObject(classname);
 
-		output.dumpInt(getInstanceVariables().size());
-		Iterator iter = getInstanceVariables().entrySet().iterator();
-		while (iter.hasNext()) {
-			Map.Entry entry = (Map.Entry) iter.next();
-			String name = (String) entry.getKey();
-			RubyObject value = (RubyObject) entry.getValue();
+        output.dumpInt(getInstanceVariables().size());
+        Iterator iter = getInstanceVariables().entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String name = (String) entry.getKey();
+            RubyObject value = (RubyObject) entry.getValue();
 
-			output.dumpObject(RubySymbol.newSymbol(ruby, name));
-			output.dumpObject(value);
-		}
+            output.dumpObject(RubySymbol.newSymbol(ruby, name));
+            output.dumpObject(value);
+        }
     }
 }

@@ -994,9 +994,9 @@ public final class Ruby {
         if (i2find.exists()) {
             return i2find;
         } else {
-			//try to load the file from a resource
-				throw new LoadError(ruby, "No such file to load -- " + i2find.getPath());
-//            throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
+            //try to load the file from a resource
+            throw new LoadError(ruby, "No such file to load -- " + i2find.getPath());
+            // throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
         }
     }
 
