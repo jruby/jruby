@@ -44,6 +44,7 @@ test_load('test/testBlock.rb')
 test_load('test/testRange.rb')
 test_load('test/testString.rb')
 test_load('test/testException.rb')
+test_load('test/testSpecialVar.rb')
 
 #MRI Ruby tests:
 test_load('test/mri/testAssignment.rb')
