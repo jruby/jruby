@@ -53,6 +53,7 @@ import java.util.HashMap;
 public class RubyThread extends RubyObject {
 
     private static boolean globalAbortOnException;
+    private static RubyThread mainThread;
 
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
@@ -126,6 +127,7 @@ public class RubyThread extends RubyObject {
         RubyThread currentThread = new RubyThread(runtime, threadClass);
         currentThread.jvmThread = Thread.currentThread();
         runtime.getCurrentContext().setCurrentThread(currentThread);
+        mainThread = currentThread;
 
         return threadClass;
     }
@@ -362,7 +364,9 @@ public class RubyThread extends RubyObject {
         Asserts.assertExpression(Thread.currentThread() == jvmThread);
 
         if (abortOnException()) {
-            // FIXME: dump exception to output; raise SystemExit on main thread.
+            // FIXME: printError explodes on some nullpointer
+            //getRuntime().getRuntime().printError(exception.getException());
+            mainThread().raise(RubyException.newException(getRuntime(), getRuntime().getExceptions().getSystemExit(),""));
         } else {
             exitingException = exception;
         }
@@ -370,5 +374,9 @@ public class RubyThread extends RubyObject {
 
     private boolean abortOnException() {
         return (globalAbortOnException || abortOnException);
+    }
+
+    private static RubyThread mainThread() {
+        return mainThread;
     }
 }

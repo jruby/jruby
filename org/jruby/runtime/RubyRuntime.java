@@ -30,12 +30,27 @@ package org.jruby.runtime;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
-import org.jruby.exceptions.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-import org.jruby.*;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.IOError;
+import org.jruby.Ruby;
+import org.jruby.RubyProc;
+import org.jruby.RubyString;
+import org.jruby.RubyModule;
+import org.jruby.RubyFixnum;
+import org.jruby.RubySymbol;
+import org.jruby.RubyException;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyIO;
 
-import java.io.*;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.InputStream;
 
 /**
  * @version $Revision$
