@@ -2,9 +2,11 @@
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -32,15 +34,15 @@ import java.util.*;
 
 import org.jruby.core.*;
 import org.jruby.exceptions.*;
-import org.jruby.interpreter.*;
-import org.jruby.original.*;
+import org.jruby.nodes.*;
+import org.jruby.runtime.*;
 import org.jruby.util.*;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyObject implements VALUE {
+public class RubyObject {
     private Ruby ruby;
     
     private RubyModule rubyClass;
@@ -96,15 +98,8 @@ public class RubyObject implements VALUE {
     /** Getter for property ruby.
      * @return Value of property ruby.
      */
-    public org.jruby.Ruby getRuby() {
+    public Ruby getRuby() {
         return this.ruby;
-    }
-    
-    /** Setter for property ruby.
-     * @param ruby New value of property ruby.
-     */
-    public void setRuby(org.jruby.Ruby ruby) {
-        this.ruby = ruby;
     }
     
     /** Getter for property rubyClass.
@@ -346,29 +341,15 @@ public class RubyObject implements VALUE {
     
     /** rb_eval
      *
-     *  future versions
      */
-    /*public RubyObject eval(NODE n) {
-        NODE node = n;
-        
-        while (true) {
-            if (node == null) {
-                return getRuby().getNil();
-            }
-            
-            if (node instanceof ExpandNode) {
-                node = ((ExpandNode)node).expand(this);
-            } else if (node instanceof ResultNode) {
-                return ((ResultNode)node).interpret(this);
-            }
-        }
-    }*/
+    public RubyObject eval(Node n) {
+        return n == null ? getRuby().getNil() : n.eval(getRuby(), this);
+    }
     
     public void callInit(RubyObject[] args) {
-        RubyInterpreter intprtr = getRuby().getInterpreter();
-        intprtr.getRubyIter().push(intprtr.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        ruby.getIter().push(ruby.isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
         funcall(getRuby().intern("initialize"), args);
-        intprtr.getRubyIter().pop();
+        ruby.getIter().pop();
     }
     
     public void extendObject(RubyModule module) {

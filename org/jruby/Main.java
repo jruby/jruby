@@ -2,9 +2,11 @@
  * Main.java - No description
  * Created on 18. September 2001, 21:48
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -146,7 +148,7 @@ public class Main {
 
         ruby.defineGlobalConstant("ARGV", JavaUtil.convertJavaToRuby(ruby, args, String[].class));
 
-        ruby.getInterpreter().eval(ruby.getRubyTopSelf(), ruby.getRubyParser().compileString(iFileName, rs, 0));
+        ruby.getRubyTopSelf().eval(ruby.getRubyParser().compileString(iFileName, rs, 0));
     }
 
     /**

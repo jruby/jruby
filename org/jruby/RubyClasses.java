@@ -2,9 +2,11 @@
  * RubyClasses.java - No description
  * Created on 05. Oktober 2001, 01:43
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 

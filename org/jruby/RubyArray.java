@@ -2,25 +2,29 @@
  * RubyArray.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -29,13 +33,14 @@ package org.jruby;
 import java.util.*;
 
 import org.jruby.exceptions.*;
+import org.jruby.util.*;
 
 /**
  *
  * @author  jpetersen
  */
 public class RubyArray extends RubyObject {
-    private ArrayList array;
+    private RubyPointer list;
     private boolean tmpLock;
 
     public RubyArray(Ruby ruby) {
@@ -44,17 +49,9 @@ public class RubyArray extends RubyObject {
 
     public RubyArray(Ruby ruby, List array) {
         super(ruby, ruby.getRubyClass("Array"));
-        this.array = new ArrayList(array);
+        
+        this.list = new RubyPointer(new ArrayList(array));
     }
-    
-    public ArrayList getArray() {
-        return array;
-    }
-    
-    public void setArray(ArrayList array) {
-        this.array = array;
-    }
-    
     
     /** Getter for property tmpLock.
      * @return Value of property tmpLock.
@@ -71,7 +68,7 @@ public class RubyArray extends RubyObject {
     }
     
     public long length() {
-        return array.size();
+        return list.size();
     }
     
     /** rb_ary_modify
@@ -95,20 +92,20 @@ public class RubyArray extends RubyObject {
     public void store(long idx, RubyObject value) {
         modify();
         if (idx < 0) {
-            idx += array.size();
+            idx += list.size();
             if (idx < 0) {
-                throw new RubyIndexException("index " + (idx - array.size()) + " out of array");
+                throw new RubyIndexException("index " + (idx - list.size()) + " out of array");
             }
-        } else if (idx > array.size()) {
-            array.ensureCapacity((int)idx + 1);
-            for (int i = array.size(); i < idx; i++) {
-                array.add(getRuby().getNil());
+        } else if (idx > list.size()) {
+            // list.ensureCapacity((int)idx + 1);
+            for (int i = list.size(); i < idx; i++) {
+                list.add(getRuby().getNil());
             }
         }
-        if (idx == array.size()) {
-            array.add(value);
+        if (idx == list.size()) {
+            list.add(value);
         } else {
-            array.set((int)idx, value);
+            list.set((int)idx, value);
         }
     }
 
@@ -117,18 +114,18 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject entry(long offset) {
-        if (array.size() == 0) {
+        if (list.size() == 0) {
             return getRuby().getNil();
         }
         
         if (offset < 0) {
-            offset += array.size();
+            offset += list.size();
         }
         
-        if (offset < 0 || array.size() <= offset) {
+        if (offset < 0 || list.size() <= offset) {
             return getRuby().getNil();
         }
-        return (RubyObject)array.get((int)offset);
+        return (RubyObject)list.get((int)offset);
     }
 
     
@@ -136,7 +133,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyArray push(RubyObject item) {
-        array.add(item);
+        list.add(item);
         return this;
     }
     
@@ -145,7 +142,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyArray unshift(RubyObject item) {
         modify();
-        array.add(0, item);
+        list.add(0, item);
                 
         return this;
     }
@@ -161,8 +158,8 @@ public class RubyArray extends RubyObject {
             return getRuby().getNil();
         }*/
         
-        if (beg + len > array.size()) {
-            len = array.size() - beg;
+        if (beg + len > list.size()) {
+            len = list.size() - beg;
         }
         if (len < 0) {
             len = 0;
@@ -171,8 +168,7 @@ public class RubyArray extends RubyObject {
             return m_newArray(getRuby());
         }
         
-        RubyArray ary2 = m_newArray(getRuby(), (int)len);
-        ary2.array.addAll(array.subList((int)beg, (int)(len + beg)));
+        RubyArray ary2 = m_newArray(getRuby(), list.subList((int)beg, (int)(len + beg)));
         
         return ary2;
     }
@@ -252,7 +248,7 @@ public class RubyArray extends RubyObject {
         modify();
         
         for (int i = 0; i < items.length; i++) {
-            array.add(items[i]);
+            list.add(items[i]);
         }
         return this;
     }
@@ -260,7 +256,7 @@ public class RubyArray extends RubyObject {
     public RubyArray m_push(RubyObject value) {
         modify();
         
-        array.add(value);
+        list.add(value);
         
         return this;
     }
@@ -270,10 +266,10 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject m_pop() {
         modify();
-        if (array.size() == 0) {
+        if (list.size() == 0) {
             return getRuby().getNil();
         }
-        return (RubyObject)array.remove(array.size() - 1);
+        return (RubyObject)list.remove(list.size() - 1);
     }
     
     /** rb_ary_shift
@@ -281,11 +277,11 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject m_shift() {
         modify();
-        if (array.size() == 0) {
+        if (list.size() == 0) {
             return getRuby().getNil();
         }
         
-        return (RubyObject)array.remove(0);
+        return (RubyObject)list.remove(0);
     }
     
     /** rb_ary_unshift_m
@@ -296,7 +292,7 @@ public class RubyArray extends RubyObject {
             throw new RubyArgumentException("wrong # of arguments(at least 1)");
         }
         modify();
-        array.addAll(0, Arrays.asList(items));
+        list.addAll(0, Arrays.asList(items));
                 
         return this;
     }
@@ -305,7 +301,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyBoolean m_includes(RubyObject item) {
-        if (array.contains(item)) {
+        if (list.contains(item)) {
             return getRuby().getTrue();
         } else {
             return getRuby().getFalse();
@@ -338,9 +334,9 @@ public class RubyArray extends RubyObject {
         if (len > Integer.MAX_VALUE) {
             throw new RubyArgumentException("array size too big");
         }
-        Collections.fill(array, args[1]);
-        for (int i = array.size(); i < len; i++) {
-            array.add(args[1]);
+        Collections.fill(list, args[1]);
+        for (int i = list.size(); i < len; i++) {
+            list.add(args[1]);
         }
         return this;
     }
@@ -357,7 +353,7 @@ public class RubyArray extends RubyObject {
             long beg = ((RubyFixnum)args[0]).getValue();
             long len = ((RubyFixnum)args[1]).getValue();
             if (beg < 0) {
-                beg += array.size();
+                beg += list.size();
             }
             return subseq(beg, len);
         }
@@ -468,11 +464,18 @@ public class RubyArray extends RubyObject {
             }
         };
         
-        Collections.sort(getArray(), getRuby().getInterpreter().isBlockGiven()
-                                        ? blockComparator :  defaultComparator);
+        Collections.sort(list, getRuby().isBlockGiven() ? blockComparator : 
+                                                          defaultComparator);
         
         setTmpLock(false);
         
         return this;
+    }
+    
+    /** Getter for property list.
+     * @return Value of property list.
+     */
+    public RubyPointer getList() {
+        return list;
     }
 }

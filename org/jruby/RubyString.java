@@ -2,25 +2,29 @@
  * RubyString.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -536,7 +540,7 @@ public class RubyString extends RubyObject {
     private RubyObject sub(RubyObject[] args, boolean bang) {
         RubyObject repl = getRuby().getNil();
         boolean iter = false;
-        if (args.length == 1 && getRuby().getInterpreter().isBlockGiven()) {
+        if (args.length == 1 && getRuby().isBlockGiven()) {
             iter = true;
         } else if (args.length == 2) {
             repl = args[1];
@@ -581,7 +585,7 @@ public class RubyString extends RubyObject {
         RubyObject repl = getRuby().getNil();
         RubyMatchData match;
         boolean iter = false;
-        if (args.length == 1 && getRuby().getInterpreter().isBlockGiven()) {
+        if (args.length == 1 && getRuby().isBlockGiven()) {
             iter = true;
         } else if (args.length == 2) {
             repl = args[1];
@@ -1041,7 +1045,7 @@ public class RubyString extends RubyObject {
     public RubyObject m_scan(RubyObject arg) {
         RubyRegexp pat = RubyRegexp.regexpValue(arg);
         int start = 0;
-        if (!getRuby().getInterpreter().isBlockGiven()) {
+        if (!getRuby().isBlockGiven()) {
             RubyArray ary = RubyArray.m_newArray(getRuby());
             while (pat.m_search(this, start) != -1) {
                 RubyMatchData md = (RubyMatchData)getRuby().getBackRef();

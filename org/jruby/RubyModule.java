@@ -1,29 +1,31 @@
 /*
  * RubyModule.java - No description
  * Created on 09. Juli 2001, 21:38
- * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ *
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
- * 
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 
 package org.jruby;
@@ -32,15 +34,16 @@ import java.util.*;
 
 import org.jruby.core.*;
 import org.jruby.exceptions.*;
-import org.jruby.interpreter.*;
-import org.jruby.original.*;
+import org.jruby.nodes.*;
+import org.jruby.nodes.types.*;
+import org.jruby.runtime.*;
 import org.jruby.util.*;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubyModule extends RubyObject implements Scope, node_type {
+public class RubyModule extends RubyObject {
     private RubyModule superClass;
     private RubyMap methods = new RubyHashMap();
     
@@ -85,7 +88,6 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     public void setSingleton(boolean singleton) {
         this.singleton = singleton;
     }
-    
     
     public RubyMap getMethods() {
         return this.methods;
@@ -255,7 +257,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         newClass.setIncluded(true);
         
         newClass.setInstanceVariables(getInstanceVariables());
-        newClass.setMethods(getMethods());
+        newClass.setMethods(methods);
         
         if (isIncluded()) {
             newClass.setRubyClass(getRubyClass());
@@ -380,7 +382,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     public void setConstant(RubyId id, RubyObject value) {
         setAv(id, value, true);
     }
-
+    
     /** rb_const_get
      *
      */
@@ -405,17 +407,17 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             }
             break;
         }
-
+        
         /* Uninitialized constant */
         if (this != getRuby().getClasses().getObjectClass()) {
-            throw new RubyNameException("uninitialized constant " + id.toName() + " at " + getClassPath().getString());
+            throw new RubyNameException("uninitialized constant " + id.toName() + " at " + getClassPath().getValue());
         } else {
             throw new RubyNameException("uninitialized constant " + id.toName());
         }
         
         // return getRuby().getNil();
     }
-            
+    
     /** rb_include_module
      *
      */
@@ -428,13 +430,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         /* Fixed to Ruby 1.6.5 */
         for (RubyModule actClass = this; rubyModule != null; rubyModule = rubyModule.getSuperClass()) {
             for (RubyModule rbClass = actClass.getSuperClass(); rbClass != null; rbClass = rbClass.getSuperClass()) {
-                if (rbClass.isIncluded() && rbClass.getMethods() == rubyModule.getMethods()) {
+                if (rbClass.isIncluded() && rbClass.methods == rubyModule.methods) {
                     continue;
                 }
             }
             actClass.setSuperClass(rubyModule.newIncludeClass(actClass.getSuperClass()));
             actClass = actClass.getSuperClass();
-	}
+        }
     }
     
     /** mod_av_set
@@ -459,55 +461,55 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         getInstanceVariables().put(id, value);
     }
-
+    
     /** rb_add_method
      *
      */
-    public void addMethod(RubyId id, NODE node, int noex) {
+    public void addMethod(RubyId id, Node node, int noex) {
         if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
-    
+        
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
             throw new RubySecurityException("Insecure: can't define method");
         }
         if (isFrozen()) {
             throw new RubyFrozenException("class/module");
         }
-        NODE body = NODE.newMethod(node, noex);
-        getMethods().put(id, body);
+        Node body = new NodeFactory(getRuby()).newMethod(node, noex);
+        methods.put(id, body);
     }
     
     public void defineMethod(String name, RubyCallbackMethod method) {
         RubyId id = getRuby().intern(name);
-
-        int noex = (name.charAt(0) == 'i' && id == getRuby().intern("initialize")) ? NOEX_PRIVATE : NOEX_PUBLIC;
         
-        addMethod(id, NODE.newCallbackMethod(method), noex | NOEX_CFUNC);
+        int noex = (name.charAt(0) == 'i' && id == getRuby().intern("initialize")) ? Constants.NOEX_PRIVATE : Constants.NOEX_PUBLIC;
+        
+        addMethod(id, new NodeFactory(getRuby()).newCFunc(method), noex | Constants.NOEX_CFUNC);
     }
     
     public void defineMethodId(RubyId id, RubyCallbackMethod method) {
-        addMethod(id, NODE.newCallbackMethod(method), NOEX_PUBLIC | NOEX_CFUNC);
+        addMethod(id, new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PUBLIC | Constants.NOEX_CFUNC);
     }
     
     public void defineProtectedMethod(String name, RubyCallbackMethod method) {
-        addMethod(getRuby().intern(name), NODE.newCallbackMethod(method), NOEX_PROTECTED | NOEX_CFUNC);
+        addMethod(getRuby().intern(name), new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PROTECTED | Constants.NOEX_CFUNC);
     }
     
     public void definePrivateMethod(String name, RubyCallbackMethod method) {
-        addMethod(getRuby().intern(name), NODE.newCallbackMethod(method), NOEX_PRIVATE | NOEX_CFUNC);
+        addMethod(getRuby().intern(name), new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PRIVATE | Constants.NOEX_CFUNC);
     }
     
     /*public void undefMethod(RubyId id) {
         if (isFrozen()) {
             throw new RubyFrozenException();
         }
-        
+     
         getMethods().remove(id);
     }*/
     
     public void undefMethod(String name) {
-        addMethod(getRuby().intern(name), null, NOEX_UNDEF);
+        addMethod(getRuby().intern(name), null, Constants.NOEX_UNDEF);
     }
     
     /** rb_frozen_class_p
@@ -544,14 +546,14 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             /*rb_warn("undefining `%s' may cause serious problem",
                      rb_id2name( id ) );*/
         }
-        NODE body = searchMethod(id).getBody();
-        if (body == null || body.nd_body() == null) {
+        MethodNode methodNode = searchMethod(id);
+        if (methodNode == null || methodNode.getBodyNode() == null) {
             String s0 = " class";
             RubyModule c = this;
-
+            
             if (c.isSingleton()) {
                 RubyObject obj = getInstanceVar("__attached__");
-
+                
                 if (obj instanceof RubyModule) {
                     c = (RubyModule)obj;
                     s0 = "";
@@ -560,9 +562,9 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 s0 = " module";
             }
             throw new RubyNameException("undefined method " + id.toName() +
-                                        " for" + s0 + " '" + c.toName() + "'");
+            " for" + s0 + " '" + c.toName() + "'");
         }
-        addMethod(id, null, NOEX_PUBLIC);
+        addMethod(id, null, Constants.NOEX_PUBLIC);
     }
     
     /** rb_define_module_function
@@ -600,7 +602,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (isModule()) {
             return getRuby().getClasses().getObjectClass().isConstantDefined(id);
         }
-
+        
         if (getRuby().isClassDefined(id)) {
             return true;
         }
@@ -611,16 +613,17 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** search_method
      *
      */
-    public SearchMethodResult searchMethod(RubyId id) {
-        NODE body = (NODE)getMethods().get(id);
+    public MethodNode searchMethod(RubyId id) {
+        MethodNode body = (MethodNode)methods.get(id);
         if (body == null) {
             if (getSuperClass() != null) {
                 return getSuperClass().searchMethod(id);
             } else {
-                return new SearchMethodResult(null, null);
+                return null;
             }
         } else {
-            return new SearchMethodResult((NODE)getMethods().get(id), this);
+            body.setMethodOrigin(this);
+            return body;
         }
     }
     
@@ -630,38 +633,38 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     public GetMethodBodyResult getMethodBody(RubyId id, int noex) {
         GetMethodBodyResult result = new GetMethodBodyResult(this, id, noex);
         
-        SearchMethodResult smr = searchMethod(id);
-        NODE body = smr.getBody();
-        RubyModule origin = smr.getOrigin();
+        MethodNode methodNode = searchMethod(id);
         
-        if (body == null || body.nd_body() == null) {
+        if (methodNode == null || methodNode.getBodyNode() == null) {
             System.out.println("Cant find method \"" + id.toName() + "\" in class " + toName());
             
-            MethodCacheEntry.saveEmptyEntry(getRuby(), this, id);
-        
+            RubyMethodCacheEntry.saveEmptyEntry(getRuby(), this, id);
+            
             return result;
         }
         
-        MethodCacheEntry ent = new MethodCacheEntry(this, body.nd_noex());
+        RubyMethodCacheEntry ent = new RubyMethodCacheEntry(this, methodNode.getNoex());
         
-        body = body.nd_body();
+        Node body = methodNode.getBodyNode();
         
-        if (body.nd_type() == NODE_FBODY) {
-            ent.setMid(id);
-            ent.setOrigin((RubyModule)body.nd_orig());
-            ent.setMid0((RubyId)body.nd_mid());
-            ent.setMethod(body.nd_head());
+        if (body instanceof FBodyNode) {
+            FBodyNode fbody = (FBodyNode)body;
             
-            result.setKlass((RubyModule)body.nd_orig());
-            result.setId((RubyId)body.nd_mid());
-            body = body.nd_head();
+            ent.setMid(id);
+            ent.setOrigin((RubyModule)fbody.getOrigin());
+            ent.setMid0(fbody.getMId());
+            ent.setMethod(fbody.getBodyNode());
+            
+            result.setRecvClass((RubyModule)fbody.getOrigin());
+            result.setId(fbody.getMId());
+            body = fbody.getBodyNode();
         } else {
             ent.setMid(id);
             ent.setMid0(id);
-            ent.setOrigin(origin);
+            ent.setOrigin(methodNode.getMethodOrigin());
             ent.setMethod(body);
             
-            result.setKlass(origin);
+            result.setRecvClass(methodNode.getMethodOrigin());
         }
         
         result.setNoex(ent.getNoex());
@@ -673,12 +676,12 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public RubyObject call(RubyObject recv, RubyId mid, RubyObject[] args, int scope) {
-        MethodCacheEntry ent = MethodCacheEntry.getEntry(getRuby(), this, mid);
+        RubyMethodCacheEntry ent = RubyMethodCacheEntry.getEntry(getRuby(), this, mid);
         
         RubyModule klass = this;
         RubyId id = mid;
         int noex;
-        NODE body; 
+        Node body;
         
         if (ent != null) {
             if (ent.getMethod() == null) {
@@ -691,7 +694,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             body = ent.getMethod();
         } else {
             GetMethodBodyResult gmbr = getMethodBody(id, 0);
-            klass = gmbr.getKlass();
+            klass = gmbr.getRecvClass();
             id = gmbr.getId();
             noex = gmbr.getNoex();
             body = gmbr.getBody();
@@ -708,7 +711,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         //     /* receiver specified form for private method */
         //     if ((noex & NOEX_PRIVATE) && scope == 0)
         //         return rb_undefined(recv, mid, argc, argv, CSTAT_PRIV);
-
+        
         //     /* self must be kind of a specified form for private method */
         //     if ((noex & NOEX_PROTECTED)) {
         //         VALUE defined_class = klass;
@@ -727,15 +730,14 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** rb_call0
      *
      */
-    public RubyObject call0(RubyObject recv, RubyId id, RubyObject[] args, NODE body, boolean noSuper) {
+    public RubyObject call0(RubyObject recv, RubyId id, RubyObject[] args, Node body, boolean noSuper) {
         
         // ...
-        RubyInterpreter interpreter = getRuby().getInterpreter();
         
         getRuby().getRubyFrame().push();
         
         // HACK +++
-        interpreter.getRubyIter().push(Iter.ITER_NOT);
+        getRuby().getIter().push(RubyIter.ITER_NOT);
         // HACK ---
         
         getRuby().getRubyFrame().setLastFunc(id);
@@ -743,40 +745,29 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         getRuby().getRubyFrame().setSelf(recv);
         getRuby().getRubyFrame().setArgs(new ShiftableList(args));
         
-        RubyObject result = null;
+        RubyObject result = getRuby().getNil();
         
-        switch (body.nd_type()) {
-            case NODE_CFUNC: {
-                // HACK +++
-                try {
-                // HACK ---
-                    result = ((RubyCallbackMethod)body.nd_cfnc()).execute(recv, args, getRuby());
-                // HACK +++
-                } catch (RubyArgumentException raExcptn) {
-                    System.out.print("Cannot call method \"" + id.toName() + "\". ");
-                    System.out.println(raExcptn.getMessage());
-                // } catch (RuntimeException rExcptn) {
-                //     System.out.print("Cannot call method \"" + id.toName() + "\". ");
-                //     System.out.println(rExcptn.getMessage());
-                }
-                // HACK ---
-                break;
-            }
+        if (body instanceof CallableNode) {
+            result = ((CallableNode)body).call(getRuby(), recv, id, args, noSuper);
+        } else {
+            System.out.println("{BUG] Not implemented yet (method call): " + id.toName() + ", node_type:" + body.getType());
+        }
+        /*switch (body.nd_type()) {
             case NODE_ZSUPER:
             case NODE_ATTRSET:
             case NODE_IVAR: {
-                result = interpreter.eval(recv, body);
+                result = body.interpreter.eval(recv, body);
                 break;
             }
             case NODE_SCOPE: {
                 NODE savedCref = null;
                 // VALUE[] localVars = null;
-                
+         
                 ShiftableList argsList = new ShiftableList(args);
                 ShiftableList localVarsList = null;
-                
+         
                 getRuby().getRubyScope().push();
-                
+         
                 if (body.nd_rval() != null) {
                     savedCref = getRuby().getRubyCRef();
                     getRuby().setRubyCRef((NODE)body.nd_rval());
@@ -789,25 +780,25 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                     localVarsList = new ShiftableList(new ArrayList(tmpList));
                     localVarsList.set(0, body);
                     localVarsList.shift(1);
-                    
+         
                     getRuby().getRubyScope().setLocalTbl(body.nd_tbl());
                     getRuby().getRubyScope().setLocalVars(localVarsList.getList());
                 } else {
                     localVarsList = getRuby().getRubyScope().getLocalVars();
-                    
+         
                     getRuby().getRubyScope().setLocalVars(null);
                     getRuby().getRubyScope().setLocalTbl(null);
                 }
-            
+         
                 body = body.nd_next();
-                
+         
                 RubyVarmap.push(getRuby());
                 // PUSH_TAG(PROT_FUNC);
-                
+         
                 try {
                     NODE node = null;
                     int i;
-                    
+         
                     if (body.nd_type() == NODE_ARGS) {
                         node = body;
                         body = null;
@@ -815,12 +806,12 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                         node = body.nd_head();
                         body = body.nd_next();
                     }
-                
+         
                     if (node != null) {
                         if (node.nd_type() != NODE_ARGS) {
                             // rb_bug("no argument-node");
                         }
-
+         
                         i = node.nd_cnt();
                         if (i > (args != null ? args.length : 0)) {
                             throw new RubyArgumentException("wrong # of arguments(" + args.length + " for " + i + ")");
@@ -828,7 +819,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                         if (node.nd_rest() == -1) {
                             int opt = i;
                             NODE optnode = node.nd_opt();
-
+         
                             while (optnode != null) {
                                 opt++;
                                 optnode = optnode.nd_next();
@@ -836,10 +827,10 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                             if (opt < (args != null ? args.length : 0)) {
                                 throw new RubyArgumentException("wrong # of arguments(" + args.length + " for " + opt + ")");
                             }
-                            
+         
                             getRuby().getRubyFrame().setArgs(localVarsList != null ? localVarsList.getList(2) : null);
                         }
-
+         
                         if (localVarsList != null) {
                             if (i > 0) {
                                 localVarsList.shift(2);
@@ -848,12 +839,12 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                                 }
                                 localVarsList.shiftLeft(2);
                             }
-                            
+         
                             argsList.shift(i);
-                            
+         
                             if (node.nd_opt() != null) {
                                 NODE opt = node.nd_opt();
-
+         
                                 while (opt != null && argsList.size() != 0) {
                                     interpreter.assign(recv, opt.nd_head(), (RubyObject)argsList.get(0), true);
                                     argsList.shift(1);
@@ -872,29 +863,29 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                             }
                         }
                     }
-
+         
                     result = interpreter.eval(recv, body);
                 } catch (ReturnException rExcptn) {
                 }
-                
+         
                 RubyVarmap.pop(getRuby());
-                
+         
                 getRuby().getRubyScope().pop();
                 getRuby().setRubyCRef(savedCref);
-                
+         
                 break;
             }
             default: {
                 System.out.println("Not implemented yet (method call): " + id.toName() + ", node_type:" + body.nd_type());
             }
         }
+         */
         
         getRuby().getRubyFrame().pop();
-        interpreter.getRubyIter().pop();
+        getRuby().getIter().pop();
         
         return result ;
     }
-    
     
     /** rb_singleton_class_new
      *
@@ -920,30 +911,31 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             getRuby().secure(4);
         }
         
-        SearchMethodResult smr = searchMethod(oldId);
-        NODE orig = smr.getBody();
-        RubyModule origin = smr.getOrigin();
+        MethodNode methodNode = searchMethod(oldId);
+        RubyModule origin = methodNode.getMethodOrigin();
         
-        if (orig == null || orig.nd_body() == null) {
+        if (methodNode == null || methodNode.getBodyNode() == null) {
             if (isModule()) {
-                smr = getRuby().getClasses().getObjectClass().searchMethod(oldId);
-                orig = smr.getBody();
-                origin = smr.getOrigin();
+                methodNode = getRuby().getClasses().getObjectClass().searchMethod(oldId);
+                origin = methodNode.getMethodOrigin();
             }
         }
-        if (orig == null || orig.nd_body() == null) {
+        if (methodNode == null || methodNode.getBodyNode() == null) {
             // print_undef( klass, def );
         }
         
-        NODE body = orig.nd_body();
-        orig.nd_cnt(orig.nd_cnt() + 1);
-        if (body.nd_type() == NODE_FBODY) { /* was alias */
-            oldId = (RubyId)body.nd_mid();
-            origin = (RubyModule)body.nd_orig();
-            body = body.nd_head();
+        Node body = methodNode.getBodyNode();
+        // methodNode.setCnt(methodNode.nd_cnt() + 1);
+        if (body instanceof FBodyNode) { /* was alias */
+            oldId = body.getMId();
+            origin = (RubyModule)body.getOrigin();
+            body = body.getBodyNode();
         }
-
-        getMethods().put(newId, NODE.newMethod(NODE.newFBody(body, oldId, origin), orig.nd_noex()));
+        
+        NodeFactory nf = new NodeFactory(getRuby());
+        
+        methods.put(newId, nf.newMethod(nf.newFBody(body, oldId, origin),
+        methodNode.getNoex()));
     }
     
     /** rb_singleton_class_clone
@@ -964,7 +956,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         clone.setSingleton(true);
         
-	return clone;
+        return clone;
     }
     
     /** rb_singleton_class_attached
@@ -992,7 +984,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         return newClass;
     }
     
-    /** rb_define_module_under 
+    /** rb_define_module_under
      *
      */
     public RubyModule defineModuleUnder(String name) {
@@ -1050,7 +1042,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (!isTaint() && getRuby().getSecurityLevel() >= 4) {
-            throw new RubySecurityException("Insecure: can't remove class variable");    
+            throw new RubySecurityException("Insecure: can't remove class variable");
         }
         
         if (isFrozen()) {
@@ -1058,24 +1050,24 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         RubyObject value = (RubyObject)getInstanceVariables().remove(id);
-         
+        
         if (value != null) {
             return value;
         }
-
+        
         if (isClassVarDefined(id)) {
             throw new RubyNameException("cannot remove " + id.toName() + " for " + toName());
         }
         
         throw new RubyNameException("class variable " + id.toName() + " not defined for " + toName());
     }
-
+    
     /** rb_define_class_variable
      *
      */
     public void defineClassVariable(String name, RubyObject value) {
         RubyId id = getRuby().intern(name);
-
+        
         if (!id.isClassId()) {
             throw new RubyNameException("wrong class variable name " + name);
         }
@@ -1087,17 +1079,17 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public void addAttribute(RubyId id, boolean read, boolean write, boolean ex) {
-        RubyInterpreter intrprtr = getRuby().getInterpreter();        
-    
-        int noex = NOEX_PUBLIC;
+        // RubyInterpreter intrprtr = getRuby().getInterpreter();
+        
+        int noex = Constants.NOEX_PUBLIC;
         
         if (ex) {
-            if (intrprtr.getActMethodScope() == SCOPE_PRIVATE) {
-                noex = NOEX_PRIVATE;
-            } else if (intrprtr.getActMethodScope() == SCOPE_PROTECTED) {
-                noex = NOEX_PROTECTED;
+            if (getRuby().getActMethodScope() == Constants.SCOPE_PRIVATE) {
+                noex = Constants.NOEX_PRIVATE;
+            } else if (getRuby().getActMethodScope() == Constants.SCOPE_PROTECTED) {
+                noex = Constants.NOEX_PROTECTED;
             } else {
-                noex = NOEX_PUBLIC;
+                noex = Constants.NOEX_PUBLIC;
             }
         }
         
@@ -1106,14 +1098,14 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         RubyId attrIV = getRuby().intern("@" + name);
         
         if (read) {
-            addMethod(id, NODE.newIVar(attrIV), noex);
+            addMethod(id, new NodeFactory(getRuby()).newIVar(attrIV), noex);
             // id.clearCache();
             funcall(getRuby().intern("method_added"), id.toSymbol());
         }
         
         if (write) {
             id = getRuby().intern(name + "=");
-            addMethod(id, NODE.newAttrSet(attrIV), noex);
+            addMethod(id, new NodeFactory(getRuby()).newAttrSet(attrIV), noex);
             // id.clearCache();
             funcall(getRuby().intern("method_added"), id.toSymbol());
         }
@@ -1141,13 +1133,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         RubyArray ary = RubyArray.m_newArray(getRuby());
         
         for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
-            klass.getMethods().foreach(method, ary);
+            klass.methods.foreach(method, ary);
             if (!option) {
                 break;
             }
         }
-
-        Iterator iter = ary.getArray().iterator();
+        
+        Iterator iter = ary.getList();
         while (iter.hasNext()) {
             if (getRuby().getNil() == iter.next()) {
                 iter.remove();
@@ -1199,7 +1191,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
             throw new RubySecurityException("Insecure: can't change method visibility");
         }
-
+        
         for (int i = 0; i < methods.length; i++) {
             exportMethod(methods[i].toId(), noex);
         }
@@ -1212,25 +1204,23 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
-
-        SearchMethodResult smr = searchMethod(name);
-        NODE body = smr.getBody();
-        RubyModule origin = smr.getOrigin();
+        
+        MethodNode body = searchMethod(name);
+        RubyModule origin = body.getMethodOrigin();
         
         if (body == null && isModule()) {
-            smr = getRuby().getClasses().getObjectClass().searchMethod(name);
-            body = smr.getBody();
-            origin = smr.getOrigin();
+            body = getRuby().getClasses().getObjectClass().searchMethod(name);
+            origin = body.getMethodOrigin();
         }
         
         if (body == null) {
         }
         
-        if (body.nd_noex() != noex) {
+        if (body.getNoex() != noex) {
             if (this == origin) {
-                body.nd_noex(noex);
+                body.setNoex(noex);
             } else {
-               addMethod(name, NODE.newZSuper(), noex);
+                addMethod(name, new NodeFactory(getRuby()).newZSuper(), noex);
             }
         }
     }
@@ -1300,14 +1290,18 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         // clone the methods.
-        if (getMethods() != null) {
+        if (methods != null) {
             clone.setMethods(new RubyHashMap());
-            getMethods().foreach(new RubyMapMethod() {
+            methods.foreach(new RubyMapMethod() {
+                NodeFactory nf = new NodeFactory(getRuby());
+                
                 public int execute(Object key, Object value, Object arg) {
-                    ((RubyMap)arg).put(key, NODE.newMethod(((NODE)value).nd_body(), ((NODE)value).nd_noex()));
+                    MethodNode methodNode = (MethodNode)value;
+                    
+                    ((RubyMap)arg).put(key, nf.newMethod(methodNode.getBodyNode(), methodNode.getNoex()));
                     return RubyMapMethod.CONTINUE;
                 }
-            }, clone.getMethods());
+            }, clone.methods);
         }
         
         return clone;
@@ -1385,7 +1379,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         RubyModule mod = this;
         while (mod != null) {
-            if (mod.getMethods() == ((RubyModule)obj).getMethods()) {
+            if (mod.methods == ((RubyModule)obj).methods) {
                 return getRuby().getTrue();
             }
             mod = mod.getSuperClass();
@@ -1476,7 +1470,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         return getRuby().getNil();
     }
-
+    
     /** rb_mod_attr_reader
      *
      */
@@ -1487,7 +1481,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         return getRuby().getNil();
     }
-
+    
     /** rb_mod_attr_writer
      *
      */
@@ -1498,7 +1492,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         return getRuby().getNil();
     }
-
+    
     /** rb_mod_attr_accessor
      *
      */
@@ -1509,7 +1503,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         return getRuby().getNil();
     }
-
+    
     /** rb_mod_const_get
      *
      */
@@ -1522,7 +1516,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         return getConstant(id);
     }
-
+    
     /** rb_mod_const_set
      *
      */
@@ -1560,24 +1554,24 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (args.length > 0) {
             includeSuper = args[0].isTrue();
         }
-
+        
         return methodList(includeSuper, new RubyMapMethod() {
             public int execute(Object key, Object value, Object arg) {
                 // cast args
                 RubyId id = (RubyId)key;
-                NODE body = (NODE)value;
+                MethodNode body = (MethodNode)value;
                 RubyArray ary = (RubyArray)arg;
                 
-                if ((body.nd_noex() & (NOEX_PRIVATE | NOEX_PROTECTED)) == 0) {
+                if ((body.getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                     RubyString name = RubyString.m_newString(getRuby(), id.toName());
                     
                     if (ary.m_includes(name).isFalse()) {
-                        if (body.nd_body() == null) {
+                        if (body.getBodyNode() == null) {
                             ary.push(getRuby().getNil());
                         }
                         ary.push(name);
                     }
-                } else if (body.nd_body() != null && body.nd_body().nd_type() == NODE_ZSUPER) {
+                } else if (body.getBodyNode() != null && body.getBodyNode() instanceof ZSuperNode) {
                     ary.push(getRuby().getNil());
                     ary.push(RubyString.m_newString(getRuby(), id.toName()));
                 }
@@ -1585,7 +1579,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             }
         });
     }
-
+    
     /** rb_class_protected_instance_methods
      *
      */
@@ -1595,24 +1589,24 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (args.length > 0) {
             includeSuper = args[0].isTrue();
         }
-
+        
         return methodList(includeSuper, new RubyMapMethod() {
             public int execute(Object key, Object value, Object arg) {
                 // cast args
                 RubyId id = (RubyId)key;
-                NODE body = (NODE)value;
+                MethodNode body = (MethodNode)value;
                 RubyArray ary = (RubyArray)arg;
                 
-                if (body.nd_body() == null) {
+                if (body.getBodyNode() == null) {
                     ary.push(getRuby().getNil());
                     ary.push(RubyString.m_newString(getRuby(), id.toName()));
-                } else if ((body.nd_noex() & NOEX_PROTECTED) != 0) {
+                } else if ((body.getNoex() & Constants.NOEX_PROTECTED) != 0) {
                     RubyString name = RubyString.m_newString(getRuby(), id.toName());
                     
                     if (ary.m_includes(name).isFalse()) {
                         ary.push(name);
                     }
-                } else if (body.nd_body().nd_type() == NODE_ZSUPER) {
+                } else if (body.getBodyNode() instanceof ZSuperNode) {
                     ary.push(getRuby().getNil());
                     ary.push(RubyString.m_newString(getRuby(), id.toName()));
                 }
@@ -1620,7 +1614,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             }
         });
     }
-
+    
     /** rb_class_private_instance_methods
      *
      */
@@ -1630,24 +1624,24 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (args.length > 0) {
             includeSuper = args[0].isTrue();
         }
-
+        
         return methodList(includeSuper, new RubyMapMethod() {
             public int execute(Object key, Object value, Object arg) {
                 // cast args
                 RubyId id = (RubyId)key;
-                NODE body = (NODE)value;
+                MethodNode body = (MethodNode)value;
                 RubyArray ary = (RubyArray)arg;
                 
-                if (body.nd_body() == null) {
+                if (body.getBodyNode() == null) {
                     ary.push(getRuby().getNil());
                     ary.push(RubyString.m_newString(getRuby(), id.toName()));
-                } else if ((body.nd_noex() & NOEX_PRIVATE) != 0) {
+                } else if ((body.getNoex() & Constants.NOEX_PRIVATE) != 0) {
                     RubyString name = RubyString.m_newString(getRuby(), id.toName());
                     
                     if (ary.m_includes(name).isFalse()) {
                         ary.push(name);
                     }
-                } else if (body.nd_body().nd_type() == NODE_ZSUPER) {
+                } else if (body.getBodyNode() instanceof ZSuperNode) {
                     ary.push(getRuby().getNil());
                     ary.push(RubyString.m_newString(getRuby(), id.toName()));
                 }
@@ -1673,7 +1667,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (name instanceof RubySymbol) {
             id = ((RubySymbol)name).toId();
         } else if (name instanceof RubyString) {
-            id = getRuby().intern(((RubyString)name).getString());
+            id = getRuby().intern(((RubyString)name).getValue());
         }
         
         if (!id.isClassId()) {
@@ -1714,7 +1708,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         obj.extendObject(this);
         return obj;
     }
-
+    
     /** rb_mod_include
      *
      */
@@ -1735,11 +1729,11 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (args.length == 0) {
-            getRuby().getInterpreter().setActMethodScope(SCOPE_PUBLIC);
+            getRuby().setActMethodScope(Constants.SCOPE_PUBLIC);
         } else {
-            setMethodVisibility(args, NOEX_PUBLIC);
+            setMethodVisibility(args, Constants.NOEX_PUBLIC);
         }
-
+        
         return this;
     }
     
@@ -1752,11 +1746,11 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (args.length == 0) {
-            getRuby().getInterpreter().setActMethodScope(SCOPE_PROTECTED);
+            getRuby().setActMethodScope(Constants.SCOPE_PROTECTED);
         } else {
-            setMethodVisibility(args, NOEX_PROTECTED);
+            setMethodVisibility(args, Constants.NOEX_PROTECTED);
         }
-
+        
         return this;
     }
     
@@ -1769,11 +1763,11 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (args.length == 0) {
-            getRuby().getInterpreter().setActMethodScope(SCOPE_PRIVATE);
+            getRuby().setActMethodScope(Constants.SCOPE_PRIVATE);
         } else {
-            setMethodVisibility(args, NOEX_PRIVATE);
+            setMethodVisibility(args, Constants.NOEX_PRIVATE);
         }
-
+        
         return this;
     }
     
@@ -1786,17 +1780,17 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (args.length == 0) {
-            getRuby().getInterpreter().setActMethodScope(SCOPE_MODFUNC);
+            getRuby().setActMethodScope(Constants.SCOPE_MODFUNC);
         } else {
-            setMethodVisibility(args, NOEX_PRIVATE);
+            setMethodVisibility(args, Constants.NOEX_PRIVATE);
             
             for (int i = 0; i < args.length; i++) {
                 RubyId id = args[i].toId();
-                NODE body = searchMethod(id).getBody();
-                if (body == null || body.nd_body() == null) {
+                MethodNode body = searchMethod(id);
+                if (body == null || body.getBodyNode() == null) {
                     throw new RubyBugException("undefined method '" + id.toName() + "'; can't happen");
                 }
-                getSingletonClass().addMethod(id, body.nd_body(), NOEX_PUBLIC);
+                getSingletonClass().addMethod(id, body.getBodyNode(), Constants.NOEX_PUBLIC);
                 // rb_clear_cache_by_id(id);
                 funcall(getRuby().intern("singleton_added"), id.toSymbol());
             }
@@ -1804,73 +1798,74 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         return this;
     }
-}
-
-class GetMethodBodyResult {
-    private NODE body;
-    private RubyModule klass;
-    private RubyId id;
-    private int noex;
-
-    public GetMethodBodyResult(RubyModule klass, RubyId id, int noex) {
-        this.klass = klass;
-        this.id = id;
-        this.noex = noex;
-    }
-
-    /** Getter for property id.
-     * @return Value of property id.
-     */
-    public RubyId getId() {
-        return id;
+    
+    private static class GetMethodBodyResult {
+        private Node body;
+        private RubyModule recvClass;
+        private RubyId id;
+        private int noex;
+        
+        public GetMethodBodyResult(RubyModule recvClass, RubyId id, int noex) {
+            this.recvClass = recvClass;
+            this.id = id;
+            this.noex = noex;
+        }
+        
+        /** Getter for property id.
+         * @return Value of property id.
+         */
+        public RubyId getId() {
+            return id;
+        }
+        
+        /** Setter for property id.
+         * @param id New value of property id.
+         */
+        public void setId(RubyId id) {
+            this.id = id;
+        }
+        
+        /** Getter for property klass.
+         * @return Value of property klass.
+         */
+        public RubyModule getRecvClass() {
+            return recvClass;
+        }
+        
+        /** Setter for property klass.
+         * @param klass New value of property klass.
+         */
+        public void setRecvClass(RubyModule recvClass) {
+            this.recvClass = recvClass;
+        }
+        
+        /** Getter for property node.
+         * @return Value of property node.
+         */
+        public Node getBody() {
+            return body;
+        }
+        
+        /** Setter for property node.
+         * @param node New value of property node.
+         */
+        public void setBody(Node body) {
+            this.body = body;
+        }
+        
+        /** Getter for property scope.
+         * @return Value of property scope.
+         */
+        public int getNoex() {
+            return noex;
+        }
+        
+        /** Setter for property scope.
+         * @param scope New value of property scope.
+         */
+        public void setNoex(int noex) {
+            this.noex = noex;
+        }
     }
     
-    /** Setter for property id.
-     * @param id New value of property id.
-     */
-    public void setId(RubyId id) {
-        this.id = id;
-    }
-    
-    /** Getter for property klass.
-     * @return Value of property klass.
-     */
-    public RubyModule getKlass() {
-        return klass;
-    }
-    
-    /** Setter for property klass.
-     * @param klass New value of property klass.
-     */
-    public void setKlass(RubyModule klass) {
-        this.klass = klass;
-    }
-    
-    /** Getter for property node.
-     * @return Value of property node.
-     */
-    public NODE getBody() {
-        return body;
-    }
-    
-    /** Setter for property node.
-     * @param node New value of property node.
-     */
-    public void setBody(NODE body) {
-        this.body = body;
-    }
-    
-    /** Getter for property scope.
-     * @return Value of property scope.
-     */
-    public int getNoex() {
-        return noex;
-    }
-    
-    /** Setter for property scope.
-     * @param scope New value of property scope.
-     */
-    public void setNoex(int noex) {
-        this.noex = noex;
-    }
 }

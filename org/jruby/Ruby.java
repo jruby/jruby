@@ -2,9 +2,11 @@
  * Ruby.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -33,10 +35,13 @@ import java.util.*;
 import java.io.*;
 
 import org.jruby.core.*;
-import org.jruby.interpreter.*;
-import org.jruby.interpreter.nodes.*;
+import org.jruby.exceptions.*;
+import org.jruby.nodes.*;
+import org.jruby.nodes.types.*;
 import org.jruby.original.*;
 import org.jruby.parser.*;
+import org.jruby.runtime.*;
+import org.jruby.runtime.RubyGlobalEntry; // TMP 
 import org.jruby.util.*;
 
 /**
@@ -59,7 +64,7 @@ public final class Ruby {
     
     private int securityLevel = 0;
     
-    private RubyInterpreter rubyInterpreter = null;
+    // private RubyInterpreter rubyInterpreter = null;
 
     // Default objects
     private RubyNil nilObject;
@@ -75,6 +80,9 @@ public final class Ruby {
     
     private RubyObject rubyTopSelf;
     
+    // Actual excpetion ($!) (matz: ruby_errinfo)
+    private RubyObject actException;
+    
     // Eval
     
     private RubyScope rubyScope = new RubyScope();
@@ -85,8 +93,8 @@ public final class Ruby {
     private RubyFrame rubyFrame;
     private RubyFrame topFrame;
     
-    private NODE rubyCRef;
-    private NODE topCRef;
+    private CRefNode cRef;
+    private CRefNode topCRef;
     
     private String sourceFile;
     private int sourceLine;
@@ -94,6 +102,18 @@ public final class Ruby {
     private int inEval;
     
     private boolean verbose;
+    
+    // 
+    private RubyIter iter;
+    private RubyBlock block = new RubyBlock(this);
+    
+    private RubyModule cBase;
+    
+    private int actMethodScope;
+    
+    private RubyModule wrapper;
+    
+    private RubyStack classStack = new RubyStack(new LinkedList());
     
     // ID
     private Map symbolTable = new HashMap(200);
@@ -292,12 +312,12 @@ public final class Ruby {
         return RubyId.newId(this, value);
     }
     
-    public RubyInterpreter getInterpreter() {
+    /* public RubyInterpreter getInterpreter() {
         if (rubyInterpreter == null) {
             rubyInterpreter = new RubyInterpreter(this);
         }
         return rubyInterpreter;
-    }
+    }*/
     
     /** Getter for property globalMap.
      * @return Value of property globalMap.
@@ -328,8 +348,129 @@ public final class Ruby {
     }
     
     public RubyObject yield(RubyObject value) {
-        return getInterpreter().yield0(value, null, null, false);
+        return yield0(value, null, null, false);
     }
+    
+    public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
+        RubyObject result = getNil();
+        
+        if (!(isBlockGiven() || isFBlockGiven()) || (block == null)) {
+            throw new RuntimeException("yield called out of block");
+        }
+        
+        RubyVarmap.push(this);
+        pushClass();
+        RubyBlock tmpBlock = block.getTmp();
+        
+        RubyFrame frame = tmpBlock.frame;
+        frame.setPrev(getRubyFrame());
+        setRubyFrame(frame);
+        
+        CRefNode oldCRef = getCRef();
+        setCRef(getRubyFrame().getCbase());
+        
+        RubyScope oldScope = getRubyScope();
+        setRubyScope(tmpBlock.scope);
+        block.pop();
+        
+        if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
+            setDynamicVars(new RubyVarmap(null, null, tmpBlock.dynamicVars));
+        } else {
+            setDynamicVars(block.dynamicVars);
+        }
+        
+        setRubyClass((klass != null) ? klass : tmpBlock.klass);
+        if (klass == null) {
+            self = tmpBlock.self;
+        }
+        
+        Node node = tmpBlock.body;
+        
+        if (tmpBlock.var != null) {
+            // try {
+            if (tmpBlock.var == Node.ONE) {
+                if (acheck && value != null &&
+                value instanceof RubyArray && ((RubyArray)value).length() != 0) {
+                    
+                    throw new RubyArgumentException("wrong # of arguments ("+ ((RubyArray)value).length() + " for 0)");
+                }
+            } else {
+                if (!(tmpBlock.var instanceof MAsgnNode)) {
+                    if (acheck && value != null && value instanceof RubyArray && ((RubyArray)value).length() == 1) {
+                        value = ((RubyArray)value).entry(0);
+                    }
+                }
+                ((AssignableNode)tmpBlock.var).assign(this, self, value, acheck);
+            }
+            // } catch () {
+            //    goto pop_state;
+            // }
+            
+        } else {
+            if (acheck && value != null && value instanceof RubyArray && ((RubyArray)value).length() == 1) {
+                
+                value = ((RubyArray)value).entry(0);
+            }
+        }
+        
+        iter.push(tmpBlock.iter);
+        while (true) {
+            try {
+                if (node == null) {
+                    result = getNil();
+                } else if (node instanceof ExecutableNode) {
+                    if (value == null) {
+                        value = RubyArray.m_newArray(this, 0);
+                    }
+                    result = ((ExecutableNode)node).execute(value, 
+                               new RubyObject[] {node.getTValue(), self}, this);
+                } else {
+                    result = node.eval(this, self);
+                }
+                break;
+            } catch (RedoException rExcptn) {
+            } catch (NextException nExcptn) {
+                result = getNil();
+                break;
+            } catch (BreakException bExcptn) {
+                break;
+            } catch (ReturnException rExcptn) {
+                break;
+            }
+        }
+        
+        // pop_state:
+        
+        iter.pop();
+        popClass();
+        RubyVarmap.pop(this);
+        
+        block.setTmp(tmpBlock);
+        setRubyFrame(getRubyFrame().getPrev());
+        
+        setCRef(oldCRef);
+        
+        // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
+        //    scope_dup(old_scope);
+        setRubyScope(oldScope);
+        
+        /*
+         * if (state) {
+         *    if (!block->tag) {
+         *       switch (state & TAG_MASK) {
+         *          case TAG_BREAK:
+         *          case TAG_RETURN:
+         *             jump_tag_but_local_jump(state & TAG_MASK);
+         *             break;
+         *       }
+         *    }
+         *    JUMP_TAG(state);
+         * }
+         */
+        
+        return result;
+    }
+    
     /** Getter for property rubyTopSelf.
      * @return Value of property rubyTopSelf.
      */
@@ -341,13 +482,13 @@ public final class Ruby {
      *
      */  
     public RubyObject iterate(RubyCallbackMethod iterateMethod, RubyObject data1, RubyCallbackMethod blockMethod, RubyObject data2) {
-        NODE node = NODE.newIFunc(blockMethod, data2);
+        Node node = new NodeFactory(this).newIFunc(blockMethod, data2);
         
         // VALUE self = ruby_top_self;
         RubyObject result = null;
         
-        getInterpreter().getRubyIter().push(Iter.ITER_PRE);
-        getInterpreter().getRubyBlock().push(null, node, getRubyTopSelf());
+        getIter().push(RubyIter.ITER_PRE);
+        getBlock().push(null, node, getRubyTopSelf());
         
         while (true) {
             try {
@@ -363,8 +504,8 @@ public final class Ruby {
                 break;
             }
         }
-        getInterpreter().getRubyIter().pop();
-        getInterpreter().getRubyBlock().pop();
+        getIter().pop();
+        getBlock().pop();
         
         return result;
     }
@@ -373,6 +514,12 @@ public final class Ruby {
         for (int i = 0; i <= FIXNUM_CACHE_MAX; i++) {
             fixnumCache[i] = new RubyFixnum(this, i);
         }
+    }
+    
+    public void raise(RubyException rubyExcptn, Object[] args) {
+        setActException(rubyExcptn);
+        
+        throw new RaiseException();
     }
     
     private void callInits() {
@@ -398,7 +545,7 @@ public final class Ruby {
         }
         initialized = true;
         
-        getInterpreter().setRubyIter(new Iter()); // ruby_iter = &iter;
+        setIter(new RubyIter()); // ruby_iter = &iter;
         rubyFrame = topFrame = new RubyFrame(this);
         
         // rb_origenviron = environ;
@@ -410,16 +557,16 @@ public final class Ruby {
         rubyScope.setLocalTbl(null);
         topScope = rubyScope;
     
-        getInterpreter().setActMethodScope(Scope.SCOPE_PRIVATE);
+        setActMethodScope(Scope.SCOPE_PRIVATE);
 
         try {
             callInits();
             
             rubyClass = getClasses().getObjectClass();
             rubyFrame.setSelf(rubyTopSelf);
-            topCRef = new NODE(NODE.NODE_CREF, getClasses().getObjectClass(), null, null);
-            rubyCRef = topCRef;
-            rubyFrame.setCbase(rubyCRef);
+            topCRef = new CRefNode(getClasses().getObjectClass(), null);
+            cRef = topCRef;
+            rubyFrame.setCbase(cRef);
             // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
             // ruby_prog_init();
         } catch (Exception excptn) {
@@ -486,6 +633,23 @@ public final class Ruby {
         return verbose;
     }
     
+    public boolean isBlockGiven() {
+        return getRubyFrame().getIter() != RubyIter.ITER_NOT;
+    }
+    
+    public boolean isFBlockGiven() {
+        return (getRubyFrame().getPrev() != null) && (getRubyFrame().getPrev().getIter() != RubyIter.ITER_NOT);
+    }
+    
+        
+    public void pushClass() {
+        classStack.push(getRubyClass());
+    }
+    
+    public void popClass() {
+        setRubyClass((RubyModule)classStack.pop());
+    }
+    
     /** Setter for property verbose.
      * @param verbose New value of property verbose.
      */
@@ -496,21 +660,21 @@ public final class Ruby {
     /** Getter for property dynamicVars.
      * @return Value of property dynamicVars.
      */
-    public org.jruby.interpreter.RubyVarmap getDynamicVars() {
+    public RubyVarmap getDynamicVars() {
         return dynamicVars;
     }
     
     /** Setter for property dynamicVars.
      * @param dynamicVars New value of property dynamicVars.
      */
-    public void setDynamicVars(org.jruby.interpreter.RubyVarmap dynamicVars) {
+    public void setDynamicVars(RubyVarmap dynamicVars) {
         this.dynamicVars = dynamicVars;
     }
     
     /** Getter for property rubyClass.
      * @return Value of property rubyClass.
      */
-    public org.jruby.RubyModule getRubyClass() {
+    public RubyModule getRubyClass() {
         return rubyClass;
     }
     
@@ -556,56 +720,56 @@ public final class Ruby {
     /** Getter for property rubyFrame.
      * @return Value of property rubyFrame.
      */
-    public org.jruby.interpreter.RubyFrame getRubyFrame() {
+    public RubyFrame getRubyFrame() {
         return rubyFrame;
     }
     
     /** Setter for property rubyFrame.
      * @param rubyFrame New value of property rubyFrame.
      */
-    public void setRubyFrame(org.jruby.interpreter.RubyFrame rubyFrame) {
+    public void setRubyFrame(RubyFrame rubyFrame) {
         this.rubyFrame = rubyFrame;
     }
     
     /** Getter for property topFrame.
      * @return Value of property topFrame.
      */
-    public org.jruby.interpreter.RubyFrame getTopFrame() {
+    public RubyFrame getTopFrame() {
         return topFrame;
     }
     
     /** Setter for property topFrame.
      * @param topFrame New value of property topFrame.
      */
-    public void setTopFrame(org.jruby.interpreter.RubyFrame topFrame) {
+    public void setTopFrame(RubyFrame topFrame) {
         this.topFrame = topFrame;
     }
     
     /** Getter for property rubyCRef.
      * @return Value of property rubyCRef.
      */
-    public org.jruby.original.NODE getRubyCRef() {
-        return rubyCRef;
+    public CRefNode getCRef() {
+        return cRef;
     }
     
     /** Setter for property rubyCRef.
      * @param rubyCRef New value of property rubyCRef.
      */
-    public void setRubyCRef(org.jruby.original.NODE rubyCRef) {
-        this.rubyCRef = rubyCRef;
+    public void setCRef(CRefNode newCRef) {
+        cRef = newCRef;
     }
     
     /** Getter for property topCRef.
      * @return Value of property topCRef.
      */
-    public org.jruby.original.NODE getTopCRef() {
+    public CRefNode getTopCRef() {
         return topCRef;
     }
     
     /** Setter for property topCRef.
      * @param topCRef New value of property topCRef.
      */
-    public void setTopCRef(org.jruby.original.NODE topCRef) {
+    public void setTopCRef(CRefNode topCRef) {
         this.topCRef = topCRef;
     }
     
@@ -699,4 +863,93 @@ public final class Ruby {
     public void setJavaClassLoader(ClassLoader javaClassLoader) {
         this.javaClassLoader = javaClassLoader;
     }
+    
+    /** Getter for property actException.
+     * @return Value of property actException.
+     */
+    public RubyObject getActException() {
+        return actException;
+    }
+    
+    /** Setter for property actException.
+     * @param actException New value of property actException.
+     */
+    public void setActException(RubyObject actException) {
+        this.actException = actException;
+    }
+    
+    /** Getter for property iter.
+     * @return Value of property iter.
+     */
+    public RubyIter getIter() {
+        return iter;
+    }
+    
+    /** Setter for property iter.
+     * @param iter New value of property iter.
+     */
+    public void setIter(RubyIter iter) {
+        this.iter = iter;
+    }
+    
+    /** Getter for property block.
+     * @return Value of property block.
+     */
+    public RubyBlock getBlock() {
+        return block;
+    }
+    
+    /** Setter for property block.
+     * @param block New value of property block.
+     */
+    public void setBlock(RubyBlock block) {
+        this.block = block;
+    }
+    
+    /** Getter for property cBase.
+     * @return Value of property cBase.
+     */
+    public RubyModule getCBase() {
+        return cBase;
+    }
+    
+    /** Setter for property cBase.
+     * @param cBase New value of property cBase.
+     */
+    public void setCBase(RubyModule cBase) {
+        this.cBase = cBase;
+    }
+    
+    public boolean isScope(int scope) {
+        return (getActMethodScope() & scope) != 0;
+    }
+    
+    /** Getter for property actMethodScope.
+     * @return Value of property actMethodScope.
+     */
+    public int getActMethodScope() {
+        return actMethodScope;
+    }
+    
+    /** Setter for property actMethodScope.
+     * @param actMethodScope New value of property actMethodScope.
+     */
+    public void setActMethodScope(int actMethodScope) {
+        this.actMethodScope = actMethodScope;
+    }
+    
+    /** Getter for property wrapper.
+     * @return Value of property wrapper.
+     */
+    public org.jruby.RubyModule getWrapper() {
+        return wrapper;
+    }
+    
+    /** Setter for property wrapper.
+     * @param wrapper New value of property wrapper.
+     */
+    public void setWrapper(org.jruby.RubyModule wrapper) {
+        this.wrapper = wrapper;
+    }
+    
 }
