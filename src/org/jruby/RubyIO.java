@@ -890,4 +890,23 @@ public class RubyIO extends RubyObject {
         return "RubyIO(" + modes.getModeString() + ", " + fileno + ")";
     }
     
+    // IO Object should always be closed by jruby internally or
+    // by a jruby script (their own fault if they forget).  If an IO 
+    // object gets GC'd and it has not been closed yet, then we should 
+    // clean up.
+    //
+    // The underlying problem is that IOHandlers are kept track or
+    // by a file descriptor pool.  This means IOHandlers have two
+    // references, so they will not automagically get closed and
+    // removed when an IO object gets reclaimed by GC.
+    public void finalize() throws Throwable {
+        try {
+            if (isOpen() == true) {
+                close();
+            }
+        } finally {
+            super.finalize();
+        }
+    }
+    
 }
