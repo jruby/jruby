@@ -26,11 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
 
 /** Represents an integer literal.
  *
@@ -38,11 +37,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class FixnumNode extends AbstractNode implements ILiteralNode {
-    private long value;
+    private final long value;
 
     public FixnumNode(ISourcePosition position, long value) {
         super(position);
-
         this.value = value;
     }
 
@@ -56,13 +54,5 @@ public class FixnumNode extends AbstractNode implements ILiteralNode {
      */
     public long getValue() {
         return value;
-    }
-
-    /**
-     * Sets the value.
-     * @param value The value to set
-     */
-    public void setValue(long value) {
-        this.value = value;
     }
 }

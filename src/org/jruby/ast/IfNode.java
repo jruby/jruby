@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * an 'if' statement.
@@ -37,13 +37,12 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class IfNode extends AbstractNode {
-    private INode condition;
-    private INode thenBody;
-    private INode elseBody;
+    private final INode condition;
+    private final INode thenBody;
+    private final INode elseBody;
 
     public IfNode(ISourcePosition position, INode condition, INode thenBody, INode elseBody) {
         super(position);
-
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;
@@ -66,14 +65,6 @@ public class IfNode extends AbstractNode {
     }
 
     /**
-     * Sets the condition.
-     * @param condition The condition to set
-     */
-    public void setCondition(INode condition) {
-        this.condition = condition;
-    }
-
-    /**
      * Gets the elseBody.
      * @return Returns a INode
      */
@@ -82,26 +73,10 @@ public class IfNode extends AbstractNode {
     }
 
     /**
-     * Sets the elseBody.
-     * @param elseBody The elseBody to set
-     */
-    public void setElseBody(INode elseBody) {
-        this.elseBody = elseBody;
-    }
-
-    /**
      * Gets the thenBody.
      * @return Returns a INode
      */
     public INode getThenBody() {
         return thenBody;
-    }
-
-    /**
-     * Sets the thenBody.
-     * @param thenBody The thenBody to set
-     */
-    public void setThenBody(INode thenBody) {
-        this.thenBody = thenBody;
     }
 }

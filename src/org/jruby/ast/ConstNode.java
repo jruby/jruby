@@ -26,9 +26,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * The access to a Constant.
@@ -37,11 +37,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ConstNode extends AbstractNode {
-    private String name;
+    private final String name;
     
     public ConstNode(ISourcePosition position, String name) {
         super(position);
-
         this.name = name;
     }
 
@@ -59,13 +58,5 @@ public class ConstNode extends AbstractNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a method call with self as receiver.
  *
@@ -37,12 +37,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public final class FCallNode extends AbstractNode {
-    private String name;
-    private INode argsNode;
+    private final String name;
+    private final INode argsNode;
 
     public FCallNode(ISourcePosition position, String name, INode argsNode) {
         super(position);
-
         this.name = name.intern();
         this.argsNode = argsNode;
     }
@@ -64,26 +63,10 @@ public final class FCallNode extends AbstractNode {
     }
 
     /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(INode argsNode) {
-        this.argsNode = argsNode;
-    }
-
-    /**
      * Gets the name.
      * @return Returns a String
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }
