@@ -541,9 +541,9 @@ public class RubyModule extends RubyObject {
     }
 
     public void defineMethod(String name, Callback method) {
-        Visibility noex = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
+        Visibility visibility = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
 
-        addMethod(name, new CallbackMethod(method, noex));
+        addMethod(name, new CallbackMethod(method, visibility));
     }
 
     public void definePrivateMethod(String name, Callback method) {
@@ -677,7 +677,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public Visibility getMethodNoex(String name) {
+    public Visibility getMethodVisibility(String name) {
         CacheEntry entry = getMethodBody(name);
         return entry.getVisibility();
     }
@@ -1000,13 +1000,13 @@ public class RubyModule extends RubyObject {
     /** set_method_visibility
      *
      */
-    public void setMethodVisibility(IRubyObject[] methods, Visibility noex) {
+    public void setMethodVisibility(IRubyObject[] methods, Visibility visibility) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
         }
 
         for (int i = 0; i < methods.length; i++) {
-            exportMethod(methods[i].toId(), noex);
+            exportMethod(methods[i].toId(), visibility);
         }
     }
 
@@ -1452,7 +1452,7 @@ public class RubyModule extends RubyObject {
         return RubyBoolean.newBoolean(getRuntime(), isConstantDefined(name));
     }
 
-    private RubyArray instance_methods(IRubyObject[] args, final Visibility noex) {
+    private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
         boolean includeSuper = false;
 
         if (args.length > 0) {
@@ -1466,7 +1466,7 @@ public class RubyModule extends RubyObject {
                 ICallable method = (ICallable) value;
                 RubyArray ary = (RubyArray) arg;
 
-                if (method.getVisibility() == noex) {
+                if (method.getVisibility() == visibility) {
                     RubyString name = RubyString.newString(getRuntime(), id);
 
                     if (!ary.includes(name)) {

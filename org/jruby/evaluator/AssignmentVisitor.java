@@ -34,6 +34,7 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.util.Asserts;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
@@ -85,11 +86,11 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitNode(INode)
      */
     protected void visitNode(INode iVisited) {
-        // assert false;
+        Asserts.notReached();
     }
 
     /**
-     * @see NodeVisitor#visitCallNode(CallNode)
+     * @see AbstractVisitor#visitCallNode(CallNode)
      */
     public void visitCallNode(CallNode iVisited) {
         EvaluateVisitor evaluator = EvaluateVisitor.createVisitor(self);
@@ -106,14 +107,14 @@ public class AssignmentVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
+     * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
         ruby.getCBase().setClassVar(iVisited.getName(), value);
     }
 
     /**
-     * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
+     * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
         if (ruby.isVerbose() && ruby.getCBase().isSingleton()) {
@@ -123,49 +124,49 @@ public class AssignmentVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitConstDeclNode(ConstDeclNode)
+     * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
         ruby.getRubyClass().defineConstant(iVisited.getName(), value);
     }
 
     /**
-     * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
+     * @see AbstractVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         ruby.setDynamicVariable(iVisited.getName(), value);
     }
 
     /**
-     * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
+     * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
         ruby.setDynamicVariable(iVisited.getName(), value);
     }
 
     /**
-     * @see NodeVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
+     * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
         ruby.setGlobalVar(iVisited.getName(), value);
     }
 
     /**
-     * @see NodeVisitor#visitInstAsgnNode(InstAsgnNode)
+     * @see AbstractVisitor#visitInstAsgnNode(InstAsgnNode)
      */
     public void visitInstAsgnNode(InstAsgnNode iVisited) {
         self.setInstanceVariable(iVisited.getName(), value);
     }
 
     /**
-     * @see NodeVisitor#visitLocalAsgnNode(LocalAsgnNode)
+     * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
         ruby.getScope().setValue(iVisited.getCount(), value);
     }
 
     /**
-     * @see NodeVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
+     * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
     public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
         // Make sure value is an array.

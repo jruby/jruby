@@ -110,7 +110,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see AbstractVisitor#visitNode(Node)
+     * @see AbstractVisitor#visitNode(INode)
      */
     protected void visitNode(INode iVisited) {
         try {
@@ -121,7 +121,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
     
 	/**
-     * @see NodeVisitor#visitSuperNode(SuperNode)
+     * @see AbstractVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
         String lastMethod = ruby.getCurrentFrame().getLastFunc();
@@ -132,7 +132,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitZSuperNode(ZSuperNode)
+     * @see AbstractVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
         String lastMethod = ruby.getCurrentFrame().getLastFunc();
@@ -142,16 +142,16 @@ public class DefinedVisitor extends AbstractVisitor {
         }
     }
     /**
-     * @see NodeVisitor#visitCallNode(CallNode)
+     * @see AbstractVisitor#visitCallNode(CallNode)
      */
     public void visitCallNode(CallNode iVisited) {
         if (getDefinition(iVisited.getReceiverNode()) != null) {
             try {
                 IRubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
                 
-                Visibility noex = receiver.getInternalClass().getMethodNoex(iVisited.getName());
+                Visibility visibility = receiver.getInternalClass().getMethodVisibility(iVisited.getName());
 
-                if (!noex.isPrivate() && (!noex.isProtected() || self.isKindOf(receiver.getInternalClass().getRealClass()))) {
+                if (!visibility.isPrivate() && (!visibility.isProtected() || self.isKindOf(receiver.getInternalClass().getRealClass()))) {
                     if (receiver.getInternalClass().isMethodBound(iVisited.getName(), false)) {
                         definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
                         return;
@@ -164,7 +164,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitFCallNode(FCallNode)
+     * @see AbstractVisitor#visitFCallNode(FCallNode)
      */
     public void visitFCallNode(FCallNode iVisited) {
         if (self.getInternalClass().isMethodBound(iVisited.getName(), false)) {
@@ -173,7 +173,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitVCallNode(VCallNode)
+     * @see AbstractVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
         if (self.getInternalClass().isMethodBound(iVisited.getMethodName(), false)) {
@@ -182,28 +182,28 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitMatch2Node(Match2Node)
+     * @see AbstractVisitor#visitMatch2Node(Match2Node)
      */
     public void visitMatch2Node(Match2Node iVisited) {
         definition = "method";
     }
 
     /**
-     * @see NodeVisitor#visitMatch3Node(Match3Node)
+     * @see AbstractVisitor#visitMatch3Node(Match3Node)
      */
     public void visitMatch3Node(Match3Node iVisited) {
         definition = "method";
     }
 
     /**
-     * @see NodeVisitor#visitFalseNode(FalseNode)
+     * @see AbstractVisitor#visitFalseNode(FalseNode)
      */
     public void visitFalseNode(FalseNode iVisited) {
         definition = "false";
     }
 
     /**
-     * @see NodeVisitor#visitNilNode(NilNode)
+     * @see AbstractVisitor#visitNilNode(NilNode)
      */
     public void visitNilNode(NilNode iVisited) {
         definition = "nil";
@@ -217,21 +217,21 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitSelfNode(SelfNode)
+     * @see AbstractVisitor#visitSelfNode(SelfNode)
      */
     public void visitSelfNode(SelfNode iVisited) {
         definition = "self";
     }
 
     /**
-     * @see NodeVisitor#visitTrueNode(TrueNode)
+     * @see AbstractVisitor#visitTrueNode(TrueNode)
      */
     public void visitTrueNode(TrueNode iVisited) {
         definition = "true";
     }
 
     /**
-     * @see NodeVisitor#visitYieldNode(YieldNode)
+     * @see AbstractVisitor#visitYieldNode(YieldNode)
      */
     public void visitYieldNode(YieldNode iVisited) {
         if (ruby.isBlockGiven()) {
@@ -239,98 +239,98 @@ public class DefinedVisitor extends AbstractVisitor {
         }
     }
     /**
-     * @see NodeVisitor#visitAttrSetNode(AttrSetNode)
+     * @see AbstractVisitor#visitAttrSetNode(AttrSetNode)
      */
     public void visitAttrSetNode(AttrSetNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
+     * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
+     * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitConstDeclNode(ConstDeclNode)
+     * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
+     * @see AbstractVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
+     * @see AbstractVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
+     * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitLocalAsgnNode(LocalAsgnNode)
+     * @see AbstractVisitor#visitLocalAsgnNode(LocalAsgnNode)
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
+     * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
     public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitOpAsgnNode(OpAsgnNode)
+     * @see AbstractVisitor#visitOpAsgnNode(OpAsgnNode)
      */
     public void visitOpAsgnNode(OpAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
+     * @see AbstractVisitor#visitOpElementAsgnNode(OpElementAsgnNode)
      */
     public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
         definition = "assignment";
     }
 
     /**
-     * @see NodeVisitor#visitDVarNode(DVarNode)
+     * @see AbstractVisitor#visitDVarNode(DVarNode)
      */
     public void visitDVarNode(DVarNode iVisited) {
         definition = "local-variable(in-block)";
     }
 
     /**
-     * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
+     * @see AbstractVisitor#visitLocalVarNode(LocalVarNode)
      */
     public void visitLocalVarNode(LocalVarNode iVisited) {
         definition = "local-variable";
     }
 
     /**
-     * @see NodeVisitor#visitClassVarNode(ClassVarNode)
+     * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
         if (ruby.getCBase() == null && self.getInternalClass().isClassVarDefined(iVisited.getName())) {
@@ -343,7 +343,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitConstNode(ConstNode)
+     * @see AbstractVisitor#visitConstNode(ConstNode)
      * 
      * @fixme Implement this method.
      */
@@ -354,7 +354,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
+     * @see AbstractVisitor#visitGlobalVarNode(GlobalVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
         if (ruby.isGlobalVarDefined(iVisited.getName())) {
@@ -363,7 +363,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitInstVarNode(InstVarNode)
+     * @see AbstractVisitor#visitInstVarNode(InstVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
         if (self.hasInstanceVariable(iVisited.getName())) {
@@ -372,7 +372,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitColon2Node(Colon2Node)
+     * @see AbstractVisitor#visitColon2Node(Colon2Node)
      */
     public void visitColon2Node(Colon2Node iVisited) {
         try {
@@ -389,7 +389,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitBackRefNode(BackRefNode)
+     * @see AbstractVisitor#visitBackRefNode(BackRefNode)
      * 
      * @fixme Add test if back ref exists.
      */
@@ -400,7 +400,7 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitNthRefNode(NthRefNode)
+     * @see AbstractVisitor#visitNthRefNode(NthRefNode)
      * 
      * @fixme Add test if nth ref exists.
      */
