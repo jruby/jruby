@@ -252,7 +252,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     return 0;
                 case '#' :
                     try {
-                        lDyn = parseExpressionString(list, (char) closeQuote, token) || lDyn;
+                        lDyn = parseExpressionString(list, closeQuote, token) || lDyn;
                     } catch (EOFException e) {
                         errorHandler.handleError(IErrors.COMPILE_ERROR, position, Messages.getString("unterminated_string")); //$NON-NLS-1$
                         return 0;
@@ -347,7 +347,7 @@ public class RubyYaccLexer implements IYaccLexer {
                             break;
                         }
                     }
-                    stringToken.append((char) c);
+                    stringToken.append(c);
             }
         }
 
@@ -377,7 +377,7 @@ public class RubyYaccLexer implements IYaccLexer {
         StringBuffer stringToken = new StringBuffer();
 
         while ((c = support.read()) != closeQuote || nest > 0) {
-            if (c == -1) {
+            if (c == '\0') {
                 errorHandler.handleError(IErrors.COMPILE_ERROR, position, Messages.getString("unterminated_string")); //$NON-NLS-1$
                 return 0;
             }
@@ -418,7 +418,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     break;
                 }
             }
-            stringToken.append((char) c);
+            stringToken.append(c);
         }
         if (stringToken.length() > 0) {
             qwords.add(new StrNode(support.getPosition(), stringToken.toString()));
@@ -565,7 +565,7 @@ public class RubyYaccLexer implements IYaccLexer {
 
         //first eat as much space as possible then grab the position of the
         //beginning of the token
-        retry_space : for (;;) {
+        for (;;) {
             switch (c = support.read()) {
                 case '\0' : // NUL
                 case '\004' : // ^D
@@ -578,7 +578,7 @@ public class RubyYaccLexer implements IYaccLexer {
                 case '\r' :
                 case '\u0013' : // '\v'
                     spaceSeen = true;
-                    continue retry_space;
+                    continue;
                 case '#' : // it's a comment
                     while ((c = support.read()) != '\n') {
                         if (c == '\0') {
@@ -588,7 +588,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     // fall through
                 case '\n' :
                     if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot()) {
-                        continue retry_space;
+                        continue;
                     }
                     lexState = LexState.EXPR_BEG;
                     return '\n';
@@ -599,7 +599,7 @@ public class RubyYaccLexer implements IYaccLexer {
                             for (;;) {
                                 // col = lex_pend;
                                 c = support.read();
-                                if (c == -1) {
+                                if (c == '\0') {
                                     errorHandler.handleError(IErrors.COMPILE_ERROR, Messages.getString("unterminated_embedded_document")); //$NON-NLS-1$
                                     return 0;
                                 } else if (c != '=') {
@@ -609,7 +609,7 @@ public class RubyYaccLexer implements IYaccLexer {
                                 }
                             }
                             support.readLine();
-                            continue retry_space;
+                            continue;
                         }
                     }
 
@@ -1586,7 +1586,7 @@ public class RubyYaccLexer implements IYaccLexer {
 
         token.newToken(support.getPosition());
 
-        int brace = -1;
+        char brace = '\0';
         int nest;
 
         fetch_id : for (;;) {
@@ -1729,7 +1729,7 @@ public class RubyYaccLexer implements IYaccLexer {
                                     }
                                     continue loop_again;
                                 case '{' :
-                                    if (brace != -1) {
+                                    if (brace != '\0') {
                                         nest++;
                                     }
                                 case '\"' :

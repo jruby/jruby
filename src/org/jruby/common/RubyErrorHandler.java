@@ -136,5 +136,4 @@ public class RubyErrorHandler implements IRubyErrorHandler {
     public void warning(String message) {
         handleError(IErrors.WARNING, runtime.getPosition(), message);
     }
-
 }

@@ -46,7 +46,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class NewlineNode extends AbstractNode {
-    private INode nextNode;
+    private final INode nextNode;
 
     public NewlineNode(ISourcePosition position, INode nextNode) {
         super(position);
@@ -71,11 +71,4 @@ public class NewlineNode extends AbstractNode {
         return nextNode;
     }
 
-    /**
-     * Sets the nextNode.
-     * @param nextNode The nextNode to set
-     */
-    public void setNextNode(INode nextNode) {
-        this.nextNode = nextNode;
-    }
 }

@@ -378,8 +378,7 @@ public class ParserSupport {
         if (node == null) {
             return null;
         } else if (node instanceof NewlineNode) {
-            ((NewlineNode) node).setNextNode(cond0(((NewlineNode) node).getNextNode()));
-            return node;
+            return new NewlineNode(node.getPosition(), cond0(((NewlineNode) node).getNextNode()));
         } else {
             return cond0(node);
         }

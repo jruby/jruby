@@ -78,7 +78,7 @@ public class ReaderLexerSource extends AbstractLexerSource {
     protected char internalRead() {
         try {
         	int c = reader.read();
-        	return c != -1 ? (char) c : (char) 0;
+        	return c != -1 ? (char) c : '\0';
         } catch (IOException ioExcptn) {
             return 0;
         }
