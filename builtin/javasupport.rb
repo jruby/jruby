@@ -47,7 +47,7 @@ class Module
     end
     @included_packages << package
 
-    def self.constant_missing(constant)
+    def self.const_missing(constant)
       java_class = nil
       @included_packages.detect {|package|
         begin

@@ -236,7 +236,7 @@ public class RubyModule extends RubyObject {
 
         moduleClass.defineMethod("instance_method", CallbackFactory.getMethod(RubyModule.class, "instance_method", IRubyObject.class));
         
-        moduleClass.defineMethod("constant_missing", CallbackFactory.getMethod(RubyModule.class, "constant_missing", IRubyObject.class));
+        moduleClass.defineMethod("const_missing", CallbackFactory.getMethod(RubyModule.class, "const_missing", IRubyObject.class));
 
         moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
     }
@@ -431,23 +431,10 @@ public class RubyModule extends RubyObject {
             }
             break;
         }
-        return callMethod("constant_missing", RubySymbol.newSymbol(runtime, name));
+        return callMethod("const_missing", RubySymbol.newSymbol(runtime, name));
     }
     
-    public IRubyObject constant_missing(IRubyObject name) {
-        
-        // Now try to load a Java class
-        String javaClassName = getRuntime().getJavaSupport().getJavaName(name.asSymbol());
-        if (javaClassName == null) {
-            javaClassName = name.asSymbol();
-        }
-
-        try {
-            Class javaClass = getRuntime().getJavaSupport().loadJavaClass(javaClassName);
-            return getRuntime().getJavaSupport().loadClass(javaClass, null);
-        } catch (NameError excptn) {
-        }
-        
+    public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
         if (this != getRuntime().getClasses().getObjectClass()) {
             throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol() + " at " + getClassPath());

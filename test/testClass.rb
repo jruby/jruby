@@ -38,8 +38,8 @@ class CM1
 end
 
 class CM2
-  def CM2::constant_missing
-    "A"
+  def CM2::const_missing (constant)
+    constant.to_s
   end
 end
 
