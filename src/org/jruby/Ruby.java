@@ -637,7 +637,7 @@ public final class Ruby {
         } else if (backtrace.getLength() == 0) {
             printErrorPos();
         } else {
-            IRubyObject mesg = backtrace.first();
+            IRubyObject mesg = backtrace.first(null);
 
             if (mesg.isNil()) {
                 printErrorPos();

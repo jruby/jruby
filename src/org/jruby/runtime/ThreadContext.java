@@ -240,7 +240,7 @@ public class ThreadContext {
                     if (length == 0) {
                         value = runtime.getNil();
                     } else if (length == 1) {
-                        value = ((RubyArray)value).first();
+                        value = ((RubyArray)value).first(null);
                     } else {
                         // XXXEnebo - Should be warning not error.
                         //throw new ArgumentError(runtime, "wrong # of arguments(" + 

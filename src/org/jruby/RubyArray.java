@@ -137,7 +137,7 @@ public class RubyArray extends RubyObject {
         arrayClass.defineMethod("[]=", callbackFactory.getOptMethod(RubyArray.class, "aset"));
         arrayClass.defineMethod("at", callbackFactory.getMethod(RubyArray.class, "at", RubyNumeric.class));
         arrayClass.defineMethod("fetch", callbackFactory.getOptMethod(RubyArray.class, "fetch", RubyNumeric.class));
-        arrayClass.defineMethod("first", callbackFactory.getMethod(RubyArray.class, "first"));
+        arrayClass.defineMethod("first", callbackFactory.getOptMethod(RubyArray.class, "first"));
         arrayClass.defineMethod("insert", callbackFactory.getOptMethod(RubyArray.class, "insert", RubyNumeric.class));
         arrayClass.defineMethod("last", callbackFactory.getMethod(RubyArray.class, "last"));
         arrayClass.defineMethod("concat", callbackFactory.getMethod(RubyArray.class, "concat", IRubyObject.class));
@@ -729,8 +729,28 @@ public class RubyArray extends RubyObject {
     /** rb_ary_first
      *
      */
-    public IRubyObject first() {
-        return getLength() == 0 ? getRuntime().getNil() : entry(0);
+    public IRubyObject first(IRubyObject[] args) {
+    	if (args == null || args.length == 0) {
+    		return getLength() == 0 ? getRuntime().getNil() : entry(0);
+    	}
+    	
+    	argCount(args, 0, 1);
+    	
+    	// TODO: See if enough integer-only conversions to make this
+    	// convenience function (which could replace RubyNumeric#fix2long).
+    	if (args[0] instanceof RubyInteger == false) {
+            throw new TypeError(getRuntime(), "Cannot convert " + 
+            		args[0].getType() + " into Integer");
+    	}
+    	
+    	long length = ((RubyInteger)args[0]).getLongValue();
+    	
+    	if (length < 0) {
+    		throw new ArgumentError(getRuntime(), 
+    				"negative array size (or size too big)");
+    	}
+    	
+    	return subseq(0, length);
     }
 
     /** rb_ary_last

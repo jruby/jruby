@@ -1460,7 +1460,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         
         RubyArray array = (RubyArray) value;
         
-        return array.getLength() == 1 ? array.first() : array;
+        return array.getLength() == 1 ? array.first(null) : array;
     }
 
     /* HACK: .... */
