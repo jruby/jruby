@@ -898,6 +898,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject aset(IRubyObject[] args) {
+		testFrozen("class");
 		int strLen = getValue().length();
 		if (argCount(args, 2, 3) == 3) {
 			RubyString repl = stringValue(args[2]);
