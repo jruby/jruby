@@ -31,17 +31,22 @@ import org.jruby.exceptions.RubyRegexpException;
 /**
  * Regexp adapter for gnu.regexp.
  */
-class GNURegexpAdapter implements IRegexpAdapter
+class GNURegexpAdapter extends IRegexpAdapter
 {
 
     private RE re;
     private int cflags = 0;
     private int eflags = RE.REG_NOTBOL | RE.REG_NOTEOL;
+    private boolean extended;
 
     /**
      * Compile the regex.
      */
     public void compile(String pattern) throws RubyRegexpException {
+        if (extended) {
+            pattern = unextend(pattern);
+        }
+
         try {
             this.re = new RE(pattern, cflags);
         } catch (REException e) {
@@ -71,10 +76,7 @@ class GNURegexpAdapter implements IRegexpAdapter
      * Set whether patterns can contain comments and extra whitespace
      */
     public void setExtended(boolean set) {
-        if (set) {
-            // XXX - we'll have to do handle this ourselves
-            throw new RubyRegexpException("Extended patterns are not supported");
-        }
+        extended = set;
     }
 
     /**

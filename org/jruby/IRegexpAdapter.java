@@ -24,42 +24,80 @@
  * 
  */
 package org.jruby;
-import org.jruby.exceptions.RubyRegexpException;
+
 /**
- * Regexp adapter interface.
- * This interface is used to decouple ruby from the actual regexp engine
+ * Regexp adapter base class.
+ * This abstract class is used to decouple ruby from the actual regexp engine
  */
-interface IRegexpAdapter
+abstract class IRegexpAdapter
 {
 
     /**
      * Compile the regex.
      */
-    public void compile(String pattern) throws org.jruby.exceptions.RubyRegexpException;
+    public abstract void compile(String pattern) throws org.jruby.exceptions.RubyRegexpException;
 
     /**
      * Set whether matches should be case-insensitive or not
      */
-    public void setCasefold(boolean set) ;
+    public abstract void setCasefold(boolean set) ;
 
     /**
      * Get whether matches are case-insensitive or not
      */
-    public boolean getCasefold() ;
+    public abstract boolean getCasefold() ;
 
     /**
      * Set whether patterns can contain comments and extra whitespace
      */
-    public void setExtended(boolean set) ;
+    public abstract void setExtended(boolean set) ;
 
     /**
      * Set whether the dot metacharacter should match newlines
      */
-    public void setMultiline(boolean set) ;
+    public abstract void setMultiline(boolean set) ;
 
     /**
      * Does the given argument match the pattern?
      */
-    public RubyObject search(Ruby ruby, String target, int startPos) ;
+    public abstract RubyObject search(Ruby ruby, String target, int startPos) ;
+    
+    /**
+     * Removes whitespace and comments from regexp, for those libs 
+     * (like gnu.regexp) that don't support extended syntax.
+     */
+    public String unextend(String re) {
+        boolean inClass = false;
+        int len = re.length();
+        StringBuffer sbuf = new StringBuffer(len);
+        int pos = 0;
+        char c;
+        while (pos < len) {
+            c = re.charAt(pos);
+            if (c == '\\' && ++pos < len) {
+                sbuf.append('\\').append(re.charAt(pos));
+            } else if (c == '[' && ++pos < len) {
+                sbuf.append(c);
+                inClass = true;
+                if ((c = re.charAt(pos)) == ']') {
+                    sbuf.append(c);
+                }
+            } else if (c == ']') {
+                sbuf.append(c);
+                inClass = false;
+            } else if (c == '#') {
+                if (pos > 2 && re.charAt(pos-2) == '(' && re.charAt(pos-1) == '?') {
+                    sbuf.append(c);
+                } else {
+                    pos++;
+                    for (; pos < len && re.charAt(pos) != '\n' && re.charAt(pos) != '\r'; pos++);
+                }
+            } else if (inClass || !Character.isWhitespace(c)) {
+                sbuf.append(c);
+            }
+            pos++;
+        }
+        return sbuf.toString();
+    }
 }
 

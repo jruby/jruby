@@ -56,7 +56,7 @@ public class RbRegexp implements ReOptions {
         regexpClass.defineMethod("=~", getMethod("m_match", RubyObject.class));
         regexpClass.defineMethod("~", getMethod("m_match2"));
         regexpClass.defineMethod("match", getMethod("m_match_m", RubyObject.class));
-//        regexpClass.defineMethod("inspect", getMethod("m_inspect"));
+        regexpClass.defineMethod("inspect", getMethod("m_inspect"));
         regexpClass.defineMethod("source", getMethod("m_source"));
         regexpClass.defineMethod("casefold?", getMethod("m_casefold"));
 //        regexpClass.defineMethod("kcode", getMethod("m_kcode"));

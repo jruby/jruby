@@ -128,7 +128,7 @@ public class RbString {
         stringClass.defineMethod("count", getMethod("m_count", true));
 
         stringClass.defineMethod("tr!", getMethod("m_tr_bang", true));
-        stringClass.defineMethod("tr_s!", getMethod("mr_tr_s_bang", true));
+        stringClass.defineMethod("tr_s!", getMethod("m_tr_s_bang", true));
         stringClass.defineMethod("delete!", getMethod("m_delete_bang", true));
         stringClass.defineMethod("squeeze!", getMethod("m_squeeze_bang", true));
 
@@ -153,8 +153,8 @@ public class RbString {
 //    rb_define_global_function("split", rb_f_split, -1);
 //    rb_define_global_function("scan", rb_f_scan, 1);
 
-    stringClass.defineMethod("slice", getMethod("m_aref", true));
-    stringClass.defineMethod("slice!", getMethod("m_slice_bang", true));
+        stringClass.defineMethod("slice", getMethod("m_aref", true));
+        stringClass.defineMethod("slice!", getMethod("m_slice_bang", true));
 
 //    id_to_s = rb_intern("to_s");
 

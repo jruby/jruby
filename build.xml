@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
+
 <project basedir="." default="all" name="JRuby">
+
     <!--<property name="build.compiler" value="jikes"/>-->
     <property name="build.compiler" value="modern"/>
     <!--<property name="build.compiler" value="classic"/>-->
@@ -9,42 +11,41 @@
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
     <property name="build.dir" value="build"/>
-    <property name="build.src" value="${build.dir}/src"/>
     <property name="build.dest" value="${build.dir}/classes"/>
     <property name="build.docs" value="${build.dir}/docs"/>
     <property name="build.tars" value="${build.dir}/tars"/>
     <property name="src.dir" value="."/>
     <property name="base.dir" value="."/>
 
-    <target name="init">
-        <property name="version" value="0.2.0"/>
-        <property name="version.file" value="0_2_0"/>
+    <property name="version" value="0.2.0"/>
+    <property name="version.file" value="0_2_0"/>
+    <property name="javadoc.title" value="JRuby"/>
 
-        <property name="javadoc.title" value="JRuby"/>
-
-        <mkdir dir="${build.dir}"/>
-        <mkdir dir="${build.src}"/>
-        <mkdir dir="${build.dest}"/>
-        <mkdir dir="${build.docs}"/>
-        <mkdir dir="${build.docs}/support"/>
+    <target name="check_for_optional_packages">
+        <available property="jdk1.4+" classname="java.lang.CharSequence" />
     </target>
 
-    <target depends="init" name="compile">
-        <!--replace the javac task start tag by the next one if using jdk1.4 -->
-        <!--<javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}"/>-->
-        <javac debug="false" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
-            <exclude name="**/JDKRegexpAdapter.java"/>
+    <target depends="check_for_optional_packages" name="compile">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.dest}"/>
+        <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
+            <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
             <exclude name="org/jruby/bsf/**/*.java"/>
+            <exclude name="org/jruby/interpreter/nodes/BlockNode.java"/>
         </javac>
         <copy todir="${build.dest}">
             <fileset dir="${src.dir}">
                 <include name="**/*.properties"/>
             </fileset>
         </copy>
-        <jar basedir="${build.dest}" compress="true" jarfile="${base.dir}/jruby.jar" manifest="${base.dir}/jruby.mf"/>
+        <jar basedir="${build.dest}"
+             compress="true" 
+             jarfile="${base.dir}/jruby.jar"
+             manifest="${base.dir}/jruby.mf"
+        />
     </target>
 
-    <target depends="init,compile," name="bin-gz">
+    <target depends="compile," name="bin-gz">
         <mkdir dir="${build.tars}"/>
         
         <copy todir="${build.tars}">
@@ -59,32 +60,56 @@
         
         <tar basedir="${build.tars}" tarfile="${build.dir}/jruby.tar"/>
 
-        <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
+        <gzip src="${build.dir}/jruby.tar" 
+              zipfile="${build.dir}/jruby-${version.file}.tar.gz"
+        />
 
-        <!--<delete dir="${build.tars}"/>         <delete file="${build.dir}/jruby.tar"/>         <delete file="${build.dir}/jruby.jar"/> -->
+        <!--<delete dir="${build.tars}"/> 
+        <delete file="${build.dir}/jruby.tar"/>
+        <delete file="${build.dir}/jruby.jar"/>-->
     </target>
 
-    <target depends="init" name="src-gz">
+    <target name="src-gz">
         <tar basedir="${base.dir}" tarfile="${build.dir}/jruby-src.tar">
             <exclude name="${build.dir}/**/*"/>
             <exclude name="**/*.class"/>
         </tar>
 
-        <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
+        <gzip src="${build.dir}/jruby-src.tar"
+              zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"
+        />
 
         <!-- <delete file="${build.dir}/jruby-src.tar"/> -->
     </target>
 
-    <target depends="init" name="javadocs">
-        <javadoc destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
-        <javadoc destdir="${build.docs}/support" doctitle="${javadoc.title}" packagenames="gnu.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
+    <target name="javadocs">
+        <mkdir dir="${build.docs}"/>
+        <mkdir dir="${build.docs}/support"/>
+        <javadoc destdir="${build.docs}"
+                 doctitle="${javadoc.title}"
+                 packagenames="org.jruby.*"
+                 public="true"
+                 sourcepath="${src.dir}"
+                 use="true"
+                 version="true"
+                 windowtitle="${javadoc.title}"
+        />
+        <javadoc destdir="${build.docs}/support"
+                 doctitle="${javadoc.title}"
+                 packagenames="gnu.*"
+                 public="true"
+                 sourcepath="${src.dir}"
+                 use="true"
+                 version="true"
+                 windowtitle="${javadoc.title}"
+        />
     </target>
 	
-    <target depends="init,bin-gz,src-gz" description="Build everything." name="all">
+    <target depends="bin-gz,src-gz" description="Build everything." name="all">
         <echo message="JRuby built."/>
     </target>
 
-    <target depends="init" description="Clean all build products." name="clean">
+    <target description="Clean all build products." name="clean">
         <delete dir="${build.dir}"/>
     </target>
 </project>

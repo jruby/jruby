@@ -29,6 +29,7 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.parser.ReOptions;
+import org.jruby.util.PrintfFormat;
 
 /**
  *
@@ -43,7 +44,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public RubyRegexp(Ruby ruby) {
         super(ruby, ruby.getRubyClass("Regexp"));
-        matcher = new GNURegexpAdapter();
+        try {
+            matcher = (IRegexpAdapter)ruby.getRegexpAdapterClass().newInstance();
+        } catch (Exception ex) {
+            // can't happen if JRuby is invoked via Main class
+            throw new RubyBugException("Couldn't create regexp adapter");
+        }
     }
     
     public void initialize(String pat, int opts) throws RubyException {
@@ -89,15 +95,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
     
-    private RubyString stringValue(RubyObject other) {
-        if (other instanceof RubyString) {
-            return (RubyString)other;
+    public static RubyRegexp regexpValue(RubyObject obj) {
+        if (obj instanceof RubyRegexp) {
+            return (RubyRegexp)obj;
+        } else if (obj instanceof RubyString) {
+            return m_newRegexp(obj.getRuby(), (RubyString)obj, 0);
         } else {
-            try {
-                return (RubyString)other.convertType(RubyString.class, "String", "to_str");
-            } catch (Exception ex) {
-                throw new RubyArgumentException("can't convert arg to String: " + ex.getMessage());
-            }
+            throw new RubyArgumentException("can't convert arg to Regexp");
         }
     }
 
@@ -123,7 +127,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public RubyObject m_initialize(RubyObject[] args) {
         String pat = (args[0] instanceof RubyRegexp)
                    ? ((RubyRegexp)args[0]).m_source().getValue()
-                   : stringValue(args[0]).getValue();
+                   : RubyString.stringValue(args[0]).getValue();
         int opts = 0;
         if (args.length > 1) {
             if (args[1] instanceof RubyFixnum) {
@@ -276,7 +280,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public int m_search(RubyObject target, int pos) {
-        String str = stringValue(target).getValue();
+        String str = RubyString.stringValue(target).getValue();
         if (pos > str.length()) {
             return -1;
         }
@@ -295,7 +299,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public RubyObject m_regsub(RubyObject str, RubyMatchData match) {
-        String repl = stringValue(str).getValue();
+        String repl = RubyString.stringValue(str).getValue();
         StringBuffer sb = new StringBuffer("");
         int pos = 0;
         int end = repl.length();
@@ -342,6 +346,56 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public RubyObject m_clone() {
         return m_newRegexp(getRuby(), m_source(), options);
+    }
+
+    /** rb_reg_inspect
+     *
+     */
+    public RubyString m_inspect() {
+        final int length = pattern.length();
+        StringBuffer sb = new StringBuffer(length + 2);
+        
+        sb.append('/');
+        for (int i = 0; i < length; i++) {
+            char c = pattern.charAt(i);
+            
+            if (RubyString.isAlnum(c)) {
+                sb.append(c);
+            } else if (c == '/') {
+                sb.append('\\').append(c);
+            } else if (RubyString.isPrint(c)) {
+                sb.append(c);
+            } else if (c == '\n') {
+                sb.append('\\').append('n');
+            } else if (c == '\r') {
+                sb.append('\\').append('r');
+            } else if (c == '\t') {
+                sb.append('\\').append('t');
+            } else if (c == '\f') {
+                sb.append('\\').append('f');
+            } else if (c == '\u000B') {
+                sb.append('\\').append('v');
+            } else if (c == '\u0007') {
+                sb.append('\\').append('a');
+            } else if (c == '\u001B') {
+                sb.append('\\').append('e');
+            } else {
+                sb.append(new PrintfFormat("\\%.3o").sprintf(c));
+            }
+        }
+        sb.append('/');
+
+        if ((options & RE_OPTION_IGNORECASE) > 0) {
+            sb.append('i');
+        }
+        if ((options & RE_OPTION_MULTILINE) > 0) {
+            sb.append('m');
+        }
+        if ((options & RE_OPTION_EXTENDED) > 0) {
+            sb.append('x');
+        }
+        
+        return RubyString.m_newString(getRuby(), sb.toString());
     }
 }
 

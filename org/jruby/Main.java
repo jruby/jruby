@@ -80,7 +80,7 @@ public class Main {
                     // Benchmark
                     now = System.currentTimeMillis();
                 } else if (args[i].equals("-rx")) {
-                    if (i++ >= lenArg) {
+                    if (++i >= lenArg) {
                         System.err.println("invalid argument " + i);
                         System.err.println(" -rx must be followed by an expression to evaluate");
                         printUsage();

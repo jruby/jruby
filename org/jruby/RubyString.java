@@ -507,7 +507,7 @@ public class RubyString extends RubyObject {
     }
 
     /* rb_str_to_str */
-    private RubyString stringValue(RubyObject other) {
+    public static RubyString stringValue(RubyObject other) {
         if (other instanceof RubyString) {
             return (RubyString)other;
         } else {
@@ -516,17 +516,6 @@ public class RubyString extends RubyObject {
             } catch (Exception ex) {
                 throw new RubyArgumentException("can't convert arg to String: " + ex.getMessage());
             }
-        }
-    }
-
-    /* get_pat */
-    private RubyRegexp regexpValue(RubyObject other) {
-        if (other instanceof RubyRegexp) {
-            return (RubyRegexp)other;
-        } else if (other instanceof RubyString) {
-            return RubyRegexp.m_newRegexp(getRuby(), (RubyString)other, 0);
-        } else {
-            throw new RubyArgumentException("can't convert arg to Regexp");
         }
     }
 
@@ -554,7 +543,7 @@ public class RubyString extends RubyObject {
         } else {
             throw new RubyArgumentException("wrong number of arguments");
         }
-        RubyRegexp pat = regexpValue(args[0]);
+        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
         if (pat.m_search(this, 0) >= 0) {
             RubyMatchData match = (RubyMatchData)getRuby().getBackRef();
@@ -600,7 +589,7 @@ public class RubyString extends RubyObject {
             throw new RubyArgumentException("wrong number of arguments");
         }
         boolean taint = repl.isTaint();
-        RubyRegexp pat = regexpValue(args[0]);
+        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
         int beg = pat.m_search(this, 0);
         if (beg < 0) {
@@ -733,7 +722,7 @@ public class RubyString extends RubyObject {
             return new RubyFixnum(getRuby(), getValue().charAt(idx));
         }
         if (args[0] instanceof RubyRegexp) {
-            if (regexpValue(args[0]).m_search(this, 0) >= 0) {
+            if (RubyRegexp.regexpValue(args[0]).m_search(this, 0) >= 0) {
                 return RubyRegexp.m_last_match(getRuby().getBackRef());
             }
             return getRuby().getNil();
@@ -743,10 +732,6 @@ public class RubyString extends RubyObject {
                 return args[0];
             }
             return getRuby().getNil();
-        }
-        if (args[0] instanceof RubyRange) {
-            long[] idxs = ((RubyRange)args[0]).getBeginLength(getValue().length());
-            return substr((int)idxs[0], (int)idxs[1]);
         }
         throw new RubyTypeException("wrong argument type");
     }
@@ -1005,7 +990,7 @@ public class RubyString extends RubyObject {
         int len = getValue().length();
         if (argc > 0) {
             if (args[0] instanceof RubyRegexp) {
-                pat = regexpValue(args[0]);
+                pat = RubyRegexp.regexpValue(args[0]);
             } else {
                 str = stringValue(args[0]);
                 if (str.getValue().equals(" ")) {
@@ -1054,7 +1039,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject m_scan(RubyObject arg) {
-        RubyRegexp pat = regexpValue(arg);
+        RubyRegexp pat = RubyRegexp.regexpValue(arg);
         int start = 0;
         if (!getRuby().getInterpreter().isBlockGiven()) {
             RubyArray ary = RubyArray.m_newArray(getRuby());
@@ -1174,7 +1159,7 @@ public class RubyString extends RubyObject {
         return this;
     }
 
-    private String chomp(RubyObject[] args) {
+    protected String chomp(RubyObject[] args) {
         if (getValue().length() == 0) {
             return null;
         }

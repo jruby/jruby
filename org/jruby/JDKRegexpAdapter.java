@@ -31,7 +31,7 @@ import org.jruby.exceptions.RubyRegexpException;
 /**
  * Regexp adapter for gnu.regexp.
  */
-class JDKRegexpAdapter implements IRegexpAdapter {
+class JDKRegexpAdapter extends IRegexpAdapter {
 
     private Pattern _Pat;
     private Matcher _Matcher;
