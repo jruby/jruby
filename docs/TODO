@@ -35,7 +35,7 @@ Items marked '-' are done and will be available in the next release.
     * Finish ASTWriterVisitor
     * Implement ASTReader
 
-* FIX build.xml (use a filtered copying to fill constants)
+- FIX build.xml (use a filtered copying to fill constants)
 
 * Marshalling
     - Reading links

@@ -10,6 +10,7 @@
   <property name="src.dir" value="${base.dir}/src"/>
   <property name="test.dir" value="${base.dir}/test"/>
   <property name="lib.dir" value="${base.dir}/lib"/>
+  <property name="test.dir" value="${base.dir}/test"/>
   
   <property name="docs.dir" value="${base.dir}/docs"/>
   <property name="apidocs.dir" value="${docs.dir}/api"/>
@@ -64,7 +65,7 @@
 	       classpathref="build.classpath"/>
   </target>
 
-  <target name="compile-src" description="compile the src directory" depends="init,check-for-optional-packages">
+  <target name="compile" description="compile the src directory" depends="init,check-for-optional-packages">
     <mkdir dir="${tmp.dir}/src"/>
  
     <copy todir="${tmp.dir}/src">
@@ -85,15 +86,6 @@
     </javac>
   </target>
 
-  <target name="compile-test" description="compile the test directory"
-	  depends="check-for-optional-packages,init">
-  </target>
-
-  <target name="compile"
-          description="compile JRuby"
-	  depends="compile-src,compile-test">
-  </target>
-
   <target name="create-jar" description="create the jruby.jar" depends="compile">
     <jar destfile="${lib.dir}/jruby.jar">
       <fileset dir="${tmp.dir}/src">
@@ -106,6 +98,62 @@
         <attribute name="Main-Class" value="org.jruby.Main"/>
       </manifest>
     </jar>
+  </target>
+  
+  <target name="compile-test" description="compile the test directory" depends="create-jar">
+    <mkdir dir="${tmp.dir}/test"/>
+ 
+    <copy todir="${tmp.dir}/test">
+      <fileset dir="${test.dir}">
+        <patternset refid="java.src.pattern"/>
+      </fileset>
+      <filterchain>
+        <expandproperties/>
+      </filterchain>
+    </copy>
+
+    <javac destdir="${tmp.dir}/test">
+      <classpath>
+        <path refid="build.classpath"/>
+        <pathelement path="${lib.dir}/jruby.jar"/>
+      </classpath>
+      <src path="${tmp.dir}/test"/>
+      <patternset refid="java.src.pattern"/>
+    </javac>
+  </target>
+
+  <target name="create-test-jar" description="create the test.jar" depends="compile-test">
+    <jar destfile="${test.dir}/test.jar">
+      <fileset dir="${tmp.dir}/test">
+        <include name="**/*.class"/>
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+      </manifest>
+    </jar>
+  </target>
+  
+  <target name="test" description="runs junit tests" depends="create-test-jar">
+    <mkdir dir="${test.dir}/report"/>
+    <mkdir dir="${tmp.dir}/test-results"/>
+    <junit printsummary="yes" haltonfailure="no">
+      <classpath>
+        <path refid="build.classpath"/>
+        <pathelement path="${lib.dir}/jruby.jar"/>
+        <pathelement path="${test.dir}/test.jar"/>
+      </classpath>
+      <sysproperty key="jruby.base" value="${base.dir}"/>
+      <sysproperty key="jruby.home" value="${base.dir}"/>
+      <sysproperty key="jruby.lib" value="${lib.dir}"/>
+      <formatter type="xml"/>
+      <test name="org.jruby.test.MainTestSuite" todir="${tmp.dir}/test-results"/>
+    </junit>
+    <junitreport todir="${tmp.dir}/test-results">
+      <fileset dir="${tmp.dir}/test-results">
+        <include name="TEST-*.xml"/>
+      </fileset>
+      <report format="noframes" todir="${test.dir}/report"/>
+    </junitreport>
   </target>
   
   <target name="create-apidocs" description="creates the java api doc" depends="init">

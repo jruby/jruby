@@ -119,7 +119,7 @@ public class ScriptTestSuite extends TestSuite {
         public void runTest() throws Throwable {
         	StringBuffer script = new StringBuffer();
         	
-        	script.append("require 'minirunit'").append('\n');
+        	script.append("require 'test/minirunit'").append('\n');
         	script.append("test_load('").append(scriptName()).append("')").append('\n');
             script.append("test_get_last_failed()").append('\n');
 
