@@ -774,9 +774,9 @@ public class RubyString extends RubyObject implements IndexCallable {
 
 		if (pat.search(this, 0) >= 0) {
 			RubyMatchData match = (RubyMatchData) getRuntime().getBackref();
-			RubyString newStr = (RubyString) match.pre_match();
-			newStr.append((RubyString) (iter ? getRuntime().yield(match.group(0)) : pat.regsub(repl, match)));
-			newStr.append((RubyString) match.post_match());
+			RubyString newStr = match.pre_match();
+			newStr.append((iter ? getRuntime().yield(match.group(0)) : pat.regsub(repl, match)));
+			newStr.append(match.post_match());
 			if (bang) {
 				replace(newStr);
 				return this;
@@ -1443,7 +1443,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 			String template = expandTemplate(specs[i], true);
 			boolean invert = (specs[i].length() > 1 && specs[i].startsWith("^"));
 			for (int j = 0; j < 256; j++) {
-				if (template.indexOf((char) j) != -1) {
+				if (template.indexOf(j) != -1) {
 					table[j] += (invert ? -1 : 1);
 				}
 			}

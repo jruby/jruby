@@ -42,6 +42,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private final Method method;
+    private RubyClass proxyClass = getRuntime().getClasses().getJavaObjectClass();
 
     private static final int NAME = 1;
     private static final int ARITY = 2;
@@ -52,6 +53,9 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private static final int ARGUMENT_TYPES = 7;
     private static final int INSPECT = 8;
     private static final int STATIC_P = 9;
+    private static final int RESULT_TYPE = 10;
+    private static final int PROXY_CLASS = 11;
+    private static final int SET_PROXY_CLASS = 12;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaMethodClass =
@@ -65,6 +69,9 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
         javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
         javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
+        javaMethodClass.defineMethod("result_type", IndexedCallback.create(RESULT_TYPE, 0));
+        javaMethodClass.defineMethod("proxy_class", IndexedCallback.create(PROXY_CLASS, 0));
+        javaMethodClass.defineMethod("proxy_class=", IndexedCallback.create(SET_PROXY_CLASS, 1));
 
         return javaMethodClass;
     }
@@ -118,7 +125,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         return invokeWithExceptionHandling(javaInvokee, arguments);
     }
 
-    private IRubyObject invoke_static(IRubyObject[] args) {
+    public IRubyObject invoke_static(IRubyObject[] args) {
         if (args.length != getArity()) {
             throw new ArgumentError(getRuntime(), args.length, getArity());
         }
@@ -128,10 +135,26 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         return invokeWithExceptionHandling(null, arguments);
     }
 
+    public IRubyObject result_type() {
+        return RubyString.newString(getRuntime(), method.getReturnType().getName());
+    }
+
+    public RubyClass proxy_class() {
+        return proxyClass;
+    }
+
+    public RubyClass set_proxy_class(IRubyObject proxyClass) {
+        if (! (proxyClass instanceof RubyClass)) {
+            throw new TypeError(getRuntime(), proxyClass, getRuntime().getClasses().getClassClass());
+        }
+        this.proxyClass = (RubyClass) proxyClass;
+        return this.proxyClass;
+    }
+
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return new RubyJavaObject(runtime, runtime.getClasses().getJavaObjectClass(), result);
+            return new RubyJavaObject(runtime, proxyClass, result);
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {
@@ -147,9 +170,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private void convertArguments(Object[] arguments) {
         Class[] parameterTypes = parameterTypes();
         for (int i = 0; i < arguments.length; i++) {
-            Object argument = arguments[i];
-            Class parameterType = parameterTypes[i];
-            arguments[i] = JavaUtil.convertArgument(argument, parameterType);
+            arguments[i] = JavaUtil.convertArgument(arguments[i], parameterTypes[i]);
         }
     }
 
@@ -189,6 +210,12 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
                 return inspect();
             case STATIC_P :
                 return static_p();
+            case RESULT_TYPE :
+                return result_type();
+            case PROXY_CLASS :
+                return proxy_class();
+            case SET_PROXY_CLASS :
+                return set_proxy_class(args[0]);
             default :
                 return super.callIndexed(index, args);
         }

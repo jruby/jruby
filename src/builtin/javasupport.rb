@@ -41,7 +41,6 @@ module JavaUtilities
     end
 
     def create_proxy_class(constant, java_class, mod)
-      # Create proxy class
       mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(mod.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
@@ -129,7 +128,7 @@ module JavaUtilities
   end
 end
 
-# Extensions to existing classes and modules
+# Extensions to the standard Module package.
 
 class Module
   private

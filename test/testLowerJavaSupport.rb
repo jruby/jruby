@@ -122,4 +122,14 @@ if defined? Java
   test_ok(method.static?)
   result = method.invoke_static(Java.primitive_to_java(101))
   test_equal(string_class.to_s, result.java_type)
+
+  # Control over return types and values
+  test_equal("java.lang.String", method.result_type)
+  test_equal(JavaObject, method.proxy_class)
+  test_equal(JavaObject,
+             method.invoke_static(Java.primitive_to_java(101)).type)
+  method.proxy_class = Object
+  test_equal(Object, method.proxy_class)
+  test_equal(Object,
+             method.invoke_static(Java.primitive_to_java(101)).type)
 end

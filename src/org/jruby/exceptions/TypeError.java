@@ -47,7 +47,7 @@ public class TypeError extends RaiseException {
         super(ruby, ruby.getExceptions().getTypeError(), msg);
     }
 
-    public TypeError(Ruby ruby, IRubyObject object, RubyClass rbClass) {
-        this(ruby, "wrong argument type " + object.getInternalClass() + " (expected " + rbClass);
+    public TypeError(Ruby ruby, IRubyObject receivedObject, RubyClass expectedType) {
+        this(ruby, "wrong argument type " + receivedObject.getInternalClass() + " (expected " + expectedType);
     }
 }
