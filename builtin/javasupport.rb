@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+# Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
 #
 # JRuby - http://jruby.sourceforge.net
 #
@@ -25,7 +26,7 @@ module JavaProxy
 end
 
 class Module
-
+  private
   def include_package(package)
     unless defined? @included_packages
       @included_packages = []
@@ -44,7 +45,7 @@ class Module
         end
       }
       if java_class.nil?
-        super
+        return super
       end
 
       # Create proxy class
@@ -80,6 +81,12 @@ class Module
 #      proxy_class.create_methods(java_class)
 
       return proxy_class
+    end
+  end
+
+  def remove_package(package)
+    if defined? @included_packages
+      @included_packages.delete package
     end
   end
 end

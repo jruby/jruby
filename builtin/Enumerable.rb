@@ -20,82 +20,175 @@
 # the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307 USA
 
+# The Enumerable mixin provides collection classes with several traversal and
+# searching methods, and with the ability to sort. The class must provide a
+# method each, which yields successive members of the collection. If
+# Enumerable#max, #min, or #sort is used, the objects in the collection must
+# also implement a meaningful <=> operator, as these methods rely on an
+# ordering between members of the collection.
 module Enumerable
-  def collect
-    result = Array.new
+  
+  def to_a
+    result = []
+    each do |item|
+      result << item
+    end
+    result
+  end
+  alias entries to_a
+
+  def sort
+    #
+    # Maybe block problem
+    #
+    to_a.sort
+  end
+
+  def sort_by
+    result = []
+    each do |item|
+      result << [yield(item), item]
+    end
+    result.sort do |a, b|
+      a.first <=> b.first
+    end
+    result.collect do |item|
+      item.last
+    end
+  end
+
+  def grep (pattern)
+    result = []
+    each do |item|
+      if block_given? then
+	result << yield(item) if pattern === item
+      else
+	result << item if pattern === item
+      end
+    end
+    result
+  end
+  
+  def detect (nothing_found = nil)
     each do |element|
-      result << yield(element)
+      return element if yield(element)
+    end
+    nothing_found.call unless nothing_found.nil?
+    nil
+  end
+  alias find detect
+
+  def select
+    result = []
+    each do |item|
+      result << item if yield(item)
+    end
+    result
+  end
+  alias find_all select
+
+  def reject
+    result = []
+    each do |item|
+      result << item unless yield(item)
+    end
+    result
+  end
+
+  def collect
+    result = []
+    each do |item|
+      result << yield(item)
+    end
+    result
+  end
+  alias map collect
+
+  def inject (*args)
+    raise ArgumentError, "wrong number of arguments (#{args.length} for 1)" if args.length > 1
+    if args.length == 1 then
+      result = args[0]
+      first = false
+    else
+      result = nil
+      first = true
+    end
+    each do |item|
+      if first then
+	first = false
+	result = item
+      else
+        result = yield(result, item)
+      end
+    end
+    result
+  end
+
+  def partition
+    result = [[], []]
+    each do |item|
+      if yield(item) then
+	result[0] << item
+      else
+	result[1] << item
+      end
     end
     result
   end
 
   def each_with_index
     index = 0
-    each do |element|
-      yield(element, index)
+    each do |item|
+      yield(item, index)
       index += 1
     end
   end
 
-  def entries
-    collect do |element|
-      element
-    end
-  end
-
-  def find
-    each do |element|
-      return element if yield(element)
-    end
-    nil
-  end
-
-  def select
-    result = Array.new
+  def include? (value)
     each do |item|
-      result << item if yield(item)
-    end
-    result
-  end
-
-  def grep (expression)
-    result = Array.new
-    each do |item|
-      if block_given? then
-	result << yield(item) if expression === item
-      else
-	result << item if expression === item
-      end
-    end
-    result
-  end
-
-  def include? (anItem)
-    each do |item|
-      return true if item == anItem
+      return true if item == value
     end
     false
   end
+  alias member? include?
 
   def max
-    entries.sort.last
+    if block_given? then
+      cmp = lambda { |a, b| yield(a, b) > 0 }
+    else
+      cmp = lambda { |a, b| a <=> b > 0 }
+    end
+    result = nil
+    each do |item|
+      result = item if result.nil? || cmp.call(item, result)
+    end
+    result
   end
 
   def min
-    entries.sort.first
+    if block_given? then
+      cmp = lambda { |a, b| yield(a, b) < 0 }
+    else
+      cmp = lambda { |a, b| a <=> b < 0 }
+    end
+    result = nil
+    each do |item|
+      result = item if result.nil? || cmp.call(item, result)
+    end
+    result
   end
 
-  def reject
-    entries.reject
+  def all?
+    each do |item|
+      return false unless yield(item)
+    end
+    true
   end
 
-  def sort
-    entries.sort
+  def any?
+    each do |item|
+      return true if yield(item)
+    end
+    false
   end
-
-  alias map collect
-  alias detect find
-  alias find_all select
-  alias member? include?
-  alias to_a entries
 end
