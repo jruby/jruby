@@ -17,11 +17,18 @@ import org.apache.oro.io.GlobFilenameFilter;
  */
 public class Glob {
     private File pattern;
+    private boolean patternEndsWithPathDelimeter = false;
 
     /**
      * Constructor for Glob.
      */
     public Glob(String pattern) {
+        // Java File will strip trailing path delimeter.
+        // Make a boolean for this special case (how about multiple slashes?)
+        if (pattern.endsWith("/")) {
+            patternEndsWithPathDelimeter = true;
+        }
+        
         this.pattern = new File(pattern); //.getAbsoluteFile();
     }
     
@@ -102,7 +109,7 @@ public class Glob {
         File[] files = getFiles();
         String[] names = new String[files.length];
         for (int i = 0, size = files.length; i < size; i++) {
-            names[i] = files[i].getPath();
+            names[i] = files[i].getPath() + (patternEndsWithPathDelimeter ? "/" : "");
         }
         return names;
     }

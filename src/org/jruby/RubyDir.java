@@ -3,10 +3,12 @@
  * Created on 18.03.2002, 15:19:50
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -30,12 +32,15 @@
 package org.jruby;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,6 +57,7 @@ public class RubyDir extends RubyObject {
     protected File      dir;
     private   String[]  snapshot;   // snapshot of contents of directory
     private   int       pos;        // current position in directory
+    private boolean isOpen = true;
 
     public RubyDir(Ruby ruby, RubyClass type) {
         super(ruby, type);
@@ -115,9 +121,8 @@ public class RubyDir extends RubyObject {
 
         dir = new File(path.getValue());
         if (!dir.isDirectory()) {
-            path = null;
             dir = null;
-            throw new IOError(getRuntime(), path.getValue() + " is not a directory");
+            throw ErrnoError.getErrnoError(getRuntime(), "ENOENT", path.getValue() + " is not a directory");
         }
 		List snapshotList = new ArrayList();
 		snapshotList.add(".");
@@ -148,7 +153,14 @@ public class RubyDir extends RubyObject {
         if (".".equals(path.toString().trim())) {
             path = new RubyString(recv.getRuntime(), System.getProperty("user.dir"));
         }
-        List fileList = getContents(new File(path.toString()));
+        
+        File directory = new File(path.toString());
+        
+        if (directory.isDirectory() == false) {
+            throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT", 
+            	"No such directory");
+        }
+        List fileList = getContents(directory);
 		fileList.add(0,".");
 		fileList.add(1,"..");
         Object[] files = fileList.toArray();
@@ -157,7 +169,19 @@ public class RubyDir extends RubyObject {
 
     /** Changes the current directory to <code>path</code> */
     public static IRubyObject chdir(IRubyObject recv, RubyString path) {
-        System.setProperty("user.dir", getDir(recv.getRuntime(), path.toString()).toString());
+        File dir = getDir(recv.getRuntime(), path.toString());
+        String realPath = null;
+    
+        // We get canonical path to try and flatten the path out.
+        // a dir '/subdir/..' should return as '/' 
+        try {
+            realPath = dir.getCanonicalPath();
+        } catch (IOException e) {
+            realPath = dir.getAbsolutePath();
+        }
+        
+        System.setProperty("user.dir", realPath);
+        
         return RubyFixnum.newFixnum(recv.getRuntime(), 0);
     }
 
@@ -174,7 +198,12 @@ public class RubyDir extends RubyObject {
      * be empty.
      */
     public static IRubyObject rmdir(IRubyObject recv, RubyString path) {
-        new File(path.toString()).delete();
+        File directory = new File(path.toString());
+        
+        if (directory.delete() == false) {
+            throw new SystemCallError(recv.getRuntime(), "No such directory");
+        }
+        
         return RubyFixnum.newFixnum(recv.getRuntime(), 0);
     }
 
@@ -187,6 +216,7 @@ public class RubyDir extends RubyObject {
 
         RubyDir dir = (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
                                             new IRubyObject[] { path });
+        
         dir.each();
         return recv.getRuntime().getNil();
     }
@@ -217,7 +247,8 @@ public class RubyDir extends RubyObject {
             throw new IOError(recv.getRuntime(), path + " already exists");
         }
 
-        return RubyBoolean.newBoolean(recv.getRuntime(), newDir.mkdir());
+        return newDir.mkdir() ? RubyFixnum.zero(recv.getRuntime()) :
+            RubyFixnum.one(recv.getRuntime());
     }
 
     /**
@@ -226,7 +257,21 @@ public class RubyDir extends RubyObject {
      * directory object before terminating.
      */
     public static IRubyObject open(IRubyObject recv, RubyString path) {
-        throw new NotImplementedError(recv.getRuntime());
+        RubyDir directory = 
+            (RubyDir) newInstance(recv.getRuntime().getClasses().getDirClass(),
+                    new IRubyObject[] { path });
+
+        if (recv.getRuntime().isBlockGiven()) {
+            try {
+                recv.getRuntime().yield(directory);
+            } finally {
+                directory.close();
+            }
+            
+            return recv.getRuntime().getNil();
+        }
+        
+        return directory;
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
@@ -235,9 +280,10 @@ public class RubyDir extends RubyObject {
      * Closes the directory stream.
      */
     public IRubyObject close() {
-        // I don't think we need to close since we don't actually have
-        // an open stream...
-        return this;
+	// Make sure any read()s after close fail.
+	isOpen = false;
+
+        return getRuntime().getNil();
     }
 
     /**
@@ -264,11 +310,15 @@ public class RubyDir extends RubyObject {
      */
     public IRubyObject seek(RubyFixnum pos) {
         this.pos = (int) pos.getLongValue();
-        return pos;
+        return this;
     }
 
     /** Returns the next entry from this directory. */
     public RubyString read() {
+	if (isOpen == false) {
+	    throw new IOError(getRuntime(), "Directory already closed");
+	}
+
         if (pos >= snapshot.length) {
             return RubyString.nilString(runtime);
         }
@@ -295,7 +345,8 @@ public class RubyDir extends RubyObject {
         File result = new File(path);
 
         if (!result.isDirectory()) {
-            throw new IOError(ruby, path + " is not a directory");
+            throw ErrnoError.getErrnoError(ruby, "ENOENT", 
+					   path + " is not a directory");
         }
 
         return result;
@@ -306,8 +357,8 @@ public class RubyDir extends RubyObject {
      * <code>ArrayList</code> containing the names of the files as Java Strings.
      */
     protected static List getContents(File directory) {
-        List result = new ArrayList();
         String[] contents = directory.list();
+        List result = new ArrayList();
         for (int i=0; i<contents.length; i++) {
             result.add(contents[i]);
         }
