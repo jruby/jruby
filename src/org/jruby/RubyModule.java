@@ -64,6 +64,7 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.IdUtil;
+import org.jruby.util.collections.ArrayStack;
 
 /**
  *
@@ -329,6 +330,15 @@ public class RubyModule extends RubyObject {
                 return var;
             }
         }
+        
+        // look for constants in module stack
+        ArrayStack moduleStack = (ArrayStack)getRuntime().getCurrentContext().getClassStack().clone();
+        for (RubyModule p = (RubyModule)moduleStack.peek(); !moduleStack.empty(); p = (RubyModule)moduleStack.pop()) {
+        	var = p.getInstanceVariable(name);
+            if (var != null && !var.isNil()) {
+                return var;
+            }
+        }        	
 
         // Lastly look for constants in top constant
         var = getRuntime().getTopConstant(name);

@@ -27,6 +27,7 @@
  */package org.jruby.internal.runtime.methods;
 
 import java.util.Iterator;
+import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -45,6 +46,7 @@ import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.ArrayStack;
 
 /**
  *
@@ -54,13 +56,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
-    private RubyModule module;
+    private ArrayStack moduleStack;
 
-    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, RubyModule module) {
+    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, ArrayStack moduleStack) {
         super(visibility);
         this.body = body;
         this.argsNode = argsNode;
-        this.module = module;
+        this.moduleStack = moduleStack;
     }
 
     /**
@@ -82,7 +84,9 @@ public final class DefaultMethod extends AbstractMethod {
 
         context.pushDynamicVars();
 
-        context.pushClass(module);
+        ArrayStack oldStack = context.getClassStack();
+        // replace class stack with appropriate execution scope
+        context.setClassStack(moduleStack);
 
         try {
             if (argsNode != null) {
@@ -103,7 +107,8 @@ public final class DefaultMethod extends AbstractMethod {
             }
             throw rj;
         } finally {
-            context.popClass();
+        	// restore class stack
+            context.setClassStack(oldStack);
             context.popDynamicVars();
             context.getScopeStack().pop();
             traceReturn(runtime, receiver, name);
@@ -222,6 +227,6 @@ public final class DefaultMethod extends AbstractMethod {
     }
     
     public ICallable dup() {
-        return new DefaultMethod(body, argsNode, getVisibility(), module);
+        return new DefaultMethod(body, argsNode, getVisibility(), moduleStack);
     }	
 }

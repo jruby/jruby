@@ -167,6 +167,7 @@ import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.ArrayStack;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
 // real problem, the trampoline method of tail call elimination could be used.
@@ -697,7 +698,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
-                                                    threadContext.getRubyClass());
+													(ArrayStack)threadContext.getClassStack().clone());
         
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
         
@@ -751,7 +752,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     Visibility.PUBLIC,
-                                                    runtime.getRubyClass());
+													(ArrayStack)threadContext.getClassStack().clone());
 
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
 
@@ -1313,7 +1314,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         try {
             eval(iVisited.getBodyNode());
-            System.out.println(iVisited.getBodyNode().getClass().getName());
         } finally {
             threadContext.getScopeStack().pop();
             threadContext.getFrameStack().pop();
