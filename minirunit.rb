@@ -29,7 +29,7 @@ end
 
 
 def test_check(what)
-  printf "\n%s :", what
+  printf "\n%s : ", what
   $what = what
   $testnum = 0
 end

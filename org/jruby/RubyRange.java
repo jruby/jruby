@@ -43,7 +43,7 @@ public class RubyRange extends RubyObject {
     private boolean isExclusive;
 
     public RubyRange(Ruby ruby) {
-        super(ruby, ruby.getRubyClass("Range"));
+        super(ruby, ruby.getClass("Range"));
     }
 
     public void init(IRubyObject begin, IRubyObject end, RubyBoolean isExclusive) {

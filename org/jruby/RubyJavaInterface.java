@@ -63,7 +63,7 @@ public class RubyJavaInterface extends RubyJavaObject {
         }));
     }
 
-    public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final RubyMethod method) {
+    public static RubyJavaInterface newJavaInterface(final Ruby ruby, final Method interfaceMethod, final org.jruby.Method method) {
         return new RubyJavaInterface(ruby, Proxy.newProxyInstance(null, new Class[]{interfaceMethod.getDeclaringClass()}, new InvocationHandler() {
             public Object invoke(Object recv, Method imethod, Object[] args) {
                 return JavaUtil.convertJavaToRuby(ruby, method.call(JavaUtil.convertJavaArrayToRuby(ruby, args)));

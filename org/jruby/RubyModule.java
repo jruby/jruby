@@ -44,6 +44,8 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.internal.runtime.methods.CallbackMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.internal.runtime.methods.MethodMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -233,7 +235,7 @@ public class RubyModule extends RubyObject {
         
         moduleClass.defineMethod("constant_missing", CallbackFactory.getMethod(RubyModule.class, "constant_missing", IRubyObject.class));
 
-        //rb_define_private_method(rb_cModule, "define_method", rb_mod_define_method, -1);
+        moduleClass.definePrivateMethod("define_method", CallbackFactory.getOptMethod(RubyModule.class, "define_method"));
         
         moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
 
@@ -1066,10 +1068,7 @@ public class RubyModule extends RubyObject {
         return isMethodBound(name, true);
     }
 
-    public IRubyObject newMethod(IRubyObject recv, String name, RubyClass methodClass) {
-        RubyClass originalClass = (RubyClass) this;
-        String originalName = name;
-
+    public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
         CacheEntry ent = getMethodBody(name);
         if (! ent.isDefined()) {
             // printUndef();
@@ -1085,15 +1084,62 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        RubyMethod newMethod = new RubyMethod(getRuntime(), methodClass);
-        newMethod.setReceiverClass((RubyClass) ent.getOrigin());
-        newMethod.setReceiver(recv);
-        newMethod.setMethodId(ent.getOriginalName());
-        newMethod.setMethod(ent.getMethod());
-        newMethod.setOriginalClass(originalClass);
-        newMethod.setOriginalId(originalName);
+        Method method = null;
+        if (bound) {
+            method = Method.newMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod(), receiver);
+        } else {
+            method = UnboundMethod.newUnboundMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod());
+        }
+        method.infectBy(this);
 
-        return newMethod;
+        return method;
+    }
+    
+    public IRubyObject define_method(IRubyObject[] args) {
+        if (args.length < 1 || args.length > 2) {
+            throw new ArgumentError(runtime, "wrong # of arguments(" + args.length + " for 1)");
+        }
+        String name = args[0].toId();
+
+        IRubyObject body;
+        if (args.length == 1) {
+            body = RubyProc.newProc(runtime);
+        } else {
+            if (!(args[0].isKindOf(runtime.getClasses().getMethodClass()) ||
+                args[0].isKindOf(runtime.getClasses().getProcClass()))) {
+                throw new TypeError(runtime, "wrong argument type " + args[0].getType().toName() + " (expected Proc/Method)");
+            }
+            body = args[0];
+        }
+        
+
+        Visibility visibility = runtime.getCurrentVisibility();
+        if (visibility.isModuleFunction()) {
+            visibility = Visibility.PRIVATE;
+        }
+
+        ICallable newMethod = null;
+        if (body instanceof RubyProc) {
+            newMethod = new ProcMethod((RubyProc)body, visibility);
+        } else {
+            newMethod = new MethodMethod(((Method)body).unbind(), visibility);
+        }
+
+        addMethod(name, newMethod);
+
+        RubySymbol symbol = RubySymbol.newSymbol(runtime, name);
+        if (runtime.getCurrentVisibility().isModuleFunction()) {
+            getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
+            callMethod("singleton_method_added", symbol);
+        }
+
+        if (isSingleton()) {
+            getInstanceVariable("__attached__").callMethod("singleton_method_added", symbol);
+        } else {
+            callMethod("method_added", symbol);
+        }
+
+        return body;
     }
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {

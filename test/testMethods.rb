@@ -1,5 +1,5 @@
 require 'minirunit'
-test_check "Test Methods:"
+test_check "Test Methods"
 
 def testMethod
     $toto = true
@@ -51,3 +51,13 @@ test_equal("yeah", "#{x.hello}")
 
 p = Proc.new {|z| "#{z.size}"}
 test_equal("hello".size.to_s, p.call("hello"))
+
+class TM1
+  define_method("foo") {
+    $foo = true
+  }
+end
+
+$foo = false
+TM1.new.foo
+test_ok($foo)

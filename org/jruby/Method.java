@@ -37,6 +37,7 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -49,22 +50,21 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @since 0.2.3
  */
-public class RubyMethod extends RubyObject {
-    private RubyClass receiverClass;
-    private IRubyObject receiver;
-    private String methodId;
-    private ICallable method;
-    private RubyClass originalClass;
-    private String originalId;
+public class Method extends RubyObject {
+    protected RubyModule implementationModule;
+    protected String methodName;
+    protected RubyModule originModule;
+    protected String originName;
+    protected ICallable method;
+    protected IRubyObject receiver;
+    
+    private static final int ARITY = 0x10000;
+    private static final int CALL = 0x10001;
+    private static final int TO_PROC = 0x10002;
+    private static final int UNBIND = 0x10003;
 
-    public static class Nil extends RubyMethod {
-        public Nil(Ruby ruby) {
-            super(ruby, ruby.getClasses().getNilClass());
-        }
-    }
-
-    public RubyMethod(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    protected Method(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
     }
 
     /** Create the Method class and add it to the Ruby runtime.
@@ -73,92 +73,33 @@ public class RubyMethod extends RubyObject {
     public static RubyClass createMethodClass(Ruby ruby) {
         RubyClass methodClass = ruby.defineClass("Method", ruby.getClasses().getObjectClass());
 
-        methodClass.defineMethod("arity", CallbackFactory.getMethod(RubyMethod.class, "arity"));
-        methodClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyMethod.class, "call"));
-        methodClass.defineMethod("call", CallbackFactory.getOptMethod(RubyMethod.class, "call"));
-        methodClass.defineMethod("to_proc", CallbackFactory.getMethod(RubyMethod.class, "to_proc"));
+        methodClass.defineMethod("[]", IndexedCallback.createOptional(CALL));
+        methodClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
+        methodClass.defineMethod("call", IndexedCallback.createOptional(CALL));
+        methodClass.defineMethod("to_proc", IndexedCallback.create(TO_PROC, 0));
+        methodClass.defineMethod("unbind", IndexedCallback.create(UNBIND, 0));
 
         return methodClass;
     }
 
-    /**
-     * Gets the methodId
-     * @return Returns a RubyId
-     */
-    public String getMethodId() {
-        return methodId;
-    }
+    public static Method newMethod(
+        RubyModule implementationModule,
+        String methodName,
+        RubyModule originModule,
+        String originName,
+        ICallable method,
+        IRubyObject receiver) {
+        Ruby runtime = implementationModule.getRuntime();
+        Method newMethod = new Method(runtime, runtime.getClasses().getMethodClass());
 
-    /**
-     * Sets the methodId
-     * @param methodId The methodId to set
-     */
-    public void setMethodId(String methodId) {
-        this.methodId = methodId;
-    }
+        newMethod.implementationModule = implementationModule;
+        newMethod.methodName = methodName;
+        newMethod.originModule = originModule;
+        newMethod.originName = originName;
+        newMethod.method = method;
+        newMethod.receiver = receiver;
 
-    /**
-     * Gets the originalClass
-     * @return Returns a RubyClass
-     */
-    public RubyClass getOriginalClass() {
-        return originalClass;
-    }
-
-    /**
-     * Sets the originalClass
-     * @param originalClass The originalClass to set
-     */
-    public void setOriginalClass(RubyClass originalClass) {
-        this.originalClass = originalClass;
-    }
-
-    /**
-     * Gets the originalId
-     * @return Returns a RubyId
-     */
-    public String getOriginalId() {
-        return originalId;
-    }
-
-    /**
-     * Sets the originalId
-     * @param originalId The originalId to set
-     */
-    public void setOriginalId(String originalId) {
-        this.originalId = originalId;
-    }
-
-    /**
-     * Gets the receiver
-     * @return Returns a RubyObject
-     */
-    public IRubyObject getReceiver() {
-        return receiver;
-    }
-
-    /**
-     * Sets the receiver
-     * @param receiver The receiver to set
-     */
-    public void setReceiver(IRubyObject receiver) {
-        this.receiver = receiver;
-    }
-
-    /**
-     * Gets the receiverClass
-     * @return Returns a RubyClass
-     */
-    public RubyClass getReceiverClass() {
-        return receiverClass;
-    }
-
-    /**
-     * Sets the receiverClass
-     * @param receiverClass The receiverClass to set
-     */
-    public void setReceiverClass(RubyClass receiverClass) {
-        this.receiverClass = receiverClass;
+        return newMethod;
     }
 
     /** Call the method.
@@ -170,7 +111,7 @@ public class RubyMethod extends RubyObject {
         }
         getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            return getReceiverClass().call0(getReceiver(), getMethodId(), args, getMethod(), false);
+            return implementationModule.call0(receiver, methodName, args, method, false);
         } finally {
             getRuntime().getIterStack().pop();
         }
@@ -184,30 +125,14 @@ public class RubyMethod extends RubyObject {
         return RubyFixnum.newFixnum(getRuntime(), method.getArity().getValue());
     }
 
-    /**
-     * Gets the method.
-     * @return Returns a IMethod
-     */
-    public ICallable getMethod() {
-        return method;
-    }
-
-    /**
-     * Sets the method.
-     * @param method The method to set
-     */
-    public void setMethod(ICallable method) {
-        this.method = method;
-    }
-
     /** Create a Proc object.
      * 
      */
     public IRubyObject to_proc() {
         return runtime.iterate(
-            CallbackFactory.getSingletonMethod(RubyMethod.class, "mproc"),
+            CallbackFactory.getSingletonMethod(Method.class, "mproc"),
             runtime.getNil(),
-            CallbackFactory.getBlockMethod(RubyMethod.class, "bmcall"),
+            CallbackFactory.getBlockMethod(Method.class, "bmcall"),
             this);
     }
 
@@ -227,16 +152,41 @@ public class RubyMethod extends RubyObject {
         }
     }
 
-    /** Delegate a block call to a method call.
+    /** Delegate a block call to a bound method call.
      * 
      * Used by the RubyMethod#to_proc method.
      *
      */
     public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
         if (blockArg instanceof RubyArray) {
-            return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray());
+            return ((Method) arg1).call(((RubyArray) blockArg).toJavaArray());
         } else {
-            return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg });
+            return ((Method) arg1).call(new IRubyObject[] { blockArg });
         }
     }
+    /**
+     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
+     */
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+            case ARITY :
+                return arity();
+            case CALL :
+                return call(args);
+            case TO_PROC :
+                return to_proc();
+            case UNBIND :
+                return unbind();
+            default:
+                return super.callIndexed(index, args);
+        }
+    }
+    
+    public UnboundMethod unbind() {
+        UnboundMethod unboundMethod = UnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        unboundMethod.receiver = this;
+        unboundMethod.infectBy(this);
+        return unboundMethod;
+    }
+
 }

@@ -102,7 +102,7 @@ public class RubyProxyFactory {
 
     protected RubyClass getRubyClassForJavaClass(Class javaClass) {
         String className = classMap.getRubyClassNameForJavaClass(javaClass);
-        return getRuby().getRubyClass(className);
+        return getRuby().getClass(className);
     }
 
     protected Class getJavaClassForRubyClass(RubyClass rubyClass) {

@@ -49,7 +49,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     private int options;
 
     public RubyRegexp(Ruby ruby) {
-        super(ruby, ruby.getRubyClass("Regexp"));
+        super(ruby, ruby.getClass("Regexp"));
         try {
             matcher = (IRegexpAdapter) ruby.getRegexpAdapterClass().newInstance();
         } catch (Exception ex) {

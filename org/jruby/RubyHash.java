@@ -57,7 +57,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {
-        super(ruby, ruby.getRubyClass("Hash"));
+        super(ruby, ruby.getClass("Hash"));
         this.valueMap = new RubyHashMap(valueMap);
         this.defaultValue = defaultValue;
     }
@@ -199,7 +199,7 @@ public class RubyHash extends RubyObject {
     // Hash methods
 
     public static RubyHash newHash(Ruby ruby) {
-        return newInstance(ruby.getRubyClass("Hash"), new IRubyObject[0]);
+        return newInstance(ruby.getClass("Hash"), new IRubyObject[0]);
     }
 
 	public static RubyHash newHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+# Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
 #
 # JRuby - http://jruby.sourceforge.net
 #

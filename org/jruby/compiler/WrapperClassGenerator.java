@@ -75,7 +75,7 @@ public class WrapperClassGenerator {
         String fc = loadFile(args[0]);
         ruby.evalScript(fc, null);
         
-        RubyClass type = ruby.getRubyClass(args[1]);
+        RubyClass type = ruby.getClass(args[1]);
         
         generateWrapper(type);
     }

@@ -42,7 +42,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.KernelModule;
-import org.jruby.RubyMethod;
+import org.jruby.Method;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
@@ -333,8 +333,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             } finally {
                 threadContext.getIterStack().pop();
             }
-        } else if (block instanceof RubyMethod) {
-            block = ((RubyMethod)block).to_proc();
+        } else if (block instanceof Method) {
+            block = ((Method)block).to_proc();
         } else if (!(block instanceof RubyProc)) {
             throw new TypeError(runtime, "wrong argument type " + block.getInternalClass().toName() + " (expected Proc)");
         }

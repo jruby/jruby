@@ -40,6 +40,7 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.Asserts;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -240,6 +241,12 @@ public class RubyClasses {
         trueClass = RubyBoolean.createTrueClass(runtime);
 
         threadClass = ThreadClass.createThreadClass(runtime);
+
+        runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
+            public IRubyObject load(Ruby runtime, String name) {
+                return UnboundMethod.defineUnboundMethodClass(runtime);
+            }
+        });
     }
 
     private void loadBuiltin(String name) {
@@ -480,7 +487,7 @@ public class RubyClasses {
      */
     public RubyClass getMethodClass() {
         if (methodClass == null) {
-            methodClass = RubyMethod.createMethodClass(runtime);
+            methodClass = Method.createMethodClass(runtime);
         }
         return methodClass;
     }

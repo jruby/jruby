@@ -818,7 +818,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public IRubyObject method(IRubyObject symbol) {
-        return getInternalClass().newMethod(this, symbol.toId(), getRuntime().getClasses().getMethodClass());
+        return getInternalClass().newMethod(this, symbol.toId(), true);
     }
 
     public RubyArray to_a() {

@@ -283,7 +283,7 @@ public final class Ruby {
      * @param name The name of the class.
      * @return The class.
      */
-    public RubyClass getRubyClass(String name) {
+    public RubyClass getClass(String name) {
         return (RubyClass) classes.getClass(name);
     }
 
@@ -310,7 +310,7 @@ public final class Ruby {
     }
 
     public RubyClass defineClass(String name, String superName) {
-        RubyClass superClass = getRubyClass(superName);
+        RubyClass superClass = getClass(superName);
         Asserts.assertTrue(superClass != null, "can't find superclass '" + superName + "'");
         return defineClass(name, superClass);
     }
