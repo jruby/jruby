@@ -202,14 +202,24 @@ public final class Ruby {
         return nilObject;
     }
     
-    /** Returns a class from the instance pool.
-     * @param name The name of the class.
-     * @return The class.
+    /** Returns a class or module from the instance pool.
+     * 
+     * @param name The name of the class or module.
+     * @return The class or module.
      */    
-    public RubyModule getRubyClass(String name) {
+    public RubyModule getRubyModule(String name) {
         return (RubyModule)classes.getClassMap().get(intern(name));
     }
     
+    /** Returns a class from the instance pool.
+     * 
+     * @param name The name of the class.
+     * @return The class.
+     */    
+    public RubyClass getRubyClass(String name) {
+        return (RubyClass)classes.getClassMap().get(intern(name));
+    }
+
     /** rb_define_class
      *
      */
@@ -229,11 +239,11 @@ public final class Ruby {
             superClass = getClasses().getObjectClass();
         }
         
-        RubyClass newClass = RubyClass.m_newClass(this, superClass);
+        RubyClass newClass = RubyClass.newClass(this, superClass);
         newClass.setName(id);
         
-        newClass.setRubyClass(((RubyClass)superClass.getRubyClass()).newSingletonClass());
-        ((RubyClass)newClass.getRubyClass()).attachSingletonClass(newClass);
+        newClass.setRubyClass(superClass.getRubyClass().newSingletonClass());
+        newClass.getRubyClass().attachSingletonClass(newClass);
         
         superClass.funcall(intern("inherited"), newClass);
         
@@ -255,7 +265,7 @@ public final class Ruby {
      *
      */
     public RubyModule defineModuleId(RubyId id) {
-        RubyModule newModule = RubyModule.m_newModule(this);
+        RubyModule newModule = RubyModule.newModule(this);
         newModule.setName(id);
         
         return newModule;
@@ -597,7 +607,7 @@ public final class Ruby {
             // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
             // ruby_prog_init();
         } catch (Exception excptn) {
-            // error_print();
+            excptn.printStackTrace(getRuntime().getErrorStream());
         }
         
         rubyScope.pop();

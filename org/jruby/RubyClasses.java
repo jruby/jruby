@@ -32,6 +32,7 @@ package org.jruby;
 
 import org.jruby.core.*;
 import org.jruby.util.*;
+import org.jruby.*;
 
 /** In this class there are references to the core (or built-in) classes
  * and modules of Ruby and JRuby. There is also a Map of referenced to the
@@ -155,7 +156,7 @@ public class RubyClasses {
      *
      */
     private RubyClass defineBootClass(String name, RubyClass superClass) {
-        RubyClass bootClass = RubyClass.m_newClass(ruby, superClass);
+        RubyClass bootClass = RubyClass.newClass(ruby, superClass);
         bootClass.setName(ruby.intern(name));
         classMap.put(ruby.intern(name), bootClass);
 
@@ -210,15 +211,18 @@ public class RubyClasses {
         classClass.setRubyClass(metaClass);
         metaClass.attachSingletonClass(classClass);
 
-        kernelModule = RbKernel.createKernelModule(ruby);
+        kernelModule = ruby.defineModule("Kernel");
         objectClass.includeModule(kernelModule);
 
         objectClass.definePrivateMethod("initialize", DefaultCallbackMethods.getMethodNil());
         classClass.definePrivateMethod("inherited", DefaultCallbackMethods.getMethodNil());
 
-        RbObject.initObjectClass(objectClass);
-        RbClass.initClassClass(classClass);
-        RbModule.initModuleClass(moduleClass);
+        RubyObject.createObjectClass(kernelModule);
+
+        RubyKernel.createKernelModule(ruby);
+
+        RubyClass.createClassClass(classClass);
+        RubyModule.createModuleClass(moduleClass);
 
         symbolClass = RbSymbol.createSymbolClass(ruby);
 

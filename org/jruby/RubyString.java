@@ -51,9 +51,17 @@ public class RubyString extends RubyObject {
         this(ruby, ruby.getClasses().getStringClass(), str);
     }
 
-    public RubyString(Ruby ruby, RubyModule rubyClass, String str) {
+    public RubyString(Ruby ruby, RubyClass rubyClass, String str) {
         super(ruby, rubyClass);
         this.value = str;
+    }
+
+    public static RubyString nilString(Ruby ruby) {
+        return new RubyString(ruby) {
+            public boolean isNil() {
+                return true;
+            }
+        };
     }
 
     public Class getJavaClass() {
@@ -128,12 +136,12 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString newString(String s) {
-        RubyModule klass = getRubyClass();
-        while (klass.isIncluded() || klass.isSingleton()) {
-            klass = klass.getSuperClass();
+        RubyClass type = getRubyClass();
+        while (type.isIncluded() || type.isSingleton()) {
+            type = type.getSuperClass();
         }
 
-        return new RubyString(getRuby(), klass, s);
+        return new RubyString(getRuby(), type, s);
     }
 
     // Methods of the String class (rb_str_*):
@@ -141,7 +149,7 @@ public class RubyString extends RubyObject {
     /** rb_str_new2
      *
      */
-    public static RubyString m_newString(Ruby ruby, String str) {
+    public static RubyString newString(Ruby ruby, String str) {
         return new RubyString(ruby, str);
     }
 
@@ -183,7 +191,7 @@ public class RubyString extends RubyObject {
     /** rb_str_to_s
      *
      */
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         return this;
     }
 
@@ -228,8 +236,8 @@ public class RubyString extends RubyObject {
      *
      */
     public static RubyString m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyString newString = m_newString(ruby, "");
-        newString.setRubyClass((RubyModule)recv);
+        RubyString newString = newString(ruby, "");
+        newString.setRubyClass((RubyClass)recv);
 
         newString.callInit(args);
 
@@ -426,7 +434,7 @@ public class RubyString extends RubyObject {
 
         sb.append('\"');
 
-        return m_newString(getRuby(), sb.toString());
+        return newString(getRuby(), sb.toString());
     }
 
     /** rb_str_plus

@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.jruby.exceptions.RubyNameException;
 import org.jruby.javasupport.JavaConstructor;
@@ -55,11 +54,11 @@ public class RubyJavaObject extends RubyObject {
 
     private static Map loadedClassMap = new HashMap();
 
-    public RubyJavaObject(Ruby ruby, RubyModule rubyClass) {
+    public RubyJavaObject(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, null);
     }
 
-    public RubyJavaObject(Ruby ruby, RubyModule rubyClass, Object value) {
+    public RubyJavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
         super(ruby, rubyClass);
 
         this.value = value;
@@ -83,10 +82,10 @@ public class RubyJavaObject extends RubyObject {
         this.value = value;
     }
 
-    public static RubyModule getRubyClass(Ruby ruby, Class javaClass) {
+    public static RubyClass getRubyClass(Ruby ruby, Class javaClass) {
         Map classMap = (Map) loadedClassMap.get(ruby);
         if (classMap != null) {
-            return (RubyModule) classMap.get(javaClass);
+            return (RubyClass) classMap.get(javaClass);
         }
         return null;
     }
@@ -100,8 +99,8 @@ public class RubyJavaObject extends RubyObject {
         classMap.put(javaClass, rubyClass);
     }
 
-    public static RubyModule loadClass(Ruby ruby, Class javaClass, String rubyName) {
-        RubyModule newRubyClass = getRubyClass(ruby, javaClass);
+    public static RubyClass loadClass(Ruby ruby, Class javaClass, String rubyName) {
+        RubyClass newRubyClass = getRubyClass(ruby, javaClass);
         if (newRubyClass != null) {
             return newRubyClass;
         }
@@ -131,7 +130,7 @@ public class RubyJavaObject extends RubyObject {
             }
         }
 
-        newRubyClass = ruby.defineClass(rubyName, (RubyClass) ruby.getRubyClass("JavaObject"));
+        newRubyClass = ruby.defineClass(rubyName, (RubyClass) ruby.getRubyModule("JavaObject"));
 
         newRubyClass.defineSingletonMethod("new", new JavaConstructor(javaClass.getConstructors()));
 
@@ -217,7 +216,7 @@ public class RubyJavaObject extends RubyObject {
     }
 
     public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), getValue() != null ? getValue().toString() : "null");
+        return RubyString.newString(getRuby(), getValue() != null ? getValue().toString() : "null");
     }
 
     public RubyFixnum m_hash() {

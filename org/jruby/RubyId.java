@@ -83,10 +83,14 @@ public final class RubyId {
     }
 
     public boolean equals(Object obj) {
-        if (obj instanceof RubyId && obj != null) {
+        if (obj instanceof RubyId) {
             return value == obj.hashCode();
         }
         return false;
+    }
+    
+    public String toString() {
+        return toName();
     }
     
     public boolean isConstId() {

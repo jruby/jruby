@@ -41,11 +41,11 @@ public class RbNilClass {
     public static RubyClass createNilClass(Ruby ruby) {
         RubyClass nilClass = ruby.defineClass("NilClass", ruby.getClasses().getObjectClass());
         
-        nilClass.defineMethod("type", getMethod("m_type"));
-        nilClass.defineMethod("to_i", getMethod("m_to_i"));
-        nilClass.defineMethod("to_s", getMethod("m_to_s"));
-        nilClass.defineMethod("to_a", getMethod("m_to_a"));
-        nilClass.defineMethod("inspect", getMethod("m_inspect"));
+        nilClass.defineMethod("type", getMethod("type"));
+        nilClass.defineMethod("to_i", getMethod("to_i"));
+        nilClass.defineMethod("to_s", getMethod("to_s"));
+        nilClass.defineMethod("to_a", getMethod("to_a"));
+        nilClass.defineMethod("inspect", getMethod("inspect"));
         
         nilClass.defineMethod("&", getMethod("op_and", RubyObject.class));
         nilClass.defineMethod("|", getMethod("op_or", RubyObject.class));

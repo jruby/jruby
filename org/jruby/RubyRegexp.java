@@ -124,7 +124,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     public static RubyRegexp m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyRegexp re = new RubyRegexp(ruby);
-        re.setRubyClass((RubyModule)recv);
+        re.setRubyClass((RubyClass)recv);
         re.m_initialize(args);
         return re;
     }
@@ -152,7 +152,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public static RubyString m_quote(Ruby ruby, RubyObject recv, RubyString str) {
         String orig = str.getValue();
-        RubyString newStr = RubyString.m_newString(ruby, quote(orig));
+        RubyString newStr = RubyString.newString(ruby, quote(orig));
         newStr.infectObject(str);
         return newStr;
     }
@@ -226,7 +226,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyString m_source() {
         checkInitialized();
-        return RubyString.m_newString(getRuby(), pattern);
+        return RubyString.newString(getRuby(), pattern);
     }
     
     /** rb_reg_casefold_p
@@ -346,7 +346,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 sb.append(c);
             }
         }
-        return RubyString.m_newString(getRuby(), sb.toString());
+        return RubyString.newString(getRuby(), sb.toString());
     }
 
     public RubyObject m_clone() {
@@ -400,7 +400,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             sb.append('x');
         }
         
-        return RubyString.m_newString(getRuby(), sb.toString());
+        return RubyString.newString(getRuby(), sb.toString());
     }
 }
 

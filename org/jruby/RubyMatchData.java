@@ -82,7 +82,7 @@ public class RubyMatchData extends RubyObject {
         if (n < 0 || n >= size()) {
             return getRuby().getNil();
         }
-        return RubyString.m_newString(getRuby(), str.substring(begin[(int)n], end[(int)n]));
+        return RubyString.newString(getRuby(), str.substring(begin[(int)n], end[(int)n]));
     }
     
     public int matchStartPosition() {
@@ -173,21 +173,21 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyString m_pre_match() {
-        return RubyString.m_newString(getRuby(), str.substring(0, begin[0]));
+        return RubyString.newString(getRuby(), str.substring(0, begin[0]));
     }
 
     /** match_post_match
      *
      */
     public RubyString m_post_match() {
-        return RubyString.m_newString(getRuby(), str.substring(end[0]));
+        return RubyString.newString(getRuby(), str.substring(end[0]));
     }
 
     /** match_string
      *
      */
     public RubyString m_string() {
-        return RubyString.m_newString(getRuby(), str);
+        return RubyString.newString(getRuby(), str);
     }
 
     /** match_to_a
@@ -202,7 +202,7 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), str.substring(begin[0], end[0]));
+        return RubyString.newString(getRuby(), str.substring(begin[0], end[0]));
     }
     
     /** match_clone

@@ -10,7 +10,8 @@ public class MainTestSuite extends TestSuite {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
-        suite.addTest(new TestSuite(org.jruby.test.TestRubyNil.class));
+        suite.addTest(new TestSuite(TestRubyObject.class));
+        suite.addTest(new TestSuite(TestRubyNil.class));
         suite.addTest(new TestSuite(org.jruby.test.TestRubyHash.class));
         suite.addTest(new TestSuite(org.jruby.test.TestRubyTime.class));
         return suite;

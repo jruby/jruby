@@ -92,7 +92,7 @@ public class JavaConstructor implements RubyCallbackMethod {
         try {
             Object javaValue = constructor.newInstance(newArgs);
             RubyJavaObject javaObject =
-                new RubyJavaObject(ruby, (RubyModule) recv, javaValue);
+                new RubyJavaObject(ruby, (RubyClass) recv, javaValue);
             javaObject.callInit(args);
             return javaObject;
         } catch (IllegalAccessException ex) {

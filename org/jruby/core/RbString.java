@@ -42,8 +42,8 @@ public class RbString {
     public static RubyClass createStringClass(Ruby ruby) {
         RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
         
-        stringClass.includeModule(ruby.getRubyClass("Comparable"));
-        stringClass.includeModule(ruby.getRubyClass("Enumerable"));
+        stringClass.includeModule(ruby.getRubyModule("Comparable"));
+        stringClass.includeModule(ruby.getRubyModule("Enumerable"));
         
         stringClass.defineSingletonMethod("new", getSingletonMethod("m_new", true));
         stringClass.defineMethod("initialize", getMethod("m_replace", RubyObject.class));
@@ -78,8 +78,8 @@ public class RbString {
         stringClass.defineMethod("to_i", getMethod("m_to_i", false));
         stringClass.defineMethod("to_f", getMethod("m_to_f", false));
         
-        stringClass.defineMethod("to_s", getMethod("m_to_s", false));
-        stringClass.defineMethod("to_str", getMethod("m_to_s", false));
+        stringClass.defineMethod("to_s", getMethod("to_s", false));
+        stringClass.defineMethod("to_str", getMethod("to_s", false));
         stringClass.defineMethod("inspect", getMethod("m_inspect", false));
         stringClass.defineMethod("dump", getMethod("m_dump", false));
 

@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -27,42 +27,51 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import java.lang.ref.*;
-
 import org.jruby.core.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
-
 /**
  *
  * @author  jpetersen
  */
 public class RubyObject {
+    // A reference to the JRuby runtime.
     private Ruby ruby;
 
-    private RubyModule rubyClass;
+    // The class of this object
+    private RubyClass rubyClass;
+
+    // The instance variables of this object.
     private RubyMap instanceVariables;
 
-    private boolean frozen = false;
-    private boolean taint = false;
+    // The two properties frozen and taint
+    private boolean frozen;
+    private boolean taint;
 
-    // deprecated ???
-    private boolean immediate = false;
-
-    public RubyObject(Ruby ruby) {
-        this(ruby, null);
+    public RubyObject(Ruby ruby, RubyClass rubyClass) {
+        this(ruby, rubyClass, true);
     }
 
-    public RubyObject(Ruby ruby, RubyModule rubyClass) {
+    public RubyObject(Ruby ruby, RubyClass rubyClass, boolean objectSpace) {
         this.ruby = ruby;
         this.rubyClass = rubyClass;
+        this.instanceVariables = new RubyHashMap();
+        this.frozen = false;
+        this.taint = false;
 
-        ruby.objectSpace.add(new SoftReference(this));
+        // Add this Object in the ObjectSpace
+        if (objectSpace) {
+            ruby.objectSpace.add(new SoftReference(this));
+        }
+    }
+
+    public static RubyObject nilObject(Ruby ruby) {
+        return ruby.getNil();
     }
 
     public Class getJavaClass() {
@@ -84,36 +93,11 @@ public class RubyObject {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || (other instanceof RubyObject)
-            && funcall(getRuby().intern("=="), (RubyObject) other).isTrue();
+        return other == this || (other instanceof RubyObject) && funcall(getRuby().intern("=="), (RubyObject) other).isTrue();
     }
 
-    /** Getter for property frozen.
-     * @return Value of property frozen.
-     */
-    public boolean isFrozen() {
-        return this.frozen;
-    }
-
-    /** Setter for property frozen.
-     * @param frozen New value of property frozen.
-     */
-    public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
-    }
-
-    /** Getter for property immediate.
-     * @return Value of property immediate.
-     */
-    public boolean isImmediate() {
-        return this.immediate;
-    }
-
-    /** Setter for property immediate.
-     * @param immediate New value of property immediate.
-     */
-    public void setImmediate(boolean immediate) {
-        this.immediate = immediate;
+    public String toString() {
+        return to_s().getValue();
     }
 
     /** Getter for property ruby.
@@ -123,38 +107,7 @@ public class RubyObject {
         return this.ruby;
     }
 
-    /** Getter for property rubyClass.
-     * @return Value of property rubyClass.
-     */
-    public RubyModule getRubyClass() {
-        return this.rubyClass;
-    }
-
-    /** Setter for property rubyClass.
-     * @param rubyClass New value of property rubyClass.
-     */
-    public void setRubyClass(RubyModule rubyClass) {
-        this.rubyClass = rubyClass;
-    }
-
-    /** Getter for property taint.
-     * @return Value of property taint.
-     */
-    public boolean isTaint() {
-        return this.taint;
-    }
-
-    /** Setter for property taint.
-     * @param taint New value of property taint.
-     */
-    public void setTaint(boolean taint) {
-        this.taint = taint;
-    }
-
     public RubyMap getInstanceVariables() {
-        if (instanceVariables == null) {
-            instanceVariables = new RubyHashMap();
-        }
         return instanceVariables;
     }
 
@@ -162,7 +115,57 @@ public class RubyObject {
         this.instanceVariables = instanceVariables;
     }
 
-    // methods
+    /**
+     * Gets the rubyClass.
+     * @return Returns a RubyClass
+     */
+    public RubyClass getRubyClass() {
+        if (isNil()) {
+            return getRuby().getClasses().getNilClass();
+        }
+
+        return rubyClass;
+    }
+
+    /**
+     * Sets the rubyClass.
+     * @param rubyClass The rubyClass to set
+     */
+    public void setRubyClass(RubyClass rubyClass) {
+        this.rubyClass = rubyClass;
+    }
+
+    /**
+     * Gets the frozen.
+     * @return Returns a boolean
+     */
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    /**
+     * Sets the frozen.
+     * @param frozen The frozen to set
+     */
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
+    }
+
+    /**
+     * Gets the taint.
+     * @return Returns a boolean
+     */
+    public boolean isTaint() {
+        return taint;
+    }
+
+    /**
+     * Sets the taint.
+     * @param taint The taint to set
+     */
+    public void setTaint(boolean taint) {
+        this.taint = taint;
+    }
 
     public boolean isNil() {
         return false;
@@ -174,6 +177,64 @@ public class RubyObject {
 
     public boolean isFalse() {
         return false;
+    }
+
+    public static void createObjectClass(RubyModule kernelModule) {
+        RubyCallbackMethod clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
+        RubyCallbackMethod dup = new ReflectionCallbackMethod(RubyObject.class, "dup");
+        RubyCallbackMethod equal = new ReflectionCallbackMethod(RubyObject.class, "equal", RubyObject.class);
+        RubyCallbackMethod extend = new ReflectionCallbackMethod(RubyObject.class, "extend", RubyModule[].class, true);
+        RubyCallbackMethod freeze = new ReflectionCallbackMethod(RubyObject.class, "freeze");
+        RubyCallbackMethod frozen = new ReflectionCallbackMethod(RubyObject.class, "frozen");
+        RubyCallbackMethod id = new ReflectionCallbackMethod(RubyObject.class, "id");
+        RubyCallbackMethod inspect = new ReflectionCallbackMethod(RubyObject.class, "inspect");
+        RubyCallbackMethod instance_eval =
+            new ReflectionCallbackMethod(RubyObject.class, "instance_eval", RubyObject[].class, true);
+        RubyCallbackMethod instance_of = new ReflectionCallbackMethod(RubyObject.class, "instance_of", RubyModule.class);
+        RubyCallbackMethod kind_of = new ReflectionCallbackMethod(RubyObject.class, "kind_of", RubyModule.class);
+        RubyCallbackMethod method = new ReflectionCallbackMethod(RubyObject.class, "method", RubyObject.class);
+        RubyCallbackMethod methods = new ReflectionCallbackMethod(RubyObject.class, "methods");
+        RubyCallbackMethod private_methods = new ReflectionCallbackMethod(RubyObject.class, "private_methods");
+        RubyCallbackMethod protected_methods = new ReflectionCallbackMethod(RubyObject.class, "protected_methods");
+        RubyCallbackMethod taint = new ReflectionCallbackMethod(RubyObject.class, "taint");
+        RubyCallbackMethod tainted = new ReflectionCallbackMethod(RubyObject.class, "tainted");
+        RubyCallbackMethod to_a = new ReflectionCallbackMethod(RubyObject.class, "to_a");
+        RubyCallbackMethod to_s = new ReflectionCallbackMethod(RubyObject.class, "to_s");
+        RubyCallbackMethod type = new ReflectionCallbackMethod(RubyObject.class, "type");
+        RubyCallbackMethod untaint = new ReflectionCallbackMethod(RubyObject.class, "untaint");
+
+        kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
+        kernelModule.defineMethod("==", equal);
+        kernelModule.defineMethod("class", type);
+        kernelModule.defineMethod("clone", clone);
+        kernelModule.defineMethod("dup", dup);
+        kernelModule.defineMethod("eql?", equal);
+        kernelModule.defineMethod("extend", extend);
+        kernelModule.defineMethod("freeze", freeze);
+        kernelModule.defineMethod("frozen?", frozen);
+        kernelModule.defineMethod("hash", id);
+        kernelModule.defineMethod("id", id);
+        kernelModule.defineMethod("__id__", id);
+        kernelModule.defineMethod("inspect", inspect);
+        kernelModule.defineMethod("instance_eval", instance_eval);
+        kernelModule.defineMethod("instance_of?", instance_of);
+        kernelModule.defineMethod("is_a?", kind_of);
+        kernelModule.defineMethod("kind_of?", kind_of);
+        kernelModule.defineMethod("method", method);
+        kernelModule.defineMethod("methods", methods);
+        kernelModule.defineMethod("private_methods", private_methods);
+        kernelModule.defineMethod("protected_methods", protected_methods);
+        kernelModule.defineMethod("public_methods", methods);
+        kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
+        kernelModule.defineMethod("taint", taint);
+        kernelModule.defineMethod("tainted?", tainted);
+        kernelModule.defineMethod("to_a", to_a);
+        kernelModule.defineMethod("to_s", to_s);
+        kernelModule.defineMethod("type", type);
+        kernelModule.defineMethod("untaint", untaint);
+
+        kernelModule.defineAlias("===", "==");
+        kernelModule.defineAlias("equal?", "==");
     }
 
     protected int argCount(RubyObject[] args, int min, int max) {
@@ -188,14 +249,15 @@ public class RubyObject {
      *
      */
     public boolean isSpecialConst() {
-        return (isImmediate() || isNil());
+        //return (isImmediate() || isNil());
+        return isNil();
     }
 
     /** SPECIAL_SINGLETON(x,c)
      *
      */
     private RubyClass getSpecialSingleton() {
-        RubyClass rubyClass = (RubyClass) getRubyClass();
+        RubyClass rubyClass = getRubyClass();
         if (!rubyClass.isSingleton()) {
             rubyClass = rubyClass.newSingletonClass();
             rubyClass.attachSingletonClass(this);
@@ -210,32 +272,25 @@ public class RubyObject {
         //        if (getType() == Type.FIXNUM || isSymbol()) {
         //            throw new RubyTypeException("can't define singleton");
         //        }
-
         if (isSpecialConst()) {
             if (isNil() || isTrue() || isFalse()) {
                 return getSpecialSingleton();
             }
             throw new RubyBugException("unknown immediate " + toString());
         }
-
         //synchronize(this) {
-        RubyClass rbClass = null;
-
+        RubyClass type = null;
         if (getRubyClass().isSingleton()) {
-            rbClass = (RubyClass) getRubyClass();
+            type = getRubyClass();
         } else {
-            rbClass = ((RubyClass) getRubyClass()).newSingletonClass();
-            setRubyClass(rbClass);
-            rbClass.attachSingletonClass(this);
+            type = getRubyClass().newSingletonClass();
+            setRubyClass(type);
+            type.attachSingletonClass(this);
         }
-
-        rbClass.setTaint(isTaint());
-
-        if (isFrozen()) {
-            rbClass.setFrozen(true);
-        }
+        type.setTaint(isTaint());
+        type.setFrozen(isFrozen());
         //}
-        return rbClass;
+        return type;
     }
 
     /** rb_define_singleton_method
@@ -246,9 +301,9 @@ public class RubyObject {
     }
 
     /** OBJSETUP
-     *
+     *@deprecated use setRubyClass(RubyClass rubyClass) instead
      */
-    protected void setupObject(RubyModule rubyClass) {
+    protected void setupObject(RubyClass rubyClass) {
         setRubyClass(rubyClass);
     }
 
@@ -256,8 +311,7 @@ public class RubyObject {
      *
      */
     protected void setupClone(RubyObject obj) {
-        setupObject(obj.getRubyClass().getSingletonClassClone());
-
+        setRubyClass(obj.getRubyClass().getSingletonClassClone());
         getRubyClass().attachSingletonClass(this);
     }
 
@@ -327,9 +381,7 @@ public class RubyObject {
                 return value;
             }
         }
-
         // todo: add warn if verbose
-
         return getRuby().getNil();
     }
 
@@ -347,9 +399,7 @@ public class RubyObject {
      */
     public RubyObject setInstanceVar(RubyId id, RubyObject value) {
         if (isTaint() && getRuby().getSecurityLevel() >= 4) {
-            throw new RubySecurityException(
-                getRuby(),
-                "Insecure: can't modify instance variable");
+            throw new RubySecurityException(getRuby(), "Insecure: can't modify instance variable");
         }
         if (isFrozen()) {
             throw new RubyFrozenException(getRuby(), "");
@@ -377,22 +427,18 @@ public class RubyObject {
 
     public RubyObject evalNode(Node n) {
         Node beginTree = ruby.getParserHelper().getEvalTreeBegin();
-
         ruby.getParserHelper().setEvalTreeBegin(null);
         if (beginTree != null) {
             eval(beginTree);
         }
-
         if (n == null) {
             return getRuby().getNil();
         }
-
         return eval(n);
     }
 
     public void callInit(RubyObject[] args) {
-        ruby.getIter().push(
-            ruby.isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
+        ruby.getIter().push(ruby.isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
         funcall(getRuby().intern("initialize"), args);
         ruby.getIter().pop();
     }
@@ -405,7 +451,7 @@ public class RubyObject {
      *
      */
     public RubyId toId() {
-        throw new RubyTypeException(getRuby(), m_inspect().getValue() + " is not a symbol");
+        throw new RubyTypeException(getRuby(), inspect().getValue() + " is not a symbol");
     }
 
     /** rb_convert_type
@@ -415,22 +461,16 @@ public class RubyObject {
         if (type.isAssignableFrom(getClass())) {
             return this;
         }
-
         RubyObject result = null;
-
         try {
             result = funcall(getRuby().intern(method));
         } catch (RubyNameException rnExcptn) {
-            throw new RubyTypeException(getRuby(),
-                "failed to convert " + getRubyClass().toName() + " into " + className);
-//        } catch (RubyS rnExcptn) {
+            throw new RubyTypeException(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
+            //        } catch (RubyS rnExcptn) {
         }
-
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new RubyTypeException(getRuby(),
-                getRubyClass().toName() + "#" + method + " should return " + className);
+            throw new RubyTypeException(getRuby(), getRubyClass().toName() + "#" + method + " should return " + className);
         }
-
         return result;
     }
 
@@ -440,8 +480,7 @@ public class RubyObject {
     public RubyObject specificEval(RubyModule mod, RubyObject[] args) {
         if (getRuby().isBlockGiven()) {
             if (args.length > 0) {
-                throw new RubyArgumentException(getRuby(),
-                    "wrong # of arguments (" + args.length + " for 0)");
+                throw new RubyArgumentException(getRuby(), "wrong # of arguments (" + args.length + " for 0)");
             }
             return yieldUnder(mod);
         } else {
@@ -449,10 +488,10 @@ public class RubyObject {
                 throw new RubyArgumentException(getRuby(), "block not supplied");
             } else if (args.length > 3) {
                 String lastFuncName = ruby.getRubyFrame().getLastFunc().toName();
-                throw new RubyArgumentException(getRuby(),
+                throw new RubyArgumentException(
+                    getRuby(),
                     "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
             }
-
             /*
             if (ruby.getSecurityLevel() >= 4) {
             	Check_Type(argv[0], T_STRING);
@@ -460,11 +499,8 @@ public class RubyObject {
             	Check_SafeStr(argv[0]);
             }
             */
-
-            RubyObject file =
-                args.length > 1 ? args[1] : RubyString.m_newString(getRuby(), "(eval)");
+            RubyObject file = args.length > 1 ? args[1] : RubyString.newString(getRuby(), "(eval)");
             RubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuby());
-
             return evalUnder(mod, args[0], file, line);
         }
     }
@@ -477,14 +513,9 @@ public class RubyObject {
         	Check_SafeStr(src);
         	}
         */
-
         return under.executeUnder(new RubyCallbackMethod() {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
-                return args[0].eval(
-                    args[1],
-                    ruby.getNil(),
-                    ((RubyString) args[2]).getValue(),
-                    RubyNumeric.fix2int(args[3]));
+                return args[0].eval(args[1], ruby.getNil(), ((RubyString) args[2]).getValue(), RubyNumeric.fix2int(args[3]));
             }
         }, new RubyObject[] { this, src, file, line });
     }
@@ -494,24 +525,20 @@ public class RubyObject {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
                 if ((ruby.getBlock().flags & RubyBlock.BLOCK_DYNAMIC) != 0) {
                     RubyBlock oldBlock = ruby.getBlock();
-
                     RubyBlock block = ruby.getBlock();
-                    /* copy the block to avoid modifying global data. */ block.frame.setCbase(
-                    ruby.getRubyFrame().getCbase());
+                    /* copy the block to avoid modifying global data. */
+                    block.frame.setCbase(ruby.getRubyFrame().getCbase());
                     ruby.setBlock(block);
-
                     RubyObject result = null;
-
                     try {
                         result = ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
                     } finally {
                         ruby.setBlock(oldBlock);
                     }
-
                     return result;
                 }
-                /* static block, no need to restore */ ruby.getBlock().frame.setCbase(
-                ruby.getRubyFrame().getCbase());
+                /* static block, no need to restore */
+                ruby.getBlock().frame.setCbase(ruby.getRubyFrame().getCbase());
                 return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
             }
         }, new RubyObject[] { this });
@@ -521,7 +548,6 @@ public class RubyObject {
         String fileSave = ruby.getSourceFile();
         int lineSave = ruby.getSourceLine();
         int iter = ruby.getRubyFrame().getIter();
-
         if (file == null) {
             file = ruby.getSourceFile();
             line = ruby.getSourceLine();
@@ -561,13 +587,10 @@ public class RubyObject {
         }
         getRuby().pushClass();
         ruby.setRubyClass(ruby.getCBase());
-
         ruby.setInEval(ruby.getInEval() + 1);
-
         if (ruby.getRubyClass().isIncluded()) {
-            ruby.setRubyClass(ruby.getRubyClass().getRubyClass());
+            ruby.setRubyClass(((RubyIncludedClass) ruby.getRubyClass()).getDelegate());
         }
-
         RubyObject result = getRuby().getNil();
         try {
             // result = ruby_errinfo;
@@ -602,7 +625,6 @@ public class RubyObject {
         } finally {
             ruby.popClass();
             ruby.setInEval(ruby.getInEval());
-
             if (!scope.isNil()) {
                 /*
                 int dont_recycle = ruby_scope->flag & SCOPE_DONT_RECYCLE;
@@ -649,68 +671,61 @@ public class RubyObject {
     /** rb_obj_equal
      *
      */
-    public RubyBoolean m_equal(RubyObject obj) {
-        if (this == obj) {
-            return getRuby().getTrue();
-        } else {
-            return (RubyBoolean) funcall(getRuby().intern("=="), obj);
-        }
+    public RubyBoolean equal(RubyObject obj) {
+        return RubyBoolean.newBoolean(getRuby(), this == obj);
     }
 
-    /** rb_obj_id
+    /** Return the internal id of an object.
+     * 
+     * <b>Warning:</b> In JRuby there is no guarantee that two objects have different ids.
+     * 
+     * <i>CRuby function: rb_obj_id</i>
      *
      */
-    public RubyObject m_id() {
-        return RubyFixnum.m_newFixnum(getRuby(), super.hashCode());
+    public RubyObject id() {
+        return RubyFixnum.m_newFixnum(getRuby(), System.identityHashCode(this));
     }
 
     /** rb_obj_type
      *
      */
-    public RubyModule m_type() {
-        RubyModule rbClass = getRubyClass();
-
-        while (rbClass.isSingleton() || rbClass.isIncluded()) {
-            rbClass = rbClass.getSuperClass();
+    public RubyClass type() {
+        RubyClass type = getRubyClass();
+        while (type.isSingleton() || type.isIncluded()) {
+            type = type.getSuperClass();
         }
-
-        return rbClass;
+        return type;
     }
 
     /** rb_obj_clone
      *
      */
-    public RubyObject m_clone() {
+    public RubyObject rbClone() {
         RubyObject clone = new RubyObject(getRuby(), (RubyClass) getRubyClass());
         clone.setupClone(this);
-
         clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
-
         return clone;
     }
 
     /** rb_obj_dup
      *
      */
-    public RubyObject m_dup() {
+    public RubyObject dup() {
         RubyObject dup = funcall(getRuby().intern("clone"));
-
         if (!dup.getClass().equals(getClass())) {
             throw new RubyTypeException(getRuby(), "duplicated object must be same type");
         }
-
         if (!dup.isSpecialConst()) {
-            dup.setupObject(m_type());
+            dup.setRubyClass(type());
             dup.infectObject(this);
         }
-
         return dup;
     }
 
     /** rb_obj_tainted
      *
      */
-    public RubyBoolean m_tainted() {
+    public RubyBoolean tainted() {
         if (isTaint()) {
             return getRuby().getTrue();
         } else {
@@ -721,63 +736,55 @@ public class RubyObject {
     /** rb_obj_taint
      *
      */
-    public RubyObject m_taint() {
+    public RubyObject taint() {
         getRuby().secure(4);
-
         if (!isTaint()) {
             if (isFrozen()) {
                 throw new RubyFrozenException(getRuby(), "object");
             }
             setTaint(true);
         }
-
         return this;
     }
 
     /** rb_obj_untaint
      *
      */
-    public RubyObject m_untaint() {
+    public RubyObject untaint() {
         getRuby().secure(3);
-
         if (isTaint()) {
             if (isFrozen()) {
                 throw new RubyFrozenException(getRuby(), "object");
             }
             setTaint(false);
         }
-
         return this;
     }
 
-    /** rb_obj_freeze
-     *
+    /** Freeze an object.
+     * 
+     * rb_obj_freeze
+     * 
      */
-    public RubyObject m_freeze() {
+    public RubyObject freeze() {
         if (getRuby().getSecurityLevel() >= 4 && isTaint()) {
             throw new RubySecurityException(getRuby(), "Insecure: can't freeze object");
         }
-
-        // ??????????????
-
+        setFrozen(true);
         return this;
     }
 
     /** rb_obj_frozen_p
      *
      */
-    public RubyBoolean m_frozen() {
-        if (isFrozen()) {
-            return getRuby().getTrue();
-        } else {
-            return getRuby().getFalse();
-        }
+    public RubyBoolean frozen() {
+        return RubyBoolean.newBoolean(getRuby(), isFrozen());
     }
 
     /** rb_obj_inspect
      *
      */
-    public RubyString m_inspect() {
+    public RubyString inspect() {
         //     if (TYPE(obj) == T_OBJECT
         // 	&& ROBJECT(obj)->iv_tbl
         // 	&& ROBJECT(obj)->iv_tbl->num_entries > 0) {
@@ -785,12 +792,12 @@ public class RubyObject {
         // 	char *c;
         //
         // 	c = rb_class2name(CLASS_OF(obj));
-        // 	if (rb_inspecting_p(obj)) {
+        // 	/*if (rb_inspecting_p(obj)) {
         // 	    str = rb_str_new(0, strlen(c)+10+16+1); /* 10:tags 16:addr 1:eos */
         // 	    sprintf(RSTRING(str)->ptr, "#<%s:0x%lx ...>", c, obj);
         // 	    RSTRING(str)->len = strlen(RSTRING(str)->ptr);
         // 	    return str;
-        // 	}
+        // 	}*/
         // 	str = rb_str_new(0, strlen(c)+6+16+1); /* 6:tags 16:addr 1:eos */
         // 	sprintf(RSTRING(str)->ptr, "-<%s:0x%lx ", c, obj);
         // 	RSTRING(str)->len = strlen(RSTRING(str)->ptr);
@@ -799,97 +806,109 @@ public class RubyObject {
         //     return rb_funcall(obj, rb_intern("to_s"), 0, 0);
         // }
         return (RubyString) funcall(getRuby().intern("to_s"));
-        //return null;
     }
 
     /** rb_obj_is_instance_of
      *
      */
-    public RubyBoolean m_instance_of(RubyModule rbModule) {
-        return RubyBoolean.m_newBoolean(getRuby(), m_type() == rbModule);
+    public RubyBoolean instance_of(RubyModule type) {
+        return RubyBoolean.newBoolean(getRuby(), type() == type);
     }
 
     /** rb_obj_is_kind_of
      *
      */
-    public RubyBoolean m_kind_of(RubyModule rbModule) {
-        RubyModule rbClass = getRubyClass();
-
-        while (rbClass != null) {
-            if (rbClass == rbModule || rbClass.getMethods() == rbModule.getMethods()) {
+    public RubyBoolean kind_of(RubyModule type) {
+        RubyClass currType = getRubyClass();
+        while (currType != null) {
+            if (currType == type || currType.getMethods().keySet().retainAll(type.getMethods().keySet())) {
                 return getRuby().getTrue();
             }
-            rbClass = rbClass.getSuperClass();
+            currType = currType.getSuperClass();
         }
-
         return getRuby().getFalse();
     }
 
     /** rb_obj_methods
      *
      */
-    public RubyArray m_methods() {
-        // return getRubyClass().m_instance_methods(getRuby().getTrue());
-        return null;
+    public RubyObject methods() {
+        return getRubyClass().instance_methods(new RubyObject[] { getRuby().getTrue()});
     }
 
     /** rb_obj_protected_methods
      *
      */
-    public RubyArray m_protected_methods() {
-        // return getRubyClass().m_protected_instance_methods(getRuby().getTrue());
-        return null;
+    public RubyObject protected_methods() {
+        return getRubyClass().protected_instance_methods(new RubyObject[] { getRuby().getTrue()});
     }
 
     /** rb_obj_private_methods
      *
      */
-    public RubyArray m_private_methods() {
-        // return getRubyClass().m_private_instance_methods(getRuby().getTrue());
-
-        return null;
+    public RubyObject private_methods() {
+        return getRubyClass().private_instance_methods(new RubyObject[] { getRuby().getTrue()});
     }
 
     /** rb_obj_singleton_methods
      *
      */
-    public RubyArray m_singleton_methods() {
+    public RubyArray singleton_methods() {
         RubyArray ary = RubyArray.m_newArray(getRuby());
-        RubyModule rbClass = getRubyClass();
-
-        while (rbClass != null && rbClass.isSingleton()) {
-            rbClass.getMethods().foreach(new RubyMapMethod() {
+        RubyClass type = getRubyClass();
+        while (type != null && type.isSingleton()) {
+            type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
+                    RubyString name = RubyString.newString(getRuby(), ((RubyId) key).toName());
+                    if ((((MethodNode) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
+                        if (((RubyArray) arg).m_includes(name).isFalse()) {
+                            if (((MethodNode) value).getBodyNode() == null) {
+                                ((RubyArray) arg).m_push(getRuby().getNil());
+                            }
+                            ((RubyArray) arg).m_push(name);
+                        }
+                    } else if (((MethodNode) value).getBodyNode() instanceof ZSuperNode) {
+                        ((RubyArray) arg).m_push(getRuby().getNil());
+                        ((RubyArray) arg).m_push(name);
+                    }
                     return CONTINUE;
                 }
             }, ary);
-            rbClass = rbClass.getSuperClass();
+            type = type.getSuperClass();
         }
         ary.m_compact_bang();
         return ary;
     }
 
-    public RubyObject m_method(RubyObject symbol) {
-        return getRubyClass().newMethod(
-            this,
-            symbol.toId(),
-            getRuby().getClasses().getMethodClass());
+    public RubyObject method(RubyObject symbol) {
+        return getRubyClass().newMethod(this, symbol.toId(), getRuby().getClasses().getMethodClass());
     }
 
-    public RubyString m_to_s() {
+    public RubyArray to_a() {
+        return RubyArray.m_newArray(getRuby(), this);
+    }
+
+    public RubyString to_s() {
         String cname = getRubyClass().toName();
-
-        RubyString str = RubyString.m_newString(getRuby(), "");
+        RubyString str = RubyString.newString(getRuby(), "");
         /* 6:tags 16:addr 1:eos */
-        str.setValue("#<" + cname + ":0x" + Integer.toHexString(hashCode()) + ">");
-        if (isTaint()) {
-            str.setTaint(true);
-        }
-
+        str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
+        str.setTaint(isTaint());
         return str;
     }
 
     public RubyObject instance_eval(RubyObject[] args) {
         return specificEval(getSingletonClass(), args);
+    }
+
+    public RubyObject extend(RubyObject args[]) {
+        if (args.length == 0) {
+            throw new RubyArgumentException(ruby, "wrong # of arguments");
+        }
+        // FIXME: Check_Type?
+        for (int i = 0; i < args.length; i++) {
+            args[i].funcall(ruby.intern("extend_object"), this);
+        }
+        return this;
     }
 }

@@ -35,64 +35,59 @@ package org.jruby;
  * @author  jpetersen
  */
 public class RubyBoolean extends RubyObject {
-    private boolean value;   
+    private boolean value;
 
     public RubyBoolean(Ruby ruby, boolean value) {
-        super(ruby);
+        super(ruby, null);
         this.value = value;
     }
 
     public Class getJavaClass() {
         return Boolean.TYPE;
     }
-    
-    public RubyModule getRubyClass() {
-        if (value) {
-            return getRuby().getClasses().getTrueClass();
-        } else {
-            return getRuby().getClasses().getFalseClass();
-        }
+
+    public RubyClass getRubyClass() {
+        return value ? getRuby().getClasses().getTrueClass() : getRuby().getClasses().getFalseClass();
     }
-    
+
     public boolean isTrue() {
         return value;
     }
-    
+
     public boolean isFalse() {
         return !value;
     }
-    
-    public static RubyBoolean m_newBoolean(Ruby ruby, boolean value) {
+
+    public static RubyBoolean newBoolean(Ruby ruby, boolean value) {
         if (value) {
             return ruby.getTrue();
         } else {
             return ruby.getFalse();
         }
     }
-    
+
     // Methods of the False class (false_*)
-    
-    
+
     /** false_to_s
      *  true_to_s
      *
      */
     public RubyString m_to_s() {
         if (isFalse()) {
-            return RubyString.m_newString(getRuby(), "false");
+            return RubyString.newString(getRuby(), "false");
         } else {
-            return RubyString.m_newString(getRuby(), "true");
+            return RubyString.newString(getRuby(), "true");
         }
     }
-    
+
     /** false_type
      *  true_type
      *
      */
-    public RubyModule m_type() {
+    public RubyClass type() {
         return getRubyClass();
     }
-    
+
     /** false_and
      *  true_and
      *
@@ -104,7 +99,7 @@ public class RubyBoolean extends RubyObject {
             return getRuby().getFalse();
         }
     }
-    
+
     /** false_or
      *  true_or
      *

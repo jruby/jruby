@@ -44,6 +44,6 @@ public class ArgsPushNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return ((RubyArray)getHeadNode().eval(ruby, self).m_dup()).push(getBodyNode().eval(ruby, self));
+        return ((RubyArray)getHeadNode().eval(ruby, self).dup()).push(getBodyNode().eval(ruby, self));
     }
 }

@@ -76,11 +76,11 @@ public class RubySymbol extends RubyObject {
     }
     
     public RubyString m_inspect() {
-        return RubyString.m_newString(getRuby(), ":" + getId().toName());
+        return RubyString.newString(getRuby(), ":" + getId().toName());
     }
     
     public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), getId().toName());
+        return RubyString.newString(getRuby(), getId().toName());
     }
 
     public RubyFixnum m_hash() {

@@ -51,7 +51,7 @@ public abstract class RubyInteger extends RubyNumeric {
             // HACK ---
         }
         
-        return RubyString.m_newString(getRuby(), new String(new char[]{(char)getLongValue()}));
+        return RubyString.newString(getRuby(), new String(new char[]{(char)getLongValue()}));
     }
     
     public RubyObject m_downto(RubyNumeric to) {

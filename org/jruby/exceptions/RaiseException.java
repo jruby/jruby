@@ -52,7 +52,7 @@ public class RaiseException extends RuntimeException {
         this.actException =
             RubyException.newException(
                 ruby,
-                (RubyClass) ruby.getRubyClass(excptnClass),
+                (RubyClass) ruby.getRubyModule(excptnClass),
                 msg);
     }
 

@@ -72,7 +72,7 @@ public class RbComparable {
                     } else {
                         try {
                             RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
-                            return RubyBoolean.m_newBoolean(ruby, fn.getValue() == 0);
+                            return RubyBoolean.newBoolean(ruby, fn.getValue() == 0);
                         } catch (RubyNameException rnExcptn) {
                             return ruby.getFalse();
                         }
@@ -92,7 +92,7 @@ public class RbComparable {
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
-                    return RubyBoolean.m_newBoolean(ruby, fn.getValue() > 0);
+                    return RubyBoolean.newBoolean(ruby, fn.getValue() > 0);
                 }
             };
         }
@@ -108,7 +108,7 @@ public class RbComparable {
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
-                    return RubyBoolean.m_newBoolean(ruby, fn.getValue() >= 0);
+                    return RubyBoolean.newBoolean(ruby, fn.getValue() >= 0);
                 }
             };
         }
@@ -124,7 +124,7 @@ public class RbComparable {
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
-                    return RubyBoolean.m_newBoolean(ruby, fn.getValue() < 0);
+                    return RubyBoolean.newBoolean(ruby, fn.getValue() < 0);
                 }
             };
         }
@@ -140,7 +140,7 @@ public class RbComparable {
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
-                    return RubyBoolean.m_newBoolean(ruby, fn.getValue() <= 0);
+                    return RubyBoolean.newBoolean(ruby, fn.getValue() <= 0);
                 }
             };
         }

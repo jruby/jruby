@@ -1,23 +1,23 @@
 package org.jruby.util.collections;
 
-public class Stack {
-    private StackObject firstStackObject = null;
+public class RubyStack {
+    private ListObject firstStackObject = null;
     
-    public Stack() {
+    public RubyStack() {
     }
 
-    public StackObject getStackObject() {
+    public ListObject getTop() {
         return firstStackObject;
     }
 
-    public void push(StackObject newStackObject) {
+    public void push(ListObject newStackObject) {
         newStackObject.setNext(firstStackObject);
         firstStackObject = newStackObject;
     }
 
-    public StackObject pop() {
+    public ListObject pop() {
         if (!isEmpty()) {
-        	StackObject result = firstStackObject;
+        	ListObject result = firstStackObject;
             firstStackObject = firstStackObject.getNext();
             return result;
         } else {

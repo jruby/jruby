@@ -37,10 +37,10 @@ package org.jruby;
 public class RubyNil extends RubyObject {
 
     public RubyNil(Ruby ruby) {
-        super(ruby);
+        super(ruby, null);
     }
     
-    public RubyModule getRubyClass() {
+    public RubyClass getRubyClass() {
         return getRuby().getClasses().getNilClass();
     }
 
@@ -61,35 +61,35 @@ public class RubyNil extends RubyObject {
     /** nil_to_i
      *
      */
-    public RubyFixnum m_to_i() {
+    public RubyFixnum to_i() {
         return RubyFixnum.m_newFixnum(getRuby(), 0);
     }
 
     /** nil_to_s
      *
      */
-    public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), "");
+    public RubyString to_s() {
+        return RubyString.newString(getRuby(), "");
     }
     
     /** nil_to_a
      *
      */
-    public RubyArray m_to_a() {
+    public RubyArray to_a() {
         return RubyArray.m_newArray(getRuby(), 0);
     }
     
     /** nil_inspect
      *
      */
-    public RubyString m_inspect() {
-        return RubyString.m_newString(getRuby(), "nil");
+    public RubyString inspect() {
+        return RubyString.newString(getRuby(), "nil");
     }
     
     /** nil_type
      *
      */
-    public RubyModule m_type() {
+    public RubyClass type() {
         return getRubyClass();
     }
     

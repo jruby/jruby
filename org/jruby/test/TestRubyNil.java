@@ -38,6 +38,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyNil;
 import org.jruby.RubyFixnum;
 import org.jruby.core.RbNilClass;
+import org.jruby.regexp.GNURegexpAdapter;
 
 /**
 * @author chadfowler
@@ -52,9 +53,8 @@ public class TestRubyNil extends TestCase {
     } 
     
     public void setUp() {
-        ruby = new Ruby();
-        ruby.init();
-        rubyNil = new RubyNil(ruby);
+        ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+        rubyNil = ruby.getNil();
     }
     
     public void testIsNil() {
@@ -67,23 +67,23 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testToI() {
-        assertEquals(RubyFixnum.m_newFixnum(ruby, 0), rubyNil.m_to_i());
+        assertEquals(RubyFixnum.zero(ruby), rubyNil.to_i());
     }
 
     public void testToS() {
-        assertEquals("", rubyNil.m_to_s().getValue());
+        assertEquals("", rubyNil.to_s().getValue());
     }
 
     public void testToA() {
-        assertEquals(new ArrayList(), rubyNil.m_to_a().getList());
+        assertEquals(new ArrayList(), rubyNil.to_a().getList());
     }
 
     public void testInspect() {
-        assertEquals("nil", rubyNil.m_inspect().getValue());
+        assertEquals("nil", rubyNil.inspect().getValue());
     }
 
     public void testType() {
-        assertEquals(RbNilClass.createNilClass(ruby).getClassname(), rubyNil.m_type().getClassname());
+        assertEquals("NilClass", rubyNil.type().name().toString());
     }
 
     public void testOpAnd() {

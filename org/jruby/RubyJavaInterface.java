@@ -17,19 +17,12 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
      * 
      */
     public static RubyClass createJavaInterfaceClass(Ruby ruby) {
-        RubyCallbackMethod s_new = new ReflectionCallbackMethod(
-                RubyJavaInterface.class, "s_new", true, true);
-        RubyCallbackMethod listener = new ReflectionCallbackMethod(
-                RubyJavaInterface.class, "listener", 
-                new Class[]{RubyString.class, RubyString.class, RubyProc.class},
-                false, true);
-        RubyCallbackMethod initialize = new ReflectionCallbackMethod(
-                RubyJavaInterface.class, "initialize", true);
-        RubyCallbackMethod assign = new ReflectionCallbackMethod(
-                RubyJavaInterface.class, "assign", new Class[]{RubyString.class, RubyProc.class});
+        RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyJavaInterface.class, "s_new", true, true);
+        RubyCallbackMethod listener = new ReflectionCallbackMethod(RubyJavaInterface.class, "listener", new Class[]{RubyString.class, RubyString.class, RubyProc.class}, false, true);
+        RubyCallbackMethod initialize = new ReflectionCallbackMethod(RubyJavaInterface.class, "initialize", true);
+        RubyCallbackMethod assign = new ReflectionCallbackMethod(RubyJavaInterface.class, "assign", new Class[]{RubyString.class, RubyProc.class});
         
-        RubyClass javaInterfaceClass = ruby.defineClass("JavaInterface", 
-                ruby.getClasses().getJavaObjectClass());
+        RubyClass javaInterfaceClass = ruby.defineClass("JavaInterface", ruby.getClasses().getJavaObjectClass());
 
         javaInterfaceClass.defineSingletonMethod("new", s_new);
         javaInterfaceClass.defineSingletonMethod("listener", listener);
@@ -50,7 +43,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
 
         RubyHash interfaceProcs = (RubyHash) getInstanceVar("interfaceProcs");
 
-        RubyString methodName = RubyString.m_newString(getRuby(), method.getName());
+        RubyString methodName = RubyString.newString(getRuby(), method.getName());
 
         RubyObject proc;
         RubyObject rubyMethod;
@@ -59,17 +52,15 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
             RubyObject[] rubyArgs = new RubyObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                rubyArgs[i] = JavaUtil.convertJavaToRuby(getRuby(), args[i], 
-                                                         method.getParameterTypes()[i]);
+                rubyArgs[i] = JavaUtil.convertJavaToRuby(getRuby(), args[i], method.getParameterTypes()[i]);
             }
 
             result = ((RubyProc) proc).call(rubyArgs);
-        } else if (!(rubyMethod = m_method(methodName)).isNil()) {
+        } else if (!(rubyMethod = method(methodName)).isNil()) {
             RubyObject[] rubyArgs = new RubyObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                rubyArgs[i] = JavaUtil.convertJavaToRuby(getRuby(),  args[i],
-                                                         method.getParameterTypes()[i]);
+                rubyArgs[i] = JavaUtil.convertJavaToRuby(getRuby(), args[i], method.getParameterTypes()[i]);
             }
 
             result = ((RubyMethod) rubyMethod).call(rubyArgs);
@@ -77,8 +68,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
             RubyObject[] rubyArgs = new RubyObject[args.length + 1];
 
             for (int i = 0; i < args.length; i++) {
-                rubyArgs[i + 1] = JavaUtil.convertJavaToRuby(getRuby(), args[i], 
-                                                             method.getParameterTypes()[i]);
+                rubyArgs[i + 1] = JavaUtil.convertJavaToRuby(getRuby(), args[i], method.getParameterTypes()[i]);
             }
 
             result = funcall(getRuby().intern("send"), rubyArgs);
@@ -116,10 +106,8 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
         return this;
     }
     
-    public static RubyJavaInterface listener(Ruby ruby, RubyObject recv, 
-                RubyString interfaceName, RubyString methodName, RubyProc proc) {
-    	RubyJavaInterface newInterface = s_new(ruby, ruby.getClasses().getJavaInterfaceClass(), 
-                                               new RubyObject[]{interfaceName});
+    public static RubyJavaInterface listener(Ruby ruby, RubyObject recv, RubyString interfaceName, RubyString methodName, RubyProc proc) {
+    	RubyJavaInterface newInterface = s_new(ruby, ruby.getClasses().getJavaInterfaceClass(), new RubyObject[]{interfaceName});
     	
     	newInterface.assign(methodName, proc);
     	

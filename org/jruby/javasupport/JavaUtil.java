@@ -146,7 +146,7 @@ public class JavaUtil {
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return RubyBoolean.m_newBoolean(ruby, ((Boolean)object).booleanValue());
+                return RubyBoolean.newBoolean(ruby, ((Boolean)object).booleanValue());
             } else if (cName == "float" || cName == "double") {
                 return RubyFloat.m_newFloat(ruby, ((Number)object).doubleValue());
             } else if (cName == "char") {
@@ -157,7 +157,7 @@ public class JavaUtil {
             }
         }
         if (javaClass == String.class) {
-            return RubyString.m_newString(ruby, object.toString());
+            return RubyString.newString(ruby, object.toString());
         }
         if (javaClass.isArray()) {
             Class arrayClass = javaClass.getComponentType();

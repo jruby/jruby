@@ -28,13 +28,15 @@
  * 
  */
 
-package org.jruby;
+package org.jruby.javasupport.db4o;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 
@@ -152,9 +154,10 @@ public class Main {
         }
         ruby.setRegexpAdapterClass(sRegexpAdapter);
         ruby.init();
+        RubyDb4o.createDb4oModule(ruby);
 
         // Parse and interpret file
-        RubyString rs = RubyString.newString(ruby, iString2Eval);
+        RubyString rs = RubyString.m_newString(ruby, iString2Eval, iString2Eval.length());
 
         ruby.defineGlobalConstant("ARGV", JavaUtil.convertJavaToRuby(ruby, args, String[].class));
 

@@ -49,25 +49,25 @@ public class RubyTime extends RubyObject {
     public RubyTime(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
-    
+
     public static RubyClass createTimeClass(Ruby ruby) {
-    	RubyClass timeClass = ruby.defineClass("Time", ruby.getClasses().getObjectClass());
-	RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyTime.class, "s_new", false, true);
-    	
-    	timeClass.defineSingletonMethod("new", s_new);
-    	timeClass.defineSingletonMethod("now", s_new);
-    	return timeClass;
+        RubyClass timeClass = ruby.defineClass("Time", ruby.getClasses().getObjectClass());
+        RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyTime.class, "s_new", false, true);
+
+        timeClass.defineSingletonMethod("new", s_new);
+        timeClass.defineSingletonMethod("now", s_new);
+        return timeClass;
     }
 
-    public static RubyTime s_new(Ruby ruby, RubyObject rubyClass){
+    public static RubyTime s_new(Ruby ruby, RubyObject rubyClass) {
         RubyObject[] args = new RubyObject[1];
         args[0] = new RubyFixnum(ruby, new Date().getTime());
         return s_at(ruby, rubyClass, args);
     }
 
     public static RubyTime s_at(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
-        long secs = ((RubyFixnum)args[0]).getValue();
-        RubyTime time = new RubyTime(ruby, (RubyClass)rubyClass.getRubyClass());
+        long secs = ((RubyFixnum) args[0]).getValue();
+        RubyTime time = new RubyTime(ruby, (RubyClass) rubyClass.getRubyClass());
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date(secs));
         time.setJavaCalendar(cal);
@@ -80,9 +80,9 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyString zone(Ruby ruby) {
-        return RubyString.m_newString(ruby, cal.getTimeZone().getID());
+        return RubyString.newString(ruby, cal.getTimeZone().getID());
     }
-    
+
     public void setJavaCalendar(Calendar cal) {
         this.cal = cal;
     }

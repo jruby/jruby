@@ -43,7 +43,7 @@ public class RbRange {
     public static RubyClass createRangeClass(Ruby ruby) {
         RubyClass rangeClass = ruby.defineClass("Range", ruby.getClasses().getObjectClass());
 
-        rangeClass.includeModule(ruby.getRubyClass("Enumerable"));
+        rangeClass.includeModule(ruby.getRubyModule("Enumerable"));
 
         rangeClass.defineMethod("==", getMethod("m_eq", RubyObject.class));
         rangeClass.defineMethod("===", getMethod("m_eqq", RubyObject.class));

@@ -217,7 +217,7 @@ public class RubyFixnum extends RubyInteger {
         if (!(other instanceof RubyNumeric)) {
             return getRuby().getFalse();
         } else {
-            return RubyBoolean.m_newBoolean(getRuby(),
+            return RubyBoolean.newBoolean(getRuby(),
                 compareValue((RubyNumeric)other) == 0);
         }
     }
@@ -229,25 +229,25 @@ public class RubyFixnum extends RubyInteger {
 
     public RubyBoolean op_gt(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) > 0);
+        return RubyBoolean.newBoolean(getRuby(), compareValue(other) > 0);
     }
 
     public RubyBoolean op_ge(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) >= 0);
+        return RubyBoolean.newBoolean(getRuby(), compareValue(other) >= 0);
     }
 
     public RubyBoolean op_lt(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) < 0);
+        return RubyBoolean.newBoolean(getRuby(), compareValue(other) < 0);
     }
 
     public RubyBoolean op_le(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) <= 0);
+        return RubyBoolean.newBoolean(getRuby(), compareValue(other) <= 0);
     }
 
     public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), String.valueOf(getValue()));
+        return RubyString.newString(getRuby(), String.valueOf(getValue()));
     }
 }

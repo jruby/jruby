@@ -57,7 +57,7 @@ public class BlockPassNode extends Node {
         if (block.isNil()) {
             return ruby.getNil(); // +++ rb_eval(self, node->nd_iter);
         }
-        if (block.m_kind_of(ruby.getClasses().getMethodClass()).isTrue()) {
+        if (block.kind_of(ruby.getClasses().getMethodClass()).isTrue()) {
             block = null; // method_proc(block);
         // } else if (!(block instanceof RubyProc)) {
         }

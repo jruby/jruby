@@ -110,7 +110,7 @@ public class RubyRange extends RubyObject {
             end = begin;
         }
 
-        return new long[]{begin, end - begin};
+        return new long[] { begin, end - begin };
     }
 
     // public Range methods
@@ -126,7 +126,7 @@ public class RubyRange extends RubyObject {
             throw new RubyNameException(getRuby(), "'initialize' called twice.");
         }
         if (args.length == 3) {
-            init(args[0], args[1], (RubyBoolean)args[2]);
+            init(args[0], args[1], (RubyBoolean) args[2]);
         } else if (args.length == 2) {
             init(args[0], args[1], getRuby().getFalse());
         } else {
@@ -144,8 +144,8 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyString m_inspect() {
-        RubyString begStr = (RubyString)getInstanceVar("begin").funcall(getRuby().intern("to_s"));
-        RubyString endStr = (RubyString)getInstanceVar("end").funcall(getRuby().intern("to_s"));
+        RubyString begStr = (RubyString) getInstanceVar("begin").funcall(getRuby().intern("to_s"));
+        RubyString endStr = (RubyString) getInstanceVar("end").funcall(getRuby().intern("to_s"));
 
         begStr.m_cat(getInstanceVar("excl").isTrue() ? "..." : "..");
         begStr.m_concat(endStr);
@@ -172,7 +172,7 @@ public class RubyRange extends RubyObject {
         }
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            size = ((RubyNumeric)end).getLongValue() - ((RubyNumeric)begin).getLongValue();
+            size = ((RubyNumeric) end).getLongValue() - ((RubyNumeric) begin).getLongValue();
             if (!exclusive) {
                 size++;
             }
@@ -185,23 +185,12 @@ public class RubyRange extends RubyObject {
             return getRuby().getFalse();
         }
 
-        RubyObject o = getInstanceVar("begin");
-        RubyBoolean r = o.m_equal(obj.getInstanceVar("begin"));
-        if (r.isFalse()) {
-            return getRuby().getFalse();
-        }
+        boolean result =
+            getInstanceVar("begin").equals(obj.getInstanceVar("begin"))
+                && getInstanceVar("end").equals(obj.getInstanceVar("end"))
+                && (getInstanceVar("excl").isTrue() == obj.getInstanceVar("excl").isTrue());
 
-        o = getInstanceVar("end");
-        r = o.m_equal(obj.getInstanceVar("end"));
-        if (r.isFalse()) {
-            return getRuby().getFalse();
-        }
-
-        if (getInstanceVar("excl").isTrue() != obj.getInstanceVar("excl").isTrue()) {
-            return getRuby().getFalse();
-        }
-
-        return getRuby().getTrue();
+        return RubyBoolean.newBoolean(getRuby(), result);
     }
 
     public RubyBoolean m_eqq(RubyObject obj) {
@@ -209,13 +198,12 @@ public class RubyRange extends RubyObject {
         RubyObject end = getInstanceVar("end");
         boolean excl = getInstanceVar("excl").isTrue();
 
-        if ((beg instanceof RubyFixnum) && (obj instanceof RubyFixnum) &&
-                (end instanceof RubyFixnum)) {
-            long b = ((RubyFixnum)beg).getValue();
-            long o = ((RubyFixnum)obj).getValue();
+        if ((beg instanceof RubyFixnum) && (obj instanceof RubyFixnum) && (end instanceof RubyFixnum)) {
+            long b = ((RubyFixnum) beg).getValue();
+            long o = ((RubyFixnum) obj).getValue();
 
             if (b <= o) {
-                long e = ((RubyFixnum)end).getValue();
+                long e = ((RubyFixnum) end).getValue();
                 if (excl) {
                     if (o < e) {
                         return getRuby().getTrue();
@@ -247,8 +235,8 @@ public class RubyRange extends RubyObject {
         boolean exclusive = getInstanceVar("excl").isTrue();
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
-            long endLong = ((RubyNumeric)end).getLongValue();
-            long i = ((RubyNumeric)begin).getLongValue();
+            long endLong = ((RubyNumeric) end).getLongValue();
+            long i = ((RubyNumeric) begin).getLongValue();
 
             if (!exclusive) {
                 endLong += 1;
@@ -258,8 +246,8 @@ public class RubyRange extends RubyObject {
                 getRuby().yield(RubyFixnum.m_newFixnum(getRuby(), i));
             }
         } else if (begin instanceof RubyString) {
-            ((RubyString)begin).upto(end, exclusive);
-        } else if (begin.m_kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
+            ((RubyString) begin).upto(end, exclusive);
+        } else if (begin.kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
             if (!exclusive) {
                 end = end.funcall(getRuby().intern("+"), RubyFixnum.one(getRuby()));
             }
@@ -272,7 +260,7 @@ public class RubyRange extends RubyObject {
 
             if (exclusive) {
                 while (v.funcall(getRuby().intern("<"), end).isTrue()) {
-                    if (v.m_equal(end).isTrue()) {
+                    if (v.equals(end)) {
                         break;
                     }
                     getRuby().yield(v);
@@ -281,7 +269,7 @@ public class RubyRange extends RubyObject {
             } else {
                 while (v.funcall(getRuby().intern("<="), end).isTrue()) {
                     getRuby().yield(v);
-                    if (v.m_equal(end).isTrue()) {
+                    if (v.equals(end)) {
                         break;
                     }
                     v = v.funcall(getRuby().intern("succ"));

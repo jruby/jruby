@@ -92,9 +92,9 @@ public class RubyRuntime {
             ruby.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
-            ruby.setWrapper(RubyModule.m_newModule(ruby));
+            ruby.setWrapper(RubyModule.newModule(ruby));
             ruby.setRubyClass(ruby.getWrapper());
-            self = ruby.getRubyTopSelf().m_clone();
+            self = ruby.getRubyTopSelf().rbClone();
             self.extendObject(ruby.getRubyClass());
             ruby.getCRef().push(ruby.getWrapper());
         }
@@ -164,7 +164,7 @@ public class RubyRuntime {
             }
             br.close();
 
-            loadScript(fname, RubyString.m_newString(ruby, source.toString()), wrap);
+            loadScript(fname, RubyString.newString(ruby, source.toString()), wrap);
 
         } catch (IOException ioExcptn) {
             getErrorStream().println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");

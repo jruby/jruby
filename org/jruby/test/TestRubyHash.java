@@ -53,8 +53,8 @@ public class TestRubyHash extends TestCase {
 
     public TestRubyHash(String name) {
         super(name);
-    } 
-    
+    }
+
     public void setUp() {
         ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
         eval("$h = {'foo' => 'bar'}");
@@ -67,7 +67,7 @@ public class TestRubyHash extends TestCase {
         } catch (IOException ex) {
         }
     }
-    
+
     /**
      * Test literal constructor {}, Hash::[], and Hash::new with and
      * without the optional default-value argument.
@@ -155,8 +155,8 @@ public class TestRubyHash extends TestCase {
         private RubyString script;
 
         EvalThread(String name, String script) {
-            this.name = RubyString.m_newString(ruby, name);
-            this.script = RubyString.m_newString(ruby, script);
+            this.name = RubyString.newString(ruby, name);
+            this.script = RubyString.newString(ruby, script);
         }
 
         public void run() {
@@ -165,4 +165,3 @@ public class TestRubyHash extends TestCase {
         }
     }
 }
-

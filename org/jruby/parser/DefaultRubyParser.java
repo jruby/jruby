@@ -2868,7 +2868,7 @@ case 415:
     private void init_for_scanner(String s) {
         rs.setLexFileIo(false);
         rs.setLexGetsPtr(0);
-        rs.setLexInput(RubyString.m_newString(ruby, s));
+        rs.setLexInput(RubyString.newString(ruby, s));
         rs.setLexP(0);
         rs.setLexPEnd(0);
         ruby.setSourceLine(0);
@@ -2885,7 +2885,7 @@ case 415:
         RubyId sl_id = ruby.intern("SCRIPT_LINES__");
         if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined(sl_id)) {
             RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant(sl_id);
-            RubyString fName = RubyString.m_newString(ruby, f);
+            RubyString fName = RubyString.newString(ruby, f);
             
             // XXX +++
             RubyObject debugLines = ruby.getNil(); // = rb_hash_aref(hash, fName);
@@ -2899,7 +2899,7 @@ case 415:
             }
             
             if (line > 1) {
-                RubyString str = RubyString.m_newString(ruby, null);
+                RubyString str = RubyString.newString(ruby, null);
                 while (line > 1) {
                     ph.getRubyDebugLines().m_push(str);
                     line--;

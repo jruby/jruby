@@ -89,10 +89,10 @@ public class RescueNode extends Node {
         ArgsUtil.endCallArgs(ruby, tmpBlock);
         
         for (int i = 0; i < args.size(); i++) {
-            if (args.getRuby(i).m_kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
+            if (args.getRuby(i).kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
                 throw new RubyTypeException(ruby, "class or module required for rescue clause");
             }
-            if (actExcptn.m_kind_of((RubyModule)args.getRuby(i)).isTrue()) {
+            if (actExcptn.kind_of((RubyModule)args.getRuby(i)).isTrue()) {
                 return true;
             }
         }

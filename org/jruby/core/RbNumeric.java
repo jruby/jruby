@@ -109,7 +109,7 @@ public class RbNumeric {
         if (methodClone == null) {
             methodClone = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return recv.m_clone();
+                    return recv.rbClone();
                 }
             };
         }
@@ -147,7 +147,7 @@ public class RbNumeric {
                         throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
-                    return recv.m_equal(args[0]);
+                    return RubyBoolean.newBoolean(ruby, recv.equals(args[0]));
                 }
             };
         }

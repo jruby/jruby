@@ -131,7 +131,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     }
 
     private RubyInteger rb_cstr2inum(String s, int radix) {
-        return RubyNumeric.str2inum(ruby, RubyString.m_newString(ruby, s), radix);
+        return RubyNumeric.str2inum(ruby, RubyString.newString(ruby, s), radix);
     }
 
     private RubyRegexp rb_reg_new(String s, int len, int options) {
@@ -890,7 +890,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         int offset_save = lex_p - lex_pbeg;
         String eos = tok();
         int len = eos.length();
-        RubyString str = RubyString.m_newString(ruby, "");
+        RubyString str = RubyString.newString(ruby, "");
 
         RubyObject line;
 
@@ -945,7 +945,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         if (list == null) {
                             list = nf.newDXStr(str);
                         }
-                        ph.list_append((Node) yyVal, nf.newStr(RubyString.m_newString(ruby, "\n")));
+                        ph.list_append((Node) yyVal, nf.newStr(RubyString.newString(ruby, "\n")));
 
                         new RuntimeException("[BUG] Want to convert" + yyVal.getClass().getName() + " to StrNode").printStackTrace();
                         // ((NODE)yyVal).nd_set_type(NODE.NODE_STR);
@@ -1977,7 +1977,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             break fetch_id;
                         default :
                             if (c == term) {
-                                ph.list_append(list, nf.newStr(RubyString.m_newString(ruby, "#$")));
+                                ph.list_append(list, nf.newStr(RubyString.newString(ruby, "#$")));
                                 pushback(c);
                                 newtok();
                                 return list;
@@ -2063,7 +2063,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                 case '`' :
                                     if (c == term) {
                                         pushback(c);
-                                        ph.list_append(list, nf.newStr(RubyString.m_newString(ruby, "#")));
+                                        ph.list_append(list, nf.newStr(RubyString.newString(ruby, "#")));
                                         ph.rb_warning("bad substitution in string");
                                         tokfix();
                                         ph.list_append(list, nf.newStr(RubyString.m_newString(ruby, tok(), toklen())));

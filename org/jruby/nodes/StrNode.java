@@ -46,7 +46,7 @@ public class StrNode extends Node implements StringExpandableNode {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return getLiteral().m_to_s();
+        return getLiteral().to_s();
     }
     
     public RubyString expandString(Ruby ruby, RubyObject self, Node parent) {

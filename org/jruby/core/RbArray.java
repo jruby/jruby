@@ -43,7 +43,7 @@ public class RbArray {
     public static RubyClass createArrayClass(Ruby ruby) {
         RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
         
-        arrayClass.includeModule(ruby.getRubyClass("Enumerable"));
+        arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
         
         arrayClass.defineSingletonMethod("new", getRestArgsSingletonMethod("m_new"));
         arrayClass.defineSingletonMethod("[]", getRestArgsSingletonMethod("m_create"));

@@ -46,7 +46,7 @@ public class RubyException extends RubyObject {
 
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
         RubyException newException = new RubyException(ruby, excptnClass);
-        newException.setInstanceVar("mesg", RubyString.m_newString(ruby, msg));
+        newException.setInstanceVar("mesg", RubyString.newString(ruby, msg));
         return newException;
     }
 
@@ -104,7 +104,7 @@ public class RubyException extends RubyObject {
             sb.append(": ");
             sb.append(exception.getValue());
             sb.append(">");
-            return RubyString.m_newString(getRuby(), sb.toString());
+            return RubyString.newString(getRuby(), sb.toString());
         }
     }
 }

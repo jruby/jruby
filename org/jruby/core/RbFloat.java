@@ -39,7 +39,7 @@ import org.jruby.exceptions.*;
  */
 public class RbFloat {
     public static RubyClass createFloat(Ruby ruby) {
-        RubyClass floatClass = ruby.defineClass("Float", (RubyClass)ruby.getRubyClass("Numeric"));
+        RubyClass floatClass = ruby.defineClass("Float", (RubyClass)ruby.getRubyModule("Numeric"));
         
         floatClass.defineMethod("to_i", getMethod("m_to_i"));
         floatClass.defineMethod("to_s", getMethod("m_to_s"));

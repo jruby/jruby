@@ -57,10 +57,10 @@ public class RubyObjectSpace {
                 SoftReference ref = (SoftReference) iter.next();
                 RubyObject obj = (RubyObject) ref.get();
                 if (obj != null) {
-                    if (obj instanceof RubyModule && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
+                    if (obj instanceof RubyModule && (((RubyModule) obj).isSingleton() || ((RubyModule) obj).isIncluded())) {
                         continue;
                     } else {
-                        if (obj.m_kind_of((RubyModule) args[0]).isTrue()) {
+                        if (obj.kind_of((RubyModule) args[0]).isTrue()) {
                             ruby.yield(obj);
                         }
                     }
@@ -76,7 +76,7 @@ public class RubyObjectSpace {
                 SoftReference ref = (SoftReference) iter.next();
                 RubyObject obj = (RubyObject) ref.get();
                 if (obj != null) {
-                    if (obj instanceof RubyModule && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
+                    if (obj instanceof RubyModule && (((RubyModule) obj).isSingleton() || ((RubyModule) obj).isIncluded())) {
                         continue;
                     } else {
                         ruby.yield(obj);

@@ -288,7 +288,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean m_equal(RubyObject other) {
-        return super.m_equal(other);
+        return super.equal(other); // +++ rb_equal
     }
     
     /** num_eql
@@ -298,7 +298,7 @@ public abstract class RubyNumeric extends RubyObject {
         if (getRubyClass() != other.getRubyClass()) {
             return getRuby().getFalse();
         } else {
-            return super.m_equal(other);
+            return super.equal(other); // +++ rb_equal
         }
     }
     
