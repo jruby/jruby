@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2003 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2003-2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,6 +26,7 @@
 package org.jruby.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -36,13 +37,13 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 
-
 public class Pack {
     private static final String sSp10 = "          ";
     private static final String sNil10 = "\000\000\000\000\000\000\000\000\000\000";
+    private static final int IS_STAR = -1;
     /** Native pack type.
      **/
-    private static final String sNatStr = "sSiIlL";
+    private static final String NATIVE_CODES = "sSiIlL";
     private static final String sTooFew = "too few arguments";
     private static final char hex_table[] = "0123456789ABCDEF".toCharArray();
     private static final char[] uu_table =
@@ -50,6 +51,143 @@ public class Pack {
     private static final char[] b64_table =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
     private static final char[] sHexDigits = "0123456789abcdef0123456789ABCDEFx".toCharArray();
+    private static HashMap converters = new HashMap();
+    
+    static {
+        // short, little-endian (network)
+        converters.put(new Character('v'), new Converter(2) { 
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, 
+                        decodeShortUnsignedLittleEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+            	int s = (o == ruby.getNil() ? 0 :
+						 (int) (RubyNumeric.num2long(o) & 0xffff));
+           		encodeShortLittleEndian(result, s);
+           	}});
+    	// single precision, little-endian
+        converters.put(new Character('e'), new Converter(4) { 
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFloat.newFloat(ruby, decodeFloatLittleEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                float f = (o == ruby.getNil() ? 0 :
+                    (float)RubyNumeric.numericValue(o).getDoubleValue());
+                encodeFloatLittleEndian(result, f);
+            }});
+        Converter tmp = new Converter(4) {
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFloat.newFloat(ruby, decodeFloatBigEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                float f = (o == ruby.getNil() ? 0 :
+                    (float)RubyNumeric.numericValue(o).getDoubleValue());
+                encodeFloatBigEndian(result, f);
+            }
+        };
+        converters.put(new Character('f'), tmp); // single precision, native
+        converters.put(new Character('g'), tmp); // single precision, native
+        // double precision, little-endian
+        converters.put(new Character('E'), new Converter(8) { 
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFloat.newFloat(ruby, decodeDoubleLittleEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                double d = (o == ruby.getNil() ? 0 :
+                    RubyNumeric.numericValue(o).getDoubleValue());
+                encodeDoubleLittleEndian(result, d);
+            }});
+        tmp = new Converter(8) {
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFloat.newFloat(ruby, decodeDoubleBigEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                double d = (o == ruby.getNil() ? 0 :
+                    RubyNumeric.numericValue(o).getDoubleValue());
+                encodeDoubleBigEndian(result, d);
+            }
+        }; 
+        converters.put(new Character('d'), tmp); // double precision native
+        converters.put(new Character('G'), tmp); // double precision bigendian 
+        converters.put(new Character('s'), new Converter(2) { // signed short
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, decodeShortBigEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                int s = (o == ruby.getNil() ? 0 :
+                    (int) (RubyNumeric.num2long(o) & 0xffff));
+                encodeShortBigEndian(result, s);
+            }});
+        tmp = new Converter(2) {
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, 
+                        decodeShortUnsignedBigEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                int s = (o == ruby.getNil() ? 0 :
+                    (int) (RubyNumeric.num2long(o) & 0xffff));
+                encodeShortBigEndian(result, s);
+            }
+        };
+        converters.put(new Character('S'), tmp); // unsigned short
+        converters.put(new Character('n'), tmp); // short network
+        converters.put(new Character('c'), new Converter(1) { // signed char
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                int c = enc.nextChar();
+                return RubyFixnum.newFixnum(ruby, c > (char) 127 ? c-256 : c);
+            }	
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                char c = (o == ruby.getNil() ? 0 :
+                    (char) (RubyNumeric.num2long(o) & 0xff));
+                result.append(c);
+            }});
+        converters.put(new Character('C'), new Converter(1) { // unsigned char
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, (int)enc.nextChar());
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                char c = (o == ruby.getNil() ? 0 :
+                    (char) (RubyNumeric.num2long(o) & 0xff));
+                result.append(c);
+            }});
+        // long, little-endian 
+        converters.put(new Character('V'), new Converter(4) { 
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, 
+                        decodeIntUnsignedLittleEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                int s = (o == ruby.getNil() ? 0 : 
+                    (int) (RubyNumeric.num2long(o)));
+                encodeIntLittleEndian(result, s);
+            }});
+        tmp = new Converter(4) {
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, 
+                        decodeIntUnsignedBigEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                int s = (o == ruby.getNil() ? 0 : 
+                    (int) (RubyNumeric.num2long(o)));
+                encodeIntBigEndian(result, s);
+            }
+        };
+        converters.put(new Character('I'), tmp); // unsigned int, native 
+        converters.put(new Character('L'), tmp); // unsigned long (bugs?)
+        converters.put(new Character('N'), tmp); // long, network
+        tmp = new Converter(4) {
+            public IRubyObject decode(Ruby ruby, PtrList enc) {
+                return RubyFixnum.newFixnum(ruby, decodeIntBigEndian(enc));
+            }
+            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
+                int s = (o == ruby.getNil() ? 0 : 
+                    (int) (RubyNumeric.num2long(o)));
+                encodeIntBigEndian(result, s);
+            }
+        };
+        converters.put(new Character('l'), tmp); // long, native 
+        converters.put(new Character('i'), tmp); // int, native 
+    }
 
     /**
      * encodes a String in base64 or its uuencode variant.
@@ -405,336 +543,169 @@ public class Pack {
      *         </table>
      *
      **/
-    public static RubyArray unpack(String value, RubyString iFmt) {
-        Ruby ruby = iFmt.getRuntime();
-
-        char[] lFmt = iFmt.getValue().toCharArray();
-        int lFmtLength = lFmt.length;
-        RubyArray lResult = RubyArray.newArray(ruby);
-        int lValueLength = value.length();
-        int lCurValueIdx = 0;
-        for (int i = 0; i < lFmtLength;) {
-            int lLength = 0;
-            char lType = lFmt[i++];
-            char lNext = i < lFmtLength ? lFmt[i] : '\0';
-            if (lNext == '_' || lNext == '!') {
-                if (sNatStr.indexOf(lType) != -1) {
-                    i++;
-                    lNext = i < lFmtLength ? lFmt[i] : '\0';
-                } else
-                    throw new ArgumentError(ruby, "'" + lNext + "' allowed only after types " + sNatStr);
-
+    public static RubyArray unpack(String encodedString, 
+            RubyString formatString) {
+        Ruby ruby = formatString.getRuntime();
+        RubyArray result = RubyArray.newArray(ruby);
+        PtrList format = new PtrList(ruby, formatString.getValue());
+        PtrList encode = new PtrList(ruby, encodedString);
+        char type = format.nextChar(); // Type to be unpacked
+        
+        while(format.isAtEnd() == false) {
+            // Possible next type, format of current type, occurrences of type
+            char next = format.nextChar();
+            
+            // Next indicates to decode using native encoding format
+            if (next == '_' || next == '!') {
+                if (NATIVE_CODES.indexOf(type) == -1) {
+                	throw new ArgumentError(ruby, "'" + next + 
+                	        "' allowed only after types " + NATIVE_CODES);
+                } 
+                // We advance in case occurences follows
+                next = format.nextChar();
             }
-            if (i > lFmtLength)
-                lLength = 1;
-            else if (lNext == '*') {
-                lLength = lValueLength - lCurValueIdx;
-                i++;
-                lNext = i < lFmtLength ? lFmt[i] : '\0';
-            } else if (Character.isDigit(lNext)) {
-                int lEndIndex = i;
-                for (; lEndIndex < lFmtLength; lEndIndex++)
-                    if (!Character.isDigit(lFmt[lEndIndex]))
-                        break;
-                lLength = Integer.parseInt(new String(lFmt, i, lEndIndex - i));
-                //an exception may occur here if an int can't hold this but ...
-                i = lEndIndex;
-                lNext = (i < lFmtLength) ? lFmt[i] : '\0';
+            
+            // How many occurrences of 'type' we want
+            int occurrences = 0;
+            if (format.isAtEnd()) {
+            	occurrences = 1;
+            } else if (next == '*') {
+            	occurrences = IS_STAR;
+				next = format.nextChar();
+            } else if (Character.isDigit(next)) {
+				format.backup(1);
+				occurrences = format.nextAsciiNumber();
+				next = format.nextChar();
             } else {
-                lLength = lType == '@' ? 0 : 1;
+                occurrences = type == '@' ? 0 : 1;
             }
-            switch (lType) {
+
+            // See if we have a converter for the job...
+            Converter converter = (Converter) converters.get(new Character(type));
+            if (converter != null) {
+            	decode(ruby, encode, occurrences, result, converter);
+            	type = next;
+            	continue;
+            }
+
+            // Otherwise the unpack should be here...
+            switch (type) {
                 case '%' :
                     throw new ArgumentError(ruby, "% is not supported");
                 case 'A' :
-                    if (lLength > (lValueLength - lCurValueIdx))
-                        lLength = (lValueLength - lCurValueIdx);
-                    {
-                        int end = lLength;
-                        for (int t = lCurValueIdx + lLength - 1; lLength > 0; lLength--, t--)
-                            if (value.charAt(t) != ' ' && value.charAt(t) != '\0')
-                                break;
-                        lResult.append(
-                            RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
-                        lCurValueIdx += end;
+                	{
+                    if (occurrences == IS_STAR || occurrences > encode.remaining())
+                        occurrences = encode.remaining();
+
+                    String potential = encode.nextSubstring(occurrences);
+                    
+                    for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
+						char c = potential.charAt(t);
+                        
+                       	if (c != '\0' && c != ' ') {
+                       		break;
+                       	}
                     }
-
+                    
+                    potential = potential.substring(0, occurrences);
+                    result.append(RubyString.newString(ruby, potential));
+                    }
                     break;
-
                 case 'Z' :
-                    if (lLength > (lValueLength - lCurValueIdx))
-                        lLength = (lValueLength - lCurValueIdx);
-                    {
-                        int end = lLength;
-                        for (int t = lCurValueIdx + lLength - 1; lLength > 0; lLength--, t--)
-                            if (value.charAt(t) != '\0')
-                                break;
-                        lResult.append(
-                            RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
-                        lCurValueIdx += end;
+                	{
+                    if (occurrences == IS_STAR || occurrences > encode.remaining())
+                        occurrences = encode.remaining();
+                    
+                    String potential = encode.nextSubstring(occurrences);
+                    
+                    for (int t = occurrences - 1; occurrences > 0; occurrences--, t--) {
+                    	char c = potential.charAt(t);
+                        
+                       	if (c != '\0') {
+                       		break;
+                       	}
                     }
+                    
+                    potential = potential.substring(0, occurrences);
+                    result.append(RubyString.newString(ruby, potential));
+                	}
                     break;
-
                 case 'a' :
-                    if (lLength > (lValueLength - lCurValueIdx))
-                        lLength = (lValueLength - lCurValueIdx);
-                    lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
-                    lCurValueIdx += lLength;
+                    if (occurrences == IS_STAR || occurrences > encode.remaining())
+                        occurrences = encode.remaining();
+                    result.append(RubyString.newString(ruby, encode.nextSubstring(occurrences)));
                     break;
-
                 case 'b' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8)
-                            lLength = (lValueLength - lCurValueIdx) * 8;
+                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 8)
+                            occurrences = encode.remaining() * 8;
                         int bits = 0;
-                        StringBuffer lElem = new StringBuffer(lLength);
-                        for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
+                        StringBuffer lElem = new StringBuffer(occurrences);
+                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
                             if ((lCurByte & 7) != 0)
                                 bits >>>= 1;
                             else
-                                bits = value.charAt(lCurValueIdx++);
+                                bits = encode.nextChar();
                             lElem.append((bits & 1) != 0 ? '1' : '0');
                         }
-                        lResult.append(RubyString.newString(ruby, lElem.toString()));
+                        result.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
-
                 case 'B' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8)
-                            lLength = (lValueLength - lCurValueIdx) * 8;
+                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 8)
+                            occurrences = encode.remaining() * 8;
                         int bits = 0;
-                        StringBuffer lElem = new StringBuffer(lLength);
-                        for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
+                        StringBuffer lElem = new StringBuffer(occurrences);
+                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
                             if ((lCurByte & 7) != 0)
                                 bits <<= 1;
                             else
-                                bits = value.charAt(lCurValueIdx++);
+                                bits = encode.nextChar();
                             lElem.append((bits & 128) != 0 ? '1' : '0');
                         }
-                        lResult.append(RubyString.newString(ruby, lElem.toString()));
+                        
+                        result.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
                 case 'h' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2)
-                            lLength = (lValueLength - lCurValueIdx) * 2;
+                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 2)
+                            occurrences = encode.remaining() * 2;
                         int bits = 0;
-                        StringBuffer lElem = new StringBuffer(lLength);
-                        for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
+                        StringBuffer lElem = new StringBuffer(occurrences);
+                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
                             if ((lCurByte & 1) != 0)
                                 bits >>>= 4;
                             else
-                                bits = value.charAt(lCurValueIdx++);
+                                bits = encode.nextChar();
                             lElem.append(sHexDigits[bits & 15]);
                         }
-                        lResult.append(RubyString.newString(ruby, lElem.toString()));
+                        result.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
                 case 'H' :
                     {
-                        if (lFmt[i - 1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2)
-                            lLength = (lValueLength - lCurValueIdx) * 2;
+                        if (occurrences == IS_STAR || occurrences > encode.remaining() * 2)
+                            occurrences = encode.remaining() * 2;
                         int bits = 0;
-                        StringBuffer lElem = new StringBuffer(lLength);
-                        for (int lCurByte = 0; lCurByte < lLength; lCurByte++) {
+                        StringBuffer lElem = new StringBuffer(occurrences);
+                        for (int lCurByte = 0; lCurByte < occurrences; lCurByte++) {
                             if ((lCurByte & 1) != 0)
                                 bits <<= 4;
                             else
-                                bits = value.charAt(lCurValueIdx++);
+                                bits = encode.nextChar();
                             lElem.append(sHexDigits[(bits >>> 4) & 15]);
                         }
-                        lResult.append(RubyString.newString(ruby, lElem.toString()));
-                    }
-                    break;
-                case 'c' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx)) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx);
-                            lLength = (lValueLength - lCurValueIdx);
-                        }
-                        for (; lLength-- > 0;) {
-                            int c = value.charAt(lCurValueIdx++);
-                            if (c > (char) 127)
-                                c -= 256;
-                            lResult.append(RubyFixnum.newFixnum(ruby, c));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-
-                    break;
-                case 'C' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx)) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx);
-                            lLength = (lValueLength - lCurValueIdx);
-                        }
-                        for (; lLength-- > 0;) {
-                            int c = value.charAt(lCurValueIdx++);
-                            lResult.append(RubyFixnum.newFixnum(ruby, c));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-                    break;
-                case 'd':
-                	{
-                		int lPadLength = 0;
-                		if (lLength > (lValueLength - lCurValueIdx) / 8) {
-                			if (lFmt[i - 1] != '*')
-                				lPadLength = lLength - (lValueLength - lCurValueIdx) / 8;
-                			lLength = (lValueLength - lCurValueIdx) / 8;
-                		}
-                		for (; lLength-- > 0;) {
-                			long l = retrieveLong(value, lCurValueIdx);
-                			lCurValueIdx += 8;
-                			double d = Double.longBitsToDouble(l);
-
-                			lResult.append(RubyFloat.newFloat(ruby, d));
-                		}
-                		for (; lPadLength-- > 0;)
-                			lResult.append(ruby.getNil());
-                	}
-                	break;
-                case 's' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx) / 2) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx) / 2;
-                            lLength = (lValueLength - lCurValueIdx) / 2;
-                        }
-                        for (; lLength-- > 0;) {
-                            short tmp = (short) (value.charAt(lCurValueIdx++) & 0xff);
-                            short s = (short) (value.charAt(lCurValueIdx++) & 0xff);
-                            s <<= 8;
-                            s |= tmp;
-                            lResult.append(RubyFixnum.newFixnum(ruby, s));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-
-                    break;
-
-                case 'S' :
-                case 'v' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx) / 2) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx) / 2;
-                            lLength = (lValueLength - lCurValueIdx) / 2;
-                        }
-                        for (; lLength-- > 0;) {
-                            short tmp = (short) (value.charAt(lCurValueIdx++) & 0xff);
-                            int s = (short) (value.charAt(lCurValueIdx++) & 0xff);
-                            s <<= 8;
-                            s |= tmp;
-                            lResult.append(RubyFixnum.newFixnum(ruby, s));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-                    break;
-
-                case 'i' :
-                case 'l' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx) / 4) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx) / 4;
-                            lLength = (lValueLength - lCurValueIdx) / 4;
-                        }
-                        for (; lLength-- > 0;) {
-                        	int ri = retrieveInt(value, lCurValueIdx);
-                        	lCurValueIdx += 4;
-                        	
-                            lResult.append(RubyFixnum.newFixnum(ruby, ri));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-
-                    break;
-
-                case 'I' :
-                case 'V' :
-                case 'L' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx) / 4) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx) / 4;
-                            lLength = (lValueLength - lCurValueIdx) / 4;
-                        }
-                        for (; lLength-- > 0;) {
-                            int i1 = (value.charAt(lCurValueIdx++) & 0xff);
-                            int i2 = (value.charAt(lCurValueIdx++) & 0xff);
-                            int i3 = (value.charAt(lCurValueIdx++) & 0xff);
-                            long i4 = (value.charAt(lCurValueIdx++) & 0xff);
-                            i4 <<= 24;
-                            i4 |= (i3 << 16);
-                            i4 |= (i2 << 8);
-                            i4 |= i1;
-                            lResult.append(RubyFixnum.newFixnum(ruby, i4));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-                    break;
-                case 'N' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx) / 4) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx) / 4;
-                            lLength = (lValueLength - lCurValueIdx) / 4;
-                        }
-                        for (; lLength-- > 0;) {
-                            long i1 = (value.charAt(lCurValueIdx++) & 0xff);
-                            i1 <<= 8;
-                            i1 |= (value.charAt(lCurValueIdx++) & 0xff);
-                            i1 <<= 8;
-                            i1 |= (value.charAt(lCurValueIdx++) & 0xff);
-                            i1 <<= 8;
-                            i1 |= (value.charAt(lCurValueIdx++) & 0xff);
-                            lResult.append(RubyFixnum.newFixnum(ruby, i1));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
-                    }
-                    break;
-                case 'n' :
-                    {
-                        int lPadLength = 0;
-                        if (lLength > (lValueLength - lCurValueIdx) / 2) {
-                            if (lFmt[i - 1] != '*')
-                                lPadLength = lLength - (lValueLength - lCurValueIdx) / 2;
-                            lLength = (lValueLength - lCurValueIdx) / 2;
-                        }
-                        for (; lLength-- > 0;) {
-                            int i1 = (value.charAt(lCurValueIdx++) & 0xff);
-                            i1 <<= 8;
-                            i1 |= (value.charAt(lCurValueIdx++) & 0xff);
-                            lResult.append(RubyFixnum.newFixnum(ruby, i1));
-                        }
-                        for (; lPadLength-- > 0;)
-                            lResult.append(ruby.getNil());
+                        result.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
                 case 'U' :
                     {
-                        if (lLength > lValueLength - lCurValueIdx)
-                            lLength = lValueLength - lCurValueIdx;
+                        if (occurrences == IS_STAR || occurrences > encode.remaining())
+                            occurrences = encode.remaining();
                         //get the correct substring
-                        String toUnpack = value.substring(lCurValueIdx);
+                        String toUnpack = encode.nextSubstring(occurrences);
                         String lUtf8 = null;
                         try {
                             lUtf8 = new String(toUnpack.getBytes("iso8859-1"), "UTF-8");
@@ -742,25 +713,204 @@ public class Pack {
                             Asserts.notReached("can't convert from UTF8");
                         }
                         char[] c = lUtf8.toCharArray();
-                        int lNbChar = c.length;
-                        for (int lCurCharIdx = 0; lLength-- > 0 && lCurCharIdx < lNbChar; lCurCharIdx++)
-                            lResult.append(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
+                        for (int lCurCharIdx = 0; occurrences-- > 0 && lCurCharIdx < c.length; lCurCharIdx++)
+                            result.append(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
                     }
                     break;
+                 case 'X':
+                     if (occurrences == IS_STAR) {
+                         occurrences = encode.getLength() - encode.remaining();
+                     }
+                     
+                     try {
+                         encode.backup(occurrences);
+                     } catch (IllegalArgumentException e) {
+                         throw new ArgumentError(ruby, "in `unpack': X outside of string");
+                     }
+                     break;
                  case 'x':
-                 	{
-                 		if (lLength > (lValueLength - lCurValueIdx))
-                 			lLength = (lValueLength - lCurValueIdx);
-                 		lCurValueIdx+=lLength;
-                 	}
-                 	break;
-                 
-            }
-        }
-        return lResult;
-    }
+              		if (occurrences == IS_STAR) {
+               			occurrences = encode.remaining();
+              		}
+              		
+              		try {
+              		    encode.nextSubstring(occurrences);
+              		} catch (IllegalArgumentException e) {
+              		    throw new ArgumentError(ruby, "in `unpack': x outside of string");
+              		}
 
+                 	break;
+            }
+			type = next;
+        }
+        return result;
+    }
+    
+    public static void decode(Ruby ruby, PtrList encode, int occurrences, 
+            RubyArray result, Converter converter) {
+        int lPadLength = 0;
+    	
+        if (occurrences == IS_STAR) {
+            occurrences = encode.remaining() / converter.size;
+        } else if (occurrences > encode.remaining() / converter.size) {
+            lPadLength = occurrences - encode.remaining() / converter.size;
+            occurrences = encode.remaining() / converter.size;
+        }
+        for (; occurrences-- > 0;) {
+            result.append(converter.decode(ruby, encode));
+        }
+        for (; lPadLength-- > 0;)
+            result.append(ruby.getNil());
+    }
+   
+    public static int encode(Ruby ruby, int occurrences, StringBuffer result, 
+            ArrayList list, int index, Converter converter) {
+        int listSize = list.size();
+
+        while (occurrences-- > 0) {
+            if (listSize-- <= 0) {
+                throw new ArgumentError(ruby, sTooFew);
+            }
+
+            IRubyObject from = (IRubyObject) list.get(index++);
+
+            converter.encode(ruby, from, result);
+        }
+
+        return index;
+    }
+    
+    public abstract static class Converter {
+    	public int size;
+    	
+    	public Converter(int size) {
+    		this.size = size;
+    	}
+    	
+    	public abstract IRubyObject decode(Ruby ruby, PtrList format);
+    	public abstract void encode(Ruby ruby, IRubyObject from, 
+    	        StringBuffer result);
+    }
  
+    static class PtrList {
+        private Ruby ruby;
+        private char[] buffer; // List to be managed
+        private int index; // Pointer location in list
+
+        public PtrList(Ruby ruby, String bufferString) {
+            this.ruby = ruby;
+            buffer = bufferString.toCharArray();
+            index = 0;
+        }
+
+        /**
+         * @return the number of elements between pointer and end of list
+         */
+        public int remaining() {
+            return buffer.length - index;
+        }
+
+		/**
+		 * <p>Get substring from current point of desired length and advance
+		 * pointer.</p>
+		 * 
+		 * @param length of substring
+		 * @return the substring
+		 */
+		public String nextSubstring(int length) {
+		    // Cannot get substring off end of buffer
+		    if (index + length > buffer.length) {
+		        throw new IllegalArgumentException();
+		    }
+		    
+			String substring = new String(buffer, index, length);
+			
+			index += length;
+			
+			return substring;
+		}
+
+		/**
+		 * @return numerical representation of ascii number at ptr
+		 */
+		public int nextAsciiNumber() {
+            int i = index;
+
+            for (; i < buffer.length; i++) {
+            	if (!Character.isDigit(buffer[i])) {
+                    break;
+				}
+			}
+            
+            // An exception will occur if no number is at ptr....
+            int number = Integer.parseInt(new String(buffer, index, i - index));
+            
+            // An exception may occur here if an int can't hold this but ...
+            index = i;
+			return number;
+        }
+
+		/**
+		 * @return length of list
+		 */
+		public int getLength() {
+			return buffer.length;
+		}
+
+		/**
+		 * @return char at the pointer (advancing the pointer) or '\0' if at end.
+		 *
+		 * Note: the pointer gets advanced one past last character to indicate
+		 * that the whole buffer has been read.
+		 */
+		public char nextChar() {
+		    char next = '\0';
+		    		    
+		    if (index < buffer.length) {
+		        next = buffer[index++];
+		    } else if (index == buffer.length) {
+		        index++;
+		    }
+		    		        
+    		return next;
+    	}
+		
+		/**
+		 * @return low byte of the char
+		 */
+		public int nextByte() {
+			return nextChar() & 0xff;
+		}
+		
+		/**
+		 * <p>Backup the pointer occurrences times.</p>
+		 * 
+		 * @throws IllegalArgumentException if it backs up past beginning 
+		 * of buffer	
+		 */
+		public void backup(int occurrences) {
+		    index -= occurrences;
+
+		    if (index < 0) {
+		        throw new IllegalArgumentException();
+		    }
+		}
+
+		/**
+		 * @return true if index is at end of the buffer
+		 */
+	    public boolean isAtEnd() {
+			return index > buffer.length;
+        }
+
+	    /**
+	     * @return the current pointer location in buffer
+	     */
+		public int getIndex() {
+	        return index;
+	    }
+    }
+    
 	/**
      * shrinks a stringbuffer.
      * shrinks a stringbuffer by a number of characters.
@@ -770,6 +920,10 @@ public class Pack {
      **/
     private static final StringBuffer shrink(StringBuffer i2Shrink, int iLength) {
         iLength = i2Shrink.length() - iLength;
+        
+        if (iLength < 0) {
+            throw new IllegalArgumentException();
+        }
         i2Shrink.setLength(iLength);
         return i2Shrink;
     }
@@ -960,46 +1114,63 @@ public class Pack {
      * use a platform-independent size. Spaces are ignored in the template string.
      * @see RubyString#unpack
      **/
-    public static RubyString pack(ArrayList list, RubyString iFmt) {
-        Ruby ruby = iFmt.getRuntime();
-
-        char[] lFmt = iFmt.getValue().toCharArray();
-        int lFmtLength = lFmt.length;
+    public static RubyString pack(ArrayList list, RubyString formatString) {
+        Ruby ruby = formatString.getRuntime();
+        PtrList format = new PtrList(ruby, formatString.getValue());
+        StringBuffer result = new StringBuffer();
+        int listSize = list.size();
+        char type = format.nextChar();
+        
         int idx = 0;
-        int lLeftInArray = list.size();
-        StringBuffer lResult = new StringBuffer();
-        IRubyObject lFrom;
         String lCurElemString;
-        for (int i = 0; i < lFmtLength;) {
-            int lLength = 1;
-            //first skip all spaces
-            char lType = lFmt[i++];
-            if (Character.isWhitespace(lType))
+        
+        while(format.isAtEnd() == false) {
+        	// Possible next type, format of current type, occurrences of type
+        	char next = format.nextChar();
+
+            if (Character.isWhitespace(type)) { // skip all spaces
+                type = next;
                 continue;
-            char lNext = i < lFmtLength ? lFmt[i] : '\0';
-            if (lNext == '!' || lNext == '_') {
-                if (sNatStr.indexOf(lType) != -1) {
-                    lNext = ++i < lFmtLength ? lFmt[i] : '\0';
-                } else
-                    throw new ArgumentError(ruby, "'" + lNext + "' allowed only after types " + sNatStr);
             }
-            if (lNext == '*') {
-                lLength = "@Xxu".indexOf(lType) == -1 ? lLeftInArray : 0;
-                lNext = ++i < lFmtLength ? lFmt[i] : '\0';
-            } else if (Character.isDigit(lNext)) {
-                int lEndIndex = i;
-                for (; lEndIndex < lFmtLength; lEndIndex++)
-                    if (!Character.isDigit(lFmt[lEndIndex]))
-                        break;
-                lLength = Integer.parseInt(new String(lFmt, i, lEndIndex - i));
-                //an exception may occur here if an int can't hold this but ...
-                i = lEndIndex;
-                lNext = i < lFmtLength ? lFmt[i] : '\0';
-            } //no else, the original value of length is correct
-            switch (lType) {
+            
+            if (next == '!' || next == '_') {
+                if (NATIVE_CODES.indexOf(type) == -1) {
+                	throw new ArgumentError(ruby, "'" + next +
+                	        "' allowed only after types " + NATIVE_CODES);
+                }
+
+                next = format.nextChar();
+            }
+
+            // Determine how many of type are needed (default: 1)
+            boolean isStar = false;
+            int occurrences = 1;
+            if (next == '*') {
+                if ("@Xxu".indexOf(type) != -1) {
+                    occurrences = 0;
+                } else {
+                    occurrences = listSize;
+                    isStar = true;
+                }
+                next = format.nextChar();
+            } else if (Character.isDigit(next)) {
+                format.backup(1);
+                // an exception may occur here if an int can't hold this but ...
+                occurrences = format.nextAsciiNumber();
+                next = format.nextChar();
+            }
+
+            Converter converter = (Converter) converters.get(new Character(type));
+
+            if (converter != null) {
+                idx += encode(ruby, occurrences, result, list, idx, converter);
+                type = next;
+                continue;
+            }
+
+            switch (type) {
                 case '%' :
                     throw new ArgumentError(ruby, "% is not supported");
-
                 case 'A' :
                 case 'a' :
                 case 'Z' :
@@ -1007,393 +1178,506 @@ public class Pack {
                 case 'b' :
                 case 'H' :
                 case 'h' :
-                    if (lLeftInArray-- > 0)
-                        lFrom = (IRubyObject) list.get(idx++);
-                    else
-                        throw new ArgumentError(ruby, sTooFew);
-                    if (lFrom == ruby.getNil())
-                        lCurElemString = "";
-                    else
-                        lCurElemString = convert2String(lFrom);
-                    if (lFmt[i - 1] == '*')
-                        lLength = lCurElemString.length();
-                    switch (lType) {
-                        case 'a' :
-                        case 'A' :
-                        case 'Z' :
-                            if (lCurElemString.length() >= lLength)
-                                lResult.append(lCurElemString.toCharArray(), 0, lLength);
-                            else //need padding
-                                { //I'm fairly sure there is a library call to create a
-                                //string filled with a given char with a given length but I couldn't find it
-                                lResult.append(lCurElemString);
-                                lLength -= lCurElemString.length();
-                                grow(lResult, (lType == 'a') ? sNil10 : sSp10, lLength);
-                            }
+                	{
+                		if (listSize-- <= 0) {
+                			throw new ArgumentError(ruby, sTooFew);
+                		}
+                		
+                		IRubyObject from = (IRubyObject) list.get(idx++);
+                		lCurElemString = (from == ruby.getNil() ? "" : 
+										  convert2String(from));
+
+                		if (isStar) {
+                			occurrences = lCurElemString.length();
+                		}
+                    
+                		switch (type) {
+                			case 'a' :
+                			case 'A' :
+                			case 'Z' :
+                				if (lCurElemString.length() >= occurrences) {
+                					result.append(lCurElemString.toCharArray(), 0, occurrences);
+                				} else {//need padding
+                					//I'm fairly sure there is a library call to create a
+                					//string filled with a given char with a given length but I couldn't find it
+                					result.append(lCurElemString);
+                					occurrences -= lCurElemString.length();
+                					grow(result, (type == 'a') ? sNil10 : sSp10, occurrences);
+                				}	
                             break;
 
                             //I believe there is a bug in the b and B case we skip a char too easily
-                        case 'b' :
-                            {
-                                int lByte = 0;
-                                int lIndex = 0;
-                                char lCurChar;
-                                int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) { //I don't understand this, why divide by 2
-                                    lPadLength = (lLength - lCurElemString.length() + 1) / 2;
-                                    lLength = lCurElemString.length();
-                                }
-                                for (lIndex = 0; lIndex < lLength;) {
-                                    lCurChar = lCurElemString.charAt(lIndex++);
-                                    if ((lCurChar & 1) != 0) //if the low bit of the current char is set
-                                        lByte |= 128; //set the high bit of the result
-                                    if ((lIndex & 7) != 0)
-                                        //if the index is not a multiple of 8, we are not on a byte boundary
-                                        lByte >>= 1; //shift the byte
-                                    else { //we are done with one byte, append it to the result and go for the next
-                                        lResult.append((char) (lByte & 0xff));
-                                        lByte = 0;
-                                    }
-                                }
-                                if ((lLength & 7) != 0) //if the length is not a multiple of 8
-                                    { //we need to pad the last byte
-                                    lByte >>= 7 - (lLength & 7);
-                                    lResult.append((char) (lByte & 0xff));
-                                }
-                                //do some padding, I don't understand the padding strategy
-                                lLength = lResult.length();
-                                lResult.setLength(lLength + lPadLength);
-                            }
+                            case 'b' :
+                            	{
+                            		int currentByte = 0;
+                            		int padLength = 0;
+
+                            		if (occurrences > lCurElemString.length()) {
+                            			padLength = occurrences - lCurElemString.length();
+                            			occurrences = lCurElemString.length();
+                            		}
+                                
+                            		for (int i = 0; i < occurrences;) {
+                            			if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
+                            				currentByte |= 128; //set the high bit of the result
+                            			}
+                            			
+                            			if ((i & 7) == 0) {
+                            				result.append((char) (currentByte & 0xff));
+                            				currentByte = 0;
+                            				continue;
+                            			}
+                            			
+                           				//if the index is not a multiple of 8, we are not on a byte boundary
+                           				currentByte >>= 1; //shift the byte
+                            		}
+                                
+                            		if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                            			currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+                            			result.append((char) (currentByte & 0xff));
+                            		}
+                                
+                            		//do some padding, I don't understand the padding strategy
+                            		result.setLength(result.length() + padLength);
+                            	}
                             break;
-
-                        case 'B' :
-                            {
-                                int lByte = 0;
-                                int lIndex = 0;
-                                char lCurChar;
-                                int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) { //I don't understand this, why divide by 2
-                                    lPadLength = (lLength - lCurElemString.length() + 1) / 2;
-                                    lLength = lCurElemString.length();
-                                }
-                                for (lIndex = 0; lIndex < lLength;) {
-                                    lCurChar = lCurElemString.charAt(lIndex++);
-                                    lByte |= lCurChar & 1;
-                                    if ((lIndex & 7) != 0)
-                                        //if the index is not a multiple of 8, we are not on a byte boundary
-                                        lByte <<= 1; //shift the byte
-                                    else { //we are done with one byte, append it to the result and go for the next
-                                        lResult.append((char) (lByte & 0xff));
-                                        lByte = 0;
-                                    }
-                                }
-                                if ((lLength & 7) != 0) //if the length is not a multiple of 8
-                                    { //we need to pad the last byte
-                                    lByte <<= 7 - (lLength & 7);
-                                    lResult.append((char) (lByte & 0xff));
-                                }
-                                //do some padding, I don't understand the padding strategy
-                                lLength = lResult.length();
-                                lResult.setLength(lLength + lPadLength);
-                            }
+                            case 'B' :
+                            	{
+                            		int currentByte = 0;
+                            		int padLength = 0;
+                            		
+                            		if (occurrences > lCurElemString.length()) {
+                            			padLength = occurrences - lCurElemString.length();
+                            			occurrences = lCurElemString.length();
+                            		}
+                            		
+                            		for (int i = 0; i < occurrences;) {
+                            			currentByte |= lCurElemString.charAt(i++) & 1;
+                            			
+                            			// we filled up current byte; append it and create next one
+                            			if ((i & 7) == 0) {
+                            				result.append((char) (currentByte & 0xff));
+                            				currentByte = 0;
+                            				continue;
+                            			}
+                            			
+                            			//if the index is not a multiple of 8, we are not on a byte boundary
+                            			currentByte <<= 1; 
+                            		}
+                            		
+                            		if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                            			currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+                            			result.append((char) (currentByte & 0xff));
+                            		}
+                            		
+                            		result.setLength(result.length() + padLength);
+                            	}
                             break;
+                            case 'h' :
+                            	{
+                            		int currentByte = 0;
+                            		int padLength = 0;
+                            		
+                            		if (occurrences > lCurElemString.length()) {
+                            			padLength = occurrences - lCurElemString.length();
+                            			occurrences = lCurElemString.length();
+                            		}
+                            		
+                            		for (int i = 0; i < occurrences;) {
+                            			char currentChar = lCurElemString.charAt(i++);
+                            			
+                            			if (Character.isJavaIdentifierStart(currentChar)) {
+                            				//this test may be too lax but it is the same as in MRI
+                            				currentByte |= (((currentChar & 15) + 9) & 15) << 4;
+                            			} else {
+                            				currentByte |= (currentChar & 15) << 4;
+                            			}
+                            			
+                            			if ((i & 1) != 0) {
+                            				currentByte >>= 4;
+                            			} else {
+                            				result.append((char) (currentByte & 0xff));
+                            				currentByte = 0;
+                            			}
+                            		}
+                            		
+                            		if ((occurrences & 1) != 0) {
+                            			result.append((char) (currentByte & 0xff));
+                            		}
 
-                        case 'h' :
-                            {
-                                int lByte = 0;
-                                int lIndex = 0;
-                                char lCurChar;
-                                int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) { //I don't undestand this why divide by 2
-                                    lPadLength = (lLength - lCurElemString.length() + 1) / 2;
-                                    lLength = lCurElemString.length();
-                                }
-                                for (lIndex = 0; lIndex < lLength;) {
-                                    lCurChar = lCurElemString.charAt(lIndex++);
-                                    if (Character.isJavaIdentifierStart(lCurChar))
-                                        //this test may be too lax but it is the same as in MRI
-                                        lByte |= (((lCurChar & 15) + 9) & 15) << 4;
-                                    else
-                                        lByte |= (lCurChar & 15) << 4;
-                                    if ((lIndex & 1) != 0)
-                                        lByte >>= 4;
-                                    else {
-                                        lResult.append((char) (lByte & 0xff));
-                                        lByte = 0;
-                                    }
-                                }
-                                if ((lLength & 1) != 0) {
-                                    lResult.append((char) (lByte & 0xff));
-                                }
-
-                                //do some padding, I don't understand the padding strategy
-                                lLength = lResult.length();
-                                lResult.setLength(lLength + lPadLength);
-                            }
+                            		result.setLength(result.length() + padLength);
+                            	}
                             break;
+                            case 'H' :
+                            	{
+                            		int currentByte = 0;
+                            		int padLength = 0;
+                            		
+                            		if (occurrences > lCurElemString.length()) {
+                            			padLength = occurrences - lCurElemString.length();
+                            			occurrences = lCurElemString.length();
+                            		}
+                            		
+                            		for (int i = 0; i < occurrences;) {
+                            			char currentChar = lCurElemString.charAt(i++);
+                            			
+                            			if (Character.isJavaIdentifierStart(currentChar)) {
+                            				//this test may be too lax but it is the same as in MRI
+                            				currentByte |= ((currentChar & 15) + 9) & 15;
+                            			} else {
+                            				currentByte |= (currentChar & 15);
+                            			}
+                            			
+                            			if ((i & 1) != 0) {
+                            				currentByte <<= 4;
+                            			} else {
+                            				result.append((char) (currentByte & 0xff));
+                            				currentByte = 0;
+                            			}
+                            		}
+                            		
+                            		if ((occurrences & 1) != 0) {
+                            			result.append((char) (currentByte & 0xff));
+                            		}
 
-                        case 'H' :
-                            {
-                                int lByte = 0;
-                                int lIndex = 0;
-                                char lCurChar;
-                                int lPadLength = 0;
-                                if (lLength > lCurElemString.length()) { //I don't undestand this why divide by 2
-                                    lPadLength = (lLength - lCurElemString.length() + 1) / 2;
-                                    lLength = lCurElemString.length();
-                                }
-                                for (lIndex = 0; lIndex < lLength;) {
-                                    lCurChar = lCurElemString.charAt(lIndex++);
-                                    if (Character.isJavaIdentifierStart(lCurChar))
-                                        //this test may be too lax but it is the same as in MRI
-                                        lByte |= ((lCurChar & 15) + 9) & 15;
-                                    else
-                                        lByte |= (lCurChar & 15);
-                                    if ((lIndex & 1) != 0)
-                                        lByte <<= 4;
-                                    else {
-                                        lResult.append((char) (lByte & 0xff));
-                                        lByte = 0;
-                                    }
-                                }
-                                if ((lLength & 1) != 0) {
-                                    lResult.append((char) (lByte & 0xff));
-                                }
-
-                                //do some padding, I don't understand the padding strategy
-                                lLength = lResult.length();
-                                lResult.setLength(lLength + lPadLength);
-                            }
+                            		result.setLength(result.length() + padLength);
+                            	}
                             break;
-                    }
-                    break;
+                		}
+                		break;
+                	}
 
                 case 'x' :
-                    grow(lResult, sNil10, lLength);
+                    grow(result, sNil10, occurrences);
                     break;
-
                 case 'X' :
-                    shrink(lResult, lLength);
+                    try {
+                        shrink(result, occurrences);
+                    } catch (IllegalArgumentException e) {
+                        throw new ArgumentError(ruby, "in `pack': X outside of string");
+                    }
                     break;
-
                 case '@' :
-                    lLength -= lResult.length();
-                    if (lLength > 0)
-                        grow(lResult, sNil10, lLength);
-                    lLength = -lLength;
-                    if (lLength > 0)
-                        shrink(lResult, lLength);
-                    break;
-
-                case 'c' :
-                case 'C' :
-                    while (lLength-- > 0) {
-                        char c;
-                        if (lLeftInArray-- > 0)
-                            lFrom = (IRubyObject) list.get(idx++);
-                        else
-                            throw new ArgumentError(ruby, sTooFew);
-                        if (lFrom == ruby.getNil())
-                            c = 0;
-                        else {
-                            c = (char) (RubyNumeric.num2long(lFrom) & 0xff);
-                        }
-                        lResult.append(c);
-                    }
-                    break;
-                case 'd':
-                	while (lLength-- > 0) {
-                		long d;
-                		if (lLeftInArray-- > 0)
-                			lFrom = (IRubyObject) list.get(idx++);
-                		else
-                			throw new ArgumentError(ruby, sTooFew);
-                		if (lFrom == ruby.getNil())
-                			d = 0;
-                		else {
-                			d = Double.doubleToLongBits(RubyNumeric.numericValue(lFrom).getDoubleValue());
-                		}
-                		appendInt(lResult, (int) (d & 0xffffffff));
-                		appendInt(lResult, (int) (d >>> 32));
-                	}
-                	break;
-                case 's' :
-                case 'v' :
-                case 'S' :
-                    while (lLength-- > 0) {
-                        int s;
-                        if (lLeftInArray-- > 0)
-                            lFrom = (IRubyObject) list.get(idx++);
-                        else
-                            throw new ArgumentError(ruby, sTooFew);
-                        if (lFrom == ruby.getNil())
-                            s = 0;
-                        else {
-                            s = (int) (RubyNumeric.num2long(lFrom) & 0xffff);
-                        }
-                        lResult.append((char) (s & 0xff));
-                        lResult.append((char) ((s & 0xff00) >> 8));
-
-                    }
-                    break;
-                case 'n' :
-                    while (lLength-- > 0) {
-                        int s;
-                        if (lLeftInArray-- > 0)
-                            lFrom = (IRubyObject) list.get(idx++);
-                        else
-                            throw new ArgumentError(ruby, sTooFew);
-                        if (lFrom == ruby.getNil())
-                            s = 0;
-                        else {
-                            s = (int) (RubyNumeric.num2long(lFrom) & 0xffff);
-                        }
-                        lResult.append((char) ((s & 0xff00) >> 8));
-                        lResult.append((char) (s & 0xff));
-
-                    }
-                    break;
-
-                case 'i' :
-                case 'I' :
-                case 'l' :
-                case 'L' :
-                case 'V' :
-                    while (lLength-- > 0) {
-                        if (lLeftInArray-- > 0)
-                            lFrom = (IRubyObject) list.get(idx++);
-                        else
-                            throw new ArgumentError(ruby, sTooFew);
-                        
-                        int s = (lFrom == ruby.getNil() ? 
-							     0 : (int) (RubyNumeric.num2long(lFrom)));
-                        appendInt(lResult, s);
-                    }
-                    break;
-                case 'N' :
-                    while (lLength-- > 0) {
-                        int s;
-                        if (lLeftInArray-- > 0)
-                            lFrom = (IRubyObject) list.get(idx++);
-                        else
-                            throw new ArgumentError(ruby, sTooFew);
-                        if (lFrom == ruby.getNil())
-                            s = 0;
-                        else {
-                            s = (int) (RubyNumeric.num2long(lFrom));
-                        }
-                        lResult.append((char) ((s >> 24) & 0xff));
-                        lResult.append((char) ((s >> 16) & 0xff));
-                        lResult.append((char) ((s >> 8) & 0xff));
-                        lResult.append((char) (s & 0xff));
-
-                    }
+                    occurrences -= result.length();
+                    if (occurrences > 0)
+                        grow(result, sNil10, occurrences);
+                    occurrences = -occurrences;
+                    if (occurrences > 0)
+                        shrink(result, occurrences);
                     break;
                 case 'u' :
                 case 'm' :
-                    if (lLeftInArray-- > 0)
-                        lFrom = (IRubyObject) list.get(idx++);
-                    else
-                        throw new ArgumentError(ruby, sTooFew);
-                    if (lFrom == ruby.getNil())
-                        lCurElemString = "";
-                    else
-                        lCurElemString = convert2String(lFrom);
+                	{
+                		if (listSize-- <= 0) {
+                			throw new ArgumentError(ruby, sTooFew);
+                		}
+                        IRubyObject from = (IRubyObject) list.get(idx++);
+                        lCurElemString = (from == ruby.getNil() ? "" :
+										  convert2String(from));
+                        occurrences = (occurrences <= 2 ? 45 :
+									   occurrences / 3 * 3);
 
-                    if (lLength <= 2)
-                        lLength = 45;
-                    else
-                        lLength = lLength / 3 * 3;
-                    for (;;) {
-                        encodes(ruby, lResult, lCurElemString, lLength, lType);
-                        if (lLength < lCurElemString.length())
-                            lCurElemString = lCurElemString.substring(lLength);
-                        else
-                            break;
-                    }
-                    break;
-
-                case 'M' :
-                    if (lLeftInArray-- > 0)
-                        lFrom = (IRubyObject) list.get(idx++);
-                    else
-                        throw new ArgumentError(ruby, sTooFew);
-                    if (lFrom == ruby.getNil())
-                        lCurElemString = "";
-                    else
-                        lCurElemString = convert2String(lFrom);
-
-                    if (lLength <= 1)
-                        lLength = 72;
-                    qpencode(lResult, lCurElemString, lLength);
-                    break;
-
-                case 'U' :
-                    char[] c = new char[lLength];
-                    for (int lCurCharIdx = 0; lLength-- > 0; lCurCharIdx++) {
-                        long l;
-                        if (lLeftInArray-- > 0)
-                            lFrom = (IRubyObject) list.get(idx++);
-                        else
-                            throw new ArgumentError(ruby, sTooFew);
-
-                        if (lFrom == ruby.getNil())
-                            l = 0;
-                        else {
-                            l = RubyNumeric.num2long(lFrom);
+                        for (;;) {
+                        	encodes(ruby, result, lCurElemString, occurrences, type);
+                        	
+                        	if (occurrences >= lCurElemString.length()) {
+                        		break;
+                        	}
+                        	
+                        	lCurElemString = lCurElemString.substring(occurrences);
                         }
-                        c[lCurCharIdx] = (char) l;
-                    }
-                    String s = new String(c);
+                	}
+                    break;
+                case 'M' :
+                	{
+               		if (listSize-- <= 0) {
+               			throw new ArgumentError(ruby, sTooFew);
+               		}
+                	
+               		IRubyObject from = (IRubyObject) list.get(idx++);
+               		lCurElemString = (from == ruby.getNil() ? "" :
+									  convert2String(from));
+
+               		if (occurrences <= 1) {
+               			occurrences = 72;
+               		}
+                    
+               		qpencode(result, lCurElemString, occurrences);
+                	}
+                    break;
+                case 'U' :
+               		char[] c = new char[occurrences];
+               		for (int cIndex = 0; occurrences-- > 0; cIndex++) {
+               			if (listSize-- <= 0) {
+               				throw new ArgumentError(ruby, sTooFew);
+               			}
+
+               			IRubyObject from = (IRubyObject) list.get(idx++);
+               			long l = (from == ruby.getNil() ? 0 :
+								RubyNumeric.num2long(from));
+
+               			c[cIndex] = (char) l;
+               		}
+                    
                     try {
-                        lResult.append(RubyString.bytesToString(s.getBytes("UTF-8")));
+                    	byte[] bytes = new String(c).getBytes("UTF-8");
+                    	result.append(RubyString.bytesToString(bytes));
                     } catch (java.io.UnsupportedEncodingException e) {
                         Asserts.notReached("can't convert to UTF8");
                     }
                     break;
             }
+            
+            type = next;
         }
-        return RubyString.newString(ruby, lResult.toString());
+        return RubyString.newString(ruby, result.toString());
+    }
+    
+    /**
+     * Retrieve an encoded int in little endian starting at index in the 
+     * string value.
+     *  
+     * @param encode string to get int from
+     * @return the decoded integer
+     */
+    private static int decodeIntLittleEndian(PtrList encode) {
+        return (encode.nextByte() + (encode.nextByte() << 8) + 
+                (encode.nextByte() << 16) + (encode.nextByte() << 24));
     }
 
-	/**
-	 * Append a packed integer representation onto end of a stringbuffer.
+    /**
+     * Retrieve an encoded int in little endian starting at index in the 
+     * string value.
+     *  
+     * @param encode string to get int from
+     * @return the decoded integer
+     */
+    private static int decodeIntBigEndian(PtrList encode) {
+        return (encode.nextByte() << 24) + (encode.nextByte() << 16) +
+        (encode.nextByte() << 8) + encode.nextByte();
+    }
+    
+    /**
+     * Retrieve an encoded int in big endian starting at index in the string 
+     * value.
+     *  
+     * @param encode string to get int from
+     * @return the decoded integer
+     */
+    private static long decodeIntUnsignedBigEndian(PtrList encode) {
+        return (((long)encode.nextByte() << 24) + 
+                ((long)encode.nextByte() << 16) + 
+                ((long)encode.nextByte() << 8) + (long)encode.nextByte());
+    }
+
+    /**
+     * Retrieve an encoded int in little endian starting at index in the 
+     * string value.
+     *  
+     * @param encode the encoded string
+     * @return the decoded integer
+     */
+    private static long decodeIntUnsignedLittleEndian(PtrList encode) {
+        return ((long)encode.nextByte() + ((long)encode.nextByte() << 8) + 
+                ((long)encode.nextByte() << 16) + 
+                ((long)encode.nextByte() << 24));
+    }
+    
+    /**
+	 * Encode an int in little endian format into a packed representation.
 	 *  
 	 * @param result to be appended to
 	 * @param s the integer to encode
 	 */
-	private static void appendInt(StringBuffer result, int s) {
-		result.append((char) (s & 0xff));
-		result.append((char) ((s >> 8) & 0xff));
-		result.append((char) ((s >> 16) & 0xff));
-		result.append((char) ((s >> 24) & 0xff));
+    private static void encodeIntLittleEndian(StringBuffer result, int s) {
+        result.append((char) (s & 0xff)).append((char) ((s >> 8) & 0xff));
+        result.append((char) ((s>>16) & 0xff)).append((char) ((s>>24) &0xff));
+    }
+
+	/**
+	 * Encode an int in big-endian format into a packed representation.
+	 *  
+	 * @param result to be appended to
+	 * @param s the integer to encode
+	 */
+    private static void encodeIntBigEndian(StringBuffer result, int s) {
+        result.append((char) ((s>>24) &0xff)).append((char) ((s>>16) &0xff));
+        result.append((char) ((s >> 8) & 0xff)).append((char) (s & 0xff));
+    }
+	
+	/**
+	 * Decode a long in big-endian format from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the long value
+	 */
+	private static long decodeLongBigEndian(PtrList encode) {
+	    int c1 = decodeIntBigEndian(encode);
+	    int c2 = decodeIntBigEndian(encode);
+		
+		return ((long) c1 << 32) + (c2 & 0xffffffffL); 
+	}
+
+	/**
+	 * Decode a long in little-endian format from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the long value
+	 */
+	private static long decodeLongLittleEndian(PtrList encode) {
+	    int c1 = decodeIntLittleEndian(encode);
+	    int c2 = decodeIntLittleEndian(encode);
+
+	    return ((long) c2 << 32) + (c1 & 0xffffffffL); 
 	}
 	
 	/**
-	 * Retrieve an encoded int starting at index in the string value.
-	 *  
-	 * @param value to get Into from
-	 * @param index where encoded int starts at
-	 * @return the decoded integer
+	 * Encode a long in little-endian format into a packed value
+	 * 
+	 * @param result to pack long into
+	 * @param l is the long to encode
 	 */
-	private static int retrieveInt(String value, int index) {
-		int i1 = (value.charAt(index) & 0xff);
-		int i2 = (value.charAt(index + 1) & 0xff);
-		int i3 = (value.charAt(index + 2) & 0xff);
-		int i4 = (value.charAt(index + 3) & 0xff);
-		
-		i4 <<= 24;
-		i4 |= (i3 << 16);
-		i4 |= (i2 << 8);
-		i4 |= i1;
-		
-		return i4;
+	private static void encodeLongLittleEndian(StringBuffer result, long l) {
+	    encodeIntLittleEndian(result, (int) (l & 0xffffffff));
+	    encodeIntLittleEndian(result, (int) (l >>> 32));
 	}
 	
-	private static long retrieveLong(String value, int index) {
-		int c1 = retrieveInt(value, index);
-		int c2 = retrieveInt(value, index + 4);
-		
-		return  (c1 & 0xffffffffL) + ((long) c2 << 32);
+	/**
+	 * Encode a long in big-endian format into a packed value
+	 * 
+	 * @param result to pack long into
+	 * @param l is the long to encode
+	 */
+	private static void encodeLongBigEndian(StringBuffer result, long l) {
+	    encodeIntBigEndian(result, (int) (l >>> 32)); 
+	    encodeIntBigEndian(result, (int) (l & 0xffffffff)); 
+	}
+	
+	/**
+	 * Decode a double from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the double value
+	 */
+	private static double decodeDoubleLittleEndian(PtrList encode) {
+	    return Double.longBitsToDouble(decodeLongLittleEndian(encode));
+	}
+
+	/**
+	 * Decode a double in big-endian from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the double value
+	 */
+	private static double decodeDoubleBigEndian(PtrList encode) {
+	    return Double.longBitsToDouble(decodeLongBigEndian(encode));
+	}
+	
+	/**
+	 * Encode a double in little endian format into a packed value
+	 * 
+	 * @param result to pack double into
+	 * @param d is the double to encode
+	 */
+	private static void encodeDoubleLittleEndian(StringBuffer result, double d) {
+	    encodeLongLittleEndian(result, Double.doubleToLongBits(d)); 
+	}
+
+	/**
+	 * Encode a double in big-endian format into a packed value
+	 * 
+	 * @param result to pack double into
+	 * @param d is the double to encode
+	 */
+	private static void encodeDoubleBigEndian(StringBuffer result, double d) {
+	    encodeLongBigEndian(result, Double.doubleToLongBits(d)); 
+	}
+	
+	/**
+	 * Decode a float in big-endian from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the double value
+	 */
+	private static float decodeFloatBigEndian(PtrList encode) {
+	    return Float.intBitsToFloat(decodeIntBigEndian(encode));
+	}
+
+	/**
+	 * Decode a float in little-endian from a packed value
+	 * 
+	 * @param encode string to get int from
+	 * @return the double value
+	 */
+	private static float decodeFloatLittleEndian(PtrList encode) {
+	    return Float.intBitsToFloat(decodeIntLittleEndian(encode));
+	}
+	
+	/**
+	 * Encode a float in little endian format into a packed value
+	 * @param result to pack float into
+	 * @param d is the double to float
+	 */
+	private static void encodeFloatLittleEndian(StringBuffer result, float f) {
+		encodeIntLittleEndian(result, Float.floatToIntBits(f)); 
+	}
+
+	/**
+	 * Encode a float in big-endian format into a packed value
+	 * @param result to pack float into
+	 * @param f is the float to encode
+	 */
+	private static void encodeFloatBigEndian(StringBuffer result, float f) {
+		encodeIntBigEndian(result, Float.floatToIntBits(f)); 
+	}
+	
+	/**
+	 * Decode a short in big-endian from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the short value
+	 */
+	private static int decodeShortUnsignedLittleEndian(PtrList encode) {
+		return (encode.nextByte() + (encode.nextByte() << 8));
+	}
+
+	/**
+	 * Decode a short in big-endian from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the short value
+	 */
+	private static int decodeShortUnsignedBigEndian(PtrList encode) {
+		return ((encode.nextByte() << 8) + encode.nextByte());
+	}
+
+	/**
+	 * Decode a short in big-endian from a packed value
+	 * 
+     * @param encode string to get int from
+	 * @return the short value
+	 */
+	private static short decodeShortBigEndian(PtrList encode) {
+		return (short) ((short) (encode.nextByte() << 8) + encode.nextByte());
+	}
+	
+	/**
+	 * Encode an short in little endian format into a packed representation.
+	 *  
+	 * @param result to be appended to
+	 * @param s the short to encode
+	 */
+	private static void encodeShortLittleEndian(StringBuffer result, int s) {
+		result.append((char) (s & 0xff)).append((char) ((s & 0xff00) >> 8));
+	}
+	
+	/**
+	 * Encode an shortin big-endian format into a packed representation.
+	 *  
+	 * @param result to be appended to
+	 * @param s the short to encode
+	 */
+	private static void encodeShortBigEndian(StringBuffer result, int s) {
+		result.append((char) ((s & 0xff00) >> 8)).append((char) (s & 0xff));
 	}
 }
