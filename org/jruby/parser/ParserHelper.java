@@ -236,7 +236,7 @@ public class ParserHelper {
     /**
      *  Description of the Method
      */
-    void rb_parser_append_print() {
+	public void rb_parser_append_print() {
         evalTree = block_append(evalTree, nf.newFCall("print", nf.newArray(nf.newGVar("$_"))));
     }
 
@@ -246,11 +246,11 @@ public class ParserHelper {
      *@param  chop   Description of Parameter
      *@param  split  Description of Parameter
      */
-    void rb_parser_while_loop(int chop, int split) {
-        if (split != 0) {
+    public void rb_parser_while_loop(boolean chop, boolean split) {
+        if (split) {
             evalTree = block_append(nf.newGAsgn("$F", nf.newCall(nf.newGVar("$_"), "split", null)), evalTree);
         }
-        if (chop != 0) {
+        if (chop) {
             evalTree = block_append(nf.newCall(nf.newGVar("$_"), "chop!", null), evalTree);
         }
         evalTree = nf.newOptN(evalTree);
@@ -1173,8 +1173,8 @@ public class ParserHelper {
         LocalVars local = new LocalVars();
         
         local.prev = lvtbl;
-        local.nofree = false;
-        local.cnt = 0;
+        //local.nofree = false;
+        //local.cnt = 0;
         local.tbl = null;
         local.dlev = 0;
         
@@ -1201,7 +1201,7 @@ public class ParserHelper {
      *@return    Description of the Returned Value
      */
     public ExtendedList local_tbl() {
-        lvtbl.nofree = true;
+        //lvtbl.nofree = true;
         return lvtbl.tbl;
     }
 
@@ -1217,7 +1217,7 @@ public class ParserHelper {
             // lvtbl.tbl.setCount(0);
             lvtbl.tbl.add("_");
             lvtbl.tbl.add("~");
-            lvtbl.cnt = 2;
+            //lvtbl.cnt = 2;
             if (id.equals("_")) {
                 return 0;
             } else if (id.equals("~")) {
@@ -1230,7 +1230,8 @@ public class ParserHelper {
         }
 
         lvtbl.tbl.add(id);
-        return lvtbl.cnt++;
+//		System.out.println("append " + id + " count = " + (lvtbl.cnt()-1) );
+        return lvtbl.cnt()-1;
     }
 
     /**
@@ -1241,7 +1242,7 @@ public class ParserHelper {
      */
     public int local_cnt(String id) {
         if (id == null) {
-            return lvtbl.cnt;
+			return lvtbl.cnt();
         } else if (lvtbl.tbl == null) {
             return local_append(id);
         }
@@ -1282,10 +1283,13 @@ public class ParserHelper {
      */
     public void top_local_init() {
         local_push();
-        lvtbl.cnt = ruby.getRubyScope().getLocalNames() != null ? ruby.getRubyScope().getLocalNames().size() : 0;
-        if (lvtbl.cnt > 0) {
-            lvtbl.tbl = new ExtendedList(lvtbl.cnt + 2, null);
-            ruby.getRubyScope().setLocalNames(lvtbl.tbl);
+		ExtendedList lLocalNames = ruby.getRubyScope().getLocalNames();
+        int lcnt = lLocalNames != null ? lLocalNames.size() : 0;
+        if (lcnt > 0) {
+            lvtbl.tbl = new ExtendedList();
+            //ruby.getRubyScope().setLocalNames(lvtbl.tbl);   //it should be the other way around, don't understand how it works
+		for(int i= 0; i < lcnt; i ++)
+			local_append((String)lLocalNames.get(i))	;
         } else {
             lvtbl.tbl = null;
         }
@@ -1300,7 +1304,8 @@ public class ParserHelper {
      *  Description of the Method
      */
     public void top_local_setup() {
-        int len = lvtbl.cnt;
+        int len = lvtbl.cnt();
+		//System.out.println("count = " +  len);
         int i;
 
         if (len > 0) {
@@ -1605,9 +1610,13 @@ public class ParserHelper {
      */
     private class LocalVars {
         ExtendedList tbl;
-        boolean nofree;
-        int cnt;
+        //boolean nofree;
+//        int cnt;
         int dlev;
         LocalVars prev;
+		int cnt()
+		{
+			return (tbl==null ? 0 : tbl.size());
+		}
     }
 }

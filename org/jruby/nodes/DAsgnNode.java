@@ -35,7 +35,7 @@ import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 
 /**
- *
+ * assignment to dynamic variable
  * @author  jpetersen
  * @version $Revision$
  */

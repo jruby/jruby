@@ -88,11 +88,27 @@ public class DumpVisitor extends NodeVisitorAdapter
 					.append(iVisited.getLine())
 					.append("'");
 				break;
+			case Constants.NODE_CVASGN:
+			case Constants.NODE_DASGN:
+			case Constants.NODE_DASGN_CURR:
+			case Constants.NODE_IASGN:
+				_buffer.append(" id='")
+					.append(iVisited.getVId())
+					.append("'");
+				break;
 			case Constants.NODE_GASGN:
 				_buffer.append(" id='")
 					.append(iVisited.getEntry().getId())
 					.append("'");
 				break;
+			
+			case Constants.NODE_LASGN:
+				_buffer.append(" count='")
+					.append(iVisited.getCount())
+					.append("'");
+				break;
+			
+
 			case Constants.NODE_LIT:
 				_buffer.append(" value='")
 					.append(iVisited.getLiteral().toString())
@@ -105,6 +121,12 @@ public class DumpVisitor extends NodeVisitorAdapter
 					.append(iVisited.getNoex())
 					.append("'");
 				break;
+			case Constants.NODE_ARGS:
+				_buffer.append(" rest='")
+					.append(iVisited.getRest())
+					.append("' count='")
+					.append(iVisited.getCount())
+					.append("'");
 			default:
 				break;
 		}

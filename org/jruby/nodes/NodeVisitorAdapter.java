@@ -78,6 +78,10 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitArgsNode(Node iVisited)
 	{
 		visit(iVisited);
+		Node lOptNode = iVisited.getOptNode();
+		if (lOptNode != null)
+			lOptNode.accept(this);
+		
 		leave(iVisited);
 	}
 	public void visitArgsPushNode(Node iVisited)
@@ -125,8 +129,6 @@ public class NodeVisitorAdapter implements NodeVisitor
 			if (lNext != null)
 				lNext.accept(this);
 		}
-		
-
 		leave(iVisited);
 	}
 	public void visitBlockPassNode(Node iVisited)
@@ -152,11 +154,15 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitCRefNode(Node iVisited)
 	{
 		visit(iVisited);
+		Node lNext = iVisited.getNextNode();
+		if (lNext != null)
+			lNext.accept(this);
 		leave(iVisited);
 	}
 	public void visitCVAsgnNode(Node iVisited)
 	{
 		visit(iVisited);
+		iVisited.getValueNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitCVDeclNode(Node iVisited)
@@ -209,11 +215,13 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitDAsgnCurrNode(Node iVisited)
 	{
 		visit(iVisited);
+		iVisited.getValueNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitDAsgnNode(Node iVisited)
 	{
 		visit(iVisited);
+		iVisited.getValueNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitDRegxNode(Node iVisited)
@@ -321,6 +329,7 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitIAsgnNode(Node iVisited)
 	{
 		visit(iVisited);
+		iVisited.getValueNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitIFuncNode(Node iVisited)
@@ -346,6 +355,7 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitLAsgnNode(Node iVisited)
 	{
 		visit(iVisited);
+		iVisited.getValueNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitLVarNode(Node iVisited)
@@ -446,6 +456,7 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitOptNNode(Node iVisited)
 	{
 		visit(iVisited);
+		iVisited.getBodyNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitOrNode(Node iVisited)
@@ -500,7 +511,9 @@ public class NodeVisitorAdapter implements NodeVisitor
 		Node lRefValue = iVisited.getRefValue();
 		if (lRefValue != null)
 			lRefValue.accept(this);
-		iVisited.getNextNode().accept(this);
+		Node lNext = iVisited.getNextNode();
+		if (lNext != null)
+			lNext.accept(this);
 		leave(iVisited);
 	}
 	public void visitSelfNode(Node iVisited)

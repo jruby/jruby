@@ -35,36 +35,43 @@ import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 
 /**
- *
+ * Class variable assignment node.
  * @author  jpetersen
  * @version $Revision$
  */
 public class CVAsgnNode extends Node implements AssignableNode {
-    /**
-     * @param vid
-     * @param valueNode  */    
-    public CVAsgnNode(String vId, Node valueNode) {
-        super(Constants.NODE_CVASGN, vId, valueNode, null);
-    }
-    
-    /**
-     * @param ruby
-     * @param self
-     * @param value
-     * @param check  */    
-    public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
-        self.getClassVarSingleton().setClassVar(getVId(), value);
-    }
-    
-    /**
-     * @param ruby
-     * @param self
-     * @return  */    
-    public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyObject result = getValueNode().eval(ruby, self);
-        self.getClassVarSingleton().setClassVar(getVId(), result);
-        return result;
-    }
+	/**
+	 * 
+	 * @param vid id of the class variable to assign to 
+	 * @param valueNode  Node used to compute the new value when the assignment is evaled
+	 */    
+	public CVAsgnNode(String vId, Node valueNode) {
+		super(Constants.NODE_CVASGN, vId, valueNode, null);
+	}
+
+	/**
+	 * @param ruby
+	 * @param self
+	 * @param value
+	 * @param check  */    
+	public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
+		self.getClassVarSingleton().setClassVar(getVId(), value);
+	}
+
+	/**
+	 * Evaluate the node.
+	 * evaluate the value node and assign the result
+	 * to the appropriate class variable
+	 * @param ruby
+	 * @param self
+	 * @return  
+	 */    
+	public RubyObject eval(Ruby ruby, RubyObject self) {
+		RubyObject result = getValueNode().eval(ruby, self);
+		self.getClassVarSingleton().setClassVar(getVId(), result);
+		return result;
+	}
+	
 	/**
 	 * Accept for the visitor pattern.
 	 * @param iVisitor the visitor

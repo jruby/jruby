@@ -36,8 +36,8 @@ import org.jruby.runtime.*;
 import org.jruby.util.*;
 
 /**
- * end of method definition node.
-  * <ul>
+ * method definition node.
+ * <ul>
  * <li>
  * u1 ==&gt; noex (int) NOTE: noex flag, private, public or protected?
  * </li>

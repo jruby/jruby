@@ -35,7 +35,7 @@ import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 
 /**
- *
+ * local variable assignment node.
  * @author  jpetersen
  * @version $Revision$
  */

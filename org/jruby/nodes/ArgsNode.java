@@ -34,10 +34,34 @@ import org.jruby.*;
 import org.jruby.runtime.*;
 
 /**
+ * arguments for a function.
+ *  this is used both in the function definition
+ * and in actual function calls                                     
+ * <ul>
+ * <li>
+ * u1 ==&gt; optNode (BlockNode) Optional argument description
+ * </li>
+ * <li>
+ * u2 ==&gt; rest (int) index of the rest argument (the array arg with a * in front 
+ * </li>
+ * <li>
+ * u3 ==&gt; count (int) number of arguments
+ * </li>
+ * </ul>
  *
  * @author  jpetersen
  */
 public class ArgsNode extends Node {
+	/**
+	 * 
+	 * @param optNode  Node describing the optional arguments
+	 * This Block will contain assignments to locals (LAsgnNode)
+	 * @param rest  index of the rest argument in the local table
+	 * 				(the array argument prefixed by a * which collects 
+	 * 				all additional params)
+	 * 				or -1 if there is none.
+	 * @param count number of regular arguments
+	 **/
     public ArgsNode(Node optNode, int rest, int count) {
         super(Constants.NODE_ARGS, optNode, rest, count);
     }
