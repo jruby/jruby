@@ -28,7 +28,9 @@
       <arity>1</arity>
       <java>is_key</java>
     </method>
+<!--
     <method name="kill"/>
+-->
     <method name="priority"/>
     <method name="priority=">
       <arity>1</arity>
@@ -37,14 +39,18 @@
     <method name="raise">
       <arity optional="true">1</arity>
     </method>
+<!--
     <method name="run"/>
     <method name="safe_level"/>
+-->
     <method name="status"/>
+<!--
     <method name="stop?">
       <java>is_stop</java>
     </method>
     <method name="value"/>
     <method name="wakeup"/>
+-->
   </instance-methods>
 
   <class-methods>

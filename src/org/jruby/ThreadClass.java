@@ -358,8 +358,8 @@ public class ThreadClass extends RubyObject implements IndexCallable {
                 return raise(args[0]);
             case ThreadDefinition.STATUS :
                 return status();
+            default :
+                return super.callIndexed(index, args);
         }
-        return super.callIndexed(index, args);
     }
-
 }
