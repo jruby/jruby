@@ -229,16 +229,16 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("module_eval", module_eval);
         moduleClass.defineMethod("class_eval", module_eval);
 
-        moduleClass.defineMethod("remove_method", remove_method);
-        moduleClass.defineMethod("undef_method", undef_method);
-        moduleClass.defineMethod("alias_method", alias_method);
+        moduleClass.definePrivateMethod("remove_method", remove_method);
+        moduleClass.definePrivateMethod("undef_method", undef_method);
+        moduleClass.definePrivateMethod("alias_method", alias_method);
+        moduleClass.definePrivateMethod("define_method", CallbackFactory.getOptMethod(RubyModule.class, "define_method"));
+
+        moduleClass.defineMethod("instance_method", CallbackFactory.getMethod(RubyModule.class, "instance_method", IRubyObject.class));
         
         moduleClass.defineMethod("constant_missing", CallbackFactory.getMethod(RubyModule.class, "constant_missing", IRubyObject.class));
 
-        moduleClass.definePrivateMethod("define_method", CallbackFactory.getOptMethod(RubyModule.class, "define_method"));
-        
         moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
-
     }
 
     /** classname
@@ -1537,6 +1537,10 @@ public class RubyModule extends RubyObject {
      */
     public RubyArray instance_methods(IRubyObject[] args) {
         return instance_methods(args, Visibility.PUBLIC);
+    }
+    
+    public IRubyObject instance_method(IRubyObject symbol) {
+        return newMethod(null, symbol.toId(), false);
     }
 
     /** rb_class_protected_instance_methods
