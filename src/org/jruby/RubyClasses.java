@@ -38,6 +38,7 @@ import org.ablaf.ast.IAstDecoder;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
@@ -244,7 +245,11 @@ public class RubyClasses {
     }
 
     private void loadBuiltin(String name) {
-        InputStream in = getClass().getResourceAsStream("/builtin/" + name + ".rb.ast.ser");
+        String resourceName = "/builtin/" + name + ".rb.ast.ser";
+        InputStream in = getClass().getResourceAsStream(resourceName);
+        if (in == null) {
+            throw new IOError(runtime, "Resource not found: " + resourceName);
+        }
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
         runtime.loadNode("init-builtin", decoder.readNode(), false);
         decoder.close();

@@ -45,8 +45,6 @@ public class RubyArgsFile extends RubyObject {
         super(ruby, ruby.getClasses().getObjectClass());
     }
 
-    private int next_p = 0;
-
     private RubyIO currentFile = null;
     private int currentLineNumber;
     
@@ -116,14 +114,12 @@ public class RubyArgsFile extends RubyObject {
 
         RubyString line = (RubyString)currentFile.callMethod("gets", args);
         
-        while (line.isNil() && next_p != -1) {
-        	next_p = 1;
+        while (line.isNil()) {
             currentFile.callMethod("close");
-            
-            if (!nextArgsFile()) {
+            if (! nextArgsFile()) {
             	return line;
         	}
-            line = (RubyString)currentFile.callMethod("gets", args);
+            line = (RubyString) currentFile.callMethod("gets", args);
         }
         
         currentLineNumber++;
