@@ -30,5 +30,8 @@ if defined? Java
     # interface, which should work.
     o = TestHelper.getInterfacedInstance()
     test_equal("stuff done", o.doStuff())
+
+    #o = TestHelper.getLooslyCastedInstance()
+    #test_equal("stuff done", o.doStuff())
   end
 end

@@ -40,22 +40,25 @@ public class TestHelper {
      *  while we don't yet have a way to create them this can be used to test basic
      *  array functionalities
      */
-    static public String[] createArray(int i) {
+    public static String[] createArray(int i) {
         return new String[i];
     }
 
     /**
      * used to test native exception handling.
      **/
-    static public void throwException() {
+    public static void throwException() {
         throw new RuntimeException("testException");
     }
 
     /**
      * @return object used to test casting
      */
+    public static SomeInterface getInterfacedInstance() {
+        return new SomeImplementation();
+    }
 
-    static public SomeInterface getInterfacedInstance() {
+    public static Object getLooslyCastedInstance() {
         return new SomeImplementation();
     }
 
