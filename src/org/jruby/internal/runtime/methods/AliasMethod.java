@@ -3,7 +3,9 @@
  * Created on 03.03.2002, 00:33:23
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -83,5 +85,9 @@ public class AliasMethod extends AbstractMethod {
         cacheEntry.setOriginalName(getOldName());
         cacheEntry.setMethod(getOldMethod());
         cacheEntry.setRecvClass(getOrigin());
+    }
+    
+    public ICallable dup() {
+        return new AliasMethod(oldMethod, oldName);
     }
 }

@@ -3,7 +3,9 @@
  * Created on 02.03.2002, 23:44:17
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -50,4 +52,5 @@ public interface ICallable {
     Arity getArity();
 
     void initializeCacheEntry(CacheEntry cacheEntry);
+    ICallable dup();
 }

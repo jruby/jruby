@@ -3,7 +3,9 @@
  * Created on 11.03.2002, 21:42:20
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -28,6 +30,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -70,5 +73,9 @@ public class CallbackMethod extends AbstractMethod {
 
     public Arity getArity() {
         return getCallback().getArity();
+    }
+    
+    public ICallable dup() {
+        return new CallbackMethod(callback, getVisibility());
     }
 }
