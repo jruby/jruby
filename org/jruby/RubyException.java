@@ -123,7 +123,11 @@ public class RubyException extends RubyObject {
             case 0 :
                 return this;
             case 1 :
-                return (RubyException) newInstance(getRuby(), getRubyClass(), args);
+            	if (args[0] == this) {
+            	    return this;
+            	} else {
+                	return (RubyException) newInstance(getRuby(), getRubyClass(), args);
+            	}
             default :
                 throw new RubyArgumentException(getRuby(), "Wrong argument count");
         }

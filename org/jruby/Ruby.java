@@ -38,6 +38,7 @@ import org.jruby.javasupport.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
 import org.jruby.parser.*;
+import org.jruby.regexp.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
@@ -53,7 +54,9 @@ public final class Ruby {
 
     public static final int FIXNUM_CACHE_MAX = 0xff;
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
-
+    
+    private static final String[] REGEXP_ADAPTER = {"org.jruby.regexp.JDKRegexpAdapter", "org.jruby.regexp.GNURegexpAdapter", "org.jruby.regexp.ORORegexpAdapter"};
+    
     private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
@@ -155,6 +158,14 @@ public final class Ruby {
      * @return the JRuby runtime
      */
     public static Ruby getDefaultInstance(Class regexpAdapterClass) {
+        for (int i = 0; regexpAdapterClass == null && i < REGEXP_ADAPTER.length; i++) {
+			try {
+            	regexpAdapterClass = Class.forName(REGEXP_ADAPTER[i]);
+			} catch (ClassNotFoundException cnfExcptn) {
+			} catch (NoClassDefFoundError ncdfError) {
+			}
+        }
+        
         Ruby ruby = new Ruby();
         ruby.setRegexpAdapterClass(regexpAdapterClass);
         ruby.init();

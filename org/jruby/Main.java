@@ -239,7 +239,7 @@ public class Main {
      */
     protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
         // Initialize Runtime
-        Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter != null ? sRegexpAdapter : GNURegexpAdapter.class);
+        Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter);
 
         // Parse and interpret file
         RubyString rs = RubyString.newString(ruby, iString2Eval);
