@@ -1,154 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
+
 <project basedir="." default="compile" name="JRuby">
-	<property name="build.dir" value="build"/>
-    <property name="lib.dir" value="lib"/>
-    <property name="jar.file" value="${build.dir}/jruby.jar"/>
-    
-	<!--<property name="build.compiler" value="jikes"/>-->
-	<property name="build.compiler" value="modern"/>
-    <!--<property name="build.compiler" value="classic"/>-->
+  <description>
+    JRuby is a pure Java implementation of a Ruby interpreter.
+  </description>
 
-    <property name="build.compiler.fulldepend" value="on"/>
-    <!--<property name="build.compiler.emacs" value="on"/>-->
+  <property name="base.dir"
+            value="."/>
+  <property name="src.dir"
+            value="${base.dir}/src"/>
+  <property name="test.dir"
+            value="${base.dir}/test"/>
+  <property name="lib.dir"
+            value="${base.dir}/lib"/>
 
-    <property name="version" value="0.5.1"/>
-    <property name="version.file" value="0_5_1"/>
-    <property name="javadoc.title" value="JRuby"/>
+  <property name="release.dir"
+            value="${base.dir}/release"/>
+  <property name="tmp.dir"
+            value="${base.dir}/.tmp"/>
 
-    <property name="build.dest" value="${build.dir}/classes"/>
-    <property name="build.docs" value="${build.dir}/docs"/>
-    <property name="build.tars.base" value="${build.dir}/tars"/>
-    <property name="build.tars" value="${build.tars.base}/jruby-${version.file}"/>
-    <property name="src.dir" value="."/>
-    <property name="base.dir" value="."/>
+  <path id="build.classpath">
+    <fileset dir="${lib.dir}"
+             includes="*.jar"/>
+  </path>
 
-    <path id="classpath">
-        <fileset dir="${lib.dir}" includes="*.jar"/>
-    </path>
+  <patternset id="java.src.pattern">
+    <include name="**/*.java"/>
+    <exclude unless="bsf.present"
+             name="org/jruby/javasupport/bsf/**/*.java"/>
+    <exclude unless="oro.present"
+             name="**/ORORegexpAdapter.java"/>
+    <exclude unless="jdk1.4+"
+             name="**/JDKRegexpAdapter.java"/>
+    <exclude unless="gnuregexp.present"
+             name="**/GNURegexpAdapter.java"/>
+  </patternset>
 
-    <target name="check_for_optional_packages">
-        <available property="jdk1.4+" classname="java.lang.CharSequence" />
-        <available property="bsf.present"
-                   classname="com.ibm.bsf.BSFManager"
-                   classpathref="classpath" />
-        <available property="junit.present"
-                   classname="junit.framework.TestCase"
-                   classpathref="classpath" />
-        <available property="oro.present"
-                   classname="org.apache.oro.text.regex.Perl5Pattern"
-                   classpathref="classpath" />
-    </target>
+  <target name="init" description="initialize the build">
+    <xmlproperty file="build-config.xml" keepRoot="false"
+                 collapseAttributes="true"/>
+  </target>
 
-    <target name="test" depends="compile">
-		<junit printsummary="yes" haltonfailure="yes">
-            <formatter type="plain"/>
-            <test name="org.jruby.test.MainTestSuite"/>
-            <classpath>
-                <pathelement path="${classpath}" />
-                <pathelement location="${jar.file}" />
-            </classpath>
-            <sysproperty key="jruby.base" value="${build.dir}"/>
-            <sysproperty key="jruby.home" value="${build.dir}"/>
-            <sysproperty key="jruby.lib" value="${build.dir}/lib"/>
-        </junit>
-    </target>
+  <target name="check-for-optional-packages"
+          description="check if specific libs and versions are avaiable"
+	  depends="init">
+    <available property="jdk1.4+"
+               classname="java.lang.CharSequence"/>
+    <available property="bsf.present"
+               classname="com.ibm.bsf.BSFManager"
+               classpathref="build.classpath"/>
+    <available property="junit.present"
+               classname="junit.framework.TestCase"
+               classpathref="build.classpath"/>
+    <available property="oro.present"
+               classname="org.apache.oro.text.regex.Perl5Pattern"
+               classpathref="build.classpath"/>
+    <available property="gnuregexp.present"
+               classname="gnu.regexp.RE"
+	       classpathref="build.classpath"/>
+  </target>
 
-    <target depends="check_for_optional_packages" name="compile">
-        <mkdir dir="${build.dir}"/>
-        <mkdir dir="${build.dest}"/>
-        <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
-            <classpath refid="classpath" />
-            <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
-            <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
-            <exclude unless="junit.present" name="**/test/**"/>
-            <exclude unless="oro.present" name="org/jruby/regexp/ORORegexpAdapter.java"/>
-            <exclude name="**/tars/**"/>
-        </javac>
-        <copy todir="${build.dest}">
-			<fileset dir="${src.dir}">
-				<include name="gnu/**/*.properties"/>
-				<include name="org/**/*.properties"/>
-                <include name="**/test.rb"/>
-                <include name="builtin/*.rb"/>
-            </fileset>
-        </copy>
-		<copy todir="${build.dir}" >
-			<fileset dir="${src.dir}" includes="lib/**/*"/>
-			<fileset dir="${src.dir}" includes="*.bat"/>
-		</copy>
-        <mkdir dir="${build.dir}/lib/ruby/1.6/java"/>
-        <!-- Create jar in build dir -->
-        <jar basedir="${build.dest}" compress="true" jarfile="${jar.file}" manifest="jruby.mf"/>
-    </target>
+  <target name="compile-src"
+          description="compile the src directory"
+	  depends="init,check-for-optional-packages">
+    <mkdir dir="${tmp.dir}/src"/>
+ 
+    <copy todir="${tmp.dir}/src">
+      <fileset dir="${src.dir}">
+        <patternset refid="java.src.pattern"/>
+      </fileset>
+      <filterchain>
+        <expandproperties/>
+      </filterchain>
+    </copy>
+	  
+    <javac destdir="${src.dir}">
+      <classpath refid="build.classpath"/>
+      <src path="${tmp.dir}/src"/>
+      <patternset refid="java.src.pattern"/>
+    </javac>
+  </target>
 
-    <target depends="compile" name="bin-gz">
-        <mkdir dir="${build.tars.base}"/>
-        <mkdir dir="${build.tars}"/>
-        
-        <copy todir="${build.tars}">
-            <fileset dir="${base.dir}">
-                <include name="COPYING"/>
-                <include name="README"/>
-                <include name="test.rb"/>
-                <include name="jruby.bat"/>
-				<include name="jruby.rb"/>
-				<include name="jruby.sh"/>
-				<include name="mkconfig.rb"/>
-                <include name="samples/**/*"/>
-                <include name="lib/**/*"/>
-            </fileset>
-            <fileset dir="${build.dir}">
-                <include name="jruby.jar"/>
-            </fileset>
-        </copy>
-        
-        <tar basedir="${build.tars.base}" tarfile="${build.dir}/jruby.tar">
-            <exclude name="jruby_${version.file}/gnu/**/*"/>
-            <exclude name="jruby_${version.file}/org/**/*"/>
-        </tar>
+  <target name="compile-test"
+          description="compile the test directory"
+	  depends="check-for-optional-packages,init">
+  </target>
 
-        <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
-
-        <!--<delete dir="${build.tars}"/> 
-        <delete file="${build.dir}/jruby.tar"/>
-        <delete file="${build.dir}/jruby.jar"/>-->
-    </target>
-
-    <target depends="bin-gz" description="Create source archive." name="src-gz">
-        <mkdir dir="${build.tars}"/>
-
-        <copy todir="${build.tars}">
-            <fileset dir="${base.dir}">
-	        <exclude name="build/**"/>
-		    <exclude name="**/CVS"/>
-		    <exclude name="**/*.class"/>
-		    <exclude name="**/*.jar"/>
-            </fileset>
-        </copy>
-        
-        <tar basedir="${build.tars.base}" tarfile="${build.dir}/jruby-src.tar">
-            <!-- <exclude name="jruby-${version.file}/jruby.jar"/> -->
-            <exclude name="**/*.jar"/>
-        </tar>
-
-        <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
-
-        <!-- <delete file="${build.dir}/jruby-src.tar"/> -->
-    </target>
-
-    <target description="Build Javadoc documentation" name="javadocs">
-        <mkdir dir="${build.docs}"/>
-        <mkdir dir="${build.docs}/support"/>
-	<javadoc classpathref="classpath" destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
-        <javadoc destdir="${build.docs}/support" doctitle="${javadoc.title}" packagenames="gnu.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
-    </target>
-	
-    <target depends="bin-gz,src-gz" description="Build everything." name="all">
-        <echo message="JRuby built."/>
-    </target>
-
-    <target description="Clean all build products." name="clean">
-        <delete dir="${build.dir}"/>
-    </target>
+  <target name="compile"
+          description="compile JRuby"
+	  depends="compile-src,compile-test">
+  </target>
 </project>

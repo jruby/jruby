@@ -1,2 +1,3 @@
 build
 TEST-org.jruby.test.MainTestSuite.txt
+.tmp

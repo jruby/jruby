@@ -149,7 +149,7 @@ module Enumerable
     if block_given? then
       cmp = lambda { |a, b| yield(a, b) > 0 }
     else
-      cmp = lambda { |a, b| a <=> b > 0 }
+      cmp = lambda { |a, b| (a <=> b) > 0 }
     end
     result = nil
     each do |item|
@@ -162,7 +162,7 @@ module Enumerable
     if block_given? then
       cmp = lambda { |a, b| yield(a, b) < 0 }
     else
-      cmp = lambda { |a, b| a <=> b < 0 }
+      cmp = lambda { |a, b| (a <=> b) < 0 }
     end
     result = nil
     each do |item|

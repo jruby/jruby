@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+
+<jruby>
+  <version jruby="1.5.9" ruby="1.6.7"/>
+</jruby>

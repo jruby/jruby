@@ -35,12 +35,11 @@ if [ -z "$JRUBY_HOME" ] ; then
     fi
   done
   
-  JRUBY_HOME_1=`dirname "$PRG"`
-  # echo "Guessing JRUBY_HOME from jruby.sh to ${JRUBY_HOME_1}" 
-    if [ -d ${JRUBY_HOME_1}/samples ] ; then 
+  JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
+  JRUBY_HOME_1=`dirname "$JRUBY_HOME_1"`  # the . dir
+  if [ -d ${JRUBY_HOME_1}/lib ] ; then 
 	JRUBY_HOME=${JRUBY_HOME_1}
-	# echo "Setting JRUBY_HOME to $JRUBY_HOME"
-    fi
+  fi
 fi
 
 if [ -z "$JRUBY_OPTS" ] ; then
@@ -51,7 +50,6 @@ if [ -z "$JAVA_HOME" ] ; then
   echo You must set JAVA_HOME to point at your Java Development Kit installation
   exit 1
 fi
-
 
 # ----- Cygwin Unix Paths Setup -----------------------------------------------
 
@@ -72,7 +70,7 @@ fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 
-CP="$JRUBY_HOME/jruby.jar:$JRUBY_HOME:$JRUBY_HOME/build/classes"
+CP="$JRUBY_HOME/src"
 
 if [ -f "$JAVA_HOME/lib/tools.jar" ] ; then
   CP=$CP:"$JAVA_HOME/lib/tools.jar"
@@ -81,7 +79,6 @@ fi
 for i in $JRUBY_HOME/lib/*.jar; do
   CP=$CP:$i
 done
-
 
 # ----- Cygwin Windows Paths Setup --------------------------------------------
 
