@@ -102,10 +102,14 @@ public class RubyProc extends RubyObject implements IndexCallable {
     }
 
     public IRubyObject call(IRubyObject[] args) {
+        return call(args, null);
+    }
+
+    public IRubyObject call(IRubyObject[] args, IRubyObject self) {
         RubyModule oldWrapper = getRuntime().getWrapper();
         getRuntime().setWrapper(wrapper);
         try {
-            return block.call(args);
+            return block.call(args, self);
         } finally {
             getRuntime().setWrapper(oldWrapper);
         }

@@ -79,9 +79,17 @@ public class Block implements StackElement {
     }
 
     public IRubyObject call(IRubyObject[] args) {
+        return call(args, null);
+    }
+
+    public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
         Ruby ruby = self.getRuntime();
         Block oldBlock = ruby.getBlockStack().getCurrent();
-        ruby.getBlockStack().setCurrent(this.cloneBlock()); // FIX
+        Block newBlock = this.cloneBlock();
+        if (replacementSelf != null) {
+            newBlock.self = replacementSelf;
+        }
+        ruby.getBlockStack().setCurrent(newBlock);
         ruby.getIterStack().push(Iter.ITER_CUR);
         ruby.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {

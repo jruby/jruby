@@ -26,6 +26,7 @@ public class ProcMethod extends AbstractMethod {
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return proc.call(args);
+        IRubyObject self = receiver;
+        return proc.call(args, self);
     }
 }
