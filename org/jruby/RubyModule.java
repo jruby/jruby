@@ -31,6 +31,7 @@ package org.jruby;
 import java.util.*;
 
 import org.jruby.exceptions.*;
+import org.jruby.javasupport.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
@@ -421,8 +422,14 @@ public class RubyModule extends RubyObject {
             break;
         }
         
+        // Now try to load a Java class
+        String javaClassName = (String)getRuby().getJavaSupport().getRenamedJavaClasses().get(name);
+        if (javaClassName == null) {
+            javaClassName = name;
+        }
+        
         try {
-            Class javaClass = getRuby().getJavaSupport().loadJavaClass(RubyString.newString(getRuby(), name));
+            Class javaClass = getRuby().getJavaSupport().loadJavaClass(RubyString.newString(getRuby(), javaClassName));
         	return getRuby().getJavaSupport().loadClass(javaClass, null);
         } catch(NameError excptn) {
         }

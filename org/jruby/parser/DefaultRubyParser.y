@@ -61,52 +61,52 @@ public class DefaultRubyParser implements RubyParser {
 %}
 
 %token  kCLASS
-	kMODULE
-	kDEF
-	kUNDEF
-	kBEGIN
-	kRESCUE
-	kENSURE
-	kEND
-	kIF
-	kUNLESS
-	kTHEN
-	kELSIF
-	kELSE
-	kCASE
-	kWHEN
-	kWHILE
-	kUNTIL
-	kFOR
-	kBREAK
-	kNEXT
-	kREDO
-	kRETRY
-	kIN
-	kDO
-	kDO_COND
-	kDO_BLOCK
-	kRETURN
-	kYIELD
-	kSUPER
-	kSELF
-	kNIL
-	kTRUE
-	kFALSE
-	kAND
-	kOR
-	kNOT
-	kIF_MOD
-	kUNLESS_MOD
-	kWHILE_MOD
-	kUNTIL_MOD
-	kRESCUE_MOD
-	kALIAS
-	kDEFINED
-	klBEGIN
-	klEND
-	k__LINE__
-	k__FILE__
+    kMODULE
+    kDEF
+    kUNDEF
+    kBEGIN
+    kRESCUE
+    kENSURE
+    kEND
+    kIF
+    kUNLESS
+    kTHEN
+    kELSIF
+    kELSE
+    kCASE
+    kWHEN
+    kWHILE
+    kUNTIL
+    kFOR
+    kBREAK
+    kNEXT
+    kREDO
+    kRETRY
+    kIN
+    kDO
+    kDO_COND
+    kDO_BLOCK
+    kRETURN
+    kYIELD
+    kSUPER
+    kSELF
+    kNIL
+    kTRUE
+    kFALSE
+    kAND
+    kOR
+    kNOT
+    kIF_MOD
+    kUNLESS_MOD
+    kWHILE_MOD
+    kUNTIL_MOD
+    kRESCUE_MOD
+    kALIAS
+    kDEFINED
+    klBEGIN
+    klEND
+    k__LINE__
+    k__FILE__
 
 %token <String>    tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR
 %token <RubyObject> tINTEGER tFLOAT tSTRING tXSTRING tREGEXP
@@ -126,33 +126,33 @@ public class DefaultRubyParser implements RubyParser {
 %type <String>    fitem variable sym symbol operation operation2 operation3
 %type <String>    cname fname op
 %type <Integer>   f_rest_arg f_norm_arg f_arg
-%token <String> tUPLUS 	/* unary+ */
-%token <String> tUMINUS 	/* unary- */
-%token <String> tPOW		/* ** */
-%token <String> tCMP  		/* <=> */
-%token <String> tEQ  		/* == */
-%token <String> tEQQ  		/* === */
-%token <String> tNEQ  		/* != */
-%token <String> tGEQ  		/* >= */
-%token <String> tLEQ  		/* <= */
-%token <String> tANDOP tOROP	/* && and || */
-%token <String> tMATCH tNMATCH	/* =~ and !~ */
-%token <String> tDOT2 tDOT3	/* .. and ... */
-%token <String> tAREF tASET	/* [] and []= */
-%token <String> tLSHFT tRSHFT	/* << and >> */
-%token <String> tCOLON2	/* :: */
-%token <String> tCOLON3	/* :: at EXPR_BEG */
-%token <String> tOP_ASGN	/* +=, -=  etc. */
-%token <String> tASSOC		/* => */
-%token <String> tLPAREN	/* ( */
-%token <String> tLBRACK	/* [ */
-%token <String> tLBRACE	/* { */
-%token <String> tSTAR		/* * */
-%token <String> tAMPER		/* & */
+%token <String> tUPLUS     /* unary+ */
+%token <String> tUMINUS     /* unary- */
+%token <String> tPOW        /* ** */
+%token <String> tCMP          /* <=> */
+%token <String> tEQ          /* == */
+%token <String> tEQQ          /* === */
+%token <String> tNEQ          /* != */
+%token <String> tGEQ          /* >= */
+%token <String> tLEQ          /* <= */
+%token <String> tANDOP tOROP    /* && and || */
+%token <String> tMATCH tNMATCH    /* =~ and !~ */
+%token <String> tDOT2 tDOT3    /* .. and ... */
+%token <String> tAREF tASET    /* [] and []= */
+%token <String> tLSHFT tRSHFT    /* << and >> */
+%token <String> tCOLON2    /* :: */
+%token <String> tCOLON3    /* :: at EXPR_BEG */
+%token <String> tOP_ASGN    /* +=, -=  etc. */
+%token <String> tASSOC        /* => */
+%token <String> tLPAREN    /* ( */
+%token <String> tLBRACK    /* [ */
+%token <String> tLBRACE    /* { */
+%token <String> tSTAR        /* * */
+%token <String> tAMPER        /* & */
 %token <String> tSYMBEG
 
 /*
- *	precedence table
+ *    precedence table
  */
 
 %left  kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD kRESCUE_MOD
@@ -177,1613 +177,1384 @@ public class DefaultRubyParser implements RubyParser {
 %token <Integer> LAST_TOKEN
 
 %%
-program		:
-            {
-                $<Object>$ = ruby.getDynamicVars();
-			    ph.setLexState(LexState.EXPR_BEG);
-                ph.top_local_init();
-			    if (ruby.getRubyClass() == ruby.getClasses().getObjectClass())
-                    ph.setClassNest(0);
-			    else
-                    ph.setClassNest(1);
-            }
-compstmt
-            {
-                if ($2 != null && !ph.isCompileForEval()) {
-                    /* last expression should not be void */
-			        if ($2.getType() != Constants.NODE_BLOCK)
-                        ph.void_expr($2);
-			        else {
-                        Node node = $2;
-				        while (node.getNextNode() != null) {
-				            node = node.getNextNode();
-				        }
-				        ph.void_expr(node.getHeadNode());
-			        }
-			    }
-			    ph.setEvalTree(ph.block_append(ph.getEvalTree(), $2));
-                ph.top_local_setup();
-			    ph.setClassNest(0);
-		        ruby.setDynamicVars($<RubyVarmap>1);
-		    }
+program     : {
+                  $<Object>$ = ruby.getDynamicVars();
+                  ph.setLexState(LexState.EXPR_BEG);
+                  ph.top_local_init();
+                  if (ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+                      ph.setClassNest(0);
+                  } else {
+                      ph.setClassNest(1);
+                  }
+              } compstmt {
+                  if ($2 != null && !ph.isCompileForEval()) {
+                      /* last expression should not be void */
+                      if ($2.getType() != Constants.NODE_BLOCK) {
+                          ph.void_expr($2);
+                      } else {
+                          Node node = $2;
+                          while (node.getNextNode() != null) {
+                              node = node.getNextNode();
+                          }
+                          ph.void_expr(node.getHeadNode());
+                      }
+                  }
+                  ph.setEvalTree(ph.block_append(ph.getEvalTree(), $2));
+                  ph.top_local_setup();
+                  ph.setClassNest(0);
+                  ruby.setDynamicVars($<RubyVarmap>1);
+              }
 
-compstmt	: stmts opt_terms
-		    {
-			    ph.void_stmts($1);
-			    $$ = $1;
-		    }
+compstmt    : stmts opt_terms {
+                  ph.void_stmts($1);
+                  $$ = $1;
+              }
 
-stmts		: none
-		| stmt
-		    {
-			    $$ = ph.newline_node($1);
-		    }
-		| stmts terms stmt
-		    {
-			    $$ = ph.block_append($1, ph.newline_node($3));
-		    }
-		| error stmt
-		    {
-			    $$ = $2;
-		    }
-
-stmt		: kALIAS fitem {ph.setLexState(LexState.EXPR_FNAME);} fitem
-		    {
-			    if (ph.isInDef() || ph.isInSingle())
-			        yyerror("alias within method");
-		        $$ = nf.newAlias($2, $4);
-		    }
-		| kALIAS tGVAR tGVAR
-		    {
-			    if (ph.isInDef() || ph.isInSingle())
-			        yyerror("alias within method");
-		        $$ = nf.newVAlias($2, $3);
-		    }
-		| kALIAS tGVAR tBACK_REF
-		    {
-			    if (ph.isInDef() || ph.isInSingle()) {
-			        yyerror("alias within method");
+stmts         : none
+              | stmt {
+                    $$ = ph.newline_node($1);
                 }
-			    $$ = nf.newVAlias($2, "$" + (char)$3.getNth());
-		    }
-		| kALIAS tGVAR tNTH_REF
-		    {
-		        yyerror("can't make alias for the number variables");
-		        $$ = null; //XXX 0
-		    }
-		| kUNDEF undef_list
-		    {
-			    if (ph.isInDef() || ph.isInSingle())
-			        yyerror("undef within method");
-			    $$ = $2;
-		    }
-		| stmt kIF_MOD expr
-		    {
-			    ph.value_expr($3);
-			    $$ = nf.newIf(ph.cond($3), $1, null);
-		        ph.fixpos($$, $3);
-		    }
-		| stmt kUNLESS_MOD expr
-		    {
-			    ph.value_expr($3);
-			    $$ = nf.newUnless(ph.cond($3), $1, null);
-		        ph.fixpos($$, $3);
-		    }
-		| stmt kWHILE_MOD expr
-		    {
-			    ph.value_expr($3);
-			    if ($1 != null && $1 instanceof BeginNode) {
-			        $$ = nf.newWhile(ph.cond($3), $1.getBodyNode()); // , 0
-			    } else {
-			        $$ = nf.newWhile(ph.cond($3), $1); // , 1
-			    }
-		    }
-		| stmt kUNTIL_MOD expr
-		    {
-			    ph.value_expr($3);
-			    if ($1 != null && $1 instanceof BeginNode) {
-			        $$ = nf.newUntil(ph.cond($3), $1.getBodyNode()); // , 0
-			    } else {
-			        $$ = nf.newUntil(ph.cond($3), $1); // , 1
-			    }
-		    }
-		| stmt kRESCUE_MOD stmt
-		    {
-			    $$ = nf.newRescue($1, nf.newResBody(null,$3,null), null);
-		    }
-		| klBEGIN
-		    {
-			    if (ph.isInDef() || ph.isInSingle()) {
-			        yyerror("BEGIN in method");
-			    }
-			    ph.local_push();
-		    }
-		  '{' compstmt '}'
-		    {
-			    ph.setEvalTreeBegin(ph.block_append(ph.getEvalTree(), nf.newPreExe($4)));
-		        ph.local_pop();
-		        $$ = null; //XXX 0;
-		    }
-		| klEND '{' compstmt '}'
-		    {
-			    if (ph.isCompileForEval() && (ph.isInDef() || ph.isInSingle())) {
-			        yyerror("END in method; use at_exit");
-			    }
+              | stmts terms stmt {
+                    $$ = ph.block_append($1, ph.newline_node($3));
+                }
+              | error stmt {
+                    $$ = $2;
+                }
 
-			    $$ = nf.newIter(null, nf.newPostExe(), $3);
-		    }
-		| lhs '=' command_call
-		    {
-			    ph.value_expr($3);
-			    $$ = ph.node_assign($1, $3);
-		    }
-		| mlhs '=' command_call
-		    {
-			    ph.value_expr($3);
-			    $1.setValueNode($3);
-			    $$ = $1;
-		    }
-		| lhs '=' mrhs_basic
-		    {
-			    $$ = ph.node_assign($1, $3);
-		    }
-		| expr
+stmt          : kALIAS fitem {
+                    ph.setLexState(LexState.EXPR_FNAME);
+                } fitem {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("alias within method");
+                    }
+                    $$ = nf.newAlias($2, $4);
+                }
+              | kALIAS tGVAR tGVAR {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("alias within method");
+                    }
+                    $$ = nf.newVAlias($2, $3);
+                }
+              | kALIAS tGVAR tBACK_REF {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("alias within method");
+                    }
+                    $$ = nf.newVAlias($2, "$" + (char)$3.getNth());
+                }
+              | kALIAS tGVAR tNTH_REF {
+                    yyerror("can't make alias for the number variables");
+                    $$ = null; //XXX 0
+                }
+              | kUNDEF undef_list {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("undef within method");
+                    }
+                    $$ = $2;
+                }
+              | stmt kIF_MOD expr {
+                    ph.value_expr($3);
+                    $$ = nf.newIf(ph.cond($3), $1, null);
+                    ph.fixpos($$, $3);
+                }
+              | stmt kUNLESS_MOD expr {
+                    ph.value_expr($3);
+                    $$ = nf.newUnless(ph.cond($3), $1, null);
+                    ph.fixpos($$, $3);
+                }
+              | stmt kWHILE_MOD expr {
+                    ph.value_expr($3);
+                    if ($1 != null && $1 instanceof BeginNode) {
+                        $$ = nf.newWhile(ph.cond($3), $1.getBodyNode()); // , 0
+                    } else {
+                        $$ = nf.newWhile(ph.cond($3), $1); // , 1
+                    }
+                }
+              | stmt kUNTIL_MOD expr {
+                    ph.value_expr($3);
+                    if ($1 != null && $1 instanceof BeginNode) {
+                        $$ = nf.newUntil(ph.cond($3), $1.getBodyNode()); // , 0
+                    } else {
+                        $$ = nf.newUntil(ph.cond($3), $1); // , 1
+                    }
+                }
+              | stmt kRESCUE_MOD stmt
+                {
+                    $$ = nf.newRescue($1, nf.newResBody(null,$3,null), null);
+                }
+              | klBEGIN
+                {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("BEGIN in method");
+                    }
+                    ph.local_push();
+                } '{' compstmt '}' {
+                    ph.setEvalTreeBegin(ph.block_append(ph.getEvalTree(), nf.newPreExe($4)));
+                    ph.local_pop();
+                    $$ = null; //XXX 0;
+                }
+              | klEND '{' compstmt '}' {
+                    if (ph.isCompileForEval() && (ph.isInDef() 
+                                              || ph.isInSingle())) {
+                        yyerror("END in method; use at_exit");
+                    }
+                    $$ = nf.newIter(null, nf.newPostExe(), $3);
+                }
+              | lhs '=' command_call {
+                    ph.value_expr($3);
+                    $$ = ph.node_assign($1, $3);
+                }
+              | mlhs '=' command_call {
+                    ph.value_expr($3);
+                    $1.setValueNode($3);
+                    $$ = $1;
+                }
+              | lhs '=' mrhs_basic {
+                    $$ = ph.node_assign($1, $3);
+                }
+              | expr
 
-expr	: mlhs '=' mrhs
-		    {
-			    ph.value_expr($3);
-			    $1.setValueNode($3);
-			    $$ = $1;
-		    }
-		| kRETURN call_args
-		    {
-			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
-			        yyerror("return appeared outside of method");
-			    $$ = nf.newReturn(ph.ret_args($2));
-		    }
-		| command_call
-		| expr kAND expr
-		    {
-			    $$ = ph.logop(Constants.NODE_AND, $1, $3);
-		    }
-		| expr kOR expr
-		    {
-			    $$ = ph.logop(Constants.NODE_OR, $1, $3);
-		    }
-		| kNOT expr
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newNot(ph.cond($2));
-		    }
-		| '!' command_call
-		    {
-			    $$ = nf.newNot(ph.cond($2));
-		    }
-		| arg
+expr          : mlhs '=' mrhs {
+                    ph.value_expr($3);
+                    $1.setValueNode($3);
+                    $$ = $1;
+                }
+              | kRETURN call_args {
+                    if (!ph.isCompileForEval() && !ph.isInDef()
+                                               && !ph.isInSingle()) {
+                        yyerror("return appeared outside of method");
+                    }
+                    $$ = nf.newReturn(ph.ret_args($2));
+                }
+              | command_call
+              | expr kAND expr {
+                    $$ = ph.logop(Constants.NODE_AND, $1, $3);
+                }
+              | expr kOR expr {
+                    $$ = ph.logop(Constants.NODE_OR, $1, $3);
+                }
+              | kNOT expr {
+                    ph.value_expr($2);
+                    $$ = nf.newNot(ph.cond($2));
+                }
+              | '!' command_call {
+                    $$ = nf.newNot(ph.cond($2));
+                }
+              | arg
 
-command_call	: command
-		| block_command
+command_call  : command
+              | block_command
 
-block_command	: block_call
-		| block_call '.' operation2 command_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		    }
-		| block_call tCOLON2 operation2 command_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		    }
+block_command : block_call
+              | block_call '.' operation2 command_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                }
+              | block_call tCOLON2 operation2 command_args {
+	            ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                }
 
-command		: operation command_args
-		    {
-			    $$ = ph.new_fcall($1, $2);
-		        ph.fixpos($$, $2);
-		    }
-		| primary '.' operation2 command_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		        ph.fixpos($$, $1);
-		    }
-		| primary tCOLON2 operation2 command_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		        ph.fixpos($$, $1);
-		    }
-		| kSUPER command_args
-		    {
-			    if (!ph.isCompileForEval() && ph.isInDef() && ph.isInSingle())
-			        yyerror("super called outside of method");
-			    $$ = ph.new_super($2);
-		        ph.fixpos($$, $2);
-		    }
-		| kYIELD call_args
-		    {
-			    $$ = nf.newYield(ph.ret_args($2));
-		        ph.fixpos($$, $2);
-		    }
+command       : operation command_args {
+                    $$ = ph.new_fcall($1, $2);
+                    ph.fixpos($$, $2);
+                }
+              | primary '.' operation2 command_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                    ph.fixpos($$, $1);
+                }
+              | primary tCOLON2 operation2 command_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                    ph.fixpos($$, $1);
+                }
+              | kSUPER command_args {
+                    if (!ph.isCompileForEval() && ph.isInDef() 
+                                               && ph.isInSingle()){
+                        yyerror("super called outside of method");
+                    }
+		    $$ = ph.new_super($2);
+		    ph.fixpos($$, $2);
+		}
+              | kYIELD call_args {
+	            $$ = nf.newYield(ph.ret_args($2));
+                    ph.fixpos($$, $2);
+		}
 
-mlhs		: mlhs_basic
-		| tLPAREN mlhs_entry ')'
-		    {
-			    $$ = $2;
-		    }
+mlhs          : mlhs_basic
+              | tLPAREN mlhs_entry ')' {
+                    $$ = $2;
+		}
 
-mlhs_entry	: mlhs_basic
-		| tLPAREN mlhs_entry ')'
-		    {
-			    $$ = nf.newMAsgn(nf.newList($2), null);
-		    }
+mlhs_entry    : mlhs_basic
+              | tLPAREN mlhs_entry ')' {
+	            $$ = nf.newMAsgn(nf.newList($2), null);
+                }
 
-mlhs_basic	: mlhs_head
-		    {
-			    $$ = nf.newMAsgn($1, null);
-		    }
-		| mlhs_head mlhs_item
-		    {
-			    $$ = nf.newMAsgn(ph.list_append($1,$2), null);
-		    }
-		| mlhs_head tSTAR mlhs_node
-		    {
-			    $$ = nf.newMAsgn($1, $3);
-		    }
-		| mlhs_head tSTAR
-		    {
-			    $$ = nf.newMAsgn($1, Node.MINUS_ONE);
-		    }
-		| tSTAR mlhs_node
-		    {
-			    $$ = nf.newMAsgn(null, $2);
-		    }
-		| tSTAR
-		    {
-			    $$ = nf.newMAsgn(null, Node.MINUS_ONE);
-		    }
+mlhs_basic    : mlhs_head {
+                    $$ = nf.newMAsgn($1, null);
+                }
+              | mlhs_head mlhs_item {
+                    $$ = nf.newMAsgn(ph.list_append($1,$2), null);
+                }
+              | mlhs_head tSTAR mlhs_node {
+                    $$ = nf.newMAsgn($1, $3);
+                }
+              | mlhs_head tSTAR {
+                    $$ = nf.newMAsgn($1, Node.MINUS_ONE);
+                }
+              | tSTAR mlhs_node {
+                    $$ = nf.newMAsgn(null, $2);
+                }
+              | tSTAR {
+                    $$ = nf.newMAsgn(null, Node.MINUS_ONE);
+                }
 
-mlhs_item	: mlhs_node
-		| tLPAREN mlhs_entry ')'
-		    {
-			    $$ = $2;
-		    }
+mlhs_item     : mlhs_node
+              | tLPAREN mlhs_entry ')' {
+                    $$ = $2;
+                }
 
-mlhs_head	: mlhs_item ','
-		    {
-			    $$ = nf.newList($1);
-		    }
-		| mlhs_head mlhs_item ','
-		    {
-			    $$ = ph.list_append($1, $2);
-		    }
+mlhs_head     : mlhs_item ',' {
+                    $$ = nf.newList($1);
+                }
+              | mlhs_head mlhs_item ',' {
+                    $$ = ph.list_append($1, $2);
+                }
 
-mlhs_node	: variable
-		    {
-			    $$ = ph.getAssignmentNode($1, null);
-		    }
-		| primary '[' aref_args ']'
-		    {
-			    $$ = ph.aryset($1, $3);
-		    }
-		| primary '.' tIDENTIFIER
-		    {
-			    $$ = ph.attrset($1, $3);
-		    }
-		| primary tCOLON2 tIDENTIFIER
-		    {
-			    $$ = ph.attrset($1, $3);
-		    }
-		| primary '.' tCONSTANT
-		    {
-			    $$ = ph.attrset($1, $3);
-		    }
-		| backref
-		    {
-		        ph.rb_backref_error($1);
-			    $$ = null; //XXX 0;
-		    }
+mlhs_node     : variable {
+                    $$ = ph.getAssignmentNode($1, null);
+                }
+              | primary '[' aref_args ']' {
+                    $$ = ph.aryset($1, $3);
+                }
+              | primary '.' tIDENTIFIER {
+                    $$ = ph.attrset($1, $3);
+                }
+              | primary tCOLON2 tIDENTIFIER {
+                    $$ = ph.attrset($1, $3);
+                }
+              | primary '.' tCONSTANT {
+                    $$ = ph.attrset($1, $3);
+                }
+              | backref {
+                    ph.rb_backref_error($1);
+                    $$ = null; //XXX 0;
+                }
 
-lhs		: variable
-		    {
-			    $$ = ph.getAssignmentNode($1, null);
-		    }
-		| primary '[' aref_args ']'
-		    {
-			    $$ = ph.aryset($1, $3);
-		    }
-		| primary '.' tIDENTIFIER
-		    {
-			    $$ = ph.attrset($1, $3);
-		    }
-		| primary tCOLON2 tIDENTIFIER
-		    {
-			    $$ = ph.attrset($1, $3);
-		    }
-		| primary '.' tCONSTANT
-		    {
-			    $$ = ph.attrset($1, $3);
-		    }
-		| backref
-		    {
-		        ph.rb_backref_error($1);
-			    $$ = null; //XXX 0;
-		    }
+lhs           : variable {
+                    $$ = ph.getAssignmentNode($1, null);
+                }
+              | primary '[' aref_args ']' {
+                    $$ = ph.aryset($1, $3);
+                }
+              | primary '.' tIDENTIFIER {
+                    $$ = ph.attrset($1, $3);
+                }
+              | primary tCOLON2 tIDENTIFIER {
+                    $$ = ph.attrset($1, $3);
+                }
+              | primary '.' tCONSTANT {
+                    $$ = ph.attrset($1, $3);
+                }
+              | backref {
+                    ph.rb_backref_error($1);
+                    $$ = null; //XXX 0;
+		}
 
-cname		: tIDENTIFIER
-		    {
-			    yyerror("class/module name must be CONSTANT");
-		    }
-		| tCONSTANT
+cname         : tIDENTIFIER {
+                    yyerror("class/module name must be CONSTANT");
+                }
+              | tCONSTANT
 
-fname		: tIDENTIFIER
-		| tCONSTANT
-		| tFID
-		| op
-		    {
-			    ph.setLexState(LexState.EXPR_END);
-                $$ = $1;
-		    }
-		| reswords
-		    {
-			    ph.setLexState(LexState.EXPR_END);
-			    $$ = $<>1;
-		    }
+fname         : tIDENTIFIER
+              | tCONSTANT
+              | tFID
+              | op {
+                    ph.setLexState(LexState.EXPR_END);
+                    $$ = $1;
+                }
+              | reswords {
+                    ph.setLexState(LexState.EXPR_END);
+                    $$ = $<>1;
+                }
 
-fitem		: fname
-		| symbol
+fitem         : fname
+              | symbol
 
-undef_list	: fitem
-		    {
-			    $$ = nf.newUndef($1);
-		    }
-		| undef_list ',' {ph.setLexState(LexState.EXPR_FNAME);} fitem
-		    {
-			    $$ = ph.block_append($1, nf.newUndef($4));
-		    }
+undef_list    : fitem {
+                    $$ = nf.newUndef($1);
+                }
+              | undef_list ',' {
+	            ph.setLexState(LexState.EXPR_FNAME);
+		} fitem {
+                    $$ = ph.block_append($1, nf.newUndef($4));
+                }
 
-op		: '|'		{ $$ = "|"; }
-		| '^'		{ $$ = "^"; }
-		| '&'		{ $$ = "&"; }
-		| tCMP		{ $$ = "<=>"; }
-		| tEQ		{ $$ = "=="; }
-		| tEQQ		{ $$ = "==="; }
-		| tMATCH	{ $$ = "=~"; }
-		| '>'		{ $$ = ">"; }
-		| tGEQ		{ $$ = ">="; }
-		| '<'		{ $$ = "<"; }
-		| tLEQ		{ $$ = "<="; }
-		| tLSHFT	{ $$ = "<<"; }
-		| tRSHFT	{ $$ = ">>"; }
-		| '+'		{ $$ = "+"; }
-		| '-'		{ $$ = "-"; }
-		| '*'		{ $$ = "*"; }
-		| tSTAR		{ $$ = "*"; }
-		| '/'		{ $$ = "/"; }
-		| '%'		{ $$ = "%"; }
-		| tPOW		{ $$ = "**"; }
-		| '~'		{ $$ = "~"; }
-		| tUPLUS	{ $$ = "+@"; }
-		| tUMINUS	{ $$ = "-@"; }
-		| tAREF		{ $$ = "[]"; }
-		| tASET		{ $$ = "[]="; }
-		| '`'		{ $$ = "`"; }
+op            : '|'    { $$ = "|"; }
+              | '^'    { $$ = "^"; }
+              | '&'    { $$ = "&"; }
+              | tCMP   { $$ = "<=>"; }
+              | tEQ    { $$ = "=="; }
+              | tEQQ   { $$ = "==="; }
+              | tMATCH { $$ = "=~"; }
+              | '>'    { $$ = ">"; }
+              | tGEQ   { $$ = ">="; }
+              | '<'    { $$ = "<"; }
+              | tLEQ   { $$ = "<="; }
+              | tLSHFT { $$ = "<<"; }
+              | tRSHFT { $$ = ">>"; }
+              | '+'    { $$ = "+"; }
+              | '-'    { $$ = "-"; }
+              | '*'    { $$ = "*"; }
+              | tSTAR  { $$ = "*"; }
+              | '/'    { $$ = "/"; }
+              | '%'    { $$ = "%"; }
+              | tPOW   { $$ = "**"; }
+              | '~'    { $$ = "~"; }
+              | tUPLUS { $$ = "+@"; }
+              | tUMINUS{ $$ = "-@"; }
+              | tAREF  { $$ = "[]"; }
+              | tASET  { $$ = "[]="; }
+              | '`'    { $$ = "`"; }
 
-reswords	: k__LINE__ | k__FILE__  | klBEGIN | klEND
-		| kALIAS | kAND | kBEGIN | kBREAK | kCASE | kCLASS | kDEF
-		| kDEFINED | kDO | kELSE | kELSIF | kEND | kENSURE | kFALSE
-		| kFOR | kIF_MOD | kIN | kMODULE | kNEXT | kNIL | kNOT
-		| kOR | kREDO | kRESCUE | kRETRY | kRETURN | kSELF | kSUPER
-		| kTHEN | kTRUE | kUNDEF | kUNLESS_MOD | kUNTIL_MOD | kWHEN
-		| kWHILE_MOD | kYIELD | kRESCUE_MOD
+reswords      : k__LINE__ 
+              | k__FILE__ 
+              | klBEGIN 
+              | klEND
+              | kALIAS
+              | kAND
+              | kBEGIN
+              | kBREAK
+              | kCASE
+              | kCLASS
+              | kDEF
+              | kDEFINED
+              | kDO
+              | kELSE
+              | kELSIF
+              | kEND
+              | kENSURE
+              | kFALSE
+              | kFOR
+              | kIF_MOD
+              | kIN
+              | kMODULE
+              | kNEXT
+              | kNIL
+              | kNOT
+              | kOR
+              | kREDO 
+              | kRESCUE 
+              | kRETRY 
+              | kRETURN 
+              | kSELF 
+              | kSUPER
+              | kTHEN 
+              | kTRUE 
+              | kUNDEF 
+              | kUNLESS_MOD 
+              | kUNTIL_MOD 
+              | kWHEN
+              | kWHILE_MOD 
+              | kYIELD 
+              | kRESCUE_MOD
 
-arg		: lhs '=' arg
-		    {
-			    ph.value_expr($3);
-			    $$ = ph.node_assign($1, $3);
-		    }
-		| variable tOP_ASGN {$$ = ph.getAssignmentNode($1, null);} arg
-		    {
-			    if ($2.equals("||")) {
-			        $3.setValueNode($4);
-			        $$ = nf.newOpAsgnOr(ph.getAccessNode($1), $<Node>3);
-			        if (IdUtil.isInstanceVariable($1)) {
-				        $<Node>$.setAId($1);
-			        }
-			    } else if ($2.equals("&&")) {
-			        $3.setValueNode($4);
-			        $$ = nf.newOpAsgnAnd(ph.getAccessNode($1), $<Node>3);
-			    } else {
-			        $$ = $3;
-			        if ($$ != null) {
-				        $<Node>$.setValueNode(ph.call_op(ph.getAccessNode($1),$2,1,$4));
-			        }
-			    }
-			    ph.fixpos($$, $4);
-		    }
-		| primary '[' aref_args ']' tOP_ASGN arg
-		    {
-			    ArrayNode args = nf.newList($6);
-
-			    ph.list_append($3, nf.newNil());
-			    ph.list_concat(args, $3);
-                $$ = nf.newOpAsgn1($1, $5, args);
-		        ph.fixpos($$, $1);
-		    }
-		| primary '.' tIDENTIFIER tOP_ASGN arg
-		    {
-                $$ = nf.newOpAsgn2($1, $3, $4, $5);
-		        ph.fixpos($$, $1);
-		    }
-		| primary '.' tCONSTANT tOP_ASGN arg
-		    {
-                $$ = nf.newOpAsgn2($1, $3, $4, $5);
-		        ph.fixpos($$, $1);
-		    }
-		| primary tCOLON2 tIDENTIFIER tOP_ASGN arg
-		    {
-                $$ = nf.newOpAsgn2($1, $3, $4, $5);
-		        ph.fixpos($$, $1);
-		    }
-		| backref tOP_ASGN arg
-		    {
-		        ph.rb_backref_error($1);
-			    $$ = null; //XXX 0
-		    }
-		| arg tDOT2 arg
-		    {
-			    $$ = nf.newDot2($1, $3);
-		    }
-		| arg tDOT3 arg
-		    {
-			    $$ = nf.newDot3($1, $3);
-		    }
-		| arg '+' arg
-		    {
-			    $$ = ph.call_op($1, '+', 1, $3);
-		    }
-		| arg '-' arg
-		    {
-		        $$ = ph.call_op($1, '-', 1, $3);
-		    }
-		| arg '*' arg
-		    {
-		        $$ = ph.call_op($1, '*', 1, $3);
-		    }
-		| arg '/' arg
-		    {
-			    $$ = ph.call_op($1, '/', 1, $3);
-		    }
-		| arg '%' arg
-		    {
-			    $$ = ph.call_op($1, '%', 1, $3);
-		    }
-		| arg tPOW arg
-		    {
-			    boolean need_negate = false;
-
-			    if ($1 instanceof LitNode) {
-                    if ($1.getLiteral() instanceof RubyFixnum || 
-                        $1.getLiteral() instanceof RubyFloat ||
-                        $1.getLiteral() instanceof RubyBignum) {
-                        if ($1.getLiteral().funcall("<", RubyFixnum.zero(ruby)).isTrue()) {
-                            $1.setLiteral($1.getLiteral().funcall("-@"));
-                            need_negate = true;
+arg           : lhs '=' arg {
+                    ph.value_expr($3);
+                    $$ = ph.node_assign($1, $3);
+                }
+              | variable tOP_ASGN {
+                    $$ = ph.getAssignmentNode($1, null);
+                } arg {
+                    if ($2.equals("||")) {
+		        $3.setValueNode($4);
+			$$ = nf.newOpAsgnOr(ph.getAccessNode($1), $<Node>3);
+                        if (IdUtil.isInstanceVariable($1)) {
+                            $<Node>$.setAId($1);
+                        }
+                    } else if ($2.equals("&&")) {
+                        $3.setValueNode($4);
+                        $$ = nf.newOpAsgnAnd(ph.getAccessNode($1), $<Node>3);
+                    } else {
+                        $$ = $3;
+                        if ($$ != null) {
+                            $<Node>$.setValueNode(ph.call_op(ph.getAccessNode($1),$2,1,$4));
                         }
                     }
-			    }
-			    $$ = ph.call_op($1, tPOW, 1, $3);
-			    if (need_negate) {
-			        $$ = ph.call_op($<Node>$, tUMINUS, 0, null);
-			    }
-		    }
-		| tUPLUS arg
-		    {
-			    if ($2 != null && $2 instanceof LitNode) {
-			        $$ = $2;
-			    } else {
-			        $$ = ph.call_op($2, tUPLUS, 0, null);
-			    }
-		    }
-		| tUMINUS arg
-		    {
-			    if ($2 != null && $2 instanceof LitNode && $2.getLiteral() instanceof RubyFixnum) {
-			        long i = ((RubyFixnum)$2.getLiteral()).getValue();
+                    ph.fixpos($$, $4);
+                }
+              | primary '[' aref_args ']' tOP_ASGN arg {
+                    ArrayNode args = nf.newList($6);
 
-			        $2.setLiteral(RubyFixnum.newFixnum(ruby, -i));
-			        $$ = $2;
-			    } else {
-			        $$ = ph.call_op($2, tUMINUS, 0, null);
-			    }
-		    }
-		| arg '|' arg
-		    {
-		        $$ = ph.call_op($1, '|', 1, $3);
-		    }
-		| arg '^' arg
-		    {
-			    $$ = ph.call_op($1, '^', 1, $3);
-		    }
-		| arg '&' arg
-		    {
-			    $$ = ph.call_op($1, '&', 1, $3);
-		    }
-		| arg tCMP arg
-		    {
-			    $$ = ph.call_op($1, tCMP, 1, $3);
-		    }
-		| arg '>' arg
-		    {
-			    $$ = ph.call_op($1, '>', 1, $3);
-		    }
-		| arg tGEQ arg
-		    {
-			    $$ = ph.call_op($1, tGEQ, 1, $3);
-		    }
-		| arg '<' arg
-		    {
-			    $$ = ph.call_op($1, '<', 1, $3);
-		    }
-		| arg tLEQ arg
-		    {
-			    $$ = ph.call_op($1, tLEQ, 1, $3);
-		    }
-		| arg tEQ arg
-		    {
-			    $$ = ph.call_op($1, tEQ, 1, $3);
-		    }
-		| arg tEQQ arg
-		    {
-			    $$ = ph.call_op($1, tEQQ, 1, $3);
-		    }
-		| arg tNEQ arg
-		    {
-			    $$ = nf.newNot(ph.call_op($1, tEQ, 1, $3));
-		    }
-		| arg tMATCH arg
-		    {
-			    $$ = ph.match_gen($1, $3);
-		    }
-		| arg tNMATCH arg
-		    {
-			    $$ = nf.newNot(ph.match_gen($1, $3));
-		    }
-		| '!' arg
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newNot(ph.cond($2));
-		    }
-		| '~' arg
-		    {
-			    $$ = ph.call_op($2, '~', 0, null);
-		    }
-		| arg tLSHFT arg
-		    {
-			    $$ = ph.call_op($1, tLSHFT, 1, $3);
-		    }
-		| arg tRSHFT arg
-		    {
-			    $$ = ph.call_op($1, tRSHFT, 1, $3);
-		    }
-		| arg tANDOP arg
-		    {
-			    $$ = ph.logop(Constants.NODE_AND, $1, $3);
-		    }
-		| arg tOROP arg
-		    {
-			    $$ = ph.logop(Constants.NODE_OR, $1, $3);
-		    }
-		| kDEFINED opt_nl { ph.setInDefined(true);} arg
-		    {
-		        ph.setInDefined(false);
-			    $$ = nf.newDefined($4);
-		    }
-		| arg '?' arg ':' arg
-		    {
-			    ph.value_expr($1);
-			    $$ = nf.newIf(ph.cond($1), $3, $5);
-		        ph.fixpos($$, $1);
-		    }
-		| primary
-		    {
-			    $$ = $1;
-		    }
+                    ph.list_append($3, nf.newNil());
+                    ph.list_concat(args, $3);
+                    $$ = nf.newOpAsgn1($1, $5, args);
+                    ph.fixpos($$, $1);
+                }
+              | primary '.' tIDENTIFIER tOP_ASGN arg {
+                    $$ = nf.newOpAsgn2($1, $3, $4, $5);
+                    ph.fixpos($$, $1);
+                }
+              | primary '.' tCONSTANT tOP_ASGN arg {
+                    $$ = nf.newOpAsgn2($1, $3, $4, $5);
+                    ph.fixpos($$, $1);
+                }
+              | primary tCOLON2 tIDENTIFIER tOP_ASGN arg {
+                    $$ = nf.newOpAsgn2($1, $3, $4, $5);
+                    ph.fixpos($$, $1);
+                }
+              | backref tOP_ASGN arg {
+                    ph.rb_backref_error($1);
+                    $$ = null; //XXX 0
+                }
+              | arg tDOT2 arg {
+                    $$ = nf.newDot2($1, $3);
+                }
+              | arg tDOT3 arg {
+                    $$ = nf.newDot3($1, $3);
+                }
+              | arg '+' arg {
+                    $$ = ph.call_op($1, '+', 1, $3);
+                }
+              | arg '-' arg {
+                    $$ = ph.call_op($1, '-', 1, $3);
+                }
+              | arg '*' arg {
+                    $$ = ph.call_op($1, '*', 1, $3);
+                }
+              | arg '/' arg {
+                    $$ = ph.call_op($1, '/', 1, $3);
+                }
+              | arg '%' arg {
+                    $$ = ph.call_op($1, '%', 1, $3);
+                }
+              | arg tPOW arg {
+                    boolean need_negate = false;
 
-aref_args	: none
-		| command_call opt_nl
-		    {
-			$$ = nf.newList($1);
-		    }
-		| args ',' command_call opt_nl
-		    {
-			$$ = ph.list_append($1, $3);
-            }
-		| args trailer
-		    {
-			    $$ = $1;
-		    }
-		| args ',' tSTAR arg opt_nl
-		    {
-			    ph.value_expr($4);
-			    $$ = ph.arg_concat($1, $4);
-		    }
-		| assocs trailer
-		    {
-			    $$ = nf.newList(nf.newHash($1));
-		    }
-		| tSTAR arg opt_nl
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newRestArgs($2);
-		    }
+                    if ($1 instanceof LitNode) {
+                        if ($1.getLiteral() instanceof RubyFixnum
+                                  || $1.getLiteral() instanceof RubyFloat
+                                  || $1.getLiteral() instanceof RubyBignum) {
+                            if ($1.getLiteral().funcall("<", RubyFixnum.zero(ruby)).isTrue()) {
+                                $1.setLiteral($1.getLiteral().funcall("-@"));
+                                need_negate = true;
+                            }
+                        }
+                    }
+                    $$ = ph.call_op($1, tPOW, 1, $3);
+                    if (need_negate) {
+                        $$ = ph.call_op($<Node>$, tUMINUS, 0, null);
+                    }
+                }
+              | tUPLUS arg {
+                    if ($2 != null && $2 instanceof LitNode) {
+                        $$ = $2;
+                    } else {
+                        $$ = ph.call_op($2, tUPLUS, 0, null);
+                    }
+                }
+              | tUMINUS arg {
+                    if ($2 != null && $2 instanceof LitNode 
+		                   && $2.getLiteral() instanceof RubyFixnum) {
+                        long i = RubyNumeric.num2long($2.getLiteral());
+                        $2.setLiteral(RubyFixnum.newFixnum(ruby, -i));
+                        $$ = $2;
+                    } else {
+                        $$ = ph.call_op($2, tUMINUS, 0, null);
+                    }
+                }
+              | arg '|' arg {
+                    $$ = ph.call_op($1, '|', 1, $3);
+                }
+              | arg '^' arg {
+                    $$ = ph.call_op($1, '^', 1, $3);
+                }
+              | arg '&' arg {
+                    $$ = ph.call_op($1, '&', 1, $3);
+                }
+              | arg tCMP arg {
+                    $$ = ph.call_op($1, tCMP, 1, $3);
+                }
+              | arg '>' arg {
+                    $$ = ph.call_op($1, '>', 1, $3);
+                }
+              | arg tGEQ arg {
+                    $$ = ph.call_op($1, tGEQ, 1, $3);
+                }
+              | arg '<' arg {
+                    $$ = ph.call_op($1, '<', 1, $3);
+                }
+              | arg tLEQ arg {
+                    $$ = ph.call_op($1, tLEQ, 1, $3);
+                }
+              | arg tEQ arg {
+                    $$ = ph.call_op($1, tEQ, 1, $3);
+                }
+              | arg tEQQ arg {
+                    $$ = ph.call_op($1, tEQQ, 1, $3);
+                }
+              | arg tNEQ arg {
+                    $$ = nf.newNot(ph.call_op($1, tEQ, 1, $3));
+                }
+              | arg tMATCH arg {
+                    $$ = ph.match_gen($1, $3);
+                }
+              | arg tNMATCH arg {
+                    $$ = nf.newNot(ph.match_gen($1, $3));
+                }
+              | '!' arg {
+                    ph.value_expr($2);
+                    $$ = nf.newNot(ph.cond($2));
+                }
+              | '~' arg {
+                    $$ = ph.call_op($2, '~', 0, null);
+                }
+              | arg tLSHFT arg {
+                    $$ = ph.call_op($1, tLSHFT, 1, $3);
+                }
+              | arg tRSHFT arg {
+                    $$ = ph.call_op($1, tRSHFT, 1, $3);
+                }
+              | arg tANDOP arg {
+                    $$ = ph.logop(Constants.NODE_AND, $1, $3);
+                }
+              | arg tOROP arg {
+                    $$ = ph.logop(Constants.NODE_OR, $1, $3);
+                }
+              | kDEFINED opt_nl {
+	            ph.setInDefined(true);
+		} arg {
+                    ph.setInDefined(false);
+                    $$ = nf.newDefined($4);
+                }
+              | arg '?' arg ':' arg {
+                    ph.value_expr($1);
+                    $$ = nf.newIf(ph.cond($1), $3, $5);
+                    ph.fixpos($$, $1);
+                }
+              | primary
+                {
+                    $$ = $1;
+                }
 
-paren_args	: '(' none ')'
-		    {
-			    $$ = $2;
-		    }
-		| '(' call_args opt_nl ')'
-		    {
-			    $$ = $2;
-		    }
-		| '(' block_call opt_nl ')'
-		    {
-			    $$ = nf.newList($2);
-		    }
-		| '(' args ',' block_call opt_nl ')'
-		    {
-			    $$ = ph.list_append($2, $4);
-		    }
+aref_args     : none
+              | command_call opt_nl {
+                    $$ = nf.newList($1);
+                }
+              | args ',' command_call opt_nl {
+                    $$ = ph.list_append($1, $3);
+                }
+              | args trailer {
+                    $$ = $1;
+                }
+              | args ',' tSTAR arg opt_nl {
+                    ph.value_expr($4);
+                    $$ = ph.arg_concat($1, $4);
+                }
+              | assocs trailer {
+                    $$ = nf.newList(nf.newHash($1));
+                }
+              | tSTAR arg opt_nl {
+                    ph.value_expr($2);
+                    $$ = nf.newRestArgs($2);
+                }
 
-opt_paren_args	: none
-		| paren_args
+paren_args    : '(' none ')' {
+                    $$ = $2;
+                }
+              | '(' call_args opt_nl ')' {
+                    $$ = $2;
+                }
+              | '(' block_call opt_nl ')' {
+                    $$ = nf.newList($2);
+                }
+              | '(' args ',' block_call opt_nl ')' {
+                    $$ = ph.list_append($2, $4);
+                }
 
-call_args	: command
-		    {
-			    $$ = nf.newList($1);
-		    }
-		| args ',' command
-		    {
-			$$ = ph.list_append($1, $3);
-		    }
-		| args opt_block_arg
-		    {
-			    $$ = ph.arg_blk_pass($<Node>1, $2);
-		    }
-		| args ',' tSTAR arg opt_block_arg
-		    {
-			    ph.value_expr($4);
-			    $$ = ph.arg_concat($1, $4);
-			    $$ = ph.arg_blk_pass($<Node>$, $5);
-		    }
-		| assocs opt_block_arg
-		    {
-			    $$ = nf.newList(nf.newHash($1));
-			    $$ = ph.arg_blk_pass($<Node>$, $2);
-		    }
-		| assocs ',' tSTAR arg opt_block_arg
-		    {
-			    ph.value_expr($4);
-			    $$ = ph.arg_concat(nf.newList(nf.newHash($1)), $4);
-			    $$ = ph.arg_blk_pass($<Node>$, $5);
-		    }
-		| args ',' assocs opt_block_arg
-		    {
-			    $$ = ph.list_append($1, nf.newHash($3));
-			    $$ = ph.arg_blk_pass($<Node>$, $4);
-		    }
-		| args ',' assocs ',' tSTAR arg opt_block_arg
-		    {
-			    ph.value_expr($6);
-			    $$ = ph.arg_concat(ph.list_append($1, nf.newHash($3)), $6);
-			    $$ = ph.arg_blk_pass($<Node>$, $7);
-		    }
-		| tSTAR arg opt_block_arg
-		    {
-			    ph.value_expr($2);
-			    $$ = ph.arg_blk_pass(nf.newRestArgs($2), $3);
-		    }
-		| block_arg
+opt_paren_args: none
+              | paren_args
 
-command_args	:  { rs.CMDARG_PUSH(); } call_args
-		    {
-			    rs.CMDARG_POP();
-		        $$ = $2;
-		    }
+call_args     : command {
+                    $$ = nf.newList($1);
+                }
+              | args ',' command {
+                    $$ = ph.list_append($1, $3);
+                }
+              | args opt_block_arg {
+                    $$ = ph.arg_blk_pass($<Node>1, $2);
+                }
+              | args ',' tSTAR arg opt_block_arg {
+                    ph.value_expr($4);
+                    $$ = ph.arg_concat($1, $4);
+                    $$ = ph.arg_blk_pass($<Node>$, $5);
+                }
+              | assocs opt_block_arg {
+                    $$ = nf.newList(nf.newHash($1));
+                    $$ = ph.arg_blk_pass($<Node>$, $2);
+                }
+              | assocs ',' tSTAR arg opt_block_arg {
+                    ph.value_expr($4);
+                    $$ = ph.arg_concat(nf.newList(nf.newHash($1)), $4);
+                    $$ = ph.arg_blk_pass($<Node>$, $5);
+                }
+              | args ',' assocs opt_block_arg {
+                    $$ = ph.list_append($1, nf.newHash($3));
+                    $$ = ph.arg_blk_pass($<Node>$, $4);
+                }
+              | args ',' assocs ',' tSTAR arg opt_block_arg {
+                    ph.value_expr($6);
+                    $$ = ph.arg_concat(ph.list_append($1, nf.newHash($3)), $6);
+                    $$ = ph.arg_blk_pass($<Node>$, $7);
+                }
+              | tSTAR arg opt_block_arg {
+                    ph.value_expr($2);
+                    $$ = ph.arg_blk_pass(nf.newRestArgs($2), $3);
+                }
+              | block_arg
 
-block_arg	: tAMPER arg
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newBlockPass($2);
-		    }
+command_args  : { 
+                    rs.CMDARG_PUSH();
+		} call_args {
+                    rs.CMDARG_POP();
+                    $$ = $2;
+                }
 
-opt_block_arg	: ',' block_arg
-		    {
-			    $$ = $2;
-		    }
-		| none
+block_arg     : tAMPER arg {
+                    ph.value_expr($2);
+                    $$ = nf.newBlockPass($2);
+                }
 
-args 		: arg
-		    {
-			    ph.value_expr($1);
-			    $$ = nf.newList($1);
-		    }
-		| args ',' arg
-		    {
-			    ph.value_expr($3);
-			    $$ = ph.list_append($1, $3);
-		    }
+opt_block_arg : ',' block_arg {
+                    $$ = $2;
+                }
+              | none
 
-mrhs		: arg
-		    {
-			    ph.value_expr($1);
-			    $$ = $1;
-		    }
-		| mrhs_basic
+args          : arg {
+                    ph.value_expr($1);
+                    $$ = nf.newList($1);
+                }
+              | args ',' arg {
+                    ph.value_expr($3);
+                    $$ = ph.list_append($1, $3);
+                }
 
-mrhs_basic	: args ',' arg
-		    {
-			    ph.value_expr($3);
-			    $$ = ph.list_append($1, $3);
-		    }
-		| args ',' tSTAR arg
-		    {
-			    ph.value_expr($4);
-			    $$ = ph.arg_concat($1, $4);
-		    }
-		| tSTAR arg
-		    {
-			    ph.value_expr($2);
-			    $$ = $2;
-		    }
+mrhs          : arg {
+                    ph.value_expr($1);
+                    $$ = $1;
+                }
+              | mrhs_basic
 
-ret_args	: call_args
-		    {
-			    $$ = $1;
-			    if ($1 != null) {
-			        if ($1.getType() == Constants.NODE_ARRAY && $1.getNextNode() == null) {
-				        $$ = $1.getHeadNode();
-    			    } else if ($1.getType() == Constants.NODE_BLOCK_PASS) {
-	    			    ph.rb_compile_error("block argument should not be given");
-		    	    }
-			    }
-		    }
+mrhs_basic    : args ',' arg {
+                    ph.value_expr($3);
+                    $$ = ph.list_append($1, $3);
+                }
+              | args ',' tSTAR arg {
+                    ph.value_expr($4);
+                    $$ = ph.arg_concat($1, $4);
+                }
+              | tSTAR arg {
+                    ph.value_expr($2);
+                    $$ = $2;
+                }
 
-primary		: literal
-		    {
-			    $$ = nf.newLit($1);
-		    }
-		| string
-		| tXSTRING
-		    {
-			    $$ = nf.newXStr($1);
-		    }
-		| tDXSTRING
-		| tDREGEXP
-		| var_ref
-		| backref
-		| tFID
-		    {
-			    $$ = nf.newVCall($1);
-		    }
-		| kBEGIN
-		  compstmt
-		  rescue
-		  opt_else
-		  ensure
-		  kEND
-		    {
-			    if ($3 == null && $4 == null && $5 == null)
-			        $$ = nf.newBegin($2);
-			    else {
-			        if ($3 != null) $<>2 = nf.newRescue($2, $3, $4);
-			        else if ($4 != null) {
-				        ph.rb_warn("else without rescue is useless");
-				        $<>2 = ph.block_append($2, $4);
-			        }
-			        if ($5 != null) $<>2 = nf.newEnsure($2, $5);
-			        $$ = $2;
-			    }
-		        ph.fixpos($$, $2);
-		    }
-		| tLPAREN compstmt ')'
-		    {
-			    $$ = $2;
-		    }
-		| primary tCOLON2 tCONSTANT
-		    {
-			    ph.value_expr($1);
-			    $$ = nf.newColon2($1, $3);
-		    }
-		| tCOLON3 cname
-		    {
-			    $$ = nf.newColon3($2);
-		    }
-		| primary '[' aref_args ']'
-		    {
-			    ph.value_expr($1);
-			    $$ = nf.newCall($1, "[]", $3);
-		    }
-		| tLBRACK aref_args ']'
-		    {
-		        if ($2 == null) {
-			        $$ = nf.newZArray(); /* zero length array*/
-			    } else {
-			        $$ = $2;
-			    }
-		    }
-		| tLBRACE assoc_list '}'
-		    {
-			    $$ = nf.newHash($2);
-		    }
-		| kRETURN '(' ret_args ')'
-		    {
-			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
-			        yyerror("return appeared outside of method");
-			    ph.value_expr($3);
-			    $$ = nf.newReturn($3);
-		    }
-		| kRETURN '(' ')'
-		    {
-			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
-			        yyerror("return appeared outside of method");
-			    $$ = nf.newReturn(null);
-		    }
-		| kRETURN
-		    {
-			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
-			        yyerror("return appeared outside of method");
-			    $$ = nf.newReturn(null);
-		    }
-		| kYIELD '(' ret_args ')'
-		    {
-			    ph.value_expr($3);
-			    $$ = nf.newYield($3);
-		    }
-		| kYIELD '(' ')'
-		    {
-			    $$ = nf.newYield(null);
-		    }
-		| kYIELD
-		    {
-			    $$ = nf.newYield(null);
-		    }
-		| kDEFINED opt_nl '(' {ph.setInDefined(true);} expr ')'
-		    {
-		        ph.setInDefined(false);
-			    $$ = nf.newDefined($5);
-		    }
-		| operation brace_block
-		    {
-			    $2.setIterNode(nf.newFCall($1, null));
-			    $$ = $2;
-		    }
-		| method_call
-		| method_call brace_block
-		    {
-			    if ($1 != null && $1.getType() == Constants.NODE_BLOCK_PASS) {
-			        ph.rb_compile_error("both block arg and actual block given");
-			    }
-			    $2.setIterNode($1);
-			    $$ = $2;
-		        ph.fixpos($$, $1);
-		    }
-		| kIF expr then
-		  compstmt
-		  if_tail
-		  kEND
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newIf(ph.cond($2), $4, $5);
-		        ph.fixpos($$, $2);
-		    }
-		| kUNLESS expr then
-		  compstmt
-		  opt_else
-		  kEND
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newUnless(ph.cond($2), $4, $5);
-		        ph.fixpos($$, $2);
-		    }
-		| kWHILE { rs.COND_PUSH(); } expr do { rs.COND_POP(); }
-		  compstmt
-		  kEND
-		    {
-			    ph.value_expr($3);
-			    $$ = nf.newWhile(ph.cond($3), $6); // , 1
-		        ph.fixpos($$, $3);
-		    }
-		| kUNTIL { rs.COND_PUSH(); } expr do { rs.COND_POP(); } 
-		  compstmt
-		  kEND
-		    {
-			    ph.value_expr($3);
-			    $$ = nf.newUntil(ph.cond($3), $6); //, 1
-		        ph.fixpos($$, $3);
-		    }
-		| kCASE expr opt_terms
-		  case_body
-		  kEND
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newCase($2, $4);
-		        ph.fixpos($$, $2);
-		    }
-		| kCASE opt_terms case_body kEND
-		    {
-			    $$ = $3;
-		    }
-		| kFOR block_var kIN { rs.COND_PUSH(); } expr do { rs.COND_POP(); }
-		  compstmt
-		  kEND
-		    {
-			    ph.value_expr($5);
-			    $$ = nf.newFor($2, $5, $8);
-		        ph.fixpos($$, $2);
-		    }
-		| kCLASS cname superclass
-		    {
-			    if (ph.isInDef() || ph.isInSingle())
-			        yyerror("class definition in method body");
-			    ph.setClassNest(ph.getClassNest() + 1);
-			    ph.local_push();
-		        $$ = new Integer(ruby.getSourceLine());
-		    }
-		  compstmt
-		  kEND
-		    {
-		        $$ = nf.newClass($2, $5, $3);
-		        $<Node>$.setLine($<Integer>4.intValue());
-		        ph.local_pop();
-			    ph.setClassNest(ph.getClassNest() - 1);
-		    }
-		| kCLASS tLSHFT expr
-		    {
-			    $$ = new Integer(ph.getInDef());
-		        ph.setInDef(0);
-		    }
-		  term
-		    {
-		        $$ = new Integer(ph.getInSingle());
-		        ph.setInSingle(0);
-			    ph.setClassNest(ph.getClassNest() - 1);
-			    ph.local_push();
-		    }
-		  compstmt
-		  kEND
-		    {
-		        $$ = nf.newSClass($3, $7);
-		        ph.fixpos($$, $3);
-		        ph.local_pop();
-			    ph.setClassNest(ph.getClassNest() - 1);
-		        ph.setInDef($<Integer>4.intValue());
-		        ph.setInSingle($<Integer>6.intValue());
-		    }
-		| kMODULE cname
-		    {
-			    if (ph.isInDef() || ph.isInSingle())
-			        yyerror("module definition in method body");
-			    ph.setClassNest(ph.getClassNest() + 1);
-			    ph.local_push();
-		        $$ = new Integer(ruby.getSourceLine());
-		    }
-		  compstmt
-		  kEND
-		    {
-		        $$ = nf.newModule($2, $4);
-		        $<Node>$.setLine($<Integer>3.intValue());
-		        ph.local_pop();
-			    ph.setClassNest(ph.getClassNest() - 1);
-		    }
-		| kDEF fname
-		    {
-			    if (ph.isInDef() || ph.isInSingle())
-			        yyerror("nested method definition");
-			    // $$ = ph.getCurMid(); useless
-                ph.setCurMid($2);
-			    ph.setInDef(ph.getInDef() + 1);
-			    ph.local_push();
-		    }
-		  f_arglist
-		  compstmt
-		  rescue
-		  opt_else
-		  ensure
-		  kEND
-		    {
-		        if ($6 != null)
-                    $<>5 = nf.newRescue($5, $6, $7);
-			    else if ($7 != null) {
-			        ph.rb_warn("else without rescue is useless");
-			        $<>5 = ph.block_append($5, $7);
-			    }
-			    if ($8 != null)
-                    $<>5 = nf.newEnsure($5, $8);
+ret_args      : call_args {
+                    $$ = $1;
+                    if ($1 != null) {
+                        if ($1.getType() == Constants.NODE_ARRAY
+			                  && $1.getNextNode() == null) {
+                            $$ = $1.getHeadNode();
+                        } else if ($1.getType() == Constants.NODE_BLOCK_PASS) {
+                            ph.rb_compile_error("block argument should not be given");
+                        }
+                    }
+                }
 
-		        /* NOEX_PRIVATE for toplevel */
-			    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? 
+primary       : literal {
+                    $$ = nf.newLit($1);
+                }
+              | string
+              | tXSTRING {
+                    $$ = nf.newXStr($1);
+                }
+              | tDXSTRING
+              | tDREGEXP
+              | var_ref
+              | backref
+              | tFID {
+                    $$ = nf.newVCall($1);
+                }
+              | kBEGIN compstmt rescue opt_else ensure kEND {
+                    if ($3 == null && $4 == null && $5 == null) {
+                        $$ = nf.newBegin($2);
+                    } else {
+                        if ($3 != null) {
+                            $<>2 = nf.newRescue($2, $3, $4);
+                        } else if ($4 != null) {
+                            ph.rb_warn("else without rescue is useless");
+                            $<>2 = ph.block_append($2, $4);
+                        }
+                        if ($5 != null) {
+                            $<>2 = nf.newEnsure($2, $5);
+                        }
+                        $$ = $2;
+                    }
+                    ph.fixpos($$, $2);
+                }
+              | tLPAREN compstmt ')' {
+                    $$ = $2;
+                }
+              | primary tCOLON2 tCONSTANT {
+                    ph.value_expr($1);
+                    $$ = nf.newColon2($1, $3);
+                }
+              | tCOLON3 cname {
+                    $$ = nf.newColon3($2);
+                }
+              | primary '[' aref_args ']' {
+                    ph.value_expr($1);
+                    $$ = nf.newCall($1, "[]", $3);
+                }
+              | tLBRACK aref_args ']' {
+                    if ($2 == null) {
+                        $$ = nf.newZArray(); /* zero length array*/
+                    } else {
+                        $$ = $2;
+                    }
+                }
+              | tLBRACE assoc_list '}' {
+                    $$ = nf.newHash($2);
+                }
+              | kRETURN '(' ret_args ')' {
+                    if (!ph.isCompileForEval() && !ph.isInDef() 
+                                               && !ph.isInSingle()) {
+                        yyerror("return appeared outside of method");
+                    }
+                    ph.value_expr($3);
+                    $$ = nf.newReturn($3);
+                }
+              | kRETURN '(' ')' {
+                    if (!ph.isCompileForEval() && !ph.isInDef()
+                                               && !ph.isInSingle()) {
+                        yyerror("return appeared outside of method");
+                    }
+                    $$ = nf.newReturn(null);
+                }
+              | kRETURN {
+                    if (!ph.isCompileForEval() && !ph.isInDef()
+                                               && !ph.isInSingle()) {
+                        yyerror("return appeared outside of method");
+                    }
+                    $$ = nf.newReturn(null);
+                }
+              | kYIELD '(' ret_args ')' {
+                    ph.value_expr($3);
+                    $$ = nf.newYield($3);
+                }
+              | kYIELD '(' ')' {
+                    $$ = nf.newYield(null);
+                }
+              | kYIELD {
+                    $$ = nf.newYield(null);
+                }
+              | kDEFINED opt_nl '(' {
+	            ph.setInDefined(true);
+		} expr ')' {
+                    ph.setInDefined(false);
+                    $$ = nf.newDefined($5);
+                }
+              | operation brace_block {
+                    $2.setIterNode(nf.newFCall($1, null));
+                    $$ = $2;
+                }
+              | method_call
+              | method_call brace_block {
+                if ($1 != null && $1.getType() == Constants.NODE_BLOCK_PASS) {
+                    ph.rb_compile_error("both block arg and actual block given");
+                }
+                    $2.setIterNode($1);
+                    $$ = $2;
+                    ph.fixpos($$, $1);
+                }
+              | kIF expr then compstmt if_tail kEND {
+                    ph.value_expr($2);
+                    $$ = nf.newIf(ph.cond($2), $4, $5);
+                    ph.fixpos($$, $2);
+                }
+              | kUNLESS expr then compstmt opt_else kEND {
+                    ph.value_expr($2);
+                    $$ = nf.newUnless(ph.cond($2), $4, $5);
+                    ph.fixpos($$, $2);
+                }
+              | kWHILE { 
+	            rs.COND_PUSH();
+		} expr do {
+		    rs.COND_POP();
+		} compstmt kEND {
+                    ph.value_expr($3);
+                    $$ = nf.newWhile(ph.cond($3), $6); // , 1
+                    ph.fixpos($$, $3);
+                }
+              | kUNTIL {
+                    rs.COND_PUSH();
+                } expr do {
+                    rs.COND_POP();
+                } compstmt kEND {
+                    ph.value_expr($3);
+                    $$ = nf.newUntil(ph.cond($3), $6); //, 1
+                    ph.fixpos($$, $3);
+                }
+              | kCASE expr opt_terms case_body kEND {
+                    ph.value_expr($2);
+                    $$ = nf.newCase($2, $4);
+                    ph.fixpos($$, $2);
+                }
+              | kCASE opt_terms case_body kEND {
+                    $$ = $3;
+                }
+              | kFOR block_var kIN {
+                    rs.COND_PUSH();
+                } expr do {
+                    rs.COND_POP();
+                } compstmt kEND {
+                    ph.value_expr($5);
+                    $$ = nf.newFor($2, $5, $8);
+                    ph.fixpos($$, $2);
+                }
+              | kCLASS cname superclass {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("class definition in method body");
+                    }
+                    ph.setClassNest(ph.getClassNest() + 1);
+                    ph.local_push();
+                    $$ = new Integer(ruby.getSourceLine());
+                } compstmt kEND {
+                    $$ = nf.newClass($2, $5, $3);
+                    $<Node>$.setLine($<Integer>4.intValue());
+                    ph.local_pop();
+                    ph.setClassNest(ph.getClassNest() - 1);
+                }
+              | kCLASS tLSHFT expr {
+                    $$ = new Integer(ph.getInDef());
+                    ph.setInDef(0);
+                } term {
+                    $$ = new Integer(ph.getInSingle());
+                    ph.setInSingle(0);
+                    ph.setClassNest(ph.getClassNest() - 1);
+                    ph.local_push();
+                } compstmt kEND {
+                    $$ = nf.newSClass($3, $7);
+                    ph.fixpos($$, $3);
+                    ph.local_pop();
+                    ph.setClassNest(ph.getClassNest() - 1);
+                    ph.setInDef($<Integer>4.intValue());
+                    ph.setInSingle($<Integer>6.intValue());
+                }
+              | kMODULE cname {
+                    if (ph.isInDef() || ph.isInSingle()) { 
+                        yyerror("module definition in method body");
+                    }
+                    ph.setClassNest(ph.getClassNest() + 1);
+                    ph.local_push();
+                    $$ = new Integer(ruby.getSourceLine());
+                } compstmt kEND {
+                    $$ = nf.newModule($2, $4);
+                    $<Node>$.setLine($<Integer>3.intValue());
+                    ph.local_pop();
+                    ph.setClassNest(ph.getClassNest() - 1);
+                }
+	      | kDEF fname {
+                    if (ph.isInDef() || ph.isInSingle()) {
+                        yyerror("nested method definition");
+                    }
+                    // $$ = ph.getCurMid(); useless
+                    ph.setCurMid($2);
+                    ph.setInDef(ph.getInDef() + 1);
+                    ph.local_push();
+                } f_arglist compstmt rescue opt_else ensure kEND {
+                    if ($6 != null) {
+                        $<>5 = nf.newRescue($5, $6, $7);
+                    } else if ($7 != null) {
+                        ph.rb_warn("else without rescue is useless");
+                        $<>5 = ph.block_append($5, $7);
+                    }
+                    if ($8 != null) {
+                        $<>5 = nf.newEnsure($5, $8);
+                    }
+
+                    /* NOEX_PRIVATE for toplevel */
+                    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? 
                                 Constants.NOEX_PUBLIC : Constants.NOEX_PRIVATE);
-			    if (IdUtil.isAttrSet($2))
-                    $<Node>$.setNoex(Constants.NOEX_PUBLIC);
-		        ph.fixpos($$, $4);
-		        ph.local_pop();
-			    ph.setInDef(ph.getInDef() - 1);
-			    //+++ ph.setCurMid($3);
-                ph.setCurMid($2);
-		    }
-		| kDEF singleton dot_or_colon {ph.setLexState(LexState.EXPR_FNAME);} fname
-		    {
-			    ph.value_expr($2);
-                ph.setInSingle(ph.getInSingle() + 1);
-			    ph.local_push();
-		        ph.setLexState(LexState.EXPR_END); /* force for args */
-		    }
-		  f_arglist
-		  compstmt
-		  rescue
-		  opt_else
-		  ensure
-		  kEND
-		    {
-		        if ($9 != null)
-                    $<>8 = nf.newRescue($8, $9, $10);
-			    else if ($10 != null) {
-			        ph.rb_warn("else without rescue is useless");
-			        $<>8 = ph.block_append($8, $10);
-			    }
-			    if ($11 != null) $<>8 = nf.newEnsure($8, $11);
+                    if (IdUtil.isAttrSet($2)) {
+                        $<Node>$.setNoex(Constants.NOEX_PUBLIC);
+                    }
+                    ph.fixpos($$, $4);
+                    ph.local_pop();
+                    ph.setInDef(ph.getInDef() - 1);
+                    //+++ ph.setCurMid($3);
+                    ph.setCurMid($2);
+                }
+              | kDEF singleton dot_or_colon {
+                    ph.setLexState(LexState.EXPR_FNAME);
+                } fname {
+                    ph.value_expr($2);
+                    ph.setInSingle(ph.getInSingle() + 1);
+                    ph.local_push();
+                    ph.setLexState(LexState.EXPR_END); /* force for args */
+                } f_arglist compstmt rescue opt_else ensure kEND {
+                    if ($9 != null) {
+                        $<>8 = nf.newRescue($8, $9, $10);
+                    } else if ($10 != null) {
+                        ph.rb_warn("else without rescue is useless");
+                        $<>8 = ph.block_append($8, $10);
+                    }
+                    if ($11 != null) {
+                        $<>8 = nf.newEnsure($8, $11);
+                    }
+                    $$ = nf.newDefs($2, $5, $7, $8);
+                    ph.fixpos($$, $2);
+                    ph.local_pop();
+                    ph.setInSingle(ph.getInSingle() - 1);
+                }
+              | kBREAK {
+                    $$ = nf.newBreak();
+                }
+              | kNEXT {
+                    $$ = nf.newNext();
+                }
+              | kREDO {
+                    $$ = nf.newRedo();
+                }
+              | kRETRY {
+                    $$ = nf.newRetry();
+                }
+ 
+then          : term
+              | kTHEN
+              | term kTHEN
 
-			    $$ = nf.newDefs($2, $5, $7, $8);
-		        ph.fixpos($$, $2);
-		        ph.local_pop();
-			    ph.setInSingle(ph.getInSingle() - 1);
-		    }
-		| kBREAK
-		    {
-			    $$ = nf.newBreak();
-		    }
-		| kNEXT
-		    {
-			    $$ = nf.newNext();
-		    }
-		| kREDO
-		    {
-			    $$ = nf.newRedo();
-		    }
-		| kRETRY
-		    {
-			    $$ = nf.newRetry();
-		    }
+do            : term
+              | kDO_COND
 
-then		: term
-		| kTHEN
-		| term kTHEN
+if_tail       : opt_else
+              | kELSIF expr then compstmt if_tail {
+                    ph.value_expr($2);
+                    $$ = nf.newIf(ph.cond($2), $4, $5);
+                    ph.fixpos($$, $2);
+                }
 
-do		: term
-		| kDO_COND
+opt_else      : none
+              | kELSE compstmt {
+                    $$ = $2;
+                }
 
-if_tail		: opt_else
-		| kELSIF expr then
-		  compstmt
-		  if_tail
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newIf(ph.cond($2), $4, $5);
-		        ph.fixpos($$, $2);
-		    }
+block_var     : lhs
+              | mlhs
 
-opt_else	: none
-		| kELSE compstmt
-		    {
-			    $$ = $2;
-		    }
+opt_block_var : none
+              | '|' /* none */ '|' {
+                    $$ = Node.ONE; // new Integer(1); //XXX (Node*)1;
+                }
+              | tOROP {
+                    $$ = Node.ONE; // new Integer(1); //XXX (Node*)1;
+                }
+              | '|' block_var '|' {
+                    $$ = $2;
+                }
 
-block_var	: lhs
-		| mlhs
+do_block      : kDO_BLOCK {
+                    $$ = ph.dyna_push();
+                } opt_block_var compstmt kEND {
+                    $$ = nf.newIter($3, null, $4);
+                    ph.fixpos($$, $3!=null?$3:$4);
+                    ph.dyna_pop($<RubyVarmap>2);
+                }
 
-opt_block_var	: none
-		| '|' /* none */ '|'
-		    {
-		        $$ = Node.ONE; // new Integer(1); //XXX (Node*)1;
-		    }
-		| tOROP
-		    {
-		        $$ = Node.ONE; // new Integer(1); //XXX (Node*)1;
-		    }
-		| '|' block_var '|'
-		    {
-			$$ = $2;
-		    }
+block_call    : command do_block {
+                    if ($1 != null &&
+		                   $1.getType() == Constants.NODE_BLOCK_PASS) {
+                        ph.rb_compile_error("both block arg and actual block given");
+                    }
+                    $2.setIterNode($1);
+                    $$ = $2;
+                    ph.fixpos($$, $2);
+                }
+              | block_call '.' operation2 opt_paren_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                }
+              | block_call tCOLON2 operation2 opt_paren_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                }
 
-do_block	: kDO_BLOCK
-		    {
-		        $$ = ph.dyna_push();
-		    }
-		  opt_block_var
-		  compstmt
-		  kEND
-		    {
-			    $$ = nf.newIter($3, null, $4);
-		        ph.fixpos($$, $3!=null?$3:$4);
-			    ph.dyna_pop($<RubyVarmap>2);
-		    }
+method_call   : operation paren_args {
+                    $$ = ph.new_fcall($1, $2);
+                    ph.fixpos($$, $2);
+                }
+              | primary '.' operation2 opt_paren_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                    ph.fixpos($$, $1);
+                }
+              | primary tCOLON2 operation2 paren_args {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, $4);
+                    ph.fixpos($$, $1);
+                }
+              | primary tCOLON2 operation3 {
+                    ph.value_expr($1);
+                    $$ = ph.new_call($1, $3, null);
+                }
+              | kSUPER paren_args {
+                    if (!ph.isCompileForEval() && !ph.isInDef()
+                                    && !ph.isInSingle() && !ph.isInDefined()) {
+                        yyerror("super called outside of method");
+                    }
+                    $$ = ph.new_super($2);
+                }
+              | kSUPER {
+                    if (!ph.isCompileForEval() && !ph.isInDef()
+                                    && !ph.isInSingle() && !ph.isInDefined()) {
+                        yyerror("super called outside of method");
+                    }
+                    $$ = nf.newZSuper();
+                }
 
-block_call	: command do_block
-		    {
-			    if ($1 != null && $1.getType() == Constants.NODE_BLOCK_PASS) {
-			        ph.rb_compile_error("both block arg and actual block given");
-			    }
-			    $2.setIterNode($1);
-			    $$ = $2;
-		        ph.fixpos($$, $2);
-		    }
-		| block_call '.' operation2 opt_paren_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		    }
-		| block_call tCOLON2 operation2 opt_paren_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		    }
+brace_block   : '{' {
+                    $$ = ph.dyna_push();
+                } opt_block_var compstmt '}' {
+                    $$ = nf.newIter($3, null, $4);
+                    ph.fixpos($$, $4);
+                    ph.dyna_pop($<RubyVarmap>2);
+                }
+              | kDO {
+                    $$ = ph.dyna_push();
+                } opt_block_var compstmt kEND {
+                    $$ = nf.newIter($3, null, $4);
+                    ph.fixpos($$, $4);
+                    ph.dyna_pop($<RubyVarmap>2);
+                }
 
-method_call	: operation paren_args
-		    {
-			    $$ = ph.new_fcall($1, $2);
-		        ph.fixpos($$, $2);
-		    }
-		| primary '.' operation2 opt_paren_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		        ph.fixpos($$, $1);
-		    }
-		| primary tCOLON2 operation2 paren_args
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, $4);
-		        ph.fixpos($$, $1);
-		    }
-		| primary tCOLON2 operation3
-		    {
-			    ph.value_expr($1);
-			    $$ = ph.new_call($1, $3, null);
-		    }
-		| kSUPER paren_args
-		    {
-			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle() && !ph.isInDefined())
-			        yyerror("super called outside of method");
-			    $$ = ph.new_super($2);
-		    }
-		| kSUPER
-		    {
-			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle() && !ph.isInDefined())
-			        yyerror("super called outside of method");
-			    $$ = nf.newZSuper();
-		    }
+case_body     : kWHEN when_args then compstmt cases {
+                    $$ = nf.newWhen($2, $4, $5);
+                }
 
-brace_block	: '{'
-		    {
-		        $$ = ph.dyna_push();
-		    }
-		  opt_block_var
-		  compstmt '}'
-		    {
-			    $$ = nf.newIter($3, null, $4);
-		        ph.fixpos($$, $4);
-			    ph.dyna_pop($<RubyVarmap>2);
-		    }
-		| kDO
-		    {
-		        $$ = ph.dyna_push();
-		    }
-		  opt_block_var
-		  compstmt kEND
-		    {
-			    $$ = nf.newIter($3, null, $4);
-		        ph.fixpos($$, $4);
-			    ph.dyna_pop($<RubyVarmap>2);
-		    }
+when_args     : args
+              | args ',' tSTAR arg {
+                    ph.value_expr($4);
+                    $$ = ph.list_append($1, nf.newWhen($4, null, null));
+                }
+              | tSTAR arg {
+                    ph.value_expr($2);
+                    $$ = nf.newList(nf.newWhen($2, null, null));
+                }
 
-case_body	: kWHEN when_args then
-		  compstmt
-		  cases
-		    {
-			    $$ = nf.newWhen($2, $4, $5);
-		    }
+cases         : opt_else
+              | case_body
 
-when_args	: args
-		| args ',' tSTAR arg
-		    {
-			    ph.value_expr($4);
-			    $$ = ph.list_append($1, nf.newWhen($4, null, null));
-		    }
-		| tSTAR arg
-		    {
-			    ph.value_expr($2);
-			    $$ = nf.newList(nf.newWhen($2, null, null));
-		    }
+exc_list      : none
+              | args
 
-cases		: opt_else
-		| case_body
+exc_var       : tASSOC lhs {
+                    $$ = $2;
+                }
+              | none
 
-exc_list	: none
-		| args
+rescue        : kRESCUE exc_list exc_var then compstmt rescue {
+                    if ($3 != null) {
+                        $<>3 = ph.node_assign($3, nf.newGVar("$!"));
+                        $<>5 = ph.block_append($3, $5);
+                    }
+                    $$ = nf.newResBody($2, $5, $6);
+                    ph.fixpos($$, $2!=null?$2:$5);
+                }
+              | none
 
-exc_var		: tASSOC lhs
-		    {
-			    $$ = $2;
-		    }
-		| none
+ensure        : none
+              | kENSURE compstmt {
+                    if ($2 != null) {
+                        $$ = $2;
+                    } else {
+                        $$ = nf.newNil();
+                    }
+                }
 
-rescue		: kRESCUE exc_list exc_var then
-		  compstmt
-		  rescue
-		    {
-		        if ($3 != null) {
-		            $<>3 = ph.node_assign($3, nf.newGVar("$!"));
-			        $<>5 = ph.block_append($3, $5);
-			    }
-			    $$ = nf.newResBody($2, $5, $6);
-		        ph.fixpos($$, $2!=null?$2:$5);
-		    }
-		| none
+literal       : numeric
+              | symbol {
+                    $$ = RubySymbol.newSymbol(ruby, $1);
+                }
+              | tREGEXP
 
-ensure		: none
-		| kENSURE compstmt
-		    {
-			    if ($2 != null)
-			        $$ = $2;
-			    else
-			        /* place holder */
-			    $$ = nf.newNil();
-		    }
+string        : tSTRING {
+                    $$ = nf.newStr($1);
+                }
+              | tDSTRING
+              | string tSTRING {
+                    if ($1.getType() == Constants.NODE_DSTR) {
+                        ph.list_append($1, nf.newStr($2));
+                    } else {
+                        ((RubyString)$1.getLiteral()).concat((RubyString)$2);
+                    }
+                    $$ = $1;
+                }
+              | string tDSTRING {
+                    if ($1.getType() == Constants.NODE_STR) {
+                        $$ = nf.newDStr($1.getLiteral());
+                    } else {
+                        $$ = $1;
+                    }
+                    // $2.setHeadNode(nf.newStr($2.getLiteral()));
+                    // $2.nd_set_type(Constants.NODE_ARRAY);
+                    //+++ 
+                    $<>2 = nf.newArray(nf.newStr($2.getLiteral()));
+                    //---
+                    ph.list_concat($<Node>$, $2);
+                }
 
-literal		: numeric
-		| symbol
-		    {
-			    $$ = RubySymbol.newSymbol(ruby, $1);
-		    }
-		| tREGEXP
+symbol        : tSYMBEG sym {
+                    ph.setLexState(LexState.EXPR_END);
+                    $$ = $2;
+                }
 
-string		: tSTRING
-		    {
-			    $$ = nf.newStr($1);
-		    }
-		| tDSTRING
-		| string tSTRING
-		    {
-		        if ($1.getType() == Constants.NODE_DSTR) {
-			        ph.list_append($1, nf.newStr($2));
-			    } else {
-			        ((RubyString)$1.getLiteral()).concat((RubyString)$2);
-			    }
-			    $$ = $1;
-		    }
-		| string tDSTRING
-		    {
-		        if ($1.getType() == Constants.NODE_STR) {
-			        $$ = nf.newDStr($1.getLiteral());
-			    } else {
-			        $$ = $1;
-			    }
-			    // $2.setHeadNode(nf.newStr($2.getLiteral()));
-			    // $2.nd_set_type(Constants.NODE_ARRAY);
-			    //+++ 
-			    $<>2 = nf.newArray(nf.newStr($2.getLiteral()));
-			    //---
-			    ph.list_concat($<Node>$, $2);
-		    }
+sym           : fname
+              | tIVAR
+              | tGVAR
+              | tCVAR
 
-symbol		: tSYMBEG sym
-		    {
-		        ph.setLexState(LexState.EXPR_END);
-			    $$ = $2;
-		    }
+numeric       : tINTEGER
+              | tFLOAT
 
-sym		: fname
-		| tIVAR
-		| tGVAR
-		| tCVAR
+variable      : tIDENTIFIER
+              | tIVAR
+              | tGVAR
+              | tCONSTANT
+              | tCVAR
+              | kNIL {$$ = "#nil";}
+              | kSELF {$$ = "#self";}
+              | kTRUE {$$ = "#true";}
+              | kFALSE {$$ = "#false";}
+              | k__FILE__ {$$ = "#__FILE__";}
+              | k__LINE__ {$$ = "#__LINE__";}
 
-numeric		: tINTEGER
-		| tFLOAT
+var_ref       : variable {
+                    $$ = ph.getAccessNode($1);
+                }
 
-variable	: tIDENTIFIER
-		| tIVAR
-		| tGVAR
-		| tCONSTANT
-		| tCVAR
-		| kNIL {$$ = "#nil";}
-		| kSELF {$$ = "#self";}
-		| kTRUE {$$ = "#true";}
-		| kFALSE {$$ = "#false";}
-		| k__FILE__ {$$ = "#__FILE__";}
-		| k__LINE__ {$$ = "#__LINE__";}
+backref       : tNTH_REF
+              | tBACK_REF
 
-var_ref		: variable
-		    {
-			    $$ = ph.getAccessNode($1);
-		    }
+superclass    : term {
+                    $$ = null;
+                }
+              | '<' {
+                    ph.setLexState(LexState.EXPR_BEG);
+                } expr term {
+                    $$ = $3;
+                }
+              | error term {
+                    yyerrok();
+                    $$ = null;
+                }
 
-backref		: tNTH_REF
-		| tBACK_REF
+f_arglist     : '(' f_args opt_nl ')' {
+                    $$ = $2;
+                    ph.setLexState(LexState.EXPR_BEG);
+                }
+              | f_args term {
+                    $$ = $1;
+                }
 
-superclass	: term
-		    {
-			    $$ = null;
-		    }
-		| '<'
-		    {
-			    ph.setLexState(LexState.EXPR_BEG);
-		    }
-		  expr term
-		    {
-			    $$ = $3;
-		    }
-		| error term {yyerrok(); $$ = null;}
+f_args        : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs($1, $3, $5.intValue()), $6);
+                }
+              | f_arg ',' f_optarg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs($1, $3, -1), $4);
+                }
+              | f_arg ',' f_rest_arg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs($1, null, $3.intValue()), $4);
+                }
+              | f_arg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs($1, null, -1), $2);
+                }
+              | f_optarg ',' f_rest_arg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs(null, $1, $3.intValue()), $4);
+                }
+              | f_optarg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs(null, $1, -1), $2);
+                }
+              | f_rest_arg opt_f_block_arg {
+                    $$ = ph.block_append(nf.newArgs(null, null, $1.intValue()), $2);
+                }
+              | f_block_arg {
+                    $$ = ph.block_append(nf.newArgs(null, null, -1), $1);
+                }
+              | /* none */ {
+                    $$ = nf.newArgs(null, null, -1);
+                }
 
-f_arglist	: '(' f_args opt_nl ')'
-		    {
-			    $$ = $2;
-			    ph.setLexState(LexState.EXPR_BEG);
-		    }
-		| f_args term
-		    {
-			    $$ = $1;
-		    }
+f_norm_arg    : tCONSTANT {
+                    yyerror("formal argument cannot be a constant");
+                }
+              | tIVAR {
+                    yyerror("formal argument cannot be an instance variable");
+                }
+              | tGVAR {
+                    yyerror("formal argument cannot be a global variable");
+                }
+              | tCVAR {
+                    yyerror("formal argument cannot be a class variable");
+                }
+              | tIDENTIFIER {
+                    if (!IdUtil.isLocal($1)) {
+                        yyerror("formal argument must be local variable");
+                    } else if (ph.isLocalRegistered($1)) {
+                        yyerror("duplicate argument name");
+                    }
+                    ph.getLocalIndex($1);
+                    $$ = new Integer(1);
+                }
 
-f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
-		    {
-                $$ = ph.block_append(nf.newArgs($1, $3, $5.intValue()), $6);
-		    }
-		| f_arg ',' f_optarg opt_f_block_arg
-		    {
-                $$ = ph.block_append(nf.newArgs($1, $3, -1), $4);
-		    }
-		| f_arg ',' f_rest_arg opt_f_block_arg
-		    {
-                $$ = ph.block_append(nf.newArgs($1, null, $3.intValue()), $4);
-		    }
-		| f_arg opt_f_block_arg
-		    {
-                $$ = ph.block_append(nf.newArgs($1, null, -1), $2);
-		    }
-		| f_optarg ',' f_rest_arg opt_f_block_arg
-		    {
-			    $$ = ph.block_append(nf.newArgs(null, $1, $3.intValue()), $4);
-		    }
-		| f_optarg opt_f_block_arg
-		    {
-			    $$ = ph.block_append(nf.newArgs(null, $1, -1), $2);
-		    }
-		| f_rest_arg opt_f_block_arg
-		    {
-			    $$ = ph.block_append(nf.newArgs(null, null, $1.intValue()), $2);
-		    }
-		| f_block_arg
-		    {
-			    $$ = ph.block_append(nf.newArgs(null, null, -1), $1);
-		    }
-		| /* none */
-		    {
-			    $$ = nf.newArgs(null, null, -1);
-		    }
+f_arg         : f_norm_arg
+              | f_arg ',' f_norm_arg {
+                    $$ = new Integer($<Integer>$.intValue() + 1);
+                }
 
-f_norm_arg	: tCONSTANT
-		    {
-			    yyerror("formal argument cannot be a constant");
-		    }
-                | tIVAR
-		    {
-                yyerror("formal argument cannot be an instance variable");
-		    }
-                | tGVAR
-		    {
-                yyerror("formal argument cannot be a global variable");
-		    }
-                | tCVAR
-		    {
-                yyerror("formal argument cannot be a class variable");
-		    }
-		| tIDENTIFIER
-		    {
-			    if (!IdUtil.isLocal($1))
-			        yyerror("formal argument must be local variable");
-			    else if (ph.isLocalRegistered($1))
-			        yyerror("duplicate argument name");
-			    ph.getLocalIndex($1);
-			    $$ = new Integer(1);
-		    }
+f_opt         : tIDENTIFIER '=' arg {
+                    if (!IdUtil.isLocal($1)) {
+                        yyerror("formal argument must be local variable");
+                    } else if (ph.isLocalRegistered($1)) {
+                        yyerror("duplicate optional argument name");
+                    }
+                    $$ = ph.getAssignmentNode($1, $3);
+                }
 
-f_arg		: f_norm_arg
-		| f_arg ',' f_norm_arg
-		    {
-			    $$ = new Integer($<Integer>$.intValue() + 1);
-		    }
+f_optarg      : f_opt {
+                    $$ = nf.newBlock($1);
+                    // $<Node>$.setEndNode($<Node>$); not needed anymore Benoit.
+                }
+              | f_optarg ',' f_opt {
+                    $$ = ph.block_append($1, $3);
+                }
 
-f_opt		: tIDENTIFIER '=' arg
-		    {
-			    if (!IdUtil.isLocal($1))
-			        yyerror("formal argument must be local variable");
-			    else if (ph.isLocalRegistered($1))
-			        yyerror("duplicate optional argument name");
-			    $$ = ph.getAssignmentNode($1, $3);
-		    }
+f_rest_arg    : tSTAR tIDENTIFIER {
+                    if (!IdUtil.isLocal($2)) {
+                        yyerror("rest argument must be local variable");
+                    } else if (ph.isLocalRegistered($2)) {
+                        yyerror("duplicate rest argument name");
+                    }
+                    $$ = new Integer(ph.getLocalIndex($2));
+                }
+              | tSTAR {
+                    $$ = new Integer(-2);
+                }
 
-f_optarg	: f_opt
-		    {
-			    $$ = nf.newBlock($1);
-			    // $<Node>$.setEndNode($<Node>$); not needed anymore Benoit.
-		    }
-		| f_optarg ',' f_opt
-		    {
-			    $$ = ph.block_append($1, $3);
-		    }
+f_block_arg   : tAMPER tIDENTIFIER {
+                    if (!IdUtil.isLocal($2)) {
+                        yyerror("block argument must be local variable");
+                    } else if (ph.isLocalRegistered($2)) {
+                        yyerror("duplicate block argument name");
+                    }
+                    $$ = nf.newBlockArg($2);
+                }
 
-f_rest_arg	: tSTAR tIDENTIFIER
-		    {
-			    if (!IdUtil.isLocal($2))
-			        yyerror("rest argument must be local variable");
-			    else if (ph.isLocalRegistered($2))
-			        yyerror("duplicate rest argument name");
-			    $$ = new Integer(ph.getLocalIndex($2));
-		    }
-		| tSTAR
-		    {
-			    $$ = new Integer(-2);
-		    }
+opt_f_block_arg: ',' f_block_arg {
+                    $$ = $2;
+                }
+              | none
 
-f_block_arg	: tAMPER tIDENTIFIER
-		    {
-			    if (!IdUtil.isLocal($2))
-			        yyerror("block argument must be local variable");
-			    else if (ph.isLocalRegistered($2))
-			        yyerror("duplicate block argument name");
-			    $$ = nf.newBlockArg($2);
-		    }
+singleton     : var_ref {
+                    if ($1.getType() == Constants.NODE_SELF) {
+                        $$ = nf.newSelf();
+                    } else {
+                        $$ = $1;
+                    }
+                }
+              | '(' {
+                    ph.setLexState(LexState.EXPR_BEG);
+                } expr opt_nl ')' {
+                    switch ($3.getType()) {
+                        case Constants.NODE_STR:
+                        case Constants.NODE_DSTR:
+                        case Constants.NODE_XSTR:
+                        case Constants.NODE_DXSTR:
+                        case Constants.NODE_DREGX:
+                        case Constants.NODE_LIT:
+                        case Constants.NODE_ARRAY:
+                        case Constants.NODE_ZARRAY:
+                            yyerror("can't define single method for literals.");
+                        default:
+                            break;
+                    }
+                    $$ = $3;
+                }
 
-opt_f_block_arg	: ',' f_block_arg
-		    {
-			    $$ = $2;
-		    }
-		| none
+assoc_list    : none
+              | assocs trailer {
+                    $$ = $1;
+                }
+              | args trailer {
+                    /* if ($1.getLength() % 2 != 0) {
+                        yyerror("odd number list for Hash");
+                    }*/
+                    $$ = $1;
+                }
 
-singleton	: var_ref
-		    {
-			    if ($1.getType() == Constants.NODE_SELF) {
-			        $$ = nf.newSelf();
-			    } else {
-			        $$ = $1;
-			    }
-		    }
-		| '(' {ph.setLexState(LexState.EXPR_BEG);} expr opt_nl ')'
-		    {
-			    switch ($3.getType()) {
-			        case Constants.NODE_STR:
-			        case Constants.NODE_DSTR:
-			        case Constants.NODE_XSTR:
-			        case Constants.NODE_DXSTR:
-			        case Constants.NODE_DREGX:
-			        case Constants.NODE_LIT:
-			        case Constants.NODE_ARRAY:
-			        case Constants.NODE_ZARRAY:
-			            yyerror("can't define single method for literals.");
-			        default:
-			            break;
-			    }
-			    $$ = $3;
-		    }
+assocs        : assoc
+              | assocs ',' assoc {
+                    $$ = ph.list_concat($1, $3);
+                }
 
-assoc_list	: none
-		| assocs trailer
-		    {
-			    $$ = $1;
-		    }
-		| args trailer
-		    {
-			    /* if ($1.getLength() % 2 != 0) {
-			        yyerror("odd number list for Hash");
-			    }*/
-			    $$ = $1;
-		    }
+assoc         : arg tASSOC arg {
+                    $$ = ph.list_append(nf.newList($1), $3);
+                }
 
-assocs		: assoc
-		| assocs ',' assoc
-		    {
-			    $$ = ph.list_concat($1, $3);
-		    }
+operation     : tIDENTIFIER
+              | tCONSTANT
+              | tFID
 
-assoc		: arg tASSOC arg
-		    {
-			    $$ = ph.list_append(nf.newList($1), $3);
-		    }
+operation2    : tIDENTIFIER
+              | tCONSTANT
+              | tFID
+              | op
 
-operation	: tIDENTIFIER
-		| tCONSTANT
-		| tFID
+operation3    : tIDENTIFIER
+              | tFID
+              | op
 
-operation2	: tIDENTIFIER
-		| tCONSTANT
-		| tFID
-		| op
+dot_or_colon  : '.'
+              | tCOLON2
 
-operation3	: tIDENTIFIER
-		| tFID
-		| op
+opt_terms     : /* none */
+              | terms
 
-dot_or_colon	: '.'
-		| tCOLON2
+opt_nl        : /* none */
+              | '\n'
 
-opt_terms	: /* none */
-		| terms
+trailer       : /* none */
+              | '\n'
+              | ','
 
-opt_nl		: /* none */
-		| '\n'
+term          : ';' {
+                    yyerrok();
+                }
+              | '\n'
 
-trailer		: /* none */
-		| '\n'
-		| ','
+terms         : term
+              | terms ';' {
+                    yyerrok();
+                }
 
-term		: ';' {yyerrok();}
-		| '\n'
-
-terms		: term
-		| terms ';' {yyerrok();}
-
-none		: /* none */
-		    {
-		        $$ = null; //XXX 0;
-		    }
+none          : /* none */ {
+                    $$ = null;
+                }
 %%
 
-    // XXX +++
+    // +++
     // Helper Methods
     
     void yyerrok() {}
-    
-    // XXX ---
-    
-    // -----------------------------------------------------------------------
-    // scanner stuff
-    // -----------------------------------------------------------------------
-
-    /*
-     *  int yyerror(String msg) {
-     *  char *p, *pe, *buf;
-     *  int len, i;
-     *  rb_compile_error("%s", msg);
-     *  p = lex_p;
-     *  while (lex_pbeg <= p) {
-     *  if (*p == '\n') break;
-     *  p--;
-     *  }
-     *  p++;
-     *  pe = lex_p;
-     *  while (pe < lex_pend) {
-     *  if (*pe == '\n') break;
-     *  pe++;
-     *  }
-     *  len = pe - p;
-     *  if (len > 4) {
-     *  buf = ALLOCA_N(char, len+2);
-     *  MEMCPY(buf, p, char, len);
-     *  buf[len] = '\0';
-     *  rb_compile_error_append("%s", buf);
-     *  i = lex_p - p;
-     *  p = buf; pe = p + len;
-     *  while (p < pe) {
-     *  if (*p != '\t') *p = ' ';
-     *  p++;
-     *  }
-     *  buf[i] = '^';
-     *  buf[i+1] = '\0';
-     *  rb_compile_error_append("%s", buf);
-     *  }
-     *  return 0;
-     *  }
-     */
     
     public Node compileString(String f, RubyObject s, int line) {
         rs.setLexFileIo(false);

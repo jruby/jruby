@@ -6,21 +6,21 @@
 # Load the Java classes.
 
 # Edit the path to point to your saxon dir:
-require "saxon.jar"
+# require "saxon.jar"
 
-JavaObject.load_class "java.io.File"
-JavaObject.load_class "javax.xml.transform.stream.StreamResult"
-JavaObject.load_class "javax.xml.transform.stream.StreamSource"
-JavaObject.load_class "javax.xml.transform.Transformer"
-JavaObject.load_class "javax.xml.transform.TransformerFactory"
+Java::import "javax.xml.transform.stream"
+Java::import "javax.xml.transform"
+
+Java::name "java.io.File", "JavaFile"
+
 
 xml = "./samples/birds.xml"
 xslt = "./samples/birds.xsl"
 output = "./samples/birds.html"
 
-xml_file = File.new xml
-xslt_file = File.new xslt
-output_file = File.new output
+xml_file = JavaFile.new xml
+xslt_file = JavaFile.new xslt
+output_file = JavaFile.new output
 
 xml_source = StreamSource.new xml_file
 xslt_source = StreamSource.new xslt_file

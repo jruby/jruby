@@ -11,6 +11,7 @@ public class JavaSupport {
 
     private Map loadedJavaClasses = new HashMap();
     private List importedPackages = new LinkedList();
+    private Map renamedJavaClasses = new HashMap();
 
     private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
 
@@ -252,5 +253,13 @@ public class JavaSupport {
 
     public void addImportPackage(String packageName) {
         importedPackages.add(packageName);
+    }
+
+    /**
+     * Gets the renamedJavaClasses.
+     * @return Returns a Map
+     */
+    public Map getRenamedJavaClasses() {
+        return renamedJavaClasses;
     }
 }
