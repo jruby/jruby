@@ -26,8 +26,6 @@ package org.jruby.runtime.marshal;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
@@ -35,7 +33,6 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyBoolean;
-import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -47,17 +44,17 @@ import org.jruby.runtime.builtin.IRubyObject;
  * $Revision$
  */
 public class MarshalStream extends FilterOutputStream {
-    private final Ruby ruby;
+    private final Ruby runtime;
     private final int depthLimit;
     private int depth = 0;
-    private Map dumpedObjects = new HashMap();
-    private Map dumpedSymbols = new HashMap();
+    private MarshalCache cache;
 
     public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
         super(out);
 
-        this.ruby = ruby;
+        this.runtime = ruby;
         this.depthLimit = (depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE);
+        this.cache = new MarshalCache(ruby);
 
         out.write(Constants.MARSHAL_MAJOR);
         out.write(Constants.MARSHAL_MINOR);
@@ -66,7 +63,7 @@ public class MarshalStream extends FilterOutputStream {
     public void dumpObject(IRubyObject value) throws IOException {
         depth++;
         if (depth > depthLimit) {
-            throw new ArgumentError(ruby, "exceed depth limit");
+            throw new ArgumentError(runtime, "exceed depth limit");
         }
         if (! shouldBeRegistered(value)) {
             writeDirectly(value);
@@ -87,22 +84,26 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private boolean shouldBeRegistered(IRubyObject value) {
-        return (! value.isNil() && ! (value instanceof RubyBoolean));
+        if (value.isNil()) {
+            return false;
+        } else if (value instanceof RubyBoolean) {
+            return false;
+        } else if (value instanceof RubyFixnum) {
+            return false;
+        }
+        return true;
+    }
+
+    private char linkType(IRubyObject value) {
+        return (value instanceof RubySymbol) ? ';' : '@';
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
-        writeAndRegister(dumpedObjects, '@', value);
-    }
-    private void writeAndRegister(RubySymbol value) throws IOException {
-        writeAndRegister(dumpedSymbols, ';', value);
-    }
-
-    private void writeAndRegister(Map registry, char linkSymbol, IRubyObject value) throws IOException {
-        if (registry.containsKey(value)) {
-            out.write(linkSymbol);
-            dumpInt(((Integer) registry.get(value)).intValue());
+        if (cache.isRegistered(value)) {
+            out.write(linkType(value));
+            dumpInt(cache.registeredIndex(value));
         } else {
-            registry.put(value, new Integer(registry.size()));
+            cache.register(value);
             value.marshalTo(this);
         }
     }
@@ -113,9 +114,9 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userMarshal(IRubyObject value) throws IOException {
         out.write('u');
-        dumpObject(RubySymbol.newSymbol(ruby, value.getInternalClass().getClassname()));
+        dumpObject(RubySymbol.newSymbol(runtime, value.getInternalClass().getClassname()));
 
-        RubyInteger depth = RubyFixnum.newFixnum(ruby, depthLimit);
+        RubyInteger depth = RubyFixnum.newFixnum(runtime, depthLimit);
         RubyString marshaled = (RubyString) value.callMethod("_dump", depth);
         dumpString(marshaled.getValue());
     }

@@ -39,6 +39,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
@@ -50,17 +51,32 @@ import org.jruby.util.Asserts;
  */
 public class UnmarshalStream extends FilterInputStream {
     protected final Ruby runtime;
+    private MarshalCache cache;
 
     public UnmarshalStream(Ruby ruby, InputStream in) throws IOException {
         super(in);
-
         this.runtime = ruby;
+        this.cache = new MarshalCache(runtime);
+
         in.read(); // Major
         in.read(); // Minor
     }
 
     public IRubyObject unmarshalObject() throws IOException {
         int type = readUnsignedByte();
+        IRubyObject result;
+        if (type == '@') {
+            result = cache.linkedByIndex(unmarshalInt());
+        } else if (type == ';') {
+            result = cache.symbolByIndex(unmarshalInt());
+        } else {
+            result = unmarshalObjectDirectly(type);
+        }
+        cache.register(result);
+        return result;
+    }
+
+    private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
         switch (type) {
             case '0' :
                 return runtime.getNil();
@@ -91,10 +107,10 @@ public class UnmarshalStream extends FilterInputStream {
             case 'u' :
                 return userUnmarshal();
             default :
-                Asserts.assertNotReached();
-                return null;
+                throw new ArgumentError(getRuntime(), "dump format error(" + type + ")");
         }
     }
+
 
     public Ruby getRuntime() {
         return runtime;

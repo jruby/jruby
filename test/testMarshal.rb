@@ -102,6 +102,7 @@ test_equal(um, Marshal.load(Marshal.dump(um)))
 
 test_marshal("[\a00", [nil, nil])
 test_marshal("[\aTT", [true, true])
+test_marshal("[\ai\006i\006", [1, 1])
 
 # Unmarshaling
 
@@ -136,3 +137,9 @@ test_equal(Object, object.class)
 
 Marshal.dump([1,2,3], 2)
 test_exception(ArgumentError) { Marshal.dump([1,2,3], 1) }
+
+#o = Object.new
+#a = Marshal.load(Marshal.dump([o, o, o, o]))
+#test_ok(a[0] == a[1])
+
+test_print_report
