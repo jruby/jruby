@@ -66,7 +66,6 @@ import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -367,7 +366,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitInstVarNode(InstVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
-        if (self.isInstanceVarDefined(iVisited.getName())) {
+        if (self.hasInstanceVariable(iVisited.getName())) {
             definition = "instance-variable";
         }
     }
