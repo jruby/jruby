@@ -61,6 +61,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int OP_LT = 9;
     private static final int INSTANCE_METHODS = 10;
     private static final int CONSTANTS = 11;
+    private static final int JAVA_METHOD = 12;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -77,6 +78,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("<", IndexedCallback.create(OP_LT, 1));
         javaClassClass.defineMethod("instance_methods", IndexedCallback.create(INSTANCE_METHODS, 0));
         javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
+        javaClassClass.defineMethod("java_method", IndexedCallback.create(JAVA_METHOD, 1));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -140,17 +142,23 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         Field[] fields = javaClass.getFields();
         RubyArray result = RubyArray.newArray(runtime);
         for (int i = 0; i < fields.length; i++) {
-            if (isClassConstant(fields[i])) {
+            if (isConstant(fields[i])) {
                 result.append(RubyString.newString(runtime, fields[i].getName()));
             }
         }
         return result;
     }
 
-    private boolean isClassConstant(Field field) {
+    private static boolean isConstant(Field field) {
         int modifiers = field.getModifiers();
         return Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers);
     }
+
+    public JavaMethodClass java_method(IRubyObject name) {
+        String methodName = ((RubyString) name.convertToType("String", "to_s", true)).getValue();
+        return JavaMethodClass.create(runtime, javaClass, methodName);
+    }
+
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
@@ -172,6 +180,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return instance_methods();
             case CONSTANTS :
                 return constants();
+            case JAVA_METHOD :
+                return java_method(args[0]);
         }
         return super.callIndexed(index, args);
     }

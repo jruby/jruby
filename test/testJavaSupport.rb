@@ -63,6 +63,9 @@ if defined? Java
 
   integer_constants = Java::JavaClass.for_name("java.lang.Integer").constants
   test_ok(integer_constants.include?("MAX_VALUE"))
+
+  method = string_class.java_method(:toString)
+  test_ok(method.kind_of?(Java::JavaMethod))
 end
 
 test_print_report

@@ -3,6 +3,7 @@ package org.jruby;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.JavaClassClass;
+import org.jruby.javasupport.JavaMethodClass;
 
 public class RubyJava {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -13,6 +14,7 @@ public class RubyJava {
         javaModule.defineModuleFunction("define_exception_handler", CallbackFactory.getOptSingletonMethod(RubyJava.class, "define_exception_handler"));
 
         JavaClassClass.createJavaClassClass(runtime, javaModule);
+        JavaMethodClass.createJavaMethodClass(runtime, javaModule);
 
         return javaModule;
     }
