@@ -50,7 +50,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.Callback#getArity()
              */
             public int getArity() {
-                return 0;
+                return -1;
             }
         });
         
@@ -66,7 +66,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.Callback#getArity()
              */
             public int getArity() {
-                return 0;
+                return -1;
             }
         });
         
@@ -82,7 +82,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.Callback#getArity()
              */
             public int getArity() {
-                return 0;
+                return -1;
             }
         });
         

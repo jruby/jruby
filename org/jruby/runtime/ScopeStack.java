@@ -55,7 +55,7 @@ public class ScopeStack extends AbstractStack {
             current().setMethodScope(ruby.getCurrentMethodScope());
         }
         super.push(newElement);
-        ruby.setCurrentMethodScope(Constants.NOEX_PUBLIC);
+        ruby.setCurrentMethodScope(Constants.SCOPE_PUBLIC);
     }
 
     public void push() {

@@ -57,7 +57,7 @@ public class Scope implements StackElement {
     private List localNames = null;
 	private List localValues = null;
     
-    private int methodScope = Constants.NOEX_PRIVATE; // Same as default for top level...just in case
+    private int methodScope = Constants.SCOPE_PUBLIC; // Constants.SCOPE_PRIVATE; ? // Same as default for top level...just in case
 
     private Scope next = null;
 

@@ -707,14 +707,14 @@ public final class EvaluateVisitor implements NodeVisitor {
         // }
         //          }
 
-        Visibility noex = Visibility.PUBLIC;
+        Visibility visibility = Visibility.PUBLIC;
 
         if (ruby.isScope(Constants.SCOPE_PRIVATE) || iVisited.getName().equals("initialize")) {
-            noex = Visibility.PRIVATE;
+            visibility = Visibility.PRIVATE;
         } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
-            noex = Visibility.PROTECTED;
+            visibility = Visibility.PROTECTED;
         } else if (rubyClass == ruby.getClasses().getObjectClass()) {
-            noex = iVisited.getVisibility();
+            visibility = iVisited.getVisibility();
         }
 
         /* FIXME Fix the undef stuff
@@ -725,7 +725,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         // FIXME Create new method store class.
         // ScopeNode body = copyNodeScope((ScopeNode)iVisited.getBodyNode(), ruby.getNamespace());
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace(), noex);
+        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace(), visibility);
 
         rubyClass.addMethod(iVisited.getName(), newMethod);
 

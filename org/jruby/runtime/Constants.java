@@ -32,17 +32,11 @@ package org.jruby.runtime;
 
 
 
-public abstract class Constants {
+public interface Constants {
     public static final int SCOPE_PUBLIC = 0;
     public static final int SCOPE_PRIVATE = 1;
     public static final int SCOPE_PROTECTED = 2;
     public static final int SCOPE_MODFUNC = 5;
-
-    public static final int NOEX_PUBLIC = 0;
-    public static final int NOEX_UNDEF = 1;
-    public static final int NOEX_CFUNC = 1;
-    public static final int NOEX_PRIVATE = 2;
-    public static final int NOEX_PROTECTED = 4;
 
     public static final String RUBY_MAJOR_VERSION = "1.6";
     public static final String RUBY_VERSION = "1.6.7";
