@@ -1,0 +1,46 @@
+
+Developer's Glossary
+--------------------
+
+
+Block:
+
+    The thing with {}. [Anything about what blockStack is?]
+
+
+Frame:
+
+    [What is it, and how does it differ from Scope?]
+
+
+Iter:
+
+    [Probably short for Iterator, but what *is* it? Seems to have something to do with
+    passing blocks.]
+
+
+MRI (Matz' Ruby Interpreter):
+
+    The original Ruby interpreter, implemented in C.
+
+
+Scope:
+
+    [The extent of a Local Variable? What language constructs create new scopes?
+    How does it work internally?]
+
+
+Variable, Block:
+
+    See Variable, Dynamic.
+
+
+Variable, Dynamic:
+
+    Similar to a Local Variable, used for Block arguments.
+
+
+Variable, Local:
+
+    Variable with a local Scope.
+
