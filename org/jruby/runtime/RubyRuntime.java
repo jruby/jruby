@@ -197,8 +197,7 @@ public class RubyRuntime {
 			loadScript(new RubyString(ruby, iFile.getPath()), new RubyString(ruby, source.toString()), wrap);
 
 		} catch (IOException ioExcptn) {
-			getErrorStream().println("Cannot read Rubyfile: \"" + iFile.getPath() + "\"");
-			getErrorStream().println("IOEception: " + ioExcptn.getMessage());
+            throw IOError.fromException(ruby, ioExcptn);
 		}
 	}
 

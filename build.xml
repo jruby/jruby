@@ -41,13 +41,16 @@
     </target>
 
     <target name="test" depends="compile">
-		<junit printsummary="yes">
+		<junit printsummary="yes" haltonfailure="yes">
             <formatter type="plain"/>
             <test name="org.jruby.test.MainTestSuite"/>
             <classpath>
                 <pathelement path="${classpath}" />
                 <pathelement location="${jar.file}" />
             </classpath>
+            <sysproperty key="jruby.base" value="${build.dir}"/>
+            <sysproperty key="jruby.home" value="${build.dir}"/>
+            <sysproperty key="jruby.lib" value="${build.dir}/lib"/>
         </junit>
     </target>
 
@@ -73,6 +76,9 @@
 			<fileset dir="${src.dir}" includes="*.bat"/>
 		</copy>
         <mkdir dir="${build.dir}/lib/ruby/1.6/java"/>
+        <copy todir="${build.dir}/lib/ruby/1.6/java">
+            <fileset dir="${src.dir}/ext" includes="*.rb"/>
+        </copy>
         <!-- Create jar in build dir -->
         <jar basedir="${build.dest}" compress="true" jarfile="${jar.file}" manifest="jruby.mf"/>
     </target>

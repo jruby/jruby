@@ -55,6 +55,10 @@ public class RaiseException extends JumpException {
         setActException(RubyException.newException(ruby, excptnClass, msg));
     }
 
+    public Throwable fillInStackTrace() {
+        return originalFillInStackTrace();
+    }
+
     /** Create an Array with backtrace information.
      * 
      * MRI: eval.c - backtrace

@@ -36,8 +36,8 @@ package org.jruby.test;
 import java.io.*;
 import java.util.*;
 import junit.framework.*;
-import org.jruby.*;
-import org.ablaf.ast.INode;
+import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 
 /**
  * @author Anders
@@ -50,17 +50,19 @@ public class ScriptTestSuite extends TestSuite {
     private static final String TEST_INDEX = "test" + File.separator + "test_index";
 
     public ScriptTestSuite(String name) {
-		super(name);
+        super(name);
     }
 
     public static Test suite() throws java.io.IOException {
         TestSuite suite = new TestSuite();
 
-        Ruby ruby = Ruby.getDefaultInstance(null);
-        ruby.initLoad(new ArrayList());
+        Ruby ruby = setupInterpreter();
 
         File testIndex = new File("test/test_index");
+
         if (! testIndex.canRead()) {
+            // Since we don't have any other error reporting mechanism, we
+            // add the error message as an always-failing test to the test suite.
             suite.addTest(new FailingTest("ScriptTestSuite",
                                           "Couldn't locate " + TEST_INDEX +
                                           ". Make sure you run the tests from the base " +
@@ -81,6 +83,12 @@ public class ScriptTestSuite extends TestSuite {
 
         return suite;
     }
+
+    private static Ruby setupInterpreter() {
+        Ruby result = Ruby.getDefaultInstance(null);
+        return result;
+    }
+
 
     private static class FailingTest extends TestCase {
         private final String message;

@@ -4,6 +4,31 @@ $ntest=0
 $failed = []
 $curtestOK=true
 
+
+module MiniRUnit
+  class Failure
+    def initialize(what, testnum, msg, where)
+      @what, @testnum, @msg, @where = what, testnum, msg, where
+    end
+
+    def to_s
+      sprintf("not ok %s %d %s-- %s\n", @what, @testnum, @msg, @where)
+    end
+  end
+
+  class Error
+    def initialize(what, testnum, boom)
+      @what, @testnum, @boom = what, testnum, boom
+    end
+
+    def to_s
+      sprintf("exception raised %s %d -- \n\tException: %s\n\t%s",
+              @what, @testnum, @boom.to_s, @boom.backtrace.join "\n\t")
+    end
+  end
+end
+
+
 def test_check(what)
   printf "\n%s :", what
   $what = what
@@ -14,15 +39,12 @@ def test_ok(cond, msg="")
   $testnum+=1
   $ntest+=1
   if cond
-	#    printf "ok %d\n", $testnum
-	print "."
+    print "."
   else
     where = caller.reject {|where| where =~ /minirunit/}[0]
-	#printf "not ok %s %d -- %s\n", $what, $testnum, where
-	#$failed+=1 
-    $failed.push(sprintf("not ok %s %d %s-- %s\n", $what, $testnum, msg, where))
-	print "F"
-	$curtestOK=false
+    $failed.push(MiniRunit::Failure.new($what, $testnum, msg, where))
+    print "F"
+    $curtestOK=false
   end
 end
 
@@ -54,7 +76,7 @@ def test_load(test)
 	load(test)
   rescue Exception => boom
 	puts 'ERROR'
-	$failed.push(sprintf("exception raised %s %d -- \n\tException: %s\n\t%s", $what, $testnum, boom.to_s, boom.backtrace.join "\n\t"))
+	$failed.push(MiniRUnit::Error.new($what, $testnum, boom))
   else
 	if $curtestOK
 		puts 'OK'

@@ -60,4 +60,8 @@ public abstract class JumpException extends RuntimeException {
     public Throwable fillInStackTrace() {
         return this;
     }    
+
+    protected Throwable originalFillInStackTrace() {
+        return super.fillInStackTrace();
+    }
 }

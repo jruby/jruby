@@ -886,7 +886,7 @@ public final class Ruby {
      *   @fixme: use the version number in some other way than hardcoded here
      *   @fixme: safe level pb here
      **/
-    public void initLoad(ArrayList ioAdditionalDirectory) {
+    public void initLoad(List ioAdditionalDirectory) {
         //	don't know what this is used for in MRI, it holds the handle of all loaded libs
         //		ruby_dln_librefs = rb_ary_new();
 
@@ -944,7 +944,7 @@ public final class Ruby {
         String l2Find = i2find.getPath();
         for (int i = 0; i < lPathNb; i++) {
             String lCurPath = ((RubyString) lLoadPath.entry(i)).getValue();
-            File lCurFile = new File(lCurPath + File.separatorChar + l2Find);
+            File lCurFile = new File(lCurPath, l2Find);
             if (lCurFile.exists()) {
                 i2find = lCurFile;
                 break;

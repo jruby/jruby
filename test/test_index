@@ -29,7 +29,7 @@ testPackUnpack.rb
 testRandom.rb
 testStruct.rb
 testGC.rb
-#testSocket.rb
+##testSocket.rb
 testJavaSupport.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):

@@ -49,12 +49,24 @@ public class TestRuby extends TestRubyBase {
 
     public void setUp() {
         ruby = Ruby.getDefaultInstance(null);
+        oldHomeProperty = System.getProperty("jruby.home");
+        oldLibProperty = System.getProperty("jruby.lib");
     }
+    
+    public void tearDown() {
+        super.tearDown();
+        System.setProperty("jruby.home", oldHomeProperty);
+        System.setProperty("jruby.lib", oldLibProperty);
+    }
+
+    private String oldHomeProperty;
+    private String oldLibProperty;
 
     public void testInitLoad() {
         ArrayList list = new ArrayList();
         //check without a RubyHome and with one parameter
         System.setProperty("jruby.home", "");
+        System.setProperty("jruby.lib", "");
         list.add("toto");
         ruby.initLoad(list);
         //check that the global vars are correctly valuated
@@ -64,7 +76,7 @@ public class TestRuby extends TestRubyBase {
         assertTrue(lCol == lI && lI == lLoad && lLoad != null);
         RubyArray lLoadA = (RubyArray) lLoad;
         //check that we have 2 non null element
-        assertTrue(RubyNumeric.num2long(lLoadA.nitems()) == 2);
+        assertEquals(2, RubyNumeric.num2long(lLoadA.nitems()));
         //check that it is what we expect, a RubyString of the correct type
         assertTrue(new RubyString(ruby, "toto").equal(lLoadA.shift()));
         assertTrue(new RubyString(ruby, ".").equal(lLoadA.shift()));
@@ -132,8 +144,4 @@ public class TestRuby extends TestRubyBase {
     private void assertTrue(RubyObject iObj) {
         assertTrue(iObj.isTrue());
     }
-    public void tearDown() {
-        super.tearDown();
-    }
-
 }
