@@ -26,11 +26,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * local variable assignment node.
@@ -38,12 +38,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class LocalAsgnNode extends AbstractNode implements IAssignableNode {
-    private int count;
+    private final int count;
     private INode valueNode;
 
     public LocalAsgnNode(ISourcePosition position, int count, INode valueNode) {
         super(position);
-
         this.count = count;
         this.valueNode = valueNode;
     }
@@ -62,14 +61,6 @@ public class LocalAsgnNode extends AbstractNode implements IAssignableNode {
      */
     public int getCount() {
         return count;
-    }
-
-    /**
-     * Sets the count.
-     * @param count The count to set
-     */
-    public void setCount(int count) {
-        this.count = count;
     }
 
     /**

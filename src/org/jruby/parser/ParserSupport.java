@@ -29,17 +29,23 @@
  */
 package org.jruby.parser;
 
-import java.util.*;
-
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.util.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.common.*;
-import org.jruby.util.*;
+import org.jruby.ast.visitor.UselessStatementVisitor;
+import org.jruby.ast.util.NodeUtil;
+import org.jruby.ast.util.ListNodeUtil;
+import org.jruby.common.IErrors;
+import org.jruby.util.IdUtil;
+import org.jruby.util.Asserts;
+import org.ablaf.common.IErrorHandler;
+import org.ablaf.common.ISourcePosition;
+import org.ablaf.ast.INode;
+
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Ruby 1.6.7 compatible.
  *
@@ -147,7 +153,7 @@ public class ParserSupport {
      * 
      * cf assignable in MRI
      * 
-     *@param id The name of the variable or constant.
+     *@param name The name of the variable or constant.
      *@param valueNode A Node representing the value which should be assigned.
      *@return A Node representing the assignment.
 	 * @fixme need to handle positions
@@ -192,7 +198,6 @@ public class ParserSupport {
      */
     public INode newline_node(INode node, ISourcePosition iPosition) {
         if (node != null) {
-//            return new NewlineNode(node.getPosition(), node);
 			return new NewlineNode(iPosition, node);
         } else {
             return null;

@@ -26,7 +26,7 @@
  */
 package org.jruby.ast.types;
 
-import org.ablaf.ast.*;
+import org.ablaf.ast.INode;
 
 /**
  *

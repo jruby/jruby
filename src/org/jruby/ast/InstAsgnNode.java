@@ -26,11 +26,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents an instance variable assignment.
  *
@@ -38,7 +38,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class InstAsgnNode extends AbstractNode implements IAssignableNode {
-    private String name;
+    private final String name;
     private INode valueNode;
 
     /**
@@ -66,14 +66,6 @@ public class InstAsgnNode extends AbstractNode implements IAssignableNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 
     /**

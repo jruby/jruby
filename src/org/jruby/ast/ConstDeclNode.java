@@ -39,18 +39,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ConstDeclNode extends AbstractNode implements IAssignableNode {
-	/** 
-	 *  the constant name.
-	 **/
-    private String name;
-	/**
-	 * the constant value.
-	 **/
+    private final String name;
     private INode valueNode;
 
     public ConstDeclNode(ISourcePosition position, String name, INode valueNode) {
         super(position);
-
         this.name = name;
         this.valueNode = valueNode;
     }
@@ -70,15 +63,6 @@ public class ConstDeclNode extends AbstractNode implements IAssignableNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-	 * name is the constant Name, it normally starts with a Capital
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 
     /**

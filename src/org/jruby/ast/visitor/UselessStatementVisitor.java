@@ -58,14 +58,14 @@ public class UselessStatementVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitGVarNode(GVarNode)
+     * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
         handleUselessWarn(iVisited, "a variable");
     }
 
     /**
-     * @see NodeVisitor#visitLVarNode(LocalVarNode)
+     * @see NodeVisitor#visitLocalVarNode(LocalVarNode)
      */
     public void visitLocalVarNode(LocalVarNode iVisited) {
         handleUselessWarn(iVisited, "a variable");
@@ -79,14 +79,14 @@ public class UselessStatementVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitCVarNode(CVarNode)
+     * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
         handleUselessWarn(iVisited, "a variable");
     }
 
     /**
-     * @see NodeVisitor#visitIVarNode(IVarNode)
+     * @see NodeVisitor#visitInstVarNode(InstVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
         handleUselessWarn(iVisited, "a variable");
