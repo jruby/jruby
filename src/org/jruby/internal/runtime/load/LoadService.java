@@ -36,8 +36,6 @@ import java.util.jar.JarFile;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
-import org.jruby.RbConfig;
-import org.jruby.util.BuiltinScript;
 import org.jruby.exceptions.LoadError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,9 +64,6 @@ public class LoadService implements ILoadService {
     public LoadService(Ruby runtime) {
         super();
         this.runtime = runtime;
-
-        builtinLibraries.put("java.rb", new BuiltinScript("javasupport"));
-        builtinLibraries.put("rbconfig.rb", new RbConfig());
     }
 
     /**
@@ -178,6 +173,13 @@ public class LoadService implements ILoadService {
      */
     public void addAutoload(String name, IAutoloadMethod loadMethod) {
         autoloadMap.put(name, loadMethod);
+    }
+
+    /**
+     * @see org.jruby.runtime.load.ILoadService#registerBuiltin(String, Library)
+     */
+    public void registerBuiltin(String name, Library library) {
+        builtinLibraries.put(name, library);
     }
 
     /**

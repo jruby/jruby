@@ -37,4 +37,6 @@ public interface ILoadService {
     boolean isAutoloadDefined(String name);
     IRubyObject autoload(String name);
     void addAutoload(String name, IAutoloadMethod loadMethod);
+
+    void registerBuiltin(String name, Library library);
 }

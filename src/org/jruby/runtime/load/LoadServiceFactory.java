@@ -1,6 +1,8 @@
 package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
+import org.jruby.RbConfig;
+import org.jruby.util.BuiltinScript;
 import org.jruby.internal.runtime.load.LoadService;
 
 /**
@@ -19,6 +21,11 @@ public final class LoadServiceFactory {
     }
 
     public static ILoadService createLoadService(Ruby runtime) {
-        return new LoadService(runtime);
+        ILoadService result = new LoadService(runtime);
+
+        result.registerBuiltin("java.rb", new BuiltinScript("javasupport"));
+        result.registerBuiltin("rbconfig.rb", new RbConfig());
+
+        return result;
     }
 }
