@@ -1503,7 +1503,6 @@ public class RubyArray extends RubyObject {
 		char[] lFmt = iFmt.getValue().toCharArray();
 		int lFmtLength = lFmt.length;
 		boolean lNativeInt = false;
-		int lLength = 1;
 		int idx = 0;
 		int lLeftInArray = list.size();
 		StringBuffer lResult = new StringBuffer();
@@ -1511,6 +1510,7 @@ public class RubyArray extends RubyObject {
 		String lCurElemString;
 		for(int i = 0; i < lFmtLength; )
 		{
+			int lLength = 1;
 			//first skip all spaces
 			char lType = lFmt[i++];
 			if (Character.isWhitespace(lType))
@@ -1811,7 +1811,7 @@ public class RubyArray extends RubyObject {
 					String s = new String(c);
 					try
 					{
-						lResult.append(s.getBytes("UTF-8"));
+						lResult.append(new String(s.getBytes("UTF-8"), RubyMarshal.sEncoding));
 					} catch (java.io.UnsupportedEncodingException e)
 					{
 						throw new RubyBugException( "can't convert to UTF8");

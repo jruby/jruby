@@ -1642,10 +1642,17 @@ public class RubyString extends RubyObject {
      * rb_str_each_byte
      */
     public RubyString each_byte() {
-        byte[] lByteValue = value.getBytes();
+		try
+		{
+			byte[] lByteValue = value.getBytes(RubyMarshal.sEncoding);
         int lLength = lByteValue.length;
         for (int i = 0; i < lLength; i++)
             ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+
+		} catch(java.io.UnsupportedEncodingException e)
+		{
+			throw new RubyBugException("unsupported encoding " + RubyMarshal.sEncoding);
+		}
         return this;
     }
 
