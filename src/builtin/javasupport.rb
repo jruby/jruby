@@ -258,12 +258,12 @@ END
         public_methods =
           java_class.java_instance_methods.select {|m| m.public? }
         grouped_methods = public_methods.group_by {|m| m.name }
-        grouped_methods.each {|name, methods|
+        grouped_methods.each do |name, methods|
 	  # Only one method by this name
           if methods.length == 1
             m = methods.first
             return_type = m.return_type
-            define_method(m.name) {|*args|
+            define_method(m.name) do |*args|
               args = JavaProxy.convert_arguments(args)
               if m.arity != args.length
                 raise ArgumentError.new("wrong # of arguments(#{args.length} for #{m.arity})")
@@ -274,9 +274,9 @@ END
                 result = JavaUtilities.wrap(result, m.return_type)
               end
               result
-            }
+            end
           else
-            define_method(name) {|*args|
+            define_method(name) do |*args|
               args = convert_arguments(args)
               m = JavaUtilities.matching_method(methods.find_all {|m|
 	            m.arity == args.length
@@ -287,9 +287,20 @@ END
                 result = JavaUtilities.wrap(result, m.return_type)
               end
               result
-            }
+            end
           end
-        }
+        end
+	
+	# All ruby objects allow to_s.  Make sure our proxy maps to the
+	# Java objects toString method.
+	define_method('to_s') do |*args|
+	  method = java_class.java_method('toString')
+	  result = Java.java_to_primitive(method.invoke(java_object))
+	  if result.kind_of?(JavaObject)
+              result = JavaUtilities.wrap(result, method.return_type)
+	  end
+          result
+        end
       end
       proxy_class.create_instance_methods(java_class)
     end
