@@ -41,7 +41,7 @@
     	</tstamp>
   		<property environment="env"/>
     	<property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
-  		<property name="ruby.home" value="${env.RUBY_HOME}"/>
+  		<property name="ruby.home" value="${ruby.home}"/>
   	</target>
 
 	<target name="prepare" depends="init" 
