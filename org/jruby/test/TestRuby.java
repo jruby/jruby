@@ -55,8 +55,12 @@ public class TestRuby extends TestRubyBase {
     
     public void tearDown() {
         super.tearDown();
-        System.setProperty("jruby.home", oldHomeProperty);
-        System.setProperty("jruby.lib", oldLibProperty);
+		if (oldHomeProperty != null) {
+	        System.setProperty("jruby.home", oldHomeProperty);
+		}
+		if (oldLibProperty != null) {
+	        System.setProperty("jruby.lib", oldLibProperty);
+		}
     }
 
     private String oldHomeProperty;

@@ -129,7 +129,6 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyObject aref(RubyObject[] args) {
-        RubyObject result = null;
         int argc = argCount(args, 1, 2);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);
@@ -217,7 +216,6 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyArray to_a() {
-        RubyString[] arr = new RubyString[begin.length];
         return subseq(0, begin.length);
     }
 

@@ -1937,7 +1937,6 @@ public class RubyString extends RubyObject {
 			for(int i = 0; i < lFmtLength;)
 			{
 				int lLength = 0;
-				boolean lStar = false;
 				char lType = lFmt[i++];
 				char lNext = i < lFmtLength ? lFmt[i]: 0 ;
 				if (lNext == '_' || lNext == '!')
@@ -1954,7 +1953,6 @@ public class RubyString extends RubyObject {
 					lLength = 1;
 				else if (lNext == '*')
 				{
-					lStar = true;
 					lLength = lValueLength - lCurValueIdx;
 					lNext  = ++i < lFmtLength ? lFmt[i]:0;
 				}

@@ -689,7 +689,6 @@ public class RubyArray extends RubyObject {
 		if (length == 0) {
 			RubyString.newString(getRuby(), "");
 		}
-		StringBuffer sbuf = new StringBuffer();
 		boolean taint = isTaint() || sep.isTaint();
 		RubyString str;
 		RubyObject tmp = entry(0);
@@ -1950,7 +1949,6 @@ public class RubyArray extends RubyObject {
 						lLength = lLength / 3 * 3;
 					for (;;) 
 					{
-						int lTodo;
 						encodes(lResult, lCurElemString, lLength, lType);
 						if (lLength < lCurElemString.length())
 							lCurElemString = lCurElemString.substring(lLength);

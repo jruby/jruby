@@ -425,7 +425,7 @@ public class RubyStruct extends RubyObject {
 
         RubyObject[] values = new RubyObject[size];
         for (int i = 0; i < size; i++) {
-            RubySymbol name = (RubySymbol) input.unmarshalObject(); // We don't really use the names
+            input.unmarshalObject(); // Read and discard a Symbol, which is the name
             values[i] = input.unmarshalObject();
         }
         

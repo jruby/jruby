@@ -136,17 +136,17 @@ public class JavaSupport {
         Method[] methods = javaClass.getDeclaredMethods();
 
         for (int i = 0; i < methods.length; i++) {
-            String methodName = methods[i].getName();
+			String methodName = methods[i].getName();
             if (Modifier.isStatic(methods[i].getModifiers())) {
-                if (singletonMethodMap.get(methods[i].getName()) == null) {
-                    singletonMethodMap.put(methods[i].getName(), new LinkedList());
+				if (singletonMethodMap.get(methodName) == null) {
+                    singletonMethodMap.put(methodName, new LinkedList());
                 }
-                ((List) singletonMethodMap.get(methods[i].getName())).add(methods[i]);
+                ((List) singletonMethodMap.get(methodName)).add(methods[i]);
             } else {
-                if (methodMap.get(methods[i].getName()) == null) {
-                    methodMap.put(methods[i].getName(), new LinkedList());
+                if (methodMap.get(methodName) == null) {
+                    methodMap.put(methodName, new LinkedList());
                 }
-                ((List) methodMap.get(methods[i].getName())).add(methods[i]);
+                ((List) methodMap.get(methodName)).add(methods[i]);
             }
         }
 

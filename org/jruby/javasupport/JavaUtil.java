@@ -254,7 +254,6 @@ public class JavaUtil {
         } else if (javaClass == String.class) {
             return RubyString.newString(ruby, object.toString());
         } else if (javaClass.isArray()) {
-            Class arrayClass = javaClass.getComponentType();
             int len = Array.getLength(object);
             RubyObject[] items = new RubyObject[len];
             for (int i = 0; i < len; i++) {

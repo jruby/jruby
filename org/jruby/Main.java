@@ -256,7 +256,6 @@ public class Main {
         Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter);
 
         // Parse and interpret file
-        RubyString rs = RubyString.newString(ruby, iString2Eval);
         RubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
 
         ruby.setVerbose(warning);

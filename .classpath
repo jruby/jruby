@@ -5,5 +5,5 @@
     <classpathentry kind="var" path="BSF_LIB" sourcepath="BSF_SRC"/>
     <classpathentry kind="var" path="ORO_LIB" sourcepath="ORO_SRC"/>
     <classpathentry kind="var" path="JUNIT_LIB" sourcepath="JUNIT_SRC"/>
-    <classpathentry kind="output" path=""/>
+    <classpathentry kind="output" path="build/classes"/>
 </classpath>

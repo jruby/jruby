@@ -755,7 +755,6 @@ public class RubyModule extends RubyObject {
         CacheEntry ent = getRuby().getMethodCache().getEntry(this, name);
 
         RubyModule klass = this;
-        int noex;
         IMethod method;
 
         if (ent != null) {
@@ -768,7 +767,6 @@ public class RubyModule extends RubyObject {
 
             klass = ent.getOrigin();
             name = ent.getOriginalName();
-            noex = ent.getNoex();
             method = ent.getMethod();
         } else {
             GetMethodBodyResult gmbr = getMethodBody(name, 0);
@@ -785,7 +783,6 @@ public class RubyModule extends RubyObject {
 
             klass = gmbr.getRecvClass();
             name = gmbr.getId();
-            noex = gmbr.getNoex();
             method = gmbr.getMethod();
         }
 
