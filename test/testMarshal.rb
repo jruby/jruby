@@ -2,7 +2,7 @@ require 'test/minirunit'
 test_check "Test Marshal:"
 
 if defined? Java
-  MARSHAL_HEADER = "\004\005"
+  MARSHAL_HEADER = "\004\012"
 else
   MARSHAL_HEADER = Marshal.dump(nil).chop
 end
