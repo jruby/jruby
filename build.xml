@@ -34,6 +34,7 @@
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
             <!--<exclude name="org/jruby/javasupport/bsf/**/*.java" unless="${bsf}"/>-->
             <exclude name="org/jruby/javasupport/bsf/**/*.java"/>
+            <exclude name="**/tars/**"/>
             <classpath>
                 <path path="${bsf.jar}"/>
             </classpath>
