@@ -379,4 +379,5 @@ public abstract class IOHandler {
     public abstract void sync() throws IOException; 
     public abstract int sysread() throws IOException;
     public abstract int syswrite(String buf);
+    public abstract void truncate(long newLength) throws IOException;
 }

@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -100,9 +101,11 @@ public class RubyFile extends RubyIO {
 		fileClass.defineSingletonMethod("dirname", callbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
 		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
 		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
-
+		fileClass.defineSingletonMethod("truncate", callbackFactory.getSingletonMethod(RubyFile.class, "truncate", RubyString.class, RubyFixnum.class));
+		
 		fileClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyFile.class, "initialize"));
-
+		fileClass.defineMethod("truncate", callbackFactory.getMethod(RubyFile.class, "truncate", RubyFixnum.class));
+		
         // Works around a strange-ish implementation that uses a static method on the superclass.
         // It broke when moved to indexed callbacks, so added this line:
         fileClass.defineMethod("print", callbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
@@ -213,7 +216,8 @@ public class RubyFile extends RubyIO {
             args[i].checkSafeString();
             File lToDelete = new File(args[i].toString());
             if (!lToDelete.exists())
-                throw new IOError(recv.getRuntime(), " No such file or directory - \"" + args[i].toString() + "\"");
+                throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
+                        " No such file or directory - \"" + args[i].toString() + "\"");
             if (!lToDelete.delete()) {
                 return recv.getRuntime().getFalse();
             }
@@ -224,7 +228,13 @@ public class RubyFile extends RubyIO {
     public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
         oldName.checkSafeString();
         newName.checkSafeString();
-        new File(oldName.asSymbol()).renameTo(new File(newName.asSymbol()));
+        File oldFile = new File(oldName.asSymbol());
+        
+        if (oldFile.exists() == false) {
+            throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
+                    "No such file: " + oldName.asSymbol());
+        }
+        oldFile.renameTo(new File(newName.asSymbol()));
         return RubyFixnum.zero(recv.getRuntime());
     }
 
@@ -300,6 +310,27 @@ public class RubyFile extends RubyIO {
 
 		return RubyString.newString(recv.getRuntime(), name);
 	}
+    
+    public IRubyObject truncate(RubyFixnum newLength) {
+        try {
+            handler.truncate(newLength.getLongValue());
+        } catch (IOException e) {
+            // Should we do anything?
+        }
+        
+        return RubyFixnum.zero(getRuntime());
+    }
+    
+    // Can we produce IOError which bypasses a close?
+    public static IRubyObject truncate(IRubyObject recv, RubyString filename, RubyFixnum newLength) {
+        IRubyObject[] args = new IRubyObject[] {filename, 
+                RubyString.newString(recv.getRuntime(), "w+")};
+        RubyFile file = (RubyFile) RubyFile.open(recv, args, false);
+        file.truncate(newLength);
+        file.close();
+        
+        return RubyFixnum.zero(recv.getRuntime());
+    }
 
     public static RubyString join(IRubyObject recv, IRubyObject[] args) {
 		RubyArray argArray = RubyArray.newArray(recv.getRuntime(), args);

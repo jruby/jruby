@@ -281,4 +281,8 @@ public class IOHandlerUnseekable extends IOHandler {
             throw new SystemCallError(getRuntime(), e.toString());
         }
     }
+    
+    public void truncate(long newLength) throws IOException {
+        throw ErrnoError.getErrnoError(getRuntime(), "ESPIPE", "Illegal seek");
+    }
 }

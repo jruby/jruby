@@ -255,4 +255,8 @@ public class IOHandlerSeekable extends IOHandler {
             throw new SystemCallError(getRuntime(), e.toString());
         }
     }
+    
+    public void truncate(long newLength) throws IOException {
+        file.setLength(newLength);
+    }
 }

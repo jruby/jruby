@@ -28,6 +28,7 @@ package org.jruby;
 
 import java.io.File;
 
+import org.jruby.exceptions.ErrnoError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -67,8 +68,13 @@ public class RubyFileTest {
     }
     
     public static IRubyObject size(IRubyObject recv, RubyString filename) {
-        return RubyFixnum.newFixnum(filename.getRuntime(),
-                new File(filename.getValue()).length());
+        File file = new File(filename.getValue());
+        
+        if (file.exists() == false) {
+            throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
+                    "No such file: " + filename.getValue());
+        }
+        return RubyFixnum.newFixnum(filename.getRuntime(), file.length());
     }
     
     // We do both writable and writable_real through the same method because
