@@ -23,6 +23,21 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # 
 
+# Test regexp substitutions
+
+rgx1 = /[a-z]+/
+str1 = "redrum".sub(rgx1, "<\\&>")
+puts str1
+
+str1.sub!(/\w+/) { |m| $` + m.upcase + $' }
+puts str1
+
+puts "ruby".upcase.gsub(/\d?/, '*')
+
+str3 = "regnad kcin".reverse
+str3.gsub!(/\w+/) { |m| m.capitalize }
+puts str3
+
 # Test string evaluation
 
 puts "Test string evaluation:"
