@@ -239,6 +239,7 @@ public class RubyClasses {
         matchDataClass = RbMatchData.createMatchDataClass(ruby);
         
         arrayClass = RbArray.createArrayClass(ruby);
+        hashClass = RbHash.createHashClass(ruby);
         rangeClass = RbRange.createRangeClass(ruby);
         
         javaObjectClass = RbJavaObject.createJavaObjectClass(ruby);

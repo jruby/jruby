@@ -75,7 +75,7 @@ public class RubyHash extends RubyObject {
     // Hash methods
     
     public static RubyHash m_newHash(Ruby ruby) {
-        return m_new(ruby, (RubyClass)ruby.getRubyClass("Hash"), null);
+        return m_new(ruby, (RubyClass)ruby.getRubyClass("Hash"), new RubyObject[0]);
     }
     
     public static RubyHash m_new(Ruby ruby, RubyClass rubyClass, RubyObject[] args) {
