@@ -83,7 +83,7 @@ methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::A
                                 instructions,
                                 classgen.getConstantPool)
 
-code = compile("if false; 1 + 2; else; 'hello'; end")
+code = compile("if true; 1 + 2; else; 'hello'; end")
 code.jvm_compile(methodgen)
 
 # Add a return manually

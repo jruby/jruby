@@ -153,6 +153,11 @@ module JRuby
       def visitFalseNode(node)
         @bytecodes << PushBoolean.new(false)
       end
+
+      def visitTrueNode(node)
+        @bytecodes << PushBoolean.new(true)
+      end
+
     end
 
     # Since we can't subclass Java interfaces properly we have

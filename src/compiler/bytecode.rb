@@ -202,14 +202,17 @@ module JRuby
           list = methodgen.getInstructionList
 
           list.append(factory.createInvoke(IRUBYOBJECT_TYPE.getClassName,
-                                           "isFalse",
+                                           "isTrue",
                                            BCEL::Type::BOOLEAN,
                                            BCEL::Type[].new(0),
                                            BCEL::Constants::INVOKEINTERFACE))
-          # If call was sucessful we have a 0 on the stack
+          # If value on stack was false we should have a 0 now
           branch = BCEL::IFEQ.new(nil)
           @target.add_listener(branch)
-          list.append(branch)
+
+          # list.append(branch)
+          JavaClass.for_name("org.apache.bcel.generic.InstructionList").java_method(:append, "org.apache.bcel.generic.BranchInstruction").invoke(list.java_object, branch.java_object)
+
         end
       end
 
@@ -224,7 +227,10 @@ module JRuby
           list = methodgen.getInstructionList
           goto = BCEL::GOTO.new(nil)
           @target.add_listener(goto)
-          list.append(goto)
+
+          #list.append(goto)
+          JavaClass.for_name("org.apache.bcel.generic.InstructionList").java_method(:append, "org.apache.bcel.generic.BranchInstruction").invoke(list.java_object, goto.java_object)
+
         end
       end
 
