@@ -614,7 +614,7 @@ public class RubyYaccLexer {
                                     throw new SyntaxException(src.getPosition(), "embedded document meets end of file");
                                 }
                                 if (c != '=') continue;
-                                if (isNextNoCase("end")) {
+                                if (src.wasBeginOfLine() && isNextNoCase("end")) {
                                     if (src.peek('\n')) {
                                         break;
                                     } 
