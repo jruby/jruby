@@ -8,23 +8,22 @@ if defined? Java
   module TestJavaSupport
     include_package "java.util"
 
+    # Java class loading
+    test_exception(NameError) { System }
+    include_package "java.lang"
+    System
+
     # Constructors
     r = Random.new
     test_equal(Random, r.type)
     r = Random.new(1001)
-    include_package "javax.swing"
-    frame = JFrame.new("hello")  # FIXME: find overloading-example within
-                                 # java.util or java.lang
+    test_equal(10.0, Double.new(10).doubleValue())
+    test_equal(10.0, Double.new("10").doubleValue())
 
     # Instance methods
     test_equal(Random, r.type)
     test_equal(Fixnum, r.nextInt.type)
     test_equal(Fixnum, r.nextInt(10).type)
-
-    # Java class loading
-    test_exception(NameError) { System }
-    include_package "java.lang"
-    System
 
     # Instance methods differing only on argument type
     l1 = Long.new(1234)
