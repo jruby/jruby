@@ -1,6 +1,6 @@
 /*
- * RubyMethod.java - No description
- * Created on 04. Juli 2001, 22:53
+ * RubyObjectSpace.java - No description
+ * Created on 04. November 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
@@ -40,8 +40,7 @@ public class RubyObjectSpace {
      * 
      */
     public static RubyModule createObjectSpaceModule(Ruby ruby) {
-        RubyCallbackMethod each_object =
-            new ReflectionCallbackMethod(RubyObjectSpace.class, "each_object", true, true);
+        RubyCallbackMethod each_object = new ReflectionCallbackMethod(RubyObjectSpace.class, "each_object", true, true);
 
         RubyModule objectSpaceModule = ruby.defineModule("ObjectSpace");
 
@@ -50,10 +49,7 @@ public class RubyObjectSpace {
         return objectSpaceModule;
     }
 
-    public static RubyObject each_object(
-        Ruby ruby,
-        RubyObject recv,
-        RubyObject[] args) {
+    public static RubyObject each_object(Ruby ruby, RubyObject recv, RubyObject[] args) {
         if (args.length == 1) {
             Iterator iter = new LinkedList(ruby.objectSpace).iterator();
 
@@ -61,11 +57,10 @@ public class RubyObjectSpace {
                 SoftReference ref = (SoftReference) iter.next();
                 RubyObject obj = (RubyObject) ref.get();
                 if (obj != null) {
-                    if (obj instanceof RubyModule
-                        && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
+                    if (obj instanceof RubyModule && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
                         continue;
                     } else {
-                        if (obj.m_kind_of((RubyModule)args[0]).isTrue()) {
+                        if (obj.m_kind_of((RubyModule) args[0]).isTrue()) {
                             ruby.yield(obj);
                         }
                     }
@@ -81,8 +76,7 @@ public class RubyObjectSpace {
                 SoftReference ref = (SoftReference) iter.next();
                 RubyObject obj = (RubyObject) ref.get();
                 if (obj != null) {
-                    if (obj instanceof RubyModule
-                        && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
+                    if (obj instanceof RubyModule && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
                         continue;
                     } else {
                         ruby.yield(obj);
