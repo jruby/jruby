@@ -37,6 +37,10 @@ if defined? Java
     result = System.currentTimeMillis()
     test_equal(Fixnum, result.type)
 
+    # Class methods differing only on argument type
+    test_equal(true, Boolean.valueOf("true"))
+    test_equal(false, Boolean.valueOf(false))
+
     # Constants
     test_equal(9223372036854775807, Long::MAX_VALUE)
 

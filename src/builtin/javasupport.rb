@@ -243,17 +243,38 @@ module JavaUtilities
       proxy_class.class_eval("@class_methods = grouped_methods")
       # FIXME: error handling, arity awareness, ...
       grouped_methods.each {|name, methods|
-        proxy_class.class_eval("def self." + name + "(*args);" +
-                               "args = JavaProxy.convert_arguments(args);" +
-                               "methods = @class_methods['" + name + "'];" +
-                               "method = methods.first;" +
-                               "return_type = method.return_type;" +
-                               "result = Java.java_to_primitive(method.invoke_static(*args));" +
-                               "if result.kind_of?(JavaObject);" +
-                               "  result = JavaUtilities.wrap(result, method.return_type);" +
-                               "end;" +
-                               "result;" +
-                               "end")
+        if methods.length == 1
+          proxy_class.class_eval("def self." + name + "(*args);" +
+                                 <<END
+                                 args = JavaProxy.convert_arguments(args)
+                                 methods = @class_methods['#{name}']
+                                 method = methods.first
+                                 return_type = method.return_type
+                                 result = Java.java_to_primitive(method.invoke_static(*args))
+                                 if result.kind_of?(JavaObject)
+                                   result = JavaUtilities.wrap(result, method.return_type)
+                                 end
+                                 result
+                                 end
+END
+                                 )
+        else
+          # Overloaded on same length
+          proxy_class.class_eval("def self." + name + "(*args);" +
+                                 <<END
+            methods = @class_methods['#{name}']
+            args = JavaProxy.convert_arguments(args)
+            m = JavaUtilities.matching_method(methods, args)
+            result = m.invoke_static(*args)
+            result = Java.java_to_primitive(result)
+            if result.kind_of?(JavaObject)
+              result = JavaUtilities.wrap(result, m.return_type)
+            end
+            result
+          end
+END
+                                 )
+        end
       }
     end
 
