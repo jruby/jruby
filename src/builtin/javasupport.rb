@@ -151,6 +151,7 @@ module JavaUtilities
         setup_array_methods(java_class, proxy_class)
       else
         setup_instance_methods(java_class, proxy_class)
+	setup_attributes(java_class, proxy_class)
         setup_class_methods(java_class, proxy_class)
         setup_constants(java_class, proxy_class)
         setup_inner_classes(java_class, proxy_class)
@@ -388,6 +389,41 @@ END
           create_matched_class_methods(proxy_class, name, methods)
         end
       }
+    end
+
+    def setup_attributes(java_class, proxy_class)
+      def proxy_class.create_attribute_methods(java_class)
+        fields = java_class.fields.collect {|name| java_class.field(name) }
+        instance_methods = 
+	  java_class.java_instance_methods.collect {|m| m.name}
+	attrs = fields.select {|field| field.public? && !field.static? }
+
+	attrs.each do |attr|
+	  # Do not add any constants that has same-name method
+	  next if instance_methods.detect {|m| m == attr.name }
+
+	  define_method(attr.name) do |*args|
+	    result = Java.java_to_primitive(attr.value(@java_object))
+	    if result.kind_of?(JavaObject)
+	      result = JavaUtilities.wrap(result, result.java_type)
+	    end
+	    result
+	  end
+
+	  next if attr.final?
+
+	  define_method("#{attr.name}=") do |*args|
+            args = JavaProxy.convert_arguments(args)
+	    result = Java.java_to_primitive(attr.set_value(@java_object, 
+							   args.first))
+	    if result.kind_of?(JavaObject)
+	      result = JavaUtilities.wrap(result, result.java_type)
+	    end
+	    result
+	  end
+	end
+      end
+      proxy_class.create_attribute_methods(java_class)
     end
 
     def setup_constants(java_class, proxy_class)
