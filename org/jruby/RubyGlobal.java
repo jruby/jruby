@@ -29,15 +29,17 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.ReadonlyGlobalVariable;
+import org.jruby.runtime.GlobalVariable;
+import org.jruby.exceptions.TypeError;
+import org.jruby.exceptions.ArgumentError;
 
 /** This class initializes global variables and constants.
  * 
  * @author jpetersen
  * @version $Revision$
- * @fixme autoload method needs to be implemented
  */
 public class RubyGlobal {
     public static void createGlobals(Ruby ruby) {

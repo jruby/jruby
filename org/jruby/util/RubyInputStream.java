@@ -29,8 +29,11 @@
  */
 package org.jruby.util;
 
-import java.io.*;
-import java.io.*;
+import java.io.PushbackInputStream;
+import java.io.InputStream;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+
 
 /**
  * 
@@ -42,36 +45,46 @@ public class RubyInputStream extends PushbackInputStream {
         super(new BufferedInputStream(in));
     }
 
-    public String gets(String separator) throws IOException {
-        int c = read();
+    public String gets(String separatorString) throws IOException {
+        if (separatorString == null) {
+            return getsEntireStream();
+        }
+        final char[] separator = separatorString.toCharArray();
 
+        int c = read();
         if (c == -1) {
             return null;
         }
 
-        char[] sep = separator.toCharArray();
-        int sepLen = sep.length;
-
-        StringBuffer sb = new StringBuffer();
+        StringBuffer buffer = new StringBuffer();
 
         LineLoop : while (true) {
-            while (c != sep[0] && c != -1) {
-                sb.append((char) c);
+            while (c != separator[0] && c != -1) {
+                buffer.append((char) c);
                 c = read();
             }
-            for (int i = 0; i < sepLen; i++) {
+            for (int i = 0; i < separator.length; i++) {
                 if (c == -1) {
                     break LineLoop;
-                } else if (c != sep[i]) {
+                } else if (c != separator[i]) {
                     continue LineLoop;
                 }
-                sb.append((char) c);
-                if (i < (sepLen - 1)) {
+                buffer.append((char) c);
+                if (i < (separator.length - 1)) {
                     c = read();
                 }
             }
             break;
         }
-        return sb.toString();
+        return buffer.toString();
+    }
+
+    private String getsEntireStream() throws IOException {
+        StringBuffer result = new StringBuffer();
+        int c;
+        while ((c = read()) != -1) {
+            result.append((char) c);
+        }
+        return result.toString();
     }
 }
