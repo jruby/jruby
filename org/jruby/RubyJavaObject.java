@@ -30,8 +30,6 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
 
 /**

@@ -28,11 +28,10 @@
  */
 package org.jruby.runtime;
 
-import java.util.*;
+import java.util.List;
 
-import org.jruby.*;
-import org.jruby.util.*;
-import org.jruby.util.collections.*;
+import org.jruby.RubyObject;
+import org.jruby.util.collections.StackElement;
 
 /**
  * A Scope in the Ruby Stack of scopes.

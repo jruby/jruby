@@ -27,8 +27,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.*;
-import org.jruby.runtime.*;
-import org.jruby.runtime.methods.*;
+import org.jruby.runtime.methods.IMethod;
 
 /**
  *

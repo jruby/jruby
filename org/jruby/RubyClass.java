@@ -33,7 +33,6 @@ package org.jruby;
 import java.util.*;
 
 import org.jruby.exceptions.*;
-import org.jruby.ast.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.marshal.*;

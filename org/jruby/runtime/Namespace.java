@@ -51,7 +51,6 @@
 package org.jruby.runtime;
 
 import org.jruby.*;
-import org.jruby.util.collections.*;
 
 /** Represents an element in the nested module/class namespace hierarchy.
  * 

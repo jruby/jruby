@@ -36,7 +36,6 @@ import java.io.*;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
-import org.jruby.util.*;
 
 /**
  *

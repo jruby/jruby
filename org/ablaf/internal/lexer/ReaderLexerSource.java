@@ -54,8 +54,6 @@ package org.ablaf.internal.lexer;
 
 import java.io.*;
 
-import org.ablaf.lexer.*;
-
 /** Default ILexerSource based on java.io.Reader.
  *
  * @author  jpetersen

@@ -28,13 +28,7 @@
  */
 package org.jruby.runtime;
 
-import java.util.*;
-
 import org.jruby.*;
-import org.jruby.ast.*;
-import org.jruby.util.*;
-import org.jruby.util.collections.*;
-import org.jruby.util.collections.StackElement;
 
 /**
  *

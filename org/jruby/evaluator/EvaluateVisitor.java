@@ -28,22 +28,21 @@ package org.jruby.evaluator;
 
 import java.util.*;
 
-import org.ablaf.ast.*;
+import org.ablaf.ast.INode;
 import org.ablaf.common.*;
-import org.ablaf.lexer.*;
-
+import org.ablaf.lexer.LexerFactory;
 import org.jruby.*;
 import org.jruby.ast.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.util.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.common.*;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.common.IErrors;
 import org.jruby.exceptions.*;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.*;
-import org.jruby.runtime.methods.*;
-import org.jruby.util.*;
+import org.jruby.runtime.methods.IMethod;
+
 //TODO this visitor often leads to very deep stacks.  If it happens to be a real problem, the trampoline method of tail call elimination could be used.
 /**
  *

@@ -31,7 +31,6 @@ package org.jruby.lexer.yacc;
 
 import java.io.*;
 import java.math.*;
-import java.util.*;
 
 import org.ablaf.common.*;
 import org.ablaf.lexer.*;

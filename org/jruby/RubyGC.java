@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import java.util.*;
 import org.jruby.runtime.CallbackFactory;
 
 /**

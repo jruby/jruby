@@ -31,7 +31,6 @@
 package org.jruby.ast.types;
 
 import org.jruby.*;
-import org.jruby.util.*;
 
 /**
  *

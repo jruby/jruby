@@ -31,7 +31,6 @@
 package org.jruby;
 
 import java.math.*;
-import java.util.*;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;

@@ -26,11 +26,10 @@
  */
 package org.jruby.ast.util;
 
-import java.util.*;
+import java.util.Iterator;
 
-import org.ablaf.ast.*;
-import org.jruby.ast.*;
-import org.jruby.ast.types.*;
+import org.ablaf.ast.INode;
+import org.jruby.ast.types.IListNode;
 
 /** Some IListNode utils.
  *

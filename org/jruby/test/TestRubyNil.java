@@ -30,11 +30,9 @@
  */
 package org.jruby.test;
 
-import java.util.*;
-
-import junit.framework.*;
+import java.util.ArrayList;
+import junit.framework.TestCase;
 import org.jruby.*;
-import org.jruby.regexp.*;
 
 /**
 * @author chadfowler

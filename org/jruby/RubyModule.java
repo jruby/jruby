@@ -33,14 +33,11 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.internal.runtime.methods.*;
-import org.jruby.javasupport.*;
 import org.jruby.ast.*;
-import org.jruby.ast.types.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
 import org.jruby.marshal.*;
-import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *

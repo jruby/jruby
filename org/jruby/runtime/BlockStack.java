@@ -1,12 +1,10 @@
 package org.jruby.runtime;
 
-import java.util.*;
-
-import org.ablaf.ast.*;
-import org.jruby.*;
-import org.jruby.runtime.methods.*;
-import org.jruby.util.collections.*;
-import org.jruby.util.collections.StackElement;
+import org.ablaf.ast.INode;
+import org.jruby.Ruby;
+import org.jruby.RubyObject;
+import org.jruby.runtime.methods.IMethod;
+import org.jruby.util.collections.AbstractStack;
 
 /**
  *

@@ -52,8 +52,6 @@
  */
 package org.ablaf.lexer;
 
-import java.util.*;
-
 import org.ablaf.common.*;
 
 /**

@@ -52,8 +52,6 @@
  */
 package org.ablaf.common;
 
-import org.ablaf.lexer.*;
-
 /**
  *
  * @author  jpetersen

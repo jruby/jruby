@@ -1,7 +1,5 @@
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a zero arg in a block.

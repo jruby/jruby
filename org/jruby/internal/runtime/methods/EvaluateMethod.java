@@ -26,10 +26,9 @@
  */
 package org.jruby.internal.runtime.methods;
 
-import org.ablaf.ast.*;
+import org.ablaf.ast.INode;
 import org.jruby.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.evaluator.*;
+import org.jruby.evaluator.EvaluateVisitor;
 
 /**
  *

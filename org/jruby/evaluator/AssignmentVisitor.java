@@ -28,18 +28,15 @@ package org.jruby.evaluator;
 
 import java.util.*;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
+import org.ablaf.ast.INode;
+import org.ablaf.common.IErrorHandler;
 import org.jruby.*;
 import org.jruby.ast.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.util.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.common.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
+import org.jruby.ast.util.ListNodeUtil;
+import org.jruby.ast.visitor.AbstractVisitor;
+import org.jruby.common.IErrors;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.RubyVarmap;
 
 /**
  *

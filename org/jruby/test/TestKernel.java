@@ -37,15 +37,10 @@
 
 package org.jruby.test;
 
-import junit.framework.TestCase;
+import java.util.ArrayList;
+
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyArray;
-import org.jruby.regexp.GNURegexpAdapter;
-import java.util.ArrayList;
-import java.io.File;
 /**
  * Unit test for the kernel class.
  **/

@@ -29,11 +29,10 @@
  */
 package org.jruby.test;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
 
 import org.jruby.*;
-import org.jruby.regexp.*;
 
 /**
  * Unit test for the ruby class.

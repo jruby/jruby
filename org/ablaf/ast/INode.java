@@ -54,7 +54,6 @@ package org.ablaf.ast;
 
 import org.ablaf.ast.visitor.*;
 import org.ablaf.common.*;
-import org.ablaf.lexer.*;
 
 /** This class represents a node in an AST.
  *

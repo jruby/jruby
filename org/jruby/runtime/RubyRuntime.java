@@ -30,11 +30,9 @@ package org.jruby.runtime;
 
 import java.io.*;
 
-import org.ablaf.ast.*;
+import org.ablaf.ast.INode;
 import org.jruby.*;
 import org.jruby.exceptions.*;
-import org.jruby.ast.*;
-import org.jruby.util.*;
 
 /**
  * @version $Revision$

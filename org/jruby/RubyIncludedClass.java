@@ -1,6 +1,5 @@
 package org.jruby;
 
-import java.util.LinkedList;
 import org.jruby.exceptions.*;
 import org.jruby.util.RubyMap;
 

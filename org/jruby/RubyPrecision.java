@@ -26,9 +26,8 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.runtime.Callback;
+import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
 
 /**
  *

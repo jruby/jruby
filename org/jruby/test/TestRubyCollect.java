@@ -37,10 +37,7 @@
 
 package org.jruby.test; 
  
-import junit.framework.*; 
-import org.jruby.*; 
-import org.jruby.javasupport.*; 
-import org.jruby.regexp.*; 
+import org.jruby.Ruby; 
  
 public class TestRubyCollect extends TestRubyBase { 
  public TestRubyCollect(String name) { 

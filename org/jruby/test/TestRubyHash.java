@@ -29,13 +29,8 @@
  */
 package org.jruby.test;
 
-import junit.framework.*;
-
-import java.io.*;
-
-import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.regexp.*;
+import org.jruby.Ruby;
+import org.jruby.RubyHash;
 
 /**
  * @author chadfowler

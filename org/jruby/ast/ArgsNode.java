@@ -27,12 +27,10 @@
  */
 package org.jruby.ast;
 
-import org.jruby.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.runtime.*;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * arguments for a function.

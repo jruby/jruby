@@ -2,7 +2,6 @@ package org.jruby.javasupport;
 
 import org.jruby.*;
 import org.jruby.runtime.Callback;
-import org.jruby.util.*;
 
 public class JavaEachMethod implements Callback {
     private String hasNextMethod;

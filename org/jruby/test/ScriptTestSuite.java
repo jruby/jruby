@@ -34,10 +34,8 @@
 package org.jruby.test;
 
 import java.io.*;
-import java.util.*;
 import junit.framework.*;
-import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
+import org.jruby.*;
 
 /**
  * @author Anders

@@ -1,10 +1,7 @@
 package org.jruby.javasupport;
 
-import java.lang.reflect.*;
-import java.util.*;
-
 import org.jruby.*;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Callback;
 /**
  * @author jpetersen
  * @version $Revision$

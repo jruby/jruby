@@ -35,7 +35,6 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
-import org.jruby.util.*;
 
 import org.apache.oro.io.*;
 

@@ -51,11 +51,10 @@
 package org.jruby.compiler;
 
 import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Method;
+import java.util.Iterator;
 
 import org.jruby.*;
-import org.jruby.javasupport.*;
 
 /**
  *

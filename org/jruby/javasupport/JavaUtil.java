@@ -30,7 +30,6 @@
 
 package org.jruby.javasupport;
 
-import java.lang.ref.*;
 import java.lang.reflect.Array;
 
 import java.util.*;

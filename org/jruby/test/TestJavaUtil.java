@@ -29,10 +29,10 @@
  */
 package org.jruby.test;
 
-import junit.framework.*;
-import org.jruby.*;
-import org.jruby.javasupport.*;
-import org.jruby.regexp.*;
+import junit.framework.TestCase;
+
+import org.jruby.Ruby;
+import org.jruby.javasupport.JavaUtil;
 
 /**
  * @author jpetersen

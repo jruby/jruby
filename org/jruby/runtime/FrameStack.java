@@ -1,9 +1,7 @@
 package org.jruby.runtime;
 
-import org.jruby.internal.util.collections.*;
-import org.jruby.util.collections.*;
-
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.internal.util.collections.Stack;
 
 /**
  *

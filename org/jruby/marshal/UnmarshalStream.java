@@ -31,10 +31,10 @@
 package org.jruby.marshal;
 
 import java.io.*;
-import java.util.*;
+
 import org.jruby.*;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.util.*;
-import org.jruby.exceptions.*;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marsal format.

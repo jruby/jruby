@@ -30,10 +30,7 @@
 package org.jruby;
 
 import java.lang.reflect.*;
-
-import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
-import org.jruby.runtime.*;
 
 public class RubyJavaInterface extends RubyJavaObject {
 

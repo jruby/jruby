@@ -29,7 +29,6 @@
  */
 package org.jruby;
 
-import java.lang.ref.*;
 import java.util.*;
 
 import org.ablaf.ast.*;
@@ -38,7 +37,6 @@ import org.jruby.evaluator.*;
 import org.jruby.exceptions.*;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ast.*;
-import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;

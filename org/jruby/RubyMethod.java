@@ -29,12 +29,10 @@
  */
 package org.jruby;
 
-import org.ablaf.ast.*;
 import org.jruby.ast.*;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
-import org.jruby.util.*;
 
 /** 
  * The RubyMethod class represents a Method object.

@@ -34,7 +34,6 @@ import java.util.*;
 import org.ablaf.ast.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
-import org.jruby.ast.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.parser.*;
 

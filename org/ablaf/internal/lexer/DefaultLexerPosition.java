@@ -53,7 +53,7 @@
 package org.ablaf.internal.lexer;
 
 import org.ablaf.common.*;
-import org.ablaf.lexer.*;
+
 /**
  * @todo we need to implement sharing of those position, probably using a WeakHashMap
  * @author  jpetersen

@@ -29,9 +29,6 @@
  */
 package org.jruby;
 
-import java.io.*;
-import java.util.*;
-
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 

@@ -31,7 +31,6 @@
 package org.jruby;
 
 import java.io.*;
-import java.util.*;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.*;
 import org.jruby.marshal.*;

@@ -27,13 +27,12 @@
  */
 package org.jruby;
 
-import java.text.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.jruby.ast.*;
 import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.util.RubyDateFormat;
 
 /** The Time class.
  * 

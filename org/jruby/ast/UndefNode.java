@@ -26,12 +26,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.runtime.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents an undef statement.
  *

@@ -33,8 +33,6 @@ package org.jruby.runtime;
 import java.util.*;
 
 import org.jruby.*;
-// import org.jruby.original.*;
-import org.jruby.util.*;
 
 
 /**

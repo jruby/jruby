@@ -29,19 +29,14 @@
  */
 package org.jruby.javasupport.bsf;
 
-import java.util.*;
+import java.util.Vector;
 
 import org.jruby.*;
-import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.javasupport.*;
-
-import org.jruby.runtime.*;
-
-import org.jruby.runtime.*;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.GlobalVariable;
 
 import com.ibm.bsf.*;
-import com.ibm.bsf.util.*;
+import com.ibm.bsf.util.BSFEngineImpl;
 
 /**
  *

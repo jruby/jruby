@@ -2,9 +2,9 @@ package org.jruby.javasupport;
 
 import java.lang.reflect.*;
 import java.util.*;
+
 import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.exceptions.NameError;
 
 public class JavaSupport {
     private Ruby ruby;
