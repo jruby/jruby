@@ -64,7 +64,7 @@ public class IndexedCallback implements Callback {
 
     public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
         checkArity(ruby, args);
-        return ((IndexCallable) recv).callIndexed(index, args);
+        return ((IndexCallable) recv).callIndexed(index, args).toRubyObject();
     }
 
     public int getArity() {

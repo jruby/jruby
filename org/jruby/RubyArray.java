@@ -34,6 +34,7 @@ import java.util.*;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.*;
 import org.jruby.util.Pack;
 import org.jruby.util.Asserts;
@@ -222,7 +223,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		return arrayClass;
 	}
 
-    public RubyObject callIndexed(int index, RubyObject[] args) {
+    public IRubyObject callIndexed(int index, RubyObject[] args) {
         switch (index) {
         case M_INSPECT:
             return inspect();
@@ -1064,12 +1065,12 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	/** rb_ary_delete
 	 *
 	 */
-	public RubyObject delete(RubyObject obj) {
+	public IRubyObject delete(RubyObject obj) {
 		modify();
-		RubyObject retVal = getRuby().getNil();
+		IRubyObject retVal = getRuby().getNil();
 		for (int i = getLength() - 1; i >= 0; i--) {
 			if (obj.callMethod("==", entry(i)).isTrue()) {
-				retVal = (RubyObject) list.remove(i);
+				retVal = (IRubyObject) list.remove(i);
 			}
 		}
 		if (retVal.isNil() && getRuby().isBlockGiven()) {
@@ -1410,7 +1411,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 
     class BlockComparator implements Comparator {
 		public int compare(Object o1, Object o2) {
-			RubyObject result = getRuby().yield(RubyArray.newArray(getRuby(), (RubyObject) o1, (RubyObject) o2));
+			IRubyObject result = getRuby().yield(RubyArray.newArray(getRuby(), (RubyObject) o1, (RubyObject) o2));
 			return (int) ((RubyNumeric) result).getLongValue();
 		}
 

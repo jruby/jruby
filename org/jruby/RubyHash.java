@@ -34,6 +34,7 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.*;
 
 /** Implementation of the Hash class.
@@ -325,7 +326,7 @@ public class RubyHash extends RubyObject {
         return value != null ? value : getDefaultValue();
     }
 
-    public RubyObject fetch(RubyObject[] args) {
+    public IRubyObject fetch(RubyObject[] args) {
         if (args.length < 1) {
             throw new ArgumentError(ruby, args.length, 1);
         }
@@ -434,13 +435,12 @@ public class RubyHash extends RubyObject {
 		return RubyArray.newArray(ruby, (RubyObject)entry.getKey(), (RubyObject)entry.getValue());
     }
 
-	public RubyObject delete(RubyObject key) {
+	public IRubyObject delete(RubyObject key) {
 		modify();
-		RubyObject result = (RubyObject) valueMap.remove(key);
+		IRubyObject result = (IRubyObject) valueMap.remove(key);
 		if (result != null) {
 			return result;
-		}
-		if (ruby.isBlockGiven()) {
+		} else if (ruby.isBlockGiven()) {
 			return ruby.yield(key);
 		} else {
 			return getDefaultValue();
@@ -466,7 +466,7 @@ public class RubyHash extends RubyObject {
 		while (iter.hasNext()) {
 			RubyObject key = (RubyObject) iter.next();
 			RubyObject value = (RubyObject) valueMap.get(key);
-			RubyObject shouldDelete = ruby.yield(RubyArray.newArray(ruby, key, value));
+			IRubyObject shouldDelete = ruby.yield(RubyArray.newArray(ruby, key, value));
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;

@@ -547,13 +547,11 @@ public class RubyObject implements Cloneable, IRubyObject {
 
                 /* copy the block to avoid modifying global data. */
                 ruby.getBlock().getCurrent().getFrame().setNamespace(ruby.getCurrentFrame().getNamespace());
-                RubyObject result = null;
                 try {
-                    result = ruby.yield(args[0], args[0], ruby.getRubyClass(), false);
+                    return ruby.yield(args[0], args[0], ruby.getRubyClass(), false).toRubyObject();
                 } finally {
                     ruby.getBlock().setCurrent(oldBlock);
                 }
-                return result;
                 // }
                 /* static block, no need to restore */
                 // ruby.getBlock().frame.setNamespace(ruby.getRubyFrame().getNamespace());

@@ -31,6 +31,7 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author  jpetersen
@@ -93,7 +94,7 @@ public class RubyProc extends RubyObject {
         return newProc;
     }
 
-    public RubyObject call(RubyObject[] args) {
+    public IRubyObject call(RubyObject[] args) {
         RubyModule oldWrapper = getRuby().getWrapper();
         Block oldBlock = getRuby().getBlock().getCurrent();
 

@@ -36,6 +36,7 @@ import java.io.*;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -447,7 +448,7 @@ public class RubyKernel {
         return RaiseException.createBacktrace(ruby, level);
     }
 
-    public static RubyObject rbCatch(Ruby ruby, RubyObject recv, RubyObject tag) {
+    public static IRubyObject rbCatch(Ruby ruby, RubyObject recv, RubyObject tag) {
         try {
             return ruby.yield(tag);
         } catch (ThrowJump throwJump) {

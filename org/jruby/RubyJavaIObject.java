@@ -73,7 +73,7 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
         if (!(proc = interfaceProcs.aref(methodName)).isNil()) {
             RubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(getRuby(), args);
 
-            result = ((RubyProc) proc).call(rubyArgs);
+            result = ((RubyProc) proc).call(rubyArgs).toRubyObject();
         } else if (!(rubyMethod = method(methodName)).isNil()) {
             RubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(getRuby(), args);
 

@@ -78,7 +78,7 @@ public class RubyEnumerable {
     // Block methods
 
     public static RubyObject collect_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        ((RubyArray) arg1).append(ruby.yield(blockArg));
+        ((RubyArray) arg1).append(ruby.yield(blockArg).toRubyObject());
 
         return ruby.getNil();
     }
@@ -132,7 +132,7 @@ public class RubyEnumerable {
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
         if (matcher.callMethod("===", blockArg).isTrue()) {
-            resultArray.append(ruby.yield(blockArg));
+            resultArray.append(ruby.yield(blockArg).toRubyObject());
         }
 
         return ruby.getNil();
@@ -157,7 +157,7 @@ public class RubyEnumerable {
 
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem))) > 0) {
+        } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem)).toRubyObject()) > 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);
@@ -192,7 +192,7 @@ public class RubyEnumerable {
         RubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem))) < 0) {
+        } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem)).toRubyObject()) < 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);
@@ -202,7 +202,7 @@ public class RubyEnumerable {
     }
 
     public static RubyObject reject_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        if (ruby.yield(blockArg).isFalse()) {
+        if (!ruby.yield(blockArg).isTrue()) {
             ((RubyArray) arg1).append(blockArg);
         }
 

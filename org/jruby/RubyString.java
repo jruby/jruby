@@ -34,6 +34,7 @@ import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.*;
 
 /**
@@ -243,7 +244,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return stringClass;
 	}
 
-    public RubyObject callIndexed(int index, RubyObject[] args) {
+    public IRubyObject callIndexed(int index, RubyObject[] args) {
         switch (index) {
         case M_CLONE:
             return rbClone();
@@ -812,7 +813,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		}
 		StringBuffer sbuf = new StringBuffer();
 		String str = getValue();
-		RubyObject newStr;
+		IRubyObject newStr;
 		int offset = 0;
 		while (beg >= 0) {
 			match = (RubyMatchData) getRuby().getBackref();

@@ -33,6 +33,7 @@ package org.jruby;
 import java.util.*;
 import java.lang.ref.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.*;
 import org.jruby.exceptions.TypeError;
 import org.jruby.util.Asserts;
@@ -51,12 +52,12 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         super(ruby, ruby.getClasses().getSymbolClass());
         this.symbol = symbol;
 
-        synchronized(RubySymbol.class) {
+        synchronized (RubySymbol.class) {
             lastId++;
             this.id = lastId;
         }
     }
-    
+
     /** rb_to_id
      *
      */
@@ -67,7 +68,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     public static RubySymbol nilSymbol(Ruby ruby) {
         return newSymbol(ruby, null);
     }
-    
+
     private static final int M_TO_I = 2;
     private static final int M_TO_S = 3;
     private static final int M_EQUAL = 4;
@@ -76,18 +77,21 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     private static final int M_CLONE = 7;
 
     public static RubyClass createSymbolClass(Ruby ruby) {
-        RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
-        
+        RubyClass symbolClass =
+            ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
+
         symbolClass.getInternalClass().undefMethod("new");
 
         symbolClass.defineMethod("to_i", IndexedCallback.create(M_TO_I, 0));
         symbolClass.defineMethod("to_int", IndexedCallback.create(M_TO_I, 0));
         symbolClass.defineMethod("id2name", IndexedCallback.create(M_TO_S, 0));
         symbolClass.defineMethod("to_s", IndexedCallback.create(M_TO_S, 0));
-        
+
         symbolClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
         symbolClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
-        symbolClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
+        symbolClass.defineMethod(
+            "inspect",
+            IndexedCallback.create(M_INSPECT, 0));
         symbolClass.defineMethod("dup", IndexedCallback.create(M_CLONE, 0));
         symbolClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
         symbolClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
@@ -96,20 +100,20 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         return symbolClass;
     }
 
-    public RubyObject callIndexed(int index, RubyObject[] args) {
+    public IRubyObject callIndexed(int index, RubyObject[] args) {
         switch (index) {
-        case M_TO_S:
-            return to_s();
-        case M_TO_I:
-            return to_i();
-        case M_EQUAL:
-            return equal(args[0]);
-        case M_HASH:
-            return hash();
-        case M_INSPECT:
-            return inspect();
-        case M_CLONE:
-            return rbClone();
+            case M_TO_S :
+                return to_s();
+            case M_TO_I :
+                return to_i();
+            case M_EQUAL :
+                return equal(args[0]);
+            case M_HASH :
+                return hash();
+            case M_INSPECT :
+                return inspect();
+            case M_CLONE :
+                return rbClone();
         }
         Asserts.assertNotReached();
         return null;
@@ -132,10 +136,10 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         if (result == null) {
             if (name == null) {
                 result = new RubySymbol(ruby, null) {
-                        public boolean isNil() {
-                            return true;
-                        }
-                    };
+                    public boolean isNil() {
+                        return true;
+                    }
+                };
             } else {
                 result = new RubySymbol(ruby, name);
             }
@@ -147,11 +151,11 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     public RubyFixnum to_i() {
         return RubyFixnum.newFixnum(ruby, id);
     }
-    
+
     public RubyString inspect() {
         return RubyString.newString(getRuby(), ":" + symbol);
     }
-    
+
     public RubyString to_s() {
         return RubyString.newString(getRuby(), symbol);
     }
@@ -175,11 +179,10 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         output.dumpString(symbol);
     }
 
-    public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        return RubySymbol.newSymbol(input.getRuby(),
-                                    input.unmarshalString());
+    public static RubySymbol unmarshalFrom(UnmarshalStream input)
+        throws java.io.IOException {
+        return RubySymbol.newSymbol(input.getRuby(), input.unmarshalString());
     }
-
 
     public static class SymbolTable {
         /* Using Java's GC to keep the table free from unused symbols. */

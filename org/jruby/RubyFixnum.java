@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.*;
 import org.jruby.util.Asserts;
 
@@ -115,7 +116,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         return fixnumClass;
     }
 
-    public RubyObject callIndexed(int index, RubyObject[] args) {
+    public IRubyObject callIndexed(int index, RubyObject[] args) {
         switch (index) {
         case M_TO_F:
             return to_f();
