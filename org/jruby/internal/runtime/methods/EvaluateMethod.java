@@ -27,10 +27,13 @@
 package org.jruby.internal.runtime.methods;
 
 import org.ablaf.ast.INode;
-import org.jruby.*;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.Ruby;
+import org.jruby.ast.AttrSetNode;
+import org.jruby.ast.InstVarNode;
 
 /**
  *
@@ -49,26 +52,27 @@ public class EvaluateMethod extends AbstractMethod {
         this(node, null);
     }
 
-    /**
-     * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
-     */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return EvaluateVisitor.createVisitor(receiver).eval(node);
     }
 
-    /**
-     * Gets the node.
-     * @return Returns a INode
-     */
     public INode getNode() {
         return node;
     }
 
-    /**
-     * Sets the node.
-     * @param node The node to set
-     */
     public void setNode(INode node) {
         this.node = node;
+    }
+
+    public Arity getArity() {
+        if (getNode() instanceof AttrSetNode) {
+            return Arity.singleArgument();
+        } else if (getNode() instanceof InstVarNode) {
+            return Arity.noArguments();
+        } else {
+            // FIXME: Not sure this case can happen.
+            // Should do polymorphic call to node instead anyway.
+            return Arity.optional();
+        }
     }
 }

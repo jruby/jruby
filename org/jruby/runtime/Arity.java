@@ -23,6 +23,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.ast.ArgsNode;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -84,4 +85,5 @@ public class Arity {
             return value;
         }
     }
+
 }

@@ -181,29 +181,7 @@ public class RubyMethod extends RubyObject {
      * @return the number of arguments of a method.
      */
     public RubyFixnum arity() {
-        if (method instanceof EvaluateMethod) {
-            if (((EvaluateMethod) method).getNode() instanceof AttrSetNode) {
-                return RubyFixnum.one(getRuntime());
-            } else if (((EvaluateMethod) method).getNode() instanceof InstVarNode) {
-                return RubyFixnum.zero(getRuntime());
-            }
-        } else if (method instanceof DefaultMethod) {
-            ArgsNode args = ((DefaultMethod) method).getArgsNode();
-
-            if (args == null) {
-                return RubyFixnum.zero(getRuntime());
-            }
-            int n = args.getArgsCount();
-            if (args.getOptArgs() != null || args.getRestArg() >= 0) {
-                n = -n - 1;
-            }
-            return RubyFixnum.newFixnum(getRuntime(), n);
-        } else if (method instanceof CallbackMethod) {
-            Arity arity = ((CallbackMethod) method).getCallback().getArity();
-            return RubyFixnum.newFixnum(getRuntime(), arity.getValue());
-        }
-
-        return RubyFixnum.newFixnum(getRuntime(), -1);
+        return RubyFixnum.newFixnum(getRuntime(), method.getArity().getValue());
     }
 
     /**

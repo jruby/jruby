@@ -16,6 +16,7 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -36,7 +37,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     /**
-     * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
+     * @see IMethod#execute(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         RubyProc optionalBlockArg = null;
@@ -179,5 +180,17 @@ public final class DefaultMethod extends AbstractMethod {
      */
     public ArgsNode getArgsNode() {
         return argsNode;
+    }
+
+    public Arity getArity() {
+        if (getArgsNode() == null) {
+            return Arity.noArguments();
+        }
+        ArgsNode args = getArgsNode();
+        int argsCount = args.getArgsCount();
+        if (args.getOptArgs() != null || args.getRestArg() >= 0) {
+            return Arity.required(argsCount);
+        }
+        return Arity.createArity(argsCount);
     }
 }
