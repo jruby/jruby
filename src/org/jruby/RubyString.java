@@ -55,12 +55,13 @@ public class RubyString extends RubyObject implements IndexCallable {
 
 	private String value;
 
-	public RubyString(Ruby ruby) {
-		this(ruby, null);
+	private RubyString(Ruby ruby) {
+		this(ruby, ruby.getClasses().getStringClass(), null);
 	}
 
 	public RubyString(Ruby ruby, String str) {
 		this(ruby, ruby.getClasses().getStringClass(), str);
+        Asserts.notNull(str);
 	}
 
 	public RubyString(Ruby ruby, RubyClass rubyClass, String str) {

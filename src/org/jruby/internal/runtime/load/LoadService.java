@@ -76,16 +76,23 @@ public class LoadService implements ILoadService {
             addPath((String)iter.next());
         }
         if (runtime.getSafeLevel() == 0) {
-            addPath(System.getProperty("jruby.lib"));
+            String jrubyLib = System.getProperty("jruby.lib");
+            if (jrubyLib != null) {
+                addPath(jrubyLib);
+            }
         }
 
-        String rubyDir = System.getProperty("jruby.home") + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
 
-        addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION);
-        addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
-        addPath(rubyDir + "site_ruby");
-        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-        addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+        String jrubyHome = System.getProperty("jruby.home");
+        if (jrubyHome != null) {
+            String rubyDir = jrubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
+
+            addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION);
+            addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+            addPath(rubyDir + "site_ruby");
+            addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+            addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+        }
 
         if (runtime.getSafeLevel() == 0) {
             addPath(".");
