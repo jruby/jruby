@@ -144,6 +144,7 @@ module Enumerable
       yield(item, index)
       index += 1
     end
+    self
   end
 
   def include? (value)
