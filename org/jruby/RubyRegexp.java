@@ -60,6 +60,18 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         matcher.compile(pattern);
     }
+
+    public static String quote(String orig) {
+        StringBuffer sb = new StringBuffer(orig.length() * 2);
+        for (int i = 0; i < orig.length(); i++) {
+            char c = orig.charAt(i);
+            if ("[]{}()|-*.\\?+^$".indexOf(c) != -1) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
     
     private void recompileIfNeeded() {
         checkInitialized();
@@ -77,7 +89,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
     
-    private RubyString get_str(RubyObject other) {
+    private RubyString stringValue(RubyObject other) {
         if (other instanceof RubyString) {
             return (RubyString)other;
         } else {
@@ -111,7 +123,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public RubyObject m_initialize(RubyObject[] args) {
         String pat = (args[0] instanceof RubyRegexp)
                    ? ((RubyRegexp)args[0]).m_source().getValue()
-                   : get_str(args[0]).getValue();
+                   : stringValue(args[0]).getValue();
         int opts = 0;
         if (args.length > 1) {
             if (args[1] instanceof RubyFixnum) {
@@ -131,15 +143,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public static RubyString m_quote(Ruby ruby, RubyObject recv, RubyString str) {
         String orig = str.getValue();
-        StringBuffer sb = new StringBuffer(orig.length() * 2);
-        for (int i = 0; i < orig.length(); i++) {
-            char c = orig.charAt(i);
-            if ("[]{}()|-*.\\?+^$".indexOf(c) != -1) {
-                sb.append('\\');
-            }
-            sb.append(c);
-        }
-        return RubyString.m_newString(ruby, sb.toString());
+        RubyString newStr = RubyString.m_newString(ruby, quote(orig));
+        newStr.infectObject(str);
+        return newStr;
     }
     
     /** 
@@ -270,7 +276,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public int m_search(RubyObject target, int pos) {
-        String str = get_str(target).getValue();
+        String str = stringValue(target).getValue();
         if (pos > str.length()) {
             return -1;
         }
@@ -289,7 +295,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public RubyObject m_regsub(RubyObject str, RubyMatchData match) {
-        String repl = get_str(str).getValue();
+        String repl = stringValue(str).getValue();
         StringBuffer sb = new StringBuffer("");
         int pos = 0;
         int end = repl.length();

@@ -191,7 +191,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_replace(RubyObject other) {
-        RubyString str = get_str(other);
+        RubyString str = stringValue(other);
         if (this == other || getValue().equals(str.getValue())) {
             return this;
         }
@@ -240,7 +240,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyFixnum op_cmp(RubyObject other) {
-        return RubyFixnum.m_newFixnum(getRuby(), cmp(get_str(other)));
+        return RubyFixnum.m_newFixnum(getRuby(), cmp(stringValue(other)));
     }
 
     /** rb_str_equal
@@ -433,7 +433,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString op_plus(RubyObject other) {
-        RubyString str = get_str(other);
+        RubyString str = stringValue(other);
         
         RubyString newString = newString(getValue() + str.getValue());
         
@@ -492,7 +492,7 @@ public class RubyString extends RubyObject {
      */
     public RubyString m_append(RubyObject other) {
         infectObject(other);
-        return m_cat(get_str(other).getValue());
+        return m_cat(stringValue(other).getValue());
     }
 
     /** rb_str_concat
@@ -507,7 +507,7 @@ public class RubyString extends RubyObject {
     }
 
     /* rb_str_to_str */
-    private RubyString get_str(RubyObject other) {
+    private RubyString stringValue(RubyObject other) {
         if (other instanceof RubyString) {
             return (RubyString)other;
         } else {
@@ -520,7 +520,7 @@ public class RubyString extends RubyObject {
     }
 
     /* get_pat */
-    private RubyRegexp get_pat(RubyObject other) {
+    private RubyRegexp regexpValue(RubyObject other) {
         if (other instanceof RubyRegexp) {
             return (RubyRegexp)other;
         } else if (other instanceof RubyString) {
@@ -554,7 +554,7 @@ public class RubyString extends RubyObject {
         } else {
             throw new RubyArgumentException("wrong number of arguments");
         }
-        RubyRegexp pat = get_pat(args[0]);
+        RubyRegexp pat = regexpValue(args[0]);
 
         if (pat.m_search(this, 0) >= 0) {
             RubyMatchData match = (RubyMatchData)getRuby().getBackRef();
@@ -600,7 +600,7 @@ public class RubyString extends RubyObject {
             throw new RubyArgumentException("wrong number of arguments");
         }
         boolean taint = repl.isTaint();
-        RubyRegexp pat = get_pat(args[0]);
+        RubyRegexp pat = regexpValue(args[0]);
 
         int beg = pat.m_search(this, 0);
         if (beg < 0) {
@@ -646,7 +646,7 @@ public class RubyString extends RubyObject {
 
     private RubyObject index(RubyObject[] args, boolean reverse) {
         int pos = 0;
-        if (count_args(args, 1, 2) == 2) {
+        if (argCount(args, 1, 2) == 2) {
             pos = RubyNumeric.fix2int(args[1]);
         }
         if (pos < 0) {
@@ -717,7 +717,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject m_aref(RubyObject[] args) {
-        if (count_args(args, 1, 2) == 2) {
+        if (argCount(args, 1, 2) == 2) {
             int beg = RubyNumeric.fix2int(args[0]);
             int len = RubyNumeric.fix2int(args[1]);
             return substr(beg, len);
@@ -733,13 +733,13 @@ public class RubyString extends RubyObject {
             return new RubyFixnum(getRuby(), getValue().charAt(idx));
         }
         if (args[0] instanceof RubyRegexp) {
-            if (get_pat(args[0]).m_search(this, 0) >= 0) {
+            if (regexpValue(args[0]).m_search(this, 0) >= 0) {
                 return RubyRegexp.m_last_match(getRuby().getBackRef());
             }
             return getRuby().getNil();
         }
         if (args[0] instanceof RubyString) {
-            if (getValue().indexOf(get_str(args[0]).getValue()) != -1) {
+            if (getValue().indexOf(stringValue(args[0]).getValue()) != -1) {
                 return args[0];
             }
             return getRuby().getNil();
@@ -756,8 +756,8 @@ public class RubyString extends RubyObject {
      */
     public RubyObject m_aset(RubyObject[] args) {
         int strLen = getValue().length();
-        if (count_args(args, 2, 3) == 3) {
-            RubyString repl = get_str(args[2]);
+        if (argCount(args, 2, 3) == 3) {
+            RubyString repl = stringValue(args[2]);
             int beg = RubyNumeric.fix2int(args[0]);
             int len = RubyNumeric.fix2int(args[1]);
             if (len < 0) {
@@ -787,7 +787,7 @@ public class RubyString extends RubyObject {
                 char c = (char)RubyNumeric.fix2int(args[1]);
                 setValue(getValue().substring(0, idx) + c + getValue().substring(idx + 1));
             } else {
-                replace(idx, 1, get_str(args[1]));
+                replace(idx, 1, stringValue(args[1]));
             }
             return args[1];
         }
@@ -796,16 +796,16 @@ public class RubyString extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyString) {
-            RubyString orig = get_str(args[0]);
+            RubyString orig = stringValue(args[0]);
             int beg = getValue().indexOf(orig.getValue());
             if (beg != -1) {
-                replace(beg, orig.getValue().length(), get_str(args[1]));
+                replace(beg, orig.getValue().length(), stringValue(args[1]));
             }
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
             long[] idxs = ((RubyRange)args[0]).getBeginLength(getValue().length());
-            replace((int)idxs[0], (int)idxs[1], get_str(args[1]));
+            replace((int)idxs[0], (int)idxs[1], stringValue(args[1]));
             return args[1];
         }
         throw new RubyTypeException("wrong argument type");
@@ -815,7 +815,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject m_slice_bang(RubyObject[] args) {
-        int argc = count_args(args, 1, 2);
+        int argc = argCount(args, 1, 2);
         RubyObject[] newArgs = new RubyObject[argc + 1];
         newArgs[0] = args[0];
         if (argc > 1) {
@@ -919,7 +919,7 @@ public class RubyString extends RubyObject {
     /* rb_str_upto */
     RubyObject upto(RubyObject str, boolean excl) {
         RubyString current = this;
-        RubyString end = get_str(str);
+        RubyString end = stringValue(str);
         while (current.cmp(end) <= 0) {
             getRuby().yield(current);
             if (current.cmp(end) == 0) {
@@ -944,7 +944,7 @@ public class RubyString extends RubyObject {
             char c = (char)RubyNumeric.fix2int(obj);
             return getValue().indexOf(c) == -1 ? getRuby().getFalse() : getRuby().getTrue();
         }
-        String str = get_str(obj).getValue();
+        String str = stringValue(obj).getValue();
         return getValue().indexOf(str) == -1 ? getRuby().getFalse() : getRuby().getTrue();
     }
     
@@ -991,7 +991,7 @@ public class RubyString extends RubyObject {
         int limit = 0;
         RubyRegexp pat = null;
         RubyString str = null;
-        int argc = count_args(args, 0, 2);
+        int argc = argCount(args, 0, 2);
         if (argc == 2) {
             limit = RubyNumeric.fix2int(args[1]);
             if (limit == 1) {
@@ -1005,9 +1005,9 @@ public class RubyString extends RubyObject {
         int len = getValue().length();
         if (argc > 0) {
             if (args[0] instanceof RubyRegexp) {
-                pat = get_pat(args[0]);
+                pat = regexpValue(args[0]);
             } else {
-                str = get_str(args[0]);
+                str = stringValue(args[0]);
                 if (str.getValue().equals(" ")) {
                     pat = RubyRegexp.m_newRegexp(getRuby(), "\\s+", 0);
                 } else if (str.getValue().length() != 1) {
@@ -1054,7 +1054,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject m_scan(RubyObject arg) {
-        RubyRegexp pat = get_pat(arg);
+        RubyRegexp pat = regexpValue(arg);
         int start = 0;
         if (!getRuby().getInterpreter().isBlockGiven()) {
             RubyArray ary = RubyArray.m_newArray(getRuby());
@@ -1138,81 +1138,79 @@ public class RubyString extends RubyObject {
         return newString(sbuf.toString());
     }
     
-    private String chop(String str) {
-        int end = str.length() - 1;
-        if (str.charAt(end) == '\n' && end > 0) {
-            if (str.charAt(end - 1) == '\r') {
+    private String chop() {
+        if (getValue().length() == 0) {
+            return null;
+        }
+        int end = getValue().length() - 1;
+        if (getValue().charAt(end) == '\n' && end > 0) {
+            if (getValue().charAt(end - 1) == '\r') {
                 end--;
             }
         }
-        return str.substring(0, end);
+        return getValue().substring(0, end);
     }
     
     /** rb_str_chop
      *
      */
     public RubyObject m_chop() {
-        if (getValue().length() == 0) {
+        String newStr = chop();
+        if (newStr == null) {
             return m_dup();
         }
-        return newString(chop(getValue()));
+        return newString(newStr);
     }
     
     /** rb_str_chop_bang
      *
      */
     public RubyObject m_chop_bang() {
-        if (getValue().length() == 0) {
+        String newStr = chop();
+        if (newStr == null) {
             return getRuby().getNil();
         }
-        setValue(chop(getValue()));
+        setValue(newStr);
         return this;
     }
 
-    private String chomp(String str, String sep) {
+    private String chomp(RubyObject[] args) {
+        if (getValue().length() == 0) {
+            return null;
+        }
+        String sep = null;
+        if (argCount(args, 0, 1) == 1) {
+            sep = stringValue(args[0]).getValue();
+        }
         int end = -1;
-        if (sep != null && str.endsWith(sep)) {
-            return str.substring(0, str.lastIndexOf(sep));
+        if (sep != null && getValue().endsWith(sep)) {
+            return getValue().substring(0, getValue().lastIndexOf(sep));
         }
         // $/ is coming up nil, so check for 'standard' line separators
-        if (str.endsWith("\r\n")) {
-            end = str.length() - 2;
-        } else if (str.endsWith("\n") || str.endsWith("\r")) {
-            end = str.length() - 1;
+        if (getValue().endsWith("\r\n")) {
+            end = getValue().length() - 2;
+        } else if (getValue().endsWith("\n") || getValue().endsWith("\r")) {
+            end = getValue().length() - 1;
         }
-        return end == -1 ? null : str.substring(0, end);
+        return end == -1 ? null : getValue().substring(0, end);
     }
     
     /** rb_str_chomp
      *
      */
     public RubyObject m_chomp(RubyObject[] args) {
-        if (getValue().length() == 0) {
-            return m_dup();
-        }
-        String sep = null;
-        if (count_args(args, 0, 1) == 1) {
-            sep = get_str(args[0]).getValue();
-        }
-        String newStr = chomp(getValue(), sep);
+        String newStr = chomp(args);
         if (newStr == null) {
             return m_dup();
         }
-        return newString(chomp(getValue(), sep));
+        return newString(newStr);
     }
     
     /** rb_str_chomp_bang
      *
      */
     public RubyObject m_chomp_bang(RubyObject[] args) {
-        if (getValue().length() == 0) {
-            return getRuby().getNil();
-        }
-        String sep = null;
-        if (count_args(args, 0, 1) == 1) {
-            sep = get_str(args[0]).getValue();
-        }
-        String newStr = chomp(getValue(), sep);
+        String newStr = chomp(args);
         if (newStr == null) {
             return getRuby().getNil();
         }
@@ -1242,6 +1240,283 @@ public class RubyString extends RubyObject {
             return getRuby().getNil();
         }
         setValue(newStr);
+        return this;
+    }
+    
+    private String expandTemplate(String spec, boolean invertOK) {
+        int len = spec.length();
+        if (len <= 1) {
+            return spec;
+        }
+        StringBuffer sbuf = new StringBuffer();
+        int pos = (invertOK && spec.startsWith("^")) ? 1 : 0;
+        char c1, c2;
+        while (pos < len) {
+            c1 = spec.charAt(pos);
+            if (pos + 2 < len && spec.charAt(pos + 1) == '-') {
+                if ((c2 = spec.charAt(pos + 2)) > c1) {
+                    for (int i = c1; i <= c2; i++) {
+                        sbuf.append((char)i);
+                    }
+                }
+                pos += 3;
+                continue;
+            }
+            sbuf.append(c1);
+            pos++;
+        }
+        return sbuf.toString();
+    }
+    
+    private String setupTable(String[] specs) {
+        int[] table = new int[256];
+        int numSets = 0;
+        for (int i = 0; i < specs.length; i++) {
+            String template = expandTemplate(specs[i], true);
+            boolean invert = (specs[i].length() > 1 && specs[i].startsWith("^"));
+            for (int j = 0; j < 256; j++) {
+                if (template.indexOf((char)j) != -1) {
+                    table[j] += (invert ? -1 : 1);
+                }
+            }
+            numSets += invert ? 0 : 1;
+        }
+        StringBuffer sbuf = new StringBuffer();
+        for (int k = 0; k < 256; k++) {
+            if (table[k] == numSets) {
+                sbuf.append((char)k);
+            }
+        }
+        return sbuf.toString();
+    }
+    
+    /** rb_str_count
+     *
+     */
+    public RubyObject m_count(RubyObject[] args) {
+        int argc = argCount(args, 1, -1);
+        String[] specs = new String[argc];
+        for (int i = 0; i < argc; i++) {
+            specs[i] = stringValue(args[i]).getValue();
+        }
+        String table = setupTable(specs);
+
+        int count = 0;
+        for (int j = 0; j < getValue().length(); j++) {
+            if (table.indexOf(getValue().charAt(j)) != -1) {
+                count++;
+            }
+        }
+        return RubyFixnum.m_newFixnum(getRuby(), count);
+    }
+    
+    private String delete(RubyObject[] args) {
+        int argc = argCount(args, 1, -1);
+        String[] specs = new String[argc];
+        for (int i = 0; i < argc; i++) {
+            specs[i] = stringValue(args[i]).getValue();
+        }
+        String table = setupTable(specs);
+
+        int strLen = getValue().length();
+        StringBuffer sbuf = new StringBuffer(strLen);
+        char c;
+        for (int j = 0; j < strLen; j++) {
+            c = getValue().charAt(j);
+            if (table.indexOf(c) == -1) {
+                sbuf.append(c);
+            }
+        }
+        return sbuf.toString();
+    }
+    
+    /** rb_str_delete
+     *
+     */
+    public RubyObject m_delete(RubyObject[] args) {
+        RubyString newStr = newString(delete(args));
+        newStr.infectObject(this);
+        return newStr;
+    }
+    
+    /** rb_str_delete_bang
+     *
+     */
+    public RubyObject m_delete_bang(RubyObject[] args) {
+        String newStr = delete(args);
+        if (newStr.equals(getValue())) {
+            return getRuby().getNil();
+        }
+        setValue(newStr);
+        return this;
+    }
+    
+    private String squeeze(RubyObject[] args) {
+        int argc = args.length;
+        String[] specs = null;
+        if (argc > 0) {
+            specs = new String[argc];
+            for (int i = 0; i < argc; i++) {
+                specs[i] = stringValue(args[i]).getValue();
+            }
+        }
+        String table = specs == null ? null : setupTable(specs);
+
+        int strLen = getValue().length();
+        if (strLen <= 1) {
+            return getValue();
+        }
+        StringBuffer sbuf = new StringBuffer(strLen);
+        char c1 = getValue().charAt(0);
+        sbuf.append(c1);
+        char c2;
+        for (int j = 1; j < strLen; j++) {
+            c2 = getValue().charAt(j);
+            if (c2 == c1 && (table == null || table.indexOf(c2) != -1)) {
+                continue;
+            }
+            sbuf.append(c2);
+            c1 = c2;
+        }
+        return sbuf.toString();
+    }
+    
+    /** rb_str_squeeze
+     *
+     */
+    public RubyObject m_squeeze(RubyObject[] args) {
+        RubyString newStr = newString(squeeze(args));
+        newStr.infectObject(this);
+        return newStr;
+    }
+    
+    /** rb_str_squeeze_bang
+     *
+     */
+    public RubyObject m_squeeze_bang(RubyObject[] args) {
+        String newStr = squeeze(args);
+        if (newStr.equals(getValue())) {
+            return getRuby().getNil();
+        }
+        setValue(newStr);
+        return this;
+    }
+    
+    private String tr(RubyObject[] args, boolean squeeze) {
+        if (args.length != 2) {
+            throw new RubyArgumentException("wrong number of arguments");
+        }
+        String srchSpec = stringValue(args[0]).getValue();
+        String srch = expandTemplate(srchSpec, true);
+        if (srchSpec.startsWith("^")) {
+            StringBuffer sbuf = new StringBuffer(256);
+            for (int i = 0; i < 256; i++) {
+                char c = (char)i;
+                if (srch.indexOf(c) == -1) {
+                    sbuf.append(c);
+                }
+            }
+            srch = sbuf.toString();
+        }
+        String repl = expandTemplate(stringValue(args[1]).getValue(), false);
+
+        int strLen = getValue().length();
+        if (strLen == 0 || srch.length() == 0) {
+            return getValue();
+        }
+        int repLen = repl.length();
+        StringBuffer sbuf = new StringBuffer(strLen);
+        char cs, cr;
+        int last = -1;
+        int pos;
+        for (int i = 0; i < strLen; i++) {
+            cs = getValue().charAt(i);
+            pos = srch.indexOf(cs);
+            if (pos == -1) {
+                sbuf.append(cs);
+                last = -1;
+            } else if (repLen > 0) {
+                cr = repl.charAt(Math.min(pos, repLen - 1));
+                if (squeeze && (int)cr == last) {
+                    continue;
+                }
+                sbuf.append(cr);
+                last = cr;
+            }
+        }
+        return sbuf.toString();
+    }
+    
+    /** rb_str_tr
+     *
+     */
+    public RubyObject m_tr(RubyObject[] args) {
+        RubyString newStr = newString(tr(args, false));
+        newStr.infectObject(this);
+        return newStr;
+    }
+    
+    /** rb_str_tr_bang
+     *
+     */
+    public RubyObject m_tr_bang(RubyObject[] args) {
+        String newStr = tr(args, false);
+        if (newStr.equals(getValue())) {
+            return getRuby().getNil();
+        }
+        setValue(newStr);
+        return this;
+    }
+    
+    /** rb_str_tr_s
+     *
+     */
+    public RubyObject m_tr_s(RubyObject[] args) {
+        RubyString newStr = newString(tr(args, true));
+        newStr.infectObject(this);
+        return newStr;
+    }
+    
+    /** rb_str_tr_s_bang
+     *
+     */
+    public RubyObject m_tr_s_bang(RubyObject[] args) {
+        String newStr = tr(args, true);
+        if (newStr.equals(getValue())) {
+            return getRuby().getNil();
+        }
+        setValue(newStr);
+        return this;
+    }
+    
+    /** rb_str_each_line
+     *
+     */
+    public RubyObject m_each_line(RubyObject[] args) {
+        int strLen = getValue().length();
+        if (strLen == 0) {
+            return this;
+        }
+        String sep = null;
+        if (argCount(args, 0, 1) == 1) {
+            sep = RubyRegexp.quote(stringValue(args[0]).getValue());
+        }
+        if (sep == null) {
+            sep = "(?:\\n|\\r\\n?)";
+        } else if (sep.length() == 0) {
+            sep = "[\\n\\r]+";
+        }
+        RubyRegexp pat = RubyRegexp.m_newRegexp(getRuby(), ".*?" + sep,
+                                                RubyRegexp.RE_OPTION_MULTILINE);
+        int start = 0;
+        while (pat.m_search(this, start) != -1) {
+            RubyMatchData md = (RubyMatchData)getRuby().getBackRef();
+            getRuby().yield(md.group(0));
+            start = md.matchEndPosition();
+        }
+        if (start < strLen) {
+            getRuby().yield(substr(start, strLen - start));
+        }
         return this;
     }
 }

@@ -121,19 +121,19 @@ public class RbString {
         stringClass.defineMethod("chomp!", getMethod("m_chomp_bang", true));
         stringClass.defineMethod("strip!", getMethod("m_strip_bang", false));
 
-//    rb_define_method(rb_cString, "tr", rb_str_tr, 2);
-//    rb_define_method(rb_cString, "tr_s", rb_str_tr_s, 2);
-//    rb_define_method(rb_cString, "delete", rb_str_delete, -1);
-//    rb_define_method(rb_cString, "squeeze", rb_str_squeeze, -1);
-//    rb_define_method(rb_cString, "count", rb_str_count, -1);
+        stringClass.defineMethod("tr", getMethod("m_tr", true));
+        stringClass.defineMethod("tr_s", getMethod("m_tr_s", true));
+        stringClass.defineMethod("delete", getMethod("m_delete", true));
+        stringClass.defineMethod("squeeze", getMethod("m_squeeze", true));
+        stringClass.defineMethod("count", getMethod("m_count", true));
 
-//    rb_define_method(rb_cString, "tr!", rb_str_tr_bang, 2);
-//    rb_define_method(rb_cString, "tr_s!", rb_str_tr_s_bang, 2);
-//    rb_define_method(rb_cString, "delete!", rb_str_delete_bang, -1);
-//    rb_define_method(rb_cString, "squeeze!", rb_str_squeeze_bang, -1);
+        stringClass.defineMethod("tr!", getMethod("m_tr_bang", true));
+        stringClass.defineMethod("tr_s!", getMethod("mr_tr_s_bang", true));
+        stringClass.defineMethod("delete!", getMethod("m_delete_bang", true));
+        stringClass.defineMethod("squeeze!", getMethod("m_squeeze_bang", true));
 
-//    rb_define_method(rb_cString, "each_line", rb_str_each_line, -1);
-//    rb_define_method(rb_cString, "each", rb_str_each_line, -1);
+        stringClass.defineMethod("each_line", getMethod("m_each_line", true));
+        stringClass.defineMethod("each", getMethod("m_each_line", true));
 //    rb_define_method(rb_cString, "each_byte", rb_str_each_byte, 0);
 
 //    rb_define_method(rb_cString, "sum", rb_str_sum, -1);

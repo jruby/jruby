@@ -161,9 +161,9 @@ public class RubyObject implements VALUE {
         return false;
     }
     
-    protected int count_args(RubyObject[] args, int min, int max) {
+    protected int argCount(RubyObject[] args, int min, int max) {
         int len = args.length;
-        if (len < min || len > max) {
+        if (len < min || (max > -1 && len > max)) {
             throw new RubyArgumentException("wrong number of arguments");
         }
         return len;
