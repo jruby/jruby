@@ -19,6 +19,7 @@ public class RubyFile extends RubyIO {
         
         fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
+        fileClass.defineSingletonMethod("delete", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
 
         fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
         
@@ -115,7 +116,10 @@ public class RubyFile extends RubyIO {
 	public static RubyObject unlink(Ruby ruby, RubyObject recv, RubyObject[] args) {
 	    for (int i = 0; i < args.length; i++) {
 	        args[i].checkSafeString();
-	        if (!new File(args[i].toString()).delete()) {
+			File lToDelete = new File(args[i].toString());
+			if (!lToDelete.exists())
+				 throw new IOError(ruby, " No such file or directory - \"" + args[i].toString() + "\"");
+	        if (!lToDelete.delete()) {
 	            return ruby.getFalse();
 	        }
 	    }
