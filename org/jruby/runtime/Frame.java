@@ -205,4 +205,16 @@ public class Frame {
         iter = tmp.iter;
         tmp = tmp.tmp;
     }
+    
+    /**
+     * clone this Frame. This method is used by the
+     * FrameStack#duplicate method.
+     * 
+     */
+    public Frame duplicate() {
+        IRubyObject[] newArgs = new IRubyObject[args.length];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        return new Frame(self, newArgs, lastFunc, lastClass, namespace, null, position, iter);
+    }
+
 }

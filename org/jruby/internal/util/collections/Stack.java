@@ -39,7 +39,7 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class Stack implements IStack {
-    private ArrayList list = new ArrayList();
+    protected ArrayList list = new ArrayList();
 
     /**
      * Constructor for Stack.

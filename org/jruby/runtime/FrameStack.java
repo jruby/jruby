@@ -1,5 +1,7 @@
 package org.jruby.runtime;
 
+import java.util.ArrayList;
+
 import org.jruby.Ruby;
 import org.jruby.internal.util.collections.Stack;
 
@@ -9,10 +11,10 @@ import org.jruby.internal.util.collections.Stack;
  * @version $Revision$
  */
 public class FrameStack extends Stack {
-    private Ruby ruby;
+    private Ruby runtime;
     
     public FrameStack(Ruby ruby) {
-        this.ruby = ruby;
+        this.runtime = ruby;
     }
 
     public Frame getPrevious() {
@@ -25,7 +27,7 @@ public class FrameStack extends Stack {
     public void push() {
         Namespace ns = peek() != null ? ((Frame)peek()).getNamespace() : null;
 
-        push(new Frame(null, null, null, null, ns, null, ruby.getPosition(), ruby.getCurrentIter()));
+        push(new Frame(null, null, null, null, ns, null, runtime.getPosition(), runtime.getCurrentIter()));
     }
 
     /**
@@ -33,7 +35,19 @@ public class FrameStack extends Stack {
      */
     public Object pop() {
         Frame frame  = (Frame) super.pop();
-        ruby.setPosition(frame.getPosition());
+        runtime.setPosition(frame.getPosition());
         return frame;
+    }
+
+    public FrameStack duplicate() {
+        // FIXME don't create to much ArrayLists
+        FrameStack newStack = new FrameStack(runtime);
+        synchronized (list) {
+            newStack.list = new ArrayList(list.size());
+            for (int i = 0, size = list.size(); i < size; i++) {
+                newStack.list.add(((Frame) list.get(i)).duplicate());
+            }
+        }
+        return newStack;
     }
 }
