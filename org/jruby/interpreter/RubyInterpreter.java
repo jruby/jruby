@@ -44,7 +44,9 @@ public class RubyInterpreter implements node_type, Scope {
     private Frame rubyFrame;
     private Frame topFrame;
     
-    public RubyVarmap ruby_dyna_vars = new RubyVarmap();
+    // public RubyVarmap ruby_dyna_vars = new RubyVarmap();
+    
+    private RubyVarmap dynamicVars = null;
     
     // C
     
@@ -784,19 +786,18 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 case NODE_DASGN:
                     result = eval(self, node.nd_value());
-                    /// dvar_asgn(node.nd_vid(), result);
+                    RubyVarmap.assign(ruby, (RubyId)node.nd_vid(), result);
                     return result;
                     
                 case NODE_DASGN_CURR:
                     result = eval(self, node.nd_value());
-                    // dvar_asgn_curr(node.nd_vid(), result);
+                    RubyVarmap.assignCurrent(ruby, (RubyId)node.nd_vid(), result);
                     return result;
                     
                 case NODE_GASGN:
-                    // result = eval(self, node.nd_value());
-                    // rom.rb_gvar_set(node.nd_entry(), result);
-                    // return result;
-                    return null;
+                    result = eval(self, node.nd_value());
+                    ((RubyGlobalEntry)node.nd_entry()).set(result);
+                    return result;
                     
                 case NODE_IASGN:
                     result = eval(self, node.nd_value());
@@ -835,12 +836,10 @@ public class RubyInterpreter implements node_type, Scope {
                     return (RubyObject)getRuby().rubyScope.getLocalVars(node.nd_cnt());
                     
                 case NODE_DVAR:
-                    // return rom.rb_dvar_ref(node.nd_vid());
-                    return null;
+                    return getDynamicVars().getRef((RubyId)node.nd_vid());
                     
                 case NODE_GVAR:
-                    // return rom.rb_gvar_get(node.nd_entry());
-                    return null;
+                    return ((RubyGlobalEntry)node.nd_entry()).get();
                     
                 case NODE_IVAR:
                     return self.getIvar((RubyId)node.nd_vid());
@@ -1318,7 +1317,7 @@ public class RubyInterpreter implements node_type, Scope {
         // PUSH_CLASS();
         ruby_class = module;
         // PUSH_SCOPE();
-        ruby_dyna_vars.push();
+        RubyVarmap.push(ruby);
 
         if (node.nd_tbl() != null) {
             List tmp = Collections.nCopies(node.nd_tbl()[0].intValue() + 1, ruby.getNil());
@@ -1347,7 +1346,7 @@ public class RubyInterpreter implements node_type, Scope {
             
         // POP_TAG();
         // POP_CREF();
-        ruby_dyna_vars.pop();
+        RubyVarmap.pop(ruby);
         // POP_SCOPE();
         // POP_CLASS();
 
@@ -1420,7 +1419,7 @@ public class RubyInterpreter implements node_type, Scope {
         }
         switch (lhs.nd_type()) {
             case NODE_GASGN:
-                // lhs.nd_entry().setGvar(val);
+                ((RubyGlobalEntry)lhs.nd_entry()).set(val);
                 break;
 
             case NODE_IASGN:
@@ -1435,11 +1434,11 @@ public class RubyInterpreter implements node_type, Scope {
                 break;
 
             case NODE_DASGN:
-                // dvar_asgn(lhs.nd_vid(), val);
+                RubyVarmap.assign(ruby, (RubyId)lhs.nd_vid(), val);
                 break;
 
             case NODE_DASGN_CURR:
-                // dvar_asgn_curr(lhs.nd_vid(), val);
+                RubyVarmap.assignCurrent(ruby, (RubyId)lhs.nd_vid(), val);
                 break;
 
             case NODE_CDECL:
@@ -1613,7 +1612,7 @@ public class RubyInterpreter implements node_type, Scope {
         _block.iter = ruby_iter.iter;
         _block.vmode = scope_vmode;
         _block.flags = BLOCK_D_SCOPE;
-        _block.dyna_vars = ruby_dyna_vars;
+        _block.dyna_vars = getDynamicVars();
         ruby_block = _block;
         return _block;
     }
@@ -1647,6 +1646,21 @@ public class RubyInterpreter implements node_type, Scope {
     public void POP_ITER() {
         ruby_iter = ruby_iter.prev;
     }
+    
+    /** Getter for property dynamicVars.
+     * @return Value of property dynamicVars.
+     */
+    public RubyVarmap getDynamicVars() {
+        return dynamicVars;
+    }
+    
+    /** Setter for property dynamicVars.
+     * @param dynamicVars New value of property dynamicVars.
+     */
+    public void setDynamicVars(RubyVarmap dynamicVars) {
+        this.dynamicVars = dynamicVars;
+    }
+    
 }
 
 // C structs

@@ -6476,13 +6476,7 @@ case 432:
     }
 
     global_entry rb_global_entry(ID v) {
-        global_entry entry = (global_entry)rb_global_tbl.get(v);
-        if (entry == null) {
-            entry = new global_entry();
-            entry.id = v;
-            rb_global_tbl.put(v, entry);
-        }
-        return entry;
+	return RubyGlobalEntry.getGlobalEntry((RubyId)v);
     }
 
     // Test methods
@@ -6568,7 +6562,7 @@ case 432:
 //XXX strange classes needed to compile the stuff
 class RBasic {}
 
-class global_entry implements VALUE {
+/*class global_entry implements VALUE {
     ID id;
     /*void *data;
     VALUE (*getter)();
@@ -6576,7 +6570,7 @@ class global_entry implements VALUE {
     void  (*marker)();
     int block_trace;
     struct trace_var *trace;*/
-};
+// };
 
 
 					// line 10414 "-"

@@ -31,6 +31,7 @@ import java.util.*;
 import org.jruby.core.*;
 import org.jruby.original.*;
 import org.jruby.interpreter.*;
+import org.jruby.util.*;
 
 /**
  * The jruby runtime.
@@ -46,7 +47,7 @@ public final class Ruby implements token {
     /** rb_global_tbl
      *
      */
-    private Map globalMap;
+    private RubyMap globalMap;
     
     private int securityLevel = 0;
     
@@ -91,7 +92,7 @@ public final class Ruby implements token {
         
         originalMethods = new RubyOriginalMethods(this);
         
-        globalMap = new HashMap();
+        globalMap = new RubyHashMap();
         classMap = new HashMap();
 
         nilObject = new RubyNil(this);
@@ -452,5 +453,33 @@ public final class Ruby implements token {
             new op_tbl(this, '`',       "`"),
             new op_tbl(this, 0,         null),
         };
+    }
+    
+    /** Getter for property globalMap.
+     * @return Value of property globalMap.
+     */
+    public RubyMap getGlobalMap() {
+        return globalMap;
+    }
+    
+    /** Setter for property globalMap.
+     * @param globalMap New value of property globalMap.
+     */
+    public void setGlobalMap(RubyMap globalMap) {
+        this.globalMap = globalMap;
+    }
+    
+    /** rb_gv_set
+     *
+     */
+    public RubyObject setGlobalVar(String name, RubyObject value) {
+        return RubyGlobalEntry.getGlobalEntry(intern(name)).set(value);
+    }
+    
+    /** rb_gv_get
+     *
+     */
+    public RubyObject getGlobalVar(String name) {
+        return RubyGlobalEntry.getGlobalEntry(intern(name)).get();
     }
 }

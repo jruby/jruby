@@ -39,7 +39,18 @@ public class ID implements VALUE, token {
     public int intValue() {
 	return value;
     }
+    
+    public int hashCode() {
+        return intValue();
+    }
 
+    public boolean equals(Object obj) {
+        if (obj instanceof ID && obj != null) {
+            return intValue() == ((ID)obj).intValue();
+        }
+        return false;
+    }
+    
     public final boolean is_notop_id() {
         return value > LAST_TOKEN;
     }

@@ -547,6 +547,8 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 result = ((RubyCallbackMethod)body.nd_cfnc()).execute(recv, args, getRuby());
                 break;
             }
+            case NODE_ZSUPER:
+            case NODE_ATTRSET:
             case NODE_IVAR: {
                 result = interpreter.eval(recv, body);
                 break;
@@ -584,7 +586,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             
                 body = body.nd_next();
                 
-                // PUSH_VARS();
+                RubyVarmap.push(getRuby());
                 // PUSH_TAG(PROT_FUNC);
                 
                 try {
@@ -659,6 +661,8 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                     result = interpreter.eval(recv, body);
                 } catch (ReturnException rExcptn) {
                 }
+                
+                RubyVarmap.pop(getRuby());
                 
                 getRuby().rubyScope.pop();
                 interpreter.ruby_cref = savedCref;

@@ -74,16 +74,19 @@ def testMethod
     "some output"
 end
 
-# def testMethod2
-#     puts "before return."
-#     return "some output"
-#     puts "after return."
-# end
-
 puts testMethod
 puts ""
-# puts testMethod2
-# puts ""
+
+# test global variable.
+
+$output = "a global variable."
+
+def testGlobalVariable
+    puts $output
+end
+testGlobalVariable
+
+puts ""
 
 # test classes
 

@@ -26,6 +26,8 @@
 
 package org.jruby.interpreter;
 
+import java.util.*;
+
 import org.jruby.*;
 import org.jruby.original.*;
 
@@ -35,14 +37,14 @@ import org.jruby.original.*;
  * @version 
  */
 public class RubyVarmap {
-    private RubyObject  superObject = null;
     private RubyId      id          = null;
-    private VALUE       val         = null;
+    private RubyObject  val         = null;
     private RubyVarmap  next        = null;
+    
+    private static Map oldMap       = new HashMap();
 
     /** Creates new RubyVarmap */
-    public RubyVarmap(RubyObject superObject, RubyId id, VALUE val, RubyVarmap next) {
-        this.superObject    = superObject;
+    public RubyVarmap(RubyId id, RubyObject val, RubyVarmap next) {
         this.id             = id;
         this.val            = val;
         this.next           = next;
@@ -51,19 +53,39 @@ public class RubyVarmap {
     public RubyVarmap() {
     }
     
-    public void push() {
-        RubyVarmap varMap = new RubyVarmap(superObject, id, val, next);
+    /** PUSH_VARS
+     *
+     */
+    public static void push(Ruby ruby) {
+        // HACK +++
+        if (oldMap.get(ruby) != null) {
+            throw new RuntimeException("JRuby - BUG: Need Queue for oldMap in RubyVarmap");
+        }
+        // HACK ---
+        
+        oldMap.put(ruby, ruby.getInterpreter().getDynamicVars());
+        ruby.getInterpreter().setDynamicVars(null);
+    }
+    
+    /** POP_VARS
+     *
+     */
+    public static void pop(Ruby ruby) {
+        ruby.getInterpreter().setDynamicVars((RubyVarmap)oldMap.get(ruby));
+    }
+    
+    /*public void push() {
+        RubyVarmap varMap = new RubyVarmap(id, val, next);
         next = varMap;
     }
     
     public void pop() {
         if (next != null) {
-            superObject = next.superObject;
             id = next.id;
             val = next.val;
             next = next.next;
         }
-    }
+    }*/
     
     /** Getter for property id.
      * @return Value of property id.
@@ -82,43 +104,121 @@ public class RubyVarmap {
     /** Getter for property next.
      * @return Value of property next.
      */
-    public org.jruby.interpreter.RubyVarmap getNext() {
+    public RubyVarmap getNext() {
         return next;
     }
     
     /** Setter for property next.
      * @param next New value of property next.
      */
-    public void setNext(org.jruby.interpreter.RubyVarmap next) {
+    public void setNext(RubyVarmap next) {
         this.next = next;
-    }
-    
-    /** Getter for property superObject.
-     * @return Value of property superObject.
-     */
-    public RubyObject getSuperObject() {
-        return superObject;
-    }
-    
-    /** Setter for property superObject.
-     * @param superObject New value of property superObject.
-     */
-    public void setSuperObject(RubyObject superObject) {
-        this.superObject = superObject;
     }
     
     /** Getter for property val.
      * @return Value of property val.
      */
-    public VALUE getVal() {
+    public RubyObject getVal() {
         return val;
     }
     
     /** Setter for property val.
      * @param val New value of property val.
      */
-    public void setVal(VALUE val) {
+    public void setVal(RubyObject val) {
         this.val = val;
     }
+
+    /** rb_dvar_defined
+     *
+     */
+    public boolean isDefined(RubyId rubyId) {
+        if (rubyId.equals(id)) {
+            return true;
+        } else if (next != null) {
+            return next.isDefined(rubyId);
+        }
+        return false;
+    }
     
+    /** rb_dvar_curr
+     *
+     */
+    public boolean isCurrent(RubyId rubyId) {
+        if (id == null || id.intValue() == 0) {
+            return false;
+        } else if (rubyId.equals(id)) {
+            return true;
+        } else if (next != null) {
+            return next.isCurrent(rubyId);
+        }
+        return false;
+    }
+
+    /** rb_dvar_ref
+     *
+     */
+    public RubyObject getRef(RubyId rubyId) {
+        if (rubyId.equals(id)) {
+            return getVal();
+        } else if (next != null) {
+            return next.getRef(rubyId);
+        }
+        return rubyId.getRuby().getNil();
+    }
+    
+    /** rb_dvar_push
+     *
+     */
+    public void push(RubyId rubyId, RubyObject value) {
+        RubyVarmap varMap = new RubyVarmap(id, val, next);
+        setId(rubyId);
+        setVal(value);
+        setNext(varMap);
+    }
+    
+    /** dvar_asgn_internal
+     *
+     */
+    public static RubyVarmap assignInternal(RubyVarmap varMap, RubyId id, RubyObject value, boolean current) {
+        int n = 0;
+        RubyVarmap tmpMap = varMap;
+
+        while (tmpMap != null) {
+            if (current && tmpMap.getId() == null) {
+                n++;
+                if (n == 2) {
+                    break;
+                }
+            }
+            if (id.equals(tmpMap.getId())) {
+                tmpMap.setVal(value);
+                return varMap;
+            }
+            tmpMap = tmpMap.getNext();
+        }
+        if (varMap == null) {
+            return new RubyVarmap(id, value, null);
+        } else {
+            tmpMap = new RubyVarmap(id, value, varMap.getNext());
+            varMap.setNext(tmpMap);
+            return varMap;
+        }
+    }
+    
+    /** dvar_asgn
+     *
+     */
+    public static void assign(Ruby ruby, RubyId id, RubyObject value) {
+        ruby.getInterpreter().setDynamicVars(assignInternal(
+                ruby.getInterpreter().getDynamicVars(), id, value, false));
+    }
+    
+    /** dvar_asgn_curr
+     *
+     */
+    public static void assignCurrent(Ruby ruby, RubyId id, RubyObject value) {
+        ruby.getInterpreter().setDynamicVars(assignInternal(
+                ruby.getInterpreter().getDynamicVars(), id, value, true));
+    }
 }
