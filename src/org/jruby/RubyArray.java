@@ -1069,9 +1069,6 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject reverse_bang() {
-        if (list.size() <= 1) {
-            return runtime.getNil();
-        }
         modify();
         Collections.reverse(list);
         return this;
@@ -1410,9 +1407,6 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject sort_bang() {
-        if (getLength() <= 1) {
-            return this;
-        }
         modify();
         setTmpLock(true);
 
