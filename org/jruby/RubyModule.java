@@ -886,13 +886,13 @@ public class RubyModule extends RubyObject {
      */
     public String toName() {
         if (this == getRuby().getClasses().getNilClass()) {
-            return "nil";
+            return "NilClass";
         }
         if (this == getRuby().getClasses().getTrueClass()) {
-            return "true";
+            return "TrueClass";
         }
         if (this == getRuby().getClasses().getFalseClass()) {
-            return "false";
+            return "FalseClass";
         }
 
         return ((RubyString) getClassPath()).getValue();

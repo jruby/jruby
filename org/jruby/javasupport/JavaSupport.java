@@ -18,7 +18,67 @@ public class JavaSupport
 	{
 		this.ruby = ruby;
 	}
+	/**
+	 * translate java naming convention in ruby naming convention.
+	 * translate getter and setter in ruby style accessor and 
+	 * boolean getter in ruby style ? method
+	 * @param javaName the name of the java method
+	 * @return the name of the equivalent rubyMethod if a translation
+	 * was needed null otherwise
+	 **/
+	private static String getRubyStyleInstanceMethodName(String javaName)
+	{
+			if (javaName.startsWith("get"))
+			{
+				return Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4);
+			} else if (javaName.startsWith("is"))
+			{
+				return Character.toLowerCase(javaName.charAt(2)) + javaName.substring(3) + "?";
+			} else if (javaName.startsWith("can"))
+			{
+				return Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
+			} else if (javaName.startsWith("has"))
+			{
+				return Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
+			} else if (javaName.startsWith("set"))
+			{
+				return Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "=";
+			}
+			return null;
+	}
 
+	/**
+	 * translate java naming convention in ruby naming convention.
+	 * does all the translation that getRubyStyleInstanceMethodName
+	 * does plus translate getElementAt, getValueAt, setValueAt in
+	 * [] and []=.  Also treat compareTo.
+	 * @param javaName the name of the java method
+	 * @return the name of the equivalent rubyMethod if a translation
+	 * was needed null otherwise
+	 **/
+	private static String getRubyStyleMethodName(Ruby ruby, String javaName, RubyClass newRubyClass)
+	{
+if (javaName.equals("getElementAt"))
+			if(javaName.equals("get"))		//java.util.List interface
+			{
+				return "[]";
+			} else if (javaName.equals("getValueAt"))
+			{
+				return "[]";
+			} else if (javaName.equals("setValueAt"))
+			{
+				return "[]=";
+			} else if (javaName.equals("set"))			//java.util.List interface
+			{
+				return "[]=";
+			} else if (javaName.equals("compareTo"))
+			{
+				newRubyClass.includeModule(ruby.getClasses().getComparableModule());
+				return "<=>";
+			}
+			return getRubyStyleInstanceMethodName(javaName);
+	}
+	
 	public RubyModule loadClass(Class javaClass, String rubyName)
 	{
 		if (javaClass == Object.class)
@@ -36,12 +96,13 @@ public class JavaSupport
 			String javaName = javaClass.getName();
 			rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
 		}
-
+		
 		// Interfaces
 		if (javaClass.isInterface())
 		{
 			RubyModule newInterface = ruby.defineModule(rubyName);
 			newInterface.setInstanceVar("interfaceName", RubyString.newString(ruby, rubyName));
+			defineModuleConstants(javaClass, newInterface);
 			// ruby.defineGlobalConstant(rubyName, newInterface);
 			return newInterface;
 		}
@@ -55,7 +116,7 @@ public class JavaSupport
 		Map singletonMethodMap = new HashMap();
 
 		Method[] methods = javaClass.getMethods(); 	//FIXME, this gets all the methods including the inherited one, not sure it is wanted
-
+		
 		for (int i = 0; i < methods.length; i++)
 		{
 			Method lCurMethod = methods[i];
@@ -87,37 +148,8 @@ public class JavaSupport
 			Map.Entry entry = (Map.Entry) iter.next();
 
 			String javaName = (String)entry.getKey();
-			String lRubyStyleName = null;
+			String lRubyStyleName = getRubyStyleMethodName(ruby, javaName, newRubyClass);
 			//make sure we add the method and not replace a previously existing version
-			if (javaName.equals("getElementAt"))
-			{
-				lRubyStyleName = "[]";
-			} else if (javaName.equals("getValueAt"))
-			{
-				lRubyStyleName = "[]";
-			} else if (javaName.equals("setValueAt"))
-			{
-				lRubyStyleName = "[]=";
-			} else if (javaName.startsWith("get"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4);
-			} else if (javaName.startsWith("is"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(2)) + javaName.substring(3) + "?";
-			} else if (javaName.startsWith("can"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
-			} else if (javaName.startsWith("has"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
-			} else if (javaName.startsWith("set"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "=";
-			} else if (javaName.equals("compareTo"))
-			{
-				newRubyClass.includeModule(ruby.getClasses().getComparableModule());
-				lRubyStyleName = "<=>";
-			}
 			if (lRubyStyleName != null) //need to treat the case where the javaName was modified specially 
 			{ 
 				List lMethodList = (List)methodMap.get(javaName);
@@ -159,23 +191,8 @@ public class JavaSupport
 
 
 			String javaName = (String)entry.getKey();
-			String lRubyStyleName = null;
-			if (javaName.startsWith("get"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4);
-			} else if (javaName.startsWith("is"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(2)) + javaName.substring(3) + "?";
-			} else if (javaName.startsWith("can"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
-			} else if (javaName.startsWith("has"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
-			} else if (javaName.startsWith("set"))
-			{
-				lRubyStyleName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "=";
-			}
+			String lRubyStyleName = getRubyStyleInstanceMethodName(javaName);
+
 			if (lRubyStyleName != null)
 			{ 
 				List lMethodList = (List)singletonMethodMap.get(lRubyStyleName);
@@ -191,11 +208,16 @@ public class JavaSupport
 			newRubyClass.defineSingletonMethod(javaName, new JavaMethod(methods, true));
 		}
 
-		//Benoit end 
+		defineModuleConstants(javaClass, newRubyClass);
 
+		//Benoit end
+		loadedJavaClasses.put(javaClass, newRubyClass);
 
+		return newRubyClass;
+	}
 
-
+	private void defineModuleConstants(Class javaClass, RubyModule rubyModule)
+	{
 		// add constants
 		Field[] fields = javaClass.getFields();
 		for (int i = 0; i < fields.length; i++)
@@ -210,19 +232,16 @@ public class JavaSupport
 					{
 						name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 					}
-					newRubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
+					rubyModule.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
 				} catch (IllegalAccessException iaExcptn)
 				{
 				}
 			}
 		}
-
-		loadedJavaClasses.put(javaClass, newRubyClass);
-
-		return newRubyClass;
 	}
-
-	public void defineWrapperMethods(Class javaClass, RubyClass rubyClass)
+	
+	
+	public void defineWrapperMethods(Class javaClass, RubyModule rubyClass)
 	{
 		Map methodMap = new HashMap();
 		Map singletonMethodMap = new HashMap();
