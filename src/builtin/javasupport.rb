@@ -193,9 +193,15 @@ module JavaUtilities
                 }
               else
                 # overloaded on same length
-                define_method(name) {
-                  # FIXME
-                  raise "java methods only differing on arg types not yet supported"
+                define_method(name) {|*args|
+                  args = convert_arguments(args)
+                  m = JavaUtilities.matching_method(same_arity_methods, args)
+                  result = m.invoke(self.java_object, *args)
+                  result = Java.java_to_primitive(result)
+                  if result.kind_of?(JavaObject)
+                    result = JavaUtilities.wrap(result, m.return_type)
+                  end
+                  result
                 }
               end
             }
@@ -203,6 +209,18 @@ module JavaUtilities
         }
       end
       proxy_class.create_instance_methods(java_class)
+    end
+
+    def matching_method(methods, args)
+      argument_types = args.collect {|a| a.java_class.name }
+      exact_match = methods.detect {|m|
+        m.argument_types == argument_types
+      }
+      return exact_match unless exact_match.nil?
+      # FIXME: look for not exact, but matching, argument types
+      raise NameError.new("no method '" + methods.first.name +
+                          "' with argument types exactly matching " +
+                          argument_types.inspect)
     end
 
     def setup_class_methods(java_class, proxy_class)

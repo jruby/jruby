@@ -16,13 +16,18 @@ if defined? Java
     test_equal(Fixnum, r.nextInt.type)
     test_equal(Fixnum, r.nextInt(10).type)
 
-    # FIXME: easy method for importing java class with colliding name
-    # (Since String would be nice to test on)
-
     # Java class loading
     test_exception(NameError) { System }
     include_package "java.lang"
     System
+
+    # Instance methods differing only on argument type
+    l1 = Long.new(1234)
+    l2 = Long.new(1000)
+    test_equal(1, l1.compareTo(l2))
+
+    # FIXME: easy method for importing java class with colliding name
+    # (Since String would be nice to test on)
 
     # Class methods
     result = System.currentTimeMillis()
