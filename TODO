@@ -1,18 +1,18 @@
 
-- Move Ruby class creation and method init into classes separate from method implementation.
-- Convert all callbacks to IndexedCallback.
+* Move Ruby class creation and method init into classes separate from method implementation.
+* Convert all callbacks to IndexedCallback.
 
-- Improved interface for accessing Java classes.
-- Loading external libraries written in Java.
+* Improved interface for accessing Java classes.
+* Loading external libraries written in Java.
 
-- Thread support
-    - Able to start from a different JVM thread (see also samples/swing2.rb)
+* Thread support
+    * Able to start from a different JVM thread (see also samples/swing2.rb)
 
-- Usability
-    - Simplify installation (replace mkconfig.rb?)
-    - Simplify command line interface (regexp engine, etc.)
+* Usability
+    * Simplify installation (replace mkconfig.rb?)
+    * Simplify command line interface (regexp engine, etc.)
 
-- Finish ASTWriterVisitor
-- Implement ASTReader
+* Finish ASTWriterVisitor
+* Implement ASTReader
 
-- FIX build.xml
+* FIX build.xml
