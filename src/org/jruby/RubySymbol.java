@@ -54,7 +54,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     private final int id;
 
     private RubySymbol(Ruby ruby, String symbol) {
-        super(ruby, ruby.getClasses().getSymbolClass());
+        super(ruby, ruby.getClass("Symbol"));
         this.symbol = symbol;
 
         lastId++;

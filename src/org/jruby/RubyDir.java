@@ -60,7 +60,7 @@ public class RubyDir extends RubyObject {
     public static RubyClass createDirClass(Ruby ruby) {
         RubyClass dirClass = ruby.defineClass("Dir", ruby.getClasses().getObjectClass());
 
-        dirClass.includeModule(ruby.getRubyModule("Enumerable"));
+        dirClass.includeModule(ruby.getModule("Enumerable"));
 
 		dirClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyDir.class, "newInstance"));
         dirClass.defineSingletonMethod("glob", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
@@ -168,7 +168,7 @@ public class RubyDir extends RubyObject {
     public static IRubyObject foreach(IRubyObject recv, RubyString path) {
         path.checkSafeString();
 
-        RubyDir dir = (RubyDir) newInstance(recv.getRuntime().getClasses().getDirClass(),
+        RubyDir dir = (RubyDir) newInstance(recv.getRuntime().getClass("Dir"),
                                             new IRubyObject[] { path });
         dir.each();
         return recv.getRuntime().getNil();

@@ -15,7 +15,7 @@ import org.jruby.util.RubyInputStream;
 
 /**
  * Ruby File class equivalent in java.
- * TODO: create the FileTest mixin and add the tests there.
+ *
  * @author jpetersen
  * @version $Revision$
  **/
@@ -26,7 +26,7 @@ public class RubyFile extends RubyIO {
 	}
 
     public static RubyClass createFileClass(Ruby ruby) {
-        RubyClass fileClass = ruby.defineClass("File", ruby.getClasses().getIoClass());
+        RubyClass fileClass = ruby.defineClass("File", ruby.getClass("IO"));
 		
 
         fileClass.defineConstant("SEPARATOR", RubyString.newString(ruby, java.io.File.separator));

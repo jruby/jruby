@@ -55,10 +55,9 @@ public class RubyPrecision {
 
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {
         if (include instanceof RubyModule) {
-            ((RubyModule)include).includeModule(receiver);
-            ((RubyModule)include).defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyPrecision.class, "induced_from", IRubyObject.class));
+            ((RubyModule) include).includeModule(receiver);
+            include.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyPrecision.class, "induced_from", IRubyObject.class));
         }
-        
         return receiver;
     }
     

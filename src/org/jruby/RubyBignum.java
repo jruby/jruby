@@ -57,7 +57,7 @@ public class RubyBignum extends RubyInteger {
     private final BigInteger value;
 
     public RubyBignum(Ruby ruby, BigInteger value) {
-        super(ruby, ruby.getClasses().getBignumClass());
+        super(ruby, ruby.getClass("Bignum"));
         this.value = value;
     }
 

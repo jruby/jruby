@@ -45,7 +45,7 @@ public class RubyMatchData extends RubyObject {
     private int[] end;
 
     public RubyMatchData(Ruby ruby, String str, int[] begin, int[] end) {
-        super(ruby, ruby.getClasses().getMatchDataClass());
+        super(ruby, ruby.getClass("MatchData"));
         this.str = str;
         this.begin = begin;
         this.end = end;

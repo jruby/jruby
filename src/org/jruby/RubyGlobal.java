@@ -70,9 +70,9 @@ public class RubyGlobal {
 
         ruby.defineVariable(new BacktraceGlobalVariable(ruby, "$@"));
 
-        IRubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), System.in);
-        IRubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), System.out);
-        IRubyObject stderr = RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), System.err);
+        IRubyObject stdin = RubyIO.stdin(ruby, ruby.getClass("IO"), System.in);
+        IRubyObject stdout = RubyIO.stdout(ruby, ruby.getClass("IO"), System.out);
+        IRubyObject stderr = RubyIO.stderr(ruby, ruby.getClass("IO"), System.err);
 
         ruby.defineVariable(new InputGlobalVariable(ruby, "$stdin", stdin));
 
@@ -115,7 +115,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            if (!value.isNil() && ! value.isKindOf(ruby.getClasses().getExceptionClass())) {
+            if (!value.isNil() && ! value.isKindOf(ruby.getClass("Exception"))) {
                 throw new TypeError(ruby, "assigning non-exception to $!");
             }
             return super.set(value);

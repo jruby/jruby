@@ -76,3 +76,10 @@ class TestModule_C_1
 end
 test_equal(:ok, TestModule_C_1.new.a_defined_method)
 
+
+#test_exception(TypeError) {
+#  module Object; end
+#}
+test_exception(TypeError) {
+  class Kernel; end
+}

@@ -61,7 +61,7 @@ public class RubyStruct extends RubyObject {
 
     public static RubyClass createStructClass(Ruby ruby) {
         RubyClass structClass = ruby.defineClass("Struct", ruby.getClasses().getObjectClass());
-        structClass.includeModule(ruby.getClasses().getEnumerableModule());
+        structClass.includeModule(ruby.getModule("Enumerable"));
 
         structClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyStruct.class, "newInstance"));
 

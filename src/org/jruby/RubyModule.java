@@ -832,11 +832,11 @@ public class RubyModule extends RubyObject {
      */
     public String toName() {
         // REMOVE +++ in 1.7
-        if (this == getRuntime().getClasses().getNilClass()) {
+        if (this == getRuntime().getClass("NilClass")) {
             return "nil";
-        } else if (this == getRuntime().getClasses().getTrueClass()) {
+        } else if (this == getRuntime().getClass("TrueClass")) {
             return "true";
-        } else if (this == getRuntime().getClasses().getFalseClass()) {
+        } else if (this == getRuntime().getClass("FalseClass")) {
             return "false";
         }
         // REMOVE ---
@@ -1012,8 +1012,8 @@ public class RubyModule extends RubyObject {
         if (args.length == 1) {
             body = RubyProc.newProc(runtime);
         } else {
-            if (!(args[0].isKindOf(runtime.getClasses().getMethodClass()) ||
-                args[0].isKindOf(runtime.getClasses().getProcClass()))) {
+            if (!(args[0].isKindOf(runtime.getClass("Method")) ||
+                args[0].isKindOf(runtime.getClass("Proc")))) {
                 throw new TypeError(runtime, "wrong argument type " + args[0].getType().toName() + " (expected Proc/Method)");
             }
             body = args[0];
@@ -1074,7 +1074,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public static RubyModule newModule(Ruby ruby) {
-        RubyModule newModule = new RubyModule(ruby, ruby.getClasses().getModuleClass());
+        RubyModule newModule = new RubyModule(ruby, ruby.getClass("Module"));
         return newModule;
     }
 
@@ -1282,10 +1282,8 @@ public class RubyModule extends RubyObject {
 
     public static RubyModule newModule(IRubyObject recv) {
         RubyModule mod = RubyModule.newModule(recv.getRuntime());
-
         mod.setMetaClass((RubyClass) recv);
         recv.getRuntime().getClasses().getModuleClass().callInit(null);
-
         return mod;
     }
 

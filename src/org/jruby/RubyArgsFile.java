@@ -53,7 +53,7 @@ public class RubyArgsFile extends RubyObject {
     }
     
     public void initArgsFile() {
-        extendObject(runtime.getClasses().getEnumerableModule());
+        extendObject(runtime.getModule("Enumerable"));
         
         runtime.defineReadonlyVariable("$<", this);
         runtime.defineGlobalConstant("ARGF", this);
@@ -96,7 +96,7 @@ public class RubyArgsFile extends RubyObject {
             try {
                 RubyInputStream inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
 
-                currentFile = new RubyFile(runtime, runtime.getClasses().getFileClass());
+                currentFile = new RubyFile(runtime, runtime.getClass("File"));
                 currentFile.initIO(inStream, null, filename);
 
             } catch (FileNotFoundException fnfExcptn) {

@@ -19,16 +19,6 @@ public class ClassFactory {
         if (superClass == null) {
             superClass = runtime.getClasses().getObjectClass();
         }
-        //find the boot classes
-        name = name.intern();
-        if (name == "Object")
-            return runtime.getClasses().getObjectClass();
-        else if (name == "Module")
-            return runtime.getClasses().getModuleClass();
-        else if (name == "Class")
-            return runtime.getClasses().getClassClass();
-
-
         RubyClass newClass = RubyClass.newClass(runtime, superClass, name);
         newClass.makeMetaClass(superClass.getMetaClass());
         newClass.inheritedBy(superClass);

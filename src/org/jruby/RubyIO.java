@@ -56,7 +56,7 @@ public class RubyIO extends RubyObject {
     protected String path;
 
     public RubyIO(Ruby ruby) {
-        super(ruby, ruby.getClasses().getIoClass());
+        super(ruby, ruby.getClass("IO"));
     }
 
     public RubyIO(Ruby ruby, RubyClass type) {
@@ -65,7 +65,7 @@ public class RubyIO extends RubyObject {
 
     public static RubyClass createIOClass(Ruby ruby) {
         RubyClass ioClass = ruby.defineClass("IO", ruby.getClasses().getObjectClass());
-        ioClass.includeModule(ruby.getClasses().getEnumerableModule());
+        ioClass.includeModule(ruby.getModule("Enumerable"));
 
         ioClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyIO.class, "newInstance"));
         ioClass.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", RubyString.class));
@@ -603,8 +603,8 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (! args[0].isKindOf(runtime.getClasses().getStringClass())) {
-                throw new TypeError(runtime, args[0], runtime.getClasses().getStringClass());
+            if (! args[0].isKindOf(runtime.getClass("String"))) {
+                throw new TypeError(runtime, args[0], runtime.getClass("String"));
             }
             separatorArgument = new IRubyObject[] { args[0] };
         } else {
@@ -623,8 +623,8 @@ public class RubyIO extends RubyObject {
         if (args.length < 1) {
             throw new ArgumentError(recv.getRuntime(), args.length, 1);
         }
-        if (! args[0].isKindOf(recv.getRuntime().getClasses().getStringClass())) {
-            throw new TypeError(recv.getRuntime(), args[0], recv.getRuntime().getClasses().getStringClass());
+        if (! args[0].isKindOf(recv.getRuntime().getClass("String"))) {
+            throw new TypeError(recv.getRuntime(), args[0], recv.getRuntime().getClass("String"));
         }
         RubyString fileName = (RubyString) args[0];
 

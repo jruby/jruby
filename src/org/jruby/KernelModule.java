@@ -82,7 +82,7 @@ public class KernelModule {
             return recv.getRuntime().getNil();
             // ---
         }
-        return RubyFile.open(recv.getRuntime().getClasses().getFileClass(), args);
+        return RubyFile.open(recv.getRuntime().getClass("File"), args);
     }
 
     public static RubyString gets(IRubyObject recv, IRubyObject[] args) {

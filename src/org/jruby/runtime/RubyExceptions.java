@@ -92,7 +92,7 @@ public class RubyExceptions implements IErrno {
     }
         
     public void initDefaultExceptionClasses() {
-        RubyClass exceptionClass = ruby.getClasses().getExceptionClass();
+        RubyClass exceptionClass = ruby.getClass("Exception");
         
         systemExit = ruby.defineClass("SystemExit", exceptionClass);
         fatal = ruby.defineClass("Fatal", exceptionClass);

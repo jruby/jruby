@@ -49,6 +49,7 @@ import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.ThreadService;
@@ -236,13 +237,15 @@ public final class Ruby {
         return nilObject;
     }
 
-    /** Returns a class or module from the instance pool.
-     *
-     * @param name The name of the class or module.
-     * @return The class or module.
+    public RubyModule getModule(String name) {
+        return classes.getClass(name);
+    }
+
+    /**
+     * @deprecated use getModule(String) instead
      */
     public RubyModule getRubyModule(String name) {
-        return classes.getClass(name);
+        return getModule(name);
     }
 
     /** Returns a class from the instance pool.
@@ -251,7 +254,12 @@ public final class Ruby {
      * @return The class.
      */
     public RubyClass getClass(String name) {
-        return (RubyClass) classes.getClass(name);
+        RubyModule module = getModule(name);
+        try {
+            return (RubyClass) module;
+        } catch (ClassCastException e) {
+            throw new TypeError(this, name + " is not a Class");
+        }
     }
 
     /** Define a new class with name 'name' and super class 'superClass'.
@@ -304,17 +312,15 @@ public final class Ruby {
     }
 
     public IRubyObject getTopConstant(String name) {
-        IRubyObject constant = getClasses().getClass(name);
-
+        IRubyObject constant = getModule(name);
         if (constant == null) {
             constant = getLoadService().autoload(name);
         }
-
         return constant;
     }
 
     public boolean isClassDefined(String name) {
-        return classes.getClass(name) != null;
+        return getModule(name) != null;
     }
 
     public IRubyObject yield(IRubyObject value) {

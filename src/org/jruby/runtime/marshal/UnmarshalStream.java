@@ -190,9 +190,9 @@ public class UnmarshalStream extends FilterInputStream {
     }
 
     private IRubyObject userUnmarshal() throws IOException {
-        String className = ((RubySymbol) unmarshalObject()).asSymbol();
+        String className = unmarshalObject().asSymbol();
         String marshaled = unmarshalString();
-        RubyModule classInstance = runtime.getRubyModule(className);
+        RubyModule classInstance = runtime.getModule(className);
         IRubyObject result = classInstance.callMethod(
             "_load",
             RubyString.newString(runtime, marshaled));

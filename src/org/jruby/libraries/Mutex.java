@@ -34,7 +34,7 @@ public class Mutex extends RubyObject implements IndexCallable {
     private boolean isLocked = false;
 
     private Mutex(Ruby runtime) {
-        super(runtime, (RubyClass) runtime.getClasses().getClass("Mutex"));
+        super(runtime, runtime.getClass("Mutex"));
     }
 
     private static final int LOCK = 1;

@@ -39,7 +39,7 @@ public class UnboundMethod extends Method {
     private static final int UNBIND = 0x10053;
 
     protected UnboundMethod(Ruby runtime) {
-        super(runtime, runtime.getClasses().getUnboundMethodClass());
+        super(runtime, runtime.getClass("UnboundMethod"));
     }
 
     public static UnboundMethod newUnboundMethod(
@@ -61,7 +61,7 @@ public class UnboundMethod extends Method {
     }
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass = runtime.defineClass("UnboundMethod", runtime.getClasses().getMethodClass());
+        RubyClass newClass = runtime.defineClass("UnboundMethod", runtime.getClass("Method"));
 
         newClass.defineMethod("[]", IndexedCallback.createOptional(CALL));
         newClass.defineMethod("bind", IndexedCallback.create(BIND, 1));

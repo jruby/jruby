@@ -70,7 +70,7 @@ public class Method extends RubyObject {
         ICallable method,
         IRubyObject receiver) {
         Ruby runtime = implementationModule.getRuntime();
-        Method newMethod = new Method(runtime, runtime.getClasses().getMethodClass());
+        Method newMethod = new Method(runtime, runtime.getClass("Method"));
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;

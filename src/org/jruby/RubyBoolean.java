@@ -39,7 +39,7 @@ import org.jruby.runtime.marshal.MarshalStream;
  * @version $Revision$
  */
 public class RubyBoolean extends RubyObject {
-	private boolean value;
+	private final boolean value;
 
 	public RubyBoolean(Ruby ruby, boolean value) {
 		super(ruby, null, // Don't initialize with class
@@ -92,11 +92,7 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyBoolean newBoolean(Ruby ruby, boolean value) {
-		if (value) {
-			return ruby.getTrue();
-		} else {
-			return ruby.getFalse();
-		}
+        return (value ? ruby.getTrue() : ruby.getFalse());
 	}
 
 	/** false_type

@@ -62,8 +62,7 @@ public class RubyArray extends RubyObject {
     private boolean tmpLock;
 
 	private RubyArray(Ruby ruby, ArrayList list) {
-		super(ruby, ruby.getClasses().getArrayClass());
-
+		super(ruby, ruby.getClass("Array"));
         this.list = list;
     }
 

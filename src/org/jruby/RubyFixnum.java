@@ -53,7 +53,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public RubyFixnum(Ruby ruby, long value) {
-        super(ruby, ruby.getClasses().getFixnumClass());
+        super(ruby, ruby.getClass("Fixnum"));
         this.value = value;
     }
 

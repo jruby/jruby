@@ -96,7 +96,7 @@ public class RubyNil {
      *
      */
     public static RubyClass type(IRubyObject recv) {
-        return recv.getRuntime().getClasses().getNilClass();
+        return recv.getRuntime().getClass("NilClass");
     }
     
     /** nil_and

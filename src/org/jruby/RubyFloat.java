@@ -47,7 +47,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyFloat(Ruby ruby, double value) {
-        super(ruby, ruby.getClasses().getFloatClass());
+        super(ruby, ruby.getClass("Float"));
         this.value = value;
     }
 

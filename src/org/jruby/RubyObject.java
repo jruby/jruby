@@ -180,7 +180,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      */
     public RubyClass getMetaClass() {
         if (isNil()) {
-            return getRuntime().getClasses().getNilClass();
+            return getRuntime().getClass("NilClass");
         }
         return metaClass;
     }
