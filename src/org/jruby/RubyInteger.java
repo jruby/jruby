@@ -48,6 +48,8 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyClass createIntegerClass(Ruby ruby) {
         RubyClass integerClass = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
 
+        integerClass.getMetaClass().undefMethod("new");
+
         integerClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyInteger.class, "induced_from", IRubyObject.class));
 
         integerClass.defineMethod("chr", CallbackFactory.getMethod(RubyInteger.class, "chr"));
@@ -96,7 +98,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject downto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (((RubyBoolean) i.callMethod("<", to)).isTrue()) {
+            if (i.callMethod("<", to).isTrue()) {
                 break;
             }
             getRuntime().yield(i);
@@ -121,7 +123,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         while (true) {
-            if (((RubyBoolean) i.callMethod(cmp, to)).isTrue()) {
+            if (i.callMethod(cmp, to).isTrue()) {
                 break;
             }
             getRuntime().yield(i);
