@@ -29,6 +29,7 @@
 package org.jruby;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.io.StringReader;
 import java.io.Reader;
 import java.io.File;
@@ -70,20 +71,21 @@ public class Main {
     private static boolean sDoSplit = false;
     private static boolean verbose = false;
     private static boolean showVersion = false;
-    private static class ArgIter {
-        int idxArg;
-        int idxChar;
-    }
+
+    private static int argumentIndex = 0;
+    private static int characterIndex = 0;
+
+
     /*
      * helper function for args processing.
      */
-    private static String grabValue(String args[], String errorMessage, ArgIter ioIter) {
-        if (++ioIter.idxChar < args[ioIter.idxArg].length()) {
-            return args[ioIter.idxArg].substring(ioIter.idxChar);
-        } else if (++ioIter.idxArg < args.length) {
-            return args[ioIter.idxArg];
+    private static String grabValue(String args[], String errorMessage) {
+        if (++characterIndex < args[argumentIndex].length()) {
+            return args[argumentIndex].substring(characterIndex);
+        } else if (++argumentIndex < args.length) {
+            return args[argumentIndex];
         } else {
-            System.err.println("invalid argument " + ioIter.idxArg);
+            System.err.println("invalid argument " + argumentIndex);
             System.err.println(errorMessage);
             printUsage();
             System.exit(1);
@@ -99,30 +101,29 @@ public class Main {
      * @return the arguments left
      **/
     private static String[] processArgs(String args[]) {
-        int lenArg = args.length;
+        int argumentLength = args.length;
         StringBuffer lBuf = new StringBuffer();
-        ArgIter lIter = new ArgIter();
-        for (; lIter.idxArg < lenArg; lIter.idxArg++) {
-            if (args[lIter.idxArg].charAt(0) == '-') {
-                FOR : for (lIter.idxChar = 1; lIter.idxChar < args[lIter.idxArg].length(); lIter.idxChar++)
-                    switch (args[lIter.idxArg].charAt(lIter.idxChar)) {
+        for (; argumentIndex < argumentLength; argumentIndex++) {
+            if (args[argumentIndex].charAt(0) == '-') {
+                FOR : for (characterIndex = 1; characterIndex < args[argumentIndex].length(); characterIndex++)
+                    switch (args[argumentIndex].charAt(characterIndex)) {
                         case 'h' :
                             printUsage();
                             break;
                         case 'I' :
-                            sLoadDirectories.add(grabValue(args, " -I must be followed by a directory name to add to lib path", lIter));
+                            sLoadDirectories.add(grabValue(args, " -I must be followed by a directory name to add to lib path"));
                             break FOR;
                         case 'r' :
-                            sRequireFirst.add(grabValue(args, "-r must be followed by a package to require", lIter));
+                            sRequireFirst.add(grabValue(args, "-r must be followed by a package to require"));
                             break FOR;
                         case 'e' :
-                            lBuf.append(grabValue(args, " -e must be followed by an expression to evaluate", lIter)).append("\n");
+                            lBuf.append(grabValue(args, " -e must be followed by an expression to evaluate")).append("\n");
                             break FOR;
                         case 'b' :
                             sBenchmarkMode = true;
                             break;
                         case 'R' :
-                            sRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate", lIter);
+                            sRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate");
                             break FOR;
                         case 'p' :
                             sDoPrint = true;
@@ -145,23 +146,23 @@ public class Main {
                             verbose = true;
                             break;
                         case '-' :
-                            if (args[lIter.idxArg].equals("--version")) {
+                            if (args[argumentIndex].equals("--version")) {
                                 showVersion = true;
                                 break FOR;
                             }
                         default :
-                            System.err.println("unknown option " + args[lIter.idxArg].charAt(lIter.idxChar));
+                            System.err.println("unknown option " + args[argumentIndex].charAt(characterIndex));
                             System.exit(1);
                     }
             } else {
                 if (lBuf.length() == 0) //only get a filename if there were no -e
-                    sFileName = args[lIter.idxArg++]; //consume the file name
+                    sFileName = args[argumentIndex++]; //consume the file name
                 break; //the rests are args for the script
             }
         }
         sScript = lBuf.toString();
-        String[] result = new String[lenArg - lIter.idxArg];
-        System.arraycopy(args, lIter.idxArg, result, 0, result.length);
+        String[] result = new String[argumentLength - argumentIndex];
+        System.arraycopy(args, argumentIndex, result, 0, result.length);
         return result;
     }
 
@@ -221,45 +222,46 @@ public class Main {
     /**
      * Launch the interpreter on a specific String.
      *
-     * @param iReader2Eval the string to evaluate
-     * @param iFileName the name of the File from which the string comes.
+     * @param reader the string to evaluate
+     * @param filename the name of the File from which the string comes.
      * @fixme implement the -p and -n options
      */
-    protected static void runInterpreter(Reader iReader2Eval, String iFileName, String[] args) {
-        // Initialize Runtime
-        Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter);
+    protected static void runInterpreter(Reader reader, String filename, String[] args) {
+        Ruby runtime = Ruby.getDefaultInstance(sRegexpAdapter);
 
-        // Parse and interpret file
-        IRubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
+        IRubyObject argumentArray = JavaUtil.convertJavaToRuby(runtime, args);
 
-        ruby.setVerbose(verbose);
-        ruby.defineReadonlyVariable("$VERBOSE", verbose ? ruby.getTrue() : ruby.getNil());
+        runtime.setVerbose(verbose);
+        runtime.defineReadonlyVariable("$VERBOSE", verbose ? runtime.getTrue() : runtime.getNil());
 
-        ruby.defineGlobalConstant("ARGV", lArgv);
-        ruby.defineReadonlyVariable("$-p", (sDoPrint ? ruby.getTrue() : ruby.getNil()));
-        ruby.defineReadonlyVariable("$-n", (sDoLoop ? ruby.getTrue() : ruby.getNil()));
-        ruby.defineReadonlyVariable("$-a", (sDoSplit ? ruby.getTrue() : ruby.getNil()));
-        ruby.defineReadonlyVariable("$-l", (sDoLine ? ruby.getTrue() : ruby.getNil()));
-        ruby.defineReadonlyVariable("$*", lArgv);
-        ruby.defineVariable(new RubyGlobal.StringGlobalVariable(ruby, "$0", RubyString.newString(ruby, iFileName)));
-        ruby.getLoadService().init(ruby, sLoadDirectories);
-        int lNbRequire = sRequireFirst.size();
+        runtime.defineGlobalConstant("ARGV", argumentArray);
+        runtime.defineReadonlyVariable("$-p", (sDoPrint ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-n", (sDoLoop ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-a", (sDoSplit ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-l", (sDoLine ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$*", argumentArray);
+        runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
+        runtime.getLoadService().init(runtime, sLoadDirectories);
         try {
-			for (int i = 0; i < lNbRequire; i++)
-				KernelModule.require(ruby.getTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
-            INode lScript = ruby.parse(iReader2Eval, iFileName);
+            Iterator iter = sRequireFirst.iterator();
+            while (iter.hasNext()) {
+                String scriptName = (String) iter.next();
+                KernelModule.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
+            }
+
+            INode parsedScript = runtime.parse(reader, filename);
             if (sDoPrint) {
-                lScript = new ParserSupport().appendPrintToBlock(lScript);
+                parsedScript = new ParserSupport().appendPrintToBlock(parsedScript);
             }
             if (sDoLoop) {
-                lScript = new ParserSupport().appendWhileLoopToBlock(lScript, sDoLine, sDoSplit);
+                parsedScript = new ParserSupport().appendWhileLoopToBlock(parsedScript, sDoLine, sDoSplit);
             }
+            runtime.eval(parsedScript);
 
-            ruby.eval(lScript);
         } catch (RaiseException rExcptn) {
-            ruby.getRuntime().printError(rExcptn.getException());
+            runtime.getRuntime().printError(rExcptn.getException());
         } catch (ThrowJump throwJump) {
-            ruby.getRuntime().printError(throwJump.getNameError());
+            runtime.getRuntime().printError(throwJump.getNameError());
         }
     }
 
