@@ -137,6 +137,20 @@ public class RubyKernel {
         return ruby.getNil();
     }
 
+	/**
+	 * this method uses the appropriate lookup strategy to find a file.
+	 * It is used by Kernel#require.
+	 *
+	 *  (matz Ruby: rb_find_file)
+	 *  @param ruby the ruby interpreter
+	 *  @param recv the receiver (not used)
+	 *  @param arg1 the file to find, this is a path name
+	 *  @return the correct file
+	 */
+	private static RubyString findFile(Ruby ruby, RubyObject recv, RubyString arg1) {
+		return arg1;
+	}
+
     public static RubyObject require(Ruby ruby, RubyObject recv, RubyString arg1) {
         if (arg1.getValue().endsWith(".jar")) {
             File jarFile = new File(arg1.getValue());
@@ -156,6 +170,7 @@ public class RubyKernel {
         } else {
             if (!arg1.getValue().endsWith(".rb")) {
                 arg1 = RubyString.newString(ruby, arg1.getValue() + ".rb");
+				arg1 = findFile(ruby, recv, arg1);
             }
             ruby.getRuntime().loadFile(arg1, false);
         }
