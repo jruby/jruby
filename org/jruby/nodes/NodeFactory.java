@@ -62,7 +62,15 @@ public class NodeFactory {
 		return setFileNLine(new FBodyNode(bodyNode, id, origin));
 	}
 
-	public Node newDefn(String mid, Node a, Node d, int p) {
+	/**
+	 * Builds a method definition node
+	 * @param mid method identifier
+	 * @param args method arguments node
+	 * @param body method body node
+	 * @param noex
+	 * @return newly built node 
+	 **/
+	public Node newDefn(String mid, Node args, Node body, int noex) {
 		return setFileNLine(new DefnNode(p, mid, newRFunc(a, d)));
 	}
 

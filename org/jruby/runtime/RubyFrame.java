@@ -261,6 +261,34 @@ public class RubyFrame {
         this.tmp = tmp;
     }
 
+	/**
+	 * pushes a copy of this frame in the tmp stack.
+	 * 
+	 **/
+	public void tmpPush()
+	{
+        RubyFrame tmpFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, cbase, prev, tmp, file, line, iter, flags);
+
+        tmp = tmpFrame;
+	}
+	/**
+	 * pops the top of the tmp stack
+	 **/
+	public void tmpPop()
+	{
+	    self = tmp.self;
+        args = tmp.args;
+        lastFunc = tmp.lastFunc;
+        lastClass = tmp.lastClass;
+        cbase = tmp.cbase;
+		prev = tmp.prev;
+        file = tmp.file;
+        line = tmp.line;
+        iter = tmp.iter;
+        flags = tmp.flags;
+		ruby = tmp.ruby;	//like it really could be different, maybe with threads...
+        tmp = tmp.tmp;
+	}	
     /** Push a new empty frame to the frame stack.
      *
      */

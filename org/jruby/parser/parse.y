@@ -1179,7 +1179,7 @@ primary		: literal
 		    {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("nested method definition");
-			    $$ = ph.getCurMid();
+			  //  $$ = ph.getCurMid(); useless
                 ph.setCurMid($2);
 			    ph.setInDef(ph.getInDef() + 1);
 			    ph.local_push();
@@ -1190,16 +1190,17 @@ primary		: literal
 		  opt_else
 		  ensure
 		  kEND
-		    {
-		        if ($6 != null)
+		    {  
+		        if ($6 != null)			//there is a rescue
                     $<>5 = nf.newRescue($5, $6, $7);
-			    else if ($7 != null) {
+			    else if ($7 != null) {	//else but no rescue
 			        ph.rb_warn("else without rescue is useless");
 			        $<>5 = ph.block_append($5, $7);
 			    }
-			    if ($8 != null)
+			    if ($8 != null)			//there is an ensure
                     $<>5 = nf.newEnsure($5, $8);
-
+				//now $5 is the whole body including all exception handling
+				
 		        /* NOEX_PRIVATE for toplevel */
 			    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? 
                                 Constants.NOEX_PUBLIC : Constants.NOEX_PRIVATE);

@@ -187,6 +187,8 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitClassNode(Node iVisited)
 	{
 		visit(iVisited);
+		//FIXME not done yet just quick testing
+		iVisited.getBodyNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitColon2Node(Node iVisited)
@@ -494,6 +496,11 @@ public class NodeVisitorAdapter implements NodeVisitor
 	public void visitScopeNode(Node iVisited)
 	{
 		visit(iVisited);
+		//FIXME: I don't have any idea of what is a CRef or what it is for
+		Node lRefValue = iVisited.getRefValue();
+		if (lRefValue != null)
+			lRefValue.accept(this);
+		iVisited.getNextNode().accept(this);
 		leave(iVisited);
 	}
 	public void visitSelfNode(Node iVisited)

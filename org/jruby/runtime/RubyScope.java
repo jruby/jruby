@@ -37,6 +37,12 @@ import org.jruby.util.*;
 import org.jruby.util.collections.*;
 
 /**
+ * A Scope in the Ruby Stack of scopes.
+ * This is used to maintain a stack of scopes through a linked list.
+ * Each scope holds a list of local values and a list of local names 
+ * Each scope also hold a pointer to the previous scope, a new empty scope
+ * can be pushed on top of the stack using the push method, the top scope
+ * can be popped of the top of the stack using the pop method.
  *
  * @author  jpetersen
  * @version 

@@ -1714,7 +1714,7 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 {
 							 if (ph.isInDef() || ph.isInSingle())
 								 yyerror("nested method definition");
-							 yyVal = ph.getCurMid();
+					//		 yyVal = ph.getCurMid();  useless
 							 ph.setCurMid(((String)yyVals[0+yyTop]));
 							 ph.setInDef(ph.getInDef() + 1);
 							 ph.local_push();

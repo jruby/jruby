@@ -44,249 +44,275 @@ import org.jruby.util.collections.*;
  * @author  jpetersen
  * @version
  */
-public class ScopeNode extends Node implements CallableNode {
-    // private RubyPointer vars = null;
-    // private RubyPointer localVarsList = null;
+public class ScopeNode extends Node implements CallableNode
+{
+	// private RubyPointer vars = null;
+	// private RubyPointer localVarsList = null;
 
-    public ScopeNode(ExtendedList table, CRefNode refValue, Node nextNode) {
-        super(Constants.NODE_SCOPE, table, refValue, nextNode);
-    }
+	public ScopeNode(ExtendedList table, CRefNode refValue, Node nextNode)
+	{
+		super(Constants.NODE_SCOPE, table, refValue, nextNode);
+	}
 
-    public RubyObject eval(Ruby ruby, RubyObject self) {
-        CRefNode savedCRef = null;
+	public RubyObject eval(Ruby ruby, RubyObject self)
+	{
+		CRefNode savedCRef = null;
 
-        RubyFrame frame = ruby.getRubyFrame();
-        frame.setTmp(ruby.getRubyFrame());
-        ruby.setRubyFrame(frame);
+		ruby.getRubyFrame().tmpPush();
+		ruby.getRubyScope().push();
+		CRefNode lRefValue = getRefValue();
+		if (lRefValue != null)
+		{
+			savedCRef = ruby.getCRef();
+			ruby.setCRef(lRefValue);
+			ruby.getRubyFrame().setCbase(lRefValue);
+		}
 
-        ruby.getRubyScope().push();
+		if (getTable() != null)
+		{
+			// RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
+			// vars.set(0, this);
+			// vars.inc();
 
-        if (getRefValue() != null) {
-            savedCRef = ruby.getCRef();
-            ruby.setCRef(getRefValue());
-            ruby.getRubyFrame().setCbase(getRefValue());
-        }
+			ruby.getRubyScope().setLocalValues(new ExtendedList(getTable().size(), ruby.getNil()));
+			ruby.getRubyScope().setLocalNames(getTable());
+		}/* else
+			{
+			ruby.getRubyScope().setLocalValues(null);
+			ruby.getRubyScope().setLocalNames(null);
+			}*/ // unneeded, it is done in RubyScope.push() Benoit
 
-        if (getTable() != null) {
-            // RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
-            // vars.set(0, this);
-            // vars.inc();
+		RubyObject result = getNextNode().eval(ruby, self);
 
-            ruby.getRubyScope().setLocalValues(new ExtendedList(getTable().size(), ruby.getNil()));
-            ruby.getRubyScope().setLocalNames(getTable());
-        } else {
-            ruby.getRubyScope().setLocalValues(null);
-            ruby.getRubyScope().setLocalNames(null);
-        }
+		ruby.getRubyScope().pop();
+		ruby.getRubyFrame().tmpPop();
 
-        RubyObject result = getNextNode().eval(ruby, self);
+		if (savedCRef != null)
+		{
+			ruby.setCRef(savedCRef);
+		}
 
-        ruby.getRubyScope().pop();
-        ruby.setRubyFrame(frame.getTmp());
+		return result;
+	}
 
-        if (savedCRef != null) {
-            ruby.setCRef(savedCRef);
-        }
+	public RubyObject setupModule(Ruby ruby, RubyModule module)
+	{
+		// Node node = n;
 
-        return result;
-    }
+		String file = ruby.getSourceFile();
+		int line = ruby.getSourceLine();
 
-    public RubyObject setupModule(Ruby ruby, RubyModule module) {
-        // Node node = n;
+		// TMP_PROTECT;
 
-        String file = ruby.getSourceFile();
-        int line = ruby.getSourceLine();
+		ruby.getRubyFrame().tmpPush();
+		ruby.pushClass();
+		ruby.setRubyClass(module);
+		ruby.setCBase(module); //CHAD
+		ruby.getRubyScope().push();
+		RubyVarmap.push(ruby);
 
-        // TMP_PROTECT;
+		if (getTable() != null)
+		{
+			// RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
+			// vars.set(0, this);
+			// vars.inc();
 
-        RubyFrame frame = ruby.getRubyFrame();
-        frame.setTmp(ruby.getRubyFrame());
-//        ruby.setRubyFrame(frame);		seems useless Benoit
+			ruby.getRubyScope().setLocalValues(new ExtendedList(getTable().size(), ruby.getNil()));
+			ruby.getRubyScope().setLocalNames(getTable());
+		} else
+		{
+			ruby.getRubyScope().setLocalValues(null);
+			ruby.getRubyScope().setLocalNames(null);
+		}
 
-        ruby.pushClass();
-        ruby.setRubyClass(module);
-        ruby.setCBase(module); //CHAD
-        ruby.getRubyScope().push();
-        RubyVarmap.push(ruby);
+		// +++
+		// if (ruby.getCRef() != null) {
+		ruby.getCRef().push(module);
+		// } else {
+		//    ruby.setCRef(new CRefNode(module, null));
+		// }
+		// ---
 
-        if (getTable() != null) {
-            // RubyPointer vars = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
-            // vars.set(0, this);
-            // vars.inc();
+		ruby.getRubyFrame().setCbase(ruby.getCRef());
+		// PUSH_TAG(PROT_NONE);
 
-            ruby.getRubyScope().setLocalValues(new ExtendedList(getTable().size(), ruby.getNil()));
-            ruby.getRubyScope().setLocalNames(getTable());
-        } else {
-            ruby.getRubyScope().setLocalValues(null);
-            ruby.getRubyScope().setLocalNames(null);
-        }
+		RubyObject result = null;
 
-        // +++
-        // if (ruby.getCRef() != null) {
-        ruby.getCRef().push(module);
-        // } else {
-        //    ruby.setCRef(new CRefNode(module, null));
-        // }
-        // ---
+		// if (( state = EXEC_TAG()) == 0 ) {
+		// if (trace_func) {
+		//     call_trace_func("class", file, line, ruby_class,
+		//                     ruby_frame->last_func, ruby_frame->last_class );
+		// }
+		result = getNextNode() != null ? getNextNode().eval(ruby, ruby.getRubyClass()) : ruby.getNil();
+		// }
 
-        ruby.getRubyFrame().setCbase(ruby.getCRef());
-        // PUSH_TAG(PROT_NONE);
+		// POP_TAG();
+		ruby.getCRef().pop();
+		RubyVarmap.pop(ruby);
+		ruby.getRubyScope().pop();
+		ruby.popClass();
+		ruby.getRubyFrame().tmpPop();
+		//        if (trace_func){
+		//            call_trace_func("end", file, line, 0, ruby_frame->last_func, ruby_frame->last_class );
+		//        }
+		// if (state != 0){
+		//     JUMP_TAG(state);
+		// }
 
-        RubyObject result = null;
+		return result;
+	}
 
-        // if (( state = EXEC_TAG()) == 0 ) {
-        // if (trace_func) {
-        //     call_trace_func("class", file, line, ruby_class,
-        //                     ruby_frame->last_func, ruby_frame->last_class );
-        // }
-        result = getNextNode() != null ? getNextNode().eval(ruby, ruby.getRubyClass()) : ruby.getNil();
-        // }
+	public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper)
+	{
+		if (args == null)
+		{
+			args = new RubyPointer();
+		}
+		CRefNode savedCref = null; // +++ = null;
 
-        // POP_TAG();
-        ruby.getCRef().pop();
-        RubyVarmap.pop(ruby);
-        ruby.getRubyScope().pop();
-        ruby.popClass();
+		// RubyPointer argsList = new RubyPointer(args);
 
-        ruby.setRubyFrame(frame.getTmp());
-        //        if (trace_func) {
-        //            call_trace_func("end", file, line, 0, ruby_frame->last_func, ruby_frame->last_class );
-        //        }
-        // if (state != 0) {
-        //     JUMP_TAG(state);
-        // }
+		ExtendedList valueList = null;
 
-        return result;
-    }
+		ruby.getRubyScope().push();
+		CRefNode lRefValue = getRefValue();
+		if (lRefValue != null)
+		{
+			savedCref = ruby.getCRef(); // s.a.
+			ruby.setCRef(lRefValue);
+			ruby.getRubyFrame().setCbase(lRefValue);
+		}
 
-    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
-        if (args == null) {
-            args = new RubyPointer();
-        }
-        CRefNode savedCref = null; // +++ = null;
+		if (getTable() != null)
+		{
+			valueList = new ExtendedList(getTable().size(), ruby.getNil());
+			// localVarsList.set(0, this);
+			// localVarsList.inc();
 
-        // RubyPointer argsList = new RubyPointer(args);
+			ruby.getRubyScope().setLocalValues(valueList);
+			ruby.getRubyScope().setLocalNames(getTable());
+		} else
+		{
+			valueList = ruby.getRubyScope().getLocalValues();
 
-        ExtendedList valueList = null;
+			ruby.getRubyScope().setLocalValues(null);
+			ruby.getRubyScope().setLocalNames(null);
+		}
 
-        ruby.getRubyScope().push();
+		Node callBody = getNextNode();
+		Node callNode = null;
+		if (callBody.getType() == Constants.NODE_ARGS)
+		{
+			callNode = callBody;
+			callBody = null;
+		} else if (callBody.getType() == Constants.NODE_BLOCK)
+		{
+			callNode = callBody.getHeadNode();
+			callBody = callBody.getNextNode();
+		}
 
-        if (getRefValue() != null) {
-            savedCref = ruby.getCRef(); // s.a.
-            ruby.setCRef(getRefValue());
-            ruby.getRubyFrame().setCbase(getRefValue());
-        }
+		RubyVarmap.push(ruby);
+		// PUSH_TAG(PROT_FUNC);
 
-        if (getTable() != null) {
-            valueList = new ExtendedList(getTable().size(), ruby.getNil());
-            // localVarsList.set(0, this);
-            // localVarsList.inc();
+		RubyObject result = ruby.getNil();
 
-            ruby.getRubyScope().setLocalValues(valueList);
-            ruby.getRubyScope().setLocalNames(getTable());
-        } else {
-            valueList = ruby.getRubyScope().getLocalValues();
+		try
+		{
+			if (callNode != null)
+			{
+				//if (call_node.getType() != Constants.NODE_ARGS) {
+				// rb_bug("no argument-node");
+				//}
 
-            ruby.getRubyScope().setLocalValues(null);
-            ruby.getRubyScope().setLocalNames(null);
-        }
+				int i = callNode.getCount();
+				if (i > (args != null ? args.size() : 0))
+				{
+					int size = 0;
+					if (args != null)
+						size = args.size();
+					throw new RubyArgumentException(ruby, "wrong # of arguments(" + size + " for " + i + ")");
+				}
+				if (callNode.getRest() == -1)
+				{
+					int opt = i;
+					Node optNode = callNode.getOptNode();
 
-        Node callBody = getNextNode();
-        Node callNode = null;
-        if (callBody.getType() == Constants.NODE_ARGS) {
-            callNode = callBody;
-            callBody = null;
-        } else if (callBody.getType() == Constants.NODE_BLOCK) {
-            callNode = callBody.getHeadNode();
-            callBody = callBody.getNextNode();
-        }
+					while (optNode != null)
+					{
+						opt++;
+						optNode = optNode.getNextNode();
+					}
+					if (opt < (args != null ? args.size() : 0))
+					{
+						throw new RubyArgumentException(ruby, "wrong # of arguments(" + args.size() + " for " + opt + ")");
+					}
 
-        RubyVarmap.push(ruby);
-        // PUSH_TAG(PROT_FUNC);
+					ruby.getRubyFrame().setArgs(valueList != null ? new ExtendedList(valueList.getDelegate(), 2) : null);
+				}
 
-        RubyObject result = ruby.getNil();
+				if (valueList != null)
+				{
+					if (i > 0)
+					{
+						for (int j = 0; j < i; j++)
+						{
+							valueList.set(j + 2, args.get(j));
+						}
+					}
 
-        try {
-            if (callNode != null) {
-                //if (call_node.getType() != Constants.NODE_ARGS) {
-                // rb_bug("no argument-node");
-                //}
+					args.inc(i);
 
-                int i = callNode.getCount();
-                if (i > (args != null ? args.size() : 0)) {
-                    int size = 0;
-                    if (args != null)
-                        size = args.size();
-                    throw new RubyArgumentException(ruby, "wrong # of arguments(" + size + " for " + i + ")");
-                }
-                if (callNode.getRest() == -1) {
-                    int opt = i;
-                    Node optNode = callNode.getOptNode();
+					if (callNode.getOptNode() != null)
+					{
+						Node optNode = callNode.getOptNode();
 
-                    while (optNode != null) {
-                        opt++;
-                        optNode = optNode.getNextNode();
-                    }
-                    if (opt < (args != null ? args.size() : 0)) {
-                        throw new RubyArgumentException(ruby, "wrong # of arguments(" + args.size() + " for " + opt + ")");
-                    }
+						while (optNode != null && args.size() != 0)
+						{
+							((AssignableNode) optNode.getHeadNode()).assign(ruby, recv, args.getRuby(0), true);
+							args.inc(1);
+							optNode = optNode.getNextNode();
+						}
+						recv.eval(optNode);
+					}
+					if (callNode.getRest() >= 0)
+					{
+						RubyArray array = null;
+						if (args.size() > 0)
+						{
+							array = RubyArray.newArray(ruby, args);
+						} else
+						{
+							array = RubyArray.newArray(ruby, 0);
+						}
+						valueList.set(callNode.getRest(), array);
+					}
+				}
+			}
 
-                    ruby.getRubyFrame().setArgs(valueList != null ? new ExtendedList(valueList.getDelegate(), 2) : null);
-                }
+			result = recv.eval(callBody);
+		} catch (ReturnException rExcptn)
+		{
+			// +++ jpetersen
+			result = ((RubyArray) rExcptn.getReturnValue()).pop();
+			// ---
+		}
 
-                if (valueList != null) {
-                    if (i > 0) {
-                        for (int j = 0; j < i; j++) {
-                            valueList.set(j + 2, args.get(j));
-                        }
-                    }
+		RubyVarmap.pop(ruby);
 
-                    args.inc(i);
+		ruby.getRubyScope().pop();
 
-                    if (callNode.getOptNode() != null) {
-                        Node optNode = callNode.getOptNode();
+		if (savedCref != null)
+		{
+			ruby.setCRef(savedCref);
+		}
 
-                        while (optNode != null && args.size() != 0) {
-                            ((AssignableNode) optNode.getHeadNode()).assign(ruby, recv, args.getRuby(0), true);
-                            args.inc(1);
-                            optNode = optNode.getNextNode();
-                        }
-                        recv.eval(optNode);
-                    }
-                    if (callNode.getRest() >= 0) {
-                        RubyArray array = null;
-                        if (args.size() > 0) {
-                            array = RubyArray.newArray(ruby, args);
-                        } else {
-                            array = RubyArray.newArray(ruby, 0);
-                        }
-                        valueList.set(callNode.getRest(), array);
-                    }
-                }
-            }
-
-            result = recv.eval(callBody);
-        } catch (ReturnException rExcptn) {
-            // +++ jpetersen
-            result = ((RubyArray) rExcptn.getReturnValue()).pop();
-            // ---
-        }
-
-        RubyVarmap.pop(ruby);
-
-        ruby.getRubyScope().pop();
-
-        if (savedCref != null) {
-            ruby.setCRef(savedCref);
-        }
-
-        return result;
-    }
+		return result;
+	}
 	/**
 	 * Accept for the visitor pattern.
 	 * @param iVisitor the visitor
 	 **/
-	public void accept(NodeVisitor iVisitor)	
+	public void accept(NodeVisitor iVisitor)
 	{
 		iVisitor.visitScopeNode(this);
 	}

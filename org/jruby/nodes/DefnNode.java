@@ -46,6 +46,8 @@ import org.jruby.util.*;
  * </li>
  * <li>
  * u3 ==&gt; defnNode (ScopeNode) NOTE: the body of the method
+ * it is actually a RFunc which means a ScopeNode with a body containing 
+ * the concatenation of the nodes corresponding to the arguments and to the body
  * </li>
  * </ul>
  * @author  jpetersen
