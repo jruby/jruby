@@ -623,7 +623,7 @@ public class RubyClasses {
 
     public RubyClass getFileStatClass() {
         if (fileStatClass == null) {
-            fileStatClass = FileStatClass.createFileStatClass(runtime);
+            fileStatClass = RubyFileStat.createFileStatClass(runtime);
         }
         return fileStatClass;
     }
