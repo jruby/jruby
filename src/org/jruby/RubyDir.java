@@ -359,8 +359,13 @@ public class RubyDir extends RubyObject {
     protected static List getContents(File directory) {
         String[] contents = directory.list();
         List result = new ArrayList();
-        for (int i=0; i<contents.length; i++) {
-            result.add(contents[i]);
+
+        // If an IO exception occurs (something odd, but possible)
+        // A directory may return null.
+        if (contents != null) {
+            for (int i=0; i<contents.length; i++) {
+                result.add(contents[i]);
+            }
         }
         return result;
     }
