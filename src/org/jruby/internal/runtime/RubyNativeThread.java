@@ -52,7 +52,7 @@ public class RubyNativeThread extends Thread {
 		this.rubyThread = rubyThread;
 		
 		runtime = rubyThread.getRuntime();
-		proc = RubyProc.newProc(runtime);
+		proc = runtime.newProc();
         currentFrame = runtime.getCurrentFrame();
         currentBlock = runtime.getBlockStack().getCurrent();
         this.arguments = args;

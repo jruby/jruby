@@ -75,7 +75,7 @@ public final class DefaultMethod extends AbstractMethod {
 
         RubyProc optionalBlockArg = null;
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
-            optionalBlockArg = RubyProc.newProc(runtime);
+            optionalBlockArg = runtime.newProc();
         }
 
         context.getScopeStack().push();

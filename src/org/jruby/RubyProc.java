@@ -35,7 +35,6 @@ package org.jruby;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,21 +51,6 @@ public class RubyProc extends RubyObject {
         super(runtime, rubyClass);
     }
 
-    public static RubyClass createProcClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Proc", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
-        
-        result.defineMethod("arity", callbackFactory.getMethod("arity"));
-        result.defineMethod("call", callbackFactory.getOptMethod("call"));
-        result.defineMethod("[]", callbackFactory.getOptMethod("call"));
-        result.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));        
-
-        result.defineSingletonMethod("new", 
-                callbackFactory.getOptSingletonMethod("newInstance"));
-        
-        return result;
-    }
-
     public Block getBlock() {
         return block;
     }
@@ -76,12 +60,6 @@ public class RubyProc extends RubyObject {
     }
 
     // Proc class
-
-    public static RubyProc newInstance(IRubyObject receiver, IRubyObject[] args) {
-        RubyProc proc = newProc(receiver.getRuntime());
-        proc.callInit(args);
-        return proc;
-    }
 
     public static RubyProc newProc(Ruby runtime, boolean isLambda) {
         if (!runtime.isBlockGiven() && !runtime.isFBlockGiven()) {
@@ -98,10 +76,16 @@ public class RubyProc extends RubyObject {
         return newProc;
     }
     
-    public static RubyProc newProc(Ruby runtime) {
-    	return newProc(runtime, false);
+    protected IRubyObject doClone() {
+    	RubyProc newProc = 
+    		new RubyProc(getRuntime(), getRuntime().getClasses().getProcClass());
+    	
+    	newProc.block = getBlock();
+    	newProc.wrapper = getWrapper();
+    	
+    	return newProc;
     }
-
+    
     public IRubyObject call(IRubyObject[] args) {
         return call(args, null);
     }

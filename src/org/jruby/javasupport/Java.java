@@ -69,7 +69,7 @@ public class Java {
         if (args.length > 1) {
             handler = (RubyProc)args[1];
         } else {
-            handler = RubyProc.newProc(recv.getRuntime());
+            handler = recv.getRuntime().newProc();
         }
         recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 
@@ -112,7 +112,7 @@ public class Java {
             throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
 
-        final RubyProc proc = args[args.length - 1] instanceof RubyProc ? (RubyProc)args[args.length - 1] : RubyProc.newProc(recv.getRuntime());
+        final RubyProc proc = args[args.length - 1] instanceof RubyProc ? (RubyProc)args[args.length - 1] : recv.getRuntime().newProc();
         int size = args[args.length - 1] instanceof RubyProc ? args.length - 1 : args.length;
 
         Class[] interfaces = new Class[size];

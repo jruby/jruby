@@ -232,7 +232,7 @@ public class RubyHash extends RubyObject {
 
         // A block to represent 'default' value for unknown values
         if (recv.getRuntime().isBlockGiven()) {
-        	hash.defaultProc = RubyProc.newProc(recv.getRuntime());
+        	hash.defaultProc = recv.getRuntime().newProc();
         }
         
         hash.setMetaClass((RubyClass) recv);

@@ -922,6 +922,10 @@ public final class Ruby {
     public RubyFloat newFloat(double value) {
     	return RubyFloat.newFloat(this, value);
     }
+    
+    public RubyProc newProc() {
+    	return RubyProc.newProc(this, false);
+    }
 
     public RubyString newString(String string) {
     	return RubyString.newString(this, string);

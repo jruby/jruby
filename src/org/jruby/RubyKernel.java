@@ -142,7 +142,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject at_exit(IRubyObject recv) {
-        return recv.getRuntime().pushExitBlock(RubyProc.newProc(recv.getRuntime()));
+        return recv.getRuntime().pushExitBlock(recv.getRuntime().newProc());
     }
 
     public static IRubyObject autoload(IRubyObject recv, IRubyObject symbol, final IRubyObject file) {

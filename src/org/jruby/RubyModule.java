@@ -908,7 +908,7 @@ public class RubyModule extends RubyObject {
         }
         
         if (args.length == 1) {
-            body = RubyProc.newProc(getRuntime());
+            body = getRuntime().newProc();
             newMethod = new ProcMethod((RubyProc)body, visibility);
         } else if (args[0].isKindOf(getRuntime().getClasses().getMethodClass())) {
             body = args[0];

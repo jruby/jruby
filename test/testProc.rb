@@ -31,3 +31,6 @@ argument_test(false, lambda{||}, 1)
 argument_test(true, lambda{|a,|}, 1)
 argument_test(false, lambda{|a,|})
 argument_test(false, lambda{|a,|}, 1,2)
+
+l = lambda{1}
+test_ok(l.clone.call == 1)
