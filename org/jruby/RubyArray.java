@@ -685,13 +685,17 @@ public class RubyArray extends RubyObject {
         modify();
         boolean changed = false;
         int length = length();
+        ArrayList newList = new ArrayList(length);
 
         for (int i = 0; i < length; i++) {
-            if (entry(i).isNil()) {
-                list.remove(i);
-                changed = true;
+            if (!entry(i).isNil()) {
+                newList.add(entry(i));
             }
+            else {
+                changed = true;
+             }
         }
+        list = newList;
         return changed ? (RubyObject)this : (RubyObject)getRuby().getNil();
     }
 
