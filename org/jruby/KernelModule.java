@@ -346,7 +346,7 @@ public class KernelModule {
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
         RubyString src = (RubyString)args[0];
-        IRubyObject scope = args.length > 0 ? args[1] : recv.getRuntime().getNil();
+        IRubyObject scope = args.length > 1 ? args[1] : recv.getRuntime().getNil();
         String file = "(eval)";
         int line = 1;
 
