@@ -261,10 +261,10 @@ public class RubyIO extends RubyObject {
 
             if (newLine != null) {
                 lineNumber++;
-
+				//increase the global linenumber
+				ruby.setGlobalVar("$.", RubyFixnum.newFixnum(ruby, lineNumber));
                 RubyString result = RubyString.newString(getRuby(), newLine);
                 result.taint();
-
                 return result;
             }
         } catch (IOException ioExcptn) {

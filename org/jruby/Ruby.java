@@ -865,7 +865,11 @@ public final class Ruby {
     }
 
     /** defines a global variable with getter and setter methods
-     * 
+     * @param name name of the new variable, since it is a global it should normally start with a $
+	 * @param value starting value for this variable, this value is used by the default getter and 
+	 * 				setter implementation.
+	 * @param getter the getter method for this variable, if null a default method which reads the value is used
+	 * @param setter the setter method for this variable, if null a default method which writes the value is used
      */
     public void defineHookedVariable(String name, RubyObject value, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
 
