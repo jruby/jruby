@@ -2,6 +2,7 @@
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
 <project basedir="." default="all" name="JRuby">
     <property name="build.dir" value="build"/>
+    <property name="lib.dir" value="lib"/>
     <property name="jar.file" value="${build.dir}/jruby.jar"/>
     
     <!--<property name="build.compiler" value="jikes"/-->
@@ -23,7 +24,7 @@
     <property name="base.dir" value="."/>
 
     <path id="classpath">
-        <fileset dir="lib" includes="*.jar"/>
+        <fileset dir="${lib.dir}" includes="*.jar"/>
     </path>
 
     <target name="check_for_optional_packages">
@@ -103,6 +104,7 @@
             	<include name="COPYING"/>
             	<include name="jruby.mf"/>
             	<include name="README"/>
+            	<include name="README.test"/>
                 <include name="**/*.rb"/>
                 <include name="samples/**/*"/>
                 <include name="gnu/**/*.java"/>
@@ -113,7 +115,7 @@
         </copy>
         
         <tar basedir="${build.tars.base}" tarfile="${build.dir}/jruby-src.tar">
-            <exclude name="jruby_${version.file}/jruby.jar"/>
+            <exclude name="jruby-${version.file}/jruby.jar"/>
         </tar>
 
         <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>

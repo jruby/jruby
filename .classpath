@@ -3,5 +3,6 @@
     <classpathentry kind="src" path=""/>
     <classpathentry kind="var" path="JRE_LIB" rootpath="JRE_SRCROOT" sourcepath="JRE_SRC"/>
     <classpathentry kind="var" path="BSF_LIB"/>
+    <classpathentry kind="var" path="JUNIT_LIB"/>
     <classpathentry kind="output" path=""/>
 </classpath>

@@ -36,6 +36,7 @@ import java.io.*;
 
 import org.jruby.core.*;
 import org.jruby.exceptions.*;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
 import org.jruby.parser.*;
@@ -142,7 +143,32 @@ public final class Ruby {
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
     }
-   
+    
+    /**
+     * Returns a default instance of the JRuby runtime.
+     * 
+     * @param regexpAdapterClass The RegexpAdapter class you want to use.
+     * @return the JRuby runtime
+     */
+    public static Ruby getDefaultInstance(Class regexpAdapterClass) {
+        Ruby ruby = new Ruby();
+        ruby.setRegexpAdapterClass(regexpAdapterClass);
+        ruby.init();
+        return ruby;
+    }
+    
+    /**
+     * Evaluates a Java script. And return an object of class returnClass.
+     * 
+     * @param script The script to evaluate
+     * @param returnClass The class which should be returned
+     * @return the result Object
+     */
+    public Object evalScript(String script, Class returnClass) {
+        RubyObject result = getRubyTopSelf().eval(getRubyParser().compileJavaString("<script>", script, script.length(), 1));
+        return JavaUtil.convertRubyToJava(this, result, returnClass);
+    }
+    
     public Class getRegexpAdapterClass() {
         return regexpAdapterClass;
     }
