@@ -110,6 +110,30 @@ C:\dev\jruby>ruby -e "puts $:"
 
 		}
 	}
+
+	public void testFindFile() {
+		ArrayList list = new ArrayList();
+		//should not work right away
+		//we do need to run initLoad first so that
+		//the $: variable is initialized
+		ruby.initLoad(list);
+		list.clear();
+		File testFile = new File("fib.rb");
+		try
+		{
+			ruby.findFile(testFile);
+			fail("should have thrown an exception, the file fib.rb is not 					in the search path");
+		}
+		catch (Exception e)
+		{
+		}
+		list.add("./samples");
+		//now we valuate the path 
+		ruby.initLoad(list);
+		assertEquals(new File("./samples/fib.rb"), ruby.findFile(testFile));
+	}
+
+	
 	private void assertTrue(RubyObject iObj)
 	{
 		assertTrue(iObj.isTrue());

@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.util.*;
+import java.io.File;
 
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
@@ -1005,9 +1006,10 @@ public final class Ruby {
 	 *	 option, followed by an installation-defined standard library location, followed
 	 *   by the current directory (``.''). This variable may be set from within a program to alter
 	 *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
-	 *   @param iAdditionalDirectory the directory specified on the command line
+	 *   Warning: the ioAdditionalDirectory list will be modified by this process!
+	 *   @param ioAdditionalDirectory the directory specified on the command line
 	 **/
-	public void initLoad(ArrayList iAdditionalDirectory) {
+	public void initLoad(ArrayList ioAdditionalDirectory) {
 		//	don't know what this is used for in MRI, it holds the handle of all loaded libs
 		//		ruby_dln_librefs = rb_ary_new();
 
@@ -1016,11 +1018,11 @@ public final class Ruby {
 		//of course we can't do that, let's just use the org.jruby.HOME property
 		String lRubyHome = System.getProperty("org.jruby.HOME");
 		String lRubyLib = System.getProperty("org.jruby.LIB");
-		for (int i = iAdditionalDirectory.size()-1; i >= 0; i--)
-			iAdditionalDirectory.set(i, new RubyString(this, (String)iAdditionalDirectory.get(i)));
+		for (int i = ioAdditionalDirectory.size()-1; i >= 0; i--)
+			ioAdditionalDirectory.set(i, new RubyString(this, (String)ioAdditionalDirectory.get(i)));
 
 		if (lRubyLib != null && lRubyLib.length()!= 0) 
-			iAdditionalDirectory.add(new RubyString(this, lRubyLib));
+			ioAdditionalDirectory.add(new RubyString(this, lRubyLib));
 		if (lRubyHome != null && lRubyHome.length()!= 0) {
 			//FIXME: use the version number in some other way than hardcoded here
 			String lRuby = lRubyHome + java.io.File.separatorChar + "lib" 
@@ -1028,21 +1030,55 @@ public final class Ruby {
 				+ java.io.File.separatorChar;
 			String lSiteRuby = lRuby + "site_ruby";
 			String lSiteRubyVersion = lSiteRuby + java.io.File.separatorChar + RUBY_VERSION;
-			iAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
+			ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
 			String lArch = java.io.File.separatorChar + "JAVA";
-			iAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
-			iAdditionalDirectory.add(new RubyString(this, lSiteRuby));
+			ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
+			ioAdditionalDirectory.add(new RubyString(this, lSiteRuby));
 			String lRubyVersion = lRuby + RUBY_VERSION;
-			iAdditionalDirectory.add(new RubyString(this, lRubyVersion));
-			iAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
+			ioAdditionalDirectory.add(new RubyString(this, lRubyVersion));
+			ioAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
 		}
 		//FIXME: safe level pb here
-		iAdditionalDirectory.add(new RubyString(this, "."));
-		RubyArray rb_load_path = new RubyArray(this, iAdditionalDirectory);
+		ioAdditionalDirectory.add(new RubyString(this, "."));
+		RubyArray rb_load_path = new RubyArray(this, ioAdditionalDirectory);
 		defineReadonlyVariable("$:", rb_load_path);
 		defineReadonlyVariable("$-I", rb_load_path);
 		defineReadonlyVariable("$LOAD_PATH", rb_load_path);
 		RubyArray rb_features = new RubyArray(this);
 		defineReadonlyVariable("$\"", rb_features);
 	}
+
+	
+	/**
+	 * this method uses the appropriate lookup strategy to find a file.
+	 * It is used by Kernel#require.
+	 * NOTE: this is only public for unit testing reasons.
+	 * 		 it should have package (default) protection
+	 *  (matz Ruby: rb_find_file)
+	 *  @param ruby the ruby interpreter
+	 *  @param i2find the file to find, this is a path name
+	 *  @return the correct file
+	 */
+	public File findFile(File i2find)
+	{
+		RubyArray lLoadPath = (RubyArray)getGlobalVar("$:");
+		int lPathNb = lLoadPath.getLength();
+		String l2Find = i2find.getPath();
+		for(int i = 0; i < lPathNb; i++)
+		{
+			String lCurPath = ((RubyString)lLoadPath.entry(i)).getValue();
+			File lCurFile = new File(lCurPath + File.separatorChar + l2Find);
+			if (lCurFile.exists())
+			{
+				i2find = lCurFile;
+				break;
+			}
+		}
+		if (i2find.exists())
+			return i2find;
+		else 
+			throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
+	}
+
+
 }

@@ -40,198 +40,200 @@ import org.jruby.nodes.*;
  * @author  jpetersen
  */
 public class RubyRuntime {
-    private boolean printBugs = false;
+	private boolean printBugs = false;
 
-    private Ruby ruby;
+	private Ruby ruby;
 
-    private InputStream inputStream;
-    private PrintStream errorStream;
-    private PrintStream outputStream;
+	private InputStream inputStream;
+	private PrintStream errorStream;
+	private PrintStream outputStream;
 
-    public RubyRuntime(Ruby ruby) {
-        this.ruby = ruby;
-    }
+	public RubyRuntime(Ruby ruby) {
+		this.ruby = ruby;
+	}
 
-    /** Print a bug report to the Error stream if bug 
-     * reporting is enabled
-     * 
-     */
-    public void printBug(String description) {
-        if (printBugs) {
-            getErrorStream().println("[BUG] " + description);
-        }
-    }
+	/** Print a bug report to the Error stream if bug 
+	 * reporting is enabled
+	 * 
+	 */
+	public void printBug(String description) {
+		if (printBugs) {
+			getErrorStream().println("[BUG] " + description);
+		}
+	}
 
-    /** This method compiles and interprets a Ruby script.
-     *
-     *  It can be used if you want to use JRuby as a Macro language.
-     *
-     */
-    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-        RubyObject self = ruby.getRubyTopSelf();
-        CRefNode savedCRef = ruby.getCRef();
+	/** This method compiles and interprets a Ruby script.
+	 *
+	*  It can be used if you want to use JRuby as a Macro language.
+	*
+	*/
+	public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
+		RubyObject self = ruby.getRubyTopSelf();
+		CRefNode savedCRef = ruby.getCRef();
 
-        // TMP_PROTECT;
-        if (wrap && ruby.getSecurityLevel() >= 4) {
-            // Check_Type(fname, T_STRING);
-        } else {
-            // Check_SafeStr(fname);
-        }
+		// TMP_PROTECT;
+		if (wrap && ruby.getSecurityLevel() >= 4) {
+			// Check_Type(fname, T_STRING);
+		} else {
+			// Check_SafeStr(fname);
+		}
 
-        // volatile ID last_func;
-        // ruby_errinfo = Qnil; /* ensure */
-        RubyVarmap.push(ruby);
-        ruby.pushClass();
+		// volatile ID last_func;
+		// ruby_errinfo = Qnil; /* ensure */
+		RubyVarmap.push(ruby);
+		ruby.pushClass();
 
-        RubyModule wrapper = ruby.getWrapper();
-        ruby.setCRef(ruby.getTopCRef());
+		RubyModule wrapper = ruby.getWrapper();
+		ruby.setCRef(ruby.getTopCRef());
 
-        if (!wrap) {
-            ruby.secure(4); /* should alter global state */
-            ruby.setRubyClass(ruby.getClasses().getObjectClass());
-            ruby.setWrapper(null);
-        } else {
-            /* load in anonymous module as toplevel */
-            ruby.setWrapper(RubyModule.newModule(ruby));
-            ruby.setRubyClass(ruby.getWrapper());
-            self = ruby.getRubyTopSelf().rbClone();
-            self.extendObject(ruby.getRubyClass());
-            ruby.getCRef().push(ruby.getWrapper());
-        }
-        ruby.getRubyFrame().push();
-        ruby.getRubyFrame().setLastFunc(null);
-        ruby.getRubyFrame().setLastClass(null);
-        ruby.getRubyFrame().setSelf(self);
-        ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
-        ruby.getRubyScope().push();
+		if (!wrap) {
+			ruby.secure(4); /* should alter global state */
+			ruby.setRubyClass(ruby.getClasses().getObjectClass());
+			ruby.setWrapper(null);
+		} else {
+			/* load in anonymous module as toplevel */
+			ruby.setWrapper(RubyModule.newModule(ruby));
+			ruby.setRubyClass(ruby.getWrapper());
+			self = ruby.getRubyTopSelf().rbClone();
+			self.extendObject(ruby.getRubyClass());
+			ruby.getCRef().push(ruby.getWrapper());
+		}
+		ruby.getRubyFrame().push();
+		ruby.getRubyFrame().setLastFunc(null);
+		ruby.getRubyFrame().setLastClass(null);
+		ruby.getRubyFrame().setSelf(self);
+		ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
+		ruby.getRubyScope().push();
 
-        /* default visibility is private at loading toplevel */
-        ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
+		/* default visibility is private at loading toplevel */
+		ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
 
-        RubyId last_func = ruby.getRubyFrame().getLastFunc();
-        try {
-            // RubyId last_func = ruby.getRubyFrame().getLastFunc();
-            // DEFER_INTS;
-            ruby.setInEval(ruby.getInEval() + 1);
+		RubyId last_func = ruby.getRubyFrame().getLastFunc();
+		try {
+			// RubyId last_func = ruby.getRubyFrame().getLastFunc();
+			// DEFER_INTS;
+			ruby.setInEval(ruby.getInEval() + 1);
 
-            ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
+			ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
 
-            // ---
-            ruby.setInEval(ruby.getInEval() - 1);
+			// ---
+			ruby.setInEval(ruby.getInEval() - 1);
 
-            self.evalNode(ruby.getParserHelper().getEvalTree());
-        } catch (Exception excptn) {
-            excptn.printStackTrace(getErrorStream());
-        } finally {
-            ruby.getRubyFrame().setLastFunc(last_func);
+			self.evalNode(ruby.getParserHelper().getEvalTree());
+		} catch (Exception excptn) {
+			excptn.printStackTrace(getErrorStream());
+		} finally {
+			ruby.getRubyFrame().setLastFunc(last_func);
 
-            /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
-                if (ruby_scope->local_tbl)
-                    free(ruby_scope->local_tbl);
-            	}*/
-            ruby.setCRef(savedCRef);
-            ruby.getRubyScope().pop();
-            ruby.getRubyFrame().pop();
-            ruby.popClass();
-            RubyVarmap.pop(ruby);
-            ruby.setWrapper(wrapper);
-        }
+			/*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+			  if (ruby_scope->local_tbl)
+			  free(ruby_scope->local_tbl);
+			  }*/
+			ruby.setCRef(savedCRef);
+			ruby.getRubyScope().pop();
+			ruby.getRubyFrame().pop();
+			ruby.popClass();
+			RubyVarmap.pop(ruby);
+			ruby.setWrapper(wrapper);
+		}
 
-        /*if (ruby_nerrs > 0) {
-            ruby_nerrs = 0;
-            rb_exc_raise(ruby_errinfo);
-        }*/
-    }
+		/*if (ruby_nerrs > 0) {
+		  ruby_nerrs = 0;
+		  rb_exc_raise(ruby_errinfo);
+		  }*/
+	}
 
-    /** This method loads, compiles and interprets a Ruby file.
-     *  It is used by Kernel#require.
-     *
-     *  (matz Ruby: rb_load)
-     */
-    public void loadFile(RubyString fname, boolean wrap) {
-        // fname = findFile(fname);
-        if (fname == null) {
-            throw new RuntimeException("No such file to load -- " + fname.getValue());
-        }
+	/** This method loads, compiles and interprets a Ruby file.
+	*  It is used by Kernel#require.
+	*
+	*  (matz Ruby: rb_load)
+	*/
+	public void loadFile(File iFile, boolean wrap) {
+		if (iFile == null) {
+			throw new RuntimeException("No such file to load");
+		}
 
-        try {
-            File rubyFile = new File(fname.getValue());
-            StringBuffer source = new StringBuffer((int) rubyFile.length());
-            BufferedReader br = new BufferedReader(new FileReader(rubyFile));
-            String line;
-            while ((line = br.readLine()) != null) {
-                source.append(line).append('\n');
-            }
-            br.close();
+		try {
+			StringBuffer source = new StringBuffer((int) iFile.length());
+			BufferedReader br = new BufferedReader(new FileReader(iFile));
+			String line;
+			while ((line = br.readLine()) != null) {
+				source.append(line).append('\n');
+			}
+			br.close();
 
-            loadScript(fname, RubyString.newString(ruby, source.toString()), wrap);
+			loadScript(new RubyString(ruby, iFile.getPath()), new RubyString(ruby, source.toString()), wrap);
 
-        } catch (IOException ioExcptn) {
-            getErrorStream().println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");
-            getErrorStream().println("IOEception: " + ioExcptn.getMessage());
-        }
-    }
+		} catch (IOException ioExcptn) {
+			getErrorStream().println("Cannot read Rubyfile: \"" + iFile.getPath() + "\"");
+			getErrorStream().println("IOEception: " + ioExcptn.getMessage());
+		}
+	}
 
-    /**
-     * Gets the errorStream
-     * @return Returns a PrintStream
-     */
-    public PrintStream getErrorStream() {
-        return errorStream != null ? errorStream : System.err;
-    }
+	public void loadFile(RubyString fname, boolean wrap)  {
+		loadFile(new File(fname.getValue()), wrap);
+	}
 
-    /**
-     * Sets the errorStream
-     * @param errorStream The errorStream to set
-     */
-    public void setErrorStream(PrintStream errorStream) {
-        this.errorStream = errorStream;
-    }
+	/**
+	 * Gets the errorStream
+	 * @return Returns a PrintStream
+	 */
+	public PrintStream getErrorStream() {
+		return errorStream != null ? errorStream : System.err;
+	}
 
-    /**
-     * Gets the inputStream
-     * @return Returns a InputStream
-     */
-    public InputStream getInputStream() {
-        return inputStream != null ? inputStream : System.in;
-    }
+	/**
+	 * Sets the errorStream
+	 * @param errorStream The errorStream to set
+	 */
+	public void setErrorStream(PrintStream errorStream) {
+		this.errorStream = errorStream;
+	}
 
-    /**
-     * Sets the inputStream
-     * @param inputStream The inputStream to set
-     */
-    public void setInputStream(InputStream inputStream) {
-        this.inputStream = inputStream;
-    }
+	/**
+	 * Gets the inputStream
+	 * @return Returns a InputStream
+	 */
+	public InputStream getInputStream() {
+		return inputStream != null ? inputStream : System.in;
+	}
 
-    /**
-     * Gets the outputStream
-     * @return Returns a PrintStream
-     */
-    public PrintStream getOutputStream() {
-        return outputStream != null ? outputStream : System.out;
-    }
+	/**
+	 * Sets the inputStream
+	 * @param inputStream The inputStream to set
+	 */
+	public void setInputStream(InputStream inputStream) {
+		this.inputStream = inputStream;
+	}
 
-    /**
-     * Sets the outputStream
-     * @param outputStream The outputStream to set
-     */
-    public void setOutputStream(PrintStream outputStream) {
-        this.outputStream = outputStream;
-    }
+	/**
+	 * Gets the outputStream
+	 * @return Returns a PrintStream
+	 */
+	public PrintStream getOutputStream() {
+		return outputStream != null ? outputStream : System.out;
+	}
 
-    /**
-     * Gets the printBugs
-     * @return Returns a boolean
-     */
-    public boolean getPrintBugs() {
-        return printBugs;
-    }
-    /**
-     * Sets the printBugs
-     * @param printBugs The printBugs to set
-     */
-    public void setPrintBugs(boolean printBugs) {
-        this.printBugs = printBugs;
-    }
+	/**
+	 * Sets the outputStream
+	 * @param outputStream The outputStream to set
+	 */
+	public void setOutputStream(PrintStream outputStream) {
+		this.outputStream = outputStream;
+	}
+
+	/**
+	 * Gets the printBugs
+	 * @return Returns a boolean
+	 */
+	public boolean getPrintBugs() {
+		return printBugs;
+	}
+	/**
+	 * Sets the printBugs
+	 * @param printBugs The printBugs to set
+	 */
+	public void setPrintBugs(boolean printBugs) {
+		this.printBugs = printBugs;
+	}
 }
