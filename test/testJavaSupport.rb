@@ -68,9 +68,11 @@ if defined? Java
   test_ok(method.kind_of?(Java::JavaMethod))
   test_equal("toString", method.name)
   test_equal(0, method.arity)
+  test_ok(method.public?)
   method = string_class.java_method("equals", "java.lang.Object")
   test_equal("equals", method.name)
   test_equal(1, method.arity)
+  test_ok(! method.final?)
 end
 
 test_print_report
