@@ -33,10 +33,11 @@ if defined? Java
                Character::UnicodeBlock.class_eval("@java_class.name"))
     test_ok(Character::UnicodeBlock.methods.include?("of"))
 
-    #h = HashMap.new
-    #h.put("a", 1)
-    #iter = h.entrySet.iterator
-    #inner_instance_entry = iter.next
-    #test_equal("a", inner_instance_entry.getKey)
+    h = HashMap.new
+    test_equal(HashMap, h.type)
+    h.put("a", 1)
+#    iter = h.entrySet.iterator
+#    inner_instance_entry = iter.next
+#    test_equal("a", inner_instance_entry.getKey)
   end
 end

@@ -41,10 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyJavaObject extends RubyObject {
     private Object value;
 
-    public RubyJavaObject(Ruby ruby, RubyClass rubyClass) {
-        this(ruby, rubyClass, null);
-    }
-
     public RubyJavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
         super(ruby, rubyClass);
         this.value = value;

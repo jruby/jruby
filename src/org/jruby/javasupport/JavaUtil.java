@@ -202,6 +202,7 @@ public class JavaUtil {
             }
         } else if (javaClass == String.class) {
             return ((RubyString) rubyObject.callMethod("to_s")).getValue();
+/*
         } else if (javaClass.isArray()) {
             try {
                 Class arrayClass = javaClass.getComponentType();
@@ -263,6 +264,7 @@ public class JavaUtil {
             } catch (IllegalAccessException iaExcptn) {
             }
             return null;
+*/
         } else {
             return ((RubyJavaObject) rubyObject).getValue();
         }
@@ -329,6 +331,7 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
         } else if (javaClass == String.class) {
             return RubyString.newString(ruby, object.toString());
+/*
         } else if (javaClass.isArray()) {
             int len = Array.getLength(object);
             IRubyObject[] items = new IRubyObject[len];
@@ -355,6 +358,7 @@ public class JavaUtil {
                 items[2 * i + 1] = convertJavaToRuby(ruby, entry.getValue());
             }
             return RubyHash.create(ruby.getClasses().getHashClass(), items);
+*/
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
         } else if (object instanceof RubyProxy) {

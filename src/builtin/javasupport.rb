@@ -36,12 +36,19 @@ end
 module JavaUtilities
   class << self
 
-    def load_java_class(constant, java_class, mod)
+    def convert_result(object)
+      Java.java_to_primitive(object)
+    end
+
+    def create_proxy_class(constant, java_class, mod)
       # Create proxy class
       mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(mod.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
+      setup_proxy_class(java_class, proxy_class)
+    end
 
+    def setup_proxy_class(java_class, proxy_class)
       # FIXME: take types into consideration, like the old javasupport,
       #        and do the searching long before call-time.
       unless java_class.interface?
@@ -66,8 +73,8 @@ module JavaUtilities
           if methods.length == 1
             m = methods.first
             define_method(m.name) {|*args|
-              args = convert_arguments(args)
-              Java.java_to_primitive(m.invoke(self, *args))
+              args = JavaProxy.convert_arguments(args)
+              JavaUtilities.convert_result(m.invoke(self, *args))
             }
           else
             methods_by_arity = methods.group_by {|m| m.arity }
@@ -77,7 +84,7 @@ module JavaUtilities
                 define_method(name) {|*args|
                   m = methods_by_arity[args.length].first
                   args = convert_arguments(args)
-                  Java.java_to_primitive(m.invoke(self, *args))
+                  JavaUtilities.convert_result(m.invoke(self, *args))
                 }
               else
                 # overloaded on same length
@@ -102,7 +109,7 @@ module JavaUtilities
                                "args = JavaProxy.convert_arguments(args);" +
                                "methods = @class_methods['" + name + "'];" +
                                "method = methods.first;" +
-                               "Java.java_to_primitive(method.invoke(*args));" +
+                               "JavaUtilities.convert_result(method.invoke(*args));" +
                                "end")
       }
 
@@ -114,7 +121,7 @@ module JavaUtilities
         rescue NameError
           return super
         end
-        JavaUtilities.load_java_class(constant, inner_class, self)
+        JavaUtilities.create_proxy_class(constant, inner_class, self)
       end
 
       return proxy_class
@@ -148,7 +155,7 @@ class Module
       if java_class.nil?
         return super
       end
-      JavaUtilities.load_java_class(constant, java_class, self)
+      JavaUtilities.create_proxy_class(constant, java_class, self)
     end
   end
 

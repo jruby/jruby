@@ -48,9 +48,9 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private static final int PUBLIC_P = 3;
     private static final int FINAL_P = 4;
     private static final int INVOKE = 5;
-    private static final int ARGUMENT_TYPES = 6;
-    private static final int INSPECT = 7;
-    private static final int STATIC_P = 8;
+    private static final int ARGUMENT_TYPES = 7;
+    private static final int INSPECT = 8;
+    private static final int STATIC_P = 9;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaMethodClass =
@@ -135,7 +135,6 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-//            return JavaUtil.convertJavaToRuby(getRuntime(), result, method);
             return new RubyJavaObject(runtime, runtime.getClasses().getJavaObjectClass(), result);
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
