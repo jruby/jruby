@@ -66,7 +66,7 @@ public final class IncludedModuleWrapper extends RubyClass {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    public String getClassname() {
+    public String getName() {
 		return delegate.getName();
     }
 
