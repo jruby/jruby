@@ -34,7 +34,6 @@ package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
