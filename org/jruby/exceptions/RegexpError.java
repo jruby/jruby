@@ -1,6 +1,6 @@
 /*
- * RubyFrozenException.java - No description
- * Created on 04. Juli 2001, 22:53
+ * RubyRegexpException.java - No description
+ * Created on 05. November 2001, 21:43
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
@@ -35,13 +35,17 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
+ * @version $Revision$
  */
-public class RubyFrozenException extends RaiseException {
+public class RegexpError extends RaiseException {
+
     /**
-     * Constructs a <code>RubyFrozenException</code> with the specified detail message.
+     * Constructs an <code>RubyRegexpException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyFrozenException(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getStandardError(), msg);
+    public RegexpError(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getRegexpError(), msg);
     }
 }
+
+

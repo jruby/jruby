@@ -1,12 +1,12 @@
 /*
- * RetryException.java - No description
- * Created on 13.01.2002, 22:22:50
+ * RubyFrozenException.java - No description
+ * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <japetersen@web.de>
+ * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,16 +27,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
+
 package org.jruby.exceptions;
 
-/** The RetryException is thrown if a 'retry' statement is interpreted.
+import org.jruby.*;
+
+/**
  *
  * @author  jpetersen
- * @version $Revision$
  */
-public class RetryException extends JumpException {
-
-    /** Creates new RetryException */
-    public RetryException() {
+public class FrozenError extends RaiseException {
+    /**
+     * Constructs a <code>RubyFrozenException</code> with the specified detail message.
+     * @param msg the detail message.
+     */
+    public FrozenError(Ruby runtime, String objectType) {
+        super(runtime, runtime.getExceptions().getTypeError(), "can't modify frozen " + objectType);
     }
 }

@@ -37,9 +37,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.RubyFrozenException;
-import org.jruby.exceptions.RubyIndexException;
-import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.IndexError;
+import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
@@ -329,13 +329,13 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public void modify() {
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "Array");
+            throw new FrozenError(getRuntime(), "Array");
         }
         if (isTmpLock()) {
             throw new TypeError(getRuntime(), "can't modify array during sort");
         }
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't modify array");
+            throw new SecurityError(getRuntime(), "Insecure: can't modify array");
         }
     }
 
@@ -355,7 +355,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
         if (idx < 0) {
             idx += getLength();
             if (idx < 0) {
-                throw new RubyIndexException(getRuntime(), "index " + (idx - getLength()) + " out of array");
+                throw new IndexError(getRuntime(), "index " + (idx - getLength()) + " out of array");
             }
         }
         autoExpand(idx + 1);
@@ -423,13 +423,13 @@ public class RubyArray extends RubyObject implements IndexCallable {
         int length = getLength();
 
         if (len < 0) {
-            throw new RubyIndexException(getRuntime(), "Negative array length: " + len);
+            throw new IndexError(getRuntime(), "Negative array length: " + len);
         }
         if (beg < 0) {
             beg += length;
         }
         if (beg < 0) {
-            throw new RubyIndexException(getRuntime(), "Index out of bounds: " + beg);
+            throw new IndexError(getRuntime(), "Index out of bounds: " + beg);
         }
 
         modify();
@@ -679,7 +679,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return entry(RubyNumeric.fix2long(args[0]));
         }
         if (args[0] instanceof RubyBignum) {
-            throw new RubyIndexException(getRuntime(), "index too big");
+            throw new IndexError(getRuntime(), "index too big");
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), true, false);
@@ -712,7 +712,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return args[1];
         }
         if (args[0] instanceof RubyBignum) {
-            throw new RubyIndexException(getRuntime(), "Index too large");
+            throw new IndexError(getRuntime(), "Index too large");
         }
         store(RubyNumeric.num2long(args[0]), args[1]);
         return args[1];
@@ -977,7 +977,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
             default :
                 beg = args[1].isNil() ? beg : RubyNumeric.fix2int(args[1]);
                 if (beg < 0 && (beg += len) < 0) {
-                    throw new RubyIndexException(getRuntime(), "Negative array index");
+                    throw new IndexError(getRuntime(), "Negative array index");
                 }
                 len -= beg;
                 if (argc == 3 && !args[2].isNil()) {

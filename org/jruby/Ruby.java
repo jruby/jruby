@@ -43,9 +43,9 @@ import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.common.IRubyErrorHandler;
 import org.jruby.common.RubyErrorHandler;
 import org.jruby.exceptions.BreakJump;
-import org.jruby.exceptions.RetryException;
+import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.SecurityError;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
@@ -322,7 +322,7 @@ public final class Ruby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw new RubySecurityException(this, "Insecure operation '" + getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
+            throw new SecurityError(this, "Insecure operation '" + getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
         }
     }
 
@@ -380,7 +380,7 @@ public final class Ruby {
 
     public void aliasGlobalVar(String oldName, String newName) {
         if (getSafeLevel() >= 4) {
-            throw new RubySecurityException(this, "Insecure: can't alias global variable");
+            throw new SecurityError(this, "Insecure: can't alias global variable");
         }
 
         if (! globalMap.containsKey(oldName)) {
@@ -424,7 +424,7 @@ public final class Ruby {
                     return getNil();
                 } catch (ReturnJump rExcptn) {
                     return rExcptn.getReturnValue();
-                } catch (RetryException rExcptn) {
+                } catch (RetryJump rExcptn) {
                 }
             }
         } finally {

@@ -33,9 +33,9 @@ import java.util.List;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.RubyFrozenException;
-import org.jruby.exceptions.RubyIndexException;
-import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.IndexError;
+import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -106,11 +106,11 @@ public class RubyStruct extends RubyObject {
 
     private void modify() {
         if (isFrozen()) {
-            throw new RubyFrozenException(runtime, "Struct is frozen.");
+            throw new FrozenError(runtime, "Struct is frozen.");
         }
 
         if (!isTaint() && runtime.getSafeLevel() >= 4) {
-            throw new RubySecurityException(runtime, "Insecure: can't modify struct");
+            throw new SecurityError(runtime, "Insecure: can't modify struct");
         }
     }
 
@@ -362,9 +362,9 @@ public class RubyStruct extends RubyObject {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
-            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new IndexError(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         } else if (idx >= values.length) {
-            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new IndexError(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         }
 
         return values[idx];
@@ -380,9 +380,9 @@ public class RubyStruct extends RubyObject {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
-            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new IndexError(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         } else if (idx >= values.length) {
-            throw new RubyIndexException(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw new IndexError(runtime, "offset " + idx + " too large for struct (size:" + values.length + ")");
         }
 
         modify();

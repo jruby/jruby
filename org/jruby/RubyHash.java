@@ -195,10 +195,10 @@ public class RubyHash extends RubyObject {
      */
     public void modify() {
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "Hash");
+            throw new FrozenError(getRuntime(), "Hash");
         }
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't modify hash");
+            throw new SecurityError(getRuntime(), "Insecure: can't modify hash");
         }
     }
 
@@ -338,7 +338,7 @@ public class RubyHash extends RubyObject {
             } else if (runtime.isBlockGiven()) {
                 return runtime.yield(key);
             } else {
-                throw new RubyIndexException(runtime, "key not found");
+                throw new IndexError(runtime, "key not found");
             }
         }
         return result;

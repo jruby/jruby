@@ -41,21 +41,28 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
 
 
-import org.jruby.exceptions.RubyFrozenException;
-import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.CallbackFactory;
 
-import org.jruby.runtime.*;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
+import org.jruby.util.IdUtil;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyMapMethod;
-
+import org.jruby.runtime.*;import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
@@ -377,10 +384,10 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject setInstanceVariable(String name, IRubyObject value) {
         if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't modify instance variable");
+            throw new SecurityError(getRuntime(), "Insecure: can't modify instance variable");
         }
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "");
+            throw new FrozenError(getRuntime(), "");
         }
         if (getInstanceVariables() == null) {
             setInstanceVariables(new RubyHashMap());
@@ -474,11 +481,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     public void checkSafeString() {
         if (runtime.getSafeLevel() > 0 && isTaint()) {
             if (runtime.getCurrentFrame().getLastFunc() != null) {
-                throw new RubySecurityException(
+                throw new SecurityError(
                     runtime,
                     "Insecure operation - " + runtime.getCurrentFrame().getLastFunc());
             } else {
-                throw new RubySecurityException(runtime, "Insecure operation: -r");
+                throw new SecurityError(runtime, "Insecure operation: -r");
             }
         }
         getRuntime().secure(4);
@@ -705,7 +712,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         getRuntime().secure(4);
         if (!isTaint()) {
             if (isFrozen()) {
-                throw new RubyFrozenException(getRuntime(), "object");
+                throw new FrozenError(getRuntime(), "object");
             }
             setTaint(true);
         }
@@ -719,7 +726,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         getRuntime().secure(3);
         if (isTaint()) {
             if (isFrozen()) {
-                throw new RubyFrozenException(getRuntime(), "object");
+                throw new FrozenError(getRuntime(), "object");
             }
             setTaint(false);
         }
@@ -733,7 +740,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject freeze() {
         if (getRuntime().getSafeLevel() >= 4 && isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't freeze object");
+            throw new SecurityError(getRuntime(), "Insecure: can't freeze object");
         }
         setFrozen(true);
         return this;

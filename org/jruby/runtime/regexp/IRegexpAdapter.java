@@ -30,7 +30,7 @@
 package org.jruby.runtime.regexp;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.exceptions.RegexpError;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -59,7 +59,7 @@ public abstract class IRegexpAdapter {
      * Compile the regex.
      */
     public abstract void compile(Ruby ruby, String pattern)
-        throws RubyRegexpException;
+        throws RegexpError;
 
     /**
      * Set whether matches should be case-insensitive or not

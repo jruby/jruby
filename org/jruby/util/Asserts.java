@@ -65,4 +65,13 @@ public final class Asserts {
             throw new AssertError(message);
         }
 	}
+    
+    /** If the assertion fails (i.e. the object is null), an error 
+     * message is logged and the application is terminated.
+     */
+    public static void assertNotNull(Object object, String message) {
+        if (ENABLE_ASSERTS && object == null) {
+            throw new AssertError(message);
+        }
+    }
 }

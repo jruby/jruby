@@ -31,7 +31,7 @@ package org.jruby;
 import java.util.Locale;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.RubyIndexException;
+import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
@@ -988,13 +988,13 @@ public class RubyString extends RubyObject implements IndexCallable {
 			int beg = RubyNumeric.fix2int(args[0]);
 			int len = RubyNumeric.fix2int(args[1]);
 			if (len < 0) {
-				throw new RubyIndexException(getRuntime(), "negative length");
+				throw new IndexError(getRuntime(), "negative length");
 			}
 			if (beg < 0) {
 				beg += strLen;
 			}
 			if (beg < 0 || beg >= strLen) {
-				throw new RubyIndexException(getRuntime(), "string index out of bounds");
+				throw new IndexError(getRuntime(), "string index out of bounds");
 			}
 			if (beg + len > strLen) {
 				len = strLen - beg;
@@ -1008,7 +1008,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 				idx += getValue().length();
 			}
 			if (idx < 0 || idx >= getValue().length()) {
-				throw new RubyIndexException(getRuntime(), "string index out of bounds");
+				throw new IndexError(getRuntime(), "string index out of bounds");
 			}
 			if (args[1] instanceof RubyFixnum) {
 				char c = (char) RubyNumeric.fix2int(args[1]);

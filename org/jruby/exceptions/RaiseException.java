@@ -119,8 +119,7 @@ public class RaiseException extends JumpException {
         if (ruby.getRuntime().getTraceFunction() != null) {
             ruby.getRuntime().callTraceFunction(
                 "return",
-                ruby.getSourceFile(),
-                ruby.getSourceLine(),
+                ruby.getPosition(),
                 ruby.getCurrentFrame().getSelf(),
                 ruby.getCurrentFrame().getLastFunc(),
                 ruby.getCurrentFrame().getLastClass());

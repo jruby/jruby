@@ -37,12 +37,12 @@ import org.jruby.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyIndexException extends RaiseException {
+public class IndexError extends RaiseException {
     /**
      * Constructs an <code>RubyIndexException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyIndexException(Ruby ruby, String msg) {
+    public IndexError(Ruby ruby, String msg) {
         super(ruby, ruby.getExceptions().getIndexError(), msg);
     }
 }

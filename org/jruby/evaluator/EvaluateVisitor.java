@@ -148,10 +148,10 @@ import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
-import org.jruby.exceptions.RetryException;
+import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.RubyFrozenException;
-import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
@@ -517,7 +517,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 runtime.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
             } else {
                 if (runtime.getSafeLevel() >= 4) {
-                    throw new RubySecurityException(runtime, "extending class prohibited");
+                    throw new SecurityError(runtime, "extending class prohibited");
                 }
                 // rb_clear_cache();
             }
@@ -718,18 +718,18 @@ public final class EvaluateVisitor implements NodeVisitor {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
 
         if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-            throw new RubySecurityException(runtime, "Insecure; can't define singleton method.");
+            throw new SecurityError(runtime, "Insecure; can't define singleton method.");
         }
 
         if (receiver.isFrozen()) {
-            throw new RubyFrozenException(runtime, "object");
+            throw new FrozenError(runtime, "object");
         }
         RubyClass rubyClass = receiver.getSingletonClass();
 
         ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
         if (method != null) {
             if (runtime.getSafeLevel() >= 4) {
-                throw new RubySecurityException(runtime, "Redefining method prohibited.");
+                throw new SecurityError(runtime, "Redefining method prohibited.");
             }
         }
 
@@ -847,7 +847,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                     result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
 
                     return;
-                } catch (RetryException rExcptn) {
+                } catch (RetryJump rExcptn) {
                 }
             }
         } catch (ReturnJump rExcptn) {
@@ -934,7 +934,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 try {
                     result = eval(iVisited.getIterNode());
                     return;
-                } catch (RetryException rExcptn) {
+                } catch (RetryJump rExcptn) {
                 }
             }
         } catch (ReturnJump rExcptn) {
@@ -1010,7 +1010,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             module = (RubyModule) runtime.getRubyClass().getConstant(iVisited.getName());
 
             if (runtime.getSafeLevel() >= 4) {
-                throw new RubySecurityException(runtime, "Extending module prohibited.");
+                throw new SecurityError(runtime, "Extending module prohibited.");
             }
         } else {
             module = runtime.defineModule(iVisited.getName());
@@ -1231,7 +1231,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         try {
                             eval(rescueNode);
                             return;
-                        } catch (RetryException retryJump) {
+                        } catch (RetryJump retryJump) {
                             runtime.setGlobalVar("$!", runtime.getNil());
                             continue RescuedBlock;
                         }
@@ -1256,7 +1256,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRetryNode(RetryNode)
      */
     public void visitRetryNode(RetryNode iVisited) {
-        throw new RetryException();
+        throw new RetryJump();
     }
 
     /**
@@ -1282,7 +1282,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             singletonClass = runtime.getClasses().getFalseClass();
         } else {
             if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw new RubySecurityException(runtime, "Insecure: can't extend object.");
+                throw new SecurityError(runtime, "Insecure: can't extend object.");
             }
 
             if (receiver.getInternalClass().isSingleton()) {

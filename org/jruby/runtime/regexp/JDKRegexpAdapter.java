@@ -36,7 +36,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
-import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.exceptions.RegexpError;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -51,11 +51,11 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
     /**
      * Compile the regex.
      */
-    public void compile(Ruby ruby, String regex) throws RubyRegexpException {
+    public void compile(Ruby ruby, String regex) throws RegexpError {
         try {
             pattern = Pattern.compile(regex, cflags);
         } catch (PatternSyntaxException e) {
-            throw new RubyRegexpException(ruby, e.getMessage());
+            throw new RegexpError(ruby, e.getMessage());
         }
     }
 

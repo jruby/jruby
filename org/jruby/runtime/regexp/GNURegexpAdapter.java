@@ -36,7 +36,7 @@ import gnu.regexp.REMatch;
 
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
-import org.jruby.exceptions.RubyRegexpException;
+import org.jruby.exceptions.RegexpError;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -53,7 +53,7 @@ public class GNURegexpAdapter extends IRegexpAdapter {
     /**
      * Compile the regex.
      */
-    public void compile(Ruby ruby, String pattern) throws RubyRegexpException {
+    public void compile(Ruby ruby, String pattern) throws RegexpError {
         if (extended) {
             pattern = unextend(pattern);
         }
@@ -61,7 +61,7 @@ public class GNURegexpAdapter extends IRegexpAdapter {
         try {
             this.re = new RE(pattern, cflags);
         } catch (REException e) {
-            throw new RubyRegexpException(ruby, e.getMessage());
+            throw new RegexpError(ruby, e.getMessage());
         }
     }
 

@@ -30,7 +30,7 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.RubyIndexException;
+import org.jruby.exceptions.IndexError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -143,7 +143,7 @@ public class RubyMatchData extends RubyObject {
             return group(RubyNumeric.fix2long(args[0]));
         }
         if (args[0] instanceof RubyBignum) {
-            throw new RubyIndexException(getRuntime(), "index too big");
+            throw new IndexError(getRuntime(), "index too big");
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getSize(), true, false);

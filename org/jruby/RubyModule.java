@@ -36,8 +36,8 @@ import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.RubyFrozenException;
-import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CacheEntry;
@@ -352,7 +352,7 @@ public class RubyModule extends RubyObject {
         while (tmp != null) {
             if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
                 if (tmp.isTaint() && getRuntime().getSafeLevel() >= 4) {
-                    throw new RubySecurityException(getRuntime(), "Insecure: can't modify class variable");
+                    throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
                 }
                 tmp.getInstanceVariables().put(name, value);
                 return;
@@ -370,7 +370,7 @@ public class RubyModule extends RubyObject {
         while (tmp != null) {
             if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
                 if (tmp.isTaint() && getRuntime().getSafeLevel() >= 4) {
-                    throw new RubySecurityException(getRuntime(), "Insecure: can't modify class variable");
+                    throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
                 }
                 tmp.getInstanceVariables().put(name, value);
             }
@@ -518,10 +518,10 @@ public class RubyModule extends RubyObject {
         String dest = constant ? "constant" : "class variable";
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't set " + dest);
+            throw new SecurityError(getRuntime(), "Insecure: can't set " + dest);
         }
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "class/module");
+            throw new FrozenError(getRuntime(), "class/module");
         }
         if (constant && (!getInstanceVariable(name).isNil())) {
             //getRuby().warn("already initialized " + dest + " " + name);
@@ -539,10 +539,10 @@ public class RubyModule extends RubyObject {
         }
 
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't define method");
+            throw new SecurityError(getRuntime(), "Insecure: can't define method");
         }
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "class/module");
+            throw new FrozenError(getRuntime(), "class/module");
         }
         runtime.getMethodCache().clearByName(name);
         getMethods().put(name, method);
@@ -589,7 +589,7 @@ public class RubyModule extends RubyObject {
                     desc = "class";
                 }
             }
-            throw new RubyFrozenException(getRuntime(), desc);
+            throw new FrozenError(getRuntime(), desc);
         }
     }
 
@@ -883,10 +883,10 @@ public class RubyModule extends RubyObject {
             getRuntime().secure(4);
         }
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't remove method");
+            throw new SecurityError(getRuntime(), "Insecure: can't remove method");
         }
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "class/module");
+            throw new FrozenError(getRuntime(), "class/module");
         }
         if (getMethods().remove(name) == null) {
             throw new NameError(getRuntime(), "method '" + name + "' not defined in " + toName());
@@ -981,11 +981,11 @@ public class RubyModule extends RubyObject {
         }
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't remove class variable");
+            throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
         }
 
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "class/module");
+            throw new FrozenError(getRuntime(), "class/module");
         }
 
         IRubyObject value = (IRubyObject) getInstanceVariables().remove(name.toId());
@@ -1073,7 +1073,7 @@ public class RubyModule extends RubyObject {
      */
     public void setMethodVisibility(IRubyObject[] methods, Visibility noex) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't change method visibility");
+            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
         }
 
         for (int i = 0; i < methods.length; i++) {
@@ -1606,10 +1606,10 @@ public class RubyModule extends RubyObject {
             throw new NameError(getRuntime(), "wrong class variable name " + id);
         }
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't remove class variable");
+            throw new SecurityError(getRuntime(), "Insecure: can't remove class variable");
         }
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "class/module");
+            throw new FrozenError(getRuntime(), "class/module");
         }
 
         if (getInstanceVariables() != null) {
@@ -1658,7 +1658,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule rbPublic(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't change method visibility");
+            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1675,7 +1675,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule rbProtected(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't change method visibility");
+            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1692,7 +1692,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule rbPrivate(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't change method visibility");
+            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {
@@ -1709,7 +1709,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule module_function(IRubyObject[] args) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw new RubySecurityException(getRuntime(), "Insecure: can't change method visibility");
+            throw new SecurityError(getRuntime(), "Insecure: can't change method visibility");
         }
 
         if (args.length == 0) {

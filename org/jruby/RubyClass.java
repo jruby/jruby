@@ -33,7 +33,7 @@ package org.jruby;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jruby.exceptions.RubyFrozenException;
+import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -73,9 +73,9 @@ public class RubyClass extends RubyModule {
     protected void testFrozen() {
         if (isFrozen()) {
             if (isSingleton()) {
-                throw new RubyFrozenException(getRuntime(), "object");
+                throw new FrozenError(getRuntime(), "object");
             } else {
-                throw new RubyFrozenException(getRuntime(), "class");
+                throw new FrozenError(getRuntime(), "class");
             }
         }
     }

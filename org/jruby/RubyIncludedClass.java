@@ -42,7 +42,7 @@ public final class RubyIncludedClass extends RubyClass {
 
     protected void testFrozen() {
         if (isFrozen()) {
-            throw new RubyFrozenException(getRuntime(), "module");
+            throw new FrozenError(getRuntime(), "module");
         }
     }
 

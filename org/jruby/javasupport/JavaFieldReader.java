@@ -56,7 +56,7 @@ public class JavaFieldReader implements Callback {
         try {
 			return JavaUtil.convertJavaToRuby(recv.getRuntime(), field.get(((RubyJavaObject)recv).getValue()));
         } catch (IllegalAccessException iaExcptn) {
-            throw new RubySecurityException(recv.getRuntime(), iaExcptn.getMessage());
+            throw new SecurityError(recv.getRuntime(), iaExcptn.getMessage());
         }
     }
 }

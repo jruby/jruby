@@ -57,7 +57,7 @@ public class JavaFieldWriter implements Callback {
 			field.set(((RubyJavaObject)recv).getValue(), JavaUtil.convertRubyToJava(recv.getRuntime(), args[0], field.getType()));
         	return recv;
         } catch (IllegalAccessException iaExcptn) {
-            throw new RubySecurityException(recv.getRuntime(), iaExcptn.getMessage());
+            throw new SecurityError(recv.getRuntime(), iaExcptn.getMessage());
         }
     }
 }

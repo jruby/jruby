@@ -1,6 +1,6 @@
 /*
- * RubyRegexpException.java - No description
- * Created on 05. November 2001, 21:43
+ * RubySecurityException.java - No description
+ * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
@@ -35,17 +35,14 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version $Revision$
  */
-public class RubyRegexpException extends RaiseException {
+public class SecurityError extends RaiseException {
 
     /**
-     * Constructs an <code>RubyRegexpException</code> with the specified detail message.
+     * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyRegexpException(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getRegexpError(), msg);
+    public SecurityError(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getSecurityError(),  msg);
     }
 }
-
-
