@@ -34,6 +34,7 @@ package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -104,12 +105,22 @@ public class RubyMarshal {
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
         try {
             if (args.length < 1) {
-                throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(at least 1)");
+                throw new ArgumentError(recv.getRuntime(), "wrong number of arguments (0 for 1)");
             }
+            
+            if (args.length > 2) {
+            	throw new ArgumentError(recv.getRuntime(), "wrong number of arguments (" + args.length + " for 2)");
+            }
+            
+            IRubyObject in = null;
+            IRubyObject proc = null;
 
-            // FIXME: handle more parameters
-
-            IRubyObject in = args[0];
+            switch (args.length) {
+            case 2:
+            	proc = args[1];
+            case 1:
+            	in = args[0];
+            }
 
             InputStream rawInput;
             if (in instanceof RubyIO) {
@@ -120,10 +131,10 @@ public class RubyMarshal {
             } else {
                 throw new TypeError(recv.getRuntime(), "instance of IO needed");
             }
-
+            
             UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput);
 
-            return input.unmarshalObject();
+            return input.unmarshalObject(proc);
 
         } catch (IOException ioe) {
             throw IOError.fromException(recv.getRuntime(), ioe);
