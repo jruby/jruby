@@ -44,7 +44,7 @@ public class RbString {
         stringClass.includeModule(ruby.getRubyClass("Enumerable"));
         
         stringClass.defineSingletonMethod("new", getSingletonMethod("m_new", true));
-        stringClass.defineMethod("initialize", getMethod("m_replace", RubyString.class));
+        stringClass.defineMethod("initialize", getMethod("m_replace", RubyObject.class));
         stringClass.defineMethod("clone", getMethod("m_clone", false));
         stringClass.defineMethod("dup", getMethod("m_dup", false));
         
@@ -58,7 +58,7 @@ public class RbString {
         stringClass.defineMethod("*", getMethod("op_mul", RubyInteger.class));
 //    rb_define_method(rb_cString, "%", rb_str_format, 1);
         stringClass.defineMethod("[]", getMethod("m_aref", true));
-//    rb_define_method(rb_cString, "[]=", rb_str_aset_m, -1);
+        stringClass.defineMethod("[]=", getMethod("m_aset", true));
         stringClass.defineMethod("length", getMethod("m_length", false));
         stringClass.defineMethod("size", getMethod("m_length", false));
         stringClass.defineMethod("empty?", getMethod("m_empty", false));
@@ -71,7 +71,7 @@ public class RbString {
 //    rb_define_method(rb_cString, "upto", rb_str_upto_m, 1);
         stringClass.defineMethod("index", getMethod("m_index", true));
         stringClass.defineMethod("rindex", getMethod("m_rindex", true));
-//    rb_define_method(rb_cString, "replace", rb_str_replace_m, 1);
+        stringClass.defineMethod("replace", getMethod("m_replace", RubyObject.class));
 
 //    rb_define_method(rb_cString, "to_i", rb_str_to_i, 0);
 
@@ -95,7 +95,7 @@ public class RbString {
 //    rb_define_method(rb_cString, "oct", rb_str_oct, 0);
 //    rb_define_method(rb_cString, "split", rb_str_split_m, -1);*/
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));
-//    rb_define_method(rb_cString, "reverse!", rb_str_reverse_bang, 0);
+        stringClass.defineMethod("reverse!", getMethod("m_reverse_bang", false));
         stringClass.defineMethod("concat", getMethod("m_concat", RubyObject.class));
         stringClass.defineMethod("<<", getMethod("m_concat", RubyObject.class));
 //    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
@@ -154,7 +154,7 @@ public class RbString {
 //    rb_define_global_function("scan", rb_f_scan, 1);
 
     stringClass.defineMethod("slice", getMethod("m_aref", true));
-//    rb_define_method(rb_cString, "slice!", rb_str_slice_bang, -1);
+    stringClass.defineMethod("slice!", getMethod("m_slice_bang", true));
 
 //    id_to_s = rb_intern("to_s");
 
