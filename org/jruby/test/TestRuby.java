@@ -1,5 +1,5 @@
 /*
- * RubyHash.java - No description
+ * TestRuby.java - TestClass for the Ruby class
  * Created on 28. Nov 2001, 15:18
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
