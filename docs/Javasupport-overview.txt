@@ -4,7 +4,7 @@ Java Support Overview
 $Revision$
 
 JRuby has a new interface for loading and using Java classes as of
-version [upcoming version].
+version 0.5.2.
 
 Goals:
 
