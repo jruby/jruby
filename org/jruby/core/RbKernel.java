@@ -160,11 +160,12 @@ public class RbKernel {
                 if (i > 0) {
                     ruby.getRuntime().getOutputStream().print(ofs);
                 }
-                ruby.getRuntime().getOutputStream().print(
-                    args[i].isNil() ? "nil" : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
+                ruby.getRuntime().getOutputStream().print(args[i].isNil() ? "nil"
+                    : ((RubyString) args[i].funcall(ruby.intern("to_s"))).getValue());
             }
         }
-        ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
+        ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? ""
+            : RubyString.stringValue(orsObj).getValue());
         return ruby.getNil();
     }
 

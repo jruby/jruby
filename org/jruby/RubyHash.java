@@ -32,6 +32,7 @@ package org.jruby;
 
 import java.util.*;
 
+import org.jruby.exceptions.*;
 import org.jruby.util.*;
 
 /**
@@ -46,8 +47,8 @@ public class RubyHash extends RubyObject {
         this(ruby, new RubyHashMap());
     }
 
-    public RubyHash(Ruby ruby, Map valueMap) {
-        this(ruby, new RubyHashMap(), null);
+    public RubyHash(Ruby ruby, RubyMap valueMap) {
+        this(ruby, valueMap, ruby.getNil());
     }
     
     public RubyHash(Ruby ruby, RubyMap valueMap, RubyObject defaultValue) {
@@ -56,22 +57,34 @@ public class RubyHash extends RubyObject {
         this.defaultValue = defaultValue;
     }
     
-    public RubyObject getDefautValue() {
-        return this.defaultValue;
+    public RubyObject getDefaultValue() {
+        return (defaultValue == null) ? getRuby().getNil() : defaultValue;
     }
     
-    public void setDefautValue(RubyObject defaultValue) {
+    public void setDefaultValue(RubyObject defaultValue) {
         this.defaultValue = defaultValue;
     }
     
     public RubyMap getValueMap() {
-        return this.valueMap;
+        return valueMap;
     }
     
     public void setValueMap(RubyMap valueMap) {
         this.valueMap = valueMap;
     }
     
+    /** rb_hash_modify
+     *
+     */
+    public void modify() {
+        if (isFrozen()) {
+            throw new RubyFrozenException(getRuby(), "Hash");
+        }
+        if (isTaint() && getRuby().getSecurityLevel() >= 4 ) {
+            throw new RubySecurityException(getRuby(), "Insecure: can't modify hash");
+        }
+    }
+
     // Hash methods
     
     public static RubyHash m_newHash(Ruby ruby) {
@@ -89,20 +102,26 @@ public class RubyHash extends RubyObject {
     
     public RubyObject m_initialize(RubyObject[] args) {
         if (args.length > 0) {
-            // modify();
+            modify();
             
-            setDefautValue(args[0]);
+            setDefaultValue(args[0]);
         }
         return this;
     }
     
     public RubyObject m_aset(RubyObject key, RubyObject value) {
-        // modify();
+        modify();
         
         // HACK +++
         valueMap.put(key, value);
         // HACK ---
             
         return this;
+    }
+    
+    public RubyObject m_aref(RubyObject key) {
+        RubyObject value = (RubyObject) valueMap.get(key);
+
+        return value != null ? value : getDefaultValue();
     }
 }

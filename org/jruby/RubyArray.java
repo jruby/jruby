@@ -546,7 +546,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject m_each() {
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             getRuby().yield(entry(i));
         }
         return this;
@@ -556,7 +556,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject m_each_index() {
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             getRuby().yield(RubyFixnum.m_newFixnum(getRuby(), i));
         }
         return this;
@@ -684,18 +684,13 @@ public class RubyArray extends RubyObject {
     public RubyObject m_compact_bang() {
         modify();
         boolean changed = false;
-        int length = length();
-        ArrayList newList = new ArrayList(length);
 
-        for (int i = 0; i < length; i++) {
-            if (!entry(i).isNil()) {
-                newList.add(entry(i));
-            }
-            else {
+        for (int i = length() - 1; i >= 0; i--) {
+            if (entry(i).isNil()) {
+                list.remove(i);
                 changed = true;
-             }
+            }
         }
-        list = newList;
         return changed ? (RubyObject)this : (RubyObject)getRuby().getNil();
     }
 
@@ -764,7 +759,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject m_index(RubyObject obj) {
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             if (obj.funcall(equals, entry(i)).isTrue()) {
                 return RubyFixnum.m_newFixnum(getRuby(), i);
             }
@@ -834,7 +829,7 @@ public class RubyArray extends RubyObject {
             return (RubyArray)m_dup();
         }
         ArrayList ary = new ArrayList();
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             ary.add(getRuby().yield(entry(i)));
         }
         return new RubyArray(getRuby(), ary);
@@ -845,7 +840,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyArray m_collect_bang() {
         modify();
-        for (int i = 0; i < length(); i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             list.set(i, getRuby().yield(entry(i)));
         }
         return this;
@@ -960,8 +955,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject m_assoc(RubyObject arg) {
-        int len = length();
-        for (int i = 0; i < len; i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             if (!((entry(i) instanceof RubyArray) && ((RubyArray)entry(i)).length() > 0)) {
                 continue;
             }
@@ -977,8 +971,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject m_rassoc(RubyObject arg) {
-        int len = length();
-        for (int i = 0; i < len; i++) {
+        for (int i = 0, len = length(); i < len; i++) {
             if (!((entry(i) instanceof RubyArray) && 
                   ((RubyArray)entry(i)).length() > 1)) {
                 continue;
@@ -993,8 +986,7 @@ public class RubyArray extends RubyObject {
 
     private boolean flatten(ArrayList ary) {
         boolean mod = false;
-        int len = ary.size();
-        for (int i = len - 1; i >= 0; i--) {
+        for (int i = ary.size() - 1; i >= 0; i--) {
             RubyObject obj = (RubyObject)ary.get(i);
             if (ary.get(i) instanceof RubyArray) {
                 ArrayList ary2 = ((RubyArray)ary.remove(i)).getList();

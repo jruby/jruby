@@ -82,4 +82,16 @@ public class RubySymbol extends RubyObject {
     public RubyString m_to_s() {
         return RubyString.m_newString(getRuby(), getId().toName());
     }
+
+    public RubyFixnum m_hash() {
+        return RubyFixnum.m_newFixnum(getRuby(), (":" + getName()).hashCode());
+    }
+
+    public RubyBoolean m_equal(RubyObject other) {
+        if ((other instanceof RubySymbol) && getName().equals(((RubySymbol) other).getName())) {
+            return getRuby().getTrue();
+        } else {
+            return getRuby().getFalse();
+        }
+    }
 }

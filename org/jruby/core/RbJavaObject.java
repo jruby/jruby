@@ -43,6 +43,7 @@ public class RbJavaObject {
         javaObjectClass.defineMethod("to_s", getMethod("m_to_s"));
         javaObjectClass.defineMethod("eql?", getMethod("m_equal"));
         javaObjectClass.defineMethod("==", getMethod("m_equal"));
+        javaObjectClass.defineMethod("hash", getMethod("m_hash"));
         javaObjectClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
         
         javaObjectClass.getRubyClass().undefMethod("new");

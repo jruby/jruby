@@ -389,14 +389,17 @@ public final class Ruby {
         if (tmpBlock.var != null) {
             // try {
             if (tmpBlock.var == Node.ONE) {
-                if (acheck && value != null &&
-                value instanceof RubyArray && ((RubyArray)value).length() != 0) {
+                if (acheck && value != null && value instanceof RubyArray 
+                    && ((RubyArray)value).length() != 0) {
                     
-                    throw new RubyArgumentException(this, "wrong # of arguments ("+ ((RubyArray)value).length() + " for 0)");
+                    throw new RubyArgumentException(this, "wrong # of arguments ("
+                        + ((RubyArray)value).length() + " for 0)");
                 }
             } else {
                 if (!(tmpBlock.var instanceof MAsgnNode)) {
-                    if (acheck && value != null && value instanceof RubyArray && ((RubyArray)value).length() == 1) {
+                    if (acheck && value != null && value instanceof RubyArray 
+                        && ((RubyArray)value).length() == 1) {
+
                         value = ((RubyArray)value).entry(0);
                     }
                 }
@@ -407,7 +410,8 @@ public final class Ruby {
             // }
             
         } else {
-            if (acheck && value != null && value instanceof RubyArray && ((RubyArray)value).length() == 1) {
+            if (acheck && value != null && value instanceof RubyArray 
+                && ((RubyArray)value).length() == 1) {
                 
                 value = ((RubyArray)value).entry(0);
             }

@@ -43,6 +43,7 @@ public class RbFloat {
         
         floatClass.defineMethod("to_i", getMethod("m_to_i"));
         floatClass.defineMethod("to_s", getMethod("m_to_s"));
+        floatClass.defineMethod("hash", getMethod("m_hash"));
         
         floatClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
         floatClass.defineMethod("-", getMethod("op_minus", RubyObject.class));

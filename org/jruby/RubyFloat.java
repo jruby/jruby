@@ -81,6 +81,10 @@ public class RubyFloat extends RubyNumeric {
         return new RubyFloat(ruby, value);
     }
     
+    public RubyFixnum m_hash() {
+        return new RubyFixnum(getRuby(), new Double(value).hashCode());
+    }
+
     public RubyArray m_coerce(RubyObject num) {
         RubyNumeric other = numericValue(num);
         return RubyArray.m_newArray(getRuby(), this, 

@@ -43,10 +43,60 @@ public class RbHash {
     
     public static RubyClass createHashClass(Ruby ruby) {
         RubyClass hashClass = ruby.defineClass("Hash", ruby.getClasses().getObjectClass());
+
+//    rb_include_module(rb_cHash, rb_mEnumerable);
+
         hashClass.defineSingletonMethod("new", getRestArgsSingletonMethod("m_new"));
         hashClass.defineSingletonMethod("{}", getRestArgsSingletonMethod("m_newHash"));
         hashClass.defineMethod("initialize", getRestArgsMethod("m_initialize"));
      
+//    rb_define_method(rb_cHash,"clone", rb_hash_clone, 0);
+//    rb_define_method(rb_cHash,"rehash", rb_hash_rehash, 0);
+//
+//    rb_define_method(rb_cHash,"to_hash", rb_hash_to_hash, 0);
+//    rb_define_method(rb_cHash,"to_a", rb_hash_to_a, 0);
+//    rb_define_method(rb_cHash,"to_s", rb_hash_to_s, 0);
+//    rb_define_method(rb_cHash,"inspect", rb_hash_inspect, 0);
+//
+//    rb_define_method(rb_cHash,"==", rb_hash_equal, 1);
+        hashClass.defineMethod("[]", getMethod("m_aref", RubyObject.class));
+//    rb_define_method(rb_cHash,"fetch", rb_hash_fetch, -1);
+//    rb_define_method(rb_cHash,"[]=", rb_hash_aset, 2);
+//    rb_define_method(rb_cHash,"store", rb_hash_aset, 2);
+//    rb_define_method(rb_cHash,"default", rb_hash_default, 0);
+//    rb_define_method(rb_cHash,"default=", rb_hash_set_default, 1);
+//    rb_define_method(rb_cHash,"index", rb_hash_index, 1);
+//    rb_define_method(rb_cHash,"indexes", rb_hash_indexes, -1);
+//    rb_define_method(rb_cHash,"indices", rb_hash_indexes, -1);
+//    rb_define_method(rb_cHash,"size", rb_hash_size, 0);
+//    rb_define_method(rb_cHash,"length", rb_hash_size, 0);
+//    rb_define_method(rb_cHash,"empty?", rb_hash_empty_p, 0);
+//
+//    rb_define_method(rb_cHash,"each", rb_hash_each_pair, 0);
+//    rb_define_method(rb_cHash,"each_value", rb_hash_each_value, 0);
+//    rb_define_method(rb_cHash,"each_key", rb_hash_each_key, 0);
+//    rb_define_method(rb_cHash,"each_pair", rb_hash_each_pair, 0);
+//    rb_define_method(rb_cHash,"sort", rb_hash_sort, 0);
+//
+//    rb_define_method(rb_cHash,"keys", rb_hash_keys, 0);
+//    rb_define_method(rb_cHash,"values", rb_hash_values, 0);
+//
+//    rb_define_method(rb_cHash,"shift", rb_hash_shift, 0);
+//    rb_define_method(rb_cHash,"delete", rb_hash_delete, 1);
+//    rb_define_method(rb_cHash,"delete_if", rb_hash_delete_if, 0);
+//    rb_define_method(rb_cHash,"reject", rb_hash_reject, 0);
+//    rb_define_method(rb_cHash,"reject!", rb_hash_reject_bang, 0);
+//    rb_define_method(rb_cHash,"clear", rb_hash_clear, 0);
+//    rb_define_method(rb_cHash,"invert", rb_hash_invert, 0);
+//    rb_define_method(rb_cHash,"update", rb_hash_update, 1);
+//    rb_define_method(rb_cHash,"replace", rb_hash_replace, 1);
+//
+//    rb_define_method(rb_cHash,"include?", rb_hash_has_key, 1);
+//    rb_define_method(rb_cHash,"member?", rb_hash_has_key, 1);
+//    rb_define_method(rb_cHash,"has_key?", rb_hash_has_key, 1);
+//    rb_define_method(rb_cHash,"has_value?", rb_hash_has_value, 1);
+//    rb_define_method(rb_cHash,"key?", rb_hash_has_key, 1);
+//    rb_define_method(rb_cHash,"value?", rb_hash_has_value, 1);
 
         return hashClass;
     }
@@ -57,5 +107,17 @@ public class RbHash {
     
     public static RubyCallbackMethod getRestArgsSingletonMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyHash.class, methodName, RubyObject[].class, true, true);
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyHash.class, methodName);
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyHash.class, methodName, arg1);
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1, Class arg2) {
+        return new ReflectionCallbackMethod(RubyHash.class, methodName, new Class[] {arg1, arg2});
     }
 }

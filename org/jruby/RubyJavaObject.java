@@ -138,15 +138,18 @@ public class RubyJavaObject extends RubyObject {
         Iterator iter = methodMap.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry)iter.next();
-            methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
+            methods = (Method[])((List)entry.getValue()).toArray(
+                new Method[((List)entry.getValue()).size()]);
             newRubyClass.defineMethod((String)entry.getKey(), new JavaMethod(methods));
         }
         
         iter = singletonMethodMap.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry)iter.next();
-            methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
-            newRubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, true));
+            methods = (Method[])((List)entry.getValue()).toArray(
+                new Method[((List)entry.getValue()).size()]);
+            newRubyClass.defineSingletonMethod((String)entry.getKey(), 
+                new JavaMethod(methods, true));
         }
         
         // add constants
@@ -159,7 +162,8 @@ public class RubyJavaObject extends RubyObject {
                     if (Character.isLowerCase(name.charAt(0))) {
                         name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
                     }
-                    newRubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
+                    newRubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, 
+                        fields[i].get(null), fields[i].getType()));
                 } catch (IllegalAccessException iaExcptn) {
                 }
             }
@@ -185,12 +189,18 @@ public class RubyJavaObject extends RubyObject {
     }
     
     public RubyString m_to_s() {
-        return RubyString.m_newString(getRuby(), getValue() != null ? getValue().toString() : "null");
+        return RubyString.m_newString(getRuby(), getValue() != null 
+            ? getValue().toString() : "null");
+    }
+
+    public RubyFixnum m_hash() {
+        return new RubyFixnum(getRuby(), value.hashCode());
     }
 
     public RubyBoolean m_equal(RubyObject other) {
         if (other instanceof RubyJavaObject) {
-            return (getValue() != null && getValue().equals(((RubyJavaObject)other).getValue())) ? getRuby().getTrue() : getRuby().getFalse();
+            return (getValue() != null && getValue().equals(((RubyJavaObject)other).getValue()))
+                ? getRuby().getTrue() : getRuby().getFalse();
         }
         return getRuby().getFalse();
     }

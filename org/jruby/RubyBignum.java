@@ -82,6 +82,10 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(ruby, value);
     }
     
+    public RubyFixnum m_hash() {
+        return new RubyFixnum(getRuby(), value.hashCode());
+    }
+
     public RubyNumeric op_plus(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_plus(other);

@@ -46,11 +46,17 @@ public class RbSymbol {
         symbolClass.defineMethod("inspect", getMethod("m_inspect"));
         symbolClass.defineMethod("to_s", getMethod("m_to_s"));
         symbolClass.defineMethod("id2name", getMethod("m_to_s"));
+        symbolClass.defineMethod("hash", getMethod("m_hash"));
+        symbolClass.defineMethod("==", getMethod("m_equal", RubyObject.class));
         
         return symbolClass;
     }
     
     public static RubyCallbackMethod getMethod(String methodName) {
-        return new ReflectionCallbackMethod(RubyModule.class, methodName);
+        return new ReflectionCallbackMethod(RubySymbol.class, methodName);
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubySymbol.class, methodName, arg1);
     }
 }

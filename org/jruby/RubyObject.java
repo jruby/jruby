@@ -69,6 +69,25 @@ public class RubyObject {
         return RubyObject.class;
     }
 
+    /**
+     * This method is just a wrapper around the Ruby "hash" method,
+     * provided so that RubyObjects can be used as keys in the Java
+     * HashMap object underlying RubyHash.
+     */
+    public int hashCode() {
+        return RubyNumeric.fix2int(funcall(getRuby().intern("hash")));
+    }
+
+    /**
+     * This method is just a wrapper around the Ruby "==" method,
+     * provided so that RubyObjects can be used as keys in the Java
+     * HashMap object underlying RubyHash.
+     */
+    public boolean equals(Object other) {
+        return other == this || (other instanceof RubyObject)
+            && funcall(getRuby().intern("=="), (RubyObject) other).isTrue();
+    }
+
     /** Getter for property frozen.
      * @return Value of property frozen.
      */
@@ -386,9 +405,7 @@ public class RubyObject {
      *
      */
     public RubyId toId() {
-        throw new RubyTypeException(
-            getRuby(),
-            m_inspect().getValue() + " is not a symbol");
+        throw new RubyTypeException(getRuby(), m_inspect().getValue() + " is not a symbol");
     }
 
     /** rb_convert_type
@@ -404,15 +421,13 @@ public class RubyObject {
         try {
             result = funcall(getRuby().intern(method));
         } catch (RubyNameException rnExcptn) {
-            throw new RubyTypeException(
-                getRuby(),
+            throw new RubyTypeException(getRuby(),
                 "failed to convert " + getRubyClass().toName() + " into " + className);
-            //} catch (RubyS rnExcptn) {
+//        } catch (RubyS rnExcptn) {
         }
 
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new RubyTypeException(
-                getRuby(),
+            throw new RubyTypeException(getRuby(),
                 getRubyClass().toName() + "#" + method + " should return " + className);
         }
 
@@ -425,8 +440,7 @@ public class RubyObject {
     public RubyObject specificEval(RubyModule mod, RubyObject[] args) {
         if (getRuby().isBlockGiven()) {
             if (args.length > 0) {
-                throw new RubyArgumentException(
-                    getRuby(),
+                throw new RubyArgumentException(getRuby(),
                     "wrong # of arguments (" + args.length + " for 0)");
             }
             return yieldUnder(mod);
@@ -435,8 +449,7 @@ public class RubyObject {
                 throw new RubyArgumentException(getRuby(), "block not supplied");
             } else if (args.length > 3) {
                 String lastFuncName = ruby.getRubyFrame().getLastFunc().toName();
-                throw new RubyArgumentException(
-                    getRuby(),
+                throw new RubyArgumentException(getRuby(),
                     "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
             }
 
@@ -456,11 +469,7 @@ public class RubyObject {
         }
     }
 
-    public RubyObject evalUnder(
-        RubyModule under,
-        RubyObject src,
-        RubyObject file,
-        RubyObject line) {
+    public RubyObject evalUnder(RubyModule under, RubyObject src, RubyObject file, RubyObject line) {
         /*
         if (ruby_safe_level >= 4) {
         	Check_Type(src, T_STRING);
@@ -508,11 +517,7 @@ public class RubyObject {
         }, new RubyObject[] { this });
     }
 
-    public RubyObject eval(
-        RubyObject src,
-        RubyObject scope,
-        String file,
-        int line) {
+    public RubyObject eval(RubyObject src, RubyObject scope, String file, int line) {
         String fileSave = ruby.getSourceFile();
         int lineSave = ruby.getSourceLine();
         int iter = ruby.getRubyFrame().getIter();
@@ -656,7 +661,7 @@ public class RubyObject {
      *
      */
     public RubyObject m_id() {
-        return RubyFixnum.m_newFixnum(getRuby(), hashCode());
+        return RubyFixnum.m_newFixnum(getRuby(), super.hashCode());
     }
 
     /** rb_obj_type

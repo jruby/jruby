@@ -121,6 +121,10 @@ public class RubyFixnum extends RubyInteger {
         return new RubyFixnum(getRuby(), value);
     }
 
+    public RubyFixnum m_hash() {
+        return new RubyFixnum(getRuby(), new Long(value).hashCode());
+    }
+
     public RubyNumeric op_plus(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {

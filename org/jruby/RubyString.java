@@ -1518,4 +1518,11 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
+    
+    /** rb_str_intern
+     *
+     */
+    public RubySymbol m_intern() {
+        return getRuby().intern(getValue()).toSymbol();
+    }
 }

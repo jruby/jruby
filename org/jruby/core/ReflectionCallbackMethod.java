@@ -62,7 +62,8 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
     }
     
     public ReflectionCallbackMethod(Class klass, String methodName, boolean restArgs) {
-        this(klass, methodName, restArgs ? new Class[]{ RubyObject[].class } : (Class[])null, restArgs, false);
+        this(klass, methodName, restArgs ? new Class[]{ RubyObject[].class }
+                                         : (Class[])null, restArgs, false);
     }
     
     public ReflectionCallbackMethod(Class klass, String methodName, Class args, boolean restArgs) {
@@ -73,15 +74,19 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         this(klass, methodName, args, restArgs, false);
     }
     
-    public ReflectionCallbackMethod(Class klass, String methodName, boolean restArgs, boolean staticMethod) {
-        this(klass, methodName, restArgs ? new Class[]{ RubyObject[].class } : (Class[])null, restArgs, staticMethod);
+    public ReflectionCallbackMethod(Class klass, String methodName, boolean restArgs, 
+                                    boolean staticMethod) {
+        this(klass, methodName, restArgs ? new Class[]{ RubyObject[].class }
+                                         : (Class[])null, restArgs, staticMethod);
     }
 
-    public ReflectionCallbackMethod(Class klass, String methodName, Class args, boolean restArgs, boolean staticMethod) {
+    public ReflectionCallbackMethod(Class klass, String methodName, Class args, boolean restArgs, 
+                                    boolean staticMethod) {
         this(klass, methodName, new Class[] {args}, restArgs, staticMethod);
     }
     
-    public ReflectionCallbackMethod(Class klass, String methodName, Class[] args, boolean restArgs, boolean staticMethod) {
+    public ReflectionCallbackMethod(Class klass, String methodName, Class[] args, boolean restArgs, 
+                                    boolean staticMethod) {
         super();
         
         this.klass = klass;
@@ -103,11 +108,11 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
                 }
                 method = klass.getMethod(methodName, newArgs);
             } catch (NoSuchMethodException nsmExcptn) {
-                throw new RuntimeException("NoSuchMethodException: Cannot get method \"" + methodName + 
-                        "\" in class \"" + klass.getName() + "\" by Reflection.");
+                throw new RuntimeException("NoSuchMethodException: Cannot get method \""
+                    + methodName + "\" in class \"" + klass.getName() + "\" by Reflection.");
             } catch (SecurityException sExcptn) {
-                throw new RuntimeException("SecurityException: Cannot get method \"" + methodName + 
-                        "\" in class \"" + klass.getName() + "\" by Reflection.");
+                throw new RuntimeException("SecurityException: Cannot get method \""
+                    + methodName + "\" in class \"" + klass.getName() + "\" by Reflection.");
             }
         }
         return method;
@@ -176,9 +181,11 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
             RubyObject[] restArray = new RubyObject[methodArgs.length - (args.length - 1)];
             Object[] newMethodArgs = new Object[args.length];
             try {
-                System.arraycopy(methodArgs, args.length - 1, restArray, 0, methodArgs.length - (args.length - 1));
+                System.arraycopy(methodArgs, args.length - 1, restArray, 0, 
+                                 methodArgs.length - (args.length - 1));
             } catch (ArrayIndexOutOfBoundsException aioobExcptn) {
-                throw new RuntimeException("Cannot call \"" + methodName + "\" in class \"" + klass.getName() + "\". " + getExceptedArgsString((RubyObject[])methodArgs));
+                throw new RuntimeException("Cannot call \"" + methodName + "\" in class \"" 
+                    + klass.getName() + "\". " + getExceptedArgsString((RubyObject[])methodArgs));
             }
             System.arraycopy(methodArgs, 0, newMethodArgs, 0, args.length - 1);
             newMethodArgs[args.length - 1] = restArray;

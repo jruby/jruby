@@ -101,7 +101,7 @@ public class RbString {
         stringClass.defineMethod("concat", getMethod("m_concat", RubyObject.class));
         stringClass.defineMethod("<<", getMethod("m_concat", RubyObject.class));
 //    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
-//    rb_define_method(rb_cString, "intern", rb_str_intern, 0);
+        stringClass.defineMethod("intern", getMethod("m_intern", false));
 
         stringClass.defineMethod("include?", getMethod("m_include", RubyObject.class));
 
