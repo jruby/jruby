@@ -1,0 +1,37 @@
+
+How JRuby differs from the original Ruby
+----------------------------------------
+$Id$
+
+
+Speed:
+
+    JRuby is slower than 'ruby' for many reasons. It uses real objects
+    for numbers, have more memory overhead and Java is in many cases
+    slower than C.
+    Once JRuby gets a bytecode compiler the difference should be less
+    obvious.
+
+    (Tip: If your program is long-running, try using the '-server'
+    option on your VM. Startup will be slower, but after that there
+    will be a major speed increase).
+
+Object ids and finalizers:
+
+    JRuby doesn't guarantee that integers returned by Object#id are
+    unique. This also prevents the implementation of finalizers.
+
+Threading:
+
+    JRuby uses Java's threads, which are usually the native threads of
+    the operating system, while 'ruby' uses it's own "green" thread
+    implementation.
+    JRuby has the ability to do non-blocking IO with threads, but
+    lacks the Thread.critical= method used for synchronization in
+    'ruby'.
+
+Character encoding:
+
+    JRuby uses Java's Unicode support for strings. [Something on what
+    this affects.]
+

@@ -1,0 +1,90 @@
+
+Writing a Java bytecode compiler for JRuby
+==========================================
+$Id$
+Copyright (c) Anders Bengtsson 2002
+
+1. Introduction
+---------------
+
+The transformation of Ruby code into Java bytecodes is done in several
+steps. The first step is to transform Ruby source into an AST, which
+was already done as part of the interpreter.
+
+The compilation of the AST to Java bytecodes is done in two steps,
+since we don't want to deal with the horrors of the JVM at the same
+time as the horrors of the AST.
+
+2. AST -> Ruby bytecode
+-----------------------
+
+The first step in compilation is translating the AST into custom
+high-level bytecodes. The bytecodes assume a VM with an "operand
+stack", which is the same model as the Java VM uses. These bytecodes
+serve two purposes. They are intended to be easy to translate to JVM
+bytecode and they can also possibly be interpreted directly.
+
+We flatten out the AST and extract some information not directly
+available in the AST, like the number of arguments a certain method
+call is using.
+
+For example "x = 10" in AST form is a tree like this:
+
+    newline-node
+        local-assignment-node (variable-index = 3)
+            fixnum-node (value = 10)
+
+Which is transformed into two bytecodes like this:
+
+    push-fixnum (value = 10)
+    assign-local (variable-index = 3)
+
+An interpreter working on these bytecodes would probably be faster
+than the AST-walking interpreter. But since we already have a working
+interpreter we instead focus on getting to JVM bytecodes.
+
+3. Ruby bytecode -> JVM bytecode
+--------------------------------
+
+3.1 Calling compiled code
+-------------------------
+
+This is where it gets interesting. The big question is maybe not how
+to do the compilation, but how to use the resulting bytecode. ASTs and
+Ruby bytecode can be passed around as objects and used in many
+different ways, but Java bytecode has to be neatly placed in methods
+within classes. How do we integrate that in our Ruby runtime?
+
+We can always use reflection callbacks to reach our generated code,
+but that would be slow, probably slower than our interpreted code that
+uses indexed callbacks(*). A better idea would involve direct,
+compiled, calls to our methods. This could be done with custom
+generated callback classes or something similar to the old indexed
+callbacks.
+
+*) See IndexedCallback, ReflectionCallback
+
+3.2 Compilation units
+---------------------
+
+The most direct mapping from Ruby code structure into Java's class
+structure is to compile each Ruby file into a Java class file. The
+outer code of the file compiled into one rubyMain() method and all the
+other method and block bodies into their own methods.
+
+This makes sense from a user's point of view too: Each '.rb'-file that
+they see can be compiled into a corresponding binary file.
+
+Note that we do not use Java's object oriented features here. Since we
+have an entirely separate OO model we just use Java classes as a place
+to store code. For this reason it is important that we do not use the
+extension '.class' for the generated files, since that would confuse the
+users.
+
+[Add example here]
+
+3.3 The compilation
+-------------------
+
+[To be written]
+
