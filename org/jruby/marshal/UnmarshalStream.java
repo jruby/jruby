@@ -56,36 +56,38 @@ public class UnmarshalStream extends FilterInputStream {
 
     public RubyObject unmarshalObject() throws IOException {
         int type = readUnsignedByte();
-
-        if (type == '0') {
+        switch (type) {
+        case '0':
             return RubyObject.nilObject(ruby);
-        } else if (type == 'T') {
+        case 'T':
             return RubyBoolean.newBoolean(ruby, true);
-        } else if (type == 'F') {
+        case 'F':
             return RubyBoolean.newBoolean(ruby, false);
-        } else if (type == '"') {
+        case '"':
             return RubyString.unmarshalFrom(this);
-        } else if (type == 'i') {
+        case 'i':
             return RubyFixnum.unmarshalFrom(this);
-        } else if (type == ':') {
+        case ':':
             return RubySymbol.unmarshalFrom(this);
-        } else if (type == '[') {
+        case '[':
             return RubyArray.unmarshalFrom(this);
-        } else if (type == '{') {
+        case '{':
             return RubyHash.unmarshalFrom(this);
-        } else if (type == 'c') {
+        case 'c':
             return RubyClass.unmarshalFrom(this);
-        } else if (type == 'm') {
+        case 'm':
             return RubyModule.unmarshalFrom(this);
-        } else if (type == 'l') {
+        case 'l':
             return RubyBignum.unmarshalFrom(this);
-        } else if (type == 'o') {
+        case 'S':
+            return RubyStruct.unmarshalFrom(this);
+        case 'o':
             return defaultObjectUnmarshal();
-        } else if (type == 'u') {
+        case 'u':
             return userUnmarshal();
+        default:
+            throw new NotImplementedError(); // FIXME
         }
-
-        throw new NotImplementedError(); // FIXME
     }
 
     public Ruby getRuby() {

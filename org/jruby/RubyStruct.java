@@ -411,4 +411,29 @@ public class RubyStruct extends RubyObject {
             output.dumpObject(values[i]);
         }
     }
+
+    public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        Ruby ruby = input.getRuby();
+
+        RubySymbol className = (RubySymbol) input.unmarshalObject();
+        RubyClass rbClass = pathToClass(ruby, className.toId());
+        if (rbClass == null) {
+            throw new NameError(ruby, "uninitialized constant " + className);
+        }
+
+        int size = input.unmarshalInt();
+
+        RubyObject[] values = new RubyObject[size];
+        for (int i = 0; i < size; i++) {
+            RubySymbol name = (RubySymbol) input.unmarshalObject(); // We don't really use the names
+            values[i] = input.unmarshalObject();
+        }
+        
+        return newStruct(ruby, rbClass, values);
+    }
+
+    private static RubyClass pathToClass(Ruby ruby, String path) {
+        // FIXME: Throw the right ArgumentError's if the class is missing
+        return (RubyClass) ruby.evalScript(path);
+    }
 }

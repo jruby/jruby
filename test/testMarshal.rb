@@ -100,6 +100,7 @@ test_equal(um, Marshal.load(Marshal.dump(um)))
 
 object = Marshal.load(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar")
 test_equal(["@foo"], object.instance_variables)
+
 test_equal(true, Marshal.load(MARSHAL_HEADER + "T"))
 test_equal(false, Marshal.load(MARSHAL_HEADER + "F"))
 test_equal(nil, Marshal.load(MARSHAL_HEADER + "0"))
@@ -114,6 +115,11 @@ test_equal([1, 2, 3], Marshal.load(MARSHAL_HEADER + "[\010i\006i\ai\010"))
 test_equal({1=>2}, Marshal.load(MARSHAL_HEADER + "{\006i\006i\a"))
 test_equal(String, Marshal.load(MARSHAL_HEADER + "c\013String"))
 #test_equal(Enumerable, Marshal.load(MARSHAL_HEADER + "m\017Enumerable"))
+
+s = Marshal.load(MARSHAL_HEADER + "S:\023Struct::Froboz\a:\006xi\n:\006yi\f")
+test_equal(Struct::Froboz, s.class)
+test_equal(5, s.x)
+test_equal(7, s.y)
 
 test_equal(2 ** 70, Marshal.load(MARSHAL_HEADER + "l+\n\000\000\000\000\000\000\000\000@\000"))
 
