@@ -32,8 +32,8 @@ Items marked '-' are done and will be available in the next release.
     - Simplify command line interface (regexp engine)
 
 * Storing/caching parsed code
-    * Finish ASTWriterVisitor
-    * Implement ASTReader
+    - Serialize builtin Ruby code
+    * General parse cache
 
 - FIX build.xml (use a filtered copying to fill constants)
 
