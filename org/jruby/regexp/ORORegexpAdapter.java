@@ -1,12 +1,5 @@
 /*
- * ORORegexpAdapter.java - ORO Adapter for Ruby Regular Expression
- * Created on 07. January 2002, 15:36
- * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2002 Takashi Okamoto <tora@debian.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -30,8 +23,14 @@
 
 package org.jruby.regexp;
 
-import org.apache.oro.text.regex.*;
-
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.MatchResult;
+import org.apache.oro.text.regex.Pattern;
+import org.apache.oro.text.regex.PatternCompiler;
+import org.apache.oro.text.regex.PatternMatcher;
+import org.apache.oro.text.regex.PatternMatcherInput;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyObject;
@@ -44,84 +43,84 @@ import org.jruby.exceptions.RubyRegexpException;
  */
 public class ORORegexpAdapter extends IRegexpAdapter {
 
-    private Pattern pattern;
-    private int cflags = 0;
-    private int eflags = 0;
-    private boolean extended;
+	private Pattern pattern;
+	private int cflags = 0;
+	private int eflags = 0;
+	private boolean extended;
 
-    /**
-     * Compile the regex.
-     */
-    public void compile(Ruby ruby, String pattern) throws RubyRegexpException {
-        if (extended) {
-            pattern = unextend(pattern);
-        }
+	/**
+	 * Compile the regex.
+	 */
+	public void compile(Ruby ruby, String pattern) throws RubyRegexpException {
+		if (extended) {
+			pattern = unextend(pattern);
+		}
 
-        try {
-  	    PatternCompiler compiler = new Perl5Compiler();
-            this.pattern = compiler.compile(pattern, cflags);
-        } catch (MalformedPatternException e) {
-            throw new RubyRegexpException(ruby, e.getMessage());
-        }
-    }
+		try {
+			PatternCompiler compiler = new Perl5Compiler();
+			this.pattern = compiler.compile(pattern, cflags);
+		} catch (MalformedPatternException e) {
+			throw new RubyRegexpException(ruby, e.getMessage());
+		}
+	}
 
-    /**
-     * Set whether matches should be case-insensitive or not
-     */
-    public void setCasefold(boolean set) {
-        if (set) {
-            cflags |= Perl5Compiler.CASE_INSENSITIVE_MASK;
-        } else {
-            cflags &= ~Perl5Compiler.CASE_INSENSITIVE_MASK;
-        }
-    }
+	/**
+	 * Set whether matches should be case-insensitive or not
+	 */
+	public void setCasefold(boolean set) {
+		if (set) {
+			cflags |= Perl5Compiler.CASE_INSENSITIVE_MASK;
+		} else {
+			cflags &= ~Perl5Compiler.CASE_INSENSITIVE_MASK;
+		}
+	}
 
-    /**
-     * Get whether matches are case-insensitive or not
-     */
-    public boolean getCasefold() {
-        return (cflags & Perl5Compiler.CASE_INSENSITIVE_MASK) > 0;
-    }
+	/**
+	 * Get whether matches are case-insensitive or not
+	 */
+	public boolean getCasefold() {
+		return (cflags & Perl5Compiler.CASE_INSENSITIVE_MASK) > 0;
+	}
 
-    /**
-     * Set whether patterns can contain comments and extra whitespace
-     */
-    public void setExtended(boolean set) {
-        extended = set;
-    }
+	/**
+	 * Set whether patterns can contain comments and extra whitespace
+	 */
+	public void setExtended(boolean set) {
+		extended = set;
+	}
 
-    /**
-     * Set whether the dot metacharacter should match newlines
-     */
-    public void setMultiline(boolean set) {
-        if (set) {
-            cflags |= Perl5Compiler.MULTILINE_MASK;
-        } else {
-	    cflags &= ~Perl5Compiler.MULTILINE_MASK;
-        }
-    }
+	/**
+	 * Set whether the dot metacharacter should match newlines
+	 */
+	public void setMultiline(boolean set) {
+		if (set) {
+			cflags |= Perl5Compiler.MULTILINE_MASK;
+		} else {
+			cflags &= ~Perl5Compiler.MULTILINE_MASK;
+		}
+	}
 
-    /**
-     * Does the given argument match the pattern?
-     */
-    public RubyObject search(Ruby ruby, String target, int startPos) {
-        PatternMatcherInput pmi = new PatternMatcherInput(target);
-        pmi.setCurrentOffset(startPos);
+	/**
+	 * Does the given argument match the pattern?
+	 */
+	public RubyObject search(Ruby ruby, String target, int startPos) {
+		PatternMatcherInput pmi = new PatternMatcherInput(target);
+		pmi.setCurrentOffset(startPos);
 
-	PatternMatcher matcher = new Perl5Matcher();
-	boolean result = matcher.contains(pmi, pattern);
+		PatternMatcher matcher = new Perl5Matcher();
+		boolean result = matcher.contains(pmi, pattern);
 
-        if (result == true) {
-	    MatchResult match = matcher.getMatch();
-            int count = match.groups();
-            int[] begin = new int[count];
-            int[] end = new int[count];
-            for (int i = 0; i < count; i++) {
-                begin[i] = match.beginOffset(i);
-                end[i] = match.endOffset(i);
-            }
-            return new RubyMatchData(ruby, target, begin, end);
-        }
-        return ruby.getNil();
-    }
+		if (result == true) {
+			MatchResult match = matcher.getMatch();
+			int count = match.groups();
+			int[] begin = new int[count];
+			int[] end = new int[count];
+			for (int i = 0; i < count; i++) {
+				begin[i] = match.beginOffset(i);
+				end[i] = match.endOffset(i);
+			}
+			return new RubyMatchData(ruby, target, begin, end);
+		}
+		return ruby.getNil();
+	}
 }
