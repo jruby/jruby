@@ -7,10 +7,10 @@ class TestModule_Foo
   define_method(:foo) { self }
 end
 # MRI 1.6 returns Class, 1.7 returns Foo.
-#test_equal(Class, TestModule_Foo.new.foo.type)
-#test_equal(TestModule_Foo, TestModule_Foo.new.foo.type)
+#test_equal(Class, TestModule_Foo.new.foo.class)
+#test_equal(TestModule_Foo, TestModule_Foo.new.foo.class)
 
-test_equal("TestModule_Foo", TestModule_Foo.new.foo.type.name)
+test_equal("TestModule_Foo", TestModule_Foo.new.foo.class.name)
 
 testmodule_local_variable = 123
 

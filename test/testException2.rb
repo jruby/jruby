@@ -9,7 +9,7 @@ begin
 rescue ArgumentError
   e = $!
 end
-test_equal(ArgumentError, e.type)
+test_equal(ArgumentError, e.class)
 
 e = nil
 begin
@@ -17,7 +17,7 @@ begin
 rescue RuntimeError
   e = $!
 end
-test_equal(RuntimeError, e.type)
+test_equal(RuntimeError, e.class)
 
 e = nil
 type = ArgumentError
@@ -26,7 +26,7 @@ begin
 rescue type
   e = $!
 end
-test_equal(ArgumentError, e.type)
+test_equal(ArgumentError, e.class)
 
 class SomeOtherException < StandardError
 end

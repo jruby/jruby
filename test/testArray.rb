@@ -16,7 +16,7 @@ arr << "fourth"
 test_ok("fourth" == arr.pop());
 test_ok("second" == arr.shift());
 
-test_ok(Array == ["zero", "first"].type)
+test_ok(Array == ["zero", "first"].class)
 test_ok("Array" == Array.to_s)
 if defined? Java
 #  Java::import "org.jruby.test"

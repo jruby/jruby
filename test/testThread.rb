@@ -83,4 +83,4 @@ begin
 rescue RuntimeError => error
   e = error
 end
-test_ok(e.kind_of? RuntimeError)
+test_ok(e.kind_of?(RuntimeError))

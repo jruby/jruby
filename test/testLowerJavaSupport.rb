@@ -189,12 +189,12 @@ if defined? Java
     |proxy, method, event|
 
     test_ok(action_listener_instance.java_class == proxy.java_class)
-    test_ok(method.instance_of? Java::JavaMethod)
+    test_ok(method.instance_of?(Java::JavaMethod))
     test_equal("actionPerformed", method.name())
 
     $callback_invoked = true
   end
-  test_ok(action_listener_instance.instance_of? JavaObject)
+  test_ok(action_listener_instance.instance_of?(JavaObject))
   instance_class = action_listener_instance.java_class
   proxy_class = Java::JavaClass.for_name("java.lang.reflect.Proxy")
   test_ok(instance_class < action_listener_class)
