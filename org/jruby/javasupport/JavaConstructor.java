@@ -50,8 +50,8 @@ public class JavaConstructor implements Callback {
         this.constructors = constructors;
     }
 
-    public int getArity() {
-        return -1;
+    public Arity getArity() {
+        return Arity.optional();
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {

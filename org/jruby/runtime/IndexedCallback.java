@@ -23,8 +23,7 @@
 
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
-import org.jruby.exceptions.ArgumentError;
+import org.jruby.util.Asserts;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -33,9 +32,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class IndexedCallback implements Callback {
     private final int index;
-    private final int arity;
+    private final Arity arity;
 
-    private IndexedCallback(int index, int arity) {
+    private IndexedCallback(int index, Arity arity) {
         this.index = index;
         this.arity = arity;
     }
@@ -44,43 +43,31 @@ public final class IndexedCallback implements Callback {
      * Create a callback with a fixed # of arguments
      */
     public static IndexedCallback create(int index, int arity) {
-        return new IndexedCallback(index, arity);
+        Asserts.assertExpression(arity >= 0);
+        return new IndexedCallback(index, Arity.createArity(arity));
     }
 
     /**
      * Create a callback with an optional # of arguments
      */
     public static IndexedCallback createOptional(int index) {
-        return new IndexedCallback(index, -1);
+        return new IndexedCallback(index, Arity.optional());
     }
 
     /**
      * Create a callback with a minimal # of arguments
      */
-    public static IndexedCallback createOptional(int index, int required) {
-        return new IndexedCallback(index, -(1 + required));
+    public static IndexedCallback createOptional(int index, int minimum) {
+        Asserts.assertExpression(minimum >= 0);
+        return new IndexedCallback(index, Arity.required(minimum));
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject args[]) {
-        checkArity(recv.getRuntime(), args);
+        arity.checkArity(recv.getRuntime(), args);
         return ((IndexCallable) recv).callIndexed(index, args);
     }
 
-    public int getArity() {
+    public Arity getArity() {
         return arity;
-    }
-
-    private void checkArity(Ruby ruby, IRubyObject[] args) {
-        if (arity >= 0) {
-            if (arity != args.length) {
-                throw new ArgumentError(ruby,
-                                        "wrong # of arguments(" + args.length + " for " + arity + ")");
-            }
-        } else {
-            int required = -(1 + arity);
-            if (args.length < required) {
-                throw new ArgumentError(ruby, "wrong # of arguments(at least " + required + ")");
-            }
-        }
     }
 }

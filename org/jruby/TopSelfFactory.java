@@ -1,7 +1,7 @@
 package org.jruby;
 
 import org.jruby.runtime.Callback;
-import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -32,8 +32,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.Callback#getArity()
              */
-            public int getArity() {
-                return 0;
+            public Arity getArity() {
+                return Arity.noArguments();
             }
         });
         
@@ -49,8 +49,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.Callback#getArity()
              */
-            public int getArity() {
-                return -1;
+            public Arity getArity() {
+                return Arity.optional();
             }
         });
         
@@ -65,8 +65,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.Callback#getArity()
              */
-            public int getArity() {
-                return -1;
+            public Arity getArity() {
+                return Arity.optional();
             }
         });
         
@@ -81,8 +81,8 @@ public final class TopSelfFactory {
             /**
              * @see org.jruby.runtime.Callback#getArity()
              */
-            public int getArity() {
-                return -1;
+            public Arity getArity() {
+                return Arity.optional();
             }
         });
         

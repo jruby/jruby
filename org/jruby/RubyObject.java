@@ -55,6 +55,7 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
@@ -536,8 +537,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                     RubyNumeric.fix2int(args[3]));
             }
 
-            public int getArity() {
-                return -1;
+            public Arity getArity() {
+                return Arity.optional();
             }
         }, new IRubyObject[] { this, src, file, line });
     }
@@ -561,13 +562,12 @@ public class RubyObject implements Cloneable, IRubyObject {
                 // return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
             }
 
-            public int getArity() {
-                return -1;
+            public Arity getArity() {
+                return Arity.optional();
             }
         }, new IRubyObject[] { this });
     }
 
-    /**@fixme*/
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
         ISourcePosition savedPosition = runtime.getPosition();
         Iter iter = runtime.getCurrentFrame().getIter();

@@ -45,12 +45,12 @@ public class JavaFieldWriter implements Callback {
         this.field = field;
     }
     
-    public int getArity() {
-        return 1;
+    public Arity getArity() {
+        return Arity.singleArgument();
     }
 
     /**
-     * @see Callback#execute(RubyObject, RubyObject[], Ruby)
+     * @see Callback#execute(IRubyObject, IRubyObject[])
      */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         try {

@@ -1,8 +1,10 @@
 package org.jruby.javasupport;
 
-import org.jruby.*;
 import org.jruby.runtime.Callback;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyJavaInterface;
+
 /**
  * @author jpetersen
  * @version $Revision$
@@ -14,8 +16,8 @@ public class JavaInterfaceConstructor implements Callback {
         this.javaInterface = javaInterface;
     }
     
-    public int getArity() {
-        return 1;
+    public Arity getArity() {
+        return Arity.singleArgument();
     }
 
     /*

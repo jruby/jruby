@@ -38,6 +38,7 @@ import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
@@ -198,7 +199,8 @@ public class RubyMethod extends RubyObject {
             }
             return RubyFixnum.newFixnum(getRuntime(), n);
         } else if (method instanceof CallbackMethod) {
-            return RubyFixnum.newFixnum(getRuntime(), ((CallbackMethod) method).getCallback().getArity());
+            Arity arity = ((CallbackMethod) method).getCallback().getArity();
+            return RubyFixnum.newFixnum(getRuntime(), arity.getValue());
         }
 
         return RubyFixnum.newFixnum(getRuntime(), -1);

@@ -26,13 +26,16 @@
  */
 package org.jruby.runtime;
 
-import java.lang.reflect.*;
-
-import org.jruby.*;
-import org.jruby.exceptions.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.AssertError;
 import org.jruby.util.Asserts;
+import org.jruby.Ruby;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  *
@@ -45,7 +48,7 @@ public final class ReflectionCallbackMethod implements Callback {
     private Class[] args = null;
     private boolean isStaticMethod = false;
     private boolean isRestArgs = false;
-    private int arity;
+    private Arity arity;
 
     private Method method = null;
 
@@ -55,7 +58,7 @@ public final class ReflectionCallbackMethod implements Callback {
         Class[] args,
         boolean isRestArgs,
         boolean isStaticMethod,
-        int arity) {
+        Arity arity) {
         super();
 
         this.klass = klass;
@@ -66,7 +69,7 @@ public final class ReflectionCallbackMethod implements Callback {
         this.arity = arity;
     }
 
-    public int getArity() {
+    public Arity getArity() {
         return arity;
     }
 
@@ -157,12 +160,12 @@ public final class ReflectionCallbackMethod implements Callback {
             result = packageRestArgumentsForReflection(result);
         }
         if (isStaticMethod) {
-            result = packageStaticArgumentsForReflection(result, rubyClass.getRuntime(), rubyClass);
+            result = packageStaticArgumentsForReflection(result, rubyClass);
         }
         return result;
     }
 
-    private Object[] packageStaticArgumentsForReflection(Object[] arguments, Ruby ruby, IRubyObject rubyClass) {
+    private Object[] packageStaticArgumentsForReflection(Object[] arguments, IRubyObject rubyClass) {
         Object[] result = new Object[arguments.length + 1];
         result[0] = rubyClass;
         System.arraycopy(arguments, 0, result, 1, arguments.length);

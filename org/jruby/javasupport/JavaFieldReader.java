@@ -26,12 +26,13 @@
  */
 package org.jruby.javasupport;
 
-import java.lang.reflect.*;
-
-import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Callback;
+import org.jruby.RubyJavaObject;
+import org.jruby.exceptions.SecurityError;
+
+import java.lang.reflect.Field;
 
 /**
  *
@@ -45,12 +46,12 @@ public class JavaFieldReader implements Callback {
         this.field = field;
     }
     
-    public int getArity() {
-        return 0;
+    public Arity getArity() {
+        return Arity.noArguments();
     }
 
     /**
-     * @see Callback#execute(RubyObject, RubyObject[], Ruby)
+     * @see Callback#execute(IRubyObject, IRubyObject[])
      */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         try {

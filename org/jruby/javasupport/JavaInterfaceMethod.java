@@ -1,11 +1,16 @@
 package org.jruby.javasupport;
 
-import java.lang.reflect.*;
-import java.util.*;
-
-import org.jruby.*;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.Arity;
+import org.jruby.RubyProc;
+import org.jruby.RubyMethod;
+import org.jruby.RubyString;
+import org.jruby.RubyJavaInterface;
+
+import java.util.Set;
+import java.lang.reflect.Method;
+
 /**
  * @author jpetersen
  * @version $Revision$
@@ -20,8 +25,8 @@ public class JavaInterfaceMethod implements Callback {
         this.methodList = methodList;
     }
     
-    public int getArity() {
-        return -1;
+    public Arity getArity() {
+        return Arity.optional();
     }
 
     /*

@@ -40,5 +40,5 @@ import org.jruby.runtime.builtin.IRubyObject;
 public interface Callback {
     public IRubyObject execute(IRubyObject recv, IRubyObject args[]);
 
-    public int getArity();
+    public Arity getArity();
 }

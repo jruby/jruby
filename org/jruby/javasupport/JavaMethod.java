@@ -30,15 +30,20 @@
 
 package org.jruby.javasupport;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
-import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.Arity;
 import org.jruby.util.Asserts;
+import org.jruby.RubyJavaObject;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.RaiseException;
 
 /**
  *
@@ -60,8 +65,8 @@ public class JavaMethod implements Callback {
         this.singleton = singleton;
     }
     
-    public int getArity() {
-        return -1;
+    public Arity getArity() {
+        return Arity.optional();
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {

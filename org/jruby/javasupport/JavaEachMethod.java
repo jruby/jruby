@@ -1,7 +1,7 @@
 package org.jruby.javasupport;
 
-import org.jruby.*;
 import org.jruby.runtime.Callback;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaEachMethod implements Callback {
@@ -33,7 +33,7 @@ public class JavaEachMethod implements Callback {
         return recv.getRuntime().getNil();
     }
     
-    public int getArity() {
-        return 0;
+    public Arity getArity() {
+        return Arity.noArguments();
     }
 }
