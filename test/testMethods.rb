@@ -61,3 +61,13 @@ end
 $foo = false
 TM1.new.foo
 test_ok($foo)
+
+o = Object.new
+def o.foo(x)
+  "hello" + x
+end
+foo_method = o.method(:foo)
+test_equal(1, foo_method.arity)
+foo_proc = foo_method.to_proc
+test_equal(Proc, foo_proc.class)
+test_equal("helloworld", foo_proc.call("world"))

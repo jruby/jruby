@@ -31,9 +31,9 @@ package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.builtin.definitions.MethodDefinition;
 
 /** 
  * The RubyMethod class represents a Method object.
@@ -50,11 +50,6 @@ public class Method extends RubyObject {
     protected String originName;
     protected ICallable method;
     protected IRubyObject receiver;
-    
-    private static final int ARITY = 0x10000;
-    private static final int CALL = 0x10001;
-    private static final int TO_PROC = 0x10002;
-    private static final int UNBIND = 0x10003;
 
     protected Method(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -64,15 +59,7 @@ public class Method extends RubyObject {
      * 
      */
     public static RubyClass createMethodClass(Ruby ruby) {
-        RubyClass methodClass = ruby.defineClass("Method", ruby.getClasses().getObjectClass());
-
-        methodClass.defineMethod("[]", IndexedCallback.createOptional(CALL));
-        methodClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
-        methodClass.defineMethod("call", IndexedCallback.createOptional(CALL));
-        methodClass.defineMethod("to_proc", IndexedCallback.create(TO_PROC, 0));
-        methodClass.defineMethod("unbind", IndexedCallback.create(UNBIND, 0));
-
-        return methodClass;
+        return new MethodDefinition(ruby).getType();
     }
 
     public static Method newMethod(
@@ -130,7 +117,7 @@ public class Method extends RubyObject {
     }
 
     /** Create a Proc object which is called like a ruby method.
-     * 
+     *
      * Used by the RubyMethod#to_proc method.
      *
      */
@@ -146,7 +133,7 @@ public class Method extends RubyObject {
     }
 
     /** Delegate a block call to a bound method call.
-     * 
+     *
      * Used by the RubyMethod#to_proc method.
      *
      */
@@ -157,29 +144,30 @@ public class Method extends RubyObject {
             return ((Method) arg1).call(new IRubyObject[] { blockArg });
         }
     }
-    /**
-     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
-     */
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case ARITY :
-                return arity();
-            case CALL :
-                return call(args);
-            case TO_PROC :
-                return to_proc();
-            case UNBIND :
-                return unbind();
-            default:
-                return super.callIndexed(index, args);
-        }
-    }
-    
+
     public UnboundMethod unbind() {
-        UnboundMethod unboundMethod = UnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+        UnboundMethod unboundMethod =
+                UnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
         unboundMethod.receiver = this;
         unboundMethod.infectBy(this);
         return unboundMethod;
     }
 
-}
+    /**
+     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
+     */
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+            case MethodDefinition.ARITY :
+                return arity();
+            case MethodDefinition.CALL :
+                return call(args);
+            case MethodDefinition.TO_PROC :
+                return to_proc();
+            case MethodDefinition.UNBIND :
+                return unbind();
+            default:
+                return super.callIndexed(index, args);
+        }
+    }
+    }

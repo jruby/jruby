@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Method</name>
+  <superclass>Object</superclass>
+
+  <implementation>org.jruby.Method</implementation>
+
+  <instance-methods>
+    <method name="call">
+      <arity optional="true">0</arity>
+    </method>
+    <method-alias name="[]" original="call"/>
+    <method name="arity"/>
+    <method name="to_proc"/>
+    <method name="unbind"/>
+  </instance-methods>
+
+  <class-methods/>
+</module>
