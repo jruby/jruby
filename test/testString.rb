@@ -17,3 +17,13 @@ test_equal(["1", "2", "3"], "1x2y3".split(/(x|y)/))
 test_equal(["foo"], "foo".split("whatever", 1))
 
 test_equal("hihihi", "hi" * 3)
+
+s = "foobar"
+s["foo"] = "baz"
+test_equal("bazbar", s)
+s["foo"] = "xyz"
+test_equal("bazbar", s)
+
+test_equal(9, "alphabetagamma" =~ /gamma$/)
+test_equal(nil, "alphabetagamma" =~ /GAMMA$/)
+

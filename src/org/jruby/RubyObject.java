@@ -312,13 +312,6 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         return callMethod(name, IRubyObject.NULL_ARRAY);
     }
 
-    /** rb_funcall3
-     *
-     */
-    public IRubyObject funcall3(String name, IRubyObject[] args) {
-        return getMetaClass().call(this, name, args, CallType.NORMAL);
-    }
-
     /** rb_funcall
      *
      */

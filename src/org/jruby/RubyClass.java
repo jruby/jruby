@@ -39,7 +39,6 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.IndexCallable;
@@ -49,10 +48,6 @@ import org.jruby.runtime.IndexCallable;
  * @author  jpetersen
  */
 public class RubyClass extends RubyModule implements IndexCallable {
-
-    private RubyClass(Ruby ruby) {
-        this(ruby, null, null);
-    }
 
     /**
      * @mri rb_boot_class
