@@ -203,7 +203,10 @@ public class ReflectionCallbackMethod implements Callback {
         } catch (InvocationTargetException itExcptn) {
             if (itExcptn.getTargetException() instanceof RaiseException) {
             	throw (RaiseException)itExcptn.getTargetException();
+            } else if (itExcptn.getTargetException() instanceof RuntimeException) {
+                throw (RuntimeException)itExcptn.getTargetException();
             } else {
+                System.err.println("[ERROR] ReflectionCallback:");
             	itExcptn.getTargetException().printStackTrace();
             	return ruby.getNil();
             }

@@ -59,9 +59,16 @@ public class RubyArgsFile extends RubyObject {
         
         ruby.defineReadonlyVariable("$<", this);
         ruby.defineGlobalConstant("ARGF", this);
+        
+        defineSingletonMethod("each", CallbackFactory.getOptMethod(RubyArgsFile.class, "each_line"));
+        defineSingletonMethod("each_line", CallbackFactory.getOptMethod(RubyArgsFile.class, "each_line"));
 
-		defineSingletonMethod("gets", CallbackFactory.getOptSingletonMethod(RubyArgsFile.class, "gets"));
 		defineSingletonMethod("filename", CallbackFactory.getMethod(RubyArgsFile.class, "filename"));
+		defineSingletonMethod("gets", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "gets"));
+		defineSingletonMethod("readline", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "readline"));
+		defineSingletonMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
+		
+		defineSingletonMethod("to_a", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
 		defineSingletonMethod("to_s", CallbackFactory.getMethod(RubyArgsFile.class, "filename"));
 
         ruby.defineReadonlyVariable("$FILENAME", RubyString.newString(ruby, "-"));
@@ -222,19 +229,21 @@ public class RubyArgsFile extends RubyObject {
     
     // ARGF methods
     
-    public RubyString filename() {
-        return (RubyString)ruby.getGlobalVar("$FILENAME");
+    /** Invoke a block for each line.
+     * 
+     */
+    public RubyObject each_line(RubyObject[] args) {
+        RubyString nextLine = internalGets(args);
+        
+        while (!nextLine.isNil()) {
+        	getRuby().yield(nextLine);
+        	nextLine = internalGets(args);
+        }
+        
+        return this;
     }
     
-    // Global functions
-    
-    public static RubyObject gets(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyArgsFile argsFile = (RubyArgsFile)ruby.getGlobalVar("$<");
-
-        RubyString line = argsFile.internalGets(args);
-        
-        ruby.getParserHelper().setLastline(line);
-        
-        return line;
+	public RubyString filename() {
+        return (RubyString)ruby.getGlobalVar("$FILENAME");
     }
 }

@@ -460,7 +460,7 @@ mlhs_head	: mlhs_item ','
 
 mlhs_node	: variable
 		    {
-			    $$ = ph.assignable($1, null);
+			    $$ = ph.getAssignmentNode($1, null);
 		    }
 		| primary '[' aref_args ']'
 		    {
@@ -486,7 +486,7 @@ mlhs_node	: variable
 
 lhs		: variable
 		    {
-			    $$ = ph.assignable($1, null);
+			    $$ = ph.getAssignmentNode($1, null);
 		    }
 		| primary '[' aref_args ']'
 		    {
@@ -582,21 +582,21 @@ arg		: lhs '=' arg
 			    ph.value_expr($3);
 			    $$ = ph.node_assign($1, $3);
 		    }
-		| variable tOP_ASGN {$$ = ph.assignable($1, null);} arg
+		| variable tOP_ASGN {$$ = ph.getAssignmentNode($1, null);} arg
 		    {
 			    if ($2.equals("||")) {
 			        $3.setValueNode($4);
-			        $$ = nf.newOpAsgnOr(ph.gettable($1), $<Node>3);
+			        $$ = nf.newOpAsgnOr(ph.getAccessNode($1), $<Node>3);
 			        if (IdUtil.isInstanceVariable($1)) {
 				        $<Node>$.setAId($1);
 			        }
 			    } else if ($2.equals("&&")) {
 			        $3.setValueNode($4);
-			        $$ = nf.newOpAsgnAnd(ph.gettable($1), $<Node>3);
+			        $$ = nf.newOpAsgnAnd(ph.getAccessNode($1), $<Node>3);
 			    } else {
 			        $$ = $3;
 			        if ($$ != null) {
-				        $<Node>$.setValueNode(ph.call_op(ph.gettable($1),$2,1,$4));
+				        $<Node>$.setValueNode(ph.call_op(ph.getAccessNode($1),$2,1,$4));
 			        }
 			    }
 			    ph.fixpos($$, $4);
@@ -1179,7 +1179,7 @@ primary		: literal
 		    {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("nested method definition");
-			  //  $$ = ph.getCurMid(); useless
+			    // $$ = ph.getCurMid(); useless
                 ph.setCurMid($2);
 			    ph.setInDef(ph.getInDef() + 1);
 			    ph.local_push();
@@ -1190,17 +1190,16 @@ primary		: literal
 		  opt_else
 		  ensure
 		  kEND
-		    {  
-		        if ($6 != null)			//there is a rescue
+		    {
+		        if ($6 != null)
                     $<>5 = nf.newRescue($5, $6, $7);
-			    else if ($7 != null) {	//else but no rescue
+			    else if ($7 != null) {
 			        ph.rb_warn("else without rescue is useless");
 			        $<>5 = ph.block_append($5, $7);
 			    }
-			    if ($8 != null)			//there is an ensure
+			    if ($8 != null)
                     $<>5 = nf.newEnsure($5, $8);
-				//now $5 is the whole body including all exception handling
-				
+
 		        /* NOEX_PRIVATE for toplevel */
 			    $$ = nf.newDefn($2, $4, $5, ph.getClassNest() !=0 ? 
                                 Constants.NOEX_PUBLIC : Constants.NOEX_PRIVATE);
@@ -1494,16 +1493,16 @@ variable	: tIDENTIFIER
 		| tGVAR
 		| tCONSTANT
 		| tCVAR
-		| kNIL {$$ = "~~NIL";}
-		| kSELF {$$ = "~~SELF";}
-		| kTRUE {$$ = "~~TRUE";}
-		| kFALSE {$$ = "~~FALSE";}
-		| k__FILE__ {$$ = "~~__FILE__";}
-		| k__LINE__ {$$ = "~~__LINE__";}
+		| kNIL {$$ = "#nil";}
+		| kSELF {$$ = "#self";}
+		| kTRUE {$$ = "#true";}
+		| kFALSE {$$ = "#false";}
+		| k__FILE__ {$$ = "#__FILE__";}
+		| k__LINE__ {$$ = "#__LINE__";}
 
 var_ref		: variable
 		    {
-			    $$ = ph.gettable($1);
+			    $$ = ph.getAccessNode($1);
 		    }
 
 backref		: tNTH_REF
@@ -1590,9 +1589,9 @@ f_norm_arg	: tCONSTANT
 		    {
 			    if (!IdUtil.isLocal($1))
 			        yyerror("formal argument must be local variable");
-			    else if (ph.local_id($1))
+			    else if (ph.isLocalRegistered($1))
 			        yyerror("duplicate argument name");
-			    ph.local_cnt($1);
+			    ph.getLocalIndex($1);
 			    $$ = new Integer(1);
 		    }
 
@@ -1606,15 +1605,15 @@ f_opt		: tIDENTIFIER '=' arg
 		    {
 			    if (!IdUtil.isLocal($1))
 			        yyerror("formal argument must be local variable");
-			    else if (ph.local_id($1))
+			    else if (ph.isLocalRegistered($1))
 			        yyerror("duplicate optional argument name");
-			    $$ = ph.assignable($1, $3);
+			    $$ = ph.getAssignmentNode($1, $3);
 		    }
 
 f_optarg	: f_opt
 		    {
 			    $$ = nf.newBlock($1);
-//			    $<Node>$.setEndNode($<Node>$);		not needed anymore Benoit
+			    // $<Node>$.setEndNode($<Node>$); not needed anymore Benoit.
 		    }
 		| f_optarg ',' f_opt
 		    {
@@ -1625,9 +1624,9 @@ f_rest_arg	: tSTAR tIDENTIFIER
 		    {
 			    if (!IdUtil.isLocal($2))
 			        yyerror("rest argument must be local variable");
-			    else if (ph.local_id($2))
+			    else if (ph.isLocalRegistered($2))
 			        yyerror("duplicate rest argument name");
-			    $$ = new Integer(ph.local_cnt($2));
+			    $$ = new Integer(ph.getLocalIndex($2));
 		    }
 		| tSTAR
 		    {
@@ -1638,7 +1637,7 @@ f_block_arg	: tAMPER tIDENTIFIER
 		    {
 			    if (!IdUtil.isLocal($2))
 			        yyerror("block argument must be local variable");
-			    else if (ph.local_id($2))
+			    else if (ph.isLocalRegistered($2))
 			        yyerror("duplicate block argument name");
 			    $$ = nf.newBlockArg($2);
 		    }
@@ -1791,7 +1790,7 @@ none		: /* none */
         rs.setLexP(0);
         rs.setLexPEnd(0);
         ruby.setSourceLine(line - 1);
-		ph.setLine(line);
+
         ph.setCompileForEval(ruby.getInEval());
 
         return yycompile(f, line);
@@ -1810,27 +1809,12 @@ none		: /* none */
 
         return yycompile(f, start);
     }
-
-//Benoit not used
-//FIXME: remove for true if it is never usefull
-//    private void init_for_scanner(String s) {
-//        rs.setLexFileIo(false);
-//        rs.setLexGetsPtr(0);
-//        rs.setLexInput(RubyString.newString(ruby, s));
-//        rs.setLexP(0);
-//        rs.setLexPEnd(0);
-//        ruby.setSourceLine(0);
-//        ph.setCompileForEval(ruby.getInEval());
-//        ph.setRubyEndSeen(false); // is there an __end__{} statement?
-//        ph.setHeredocEnd(0);
-//        ph.setRubyInCompile(true);
-//    }
     
     /** This function compiles a given String into a Node.
      *
      */
     public Node yycompile(String f, int line) {
-        if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined("SCRIPT_LINES__")) {
+        if (!ph.isCompileForEval() && ruby.getSafeLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined("SCRIPT_LINES__")) {
             RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant("SCRIPT_LINES__");
             RubyString fName = RubyString.newString(ruby, f);
             

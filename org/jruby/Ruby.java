@@ -496,29 +496,24 @@ public final class Ruby {
         Node node = new NodeFactory(this).newIFunc(blockMethod, data2);
 
         // VALUE self = ruby_top_self;
-        RubyObject result = null;
-
         getIter().push(RubyIter.ITER_PRE);
         getBlock().push(null, node, getRubyTopSelf());
 
-        while (true) {
-            try {
-                result = iterateMethod.execute(data1, null, this);
-
-                break;
-            } catch (RetryException rExcptn) {
-            } catch (BreakException bExcptn) {
-                result = getNil();
-                break;
-            } catch (ReturnException rExcptn) {
-                result = rExcptn.getReturnValue();
-                break;
+        try {
+            while (true) {
+                try {
+                    return iterateMethod.execute(data1, null, this);
+                } catch (BreakException bExcptn) {
+                    return getNil();
+                } catch (ReturnException rExcptn) {
+                    return rExcptn.getReturnValue();
+                } catch (RetryException rExcptn) {
+                }
             }
+        } finally {
+            getIter().pop();
+            getBlock().pop();
         }
-        getIter().pop();
-        getBlock().pop();
-
-        return result;
     }
 
     private void createFixnumCache() {
@@ -815,7 +810,7 @@ public final class Ruby {
      * @return Value of property cBase.
      */
     public RubyModule getCBase() {
-        return (RubyModule)getRubyFrame().getCbase().getClassValue();
+        return (RubyModule) getRubyFrame().getCbase().getClassValue();
         // +++
         // return cBase;
         // ---

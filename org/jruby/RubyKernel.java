@@ -44,7 +44,6 @@ import org.jruby.runtime.*;
 public class RubyKernel {
 	public static void createKernelModule(Ruby ruby) {
 		ruby.defineGlobalFunction("format", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
-		ruby.defineGlobalFunction("p", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "p"));
 		ruby.defineGlobalFunction("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
 		ruby.defineGlobalFunction("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
 		ruby.defineGlobalFunction("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
@@ -56,28 +55,6 @@ public class RubyKernel {
 		ruby.defineGlobalFunction("singleton_method_added", CallbackFactory.getNilMethod());
 		ruby.defineGlobalFunction("sprintf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
 	}
-
-    public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        if (args.length == 0) {
-            ruby.getRuntime().getOutputStream().println();
-            return ruby.getNil();
-        }
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] != null) {
-                if (args[i] instanceof RubyArray) {
-                    puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
-                } else {
-                    String line = args[i].isNil() ? "nil" : args[i].toString();
-                    if (line.endsWith("\n")) {
-                        ruby.getRuntime().getOutputStream().print(line);
-                    } else {
-                        ruby.getRuntime().getOutputStream().println(line);
-                    }
-                }
-            }
-        }
-        return ruby.getNil();
-    }
 
     public static RubyObject raise(Ruby ruby, RubyObject recv, RubyObject args[]) {
         int argsLength = args != null ? args.length : 0;
@@ -108,15 +85,6 @@ public class RubyKernel {
             }
         }
         ruby.getRuntime().getOutputStream().print(orsObj.isNil() ? "" : RubyString.stringValue(orsObj).getValue());
-        return ruby.getNil();
-    }
-
-    public static RubyObject p(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] != null) {
-                ruby.getRuntime().getOutputStream().println(((RubyString) args[i].funcall("inspect")).getValue());
-            }
-        }
         return ruby.getNil();
     }
 

@@ -85,6 +85,8 @@ public class RubyIO extends RubyObject {
         ioClass.defineMethod("close", CallbackFactory.getMethod(RubyIO.class, "close"));
         ioClass.defineMethod("flush", CallbackFactory.getMethod(RubyIO.class, "flush"));
 
+		ioClass.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
+		
         return ioClass;
     }
 
@@ -101,6 +103,15 @@ public class RubyIO extends RubyObject {
         RubyIO io = new RubyIO(ruby, rubyClass);
 
         io.outStream = ruby.getRuntime().getOutputStream();
+        io.writeable = true;
+
+        return io;
+    }
+
+    public static RubyObject stderr(Ruby ruby, RubyClass rubyClass) {
+        RubyIO io = new RubyIO(ruby, rubyClass);
+
+        io.outStream = ruby.getRuntime().getErrorStream();
         io.writeable = true;
 
         return io;
@@ -148,7 +159,7 @@ public class RubyIO extends RubyObject {
     /** rb_io_write
      * 
      */
-    protected RubyObject callWrite(RubyObject anObject) {
+    public RubyObject callWrite(RubyObject anObject) {
         return funcall("write", anObject);
     }
 
@@ -411,5 +422,29 @@ public class RubyIO extends RubyObject {
         }
         
         return this;
+    }
+    
+	public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length == 0) {
+            recv.funcall("write", RubyString.newString(ruby, "\n"));
+            return ruby.getNil();
+        }
+
+        for (int i = 0; i < args.length; i++) {
+            String line = null;
+            if (args[i].isNil()) {
+                line = "nil";
+            } else if (args[i] instanceof RubyArray) {
+                puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
+                continue;
+            } else {
+            	line = args[i].toString();
+            }
+			recv.funcall("write", RubyString.newString(ruby, line));
+            if (!line.endsWith("\n")) {
+                recv.funcall("write", RubyString.newString(ruby, "\n"));
+            }
+        }
+        return ruby.getNil();
     }
 }
