@@ -39,7 +39,7 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class Stack implements IStack {
-    protected ArrayList list = new ArrayList();
+    protected final ArrayList list = new ArrayList();
 
     /**
      * Constructor for Stack.
@@ -81,12 +81,10 @@ public class Stack implements IStack {
      */
     public Object pop() {
         synchronized (list) {
-
             if (isEmpty()) {
                 throw new StackEmptyException("Stack is empty.");
-            } else {
-                return list.remove(list.size() - 1);
             }
+            return list.remove(list.size() - 1);
         }
     }
 

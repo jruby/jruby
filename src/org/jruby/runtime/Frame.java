@@ -42,7 +42,7 @@ public class Frame {
     private IRubyObject[] args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
-    private ISourcePosition position;
+    private final ISourcePosition position;
     private Iter iter = Iter.ITER_NOT;
 
     public Frame(IRubyObject self,
@@ -154,7 +154,7 @@ public class Frame {
     }
 
     public Frame duplicate() {
-        IRubyObject[] newArgs;
+        final IRubyObject[] newArgs;
         if (args != null) {
             newArgs = new IRubyObject[args.length];
             System.arraycopy(args, 0, newArgs, 0, args.length);
@@ -163,5 +163,4 @@ public class Frame {
         }
         return new Frame(self, newArgs, lastFunc, lastClass, position, iter);
     }
-
 }

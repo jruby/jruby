@@ -2,8 +2,6 @@ package org.jruby.runtime;
 
 import org.jruby.internal.util.collections.Stack;
 
-import java.util.ArrayList;
-
 /**
  *
  * @author  jpetersen
@@ -35,20 +33,8 @@ public class FrameStack extends Stack {
      * @see Stack#pop()
      */
     public Object pop() {
-        Frame frame  = (Frame) super.pop();
+        final Frame frame  = (Frame) super.pop();
         threadContext.setPosition(frame.getPosition());
         return frame;
-    }
-
-    public FrameStack duplicate() {
-        // FIXME don't create to much ArrayLists
-        FrameStack newStack = new FrameStack(threadContext);
-        synchronized (list) {
-            newStack.list = new ArrayList(list.size());
-            for (int i = 0, size = list.size(); i < size; i++) {
-                newStack.list.add(((Frame) list.get(i)).duplicate());
-            }
-        }
-        return newStack;
     }
 }

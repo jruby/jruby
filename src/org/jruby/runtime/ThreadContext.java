@@ -218,6 +218,7 @@ public class ThreadContext {
         }
 
         ICallable method = currentBlock.getMethod();
+
         if (method == null) {
             return runtime.getNil();
         }

@@ -410,7 +410,7 @@ public class RubyModule extends RubyObject {
             throw new FrozenError(getRuntime(), "class/module");
         }
         getMethods().put(name, method);
-        clearMethodCache();
+        clearMethodCache(name);
     }
 
     public void defineMethod(String name, Callback method) {
@@ -570,8 +570,19 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    public static void clearMethodCache(Ruby runtime, String methodName) {
+        Iterator iter = runtime.getClasses().getClassMap().values().iterator();
+        while (iter.hasNext()) {
+            ((RubyModule) iter.next()).methodCache.remove(methodName);
+        }
+    }
+
     private void clearMethodCache() {
         clearMethodCache(getRuntime());
+    }
+
+    private void clearMethodCache(String methodName) {
+        clearMethodCache(getRuntime(), methodName);
     }
 
     /** rb_call
@@ -679,7 +690,7 @@ public class RubyModule extends RubyObject {
             }
         }
         getMethods().put(name, new AliasMethod(method, oldName));
-        clearMethodCache();
+        clearMethodCache(name);
     }
 
     /** remove_method
@@ -699,7 +710,7 @@ public class RubyModule extends RubyObject {
             throw new NameError(getRuntime(), "method '" + name + "' not defined in " + toName());
         }
 
-        clearMethodCache();
+        clearMethodCache(name);
     }
 
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClass) {
