@@ -24,12 +24,10 @@
 package org.jruby.internal.runtime.load;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -46,13 +44,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.RbConfig;
 import org.jruby.util.BuiltinScript;
-import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.LoadError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.Library;
+import org.jruby.runtime.load.ExternalScript;
 
 /**
  *
@@ -123,13 +121,7 @@ public class LoadService implements ILoadService {
         if (name.startsWith("file:")) {
             name = name.substring(5);
         }
-        try {
-            Reader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-            runtime.loadScript(name, reader, false);
-            reader.close();
-        } catch (IOException ioExcptn) {
-            throw IOError.fromException(runtime, ioExcptn);
-        }
+        new ExternalScript(url, name).load(runtime);
         return true;
     }
 
