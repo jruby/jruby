@@ -17,6 +17,12 @@
 #
 # -----------------------------------------------------------------------------
 
+cygwin=false
+
+# ----- Identify OS we are running under --------------------------------------
+case "`uname`" in
+CYGWIN*) cygwin=true
+esac
 
 # ----- Verify and Set Required Environment Variables -------------------------
 
@@ -88,6 +94,11 @@ else
   fi
 fi
 
+if $cygwin; then
+  JAVA_HOME=`cygpath --windows "$JAVA_HOME"`
+  CP=`cygpath --path --windows "$CP"`
+fi
+
 EN_US=
 if [ "$1" = "EN_US" ]; then
   EN_US="-Duser.language=en -Duser.country=US"
@@ -95,7 +106,7 @@ if [ "$1" = "EN_US" ]; then
 fi
 
 	
-  $JAVA_HOME/bin/java $DEBUG -classpath $CP \
+  $JAVA_HOME/bin/java $DEBUG -classpath "$CP" \
   -Djruby.base=$JRUBY_BASE \
   -Djruby.home=$JRUBY_HOME \
   -Djruby.lib=$JRUBY_BASE/lib \
