@@ -85,7 +85,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineSingletonMethod(
             "new",
             CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
-    //    threadClass.defineSingletonMethod("pass", CallbackFactory.getSingletonMethod(RubyThread.class, "pass"));
+        threadClass.defineSingletonMethod("pass", CallbackFactory.getSingletonMethod(RubyThread.class, "pass"));
         threadClass.defineSingletonMethod("start", CallbackFactory.getOptSingletonMethod(RubyThread.class, "start"));
     //    threadClass.defineSingletonMethod("stop", CallbackFactory.getSingletonMethod(RubyThread.class, "stop"));
 
@@ -166,16 +166,15 @@ public class RubyThread extends RubyObject {
 
         final RubyProc proc = RubyProc.newProc(runtime, runtime.getClasses().getProcClass());
 
+        final Frame currentFrame = runtime.getCurrentFrame();
+        final Block currentBlock = runtime.getBlockStack().getCurrent();
+
         thread.jvmThread = new Thread(new Runnable() {
             public void run() {
-                Frame currentFrame = runtime.getCurrentFrame();
-                Block currentBlock = runtime.getBlockStack().getCurrent();
-                // Now create and initialize the own thread context
-                runtime.registerNewContext();
+                runtime.registerNewContext(thread);
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
                 context.getBlockStack().setCurrent(currentBlock);
-                context.setCurrentThread(thread);
 
                 // Call the thread's code
                 try {
@@ -223,6 +222,11 @@ public class RubyThread extends RubyObject {
 
     public static RubyThread current(IRubyObject recv) {
         return recv.getRuntime().getCurrentContext().getCurrentThread();
+    }
+
+    public static IRubyObject pass(IRubyObject recv) {
+        Thread.yield();
+        return recv.getRuntime().getNil();
     }
 
     public static RubyArray list(IRubyObject recv) {

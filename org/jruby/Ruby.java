@@ -712,8 +712,9 @@ public final class Ruby {
         return (ThreadContext)threadContext.get();
     }
     
-    public void registerNewContext() {
+    public void registerNewContext(RubyThread thread) {
         threadContext.set(new ThreadContext(this));
+        getCurrentContext().setCurrentThread(thread);
     }
 
     public ISourcePosition getPosition() {
