@@ -81,7 +81,7 @@ public final class Ruby implements token {
     
     private RubyObject rubyTopSelf;
     
-    // private RubyOriginalMethods originalMethods;
+    private RubyOriginalMethods originalMethods;
     
     /**
      *
@@ -96,7 +96,7 @@ public final class Ruby implements token {
     public Ruby() {
         initOperatorTable();
         
-        // originalMethods = new RubyOriginalMethods(this);
+        originalMethods = new RubyOriginalMethods(this);
         
         globalMap = new RubyHashMap();
         classMap = new RubyHashMap();
@@ -396,10 +396,10 @@ public final class Ruby implements token {
     public boolean isAutoloadDefined(ID id) {
         return false;
     }
-    /*
+    
     public RubyOriginalMethods getOriginalMethods() {
         return this.originalMethods;
-    }*/
+    }
     
     public RubyId intern(String name) {
         return (RubyId)ID.rb_intern(name, this);

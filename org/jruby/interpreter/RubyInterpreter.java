@@ -125,7 +125,7 @@ public class RubyInterpreter implements node_type, Scope {
             // ruby_frame.self = ruby_top_self;
             top_cref = new NODE(NODE_CREF, getRuby().getObjectClass(), null, null);
             ruby_cref = top_cref;
-            rubyFrame.setCbase((VALUE)ruby_cref);
+            getRubyFrame().setCbase((VALUE)ruby_cref);
             // rb_define_global_const( "TOPLEVEL_BINDING", rb_f_binding( ruby_top_self ) );
             // ruby_prog_init();
         // }
@@ -618,11 +618,11 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_ZSUPER:
                     //                TMP_PROTECT;
                     
-                    if (rubyFrame.getLastClass() == null) {
+                    if (getRubyFrame().getLastClass() == null) {
                         throw new RubyNameException("superclass method '" + rubyFrame.getLastFunc().toName() + "' disabled");
                     }
                     if (node.nd_type() == NODE_ZSUPER) {
-                        List argsList = rubyFrame.getArgs();
+                        List argsList = getRubyFrame().getArgs();
                         args = (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]);
                     } else {
                         tmpBlock = beginCallargs();
@@ -631,7 +631,7 @@ public class RubyInterpreter implements node_type, Scope {
                     }
  
                     rubyIter.push(rubyIter.getIter() != Iter.ITER_NOT ? Iter.ITER_PRE : Iter.ITER_NOT);
-                    result = rubyFrame.getLastClass().getSuperClass().call(rubyFrame.getSelf(), rubyFrame.getLastFunc(), args, 3);
+                    result = getRubyFrame().getLastClass().getSuperClass().call(rubyFrame.getSelf(), rubyFrame.getLastFunc(), args, 3);
                     rubyIter.pop();
                     
                     return result;
@@ -639,8 +639,8 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_SCOPE:
                     NODE saved_cref = null;
                     
-                    Frame frame = rubyFrame;
-                    frame.setTmp(rubyFrame);
+                    Frame frame = getRubyFrame();
+                    frame.setTmp(getRubyFrame());
                     rubyFrame = frame;
                     
                     ruby.rubyScope.push();
@@ -648,7 +648,7 @@ public class RubyInterpreter implements node_type, Scope {
                     if (node.nd_rval() != null) {
                         saved_cref = ruby_cref;
                         ruby_cref = (NODE)node.nd_rval();
-                        rubyFrame.setCbase(node.nd_rval());
+                        getRubyFrame().setCbase(node.nd_rval());
                     }
                     
                     if (node.nd_tbl() != null) {
@@ -825,7 +825,7 @@ public class RubyInterpreter implements node_type, Scope {
                     return self.getInstanceVar((RubyId)node.nd_vid());
                     
                 case NODE_CONST:
-                    return getConstant((NODE)rubyFrame.getCbase(), (RubyId)node.nd_vid(), self);
+                    return getConstant((NODE)getRubyFrame().getCbase(), (RubyId)node.nd_vid(), self);
                     
                 case NODE_CVAR:     /* normal method */
                     if (ruby_cbase == null) {
@@ -981,7 +981,7 @@ public class RubyInterpreter implements node_type, Scope {
                     return (RubyObject)node.nd_lit();
                     
                 case NODE_ATTRSET:
-                    if (rubyFrame.getArgs().size() != 1) {
+                    if (getRubyFrame().getArgs().size() != 1) {
                         throw new RubyArgumentException("wrong # of arguments(" + rubyFrame.getArgs().size() + "for 1)");
                     }
                     return self.setInstanceVar((RubyId)node.nd_vid(), (RubyObject)rubyFrame.getArgs().get(0));
@@ -1288,8 +1288,8 @@ public class RubyInterpreter implements node_type, Scope {
         
         // TMP_PROTECT;
 
-        Frame frame = rubyFrame;
-        frame.setTmp(rubyFrame);
+        Frame frame = getRubyFrame();
+        frame.setTmp(getRubyFrame());
         rubyFrame = frame;
 
         pushClass();
@@ -1309,7 +1309,7 @@ public class RubyInterpreter implements node_type, Scope {
         }
 
         PUSH_CREF(module);
-        rubyFrame.setCbase((VALUE)ruby_cref);
+        getRubyFrame().setCbase((VALUE)ruby_cref);
         // PUSH_TAG(PROT_NONE);
         
         RubyObject result = null;
@@ -1504,11 +1504,11 @@ public class RubyInterpreter implements node_type, Scope {
     }
     
     public boolean isBlockGiven() {
-        return rubyFrame.getIter() != Iter.ITER_NOT;
+        return getRubyFrame().getIter() != Iter.ITER_NOT;
     }
 
     public boolean isFBlockGiven() {
-        return (rubyFrame.getPrev() != null) && (rubyFrame.getPrev().getIter() != Iter.ITER_NOT);
+        return (getRubyFrame().getPrev() != null) && (getRubyFrame().getPrev().getIter() != Iter.ITER_NOT);
     }
 
     public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
@@ -1523,11 +1523,11 @@ public class RubyInterpreter implements node_type, Scope {
         RubyBlock block = rubyBlock.getTmp();
         
         Frame frame = block.frame;
-        frame.setPrev(rubyFrame);
+        frame.setPrev(getRubyFrame());
         rubyFrame = frame;
         
         VALUE old_cref = ruby_cref;
-        ruby_cref = (NODE)rubyFrame.getCbase();
+        ruby_cref = (NODE)getRubyFrame().getCbase();
         
         RubyScope oldScope = ruby.rubyScope;
         ruby.rubyScope = block.scope;
@@ -1610,7 +1610,7 @@ public class RubyInterpreter implements node_type, Scope {
         RubyVarmap.pop(ruby);
         
         rubyBlock.setTmp(block);
-        rubyFrame = rubyFrame.getPrev();
+        rubyFrame = getRubyFrame().getPrev();
         
         ruby_cref = (NODE)old_cref;
         
@@ -1749,5 +1749,4 @@ public class RubyInterpreter implements node_type, Scope {
     public void setRuby_class(org.jruby.RubyModule ruby_class) {
         this.ruby_class = ruby_class;
     }
-    
 }

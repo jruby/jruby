@@ -637,7 +637,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         // ??
         if (body == null) {
-            System.out.println("Cant find method: " + id.toName());
+            System.out.println("Cant find method \"" + id.toName() + "\" in class " + toName());
             
             return null;
         }
