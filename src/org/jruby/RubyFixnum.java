@@ -230,20 +230,25 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public RubyNumeric op_mul(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_mul(other);
-        } else if (other instanceof RubyBignum) {
+        return numericValue(num).multiplyWith(this);
+    }
+
+    public RubyNumeric multiplyWith(RubyFixnum other) {
+        long otherValue = other.getLongValue();
+        long result = value * otherValue;
+        if (result > MAX || result < MIN || result / otherValue != value) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mul(other);
         } else {
-            long otherValue = other.getLongValue();
-            long result = value * otherValue;
-            if (result > MAX || result < MIN || result / otherValue != value) {
-                return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mul(other);
-            } else {
-                return newFixnum(result);
-            }
+            return newFixnum(result);
         }
+    }
+
+    public RubyNumeric multiplyWith(RubyInteger other) {
+        return other.multiplyWith(this);
+    }
+
+    public RubyNumeric multiplyWith(RubyFloat other) {
+       return other.multiplyWith(RubyFloat.newFloat(runtime, getLongValue()));
     }
 
     public RubyNumeric op_div(IRubyObject num) {

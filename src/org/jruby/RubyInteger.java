@@ -175,4 +175,8 @@ public abstract class RubyInteger extends RubyNumeric
     public RubyInteger to_i() {
         return this;
     }
+
+    public RubyNumeric multiplyWith(RubyBignum value) {
+        return value.multiplyWith(this);
+    }
 }

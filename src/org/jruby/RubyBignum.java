@@ -257,28 +257,32 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyNumeric op_mul(IRubyObject num) {
-        RubyNumeric other = numericValue(num);
-        if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_mul(other);
-        }
+        return numericValue(num).multiplyWith(this);
+    }
+
+    public RubyNumeric multiplyWith(RubyInteger other) {
         return bigNorm(getRuntime(), getValue().multiply(bigIntValue(other)));
+    }
+
+    public RubyNumeric multiplyWith(RubyFloat other) {
+        return other.multiplyWith(RubyFloat.newFloat(getRuntime(), getDoubleValue()));
     }
 
     public RubyNumeric op_div(IRubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.newFloat(getRuntime(), 
-				      getDoubleValue()).op_div(other);
+            return RubyFloat.newFloat(getRuntime(),
+                                      getDoubleValue()).op_div(other);
         }
 
-	BigInteger results[] = 
-	    getValue().divideAndRemainder(bigIntValue(other));
+        BigInteger results[] =
+                getValue().divideAndRemainder(bigIntValue(other));
 
-	if (results[0].compareTo(BigInteger.ZERO) <= 0 && 
-	    results[1].compareTo(BigInteger.ZERO) != 0) {
-	    return bigNorm(getRuntime(), results[0].subtract(BigInteger.ONE));
-	}
-	
+        if (results[0].compareTo(BigInteger.ZERO) <= 0 &&
+                results[1].compareTo(BigInteger.ZERO) != 0) {
+            return bigNorm(getRuntime(), results[0].subtract(BigInteger.ONE));
+        }
+
 
         return bigNorm(getRuntime(), results[0]);
     }

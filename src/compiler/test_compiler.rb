@@ -116,7 +116,7 @@ test_compiled(nil, "true and nil")
 test_compiled(34, "12 and 34")
 
 test_compiled(nil, "class CL_1; end")
-#test_compiled_type(Class, "class CL_2; end; CL_2")
+test_compiled_type(Class, "class CL_2; end; CL_2")
 
 test_compiled(nil, "module ABC; end")
 test_compiled(123, "module X; Y = 123; end")

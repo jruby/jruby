@@ -219,7 +219,7 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
      * the string fails to parse as a number, 0.0 is returned.
      * 
      * @param ruby  the ruby runtime
-     * @param str   the string to be converted
+     * @param arg   the string to be converted
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
@@ -422,4 +422,14 @@ public abstract class RubyNumeric extends RubyObject implements IndexCallable {
     public RubyInteger truncate() {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue()).truncate();
     }
+
+    public RubyNumeric multiplyWith(RubyFixnum value) {
+        return multiplyWith((RubyInteger) value);
+    }
+
+    public abstract RubyNumeric multiplyWith(RubyInteger value);
+
+    public abstract RubyNumeric multiplyWith(RubyFloat value);
+
+    public abstract RubyNumeric multiplyWith(RubyBignum value);
 }
