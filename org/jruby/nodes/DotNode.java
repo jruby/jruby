@@ -55,7 +55,7 @@ public class DotNode extends Node {
             return cachedValue;
         }
 
-        RubyObject result = RubyRange.m_newRange(ruby, 
+        RubyObject result = RubyRange.newRange(ruby, 
               self.eval(getBeginNode()), self.eval(getEndNode()), exclusive);
         
         if (cannotCached) {

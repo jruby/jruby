@@ -44,6 +44,6 @@ public class MatchNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return ((RubyRegexp)getHeadNode().getLiteral()).m_match2();
+        return ((RubyRegexp)getHeadNode().getLiteral()).match2();
     }
 }

@@ -3,7 +3,7 @@
  * Created on 10. September 2001, 17:49
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -42,84 +43,110 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyInteger(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
- 
-    public RubyString m_chr() {
+
+    public static RubyClass createIntegerClass(Ruby ruby) {
+        RubyClass integerClass = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
+
+        integerClass.defineMethod("chr", CallbackFactory.getMethod(RubyInteger.class, "chr"));
+        integerClass.defineMethod("integer?", CallbackFactory.getMethod(RubyInteger.class, "int_p"));
+        integerClass.defineMethod("to_i", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+        integerClass.defineMethod("to_int", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+
+        integerClass.defineMethod("ceil", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+        integerClass.defineMethod("floor", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+        integerClass.defineMethod("round", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+        integerClass.defineMethod("truncate", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+
+        integerClass.defineMethod("next", CallbackFactory.getMethod(RubyInteger.class, "succ"));
+        integerClass.defineMethod("succ", CallbackFactory.getMethod(RubyInteger.class, "succ"));
+
+        integerClass.defineMethod("downto", CallbackFactory.getMethod(RubyInteger.class, "downto", RubyNumeric.class));
+        integerClass.defineMethod(
+            "step",
+            CallbackFactory.getMethod(RubyInteger.class, "step", RubyNumeric.class, RubyNumeric.class));
+        integerClass.defineMethod("times", CallbackFactory.getMethod(RubyInteger.class, "times"));
+        integerClass.defineMethod("upto", CallbackFactory.getMethod(RubyInteger.class, "upto", RubyNumeric.class));
+
+        return integerClass;
+    }
+
+    public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             // throw new RubyRangeException();
             // HACK +++
             throw new RuntimeException();
             // HACK ---
         }
-        
-        return RubyString.newString(getRuby(), new String(new char[]{(char)getLongValue()}));
+
+        return RubyString.newString(getRuby(), new String(new char[] {(char) getLongValue()}));
     }
-    
-    public RubyObject m_downto(RubyNumeric to) {
+
+    public RubyObject downto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
-            if (((RubyBoolean)i.funcall(getRuby().intern("<"), to)).isTrue()) {
+            if (((RubyBoolean) i.funcall(getRuby().intern("<"), to)).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("-"), RubyFixnum.newFixnum(getRuby(), 1));
+            i = (RubyNumeric) i.funcall(getRuby().intern("-"), RubyFixnum.newFixnum(getRuby(), 1));
         }
         return this;
     }
-    
-    public RubyBoolean m_int_p() {
+
+    public RubyBoolean int_p() {
         return getRuby().getTrue();
     }
-    
-    public RubyObject m_step(RubyNumeric to, RubyNumeric step) {
+
+    public RubyObject step(RubyNumeric to, RubyNumeric step) {
         RubyNumeric i = this;
         if (step.getLongValue() == 0) {
             throw new RubyArgumentException(getRuby(), "step cannot be 0");
         }
-        
+
         RubyId cmp = getRuby().intern("<");
-        if (((RubyBoolean)step.funcall(cmp, RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
+        if (((RubyBoolean) step.funcall(cmp, RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
             cmp = getRuby().intern(">");
         }
-        
+
         while (true) {
-            if (((RubyBoolean)i.funcall(cmp, to)).isTrue()) {
+            if (((RubyBoolean) i.funcall(cmp, to)).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("+"), step);
+            i = (RubyNumeric) i.funcall(getRuby().intern("+"), step);
         }
         return this;
     }
-    
-    public RubyObject m_times() {
+
+    public RubyObject times() {
         RubyNumeric i = RubyFixnum.newFixnum(getRuby(), 0);
         while (true) {
             if (i.funcall(getRuby().intern("<"), this).isFalse()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
+            i = (RubyNumeric) i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
         }
         return this;
     }
-    
-    public RubyObject m_succ() {
+
+    public RubyObject succ() {
         return funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
     }
-    
-    public RubyObject m_upto(RubyNumeric to) {
+
+    public RubyObject upto(RubyNumeric to) {
         RubyNumeric i = this;
         while (true) {
             if (i.funcall(getRuby().intern(">"), to).isTrue()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
+            i = (RubyNumeric) i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
         }
         return this;
     }
-    
-    public RubyInteger m_to_i() {
+
+    public RubyInteger to_i() {
         return this;
     }
 }

@@ -1,11 +1,39 @@
+/*
+ * RubyJavaInterface.java - No description
+ * Created on 1. December 2001, 17:49
+ * 
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * 
+ * JRuby - http://jruby.sourceforge.net
+ * 
+ * This file is part of JRuby
+ * 
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * 
+ */
 package org.jruby;
 
 import java.lang.reflect.*;
-import java.lang.reflect.Method;
 
-import org.jruby.core.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
+import org.jruby.runtime.*;
 
 public class RubyJavaInterface extends RubyJavaObject implements InvocationHandler {
 
@@ -48,7 +76,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
         RubyObject proc;
         RubyObject rubyMethod;
 
-        if (!(proc = interfaceProcs.m_aref(methodName)).isNil()) {
+        if (!(proc = interfaceProcs.aref(methodName)).isNil()) {
             RubyObject[] rubyArgs = new RubyObject[args.length];
 
             for (int i = 0; i < args.length; i++) {
@@ -101,7 +129,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
         } catch (IllegalArgumentException iaExcptn) {
         }
         
-        setInstanceVar("interfaceProcs", RubyHash.m_newHash(getRuby()));
+        setInstanceVar("interfaceProcs", RubyHash.newHash(getRuby()));
 
         return this;
     }
@@ -115,7 +143,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
     }
     
     public RubyObject assign(RubyString methodName, RubyProc proc) {
-    	((RubyHash) getInstanceVar("interfaceProcs")).m_aset(methodName, proc);
+    	((RubyHash) getInstanceVar("interfaceProcs")).aset(methodName, proc);
     	
     	return this;
     }

@@ -47,7 +47,7 @@ public class Match3Node extends Node {
         RubyObject r = getRecvNode().eval(ruby, self);
         RubyObject l = getValueNode().eval(ruby, self);
         if (l instanceof RubyString) {
-            return ((RubyRegexp)r).m_match(l);
+            return ((RubyRegexp)r).match(l);
         } else {
             return l.funcall(ruby.intern("=~"), r);
         }

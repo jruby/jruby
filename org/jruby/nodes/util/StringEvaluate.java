@@ -54,7 +54,7 @@ public class StringEvaluate {
                     str2 = (RubyString)head.eval(ruby, self).convertType(RubyString.class, "String", "to_s");
                 }
                 
-                str.m_concat(str2);
+                str.concat(str2);
                 // str.infectObject(str2);
             }
             list = list.getNextNode();

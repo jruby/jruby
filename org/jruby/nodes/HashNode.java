@@ -45,7 +45,7 @@ public class HashNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyHash hash = RubyHash.m_newHash(ruby);
+        RubyHash hash = RubyHash.newHash(ruby);
         
         Node list = getHeadNode();
         while(list != null) {
@@ -56,7 +56,7 @@ public class HashNode extends Node {
                 throw new RuntimeException("[BUG] odd number list for Hash");
                 // HACK ---
             }
-            hash.m_aset(key, list.getHeadNode().eval(ruby, self));
+            hash.aset(key, list.getHeadNode().eval(ruby, self));
             
             list = list.getNextNode();
         }

@@ -3,7 +3,7 @@
  * Created on 09. Juli 2001, 21:38
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -29,6 +29,8 @@
  */
 
 package org.jruby;
+
+import org.jruby.runtime.*;
 
 /**
  *
@@ -58,6 +60,40 @@ public class RubyBoolean extends RubyObject {
         return !value;
     }
 
+    public static RubyClass createFalseClass(Ruby ruby) {
+        RubyClass falseClass = ruby.defineClass("FalseClass", ruby.getClasses().getObjectClass());
+
+        falseClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBoolean.class, "to_s"));
+        falseClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
+
+        falseClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", RubyObject.class));
+        falseClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", RubyObject.class));
+        falseClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", RubyObject.class));
+
+        falseClass.getRubyClass().undefMethod("new");
+
+        ruby.defineGlobalConstant("FALSE", ruby.getFalse());
+
+        return falseClass;
+    }
+
+    public static RubyClass createTrueClass(Ruby ruby) {
+        RubyClass trueClass = ruby.defineClass("TrueClass", ruby.getClasses().getObjectClass());
+
+        trueClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBoolean.class, "to_s"));
+        trueClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
+
+        trueClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", RubyObject.class));
+        trueClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", RubyObject.class));
+        trueClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", RubyObject.class));
+
+        trueClass.getRubyClass().undefMethod("new");
+
+        ruby.defineGlobalConstant("TRUE", ruby.getTrue());
+
+        return trueClass;
+    }
+
     public static RubyBoolean newBoolean(Ruby ruby, boolean value) {
         if (value) {
             return ruby.getTrue();
@@ -72,7 +108,7 @@ public class RubyBoolean extends RubyObject {
      *  true_to_s
      *
      */
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         if (isFalse()) {
             return RubyString.newString(getRuby(), "false");
         } else {

@@ -28,7 +28,7 @@
  * 
  */
 
-package org.jruby.core;
+package org.jruby.runtime;
 
 import java.lang.reflect.*;
 

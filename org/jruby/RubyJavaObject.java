@@ -3,7 +3,7 @@
  * Created on 21. September 2001, 14:43
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -30,19 +30,12 @@
 
 package org.jruby;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.util.*;
 
-import org.jruby.exceptions.RubyNameException;
-import org.jruby.javasupport.JavaConstructor;
-import org.jruby.javasupport.JavaMethod;
-import org.jruby.javasupport.JavaUtil;
+import org.jruby.exceptions.*;
+import org.jruby.javasupport.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -80,6 +73,21 @@ public class RubyJavaObject extends RubyObject {
      */
     public void setValue(Object value) {
         this.value = value;
+    }
+    
+        public static RubyClass createJavaObjectClass(Ruby ruby) {
+        RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
+
+        javaObjectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyJavaObject.class, "to_s"));
+        javaObjectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
+        javaObjectClass.defineMethod("==", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
+        javaObjectClass.defineMethod("hash", CallbackFactory.getMethod(RubyJavaObject.class, "hash"));
+        javaObjectClass.defineSingletonMethod("load_class", CallbackFactory.getOptSingletonMethod(RubyJavaObject.class, "load_class", RubyString.class));
+        javaObjectClass.defineSingletonMethod("import", CallbackFactory.getSingletonMethod(RubyJavaObject.class, "rbImport", RubyString.class));
+
+        javaObjectClass.getRubyClass().undefMethod("new");
+
+        return javaObjectClass;
     }
 
     public static RubyClass getRubyClass(Ruby ruby, Class javaClass) {
@@ -193,14 +201,14 @@ public class RubyJavaObject extends RubyObject {
 
     // JavaObject methods
 
-    public static RubyObject m_load_class(Ruby ruby, RubyObject recv, RubyString className, RubyObject[] args) {
+    public static RubyObject load_class(Ruby ruby, RubyObject recv, RubyString className, RubyObject[] args) {
         String rubyName = (args.length > 0) ? ((RubyString) args[0]).getValue() : null;
 
         Class c = loadJavaClass(ruby, className);
         return loadClass(ruby, c, rubyName);
     }
 
-    public static RubyObject m_import(Ruby ruby, RubyObject recv, RubyString packageName) {
+    public static RubyObject rbImport(Ruby ruby, RubyObject recv, RubyString packageName) {
     	RubyArray imports;
     	
     	if (((RubyClass)recv).isClassVarDefined(ruby.intern("imports"))) {
@@ -215,15 +223,15 @@ public class RubyJavaObject extends RubyObject {
         return recv;
     }
 
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         return RubyString.newString(getRuby(), getValue() != null ? getValue().toString() : "null");
     }
 
-    public RubyFixnum m_hash() {
+    public RubyFixnum hash() {
         return new RubyFixnum(getRuby(), value.hashCode());
     }
 
-    public RubyBoolean m_equal(RubyObject other) {
+    public RubyBoolean equal(RubyObject other) {
         if (other instanceof RubyJavaObject) {
             return (getValue() != null && getValue().equals(((RubyJavaObject) other).getValue()))
                 ? getRuby().getTrue()

@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -30,7 +30,7 @@
 
 package org.jruby;
 
-import org.jruby.core.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -77,7 +77,6 @@ public class RubyFixnum extends RubyInteger {
 	public static RubyClass createFixnumClass(Ruby ruby) {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
 
-        fixnumClass.defineMethod("to_i", CallbackFactory.getMethod(RubyFixnum.class, "to_i"));
         fixnumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("to_str", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("hash", CallbackFactory.getMethod(RubyFixnum.class, "hash"));
@@ -154,14 +153,14 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_plus(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_plus(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_plus(other);
         } else if (other instanceof RubyBignum) {
-            return RubyBignum.m_newBignum(getRuby(), value).op_plus(other);
+            return RubyBignum.newBignum(getRuby(), value).op_plus(other);
         } else {
             long otherValue = other.getLongValue();
             long result = value + otherValue;
 			if ((value < 0 && otherValue < 0 && result > 0) || (value > 0 && otherValue > 0 && result < 0)) {
-			    return RubyBignum.m_newBignum(getRuby(), value).op_plus(other);
+			    return RubyBignum.newBignum(getRuby(), value).op_plus(other);
         	}
             return newFixnum(result);
         }
@@ -170,14 +169,14 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_minus(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_minus(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_minus(other);
         } else if (other instanceof RubyBignum) {
-            return RubyBignum.m_newBignum(getRuby(), value).op_minus(other);
+            return RubyBignum.newBignum(getRuby(), value).op_minus(other);
         } else {
             long otherValue = other.getLongValue();
             long result = value - otherValue;
 			if ((value < 0 && otherValue > 0 && result > 0) || (value > 0 && otherValue < 0 && result < 0)) {
-			    return RubyBignum.m_newBignum(getRuby(), value).op_minus(other);
+			    return RubyBignum.newBignum(getRuby(), value).op_minus(other);
         	}
             return newFixnum(result);
         }
@@ -186,16 +185,16 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_mul(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_mul(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_mul(other);
         } else if (other instanceof RubyBignum) {
-            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_mul(other);
+            return RubyBignum.newBignum(getRuby(), getLongValue()).op_mul(other);
         } else {
             long otherValue = other.getLongValue();
             long result = value * otherValue;
 			if (result / otherValue == value) {
             	return newFixnum(result);
 			} else {
-			    return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_mul(other);
+			    return RubyBignum.newBignum(getRuby(), getLongValue()).op_mul(other);
 			}			
         }
     }
@@ -203,9 +202,9 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_div(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_div(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_div(other);
         } else if (other instanceof RubyBignum) {
-            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_div(other);
+            return RubyBignum.newBignum(getRuby(), getLongValue()).op_div(other);
         } else {
             return newFixnum(getRuby(), getValue() / other.getLongValue());
         }
@@ -214,9 +213,9 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_mod(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_mod(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_mod(other);
         } else if (other instanceof RubyBignum) {
-            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_mod(other);
+            return RubyBignum.newBignum(getRuby(), getLongValue()).op_mod(other);
         } else {
             return newFixnum(getRuby(), getValue() % other.getLongValue());
         }
@@ -225,16 +224,16 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_pow(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_pow(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_pow(other);
         } else {
             if (other.getLongValue() == 0) {
                 return newFixnum(getRuby(), 1);
             } else if (other.getLongValue() == 1) {
                 return this;
             } else if (other.getLongValue() > 1) {
-                return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_pow(other);
+                return RubyBignum.newBignum(getRuby(), getLongValue()).op_pow(other);
             } else {
-                return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_pow(other);
+                return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_pow(other);
             }
         }
     }
@@ -271,10 +270,6 @@ public class RubyFixnum extends RubyInteger {
     public RubyBoolean op_le(RubyObject num) {
         RubyNumeric other = numericValue(num);
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) <= 0);
-    }
-
-    public RubyInteger to_i() {
-        return this;
     }
 
     public RubyString to_s() {

@@ -44,6 +44,6 @@ public class NthRefNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return RubyRegexp.m_nth_match(getNth(), ruby.getBackRef());
+        return RubyRegexp.nth_match(getNth(), ruby.getBackRef());
     }
 }

@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -30,6 +30,8 @@
 
 package org.jruby;
 
+import org.jruby.runtime.*;
+
 /**
  *
  * @author  jpetersen
@@ -40,7 +42,7 @@ public class RubyFloat extends RubyNumeric {
     public RubyFloat(Ruby ruby) {
         this(ruby, 0.0);
     }
-    
+
     public RubyFloat(Ruby ruby, double value) {
         super(ruby, ruby.getClasses().getFloatClass());
         this.value = value;
@@ -49,99 +51,160 @@ public class RubyFloat extends RubyNumeric {
     public Class getJavaClass() {
         return Double.TYPE;
     }
-    
+
     /** Getter for property value.
      * @return Value of property value.
      */
     public double getValue() {
         return this.value;
     }
-    
+
     /** Setter for property value.
      * @param value New value of property value.
      */
     public void setValue(double value) {
         this.value = value;
     }
-    
+
     public double getDoubleValue() {
         return value;
     }
-    
+
     public long getLongValue() {
-        return (long)value;
+        return (long) value;
     }
-    
+
+    public static RubyClass createFloatClass(Ruby ruby) {
+        RubyClass floatClass = ruby.defineClass("Float", ruby.getClasses().getNumericClass());
+
+        floatClass.defineMethod("to_i", CallbackFactory.getMethod(RubyFloat.class, "to_i"));
+        floatClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFloat.class, "to_s"));
+        floatClass.defineMethod("hash", CallbackFactory.getMethod(RubyFloat.class, "hash"));
+
+        floatClass.defineMethod("+", CallbackFactory.getMethod(RubyFloat.class, "op_plus", RubyObject.class));
+        floatClass.defineMethod("-", CallbackFactory.getMethod(RubyFloat.class, "op_minus", RubyObject.class));
+        floatClass.defineMethod("*", CallbackFactory.getMethod(RubyFloat.class, "op_mul", RubyObject.class));
+        floatClass.defineMethod("/", CallbackFactory.getMethod(RubyFloat.class, "op_div", RubyObject.class));
+        floatClass.defineMethod("%", CallbackFactory.getMethod(RubyFloat.class, "op_mod", RubyObject.class));
+        floatClass.defineMethod("**", CallbackFactory.getMethod(RubyFloat.class, "op_pow", RubyObject.class));
+
+        floatClass.defineMethod("==", CallbackFactory.getMethod(RubyFloat.class, "op_equal", RubyObject.class));
+        floatClass.defineMethod("<=>", CallbackFactory.getMethod(RubyFloat.class, "op_cmp", RubyObject.class));
+        floatClass.defineMethod(">", CallbackFactory.getMethod(RubyFloat.class, "op_gt", RubyObject.class));
+        floatClass.defineMethod(">=", CallbackFactory.getMethod(RubyFloat.class, "op_ge", RubyObject.class));
+        floatClass.defineMethod("<", CallbackFactory.getMethod(RubyFloat.class, "op_lt", RubyObject.class));
+        floatClass.defineMethod("<=", CallbackFactory.getMethod(RubyFloat.class, "op_le", RubyObject.class));
+
+        floatClass.defineMethod("floor", CallbackFactory.getMethod(RubyFloat.class, "floor"));
+        floatClass.defineMethod("ceil", CallbackFactory.getMethod(RubyFloat.class, "ceil"));
+        floatClass.defineMethod("round", CallbackFactory.getMethod(RubyFloat.class, "round"));
+        floatClass.defineMethod("truncate", CallbackFactory.getMethod(RubyFloat.class, "truncate"));
+
+        return floatClass;
+    }
+
     protected int compareValue(RubyNumeric other) {
         double otherVal = other.getDoubleValue();
         return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
     }
 
     // Float methods (flo_*)
-    
+
     /**
      *
      */
-    public static RubyFloat m_newFloat(Ruby ruby, double value) {
+    public static RubyFloat newFloat(Ruby ruby, double value) {
         return new RubyFloat(ruby, value);
     }
-    
-    public RubyFixnum m_hash() {
+
+    public RubyFixnum hash() {
         return new RubyFixnum(getRuby(), new Double(value).hashCode());
     }
 
-    public RubyArray m_coerce(RubyObject num) {
+    public RubyArray coerce(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyArray.newArray(getRuby(), this, 
-             m_newFloat(getRuby(), other.getDoubleValue()));
+        return RubyArray.newArray(getRuby(), this, newFloat(getRuby(), other.getDoubleValue()));
     }
-    
+
+    public RubyInteger ceil() {
+        double val = Math.ceil(getDoubleValue());
+
+        if (val < Long.MIN_VALUE || val > Long.MAX_VALUE) {
+            return RubyBignum.newBignum(getRuby(), val);
+        } else {
+            return RubyFixnum.newFixnum(getRuby(), (long) val);
+        }
+    }
+
+    public RubyInteger floor() {
+        double val = Math.floor(getDoubleValue());
+
+        if (val < Long.MIN_VALUE || val > Long.MAX_VALUE) {
+            return RubyBignum.newBignum(getRuby(), val);
+        } else {
+            return RubyFixnum.newFixnum(getRuby(), (long) val);
+        }
+    }
+
+    public RubyInteger round() {
+        double val = Math.round(getDoubleValue());
+
+        if (val < Long.MIN_VALUE || val > Long.MAX_VALUE) {
+            return RubyBignum.newBignum(getRuby(), val);
+        } else {
+            return RubyFixnum.newFixnum(getRuby(), (long) val);
+        }
+    }
+
+    public RubyInteger truncate() {
+        if (getDoubleValue() > 0.0) {
+            return floor();
+        } else if (getDoubleValue() < 0.0) {
+            return ceil();
+        } else {
+            return RubyFixnum.zero(getRuby());
+        }
+    }
+
     public RubyNumeric op_uminus() {
-        return RubyFloat.m_newFloat(getRuby(), -value);
+        return RubyFloat.newFloat(getRuby(), -value);
     }
-    
+
     public RubyNumeric op_plus(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFloat.m_newFloat(getRuby(),
-            getDoubleValue() + other.getDoubleValue());
+        return RubyFloat.newFloat(getRuby(), getDoubleValue() + other.getDoubleValue());
     }
-    
+
     public RubyNumeric op_minus(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFloat.m_newFloat(getRuby(),
-            getDoubleValue() - other.getDoubleValue());
+        return RubyFloat.newFloat(getRuby(), getDoubleValue() - other.getDoubleValue());
     }
-    
+
     public RubyNumeric op_mul(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFloat.m_newFloat(getRuby(),
-            getDoubleValue() * other.getDoubleValue());
+        return RubyFloat.newFloat(getRuby(), getDoubleValue() * other.getDoubleValue());
     }
-    
+
     public RubyNumeric op_div(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFloat.m_newFloat(getRuby(),
-            getDoubleValue() / other.getDoubleValue());
+        return RubyFloat.newFloat(getRuby(), getDoubleValue() / other.getDoubleValue());
     }
-    
+
     public RubyNumeric op_mod(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFloat.m_newFloat(getRuby(),
-            getDoubleValue() % other.getDoubleValue());
+        return RubyFloat.newFloat(getRuby(), getDoubleValue() % other.getDoubleValue());
     }
-    
+
     public RubyNumeric op_pow(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFloat.m_newFloat(getRuby(), 
-            Math.pow(getDoubleValue(), other.getDoubleValue()));
+        return RubyFloat.newFloat(getRuby(), Math.pow(getDoubleValue(), other.getDoubleValue()));
     }
-    
+
     public RubyBoolean op_equal(RubyObject other) {
         if (!(other instanceof RubyNumeric)) {
             return getRuby().getFalse();
         } else {
-            return RubyBoolean.newBoolean(getRuby(),
-                compareValue((RubyNumeric)other) == 0);
+            return RubyBoolean.newBoolean(getRuby(), compareValue((RubyNumeric) other) == 0);
         }
     }
 
@@ -170,11 +233,11 @@ public class RubyFloat extends RubyNumeric {
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) <= 0);
     }
 
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         return RubyString.newString(getRuby(), Double.toString(getValue()));
     }
-    
-    public RubyInteger m_to_i() {
+
+    public RubyInteger to_i() {
         // HACK +++
         return RubyFixnum.newFixnum(getRuby(), getLongValue());
         // HACK ---

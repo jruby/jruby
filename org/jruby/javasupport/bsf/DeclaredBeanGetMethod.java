@@ -8,7 +8,7 @@ package org.jruby.javasupport.bsf;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.core.Callback;
+import org.jruby.runtime.Callback;
 import org.jruby.javasupport.JavaUtil;
 
 import com.ibm.bsf.BSFDeclaredBean;

@@ -154,7 +154,7 @@ public final class RubyId {
     }
     
     public RubySymbol toSymbol() {
-        return RubySymbol.m_newSymbol(ruby, this);
+        return RubySymbol.newSymbol(ruby, this);
     }
     
     public static RubyId intern(Ruby ruby, String name) {

@@ -1,5 +1,5 @@
 /*
- * RBKernel.java - No description
+ * RubyKernel.java - No description
  * Created on 10. September 2001, 17:56
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
@@ -33,9 +33,8 @@ package org.jruby;
 import java.io.*;
 import java.net.*;
 
-import org.jruby.*;
 import org.jruby.exceptions.*;
-import org.jruby.core.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -44,23 +43,15 @@ import org.jruby.core.*;
  */
 public class RubyKernel {
     public static void createKernelModule(Ruby ruby) {
-        Callback sprintf = new ReflectionCallbackMethod(RubyKernel.class, "sprintf", true, true);
-        Callback p = new ReflectionCallbackMethod(RubyKernel.class, "p", true, true);
-        Callback print = new ReflectionCallbackMethod(RubyKernel.class, "print", true, true);
-        Callback printf = new ReflectionCallbackMethod(RubyKernel.class, "printf", true, true);
-        Callback puts = new ReflectionCallbackMethod(RubyKernel.class, "puts", true, true);
-        Callback raise = new ReflectionCallbackMethod(RubyKernel.class, "raise", true, true);
-        Callback require = new ReflectionCallbackMethod(RubyKernel.class, "require", RubyString.class, false, true);
-
-        ruby.defineGlobalFunction("format", sprintf);
-        ruby.defineGlobalFunction("p", p);
-        ruby.defineGlobalFunction("print", print);
-        ruby.defineGlobalFunction("printf", printf);
-        ruby.defineGlobalFunction("puts", puts);
-        ruby.defineGlobalFunction("raise", raise);
-        ruby.defineGlobalFunction("require", require);
-        ruby.defineGlobalFunction("singleton_method_added", DefaultCallbackMethods.getMethodNil());
-        ruby.defineGlobalFunction("sprintf", sprintf);
+        ruby.defineGlobalFunction("format", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
+        ruby.defineGlobalFunction("p", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "p"));
+        ruby.defineGlobalFunction("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
+        ruby.defineGlobalFunction("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
+        ruby.defineGlobalFunction("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
+        ruby.defineGlobalFunction("raise", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "raise"));
+        ruby.defineGlobalFunction("require", CallbackFactory.getSingletonMethod(RubyKernel.class, "require", RubyString.class));
+        ruby.defineGlobalFunction("singleton_method_added", CallbackFactory.getNilMethod());
+        ruby.defineGlobalFunction("sprintf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
     }
 
     public static RubyObject puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
@@ -87,7 +78,7 @@ public class RubyKernel {
         switch (argsLength) {
             case 0 :
             case 1 :
-                throw new RaiseException(RubyException.s_new(ruby, ruby.getExceptions().getRuntimeError(), args));
+                throw new RaiseException(RubyException.newInstance(ruby, ruby.getExceptions().getRuntimeError(), args));
             case 2 :
                 RubyException excptn = (RubyException) args[0].funcall(ruby.intern("exception"), args[1]);
                 throw new RaiseException(excptn);
@@ -129,7 +120,7 @@ public class RubyKernel {
         RubyString str = RubyString.stringValue(args[0]);
         RubyArray newArgs = RubyArray.create(ruby, null, args);
         newArgs.shift();
-        return str.m_format(newArgs);
+        return str.format(newArgs);
     }
 
     public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {

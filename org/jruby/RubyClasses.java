@@ -3,7 +3,7 @@
  * Created on 05. Oktober 2001, 01:43
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -30,9 +30,8 @@
 
 package org.jruby;
 
-import org.jruby.core.*;
+import org.jruby.runtime.*;
 import org.jruby.util.*;
-import org.jruby.*;
 
 /** In this class there are references to the core (or built-in) classes
  * and modules of Ruby and JRuby. There is also a Map of referenced to the
@@ -214,8 +213,8 @@ public class RubyClasses {
         kernelModule = ruby.defineModule("Kernel");
         objectClass.includeModule(kernelModule);
 
-        objectClass.definePrivateMethod("initialize", DefaultCallbackMethods.getMethodNil());
-        classClass.definePrivateMethod("inherited", DefaultCallbackMethods.getMethodNil());
+        objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod());
+        classClass.definePrivateMethod("inherited", CallbackFactory.getNilMethod());
 
         RubyObject.createObjectClass(kernelModule);
 
@@ -224,34 +223,34 @@ public class RubyClasses {
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);
 
-        symbolClass = RbSymbol.createSymbolClass(ruby);
+        symbolClass = RubySymbol.createSymbolClass(ruby);
 
         nilClass = RubyNil.createNilClass(ruby);
 
-        falseClass = RbFalseClass.createFalseClass(ruby);
-        trueClass = RbTrueClass.createTrueClass(ruby);
+        falseClass = RubyBoolean.createFalseClass(ruby);
+        trueClass = RubyBoolean.createTrueClass(ruby);
 
-        comparableModule = RbComparable.createComparable(ruby);
-        enumerableModule = RbEnumerable.createEnumerableModule(ruby);
+        comparableModule = RubyComparable.createComparable(ruby);
+        enumerableModule = RubyEnumerable.createEnumerableModule(ruby);
 
-        numericClass = RbNumeric.createNumericClass(ruby);
-        integerClass = RbInteger.createIntegerClass(ruby);
+        numericClass = RubyNumeric.createNumericClass(ruby);
+        integerClass = RubyInteger.createIntegerClass(ruby);
         fixnumClass = RubyFixnum.createFixnumClass(ruby);
-        bignumClass = RbBignum.createBignum(ruby);
-        floatClass = RbFloat.createFloat(ruby);
+        bignumClass = RubyBignum.createBignumClass(ruby);
+        floatClass = RubyFloat.createFloatClass(ruby);
 
-        stringClass = RbString.createStringClass(ruby);
-        regExpClass = RbRegexp.createRegexpClass(ruby);
-        matchDataClass = RbMatchData.createMatchDataClass(ruby);
+        stringClass = RubyString.createStringClass(ruby);
+        regExpClass = RubyRegexp.createRegexpClass(ruby);
+        matchDataClass = RubyMatchData.createMatchDataClass(ruby);
 
         arrayClass = RubyArray.createArrayClass(ruby);
-        hashClass = RbHash.createHashClass(ruby);
-        rangeClass = RbRange.createRangeClass(ruby);
+        hashClass = RubyHash.createHashClass(ruby);
+        rangeClass = RubyRange.createRangeClass(ruby);
 
-        javaObjectClass = RbJavaObject.createJavaObjectClass(ruby);
+        javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
         javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
 
-        exceptionClass = RbException.createExceptionClass(ruby);
+        exceptionClass = RubyException.createExceptionClass(ruby);
 
         methodClass = RubyMethod.createMethodClass(ruby);
         procClass = RubyProc.createProcClass(ruby);

@@ -2027,7 +2027,7 @@ case 330:
 		        if (((Node)yyVals[-1+yyTop]).getType() == Constants.NODE_DSTR) {
 			        ph.list_append(((Node)yyVals[-1+yyTop]), nf.newStr(((RubyObject)yyVals[0+yyTop])));
 			    } else {
-			        ((RubyString)((Node)yyVals[-1+yyTop]).getLiteral()).m_concat((RubyString)((RubyObject)yyVals[0+yyTop]));
+			        ((RubyString)((Node)yyVals[-1+yyTop]).getLiteral()).concat((RubyString)((RubyObject)yyVals[0+yyTop]));
 			    }
 			    yyVal = ((Node)yyVals[-1+yyTop]);
 		    }
@@ -2852,7 +2852,7 @@ case 415:
     }
 
     public Node compileJavaString(String f, String s, int len, int line) {
-        return compileString(f, RubyString.m_newString(ruby, s, len), line);
+        return compileString(f, RubyString.newString(ruby, s, len), line);
     }
 
     public Node compileFile(String f, RubyObject file, int start) {
@@ -2893,7 +2893,7 @@ case 415:
             
             if (debugLines.isNil()) {
                 ph.setRubyDebugLines(RubyArray.newArray(ruby));
-                hash.m_aset(fName, ph.getRubyDebugLines());
+                hash.aset(fName, ph.getRubyDebugLines());
             } else {
                 ph.setRubyDebugLines((RubyArray)debugLines);
             }

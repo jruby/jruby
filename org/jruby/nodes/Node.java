@@ -31,9 +31,7 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
-import org.jruby.core.*;
 import org.jruby.runtime.*;
-import org.jruby.runtime.RubyGlobalEntry; // TMP while o.j.u.RGE isn't deleted
 import org.jruby.util.*;
 
 /**

@@ -3,7 +3,7 @@
  * Created on 13. September 2001, 00:40
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -33,6 +33,7 @@ package org.jruby;
 import java.math.*;
 
 import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -40,8 +41,8 @@ import org.jruby.exceptions.*;
  * @version 
  */
 public class RubyBignum extends RubyInteger {
-    private static BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    private static BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+    private final static BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
+    private final static BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
     private BigInteger value;
 
@@ -77,10 +78,33 @@ public class RubyBignum extends RubyInteger {
         this.value = value;
     }
 
+    public static RubyClass createBignumClass(Ruby ruby) {
+        RubyClass bignumClass = ruby.defineClass("Bignum", ruby.getClasses().getIntegerClass());
+
+        bignumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBignum.class, "to_s"));
+        bignumClass.defineMethod("hash", CallbackFactory.getMethod(RubyBignum.class, "hash"));
+
+        bignumClass.defineMethod("+", CallbackFactory.getMethod(RubyBignum.class, "op_plus", RubyObject.class));
+        bignumClass.defineMethod("-", CallbackFactory.getMethod(RubyBignum.class, "op_minus", RubyObject.class));
+        bignumClass.defineMethod("*", CallbackFactory.getMethod(RubyBignum.class, "op_mul", RubyObject.class));
+        bignumClass.defineMethod("/", CallbackFactory.getMethod(RubyBignum.class, "op_div", RubyObject.class));
+        bignumClass.defineMethod("%", CallbackFactory.getMethod(RubyBignum.class, "op_mod", RubyObject.class));
+        bignumClass.defineMethod("**", CallbackFactory.getMethod(RubyBignum.class, "op_pow", RubyObject.class));
+
+        bignumClass.defineMethod("==", CallbackFactory.getMethod(RubyBignum.class, "op_equal", RubyObject.class));
+        bignumClass.defineMethod("<=>", CallbackFactory.getMethod(RubyBignum.class, "op_cmp", RubyObject.class));
+        bignumClass.defineMethod(">", CallbackFactory.getMethod(RubyBignum.class, "op_gt", RubyObject.class));
+        bignumClass.defineMethod(">=", CallbackFactory.getMethod(RubyBignum.class, "op_ge", RubyObject.class));
+        bignumClass.defineMethod("<", CallbackFactory.getMethod(RubyBignum.class, "op_lt", RubyObject.class));
+        bignumClass.defineMethod("<=", CallbackFactory.getMethod(RubyBignum.class, "op_le", RubyObject.class));
+
+        return bignumClass;
+    }
+
     /* If the value will fit in a Fixnum, return one of those. */
     private static RubyInteger bigNorm(Ruby ruby, BigInteger bi) {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {
-            return m_newBignum(ruby, bi);
+            return newBignum(ruby, bi);
         }
         return RubyFixnum.newFixnum(ruby, bi.longValue());
     }
@@ -89,9 +113,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyFloat) {
             throw new RubyBugException("argument must be an integer");
         }
-        return (other instanceof RubyBignum)
-               ? ((RubyBignum)other).getValue()
-               : BigInteger.valueOf(other.getLongValue());
+        return (other instanceof RubyBignum) ? ((RubyBignum) other).getValue() : BigInteger.valueOf(other.getLongValue());
     }
 
     protected int compareValue(RubyNumeric other) {
@@ -106,22 +128,26 @@ public class RubyBignum extends RubyInteger {
 
     // Bignum methods
 
-    public static RubyBignum m_newBignum(Ruby ruby, long value) {
-        return new RubyBignum(ruby, BigInteger.valueOf(value));
+    public static RubyBignum newBignum(Ruby ruby, long value) {
+        return newBignum(ruby, BigInteger.valueOf(value));
     }
 
-    public static RubyBignum m_newBignum(Ruby ruby, BigInteger value) {
+    public static RubyBignum newBignum(Ruby ruby, double value) {
+        return newBignum(ruby, new BigDecimal(value).toBigInteger());
+    }
+    
+    public static RubyBignum newBignum(Ruby ruby, BigInteger value) {
         return new RubyBignum(ruby, value);
     }
 
-    public RubyFixnum m_hash() {
+    public RubyFixnum hash() {
         return new RubyFixnum(getRuby(), value.hashCode());
     }
 
     public RubyNumeric op_plus(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_plus(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_plus(other);
         }
         return bigNorm(getRuby(), getValue().add(bigIntValue(other)));
     }
@@ -129,7 +155,7 @@ public class RubyBignum extends RubyInteger {
     public RubyNumeric op_minus(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_minus(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_minus(other);
         }
         return bigNorm(getRuby(), getValue().subtract(bigIntValue(other)));
     }
@@ -137,7 +163,7 @@ public class RubyBignum extends RubyInteger {
     public RubyNumeric op_mul(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_mul(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_mul(other);
         }
         return bigNorm(getRuby(), getValue().multiply(bigIntValue(other)));
     }
@@ -145,7 +171,7 @@ public class RubyBignum extends RubyInteger {
     public RubyNumeric op_div(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_div(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_div(other);
         }
         return bigNorm(getRuby(), getValue().divide(bigIntValue(other)));
     }
@@ -153,7 +179,7 @@ public class RubyBignum extends RubyInteger {
     public RubyNumeric op_mod(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_mod(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_mod(other);
         }
         return bigNorm(getRuby(), getValue().mod(bigIntValue(other)));
     }
@@ -161,9 +187,9 @@ public class RubyBignum extends RubyInteger {
     public RubyNumeric op_pow(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (other instanceof RubyFloat) {
-            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_pow(other);
+            return RubyFloat.newFloat(getRuby(), getDoubleValue()).op_pow(other);
         } else {
-            return bigNorm(getRuby(), getValue().pow((int)other.getLongValue()));
+            return bigNorm(getRuby(), getValue().pow((int) other.getLongValue()));
         }
     }
 
@@ -171,8 +197,7 @@ public class RubyBignum extends RubyInteger {
         if (!(other instanceof RubyNumeric)) {
             return getRuby().getFalse();
         } else {
-            return RubyBoolean.newBoolean(getRuby(),
-                compareValue((RubyNumeric)other) == 0);
+            return RubyBoolean.newBoolean(getRuby(), compareValue((RubyNumeric) other) == 0);
         }
     }
 
@@ -201,7 +226,7 @@ public class RubyBignum extends RubyInteger {
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) <= 0);
     }
 
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         return RubyString.newString(getRuby(), getValue().toString());
     }
 }

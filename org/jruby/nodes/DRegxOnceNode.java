@@ -57,7 +57,7 @@ public class DRegxOnceNode extends Node implements StringEvaluableNode {
     }
     
     public RubyObject evalString(Ruby ruby, RubyObject self, RubyString str) {
-        RubyObject regex = RubyRegexp.m_newRegexp(ruby, str, getCFlag());
+        RubyObject regex = RubyRegexp.newRegexp(ruby, str, getCFlag());
         
         setLiteral(regex);
         expanded = true; // Next time don't expand again.

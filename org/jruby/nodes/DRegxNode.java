@@ -50,6 +50,6 @@ public class DRegxNode extends Node implements StringEvaluableNode {
     }
     
     public RubyObject evalString(Ruby ruby, RubyObject self, RubyString str) {
-        return RubyRegexp.m_newRegexp(ruby, str, getCFlag());
+        return RubyRegexp.newRegexp(ruby, str, getCFlag());
     }
 }

@@ -3,7 +3,7 @@
  * Created on 09. Juli 2001, 21:38
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -32,7 +32,6 @@ package org.jruby;
 
 import java.util.*;
 
-import org.jruby.core.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
@@ -190,7 +189,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("const_get", const_get);
         moduleClass.defineMethod("const_set", const_set);
         moduleClass.defineMethod("const_defined?", const_defined);
-        moduleClass.definePrivateMethod("method_added", DefaultCallbackMethods.getMethodNil());
+        moduleClass.definePrivateMethod("method_added", CallbackFactory.getNilMethod());
         moduleClass.defineMethod("class_variables", class_variables);
         moduleClass.definePrivateMethod("remove_class_variable", remove_class_variable);
 
@@ -299,9 +298,9 @@ public class RubyModule extends RubyObject {
         if (under == getRuby().getClasses().getObjectClass()) {
             value = RubyString.newString(getRuby(), name);
         } else {
-            value = (RubyString) under.getClassPath().m_dup();
-            value.m_cat("::");
-            value.m_cat(name);
+            value = (RubyString) under.getClassPath().dup();
+            value.cat("::");
+            value.cat(name);
         }
 
         getInstanceVariables().put(getRuby().intern("__classpath__"), value);
@@ -1194,7 +1193,7 @@ public class RubyModule extends RubyObject {
     public RubyString name() {
         RubyString path = getClassname();
         if (path != null) {
-            return (RubyString) path.m_dup();
+            return (RubyString) path.dup();
         }
         return RubyString.newString(getRuby(), "");
     }
@@ -1313,7 +1312,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString to_s() {
-        return (RubyString) getClassPath().m_dup();
+        return (RubyString) getClassPath().dup();
     }
 
     /** rb_mod_eqq
@@ -1815,9 +1814,9 @@ public class RubyModule extends RubyObject {
 
             String name = key.toName();
             if (res.path != null) {
-                path = (RubyString) res.path.m_dup();
-                path.m_cat("::");
-                path.m_cat(name);
+                path = (RubyString) res.path.dup();
+                path.cat("::");
+                path.cat(name);
             } else {
                 path = RubyString.newString(getRuby(), name);
             }

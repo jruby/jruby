@@ -30,11 +30,12 @@
 package org.jruby;
 
 import java.lang.ref.*;
-import org.jruby.core.*;
+
 import org.jruby.exceptions.*;
 import org.jruby.nodes.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+
 /**
  *
  * @author  jpetersen
@@ -53,10 +54,10 @@ public class RubyObject {
     private boolean frozen;
     private boolean taint;
 
-	public RubyObject(Ruby ruby) {
+    public RubyObject(Ruby ruby) {
         this(ruby, null, false);
     }
-    
+
     public RubyObject(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, true);
     }
@@ -78,11 +79,11 @@ public class RubyObject {
         if (ruby.getNil() != null) {
             return ruby.getNil();
         } else {
-        	return new RubyObject(ruby) {
-        	    public boolean isNil() {
-        	        return true;
-        	    }
-        	};
+            return new RubyObject(ruby) {
+                public boolean isNil() {
+                    return true;
+                }
+            };
         }
     }
 
@@ -192,6 +193,7 @@ public class RubyObject {
     }
 
     public static void createObjectClass(RubyModule kernelModule) {
+        // TODO: convert to CallbackFactory invokes.
         Callback clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
         Callback dup = new ReflectionCallbackMethod(RubyObject.class, "dup");
         Callback equal = new ReflectionCallbackMethod(RubyObject.class, "equal", RubyObject.class);
@@ -200,8 +202,7 @@ public class RubyObject {
         Callback frozen = new ReflectionCallbackMethod(RubyObject.class, "frozen");
         Callback id = new ReflectionCallbackMethod(RubyObject.class, "id");
         Callback inspect = new ReflectionCallbackMethod(RubyObject.class, "inspect");
-        Callback instance_eval =
-            new ReflectionCallbackMethod(RubyObject.class, "instance_eval", RubyObject[].class, true);
+        Callback instance_eval = new ReflectionCallbackMethod(RubyObject.class, "instance_eval", RubyObject[].class, true);
         Callback instance_of = new ReflectionCallbackMethod(RubyObject.class, "instance_of", RubyModule.class);
         Callback kind_of = new ReflectionCallbackMethod(RubyObject.class, "kind_of", RubyModule.class);
         Callback method = new ReflectionCallbackMethod(RubyObject.class, "method", RubyObject.class);
@@ -215,7 +216,7 @@ public class RubyObject {
         Callback type = new ReflectionCallbackMethod(RubyObject.class, "type");
         Callback untaint = new ReflectionCallbackMethod(RubyObject.class, "untaint");
 
-        kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
+        kernelModule.defineMethod("=~", CallbackFactory.getFalseMethod());
         kernelModule.defineMethod("==", equal);
         kernelModule.defineMethod("class", type);
         kernelModule.defineMethod("clone", clone);
@@ -237,7 +238,7 @@ public class RubyObject {
         kernelModule.defineMethod("private_methods", private_methods);
         kernelModule.defineMethod("protected_methods", protected_methods);
         kernelModule.defineMethod("public_methods", methods);
-        kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
+        kernelModule.defineMethod("nil?", CallbackFactory.getFalseMethod());
         kernelModule.defineMethod("taint", taint);
         kernelModule.defineMethod("tainted?", tainted);
         kernelModule.defineMethod("to_a", to_a);

@@ -3,7 +3,7 @@
  * Created on 18. Oktober 2001, 17:21
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -41,7 +42,7 @@ public class RubyMatchData extends RubyObject {
     private String str;
     private int[] begin;
     private int[] end;
-  
+
     public RubyMatchData(Ruby ruby, String str, int[] begin, int[] end) {
         super(ruby, ruby.getClasses().getMatchDataClass());
         this.str = str;
@@ -49,16 +50,38 @@ public class RubyMatchData extends RubyObject {
         this.end = end;
     }
 
-    public RubyObject subseq(long beg, long len) {
-        if (beg > size()) {
-            return getRuby().getNil();
+    public static RubyClass createMatchDataClass(Ruby ruby) {
+        RubyClass matchDataClass = ruby.defineClass("MatchData", ruby.getClasses().getObjectClass());
+        ruby.defineGlobalConstant("MatchingData", matchDataClass);
+
+        matchDataClass.defineMethod("clone", CallbackFactory.getMethod(RubyMatchData.class, "rbClone"));
+        matchDataClass.defineMethod("size", CallbackFactory.getMethod(RubyMatchData.class, "size"));
+        matchDataClass.defineMethod("length", CallbackFactory.getMethod(RubyMatchData.class, "size"));
+        matchDataClass.defineMethod("offset", CallbackFactory.getMethod(RubyMatchData.class, "offset", RubyFixnum.class));
+        matchDataClass.defineMethod("begin", CallbackFactory.getMethod(RubyMatchData.class, "begin", RubyFixnum.class));
+        matchDataClass.defineMethod("end", CallbackFactory.getMethod(RubyMatchData.class, "end", RubyFixnum.class));
+        matchDataClass.defineMethod("to_a", CallbackFactory.getMethod(RubyMatchData.class, "to_a"));
+        matchDataClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyMatchData.class, "aref"));
+        matchDataClass.defineMethod("pre_match", CallbackFactory.getMethod(RubyMatchData.class, "pre_match"));
+        matchDataClass.defineMethod("post_match", CallbackFactory.getMethod(RubyMatchData.class, "post_match"));
+        matchDataClass.defineMethod("to_s", CallbackFactory.getMethod(RubyMatchData.class, "to_s"));
+        matchDataClass.defineMethod("string", CallbackFactory.getMethod(RubyMatchData.class, "string"));
+
+        matchDataClass.getRubyClass().undefMethod("new");
+
+        return matchDataClass;
+    }
+
+    public RubyArray subseq(long beg, long len) {
+        if (beg > getSize()) {
+            return RubyArray.nilArray(getRuby());
         }
         if (beg < 0 || len < 0) {
-            return getRuby().getNil();
+            return RubyArray.nilArray(getRuby());
         }
-        
-        if (beg + len > size()) {
-            len = size() - beg;
+
+        if (beg + len > getSize()) {
+            len = getSize() - beg;
         }
         if (len < 0) {
             len = 0;
@@ -66,53 +89,53 @@ public class RubyMatchData extends RubyObject {
         if (len == 0) {
             return RubyArray.newArray(getRuby());
         }
-        
+
         RubyArray arr = RubyArray.newArray(getRuby(), 0);
         for (long i = beg; i < beg + len; i++) {
             arr.push(group(i));
         }
         return arr;
     }
-    
-    public long size() {
-        return (long)begin.length;
+
+    public long getSize() {
+        return (long) begin.length;
     }
 
     public RubyObject group(long n) {
-        if (n < 0 || n >= size()) {
+        if (n < 0 || n >= getSize()) {
             return getRuby().getNil();
         }
-        return RubyString.newString(getRuby(), str.substring(begin[(int)n], end[(int)n]));
+        return RubyString.newString(getRuby(), str.substring(begin[(int) n], end[(int) n]));
     }
-    
+
     public int matchStartPosition() {
         return begin[0];
     }
-    
+
     public int matchEndPosition() {
         return end[0];
     }
-    
+
     private boolean outOfBounds(RubyFixnum index) {
         long n = index.getLongValue();
-        return (n < 0 || n >= size());
+        return (n < 0 || n >= getSize());
     }
-    
+
     //
     // Methods of the MatchData Class:
     //
-    
+
     /** match_aref
      *
      */
-    public RubyObject m_aref(RubyObject[] args) {
+    public RubyObject aref(RubyObject[] args) {
         RubyObject result = null;
         int argc = argCount(args, 1, 2);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
             if (beg < 0) {
-                beg += size();
+                beg += getSize();
             }
             return subseq(beg, len);
         }
@@ -123,7 +146,7 @@ public class RubyMatchData extends RubyObject {
             throw new RubyIndexException(getRuby(), "index too big");
         }
         if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange)args[0]).getBeginLength(size(), true, false);
+            long[] begLen = ((RubyRange) args[0]).getBeginLength(getSize(), true, false);
             if (begLen != null) {
                 return getRuby().getNil();
             }
@@ -131,69 +154,69 @@ public class RubyMatchData extends RubyObject {
         }
         return group(RubyNumeric.num2long(args[0]));
     }
-    
+
     /** match_begin
      *
      */
-    public RubyObject m_begin(RubyFixnum index) {
+    public RubyObject begin(RubyFixnum index) {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyFixnum.newFixnum(getRuby(), begin[(int)index.getValue()]);
+        return RubyFixnum.newFixnum(getRuby(), begin[(int) index.getValue()]);
     }
 
     /** match_end
      *
      */
-    public RubyObject m_end(RubyFixnum index) {
+    public RubyObject end(RubyFixnum index) {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyFixnum.newFixnum(getRuby(), end[(int)index.getValue()]);
+        return RubyFixnum.newFixnum(getRuby(), end[(int) index.getValue()]);
     }
 
     /** match_size
      *
      */
-    public RubyFixnum m_size() {
-        return RubyFixnum.newFixnum(getRuby(), size());
+    public RubyFixnum size() {
+        return RubyFixnum.newFixnum(getRuby(), getSize());
     }
 
     /** match_offset
      *
      */
-    public RubyObject m_offset(RubyFixnum index) {
+    public RubyObject offset(RubyFixnum index) {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyArray.create(getRuby(), null, new RubyObject[] { m_begin(index), m_end(index) });
+        return RubyArray.create(getRuby(), null, new RubyObject[] { begin(index), end(index)});
     }
 
     /** match_pre_match
      *
      */
-    public RubyString m_pre_match() {
+    public RubyString pre_match() {
         return RubyString.newString(getRuby(), str.substring(0, begin[0]));
     }
 
     /** match_post_match
      *
      */
-    public RubyString m_post_match() {
+    public RubyString post_match() {
         return RubyString.newString(getRuby(), str.substring(end[0]));
     }
 
     /** match_string
      *
      */
-    public RubyString m_string() {
+    public RubyString string() {
         return RubyString.newString(getRuby(), str);
     }
 
     /** match_to_a
      *
      */
-    public RubyObject m_to_a() {
+    public RubyArray to_a() {
         RubyString[] arr = new RubyString[begin.length];
         return subseq(0, begin.length);
     }
@@ -201,15 +224,15 @@ public class RubyMatchData extends RubyObject {
     /** match_to_s
      *
      */
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         return RubyString.newString(getRuby(), str.substring(begin[0], end[0]));
     }
-    
+
     /** match_clone
      *
      */
-    public RubyObject m_clone() {
-        int len = (int)size();
+    public RubyObject rbClone() {
+        int len = (int) getSize();
         int[] begin_p = new int[len];
         int[] end_p = new int[len];
         System.arraycopy(begin, 0, begin_p, 0, len);

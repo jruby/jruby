@@ -30,13 +30,8 @@
 
 package org.jruby;
 
-import java.util.*;
-
-import org.jruby.core.DefaultCallbackMethods;
-import org.jruby.core.ReflectionCallbackMethod;
-import org.jruby.core.Callback;
 import org.jruby.exceptions.*;
-import org.jruby.util.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -89,17 +84,12 @@ public class RubyClass extends RubyModule {
     }
 
     public static void createClassClass(RubyClass classClass) {
-        Callback s_newInstance = new ReflectionCallbackMethod(RubyClass.class, "newInstance", true, true);
-        Callback newInstance = new ReflectionCallbackMethod(RubyClass.class, "newInstance", true);
-        Callback superclass = new ReflectionCallbackMethod(RubyClass.class, "superclass");
-        // RubyCallbackMethod inherited = new ReflectionCallbackMethod(RubyClass.class, "inherited", RubyClass.class, false, true);
+        classClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyClass.class, "newInstance"));
 
-        classClass.defineSingletonMethod("new", s_newInstance);
+        classClass.defineMethod("new", CallbackFactory.getOptMethod(RubyClass.class, "newInstance"));
+        classClass.defineMethod("superclass", CallbackFactory.getMethod(RubyClass.class, "superclass"));
 
-        classClass.defineMethod("new", newInstance);
-        classClass.defineMethod("superclass", superclass);
-
-        classClass.defineSingletonMethod("inherited", DefaultCallbackMethods.getMethodNil());
+        classClass.defineSingletonMethod("inherited", CallbackFactory.getNilMethod());
 
         classClass.undefMethod("module_function");
     }

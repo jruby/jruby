@@ -1,5 +1,5 @@
 /*
- * RubyCallbackMethod.java - No description
+ * Callback.java - No description
  * Created on 25. Juli 2001, 23:56
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
@@ -28,7 +28,7 @@
  * 
  */
 
-package org.jruby.core;
+package org.jruby.runtime;
 
 import org.jruby.*;
 

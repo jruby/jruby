@@ -32,9 +32,8 @@ package org.jruby;
 
 import java.util.*;
 
-import org.jruby.core.*;
 import org.jruby.exceptions.*;
-import org.jruby.util.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -59,6 +58,14 @@ public class RubyArray extends RubyObject {
         this.list = array;
 
         // equals = ruby.intern("==");
+    }
+
+    public static RubyArray nilArray(Ruby ruby) {
+        return new RubyArray(ruby) {
+            public boolean isNil() {
+                return true;
+            }
+        };
     }
 
     /** Getter for property list.
@@ -614,11 +621,11 @@ public class RubyArray extends RubyObject {
 	RubyString sep = RubyString.newString(getRuby(), ", ");
         for (int i = 0; i < length; i++) {
             if (i > 0) {
-                result.m_append(sep);
+                result.append(sep);
             }
-            result.m_append(entry(i).funcall(getRuby().intern("inspect")));
+            result.append(entry(i).funcall(getRuby().intern("inspect")));
         }
-        result.m_cat("]");
+        result.cat("]");
         return result;
         // HACK ---
     }
@@ -701,7 +708,7 @@ public class RubyArray extends RubyObject {
             } else if (!(tmp instanceof RubyString)) {
                 tmp = RubyString.objAsString(getRuby(), tmp);
             }
-            str.m_append(sep.op_plus(tmp));
+            str.append(sep.op_plus(tmp));
         }
         str.setTaint(taint);
         return str;

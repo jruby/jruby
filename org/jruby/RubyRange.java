@@ -3,7 +3,7 @@
  * Created on 26. Juli 2001, 00:01
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -30,6 +30,9 @@
 package org.jruby;
 
 import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
+import sun.security.krb5.internal.*;
+import sun.security.krb5.internal.crypto.*;
 
 /**
  * @author jpetersen
@@ -53,6 +56,29 @@ public class RubyRange extends RubyObject {
         setInstanceVar("begin", begin);
         setInstanceVar("end", end);
         setInstanceVar("excl", exclusive);
+    }
+
+    public static RubyClass createRangeClass(Ruby ruby) {
+        RubyClass rangeClass = ruby.defineClass("Range", ruby.getClasses().getObjectClass());
+
+        rangeClass.includeModule(ruby.getClasses().getEnumerableModule());
+
+        rangeClass.defineMethod("==", CallbackFactory.getMethod(RubyRange.class, "equal", RubyObject.class));
+        rangeClass.defineMethod("===", CallbackFactory.getMethod(RubyRange.class, "op_eqq", RubyObject.class));
+        rangeClass.defineMethod("first", CallbackFactory.getMethod(RubyRange.class, "first"));
+        rangeClass.defineMethod("begin", CallbackFactory.getMethod(RubyRange.class, "first"));
+        rangeClass.defineMethod("last", CallbackFactory.getMethod(RubyRange.class, "last"));
+        rangeClass.defineMethod("end", CallbackFactory.getMethod(RubyRange.class, "last"));
+
+        rangeClass.defineMethod("to_s", CallbackFactory.getMethod(RubyRange.class, "inspect"));
+        rangeClass.defineMethod("inspect", CallbackFactory.getMethod(RubyRange.class, "inspect"));
+        rangeClass.defineMethod("exclude_end?", CallbackFactory.getMethod(RubyRange.class, "exclude_end_p"));
+        rangeClass.defineMethod("length", CallbackFactory.getMethod(RubyRange.class, "length"));
+        rangeClass.defineMethod("size", CallbackFactory.getMethod(RubyRange.class, "length"));
+        rangeClass.defineMethod("each", CallbackFactory.getMethod(RubyRange.class, "each"));
+        rangeClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyRange.class, "initialize"));
+
+        return rangeClass;
     }
 
     /**
@@ -115,13 +141,13 @@ public class RubyRange extends RubyObject {
 
     // public Range methods
 
-    public static RubyRange m_newRange(Ruby ruby, RubyObject begin, RubyObject end, boolean exclusive) {
+    public static RubyRange newRange(Ruby ruby, RubyObject begin, RubyObject end, boolean exclusive) {
         RubyRange range = new RubyRange(ruby);
         range.init(begin, end, exclusive ? ruby.getTrue() : ruby.getFalse());
         return range;
     }
 
-    public RubyObject m_initialize(RubyObject[] args) {
+    public RubyObject initialize(RubyObject[] args) {
         if (isInstanceVarDefined(getRuby().intern("begin"))) {
             throw new RubyNameException(getRuby(), "'initialize' called twice.");
         }
@@ -135,24 +161,24 @@ public class RubyRange extends RubyObject {
         return getRuby().getNil();
     }
 
-    public RubyObject m_first() {
+    public RubyObject first() {
         return getInstanceVar("begin");
     }
 
-    public RubyObject m_last() {
+    public RubyObject last() {
         return getInstanceVar("end");
     }
 
-    public RubyString m_inspect() {
+    public RubyString inspect() {
         RubyString begStr = (RubyString) getInstanceVar("begin").funcall(getRuby().intern("to_s"));
         RubyString endStr = (RubyString) getInstanceVar("end").funcall(getRuby().intern("to_s"));
 
-        begStr.m_cat(getInstanceVar("excl").isTrue() ? "..." : "..");
-        begStr.m_concat(endStr);
+        begStr.cat(getInstanceVar("excl").isTrue() ? "..." : "..");
+        begStr.concat(endStr);
         return begStr;
     }
 
-    public RubyBoolean m_exclude_end_p() {
+    public RubyBoolean exclude_end_p() {
         if (getInstanceVar("excl").isTrue()) {
             return getRuby().getTrue();
         } else {
@@ -160,7 +186,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    public RubyObject m_length() {
+    public RubyObject length() {
         RubyObject begin = getInstanceVar("begin");
         RubyObject end = getInstanceVar("end");
         boolean exclusive = getInstanceVar("excl").isTrue();
@@ -180,7 +206,7 @@ public class RubyRange extends RubyObject {
         return new RubyFixnum(getRuby(), size);
     }
 
-    public RubyBoolean m_eq(RubyObject obj) {
+    public RubyBoolean equal(RubyObject obj) {
         if (!(obj instanceof RubyRange)) {
             return getRuby().getFalse();
         }
@@ -193,7 +219,7 @@ public class RubyRange extends RubyObject {
         return RubyBoolean.newBoolean(getRuby(), result);
     }
 
-    public RubyBoolean m_eqq(RubyObject obj) {
+    public RubyBoolean op_eqq(RubyObject obj) {
         RubyObject beg = getInstanceVar("begin");
         RubyObject end = getInstanceVar("end");
         boolean excl = getInstanceVar("excl").isTrue();
@@ -229,7 +255,7 @@ public class RubyRange extends RubyObject {
         return getRuby().getFalse();
     }
 
-    public RubyObject m_each() {
+    public RubyObject each() {
         RubyObject begin = getInstanceVar("begin");
         RubyObject end = getInstanceVar("end");
         boolean exclusive = getInstanceVar("excl").isTrue();

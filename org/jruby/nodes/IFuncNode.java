@@ -31,7 +31,6 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
-import org.jruby.core.*;
 import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 

@@ -3,7 +3,7 @@
  * Created on 18. Oktober 2001, 23:31
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -30,7 +30,8 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.RubyArgumentException;
+import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
 
 
 /**
@@ -43,6 +44,19 @@ public class RubyException extends RubyObject {
     public RubyException(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
+    
+    public static RubyClass createExceptionClass(Ruby ruby) {
+        RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
+        
+        exceptionClass.defineMethod("to_s", CallbackFactory.getMethod(RubyException.class, "to_s"));
+        exceptionClass.defineMethod("to_str", CallbackFactory.getMethod(RubyException.class, "to_s"));
+        exceptionClass.defineMethod("inspect", CallbackFactory.getMethod(RubyException.class, "inspect"));
+        
+        // exceptionClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
+        
+        return exceptionClass;
+    }
+
 
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
         RubyException newException = new RubyException(ruby, excptnClass);
@@ -50,7 +64,7 @@ public class RubyException extends RubyObject {
         return newException;
     }
 
-    public static RubyException s_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static RubyException newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyException newException = new RubyException(ruby, (RubyClass)recv);
         if (args.length == 1) {
             newException.setInstanceVar("mesg", args[0]);
@@ -58,23 +72,19 @@ public class RubyException extends RubyObject {
         return newException;
     }
 
-    public static RubyException m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        return s_new(ruby, recv.getRubyClass(), args);
-    }
-
-    public RubyException m_exception(RubyObject[] args) {
+    public RubyException exception(RubyObject[] args) {
         switch (args.length) {
             case 0 :
                 return this;
             case 1 :
-                return (RubyException) m_new(getRuby(), this, args);
+                return (RubyException) newInstance(getRuby(), getRubyClass(), args);
             default :
                 throw new RubyArgumentException(getRuby(), "Wrong argument count");
         }
 
     }
 
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         RubyObject message = getInstanceVar("mesg");
 
         if (message.isNil()) {
@@ -90,7 +100,7 @@ public class RubyException extends RubyObject {
      * 
      *@return A RubyString containing the debug information.
      */
-    public RubyString m_inspect() {
+    public RubyString inspect() {
         RubyModule rubyClass = getRubyClass();
 
         RubyString exception = RubyString.stringValue(this);

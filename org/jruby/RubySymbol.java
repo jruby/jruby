@@ -3,7 +3,7 @@
  * Created on 26. Juli 2001, 00:01
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -29,6 +29,8 @@
  */
 
 package org.jruby;
+
+import org.jruby.runtime.*;
 
 /**
  *
@@ -67,27 +69,48 @@ public class RubySymbol extends RubyObject {
         this.id = id;
     }
     
-    public static RubySymbol m_newSymbol(Ruby ruby, RubyId rubyId) {
+    public static RubyClass createSymbolClass(Ruby ruby) {
+        RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
+        
+        symbolClass.getRubyClass().undefMethod("new");
+        
+        symbolClass.defineMethod("to_i", CallbackFactory.getMethod(RubySymbol.class, "to_i"));
+        symbolClass.defineMethod("to_int", CallbackFactory.getMethod(RubySymbol.class, "to_i"));
+        symbolClass.defineMethod("id2name", CallbackFactory.getMethod(RubySymbol.class, "to_s"));
+        symbolClass.defineMethod("to_s", CallbackFactory.getMethod(RubySymbol.class, "to_s"));
+        
+        symbolClass.defineMethod("==", CallbackFactory.getMethod(RubySymbol.class, "equal", RubyObject.class));
+        symbolClass.defineMethod("inspect", CallbackFactory.getMethod(RubySymbol.class, "inspect"));
+        symbolClass.defineMethod("hash", CallbackFactory.getMethod(RubySymbol.class, "hash"));
+        
+        return symbolClass;
+    }
+    
+    /* Symbol class methods.
+     * 
+     */
+    
+    public static RubySymbol newSymbol(Ruby ruby, RubyId rubyId) {
         return new RubySymbol(ruby, rubyId);
     }
 
-    public RubyFixnum m_to_i() {
+    public RubyFixnum to_i() {
         return RubyFixnum.newFixnum(getRuby(), getId().intValue());
     }
     
-    public RubyString m_inspect() {
+    public RubyString inspect() {
         return RubyString.newString(getRuby(), ":" + getId().toName());
     }
     
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         return RubyString.newString(getRuby(), getId().toName());
     }
 
-    public RubyFixnum m_hash() {
+    public RubyFixnum hash() {
         return RubyFixnum.newFixnum(getRuby(), (":" + getName()).hashCode());
     }
 
-    public RubyBoolean m_equal(RubyObject other) {
+    public RubyBoolean equal(RubyObject other) {
         if ((other instanceof RubySymbol) && getName().equals(((RubySymbol) other).getName())) {
             return getRuby().getTrue();
         } else {

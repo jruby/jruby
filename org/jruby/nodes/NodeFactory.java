@@ -31,11 +31,8 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
-import org.jruby.core.*;
-import org.jruby.runtime.*;
-import org.jruby.runtime.RubyGlobalEntry; // TMP
 import org.jruby.parser.*;
-import org.jruby.util.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -309,7 +306,7 @@ public class NodeFactory {
     }
        
     public Node newEVStr(String s, int len) {
-        return new EvStrNode(RubyString.m_newString(ruby, s, len));
+        return new EvStrNode(RubyString.newString(ruby, s, len));
     }
        
     public Node newCall(Node recv, RubyId mid, Node args) {

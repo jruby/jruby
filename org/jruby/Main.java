@@ -162,7 +162,7 @@ public class Main {
         try {
             ruby.getRubyTopSelf().eval(ruby.getRubyParser().compileString(iFileName, rs, 0));
         } catch (RaiseException rExcptn) {
-            System.out.println(rExcptn.getActException().m_to_s().getValue());
+            System.out.println(rExcptn.getActException().to_s().getValue());
         }
         // ---
     }

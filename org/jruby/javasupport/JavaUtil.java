@@ -148,7 +148,7 @@ public class JavaUtil {
             if (cName == "boolean") {
                 return RubyBoolean.newBoolean(ruby, ((Boolean)object).booleanValue());
             } else if (cName == "float" || cName == "double") {
-                return RubyFloat.m_newFloat(ruby, ((Number)object).doubleValue());
+                return RubyFloat.newFloat(ruby, ((Number)object).doubleValue());
             } else if (cName == "char") {
             	return RubyFixnum.newFixnum(ruby, ((Character)object).charValue());
             } else {
