@@ -50,7 +50,7 @@ public class SuperNode extends Node {
         // TMP_PROTECT;
         
         if (ruby.getRubyFrame().getLastClass() == null) {
-            throw new RubyNameException(ruby, "superclass method '" + 
+            throw new NameError(ruby, "superclass method '" + 
                     ruby.getRubyFrame().getLastFunc() + "' disabled");
         }
         

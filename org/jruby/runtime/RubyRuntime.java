@@ -40,6 +40,10 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public class RubyRuntime {
+    private static final int TRACE_HEAD = 8;
+    private static final int TRACE_TAIL = 5;
+    private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
+    
     private boolean printBugs = false;
 
     private Ruby ruby;
@@ -68,7 +72,7 @@ public class RubyRuntime {
      */
     public RubyObject callSuper(RubyObject[] args) {
         if (ruby.getRubyFrame().getLastClass() == null) {
-            throw new RubyNameException(ruby, "superclass method '" + ruby.getRubyFrame().getLastFunc() + "' must be enabled by enableSuper().");
+            throw new NameError(ruby, "superclass method '" + ruby.getRubyFrame().getLastFunc() + "' must be enabled by enableSuper().");
         }
         
         ruby.getIter().push();
@@ -135,16 +139,15 @@ public class RubyRuntime {
             // RubyId last_func = ruby.getRubyFrame().getLastFunc();
             // DEFER_INTS;
             ruby.setInEval(ruby.getInEval() + 1);
-
+            
             ruby.getRubyParser().compileString(scriptName.getValue(), source, 0);
 
             // ---
             ruby.setInEval(ruby.getInEval() - 1);
 
             self.evalNode(ruby.getParserHelper().getEvalTree());
-        /*} catch (Exception excptn) {
-            excptn.printStackTrace(getErrorStream());*/
-        } finally {
+
+         } finally {
             ruby.getRubyFrame().setLastFunc(last_func);
 
             /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
@@ -194,6 +197,98 @@ public class RubyRuntime {
 
 	public void loadFile(RubyString fname, boolean wrap)  {
 		loadFile(new File(fname.getValue()), wrap);
+	}
+	
+	/** Prints an error with backtrace to the error stream.
+	 * 
+	 * MRI: eval.c - error_print()
+	 * 
+	 */
+	public void printError(RubyException excp) {
+	    if (excp == null || excp.isNil()) {
+	        return;
+	    }
+	    
+	    RubyArray backtrace = (RubyArray)excp.funcall("backtrace");
+	    
+	    if (backtrace.isNil()) {
+	        if (ruby.getSourceFile() != null) {
+	            getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
+	        } else {
+	            getErrorStream().print(ruby.getSourceLine());
+	        }
+	    } else if (backtrace.getLength() == 0){
+	        printErrorPos();
+	    } else {
+	        RubyObject mesg = backtrace.entry(0);
+	        
+	        if (mesg.isNil()) {
+	            printErrorPos();
+	        } else {
+	            getErrorStream().print(mesg);
+	        }
+	    }
+	    
+	    RubyClass type = excp.getRubyClass();
+	    String info = excp.toString();
+
+	    if (type == ruby.getExceptions().getRuntimeError() && info.length() == 0) {
+	        getErrorStream().print(": unhandled exception\n");
+	    } else {
+	        String path = type.getClassPath().toString();
+	        
+	        if (info.length() == 0) {
+	            getErrorStream().print(": " + path + '\n');
+	        } else {
+	            if (path.startsWith("#")) {
+	                path = null;
+	            }
+	            
+	            String tail = null;
+	            if (info.indexOf("\n") != -1) {
+	                tail = info.substring(info.indexOf("\n") + 1);
+	                info = info.substring(0, info.indexOf("\n"));
+	            }
+	            
+	            getErrorStream().print(": " + info);
+	            
+	            if (path != null) {
+	                getErrorStream().print(" (" + path + ")\n");
+	            }
+	            
+	            if (tail != null) {
+	                getErrorStream().print(tail + '\n');
+	            }
+	        }
+	    }
+	    
+	    if (!backtrace.isNil()) {
+	        RubyObject[] elements = backtrace.toJavaArray();
+	        
+	        for (int i = 0; i < elements.length; i++) {
+	            if (elements[i] instanceof RubyString) {
+	                getErrorStream().print("\tfrom " + elements[i] + '\n');
+	            }
+	            
+	            if (i == TRACE_HEAD && elements.length > TRACE_MAX) {
+	                getErrorStream().print("\t ... " + (elements.length - TRACE_HEAD - TRACE_TAIL) + "levels...\n");
+	                i = elements.length - TRACE_TAIL;
+	            }
+	        }
+	    }
+	}
+	
+	private void printErrorPos() {
+	    if (ruby.getSourceFile() != null) {
+	        if (ruby.getRubyFrame().getLastFunc() != null) {
+	            getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
+	            getErrorStream().print(":in '" + ruby.getRubyFrame().getLastFunc() + '\'');
+	        } else if (ruby.getSourceLine() != 0) {
+	            getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
+	        } else {
+	            getErrorStream().print(ruby.getSourceFile());
+	        }
+	    }
 	}
 
 	/**

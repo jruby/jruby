@@ -147,7 +147,7 @@ public class RubyRange extends RubyObject {
 
     public RubyObject initialize(RubyObject[] args) {
         if (isInstanceVarDefined("begin")) {
-            throw new RubyNameException(getRuby(), "'initialize' called twice.");
+            throw new NameError(getRuby(), "'initialize' called twice.");
         }
         if (args.length == 3) {
             init(args[0], args[1], (RubyBoolean) args[2]);

@@ -200,7 +200,7 @@ public final class RubyGlobalEntry {
     private static class ReadonlySetter implements SetterMethod {
         public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
 
-            throw new RubyNameException(entry.ruby, "can't set variable " + id);
+            throw new NameError(entry.ruby, "can't set variable " + id);
         }
     }
 }

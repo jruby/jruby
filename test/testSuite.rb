@@ -46,3 +46,13 @@ load('test/mri/testCondition.rb')
 load('test/mri/testCase.rb')
 load('test/mri/testIfUnless.rb')
 load('test/mri/testWhileUntil')
+load('test/mri/testException')
+load('test/mri/testArray')
+
+#Output result
+puts
+if $failed > 0
+   printf "test: %d failed %d\n", $ntest, $failed
+else
+   printf "end of test(test: %d)\n", $ntest
+end

@@ -34,7 +34,7 @@ import org.jruby.runtime.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RaiseException extends RuntimeException {
+public class RaiseException extends JumpException {
     private RubyException actException;
 
     public RaiseException(RubyException actException) {

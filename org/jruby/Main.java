@@ -38,6 +38,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.*;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.regexp.*;
 import org.jruby.runtime.RubyGlobalEntry;
@@ -274,17 +275,9 @@ public class Main {
                 ruby.getRubyTopSelf().eval(lScript);
             }
         } catch (RaiseException rExcptn) {
-            // +++ Move to another class
-            PrintStream err = ruby.getRuntime().getErrorStream();
-            err.print(rExcptn.getActException().getRubyClass().toName());
-            err.print(": ");
-            err.println(rExcptn.getActException().to_s());
-
-            RubyArray backtrace = (RubyArray)rExcptn.getActException().funcall("backtrace");
-            for (int i = 0; i < backtrace.getLength(); i++) {
-                err.println(backtrace.entry(i));
-            }
-            // ---
+            ruby.getRuntime().printError(rExcptn.getActException());
+        } catch (ThrowJump throwJump ) {
+            ruby.getRuntime().printError(throwJump.getNameError());
         }
         // ---
 		// to look nicer

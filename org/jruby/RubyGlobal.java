@@ -120,6 +120,10 @@ public class RubyGlobal {
         ruby.defineGlobalFunction("loop", CallbackFactory.getSingletonMethod(RubyGlobal.class, "loop"));
 
         ruby.defineGlobalFunction("eval", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "eval", RubyString.class));
+        ruby.defineGlobalFunction("caller", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "caller"));
+        
+        ruby.defineGlobalFunction("catch", CallbackFactory.getSingletonMethod(RubyGlobal.class, "rbCatch", RubyObject.class));
+        ruby.defineGlobalFunction("throw", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "rbThrow", RubyObject.class));
 
         ruby.defineGlobalFunction("singleton_method_added", CallbackFactory.getNilMethod());
     }
@@ -336,7 +340,7 @@ public class RubyGlobal {
     private static RubyString getLastlineString(Ruby ruby) {
         RubyObject line = ruby.getParserHelper().getLastline();
 
-        if (!line.isNil()) {
+        if (line.isNil()) {
             throw new TypeError(ruby, "$_ value need to be String (nil given).");
         } else if (!(line instanceof RubyString)) {
             throw new TypeError(ruby, "$_ value need to be String (" + line.getRubyClass().toName() + " given).");
@@ -451,6 +455,32 @@ public class RubyGlobal {
         return recv.eval(src, scope, file, line);
     }
 
+    public static RubyObject caller(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        int level = args.length > 0 ? RubyFixnum.fix2int(args[0]) : 1;
+        
+        if (level < 0) {
+            throw new RubyArgumentException(ruby, "negative level(" + level + ')');
+        }
+
+        return RaiseException.createBacktrace(ruby, level);
+    }
+
+	public static RubyObject rbCatch(Ruby ruby, RubyObject recv, RubyObject tag) {
+	    try {
+	        return ruby.yield(tag);
+		} catch (ThrowJump throwJump) {
+		    if (throwJump.getTag().equals(tag.toId())) {
+		        return throwJump.getValue();
+		    } else {
+		        throw throwJump;
+		    }
+	    }
+	}
+
+    public static RubyObject rbThrow(Ruby ruby, RubyObject recv, RubyObject tag, RubyObject[] args) {
+        throw new ThrowJump(tag.toId(), args.length > 0 ? args[0] : ruby.getNil());
+    }
+
     public static RubyObject lambda(Ruby ruby, RubyObject recv) {
         return RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
     }
@@ -480,7 +510,7 @@ public class RubyGlobal {
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
         public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            if (!value.isNil() && value.kind_of(entry.getRuby().getClasses().getExceptionClass()).isTrue()) {
+            if (!value.isNil() && value.kind_of(entry.getRuby().getClasses().getExceptionClass()).isFalse()) {
                 throw new TypeError(entry.getRuby(), "assigning non-exception to $!");
             }
             entry.setData(value);

@@ -222,7 +222,7 @@ public class JavaSupport {
                 }
             }
         }
-        throw new RubyNameException(ruby, "cannot load Java class: " + name.getValue());
+        throw new NameError(ruby, "cannot load Java class: " + name.getValue());
     }
 
     public void addImportPackage(String packageName) {

@@ -67,7 +67,7 @@ public class RubyComparable {
             try {
                 RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
                 return RubyBoolean.newBoolean(ruby, fn.getValue() == 0);
-            } catch (RubyNameException rnExcptn) {
+            } catch (NameError rnExcptn) {
                 return ruby.getFalse();
             }
         }

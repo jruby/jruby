@@ -476,7 +476,7 @@ public class RubyObject {
         RubyObject result = null;
         try {
             result = funcall(method);
-        } catch (RubyNameException rnExcptn) {
+        } catch (NameError rnExcptn) {
             throw new TypeError(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
             //        } catch (RubyS rnExcptn) {
         }
@@ -962,7 +962,7 @@ public class RubyObject {
         // ---
 
         Ruby ruby = getRuby();
-        throw new RubyNameException(
+        throw new NameError(
             ruby,
             ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for " + type().toName());
     }

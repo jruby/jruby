@@ -31,6 +31,7 @@
 package org.jruby.nodes;
 
 import org.jruby.*;
+import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
 /**
@@ -44,24 +45,14 @@ public class EnsureNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyObject result = null;
         try {
-            result = getHeadNode().eval(ruby, self);
+            return getHeadNode().eval(ruby, self);
+//        } catch (JumpException jumpException) {
+//            throw jumpException;
         } finally {
             if (getEnsureNode() != null) {
-                // RubyObject actExcptn = ruby.getActException();
-            
                 getEnsureNode().eval(ruby, self);
-
-                // ruby.setActException(actExcptn);
-
-                // VALUE retval = prot_tag->retval; /* save retval */
-                // return_value(retval);
-
             }
-            // +++
-            return result;
-            // ---
         }
     }
 	/**

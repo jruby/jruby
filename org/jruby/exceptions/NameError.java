@@ -36,13 +36,13 @@ import org.jruby.*;
  *
  * @author  jpetersen
  */
-public class RubyNameException extends RaiseException {
+public class NameError extends RaiseException {
 
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyNameException(Ruby ruby, String msg) {
+    public NameError(Ruby ruby, String msg) {
         super(ruby, ruby.getExceptions().getNameError(), msg);
     }
 }

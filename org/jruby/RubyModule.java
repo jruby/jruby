@@ -2,9 +2,8 @@
  * RubyModule.java - No description
  * Created on 09. Juli 2001, 21:38
  *
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  *
@@ -27,7 +26,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-
 package org.jruby;
 
 import java.util.*;
@@ -343,7 +341,7 @@ public class RubyModule extends RubyObject {
             }
             tmp = tmp.getSuperClass();
         }
-        throw new RubyNameException(getRuby(), "uninitialized class variable " + name + " in " + toName());
+        throw new NameError(getRuby(), "uninitialized class variable " + name + " in " + toName());
     }
 
     /** rb_cvar_declare
@@ -374,7 +372,7 @@ public class RubyModule extends RubyObject {
             }
             tmp = tmp.getSuperClass();
         }
-        throw new RubyNameException(getRuby(), "uninitialized class variable " + name + " in " + toName());
+        throw new NameError(getRuby(), "uninitialized class variable " + name + " in " + toName());
     }
 
     /** rb_cvar_defined
@@ -426,14 +424,14 @@ public class RubyModule extends RubyObject {
         try {
             Class javaClass = getRuby().getJavaSupport().loadJavaClass(RubyString.newString(getRuby(), name));
         	return getRuby().getJavaSupport().loadClass(javaClass, null);
-        } catch(RubyNameException excptn) {
+        } catch(NameError excptn) {
         }
 
         /* Uninitialized constant */
         if (this != getRuby().getClasses().getObjectClass()) {
-            throw new RubyNameException(getRuby(), "uninitialized constant " + name + " at " + getClassPath().getValue());
+            throw new NameError(getRuby(), "uninitialized constant " + name + " at " + getClassPath().getValue());
         } else {
-            throw new RubyNameException(getRuby(), "uninitialized constant " + name);
+            throw new NameError(getRuby(), "uninitialized constant " + name);
         }
 
         // return getRuby().getNil();
@@ -589,7 +587,7 @@ public class RubyModule extends RubyObject {
                 s0 = " module";
             }
 
-            throw new RubyNameException(ruby, ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method " + name + " for" + s0 + " '" + c.toName() + "'");
+            throw new NameError(ruby, ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method " + name + " for" + s0 + " '" + c.toName() + "'");
         }
         getRuby().getMethodCache().clearByName(name);
         addMethod(name, null, Constants.NOEX_PUBLIC);
@@ -733,7 +731,7 @@ public class RubyModule extends RubyObject {
 
             if (gmbr == null || gmbr.getBody() == null) {
                 if (scope == 3) {
-                    throw new RubyNameException(getRuby(), "super: no superclass method '" + name + "'");
+                    throw new NameError(getRuby(), "super: no superclass method '" + name + "'");
                 }
                 RubyPointer newArgs = new RubyPointer();
                 newArgs.add(RubySymbol.newSymbol(getRuby(), name));
@@ -789,13 +787,13 @@ public class RubyModule extends RubyObject {
         frame.setLastClass(noSuper ? null : this);
         frame.setSelf(recv);
         frame.setArgs(args);
-
-        RubyObject result = ((CallableNode) body).call(ruby, recv, name, args, noSuper);
-
-        ruby.getRubyFrame().pop();
-        lIter.pop();
-
-        return result;
+        
+        try {
+			return ((CallableNode) body).call(ruby, recv, name, args, noSuper);
+        } finally {
+        	ruby.getRubyFrame().pop();
+        	lIter.pop();
+        }
     }
 
     /** rb_alias
@@ -856,7 +854,7 @@ public class RubyModule extends RubyObject {
             // rb_error_frozen("class/module");
         }
         if (getMethods().remove(name) == null) {
-            throw new RubyNameException(getRuby(), "method '" + name + "' not defined in " + toName());
+            throw new NameError(getRuby(), "method '" + name + "' not defined in " + toName());
         }
 
         getRuby().getMethodCache().clearByName(name);
@@ -912,7 +910,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!IdUtil.isConstant(name)) {
-            throw new RubyNameException(getRuby(), "bad constant name " + name);
+            throw new NameError(getRuby(), "bad constant name " + name);
         }
 
         setConstant(name, value);
@@ -923,7 +921,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyObject removeCvar(RubyObject name) { // Wrong Parameter ?
         if (!IdUtil.isClassVariable(name.toId())) {
-            throw new RubyNameException(getRuby(), "wrong class variable name " + name.toId());
+            throw new NameError(getRuby(), "wrong class variable name " + name.toId());
         }
 
         if (!isTaint() && getRuby().getSafeLevel() >= 4) {
@@ -941,10 +939,10 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(name.toId())) {
-            throw new RubyNameException(getRuby(), "cannot remove " + name.toId() + " for " + toName());
+            throw new NameError(getRuby(), "cannot remove " + name.toId() + " for " + toName());
         }
 
-        throw new RubyNameException(getRuby(), "class variable " + name.toId() + " not defined for " + toName());
+        throw new NameError(getRuby(), "class variable " + name.toId() + " not defined for " + toName());
     }
 
     /** rb_define_class_variable
@@ -952,7 +950,7 @@ public class RubyModule extends RubyObject {
      */
     public void defineClassVariable(String name, RubyObject value) {
         if (!IdUtil.isClassVariable(name)) {
-            throw new RubyNameException(getRuby(), "wrong class variable name " + name);
+            throw new NameError(getRuby(), "wrong class variable name " + name);
         }
 
         declareClassVar(name, value);
@@ -1471,7 +1469,7 @@ public class RubyModule extends RubyObject {
         String name = symbol.toId();
 
         if (!IdUtil.isConstant(name)) {
-            throw new RubyNameException(getRuby(), "wrong constant name " + name);
+            throw new NameError(getRuby(), "wrong constant name " + name);
         }
 
         return getConstant(name);
@@ -1484,7 +1482,7 @@ public class RubyModule extends RubyObject {
         String name = symbol.toId();
 
         if (!IdUtil.isConstant(name)) {
-            throw new RubyNameException(getRuby(), "wrong constant name " + name);
+            throw new NameError(getRuby(), "wrong constant name " + name);
         }
 
         setConstant(name, value);
@@ -1499,7 +1497,7 @@ public class RubyModule extends RubyObject {
         String name = symbol.toId();
 
         if (!IdUtil.isConstant(name)) {
-            throw new RubyNameException(getRuby(), "wrong constant name " + name);
+            throw new NameError(getRuby(), "wrong constant name " + name);
         }
 
         return RubyBoolean.newBoolean(getRuby(), isConstantDefined(name));
@@ -1626,7 +1624,7 @@ public class RubyModule extends RubyObject {
         String id = name.toId();
 
         if (!IdUtil.isClassVariable(id)) {
-            throw new RubyNameException(getRuby(), "wrong class variable name " + id);
+            throw new NameError(getRuby(), "wrong class variable name " + id);
         }
         if (!isTaint() && getRuby().getSafeLevel() >= 4) {
             throw new RubySecurityException(getRuby(), "Insecure: can't remove class variable");
@@ -1643,9 +1641,9 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new RubyNameException(getRuby(), "cannot remove " + id + " for " + toName());
+            throw new NameError(getRuby(), "cannot remove " + id + " for " + toName());
         }
-        throw new RubyNameException(getRuby(), "class variable " + id + " not defined for " + toName());
+        throw new NameError(getRuby(), "class variable " + id + " not defined for " + toName());
     }
 
     /** rb_mod_append_features

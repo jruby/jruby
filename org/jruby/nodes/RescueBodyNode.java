@@ -44,7 +44,7 @@ public class RescueBodyNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return getBodyNode().eval(ruby, self);
+        return self.eval(getBodyNode());
     }
 	/**
 	 * Accept for the visitor pattern.

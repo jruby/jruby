@@ -1,12 +1,9 @@
 /*
- * BreakException.java - No description
- * Created on 19.01.2002, 18:02:24
+ * ThrowJump.java - No description
+ * Created on 19.01.2002, 19:29:20
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -29,14 +26,38 @@
  */
 package org.jruby.exceptions;
 
-/**
+import org.jruby.*;
+
+/** Created by the global throw function.
  *
- * @author  jpetersen
+ * @author jpetersen
  * @version $Revision$
  */
-public class BreakException extends JumpException {
+public class ThrowJump extends JumpException {
+    private String tag;
+    private RubyObject value;
+    private RubyException nameError;
 
-    /** Creates new BreakException */
-    public BreakException() {
+    /**
+     * Constructor for ThrowJump.
+     */
+    public ThrowJump(String tag, RubyObject value) {
+        super();
+
+        this.tag = tag;
+        this.value = value;
+        this.nameError = new NameError(value.getRuby(), "uncaught throw '" + tag + '\'').getActException();
+    }
+    
+    public String getTag() {
+        return tag;
+    }
+    
+    public RubyObject getValue() {
+        return value;
+    }
+    
+    public RubyException getNameError() {
+        return nameError;
     }
 }

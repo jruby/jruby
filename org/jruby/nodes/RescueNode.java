@@ -87,7 +87,7 @@ public class RescueNode extends Node {
         // TMP_PROTECT;
         
         if (node.getArgsNode() == null) {
-            // return ruby.getActException().m_kind_of(ruby.getExceptions().getStandardError()).isTrue();
+            return actExcptn.kind_of(ruby.getExceptions().getStandardError()).isTrue();
         }
 
         RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);

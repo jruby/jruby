@@ -121,7 +121,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new RubyNameException(ruby, name + " is not struct member");
+        throw new NameError(ruby, name + " is not struct member");
     }
 
     private RubyObject getByName(String name) {
@@ -137,7 +137,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new RubyNameException(ruby, name + " is not struct member");
+        throw new NameError(ruby, name + " is not struct member");
     }
 
     // Struct methods
@@ -166,7 +166,7 @@ public class RubyStruct extends RubyObject {
             newStruct = RubyClass.newClass(ruby, (RubyClass) recv);
         } else {
             if (!IdUtil.isConstant(name)) {
-                throw new RubyNameException(ruby, "identifier " + name + " needs to be constant");
+                throw new NameError(ruby, "identifier " + name + " needs to be constant");
             }
             newStruct = ((RubyClass) recv).defineClassUnder(name, ((RubyClass) recv));
         }
@@ -260,7 +260,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new RubyNameException(ruby, name + " is not struct member");
+        throw new NameError(ruby, name + " is not struct member");
     }
 
     public RubyObject get() {
@@ -278,7 +278,7 @@ public class RubyStruct extends RubyObject {
             }
         }
 
-        throw new RubyNameException(ruby, name + " is not struct member");
+        throw new NameError(ruby, name + " is not struct member");
     }
 
     public RubyObject rbClone() {

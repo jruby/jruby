@@ -209,8 +209,6 @@ public class ScopeNode extends Node implements CallableNode {
 		RubyVarmap.push(ruby);
 		// PUSH_TAG(PROT_FUNC);
 
-		RubyObject result = ruby.getNil();
-
 		try {
 			if (callNode != null) {
 				//if (call_node.getType() != Constants.NODE_ARGS) {
@@ -272,22 +270,20 @@ public class ScopeNode extends Node implements CallableNode {
 				}
 			}
 
-			result = recv.eval(callBody);
+			return recv.eval(callBody);
 		} catch (ReturnException rExcptn) {
 			// +++ jpetersen
-			result = ((RubyArray) rExcptn.getReturnValue()).pop();
+			return ((RubyArray) rExcptn.getReturnValue()).pop();
 			// ---
+		} finally {
+			RubyVarmap.pop(ruby);
+
+			ruby.getScope().pop();
+
+			if (savedCref != null) {
+				ruby.setCRef(savedCref);
+			}
 		}
-
-		RubyVarmap.pop(ruby);
-
-		ruby.getScope().pop();
-
-		if (savedCref != null) {
-			ruby.setCRef(savedCref);
-		}
-
-		return result;
 	}
 	/**
 	 * Accept for the visitor pattern.

@@ -16,6 +16,9 @@ public class RubyFile extends RubyIO {
         
         fileClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
         fileClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
+        
+        fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
+        fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
 
         fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
         
@@ -107,5 +110,20 @@ public class RubyFile extends RubyIO {
 	    }
 	    
 	    return file;
+	}
+
+	public static RubyObject unlink(Ruby ruby, RubyObject recv, RubyObject[] args) {
+	    for (int i = 0; i < args.length; i++) {
+	        args[i].checkSafeString();
+	        if (!new File(args[i].toString()).delete()) {
+	            return ruby.getFalse();
+	        }
+	    }
+	    
+	    return RubyFixnum.newFixnum(ruby, args.length);
+	}
+
+	public static RubyObject exist(Ruby ruby, RubyObject recv, RubyString filename) {
+	    return RubyBoolean.newBoolean(ruby, new File(filename.toString()).exists());
 	}
 }
