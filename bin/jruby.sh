@@ -51,44 +51,17 @@ if [ -z "$JAVA_HOME" ] ; then
   exit 1
 fi
 
-# ----- Cygwin Unix Paths Setup -----------------------------------------------
-
-# Cygwin support.  $cygwin _must_ be set to either true or false.
-case "`uname`" in
-  CYGWIN*) cygwin=true ;;
-  *) cygwin=false ;;
-esac
- 
-# For Cygwin, ensure paths are in UNIX format before anything is touched
-if $cygwin ; then
-  [ -n "$JRUBY_HOME" ] &&
-    JRUBY_HOME=`cygpath --unix "$JRUBY_HOME"`
-    [ -n "$JAVA_HOME" ] &&
-    JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
-fi
-
-
 # ----- Set Up The System Classpath -------------------------------------------
 
-CP="$JRUBY_HOME/src"
+CP=""
 
 if [ -f "$JAVA_HOME/lib/tools.jar" ] ; then
-  CP=$CP:"$JAVA_HOME/lib/tools.jar"
+  CP="$JAVA_HOME/lib/tools.jar"
 fi
 
 for i in $JRUBY_HOME/lib/*.jar; do
   CP=$CP:$i
 done
-
-# ----- Cygwin Windows Paths Setup --------------------------------------------
-
-# convert the existing path to windows
-if $cygwin ; then
-   CP=`cygpath --path --windows "$CP"`
-   JRUBY_HOME=`cygpath --path --windows "$JRUBY_HOME"`
-   JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
-fi
-
 
 # ----- Set Up JRUBY_BASE If Necessary -------------------------------------
 
@@ -99,21 +72,14 @@ fi
 
 # ----- Execute The Requested Command -----------------------------------------
 
-# echo "Using CLASSPATH:  $CP"
-# echo "Using JRUBY_BASE: $JRUBY_BASE"
-# echo "Using JRUBY_HOME: $JRUBY_HOME"
-# echo "Using JAVA_HOME:  $JAVA_HOME"
-
-# shift
-#  touch $JRUBY_BASE/logs/jruby.out
 DEBUG=""
 if [ "$1" = "JAVA_DEBUG" ]; then
   DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"
   shift
 else
   if [ "$1" = "JPROFILER" ]; then
-    export LD_LIBRARY_PATH=/home/jpetersen/jprofiler/bin/linux-x86
-    DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/home/jpetersen/jprofiler/bin/agent.jar"
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JPROFILER_PATH/linux/i86
+    DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/$JPROFILER_PATH/bin/agent.jar"
     shift
   else if [ "$1" = "HPROF" ]; then
       DEBUG="-Xrunhprof:cpu=samples"
@@ -136,7 +102,5 @@ fi
   -Djruby.script=jruby.sh \
   -Djruby.shell=/bin/sh \
   $EN_US \
-     org.jruby.Main $JRUBY_OPTS "$@" 
-#     \
-#  >> $JRUBY_BASE/logs/jruby.out 2>&1 &
+  org.jruby.Main $JRUBY_OPTS "$@" 
 

@@ -21,29 +21,30 @@
             value="${base.dir}/.tmp"/>
 
   <path id="build.classpath">
-    <fileset dir="${lib.dir}"
-             includes="*.jar"/>
+    <fileset dir="${lib.dir}">
+      <include name="*.jar">
+      <exclude name="jruby.jar">
+    </fileset>
   </path>
 
   <patternset id="java.src.pattern">
     <include name="**/*.java"/>
-    <exclude unless="bsf.present"
-             name="org/jruby/javasupport/bsf/**/*.java"/>
-    <exclude unless="oro.present"
-             name="**/ORORegexpAdapter.java"/>
-    <exclude unless="jdk1.4+"
-             name="**/JDKRegexpAdapter.java"/>
-    <exclude unless="gnuregexp.present"
-             name="**/GNURegexpAdapter.java"/>
+    <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
+    <exclude unless="oro.present" name="**/ORORegexpAdapter.java"/>
+    <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
+    <exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
   </patternset>
 
   <patternset id="ruby.src.pattern">
-      <include name="**/*.rb"/>
+    <include name="**/*.rb"/>
+  </patternset>
+
+  <patternset id="other.src.pattern">
+    <include name="**/*.properties"/>
   </patternset>
 
   <target name="init" description="initialize the build">
-    <xmlproperty file="build-config.xml" keepRoot="false"
-                 collapseAttributes="true"/>
+    <xmlproperty file="build-config.xml" keepRoot="false" collapseAttributes="true"/>
     <tstamp>
       <format property="build.date" pattern="yyyy-MM-dd"/>
     </tstamp>
@@ -69,15 +70,14 @@
 	       classpathref="build.classpath"/>
   </target>
 
-  <target name="compile-src"
-          description="compile the src directory"
-	  depends="init,check-for-optional-packages">
+  <target name="compile-src" description="compile the src directory" depends="init,check-for-optional-packages">
     <mkdir dir="${tmp.dir}/src"/>
  
     <copy todir="${tmp.dir}/src">
       <fileset dir="${src.dir}">
         <patternset refid="java.src.pattern"/>
-	<patternset refid="ruby.src.pattern"/>
+        <patternset refid="ruby.src.pattern"/>
+        <patternset refid="other.src.pattern"/>
       </fileset>
       <filterchain>
         <expandproperties/>
@@ -91,8 +91,7 @@
     </javac>
   </target>
 
-  <target name="compile-test"
-          description="compile the test directory"
+  <target name="compile-test" description="compile the test directory"
 	  depends="check-for-optional-packages,init">
   </target>
 
@@ -105,7 +104,8 @@
     <jar destfile="${lib.dir}/jruby.jar">
       <fileset dir="${tmp.dir}/src">
         <include name="**/*.class"/>
-	<include name="**/*.rb"/>
+	    <include name="**/*.properties"/>
+	    <include name="**/*.rb"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
