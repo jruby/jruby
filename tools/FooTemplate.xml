@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>FooTemplate</name>
+  <superclass>none</superclass>
+  <implementation>org.stuff.FooTemplate</implementation>
+
+  <instance-methods>
+	  <method name="toto_method"/>
+  </instance-methods>
+
+  <class-methods/>
+  </class-methods>
+</module>

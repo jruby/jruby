@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Foo</name>
+  <superclass>FooTemplate</superclass>
+  <implementation>org.stuff.Foo</implementation>
+
+  <instance-methods>
+    <method name="some_method">
+      <arity>2</arity>
+    </method>
+    <method name="some_other_method">
+      <java>someOtherMethod</java>
+    </method>
+    <method name="optional_method">
+      <arity optional="true">1</arity>
+    </method>
+    <method-alias name="op2" original="optional_method"/>
+    <undefine-method name="whoah"/>
+  </instance-methods>
+
+  <class-methods>
+    <method name="alpha">
+      <arity>2</arity>
+    </method>
+    <method name="beta"/>
+  </class-methods>
+</module>
