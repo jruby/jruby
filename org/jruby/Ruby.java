@@ -41,15 +41,8 @@ import java.util.Random;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.ZeroArgNode;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LoadError;
-import org.jruby.exceptions.NextJump;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnException;
 import org.jruby.exceptions.RubyBugException;
@@ -60,14 +53,12 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.AliasGlobalVariable;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ObjectSpace;
@@ -401,95 +392,7 @@ public final class Ruby {
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
-        if (!isBlockGiven()) {
-            throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
-        }
-
-        pushDynamicVars();
-        Block currentBlock = getBlockStack().getCurrent();
-
-        getFrameStack().push(currentBlock.getFrame());
-
-        Namespace oldNamespace = getNamespace();
-        setNamespace(getCurrentFrame().getNamespace());
-
-        Scope oldScope = (Scope)getScope().getTop();
-        getScope().setTop(currentBlock.getScope());
-
-        getBlockStack().pop();
-
-        getCurrentContext().getDynamicVarsStack().push(currentBlock.getDynamicVariables());
-
-        pushClass((klass != null) ? klass : currentBlock.getKlass());
-
-        if (klass == null) {
-            self = currentBlock.getSelf();
-        }
-
-        if (value == null) {
-            value = RubyArray.newArray(this, 0);
-        }
-
-        ICallable method = currentBlock.getMethod();
-
-        if (method == null) {
-            return getNil();
-        }
-
-        INode blockVar = currentBlock.getVar();
-
-        if (blockVar != null) {
-            if (blockVar instanceof ZeroArgNode) {
-                if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
-                    throw new ArgumentError(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
-                }
-            } else {
-                if (!(blockVar instanceof MultipleAsgnNode)) {
-                    if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                        value = ((RubyArray) value).entry(0);
-                    }
-                }
-                new AssignmentVisitor(this, self.toRubyObject()).assign(blockVar, value.toRubyObject(), checkArguments);
-            }
-        } else {
-            if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                value = ((RubyArray) value).entry(0);
-            }
-        }
-
-        getIterStack().push(currentBlock.getIter());
-
-        RubyObject[] args;
-        if (value instanceof RubyArray) {
-            args = ((RubyArray) value).toJavaArray();
-        } else {
-            args = new RubyObject[] { value.toRubyObject() };
-        }
-
-        try {
-            while (true) {
-                try {
-                    return method.call(this, self.toRubyObject(), null, args, false);
-                } catch (RedoJump rExcptn) {
-                }
-            }
-        } catch (NextJump nExcptn) {
-            return getNil();
-        } catch (ReturnException rExcptn) {
-            return rExcptn.getReturnValue();
-        } finally {
-            getIterStack().pop();
-            popClass();
-            popDynamicVars();
-
-            getBlockStack().setCurrent(currentBlock);
-            getFrameStack().pop();
-
-            setNamespace(oldNamespace);
-
-            getScope().setTop(oldScope);
-            getCurrentContext().getDynamicVarsStack().pop();
-        }
+        return getCurrentContext().yield(value, self, klass, checkArguments);
     }
 
     public Scope currentScope() {
