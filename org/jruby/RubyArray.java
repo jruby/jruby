@@ -1379,7 +1379,7 @@ public class RubyArray extends RubyObject {
 		return io2Append;
 	}
 
-	static char hex_table[] = "0123456789ABCDEF".toCharArray();
+	public static char hex_table[] = "0123456789ABCDEF".toCharArray();
 	/**
 	 * encodes a String with the Quoted printable, MIME encoding (see RFC2045).
 	 * appends the result of the encoding in a StringBuffer

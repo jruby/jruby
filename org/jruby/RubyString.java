@@ -41,1925 +41,1926 @@ import org.jruby.marshal.*;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
-    private static RubyModule pfClass;
+	private static RubyModule pfClass;
 
-    private String value;
+	private String value;
 
-    public RubyString(Ruby ruby) {
-        this(ruby, null);
-    }
+	public RubyString(Ruby ruby) {
+		this(ruby, null);
+	}
 
-    public RubyString(Ruby ruby, String str) {
-        this(ruby, ruby.getClasses().getStringClass(), str);
-    }
+	public RubyString(Ruby ruby, String str) {
+		this(ruby, ruby.getClasses().getStringClass(), str);
+	}
 
-    public RubyString(Ruby ruby, RubyClass rubyClass, String str) {
-        super(ruby, rubyClass);
-        this.value = str;
-    }
+	public RubyString(Ruby ruby, RubyClass rubyClass, String str) {
+		super(ruby, rubyClass);
+		this.value = str;
+	}
 
-    public static RubyString nilString(Ruby ruby) {
-        return new RubyString(ruby) {
-            public boolean isNil() {
-                return true;
-            }
-        };
-    }
+	public static RubyString nilString(Ruby ruby) {
+		return new RubyString(ruby) {
+			public boolean isNil() {
+				return true;
+			}
+		};
+	}
 
-    public Class getJavaClass() {
-        return String.class;
-    }
+	public Class getJavaClass() {
+		return String.class;
+	}
 
-    public String getValue() {
-        return this.value;
-    }
+	public String getValue() {
+		return this.value;
+	}
 
-    public void setValue(String newValue) {
-        value = newValue;
-    }
+	public void setValue(String newValue) {
+		value = newValue;
+	}
 
-    public String toString() {
-        return getValue();
-    }
+	public String toString() {
+		return getValue();
+	}
 
-    public static RubyClass createStringClass(Ruby ruby) {
-        RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
+	public static RubyClass createStringClass(Ruby ruby) {
+		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
 
-        stringClass.includeModule(ruby.getClasses().getComparableModule());
-        stringClass.includeModule(ruby.getClasses().getEnumerableModule());
+		stringClass.includeModule(ruby.getClasses().getComparableModule());
+		stringClass.includeModule(ruby.getClasses().getEnumerableModule());
 
-        stringClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
-        stringClass.defineMethod("initialize", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
-        stringClass.defineMethod("clone", CallbackFactory.getMethod(RubyString.class, "rbClone"));
-        stringClass.defineMethod("dup", CallbackFactory.getMethod(RubyString.class, "dup"));
+		stringClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
+		stringClass.defineMethod("initialize", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
+		stringClass.defineMethod("clone", CallbackFactory.getMethod(RubyString.class, "rbClone"));
+		stringClass.defineMethod("dup", CallbackFactory.getMethod(RubyString.class, "dup"));
 
-        stringClass.defineMethod("<=>", CallbackFactory.getMethod(RubyString.class, "op_cmp", RubyObject.class));
-        stringClass.defineMethod("==", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
-        stringClass.defineMethod("===", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
-        stringClass.defineMethod("eql?", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
+		stringClass.defineMethod("<=>", CallbackFactory.getMethod(RubyString.class, "op_cmp", RubyObject.class));
+		stringClass.defineMethod("==", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
+		stringClass.defineMethod("===", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
+		stringClass.defineMethod("eql?", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
 
-        stringClass.defineMethod("hash", CallbackFactory.getMethod(RubyString.class, "hash"));
-        stringClass.defineMethod("+", CallbackFactory.getMethod(RubyString.class, "op_plus", RubyObject.class));
-        stringClass.defineMethod("*", CallbackFactory.getMethod(RubyString.class, "op_mul", RubyInteger.class));
-        stringClass.defineMethod("%", CallbackFactory.getMethod(RubyString.class, "format", RubyObject.class));
-        stringClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyString.class, "aref"));
-        stringClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyString.class, "aset"));
-        stringClass.defineMethod("length", CallbackFactory.getMethod(RubyString.class, "length"));
-        stringClass.defineMethod("size", CallbackFactory.getMethod(RubyString.class, "length"));
-        stringClass.defineMethod("empty?", CallbackFactory.getMethod(RubyString.class, "empty"));
-        stringClass.defineMethod("=~", CallbackFactory.getMethod(RubyString.class, "match", RubyObject.class));
-        stringClass.defineMethod("~", CallbackFactory.getMethod(RubyString.class, "match2"));
-        stringClass.defineMethod("succ", CallbackFactory.getMethod(RubyString.class, "succ"));
-        stringClass.defineMethod("succ!", CallbackFactory.getMethod(RubyString.class, "succ_bang"));
-        stringClass.defineMethod("next", CallbackFactory.getMethod(RubyString.class, "succ"));
-        stringClass.defineMethod("next!", CallbackFactory.getMethod(RubyString.class, "succ_bang"));
-        stringClass.defineMethod("upto", CallbackFactory.getMethod(RubyString.class, "upto", RubyObject.class));
-        stringClass.defineMethod("index", CallbackFactory.getOptMethod(RubyString.class, "index"));
-        stringClass.defineMethod("rindex", CallbackFactory.getOptMethod(RubyString.class, "rindex"));
-        stringClass.defineMethod("replace", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
+		stringClass.defineMethod("hash", CallbackFactory.getMethod(RubyString.class, "hash"));
+		stringClass.defineMethod("+", CallbackFactory.getMethod(RubyString.class, "op_plus", RubyObject.class));
+		stringClass.defineMethod("*", CallbackFactory.getMethod(RubyString.class, "op_mul", RubyInteger.class));
+		stringClass.defineMethod("%", CallbackFactory.getMethod(RubyString.class, "format", RubyObject.class));
+		stringClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyString.class, "aref"));
+		stringClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyString.class, "aset"));
+		stringClass.defineMethod("length", CallbackFactory.getMethod(RubyString.class, "length"));
+		stringClass.defineMethod("size", CallbackFactory.getMethod(RubyString.class, "length"));
+		stringClass.defineMethod("empty?", CallbackFactory.getMethod(RubyString.class, "empty"));
+		stringClass.defineMethod("=~", CallbackFactory.getMethod(RubyString.class, "match", RubyObject.class));
+		stringClass.defineMethod("~", CallbackFactory.getMethod(RubyString.class, "match2"));
+		stringClass.defineMethod("succ", CallbackFactory.getMethod(RubyString.class, "succ"));
+		stringClass.defineMethod("succ!", CallbackFactory.getMethod(RubyString.class, "succ_bang"));
+		stringClass.defineMethod("next", CallbackFactory.getMethod(RubyString.class, "succ"));
+		stringClass.defineMethod("next!", CallbackFactory.getMethod(RubyString.class, "succ_bang"));
+		stringClass.defineMethod("upto", CallbackFactory.getMethod(RubyString.class, "upto", RubyObject.class));
+		stringClass.defineMethod("index", CallbackFactory.getOptMethod(RubyString.class, "index"));
+		stringClass.defineMethod("rindex", CallbackFactory.getOptMethod(RubyString.class, "rindex"));
+		stringClass.defineMethod("replace", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
 
-        stringClass.defineMethod("to_i", CallbackFactory.getMethod(RubyString.class, "to_i"));
-        stringClass.defineMethod("to_f", CallbackFactory.getMethod(RubyString.class, "to_f"));
+		stringClass.defineMethod("to_i", CallbackFactory.getMethod(RubyString.class, "to_i"));
+		stringClass.defineMethod("to_f", CallbackFactory.getMethod(RubyString.class, "to_f"));
 
-        stringClass.defineMethod("to_s", CallbackFactory.getMethod(RubyString.class, "to_s"));
-        stringClass.defineMethod("to_str", CallbackFactory.getMethod(RubyString.class, "to_s"));
-        stringClass.defineMethod("inspect", CallbackFactory.getMethod(RubyString.class, "inspect"));
-        stringClass.defineMethod("dump", CallbackFactory.getMethod(RubyString.class, "dump"));
+		stringClass.defineMethod("to_s", CallbackFactory.getMethod(RubyString.class, "to_s"));
+		stringClass.defineMethod("to_str", CallbackFactory.getMethod(RubyString.class, "to_s"));
+		stringClass.defineMethod("inspect", CallbackFactory.getMethod(RubyString.class, "inspect"));
+		stringClass.defineMethod("dump", CallbackFactory.getMethod(RubyString.class, "dump"));
 
-        stringClass.defineMethod("upcase", CallbackFactory.getMethod(RubyString.class, "upcase"));
-        stringClass.defineMethod("downcase", CallbackFactory.getMethod(RubyString.class, "downcase"));
-        stringClass.defineMethod("capitalize", CallbackFactory.getMethod(RubyString.class, "capitalize"));
-        stringClass.defineMethod("swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
+		stringClass.defineMethod("upcase", CallbackFactory.getMethod(RubyString.class, "upcase"));
+		stringClass.defineMethod("downcase", CallbackFactory.getMethod(RubyString.class, "downcase"));
+		stringClass.defineMethod("capitalize", CallbackFactory.getMethod(RubyString.class, "capitalize"));
+		stringClass.defineMethod("swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
 
-        stringClass.defineMethod("upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
-        stringClass.defineMethod("downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));
-        stringClass.defineMethod("capitalize!", CallbackFactory.getMethod(RubyString.class, "capitalize_bang"));
-        stringClass.defineMethod("swapcase!", CallbackFactory.getMethod(RubyString.class, "swapcase_bang"));
+		stringClass.defineMethod("upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
+		stringClass.defineMethod("downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));
+		stringClass.defineMethod("capitalize!", CallbackFactory.getMethod(RubyString.class, "capitalize_bang"));
+		stringClass.defineMethod("swapcase!", CallbackFactory.getMethod(RubyString.class, "swapcase_bang"));
 
-        stringClass.defineMethod("hex", CallbackFactory.getMethod(RubyString.class, "hex"));
-        stringClass.defineMethod("oct", CallbackFactory.getMethod(RubyString.class, "oct"));
-        stringClass.defineMethod("split", CallbackFactory.getOptMethod(RubyString.class, "split"));
-        stringClass.defineMethod("reverse", CallbackFactory.getMethod(RubyString.class, "reverse"));
-        stringClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyString.class, "reverse_bang"));
-        stringClass.defineMethod("concat", CallbackFactory.getMethod(RubyString.class, "concat", RubyObject.class));
-        stringClass.defineMethod("<<", CallbackFactory.getMethod(RubyString.class, "concat", RubyObject.class));
-        //    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
-        stringClass.defineMethod("intern", CallbackFactory.getMethod(RubyString.class, "intern"));
+		stringClass.defineMethod("hex", CallbackFactory.getMethod(RubyString.class, "hex"));
+		stringClass.defineMethod("oct", CallbackFactory.getMethod(RubyString.class, "oct"));
+		stringClass.defineMethod("split", CallbackFactory.getOptMethod(RubyString.class, "split"));
+		stringClass.defineMethod("reverse", CallbackFactory.getMethod(RubyString.class, "reverse"));
+		stringClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyString.class, "reverse_bang"));
+		stringClass.defineMethod("concat", CallbackFactory.getMethod(RubyString.class, "concat", RubyObject.class));
+		stringClass.defineMethod("<<", CallbackFactory.getMethod(RubyString.class, "concat", RubyObject.class));
+		//    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
+		stringClass.defineMethod("intern", CallbackFactory.getMethod(RubyString.class, "intern"));
 
-        stringClass.defineMethod("include?", CallbackFactory.getMethod(RubyString.class, "include", RubyObject.class));
+		stringClass.defineMethod("include?", CallbackFactory.getMethod(RubyString.class, "include", RubyObject.class));
 
-        stringClass.defineMethod("scan", CallbackFactory.getMethod(RubyString.class, "scan", RubyObject.class));
+		stringClass.defineMethod("scan", CallbackFactory.getMethod(RubyString.class, "scan", RubyObject.class));
 
-        stringClass.defineMethod("ljust", CallbackFactory.getMethod(RubyString.class, "ljust", RubyObject.class));
-        stringClass.defineMethod("rjust", CallbackFactory.getMethod(RubyString.class, "rjust", RubyObject.class));
-        stringClass.defineMethod("center", CallbackFactory.getMethod(RubyString.class, "center", RubyObject.class));
+		stringClass.defineMethod("ljust", CallbackFactory.getMethod(RubyString.class, "ljust", RubyObject.class));
+		stringClass.defineMethod("rjust", CallbackFactory.getMethod(RubyString.class, "rjust", RubyObject.class));
+		stringClass.defineMethod("center", CallbackFactory.getMethod(RubyString.class, "center", RubyObject.class));
 
-        stringClass.defineMethod("sub", CallbackFactory.getOptMethod(RubyString.class, "sub"));
-        stringClass.defineMethod("gsub", CallbackFactory.getOptMethod(RubyString.class, "gsub"));
-        stringClass.defineMethod("chop", CallbackFactory.getMethod(RubyString.class, "chop"));
-        stringClass.defineMethod("chomp", CallbackFactory.getOptMethod(RubyString.class, "chomp"));
-        stringClass.defineMethod("strip", CallbackFactory.getMethod(RubyString.class, "strip"));
+		stringClass.defineMethod("sub", CallbackFactory.getOptMethod(RubyString.class, "sub"));
+		stringClass.defineMethod("gsub", CallbackFactory.getOptMethod(RubyString.class, "gsub"));
+		stringClass.defineMethod("chop", CallbackFactory.getMethod(RubyString.class, "chop"));
+		stringClass.defineMethod("chomp", CallbackFactory.getOptMethod(RubyString.class, "chomp"));
+		stringClass.defineMethod("strip", CallbackFactory.getMethod(RubyString.class, "strip"));
 
-        stringClass.defineMethod("sub!", CallbackFactory.getOptMethod(RubyString.class, "sub_bang"));
-        stringClass.defineMethod("gsub!", CallbackFactory.getOptMethod(RubyString.class, "gsub_bang"));
-        stringClass.defineMethod("chop!", CallbackFactory.getMethod(RubyString.class, "chop_bang"));
-        stringClass.defineMethod("chomp!", CallbackFactory.getOptMethod(RubyString.class, "chomp_bang"));
-        stringClass.defineMethod("strip!", CallbackFactory.getMethod(RubyString.class, "strip_bang"));
+		stringClass.defineMethod("sub!", CallbackFactory.getOptMethod(RubyString.class, "sub_bang"));
+		stringClass.defineMethod("gsub!", CallbackFactory.getOptMethod(RubyString.class, "gsub_bang"));
+		stringClass.defineMethod("chop!", CallbackFactory.getMethod(RubyString.class, "chop_bang"));
+		stringClass.defineMethod("chomp!", CallbackFactory.getOptMethod(RubyString.class, "chomp_bang"));
+		stringClass.defineMethod("strip!", CallbackFactory.getMethod(RubyString.class, "strip_bang"));
 
-        stringClass.defineMethod("tr", CallbackFactory.getOptMethod(RubyString.class, "tr"));
-        stringClass.defineMethod("tr_s", CallbackFactory.getOptMethod(RubyString.class, "tr_s"));
-        stringClass.defineMethod("delete", CallbackFactory.getOptMethod(RubyString.class, "delete"));
-        stringClass.defineMethod("squeeze", CallbackFactory.getOptMethod(RubyString.class, "squeeze"));
-        stringClass.defineMethod("count", CallbackFactory.getOptMethod(RubyString.class, "count"));
+		stringClass.defineMethod("tr", CallbackFactory.getOptMethod(RubyString.class, "tr"));
+		stringClass.defineMethod("tr_s", CallbackFactory.getOptMethod(RubyString.class, "tr_s"));
+		stringClass.defineMethod("delete", CallbackFactory.getOptMethod(RubyString.class, "delete"));
+		stringClass.defineMethod("squeeze", CallbackFactory.getOptMethod(RubyString.class, "squeeze"));
+		stringClass.defineMethod("count", CallbackFactory.getOptMethod(RubyString.class, "count"));
 
-        stringClass.defineMethod("tr!", CallbackFactory.getOptMethod(RubyString.class, "tr_bang"));
-        stringClass.defineMethod("tr_s!", CallbackFactory.getOptMethod(RubyString.class, "tr_s_bang"));
-        stringClass.defineMethod("delete!", CallbackFactory.getOptMethod(RubyString.class, "delete_bang"));
-        stringClass.defineMethod("squeeze!", CallbackFactory.getOptMethod(RubyString.class, "squeeze_bang"));
+		stringClass.defineMethod("tr!", CallbackFactory.getOptMethod(RubyString.class, "tr_bang"));
+		stringClass.defineMethod("tr_s!", CallbackFactory.getOptMethod(RubyString.class, "tr_s_bang"));
+		stringClass.defineMethod("delete!", CallbackFactory.getOptMethod(RubyString.class, "delete_bang"));
+		stringClass.defineMethod("squeeze!", CallbackFactory.getOptMethod(RubyString.class, "squeeze_bang"));
 
-        stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
-        stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
-        stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
+		stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
+		stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
+		stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
 
-        //    rb_define_method(rb_cString, "sum", rb_str_sum, -1);
+		//    rb_define_method(rb_cString, "sum", rb_str_sum, -1);
 
-        stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
-        stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
+		stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
+		stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
 
-        //    id_to_s = rb_intern("to_s");
+		//    id_to_s = rb_intern("to_s");
 
-        //    rb_fs = Qnil;
-        //    rb_define_hooked_variable("$;", &rb_fs, 0, rb_str_setter);
-        //    rb_define_hooked_variable("$-F", &rb_fs, 0, rb_str_setter);
+		//    rb_fs = Qnil;
+		//    rb_define_hooked_variable("$;", &rb_fs, 0, rb_str_setter);
+		//    rb_define_hooked_variable("$-F", &rb_fs, 0, rb_str_setter);
 
 		stringClass.defineMethod("unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
-        return stringClass;
-    }
-
-    public static boolean isDigit(char c) {
-        return c >= '0' && c <= '9';
-    }
-
-    public static boolean isUpper(char c) {
-        return c >= 'A' && c <= 'Z';
-    }
-
-    public static boolean isLower(char c) {
-        return c >= 'a' && c <= 'z';
-    }
-
-    public static boolean isLetter(char c) {
-        return isUpper(c) || isLower(c);
-    }
-
-    public static boolean isAlnum(char c) {
-        return isUpper(c) || isLower(c) || isDigit(c);
-    }
-
-    public static boolean isPrint(char c) {
-        return c >= 0x20 && c <= 0x7E;
-    }
-
-    /** rb_obj_as_string
-     *
-     */
-    public static RubyString objAsString(Ruby ruby, RubyObject obj) {
-        if (obj instanceof RubyString) {
-            return (RubyString) obj;
-        }
-        return (RubyString) obj.funcall("to_s");
-    }
-
-    /** rb_str_cmp
-     *
-     */
-    public int cmp(RubyString other) {
-        /* use Java implementatiom */
-        return getValue().compareTo(other.getValue());
-    }
-
-    /** rb_to_id
-     *
-     */
-    public String toId() {
-        return getValue();
-    }
-
-    /** Create a new String which uses the same Ruby runtime and the same
-     *  class like this String.
-     *
-     *  This method should be used to satisfy RCR #38.
-     *
-     */
-    public RubyString newString(String s) {
-        RubyClass type = getRubyClass();
-        while (type.isIncluded() || type.isSingleton()) {
-            type = type.getSuperClass();
-        }
-
-        return new RubyString(getRuby(), type, s);
-    }
-
-    // Methods of the String class (rb_str_*):
-
-    /** rb_str_new2
-     *
-     */
-    public static RubyString newString(Ruby ruby, String str) {
-        return new RubyString(ruby, str);
-    }
-
-    /** rb_str_new
-     *
-     */
-    public static RubyString newString(Ruby ruby, String str, int len) {
-        return new RubyString(ruby, str.substring(0, len));
-    }
-
-    /** rb_str_dup
-     *
-     */
-    public RubyObject dup() {
-        RubyString newStr = newString(getValue());
-        newStr.infectObject(this);
-        return newStr;
-    }
-
-    /** rb_str_clone
-     *
-     */
-    public RubyObject rbClone() {
-        RubyObject newObject = dup();
-
-        newObject.setupClone(this);
-
-        return newObject;
-    }
-
-    /** rb_str_cat
-     *
-     */
-    public RubyString cat(String str) {
-        value = value + str;
-        return this;
-    }
-
-    /** rb_str_to_s
-     *
-     */
-    public RubyString to_s() {
-        return this;
-    }
-
-    /** rb_str_replace_m
-     *
-     */
-    public RubyString replace(RubyObject other) {
-        RubyString str = stringValue(other);
-        if (this == other || getValue().equals(str.getValue())) {
-            return this;
-        }
-        setValue(str.getValue());
-        infectObject(str);
-        return this;
-    }
-
-    /** rb_str_reverse
-     *
-     */
-    public RubyString reverse() {
-        StringBuffer sb = new StringBuffer(getValue().length());
-        for (int i = getValue().length() - 1; i >= 0; i--) {
-            sb.append(getValue().charAt(i));
-        }
-
-        return newString(sb.toString());
-    }
-
-    /** rb_str_reverse_bang
-     *
-     */
-    public RubyString reverse_bang() {
-        StringBuffer sb = new StringBuffer(getValue().length());
-        for (int i = getValue().length() - 1; i >= 0; i--) {
-            sb.append(getValue().charAt(i));
-        }
-        setValue(sb.toString());
-        return this;
-    }
-
-    /** rb_str_s_new
-     *
-     */
-    public static RubyString newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyString newString = newString(ruby, "");
-        newString.setRubyClass((RubyClass) recv);
-
-        newString.callInit(args);
-
-        return newString;
-    }
-
-    /** rb_str_cmp_m
-     *
-     */
-    public RubyFixnum op_cmp(RubyObject other) {
-        return RubyFixnum.newFixnum(getRuby(), cmp(stringValue(other)));
-    }
-
-    /** rb_str_equal
-     *
-     */
-    public RubyBoolean equal(RubyObject other) {
-        if (other == this) {
-            return getRuby().getTrue();
-        } else if (!(other instanceof RubyString)) {
-            return getRuby().getFalse();
-        }
-        /* use Java implementation */
-        return getValue().equals(((RubyString) other).getValue()) ? getRuby().getTrue() : getRuby().getFalse();
-    }
-
-    /** rb_str_match
-     *
-     */
-    public RubyObject match(RubyObject other) {
-        if (other instanceof RubyRegexp) {
-            return ((RubyRegexp) other).match(this);
-        } else if (other instanceof RubyString) {
-            return RubyRegexp.newRegexp(getRuby(), (RubyString) other, 0).match(this);
-        }
-        return other.funcall("=~", this);
-    }
-
-    /** rb_str_match2
-     *
-     */
-    public RubyObject match2() {
-        return RubyRegexp.newRegexp(getRuby(), this, 0).match2();
-    }
-
-    /** rb_str_capitalize
-     *
-     */
-    public RubyString capitalize() {
-        final int length = getValue().length();
-
-        StringBuffer sb = new StringBuffer(length);
-        if (length > 0) {
-            sb.append(Character.toUpperCase(getValue().charAt(0)));
-        }
-        if (length > 1) {
-            sb.append(getValue().toLowerCase().substring(1));
-        }
-
-        return newString(sb.toString());
-    }
-
-    /** rb_str_capitalize_bang
-     *
-     */
-    public RubyString capitalize_bang() {
-        final int length = getValue().length();
-
-        StringBuffer sb = new StringBuffer(length);
-        if (length > 0) {
-            sb.append(Character.toUpperCase(getValue().charAt(0)));
-        }
-        if (length > 1) {
-            sb.append(getValue().toLowerCase().substring(1));
-        }
-
-        setValue(sb.toString());
-
-        return this;
-    }
-
-    /** rb_str_upcase
-     *
-     */
-    public RubyString upcase() {
-        return newString(getValue().toUpperCase());
-    }
-
-    /** rb_str_upcase_bang
-     *
-     */
-    public RubyString upcase_bang() {
-        setValue(getValue().toUpperCase());
-
-        return this;
-    }
-
-    /** rb_str_downcase
-     *
-     */
-    public RubyString downcase() {
-        return newString(getValue().toLowerCase());
-    }
-
-    /** rb_str_downcase_bang
-     *
-     */
-    public RubyString downcase_bang() {
-        setValue(getValue().toLowerCase());
-
-        return this;
-    }
-
-    /** rb_str_swapcase
-     *
-     */
-    public RubyString swapcase() {
-        RubyString newString = newString(getValue());
-
-        return newString.swapcase_bang();
-    }
-
-    /** rb_str_swapcase_bang
-     *
-     */
-    public RubyString swapcase_bang() {
-        char[] chars = getValue().toCharArray();
-        StringBuffer sb = new StringBuffer(chars.length);
-
-        for (int i = 0; i < chars.length; i++) {
-            if (!Character.isLetter(chars[i])) {
-                sb.append(chars[i]);
-            } else if (Character.isLowerCase(chars[i])) {
-                sb.append(Character.toUpperCase(chars[i]));
-            } else {
-                sb.append(Character.toLowerCase(chars[i]));
-            }
-        }
-        setValue(getValue().toLowerCase());
-
-        return this;
-    }
-
-    /** rb_str_dump
-     *
-     */
-    public RubyString dump() {
-        return inspect(true);
-    }
-
-    /** rb_str_inspect
-     *
-     */
-    public RubyString inspect() {
-        return inspect(false);
-    }
-
-    private RubyString inspect(boolean dump) {
-        final int length = getValue().length();
-
-        StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
-
-        sb.append('\"');
-
-        for (int i = 0; i < length; i++) {
-            char c = getValue().charAt(i);
-
-            if (isAlnum(c)) {
-                sb.append(c);
-            } else if (c == '\"' || c == '\\') {
-                sb.append('\\').append(c);
-            } else if (dump && c == '#') {
-                sb.append('\\').append(c);
-            } else if (isPrint(c)) {
-                sb.append(c);
-            } else if (c == '\n') {
-                sb.append('\\').append('n');
-            } else if (c == '\r') {
-                sb.append('\\').append('r');
-            } else if (c == '\t') {
-                sb.append('\\').append('t');
-            } else if (c == '\f') {
-                sb.append('\\').append('f');
-            } else if (c == '\u000B') {
-                sb.append('\\').append('v');
-            } else if (c == '\u0007') {
-                sb.append('\\').append('a');
-            } else if (c == '\u001B') {
-                sb.append('\\').append('e');
-            } else {
-                sb.append(new PrintfFormat("\\%.3o").sprintf(c));
-            }
-        }
-
-        sb.append('\"');
-
-        return newString(getRuby(), sb.toString());
-    }
-
-    /** rb_str_plus
-     *
-     */
-    public RubyString op_plus(RubyObject other) {
-        RubyString str = stringValue(other);
-
-        RubyString newString = newString(getValue() + str.getValue());
-
-        newString.infectObject(str);
-
-        return newString;
-    }
-
-    /** rb_str_mul
-     *
-     */
-    public RubyString op_mul(RubyInteger other) {
-        long len = other.getLongValue();
-
-        if (len < 0) {
-            throw new ArgumentError(getRuby(), "negative argument");
-        }
-
-        if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
-            throw new ArgumentError(getRuby(), "argument too big");
-        }
-        StringBuffer sb = new StringBuffer((int) (getValue().length() * len));
-
-        for (int i = 0; i < len; i++) {
-            sb.append(getValue());
-        }
-
-        RubyString newString = newString(sb.toString());
-        newString.setTaint(isTaint());
-        return newString;
-    }
-
-    /** rb_str_hash_m
-     *
-     */
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuby(), getValue().hashCode());
-    }
-
-    /** rb_str_length
-     *
-     */
-    public RubyFixnum length() {
-        return new RubyFixnum(getRuby(), getValue().length());
-    }
-
-    /** rb_str_empty
-     *
-     */
-    public RubyBoolean empty() {
-        return new RubyBoolean(getRuby(), getValue().length() == 0);
-    }
-
-    /** rb_str_append
-     *
-     */
-    public RubyString append(RubyObject other) {
-        infectObject(other);
-        return cat(stringValue(other).getValue());
-    }
-
-    /** rb_str_concat
-     *
-     */
-    public RubyString concat(RubyObject other) {
-        if ((other instanceof RubyFixnum) && ((RubyFixnum) other).getLongValue() < 256) {
-            char c = (char) ((RubyFixnum) other).getLongValue();
-            return cat("" + c);
-        }
-        return append(other);
-    }
-
-    /* rb_str_to_str */
-    public static RubyString stringValue(RubyObject other) {
-        if (other instanceof RubyString) {
-            return (RubyString) other;
-        } else {
-            return (RubyString) other.convertType(RubyString.class, "String", "to_str");
-        }
-    }
-
-    /** rb_str_sub
-     *
-     */
-    public RubyObject sub(RubyObject[] args) {
-        return sub(args, false);
-    }
-
-    /** rb_str_sub_bang
-     *
-     */
-    public RubyObject sub_bang(RubyObject[] args) {
-        return sub(args, true);
-    }
-
-    private RubyObject sub(RubyObject[] args, boolean bang) {
-        RubyObject repl = getRuby().getNil();
-        boolean iter = false;
-        if (args.length == 1 && getRuby().isBlockGiven()) {
-            iter = true;
-        } else if (args.length == 2) {
-            repl = args[1];
-        } else {
-            throw new ArgumentError(getRuby(), "wrong number of arguments");
-        }
-        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
-
-        if (pat.search(this, 0) >= 0) {
-            RubyMatchData match = (RubyMatchData) getRuby().getBackref();
-            RubyString newStr = (RubyString) match.pre_match();
-            newStr.append((RubyString) (iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match)));
-            newStr.append((RubyString) match.post_match());
-            if (bang) {
-                replace(newStr);
-                return this;
-            }
-            return newStr;
-        }
-        if (bang) {
-            return getRuby().getNil();
-        }
-        return this;
-    }
-
-    /** rb_str_gsub
-     *
-     */
-    public RubyObject gsub(RubyObject[] args) {
-        return gsub(args, false);
-    }
-
-    /** rb_str_gsub_bang
-     *
-     */
-    public RubyObject gsub_bang(RubyObject[] args) {
-        return gsub(args, true);
-    }
-
-    private RubyObject gsub(RubyObject[] args, boolean bang) {
-        RubyObject repl = getRuby().getNil();
-        RubyMatchData match;
-        boolean iter = false;
-        if (args.length == 1 && getRuby().isBlockGiven()) {
-            iter = true;
-        } else if (args.length == 2) {
-            repl = args[1];
-        } else {
-            throw new ArgumentError(getRuby(), "wrong number of arguments");
-        }
-        boolean taint = repl.isTaint();
-        RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
-
-        int beg = pat.search(this, 0);
-        if (beg < 0) {
-            return bang ? getRuby().getNil() : dup();
-        }
-        StringBuffer sbuf = new StringBuffer();
-        String str = getValue();
-        RubyObject newStr;
-        int offset = 0;
-        while (beg >= 0) {
-            match = (RubyMatchData) getRuby().getBackref();
-            sbuf.append(str.substring(offset, beg));
-            newStr = iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match);
-            taint |= newStr.isTaint();
-            sbuf.append(((RubyString) newStr).getValue());
-            offset = match.matchEndPosition();
-            beg = pat.search(this, (offset == beg ? beg + 1 : offset));
-        }
-        sbuf.append(str.substring(offset, str.length()));
-        if (bang) {
-            setTaint(isTaint() || taint);
-            setValue(sbuf.toString());
-            return this;
-        }
-        RubyString result = newString(sbuf.toString());
-        result.setTaint(taint);
-        return result;
-    }
-
-    /** rb_str_index_m
-     *
-     */
-    public RubyObject index(RubyObject[] args) {
-        return index(args, false);
-    }
-
-    /** rb_str_rindex_m
-     *
-     */
-    public RubyObject rindex(RubyObject[] args) {
-        return index(args, true);
-    }
-
-    /**
-    *	@fixme may be a problem with pos when doing reverse searches
-    */
-    private RubyObject index(RubyObject[] args, boolean reverse) {
-        //FIXME may be a problem with pos when doing reverse searches
-        int pos = 0;
-        if (reverse)
-            pos = getValue().length();
-        if (argCount(args, 1, 2) == 2) {
-            pos = RubyNumeric.fix2int(args[1]);
-        }
-        if (pos < 0) {
-            pos += getValue().length();
-            if (pos < 0) {
-                return getRuby().getNil();
-            }
-        }
-        if (args[0] instanceof RubyRegexp) {
-            pos = ((RubyRegexp) args[0]).search(this, pos);
-            // RubyRegexp doesn't (yet?) support reverse searches, so we
-            // find all matches and use the last one--very inefficient.
-            // XXX - find a better way
-            int dummy = pos;
-            while (reverse && dummy > -1) {
-                pos = dummy;
-                dummy = ((RubyRegexp) args[0]).search(this, pos + 1);
-            }
-        } else if (args[0] instanceof RubyString) {
-            String sub = ((RubyString) args[0]).getValue();
-            pos = reverse ? getValue().lastIndexOf(sub, pos) : getValue().indexOf(sub, pos);
-        } else if (args[0] instanceof RubyFixnum) {
-            char c = (char) ((RubyFixnum) args[0]).getLongValue();
-            pos = reverse ? getValue().lastIndexOf(c, pos) : getValue().indexOf(c, pos);
-        } else {
-            throw new ArgumentError(getRuby(), "wrong type of argument");
-        }
-
-        if (pos == -1) {
-            return getRuby().getNil();
-        }
-        return RubyFixnum.newFixnum(getRuby(), pos);
-    }
-
-    /* rb_str_substr */
-    private RubyObject substr(int beg, int len) {
-        int strLen = getValue().length();
-        if (len < 0 || beg > strLen) {
-            return getRuby().getNil();
-        }
-        if (beg < 0) {
-            beg += strLen;
-            if (beg < 0) {
-                return getRuby().getNil();
-            }
-        }
-        int end = Math.min(strLen, beg + len);
-        RubyString newStr = newString(getValue().substring(beg, end));
-        newStr.infectObject(this);
-        return newStr;
-    }
-
-    /* rb_str_replace */
-    private RubyObject replace(int beg, int len, RubyString repl) {
-        int strLen = getValue().length();
-        if (beg + len >= strLen) {
-            len = strLen - beg;
-        }
-        setValue(getValue().substring(0, beg) + repl.getValue() + getValue().substring(beg + len));
-        infectObject(repl);
-        return this;
-    }
-
-    /** rb_str_aref, rb_str_aref_m
-     *
-     */
-    public RubyObject aref(RubyObject[] args) {
-        if (argCount(args, 1, 2) == 2) {
-            int beg = RubyNumeric.fix2int(args[0]);
-            int len = RubyNumeric.fix2int(args[1]);
-            return substr(beg, len);
-        }
-        if (args[0] instanceof RubyFixnum) {
-            int idx = RubyNumeric.fix2int(args[0]);
-            if (idx < 0) {
-                idx += getValue().length();
-            }
-            if (idx < 0 || idx >= getValue().length()) {
-                return getRuby().getNil();
-            }
-            return new RubyFixnum(getRuby(), getValue().charAt(idx));
-        }
-        if (args[0] instanceof RubyRegexp) {
-            if (RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0) {
-                return RubyRegexp.last_match(getRuby().getBackref());
-            }
-            return getRuby().getNil();
-        }
-        if (args[0] instanceof RubyString) {
-            if (getValue().indexOf(stringValue(args[0]).getValue()) != -1) {
-                return args[0];
-            }
-            return getRuby().getNil();
-        }
-        if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, false);
-            if (begLen == null) {
-                return getRuby().getNil();
-            }
-            return substr((int) begLen[0], (int) begLen[1]);
-        }
-        int idx = (int) RubyNumeric.num2long(args[0]);
-        if (idx < 0) {
-            idx += getValue().length();
-        }
-        if (idx < 0 || idx >= getValue().length()) {
-            return getRuby().getNil();
-        }
-        return new RubyFixnum(getRuby(), getValue().charAt(idx));
-    }
-
-    /** rb_str_aset, rb_str_aset_m
-     *
-     */
-    public RubyObject aset(RubyObject[] args) {
-        int strLen = getValue().length();
-        if (argCount(args, 2, 3) == 3) {
-            RubyString repl = stringValue(args[2]);
-            int beg = RubyNumeric.fix2int(args[0]);
-            int len = RubyNumeric.fix2int(args[1]);
-            if (len < 0) {
-                throw new RubyIndexException(getRuby(), "negative length");
-            }
-            if (beg < 0) {
-                beg += strLen;
-            }
-            if (beg < 0 || beg >= strLen) {
-                throw new RubyIndexException(getRuby(), "string index out of bounds");
-            }
-            if (beg + len > strLen) {
-                len = strLen - beg;
-            }
-            replace(beg, len, repl);
-            return repl;
-        }
-        if (args[0] instanceof RubyFixnum) { // RubyNumeric?
-            int idx = RubyNumeric.fix2int(args[0]); // num2int?
-            if (idx < 0) {
-                idx += getValue().length();
-            }
-            if (idx < 0 || idx >= getValue().length()) {
-                throw new RubyIndexException(getRuby(), "string index out of bounds");
-            }
-            if (args[1] instanceof RubyFixnum) {
-                char c = (char) RubyNumeric.fix2int(args[1]);
-                setValue(getValue().substring(0, idx) + c + getValue().substring(idx + 1));
-            } else {
-                replace(idx, 1, stringValue(args[1]));
-            }
-            return args[1];
-        }
-        if (args[0] instanceof RubyRegexp) {
-            sub_bang(args);
-            return args[1];
-        }
-        if (args[0] instanceof RubyString) {
-            RubyString orig = stringValue(args[0]);
-            int beg = getValue().indexOf(orig.getValue());
-            if (beg != -1) {
-                replace(beg, orig.getValue().length(), stringValue(args[1]));
-            }
-            return args[1];
-        }
-        if (args[0] instanceof RubyRange) {
-            long[] idxs = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, true);
-            replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
-            return args[1];
-        }
-        throw new TypeError(getRuby(), "wrong argument type");
-    }
-
-    /** rb_str_slice_bang
-     *
-     */
-    public RubyObject slice_bang(RubyObject[] args) {
-        int argc = argCount(args, 1, 2);
-        RubyObject[] newArgs = new RubyObject[argc + 1];
-        newArgs[0] = args[0];
-        if (argc > 1) {
-            newArgs[1] = args[1];
-        }
-        newArgs[argc] = newString("");
-        RubyObject result = aref(args);
-        aset(newArgs);
-        return result;
-    }
-
-    /** rb_str_format
-     *
-     */
-    public RubyObject format(RubyObject arg) {
-        if (arg instanceof RubyArray) {
-            Object[] args = new Object[((RubyArray) arg).getLength()];
-            for (int i = 0; i < args.length; i++) {
-                args[i] = JavaUtil.convertRubyToJava(ruby, ((RubyArray) arg).entry(i));
-            }
-            return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(args));
-        } else {
-            return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(ruby, arg)));
-        }
-    }
-
-    /** rb_str_succ
-     *
-     */
-    public RubyObject succ() {
-        return succ(false);
-    }
-
-    /** rb_str_succ_bang
-     *
-     */
-    public RubyObject succ_bang() {
-        return succ(true);
-    }
-
-    private RubyString succ(boolean bang) {
-        if (getValue().length() == 0) {
-            return bang ? this : (RubyString) dup();
-        }
-        StringBuffer sbuf = new StringBuffer(getValue());
-        boolean alnumSeen = false;
-        int pos = -1;
-        char c = 0;
-        char n = 0;
-        for (int i = sbuf.length() - 1; i >= 0; i--) {
-            c = sbuf.charAt(i);
-            if (isAlnum(c)) {
-                alnumSeen = true;
-                if ((isDigit(c) && c < '9') || (isLower(c) && c < 'z') || (isUpper(c) && c < 'Z')) {
-                    sbuf.setCharAt(i, (char) (c + 1));
-                    pos = -1;
-                    break;
-                } else {
-                    pos = i;
-                    n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
-                    sbuf.setCharAt(i, n);
-                }
-            }
-        }
-        if (!alnumSeen) {
-            for (int i = sbuf.length() - 1; i >= 0; i--) {
-                c = sbuf.charAt(i);
-                if (c < 0xff) {
-                    sbuf.setCharAt(i, (char) (c + 1));
-                    pos = -1;
-                    break;
-                } else {
-                    pos = i;
-                    n = '\u0001';
-                    sbuf.setCharAt(i, '\u0000');
-                }
-            }
-        }
-        if (pos > -1) {
-            sbuf.insert(pos, n);
-        }
-
-        if (bang) {
-            setValue(sbuf.toString());
-            return this;
-        } else {
-            RubyString newStr = (RubyString) dup();
-            newStr.setValue(sbuf.toString());
-            return newStr;
-        }
-    }
-
-    /** rb_str_upto_m
-     *
-     */
-    public RubyObject upto(RubyObject str) {
-        return upto(str, false);
-    }
-
-    /* rb_str_upto */
-    RubyObject upto(RubyObject str, boolean excl) {
-        RubyString current = this;
-        RubyString end = stringValue(str);
-        while (current.cmp(end) <= 0) {
-            getRuby().yield(current);
-            if (current.cmp(end) == 0) {
-                break;
-            }
-            current = current.succ(false);
-            if (excl && current.cmp(end) == 0) {
-                break;
-            }
-            if (current.getValue().length() > end.getValue().length()) {
-                break;
-            }
-        }
-        return this;
-    }
-
-    /** rb_str_include
-     *
-     */
-    public RubyBoolean include(RubyObject obj) {
-        if (obj instanceof RubyFixnum) {
-            char c = (char) RubyNumeric.fix2int(obj);
-            return getValue().indexOf(c) == -1 ? getRuby().getFalse() : getRuby().getTrue();
-        }
-        String str = stringValue(obj).getValue();
-        return getValue().indexOf(str) == -1 ? getRuby().getFalse() : getRuby().getTrue();
-    }
-
-    /** rb_str_to_i
-     *
-     */
-    public RubyObject to_i() {
-        return RubyNumeric.str2inum(getRuby(), this, 10);
-    }
-
-    /** rb_str_oct
-     *
-     */
-    public RubyObject oct() {
-        int base = 8;
-        String str = getValue().trim();
-        int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;
-        if (str.indexOf("0x") == pos || str.indexOf("0X") == pos) {
-            base = 16;
-        } else if (str.indexOf("0b") == pos || str.indexOf("0B") == pos) {
-            base = 2;
-        }
-        return RubyNumeric.str2inum(getRuby(), this, base);
-    }
-
-    /** rb_str_hex
-     *
-     */
-    public RubyObject hex() {
-        return RubyNumeric.str2inum(getRuby(), this, 16);
-    }
-
-    /** rb_str_to_f
-     *
-     */
-    public RubyObject to_f() {
-        return RubyNumeric.str2fnum(getRuby(), this);
-    }
-
-    /** rb_str_split
-     *
-     */
-    public RubyArray split(RubyObject[] args) {
-        int limit = 0;
-        RubyRegexp pat = null;
-        RubyString str = null;
-        int argc = argCount(args, 0, 2);
-        if (argc == 2) {
-            limit = RubyNumeric.fix2int(args[1]);
-            if (limit == 1) {
-                return RubyArray.newArray(getRuby(), dup());
-            }
-        }
-        RubyArray result = RubyArray.newArray(getRuby(), 0);
-        int pos = 0;
-        int beg = 0;
-        int hits = 0;
-        int len = getValue().length();
-        if (argc > 0) {
-            if (args[0] instanceof RubyRegexp) {
-                pat = RubyRegexp.regexpValue(args[0]);
-            } else {
-                str = stringValue(args[0]);
-                if (str.getValue().equals(" ")) {
-                    pat = RubyRegexp.newRegexp(getRuby(), "\\s+", 0);
-                } else if (str.getValue().length() != 1) {
-                    pat = RubyRegexp.newRegexp(getRuby(), str, 0);
-                }
-            }
-        } else {
-            pat = RubyRegexp.newRegexp(getRuby(), "\\s+", 0);
-        }
-        if (pat != null) {
-            while ((beg = pat.search(this, pos)) > -1) {
-                hits++;
-                int end = ((RubyMatchData) getRuby().getBackref()).matchEndPosition();
-                result.push(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
-                pos = (end == beg) ? beg + 1 : end;
-                if (hits + 1 == limit) {
-                    break;
-                }
-            }
-        } else {
-            while ((beg = getValue().indexOf(str.getValue(), pos)) > -1) {
-                hits++;
-                result.push(substr(pos, beg - pos));
-                if (hits + 1 == limit) {
-                    break;
-                }
-                pos = beg + 1;
-            }
-        }
-        if (hits == 0) {
-            result.push(dup());
-        } else if (pos <= len) {
-            result.push(substr(pos, len - pos));
-        }
-        if (limit == 0) {
-            while (((RubyString) result.entry(result.getLength() - 1)).empty().isTrue()) {
-                result.pop();
-            }
-        }
-        return result;
-    }
-
-    /** rb_str_scan
-     *
-     */
-    public RubyObject scan(RubyObject arg) {
-        RubyRegexp pat = RubyRegexp.regexpValue(arg);
-        int start = 0;
-        if (!getRuby().isBlockGiven()) {
-            RubyArray ary = RubyArray.newArray(getRuby());
-            while (pat.search(this, start) != -1) {
-                RubyMatchData md = (RubyMatchData) getRuby().getBackref();
-                if (md.getSize() == 1) {
-                    ary.push(md.group(0));
-                } else {
-                    ary.push(md.subseq(1, md.getSize()));
-                }
-                if (md.matchEndPosition() == md.matchStartPosition()) {
-                    start++;
-                } else {
-                    start = md.matchEndPosition();
-                }
-            }
-            return ary;
-        }
-
-        while (pat.search(this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) getRuby().getBackref();
-            if (md.getSize() == 1) {
-                getRuby().yield(md.group(0));
-            } else {
-                getRuby().yield(md.subseq(1, md.getSize()));
-            }
-            if (md.matchEndPosition() == md.matchStartPosition()) {
-                start++;
-            } else {
-                start = md.matchEndPosition();
-            }
-        }
-        return this;
-    }
-
-    /** rb_str_ljust
-     *
-     */
-    public RubyObject ljust(RubyObject arg) {
-        int len = RubyNumeric.fix2int(arg);
-        if (len <= getValue().length()) {
-            return dup();
-        }
-        Object[] args = new Object[] { getValue(), new Integer(-len)};
-        return newString(new PrintfFormat("%*2$s").sprintf(args));
-    }
-
-    /** rb_str_rjust
-     *
-     */
-    public RubyObject rjust(RubyObject arg) {
-        int len = RubyNumeric.fix2int(arg);
-        if (len <= getValue().length()) {
-            return dup();
-        }
-        Object[] args = new Object[] { getValue(), new Integer(len)};
-        return newString(new PrintfFormat("%*2$s").sprintf(args));
-    }
-
-    /** rb_str_center
-     *
-     */
-    public RubyObject center(RubyObject arg) {
-        int len = RubyNumeric.fix2int(arg);
-        int strLen = getValue().length();
-        if (len <= strLen) {
-            return dup();
-        }
-        StringBuffer sbuf = new StringBuffer(len);
-        int lead = (len - strLen) / 2;
-        int pos = 0;
-        while (pos < len) {
-            if (pos == lead) {
-                sbuf.append(getValue());
-                pos += strLen;
-            } else {
-                sbuf.append(' ');
-                pos++;
-            }
-        }
-        return newString(sbuf.toString());
-    }
-
-    private String getChop() {
-        if (getValue().length() == 0) {
-            return null;
-        }
-        int end = getValue().length() - 1;
-        if (getValue().charAt(end) == '\n' && end > 0) {
-            if (getValue().charAt(end - 1) == '\r') {
-                end--;
-            }
-        }
-        return getValue().substring(0, end);
-    }
-
-    /** rb_str_chop
-     *
-     */
-    public RubyObject chop() {
-        String newStr = getChop();
-        if (newStr == null) {
-            return dup();
-        }
-        return newString(newStr);
-    }
-
-    /** rb_str_chop_bang
-     *
-     */
-    public RubyObject chop_bang() {
-        String newStr = getChop();
-        if (newStr == null) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    protected String getChomp(RubyObject[] args) {
-        if (getValue().length() == 0) {
-            return null;
-        }
-        String sep = null;
-        if (argCount(args, 0, 1) == 1) {
-            sep = stringValue(args[0]).getValue();
-        }
-        int end = -1;
-        if (sep != null && getValue().endsWith(sep)) {
-            return getValue().substring(0, getValue().lastIndexOf(sep));
-        }
-        // $/ is coming up nil, so check for 'standard' line separators
-        if (getValue().endsWith("\r\n")) {
-            end = getValue().length() - 2;
-        } else if (getValue().endsWith("\n") || getValue().endsWith("\r")) {
-            end = getValue().length() - 1;
-        }
-        return end == -1 ? null : getValue().substring(0, end);
-    }
-
-    /** rb_str_chomp
-     *
-     */
-    public RubyObject chomp(RubyObject[] args) {
-        String newStr = getChomp(args);
-        if (newStr == null) {
-            return dup();
-        }
-        return newString(newStr);
-    }
-
-    /** rb_str_chomp_bang
-     *
-     */
-    public RubyObject chomp_bang(RubyObject[] args) {
-        String newStr = getChomp(args);
-        if (newStr == null) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    /** rb_str_strip
-     *
-     */
-    public RubyObject strip() {
-        if (getValue().length() == 0) {
-            return dup();
-        }
-        return newString(getValue().trim());
-    }
-
-    /** rb_str_strip_bang
-     *
-     */
-    public RubyObject strip_bang() {
-        if (getValue().length() == 0) {
-            return getRuby().getNil();
-        }
-        String newStr = getValue().trim();
-        if (newStr.equals(getValue())) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    private String expandTemplate(String spec, boolean invertOK) {
-        int len = spec.length();
-        if (len <= 1) {
-            return spec;
-        }
-        StringBuffer sbuf = new StringBuffer();
-        int pos = (invertOK && spec.startsWith("^")) ? 1 : 0;
-        char c1, c2;
-        while (pos < len) {
-            c1 = spec.charAt(pos);
-            if (pos + 2 < len && spec.charAt(pos + 1) == '-') {
-                if ((c2 = spec.charAt(pos + 2)) > c1) {
-                    for (int i = c1; i <= c2; i++) {
-                        sbuf.append((char) i);
-                    }
-                }
-                pos += 3;
-                continue;
-            }
-            sbuf.append(c1);
-            pos++;
-        }
-        return sbuf.toString();
-    }
-
-    private String setupTable(String[] specs) {
-        int[] table = new int[256];
-        int numSets = 0;
-        for (int i = 0; i < specs.length; i++) {
-            String template = expandTemplate(specs[i], true);
-            boolean invert = (specs[i].length() > 1 && specs[i].startsWith("^"));
-            for (int j = 0; j < 256; j++) {
-                if (template.indexOf((char) j) != -1) {
-                    table[j] += (invert ? -1 : 1);
-                }
-            }
-            numSets += invert ? 0 : 1;
-        }
-        StringBuffer sbuf = new StringBuffer();
-        for (int k = 0; k < 256; k++) {
-            if (table[k] == numSets) {
-                sbuf.append((char) k);
-            }
-        }
-        return sbuf.toString();
-    }
-
-    /** rb_str_count
-     *
-     */
-    public RubyObject count(RubyObject[] args) {
-        int argc = argCount(args, 1, -1);
-        String[] specs = new String[argc];
-        for (int i = 0; i < argc; i++) {
-            specs[i] = stringValue(args[i]).getValue();
-        }
-        String table = setupTable(specs);
-
-        int count = 0;
-        for (int j = 0; j < getValue().length(); j++) {
-            if (table.indexOf(getValue().charAt(j)) != -1) {
-                count++;
-            }
-        }
-        return RubyFixnum.newFixnum(getRuby(), count);
-    }
-
-    private String getDelete(RubyObject[] args) {
-        int argc = argCount(args, 1, -1);
-        String[] specs = new String[argc];
-        for (int i = 0; i < argc; i++) {
-            specs[i] = stringValue(args[i]).getValue();
-        }
-        String table = setupTable(specs);
-
-        int strLen = getValue().length();
-        StringBuffer sbuf = new StringBuffer(strLen);
-        char c;
-        for (int j = 0; j < strLen; j++) {
-            c = getValue().charAt(j);
-            if (table.indexOf(c) == -1) {
-                sbuf.append(c);
-            }
-        }
-        return sbuf.toString();
-    }
-
-    /** rb_str_delete
-     *
-     */
-    public RubyObject delete(RubyObject[] args) {
-        RubyString newStr = newString(getDelete(args));
-        newStr.infectObject(this);
-        return newStr;
-    }
-
-    /** rb_str_delete_bang
-     *
-     */
-    public RubyObject delete_bang(RubyObject[] args) {
-        String newStr = getDelete(args);
-        if (newStr.equals(getValue())) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    private String getSqueeze(RubyObject[] args) {
-        int argc = args.length;
-        String[] specs = null;
-        if (argc > 0) {
-            specs = new String[argc];
-            for (int i = 0; i < argc; i++) {
-                specs[i] = stringValue(args[i]).getValue();
-            }
-        }
-        String table = specs == null ? null : setupTable(specs);
-
-        int strLen = getValue().length();
-        if (strLen <= 1) {
-            return getValue();
-        }
-        StringBuffer sbuf = new StringBuffer(strLen);
-        char c1 = getValue().charAt(0);
-        sbuf.append(c1);
-        char c2;
-        for (int j = 1; j < strLen; j++) {
-            c2 = getValue().charAt(j);
-            if (c2 == c1 && (table == null || table.indexOf(c2) != -1)) {
-                continue;
-            }
-            sbuf.append(c2);
-            c1 = c2;
-        }
-        return sbuf.toString();
-    }
-
-    /** rb_str_squeeze
-     *
-     */
-    public RubyObject squeeze(RubyObject[] args) {
-        RubyString newStr = newString(getSqueeze(args));
-        newStr.infectObject(this);
-        return newStr;
-    }
-
-    /** rb_str_squeeze_bang
-     *
-     */
-    public RubyObject squeeze_bang(RubyObject[] args) {
-        String newStr = getSqueeze(args);
-        if (newStr.equals(getValue())) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    private String tr(RubyObject[] args, boolean squeeze) {
-        if (args.length != 2) {
-            throw new ArgumentError(getRuby(), "wrong number of arguments");
-        }
-        String srchSpec = stringValue(args[0]).getValue();
-        String srch = expandTemplate(srchSpec, true);
-        if (srchSpec.startsWith("^")) {
-            StringBuffer sbuf = new StringBuffer(256);
-            for (int i = 0; i < 256; i++) {
-                char c = (char) i;
-                if (srch.indexOf(c) == -1) {
-                    sbuf.append(c);
-                }
-            }
-            srch = sbuf.toString();
-        }
-        String repl = expandTemplate(stringValue(args[1]).getValue(), false);
-
-        int strLen = getValue().length();
-        if (strLen == 0 || srch.length() == 0) {
-            return getValue();
-        }
-        int repLen = repl.length();
-        StringBuffer sbuf = new StringBuffer(strLen);
-        char cs, cr;
-        int last = -1;
-        int pos;
-        for (int i = 0; i < strLen; i++) {
-            cs = getValue().charAt(i);
-            pos = srch.indexOf(cs);
-            if (pos == -1) {
-                sbuf.append(cs);
-                last = -1;
-            } else if (repLen > 0) {
-                cr = repl.charAt(Math.min(pos, repLen - 1));
-                if (squeeze && (int) cr == last) {
-                    continue;
-                }
-                sbuf.append(cr);
-                last = cr;
-            }
-        }
-        return sbuf.toString();
-    }
-
-    /** rb_str_tr
-     *
-     */
-    public RubyObject tr(RubyObject[] args) {
-        RubyString newStr = newString(tr(args, false));
-        newStr.infectObject(this);
-        return newStr;
-    }
-
-    /** rb_str_tr_bang
-     *
-     */
-    public RubyObject tr_bang(RubyObject[] args) {
-        String newStr = tr(args, false);
-        if (newStr.equals(getValue())) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    /** rb_str_tr_s
-     *
-     */
-    public RubyObject tr_s(RubyObject[] args) {
-        RubyString newStr = newString(tr(args, true));
-        newStr.infectObject(this);
-        return newStr;
-    }
-
-    /** rb_str_tr_s_bang
-     *
-     */
-    public RubyObject tr_s_bang(RubyObject[] args) {
-        String newStr = tr(args, true);
-        if (newStr.equals(getValue())) {
-            return getRuby().getNil();
-        }
-        setValue(newStr);
-        return this;
-    }
-
-    /** rb_str_each_line
-     *
-     */
-    public RubyObject each_line(RubyObject[] args) {
-        int strLen = getValue().length();
-        if (strLen == 0) {
-            return this;
-        }
-        String sep = null;
-        if (argCount(args, 0, 1) == 1) {
-            sep = RubyRegexp.quote(stringValue(args[0]).getValue());
-        }
-        if (sep == null) {
-            sep = "(?:\\n|\\r\\n?)";
-        } else if (sep.length() == 0) {
-            sep = "(?:\\n|\\r\\n?){2,}";
-        }
-        RubyRegexp pat = RubyRegexp.newRegexp(getRuby(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE);
-        int start = 0;
-        while (pat.search(this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) getRuby().getBackref();
-            getRuby().yield(md.group(0));
-            start = md.matchEndPosition();
-        }
-        if (start < strLen) {
-            getRuby().yield(substr(start, strLen - start));
-        }
-        return this;
-    }
-
-    /**
-     * rb_str_each_byte
-     */
-    public RubyString each_byte() {
+		return stringClass;
+	}
+
+	public static boolean isDigit(char c) {
+		return c >= '0' && c <= '9';
+	}
+
+	public static boolean isUpper(char c) {
+		return c >= 'A' && c <= 'Z';
+	}
+
+	public static boolean isLower(char c) {
+		return c >= 'a' && c <= 'z';
+	}
+
+	public static boolean isLetter(char c) {
+		return isUpper(c) || isLower(c);
+	}
+
+	public static boolean isAlnum(char c) {
+		return isUpper(c) || isLower(c) || isDigit(c);
+	}
+
+	public static boolean isPrint(char c) {
+		return c >= 0x20 && c <= 0x7E;
+	}
+
+	/** rb_obj_as_string
+	 *
+	 */
+	public static RubyString objAsString(Ruby ruby, RubyObject obj) {
+		if (obj instanceof RubyString) {
+			return (RubyString) obj;
+		}
+		return (RubyString) obj.funcall("to_s");
+	}
+
+	/** rb_str_cmp
+	 *
+	 */
+	public int cmp(RubyString other) {
+		/* use Java implementatiom */
+		return getValue().compareTo(other.getValue());
+	}
+
+	/** rb_to_id
+	 *
+	 */
+	public String toId() {
+		return getValue();
+	}
+
+	/** Create a new String which uses the same Ruby runtime and the same
+	 *  class like this String.
+	 *
+	 *  This method should be used to satisfy RCR #38.
+	 *
+	 */
+	public RubyString newString(String s) {
+		RubyClass type = getRubyClass();
+		while (type.isIncluded() || type.isSingleton()) {
+			type = type.getSuperClass();
+		}
+
+		return new RubyString(getRuby(), type, s);
+	}
+
+	// Methods of the String class (rb_str_*):
+
+	/** rb_str_new2
+	 *
+	 */
+	public static RubyString newString(Ruby ruby, String str) {
+		return new RubyString(ruby, str);
+	}
+
+	/** rb_str_new
+	 *
+	 */
+	public static RubyString newString(Ruby ruby, String str, int len) {
+		return new RubyString(ruby, str.substring(0, len));
+	}
+
+	/** rb_str_dup
+	 *
+	 */
+	public RubyObject dup() {
+		RubyString newStr = newString(getValue());
+		newStr.infectObject(this);
+		return newStr;
+	}
+
+	/** rb_str_clone
+	 *
+	 */
+	public RubyObject rbClone() {
+		RubyObject newObject = dup();
+
+		newObject.setupClone(this);
+
+		return newObject;
+	}
+
+	/** rb_str_cat
+	 *
+	 */
+	public RubyString cat(String str) {
+		value = value + str;
+		return this;
+	}
+
+	/** rb_str_to_s
+	 *
+	 */
+	public RubyString to_s() {
+		return this;
+	}
+
+	/** rb_str_replace_m
+	 *
+	 */
+	public RubyString replace(RubyObject other) {
+		RubyString str = stringValue(other);
+		if (this == other || getValue().equals(str.getValue())) {
+			return this;
+		}
+		setValue(str.getValue());
+		infectObject(str);
+		return this;
+	}
+
+	/** rb_str_reverse
+	 *
+	 */
+	public RubyString reverse() {
+		StringBuffer sb = new StringBuffer(getValue().length());
+		for (int i = getValue().length() - 1; i >= 0; i--) {
+			sb.append(getValue().charAt(i));
+		}
+
+		return newString(sb.toString());
+	}
+
+	/** rb_str_reverse_bang
+	 *
+	 */
+	public RubyString reverse_bang() {
+		StringBuffer sb = new StringBuffer(getValue().length());
+		for (int i = getValue().length() - 1; i >= 0; i--) {
+			sb.append(getValue().charAt(i));
+		}
+		setValue(sb.toString());
+		return this;
+	}
+
+	/** rb_str_s_new
+	 *
+	 */
+	public static RubyString newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
+		RubyString newString = newString(ruby, "");
+		newString.setRubyClass((RubyClass) recv);
+
+		newString.callInit(args);
+
+		return newString;
+	}
+
+	/** rb_str_cmp_m
+	 *
+	 */
+	public RubyFixnum op_cmp(RubyObject other) {
+		return RubyFixnum.newFixnum(getRuby(), cmp(stringValue(other)));
+	}
+
+	/** rb_str_equal
+	 *
+	 */
+	public RubyBoolean equal(RubyObject other) {
+		if (other == this) {
+			return getRuby().getTrue();
+		} else if (!(other instanceof RubyString)) {
+			return getRuby().getFalse();
+		}
+		/* use Java implementation */
+		return getValue().equals(((RubyString) other).getValue()) ? getRuby().getTrue() : getRuby().getFalse();
+	}
+
+	/** rb_str_match
+	 *
+	 */
+	public RubyObject match(RubyObject other) {
+		if (other instanceof RubyRegexp) {
+			return ((RubyRegexp) other).match(this);
+		} else if (other instanceof RubyString) {
+			return RubyRegexp.newRegexp(getRuby(), (RubyString) other, 0).match(this);
+		}
+		return other.funcall("=~", this);
+	}
+
+	/** rb_str_match2
+	 *
+	 */
+	public RubyObject match2() {
+		return RubyRegexp.newRegexp(getRuby(), this, 0).match2();
+	}
+
+	/** rb_str_capitalize
+	 *
+	 */
+	public RubyString capitalize() {
+		final int length = getValue().length();
+
+		StringBuffer sb = new StringBuffer(length);
+		if (length > 0) {
+			sb.append(Character.toUpperCase(getValue().charAt(0)));
+		}
+		if (length > 1) {
+			sb.append(getValue().toLowerCase().substring(1));
+		}
+
+		return newString(sb.toString());
+	}
+
+	/** rb_str_capitalize_bang
+	 *
+	 */
+	public RubyString capitalize_bang() {
+		final int length = getValue().length();
+
+		StringBuffer sb = new StringBuffer(length);
+		if (length > 0) {
+			sb.append(Character.toUpperCase(getValue().charAt(0)));
+		}
+		if (length > 1) {
+			sb.append(getValue().toLowerCase().substring(1));
+		}
+
+		setValue(sb.toString());
+
+		return this;
+	}
+
+	/** rb_str_upcase
+	 *
+	 */
+	public RubyString upcase() {
+		return newString(getValue().toUpperCase());
+	}
+
+	/** rb_str_upcase_bang
+	 *
+	 */
+	public RubyString upcase_bang() {
+		setValue(getValue().toUpperCase());
+
+		return this;
+	}
+
+	/** rb_str_downcase
+	 *
+	 */
+	public RubyString downcase() {
+		return newString(getValue().toLowerCase());
+	}
+
+	/** rb_str_downcase_bang
+	 *
+	 */
+	public RubyString downcase_bang() {
+		setValue(getValue().toLowerCase());
+
+		return this;
+	}
+
+	/** rb_str_swapcase
+	 *
+	 */
+	public RubyString swapcase() {
+		RubyString newString = newString(getValue());
+
+		return newString.swapcase_bang();
+	}
+
+	/** rb_str_swapcase_bang
+	 *
+	 */
+	public RubyString swapcase_bang() {
+		char[] chars = getValue().toCharArray();
+		StringBuffer sb = new StringBuffer(chars.length);
+
+		for (int i = 0; i < chars.length; i++) {
+			if (!Character.isLetter(chars[i])) {
+				sb.append(chars[i]);
+			} else if (Character.isLowerCase(chars[i])) {
+				sb.append(Character.toUpperCase(chars[i]));
+			} else {
+				sb.append(Character.toLowerCase(chars[i]));
+			}
+		}
+		setValue(getValue().toLowerCase());
+
+		return this;
+	}
+
+	/** rb_str_dump
+	 *
+	 */
+	public RubyString dump() {
+		return inspect(true);
+	}
+
+	/** rb_str_inspect
+	 *
+	 */
+	public RubyString inspect() {
+		return inspect(false);
+	}
+
+	private RubyString inspect(boolean dump) {
+		final int length = getValue().length();
+
+		StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
+
+		sb.append('\"');
+
+		for (int i = 0; i < length; i++) {
+			char c = getValue().charAt(i);
+
+			if (isAlnum(c)) {
+				sb.append(c);
+			} else if (c == '\"' || c == '\\') {
+				sb.append('\\').append(c);
+			} else if (dump && c == '#') {
+				sb.append('\\').append(c);
+			} else if (isPrint(c)) {
+				sb.append(c);
+			} else if (c == '\n') {
+				sb.append('\\').append('n');
+			} else if (c == '\r') {
+				sb.append('\\').append('r');
+			} else if (c == '\t') {
+				sb.append('\\').append('t');
+			} else if (c == '\f') {
+				sb.append('\\').append('f');
+			} else if (c == '\u000B') {
+				sb.append('\\').append('v');
+			} else if (c == '\u0007') {
+				sb.append('\\').append('a');
+			} else if (c == '\u001B') {
+				sb.append('\\').append('e');
+			} else {
+				sb.append(new PrintfFormat("\\%.3o").sprintf(c));
+			}
+		}
+
+		sb.append('\"');
+
+		return newString(getRuby(), sb.toString());
+	}
+
+	/** rb_str_plus
+	 *
+	 */
+	public RubyString op_plus(RubyObject other) {
+		RubyString str = stringValue(other);
+
+		RubyString newString = newString(getValue() + str.getValue());
+
+		newString.infectObject(str);
+
+		return newString;
+	}
+
+	/** rb_str_mul
+	 *
+	 */
+	public RubyString op_mul(RubyInteger other) {
+		long len = other.getLongValue();
+
+		if (len < 0) {
+			throw new ArgumentError(getRuby(), "negative argument");
+		}
+
+		if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
+			throw new ArgumentError(getRuby(), "argument too big");
+		}
+		StringBuffer sb = new StringBuffer((int) (getValue().length() * len));
+
+		for (int i = 0; i < len; i++) {
+			sb.append(getValue());
+		}
+
+		RubyString newString = newString(sb.toString());
+		newString.setTaint(isTaint());
+		return newString;
+	}
+
+	/** rb_str_hash_m
+	 *
+	 */
+	public RubyFixnum hash() {
+		return RubyFixnum.newFixnum(getRuby(), getValue().hashCode());
+	}
+
+	/** rb_str_length
+	 *
+	 */
+	public RubyFixnum length() {
+		return new RubyFixnum(getRuby(), getValue().length());
+	}
+
+	/** rb_str_empty
+	 *
+	 */
+	public RubyBoolean empty() {
+		return new RubyBoolean(getRuby(), getValue().length() == 0);
+	}
+
+	/** rb_str_append
+	 *
+	 */
+	public RubyString append(RubyObject other) {
+		infectObject(other);
+		return cat(stringValue(other).getValue());
+	}
+
+	/** rb_str_concat
+	 *
+	 */
+	public RubyString concat(RubyObject other) {
+		if ((other instanceof RubyFixnum) && ((RubyFixnum) other).getLongValue() < 256) {
+			char c = (char) ((RubyFixnum) other).getLongValue();
+			return cat("" + c);
+		}
+		return append(other);
+	}
+
+	/* rb_str_to_str */
+	public static RubyString stringValue(RubyObject other) {
+		if (other instanceof RubyString) {
+			return (RubyString) other;
+		} else {
+			return (RubyString) other.convertType(RubyString.class, "String", "to_str");
+		}
+	}
+
+	/** rb_str_sub
+	 *
+	 */
+	public RubyObject sub(RubyObject[] args) {
+		return sub(args, false);
+	}
+
+	/** rb_str_sub_bang
+	 *
+	 */
+	public RubyObject sub_bang(RubyObject[] args) {
+		return sub(args, true);
+	}
+
+	private RubyObject sub(RubyObject[] args, boolean bang) {
+		RubyObject repl = getRuby().getNil();
+		boolean iter = false;
+		if (args.length == 1 && getRuby().isBlockGiven()) {
+			iter = true;
+		} else if (args.length == 2) {
+			repl = args[1];
+		} else {
+			throw new ArgumentError(getRuby(), "wrong number of arguments");
+		}
+		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
+
+		if (pat.search(this, 0) >= 0) {
+			RubyMatchData match = (RubyMatchData) getRuby().getBackref();
+			RubyString newStr = (RubyString) match.pre_match();
+			newStr.append((RubyString) (iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match)));
+			newStr.append((RubyString) match.post_match());
+			if (bang) {
+				replace(newStr);
+				return this;
+			}
+			return newStr;
+		}
+		if (bang) {
+			return getRuby().getNil();
+		}
+		return this;
+	}
+
+	/** rb_str_gsub
+	 *
+	 */
+	public RubyObject gsub(RubyObject[] args) {
+		return gsub(args, false);
+	}
+
+	/** rb_str_gsub_bang
+	 *
+	 */
+	public RubyObject gsub_bang(RubyObject[] args) {
+		return gsub(args, true);
+	}
+
+	private RubyObject gsub(RubyObject[] args, boolean bang) {
+		RubyObject repl = getRuby().getNil();
+		RubyMatchData match;
+		boolean iter = false;
+		if (args.length == 1 && getRuby().isBlockGiven()) {
+			iter = true;
+		} else if (args.length == 2) {
+			repl = args[1];
+		} else {
+			throw new ArgumentError(getRuby(), "wrong number of arguments");
+		}
+		boolean taint = repl.isTaint();
+		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
+
+		int beg = pat.search(this, 0);
+		if (beg < 0) {
+			return bang ? getRuby().getNil() : dup();
+		}
+		StringBuffer sbuf = new StringBuffer();
+		String str = getValue();
+		RubyObject newStr;
+		int offset = 0;
+		while (beg >= 0) {
+			match = (RubyMatchData) getRuby().getBackref();
+			sbuf.append(str.substring(offset, beg));
+			newStr = iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match);
+			taint |= newStr.isTaint();
+			sbuf.append(((RubyString) newStr).getValue());
+			offset = match.matchEndPosition();
+			beg = pat.search(this, (offset == beg ? beg + 1 : offset));
+		}
+		sbuf.append(str.substring(offset, str.length()));
+		if (bang) {
+			setTaint(isTaint() || taint);
+			setValue(sbuf.toString());
+			return this;
+		}
+		RubyString result = newString(sbuf.toString());
+		result.setTaint(taint);
+		return result;
+	}
+
+	/** rb_str_index_m
+	 *
+	 */
+	public RubyObject index(RubyObject[] args) {
+		return index(args, false);
+	}
+
+	/** rb_str_rindex_m
+	 *
+	 */
+	public RubyObject rindex(RubyObject[] args) {
+		return index(args, true);
+	}
+
+	/**
+	 *	@fixme may be a problem with pos when doing reverse searches
+	 */
+	private RubyObject index(RubyObject[] args, boolean reverse) {
+		//FIXME may be a problem with pos when doing reverse searches
+		int pos = 0;
+		if (reverse)
+			pos = getValue().length();
+		if (argCount(args, 1, 2) == 2) {
+			pos = RubyNumeric.fix2int(args[1]);
+		}
+		if (pos < 0) {
+			pos += getValue().length();
+			if (pos < 0) {
+				return getRuby().getNil();
+			}
+		}
+		if (args[0] instanceof RubyRegexp) {
+			pos = ((RubyRegexp) args[0]).search(this, pos);
+			// RubyRegexp doesn't (yet?) support reverse searches, so we
+			// find all matches and use the last one--very inefficient.
+			// XXX - find a better way
+			int dummy = pos;
+			while (reverse && dummy > -1) {
+				pos = dummy;
+				dummy = ((RubyRegexp) args[0]).search(this, pos + 1);
+			}
+		} else if (args[0] instanceof RubyString) {
+			String sub = ((RubyString) args[0]).getValue();
+			pos = reverse ? getValue().lastIndexOf(sub, pos) : getValue().indexOf(sub, pos);
+		} else if (args[0] instanceof RubyFixnum) {
+			char c = (char) ((RubyFixnum) args[0]).getLongValue();
+			pos = reverse ? getValue().lastIndexOf(c, pos) : getValue().indexOf(c, pos);
+		} else {
+			throw new ArgumentError(getRuby(), "wrong type of argument");
+		}
+
+		if (pos == -1) {
+			return getRuby().getNil();
+		}
+		return RubyFixnum.newFixnum(getRuby(), pos);
+	}
+
+	/* rb_str_substr */
+	private RubyObject substr(int beg, int len) {
+		int strLen = getValue().length();
+		if (len < 0 || beg > strLen) {
+			return getRuby().getNil();
+		}
+		if (beg < 0) {
+			beg += strLen;
+			if (beg < 0) {
+				return getRuby().getNil();
+			}
+		}
+		int end = Math.min(strLen, beg + len);
+		RubyString newStr = newString(getValue().substring(beg, end));
+		newStr.infectObject(this);
+		return newStr;
+	}
+
+	/* rb_str_replace */
+	private RubyObject replace(int beg, int len, RubyString repl) {
+		int strLen = getValue().length();
+		if (beg + len >= strLen) {
+			len = strLen - beg;
+		}
+		setValue(getValue().substring(0, beg) + repl.getValue() + getValue().substring(beg + len));
+		infectObject(repl);
+		return this;
+	}
+
+	/** rb_str_aref, rb_str_aref_m
+	 *
+	 */
+	public RubyObject aref(RubyObject[] args) {
+		if (argCount(args, 1, 2) == 2) {
+			int beg = RubyNumeric.fix2int(args[0]);
+			int len = RubyNumeric.fix2int(args[1]);
+			return substr(beg, len);
+		}
+		if (args[0] instanceof RubyFixnum) {
+			int idx = RubyNumeric.fix2int(args[0]);
+			if (idx < 0) {
+				idx += getValue().length();
+			}
+			if (idx < 0 || idx >= getValue().length()) {
+				return getRuby().getNil();
+			}
+			return new RubyFixnum(getRuby(), getValue().charAt(idx));
+		}
+		if (args[0] instanceof RubyRegexp) {
+			if (RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0) {
+				return RubyRegexp.last_match(getRuby().getBackref());
+			}
+			return getRuby().getNil();
+		}
+		if (args[0] instanceof RubyString) {
+			if (getValue().indexOf(stringValue(args[0]).getValue()) != -1) {
+				return args[0];
+			}
+			return getRuby().getNil();
+		}
+		if (args[0] instanceof RubyRange) {
+			long[] begLen = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, false);
+			if (begLen == null) {
+				return getRuby().getNil();
+			}
+			return substr((int) begLen[0], (int) begLen[1]);
+		}
+		int idx = (int) RubyNumeric.num2long(args[0]);
+		if (idx < 0) {
+			idx += getValue().length();
+		}
+		if (idx < 0 || idx >= getValue().length()) {
+			return getRuby().getNil();
+		}
+		return new RubyFixnum(getRuby(), getValue().charAt(idx));
+	}
+
+	/** rb_str_aset, rb_str_aset_m
+	 *
+	 */
+	public RubyObject aset(RubyObject[] args) {
+		int strLen = getValue().length();
+		if (argCount(args, 2, 3) == 3) {
+			RubyString repl = stringValue(args[2]);
+			int beg = RubyNumeric.fix2int(args[0]);
+			int len = RubyNumeric.fix2int(args[1]);
+			if (len < 0) {
+				throw new RubyIndexException(getRuby(), "negative length");
+			}
+			if (beg < 0) {
+				beg += strLen;
+			}
+			if (beg < 0 || beg >= strLen) {
+				throw new RubyIndexException(getRuby(), "string index out of bounds");
+			}
+			if (beg + len > strLen) {
+				len = strLen - beg;
+			}
+			replace(beg, len, repl);
+			return repl;
+		}
+		if (args[0] instanceof RubyFixnum) { // RubyNumeric?
+			int idx = RubyNumeric.fix2int(args[0]); // num2int?
+			if (idx < 0) {
+				idx += getValue().length();
+			}
+			if (idx < 0 || idx >= getValue().length()) {
+				throw new RubyIndexException(getRuby(), "string index out of bounds");
+			}
+			if (args[1] instanceof RubyFixnum) {
+				char c = (char) RubyNumeric.fix2int(args[1]);
+				setValue(getValue().substring(0, idx) + c + getValue().substring(idx + 1));
+			} else {
+				replace(idx, 1, stringValue(args[1]));
+			}
+			return args[1];
+		}
+		if (args[0] instanceof RubyRegexp) {
+			sub_bang(args);
+			return args[1];
+		}
+		if (args[0] instanceof RubyString) {
+			RubyString orig = stringValue(args[0]);
+			int beg = getValue().indexOf(orig.getValue());
+			if (beg != -1) {
+				replace(beg, orig.getValue().length(), stringValue(args[1]));
+			}
+			return args[1];
+		}
+		if (args[0] instanceof RubyRange) {
+			long[] idxs = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, true);
+			replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
+			return args[1];
+		}
+		throw new TypeError(getRuby(), "wrong argument type");
+	}
+
+	/** rb_str_slice_bang
+	 *
+	 */
+	public RubyObject slice_bang(RubyObject[] args) {
+		int argc = argCount(args, 1, 2);
+		RubyObject[] newArgs = new RubyObject[argc + 1];
+		newArgs[0] = args[0];
+		if (argc > 1) {
+			newArgs[1] = args[1];
+		}
+		newArgs[argc] = newString("");
+		RubyObject result = aref(args);
+		aset(newArgs);
+		return result;
+	}
+
+	/** rb_str_format
+	 *
+	 */
+	public RubyObject format(RubyObject arg) {
+		if (arg instanceof RubyArray) {
+			Object[] args = new Object[((RubyArray) arg).getLength()];
+			for (int i = 0; i < args.length; i++) {
+				args[i] = JavaUtil.convertRubyToJava(ruby, ((RubyArray) arg).entry(i));
+			}
+			return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(args));
+		} else {
+			return RubyString.newString(ruby, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(ruby, arg)));
+		}
+	}
+
+	/** rb_str_succ
+	 *
+	 */
+	public RubyObject succ() {
+		return succ(false);
+	}
+
+	/** rb_str_succ_bang
+	 *
+	 */
+	public RubyObject succ_bang() {
+		return succ(true);
+	}
+
+	private RubyString succ(boolean bang) {
+		if (getValue().length() == 0) {
+			return bang ? this : (RubyString) dup();
+		}
+		StringBuffer sbuf = new StringBuffer(getValue());
+		boolean alnumSeen = false;
+		int pos = -1;
+		char c = 0;
+		char n = 0;
+		for (int i = sbuf.length() - 1; i >= 0; i--) {
+			c = sbuf.charAt(i);
+			if (isAlnum(c)) {
+				alnumSeen = true;
+				if ((isDigit(c) && c < '9') || (isLower(c) && c < 'z') || (isUpper(c) && c < 'Z')) {
+					sbuf.setCharAt(i, (char) (c + 1));
+					pos = -1;
+					break;
+				} else {
+					pos = i;
+					n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
+					sbuf.setCharAt(i, n);
+				}
+			}
+		}
+		if (!alnumSeen) {
+			for (int i = sbuf.length() - 1; i >= 0; i--) {
+				c = sbuf.charAt(i);
+				if (c < 0xff) {
+					sbuf.setCharAt(i, (char) (c + 1));
+					pos = -1;
+					break;
+				} else {
+					pos = i;
+					n = '\u0001';
+					sbuf.setCharAt(i, '\u0000');
+				}
+			}
+		}
+		if (pos > -1) {
+			sbuf.insert(pos, n);
+		}
+
+		if (bang) {
+			setValue(sbuf.toString());
+			return this;
+		} else {
+			RubyString newStr = (RubyString) dup();
+			newStr.setValue(sbuf.toString());
+			return newStr;
+		}
+	}
+
+	/** rb_str_upto_m
+	 *
+	 */
+	public RubyObject upto(RubyObject str) {
+		return upto(str, false);
+	}
+
+	/* rb_str_upto */
+	RubyObject upto(RubyObject str, boolean excl) {
+		RubyString current = this;
+		RubyString end = stringValue(str);
+		while (current.cmp(end) <= 0) {
+			getRuby().yield(current);
+			if (current.cmp(end) == 0) {
+				break;
+			}
+			current = current.succ(false);
+			if (excl && current.cmp(end) == 0) {
+				break;
+			}
+			if (current.getValue().length() > end.getValue().length()) {
+				break;
+			}
+		}
+		return this;
+	}
+
+	/** rb_str_include
+	 *
+	 */
+	public RubyBoolean include(RubyObject obj) {
+		if (obj instanceof RubyFixnum) {
+			char c = (char) RubyNumeric.fix2int(obj);
+			return getValue().indexOf(c) == -1 ? getRuby().getFalse() : getRuby().getTrue();
+		}
+		String str = stringValue(obj).getValue();
+		return getValue().indexOf(str) == -1 ? getRuby().getFalse() : getRuby().getTrue();
+	}
+
+	/** rb_str_to_i
+	 *
+	 */
+	public RubyObject to_i() {
+		return RubyNumeric.str2inum(getRuby(), this, 10);
+	}
+
+	/** rb_str_oct
+	 *
+	 */
+	public RubyObject oct() {
+		int base = 8;
+		String str = getValue().trim();
+		int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;
+		if (str.indexOf("0x") == pos || str.indexOf("0X") == pos) {
+			base = 16;
+		} else if (str.indexOf("0b") == pos || str.indexOf("0B") == pos) {
+			base = 2;
+		}
+		return RubyNumeric.str2inum(getRuby(), this, base);
+	}
+
+	/** rb_str_hex
+	 *
+	 */
+	public RubyObject hex() {
+		return RubyNumeric.str2inum(getRuby(), this, 16);
+	}
+
+	/** rb_str_to_f
+	 *
+	 */
+	public RubyObject to_f() {
+		return RubyNumeric.str2fnum(getRuby(), this);
+	}
+
+	/** rb_str_split
+	 *
+	 */
+	public RubyArray split(RubyObject[] args) {
+		int limit = 0;
+		RubyRegexp pat = null;
+		RubyString str = null;
+		int argc = argCount(args, 0, 2);
+		if (argc == 2) {
+			limit = RubyNumeric.fix2int(args[1]);
+			if (limit == 1) {
+				return RubyArray.newArray(getRuby(), dup());
+			}
+		}
+		RubyArray result = RubyArray.newArray(getRuby(), 0);
+		int pos = 0;
+		int beg = 0;
+		int hits = 0;
+		int len = getValue().length();
+		if (argc > 0) {
+			if (args[0] instanceof RubyRegexp) {
+				pat = RubyRegexp.regexpValue(args[0]);
+			} else {
+				str = stringValue(args[0]);
+				if (str.getValue().equals(" ")) {
+					pat = RubyRegexp.newRegexp(getRuby(), "\\s+", 0);
+				} else if (str.getValue().length() != 1) {
+					pat = RubyRegexp.newRegexp(getRuby(), str, 0);
+				}
+			}
+		} else {
+			pat = RubyRegexp.newRegexp(getRuby(), "\\s+", 0);
+		}
+		if (pat != null) {
+			while ((beg = pat.search(this, pos)) > -1) {
+				hits++;
+				int end = ((RubyMatchData) getRuby().getBackref()).matchEndPosition();
+				result.push(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
+				pos = (end == beg) ? beg + 1 : end;
+				if (hits + 1 == limit) {
+					break;
+				}
+			}
+		} else {
+			while ((beg = getValue().indexOf(str.getValue(), pos)) > -1) {
+				hits++;
+				result.push(substr(pos, beg - pos));
+				if (hits + 1 == limit) {
+					break;
+				}
+				pos = beg + 1;
+			}
+		}
+		if (hits == 0) {
+			result.push(dup());
+		} else if (pos <= len) {
+			result.push(substr(pos, len - pos));
+		}
+		if (limit == 0) {
+			while (((RubyString) result.entry(result.getLength() - 1)).empty().isTrue()) {
+				result.pop();
+			}
+		}
+		return result;
+	}
+
+	/** rb_str_scan
+	 *
+	 */
+	public RubyObject scan(RubyObject arg) {
+		RubyRegexp pat = RubyRegexp.regexpValue(arg);
+		int start = 0;
+		if (!getRuby().isBlockGiven()) {
+			RubyArray ary = RubyArray.newArray(getRuby());
+			while (pat.search(this, start) != -1) {
+				RubyMatchData md = (RubyMatchData) getRuby().getBackref();
+				if (md.getSize() == 1) {
+					ary.push(md.group(0));
+				} else {
+					ary.push(md.subseq(1, md.getSize()));
+				}
+				if (md.matchEndPosition() == md.matchStartPosition()) {
+					start++;
+				} else {
+					start = md.matchEndPosition();
+				}
+			}
+			return ary;
+		}
+
+		while (pat.search(this, start) != -1) {
+			RubyMatchData md = (RubyMatchData) getRuby().getBackref();
+			if (md.getSize() == 1) {
+				getRuby().yield(md.group(0));
+			} else {
+				getRuby().yield(md.subseq(1, md.getSize()));
+			}
+			if (md.matchEndPosition() == md.matchStartPosition()) {
+				start++;
+			} else {
+				start = md.matchEndPosition();
+			}
+		}
+		return this;
+	}
+
+	/** rb_str_ljust
+	 *
+	 */
+	public RubyObject ljust(RubyObject arg) {
+		int len = RubyNumeric.fix2int(arg);
+		if (len <= getValue().length()) {
+			return dup();
+		}
+		Object[] args = new Object[] { getValue(), new Integer(-len)};
+		return newString(new PrintfFormat("%*2$s").sprintf(args));
+	}
+
+	/** rb_str_rjust
+	 *
+	 */
+	public RubyObject rjust(RubyObject arg) {
+		int len = RubyNumeric.fix2int(arg);
+		if (len <= getValue().length()) {
+			return dup();
+		}
+		Object[] args = new Object[] { getValue(), new Integer(len)};
+		return newString(new PrintfFormat("%*2$s").sprintf(args));
+	}
+
+	/** rb_str_center
+	 *
+	 */
+	public RubyObject center(RubyObject arg) {
+		int len = RubyNumeric.fix2int(arg);
+		int strLen = getValue().length();
+		if (len <= strLen) {
+			return dup();
+		}
+		StringBuffer sbuf = new StringBuffer(len);
+		int lead = (len - strLen) / 2;
+		int pos = 0;
+		while (pos < len) {
+			if (pos == lead) {
+				sbuf.append(getValue());
+				pos += strLen;
+			} else {
+				sbuf.append(' ');
+				pos++;
+			}
+		}
+		return newString(sbuf.toString());
+	}
+
+	private String getChop() {
+		if (getValue().length() == 0) {
+			return null;
+		}
+		int end = getValue().length() - 1;
+		if (getValue().charAt(end) == '\n' && end > 0) {
+			if (getValue().charAt(end - 1) == '\r') {
+				end--;
+			}
+		}
+		return getValue().substring(0, end);
+	}
+
+	/** rb_str_chop
+	 *
+	 */
+	public RubyObject chop() {
+		String newStr = getChop();
+		if (newStr == null) {
+			return dup();
+		}
+		return newString(newStr);
+	}
+
+	/** rb_str_chop_bang
+	 *
+	 */
+	public RubyObject chop_bang() {
+		String newStr = getChop();
+		if (newStr == null) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	protected String getChomp(RubyObject[] args) {
+		if (getValue().length() == 0) {
+			return null;
+		}
+		String sep = null;
+		if (argCount(args, 0, 1) == 1) {
+			sep = stringValue(args[0]).getValue();
+		}
+		int end = -1;
+		if (sep != null && getValue().endsWith(sep)) {
+			return getValue().substring(0, getValue().lastIndexOf(sep));
+		}
+		// $/ is coming up nil, so check for 'standard' line separators
+		if (getValue().endsWith("\r\n")) {
+			end = getValue().length() - 2;
+		} else if (getValue().endsWith("\n") || getValue().endsWith("\r")) {
+			end = getValue().length() - 1;
+		}
+		return end == -1 ? null : getValue().substring(0, end);
+	}
+
+	/** rb_str_chomp
+	 *
+	 */
+	public RubyObject chomp(RubyObject[] args) {
+		String newStr = getChomp(args);
+		if (newStr == null) {
+			return dup();
+		}
+		return newString(newStr);
+	}
+
+	/** rb_str_chomp_bang
+	 *
+	 */
+	public RubyObject chomp_bang(RubyObject[] args) {
+		String newStr = getChomp(args);
+		if (newStr == null) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	/** rb_str_strip
+	 *
+	 */
+	public RubyObject strip() {
+		if (getValue().length() == 0) {
+			return dup();
+		}
+		return newString(getValue().trim());
+	}
+
+	/** rb_str_strip_bang
+	 *
+	 */
+	public RubyObject strip_bang() {
+		if (getValue().length() == 0) {
+			return getRuby().getNil();
+		}
+		String newStr = getValue().trim();
+		if (newStr.equals(getValue())) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	private String expandTemplate(String spec, boolean invertOK) {
+		int len = spec.length();
+		if (len <= 1) {
+			return spec;
+		}
+		StringBuffer sbuf = new StringBuffer();
+		int pos = (invertOK && spec.startsWith("^")) ? 1 : 0;
+		char c1, c2;
+		while (pos < len) {
+			c1 = spec.charAt(pos);
+			if (pos + 2 < len && spec.charAt(pos + 1) == '-') {
+				if ((c2 = spec.charAt(pos + 2)) > c1) {
+					for (int i = c1; i <= c2; i++) {
+						sbuf.append((char) i);
+					}
+				}
+				pos += 3;
+				continue;
+			}
+			sbuf.append(c1);
+			pos++;
+		}
+		return sbuf.toString();
+	}
+
+	private String setupTable(String[] specs) {
+		int[] table = new int[256];
+		int numSets = 0;
+		for (int i = 0; i < specs.length; i++) {
+			String template = expandTemplate(specs[i], true);
+			boolean invert = (specs[i].length() > 1 && specs[i].startsWith("^"));
+			for (int j = 0; j < 256; j++) {
+				if (template.indexOf((char) j) != -1) {
+					table[j] += (invert ? -1 : 1);
+				}
+			}
+			numSets += invert ? 0 : 1;
+		}
+		StringBuffer sbuf = new StringBuffer();
+		for (int k = 0; k < 256; k++) {
+			if (table[k] == numSets) {
+				sbuf.append((char) k);
+			}
+		}
+		return sbuf.toString();
+	}
+
+	/** rb_str_count
+	 *
+	 */
+	public RubyObject count(RubyObject[] args) {
+		int argc = argCount(args, 1, -1);
+		String[] specs = new String[argc];
+		for (int i = 0; i < argc; i++) {
+			specs[i] = stringValue(args[i]).getValue();
+		}
+		String table = setupTable(specs);
+
+		int count = 0;
+		for (int j = 0; j < getValue().length(); j++) {
+			if (table.indexOf(getValue().charAt(j)) != -1) {
+				count++;
+			}
+		}
+		return RubyFixnum.newFixnum(getRuby(), count);
+	}
+
+	private String getDelete(RubyObject[] args) {
+		int argc = argCount(args, 1, -1);
+		String[] specs = new String[argc];
+		for (int i = 0; i < argc; i++) {
+			specs[i] = stringValue(args[i]).getValue();
+		}
+		String table = setupTable(specs);
+
+		int strLen = getValue().length();
+		StringBuffer sbuf = new StringBuffer(strLen);
+		char c;
+		for (int j = 0; j < strLen; j++) {
+			c = getValue().charAt(j);
+			if (table.indexOf(c) == -1) {
+				sbuf.append(c);
+			}
+		}
+		return sbuf.toString();
+	}
+
+	/** rb_str_delete
+	 *
+	 */
+	public RubyObject delete(RubyObject[] args) {
+		RubyString newStr = newString(getDelete(args));
+		newStr.infectObject(this);
+		return newStr;
+	}
+
+	/** rb_str_delete_bang
+	 *
+	 */
+	public RubyObject delete_bang(RubyObject[] args) {
+		String newStr = getDelete(args);
+		if (newStr.equals(getValue())) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	private String getSqueeze(RubyObject[] args) {
+		int argc = args.length;
+		String[] specs = null;
+		if (argc > 0) {
+			specs = new String[argc];
+			for (int i = 0; i < argc; i++) {
+				specs[i] = stringValue(args[i]).getValue();
+			}
+		}
+		String table = specs == null ? null : setupTable(specs);
+
+		int strLen = getValue().length();
+		if (strLen <= 1) {
+			return getValue();
+		}
+		StringBuffer sbuf = new StringBuffer(strLen);
+		char c1 = getValue().charAt(0);
+		sbuf.append(c1);
+		char c2;
+		for (int j = 1; j < strLen; j++) {
+			c2 = getValue().charAt(j);
+			if (c2 == c1 && (table == null || table.indexOf(c2) != -1)) {
+				continue;
+			}
+			sbuf.append(c2);
+			c1 = c2;
+		}
+		return sbuf.toString();
+	}
+
+	/** rb_str_squeeze
+	 *
+	 */
+	public RubyObject squeeze(RubyObject[] args) {
+		RubyString newStr = newString(getSqueeze(args));
+		newStr.infectObject(this);
+		return newStr;
+	}
+
+	/** rb_str_squeeze_bang
+	 *
+	 */
+	public RubyObject squeeze_bang(RubyObject[] args) {
+		String newStr = getSqueeze(args);
+		if (newStr.equals(getValue())) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	private String tr(RubyObject[] args, boolean squeeze) {
+		if (args.length != 2) {
+			throw new ArgumentError(getRuby(), "wrong number of arguments");
+		}
+		String srchSpec = stringValue(args[0]).getValue();
+		String srch = expandTemplate(srchSpec, true);
+		if (srchSpec.startsWith("^")) {
+			StringBuffer sbuf = new StringBuffer(256);
+			for (int i = 0; i < 256; i++) {
+				char c = (char) i;
+				if (srch.indexOf(c) == -1) {
+					sbuf.append(c);
+				}
+			}
+			srch = sbuf.toString();
+		}
+		String repl = expandTemplate(stringValue(args[1]).getValue(), false);
+
+		int strLen = getValue().length();
+		if (strLen == 0 || srch.length() == 0) {
+			return getValue();
+		}
+		int repLen = repl.length();
+		StringBuffer sbuf = new StringBuffer(strLen);
+		char cs, cr;
+		int last = -1;
+		int pos;
+		for (int i = 0; i < strLen; i++) {
+			cs = getValue().charAt(i);
+			pos = srch.indexOf(cs);
+			if (pos == -1) {
+				sbuf.append(cs);
+				last = -1;
+			} else if (repLen > 0) {
+				cr = repl.charAt(Math.min(pos, repLen - 1));
+				if (squeeze && (int) cr == last) {
+					continue;
+				}
+				sbuf.append(cr);
+				last = cr;
+			}
+		}
+		return sbuf.toString();
+	}
+
+	/** rb_str_tr
+	 *
+	 */
+	public RubyObject tr(RubyObject[] args) {
+		RubyString newStr = newString(tr(args, false));
+		newStr.infectObject(this);
+		return newStr;
+	}
+
+	/** rb_str_tr_bang
+	 *
+	 */
+	public RubyObject tr_bang(RubyObject[] args) {
+		String newStr = tr(args, false);
+		if (newStr.equals(getValue())) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	/** rb_str_tr_s
+	 *
+	 */
+	public RubyObject tr_s(RubyObject[] args) {
+		RubyString newStr = newString(tr(args, true));
+		newStr.infectObject(this);
+		return newStr;
+	}
+
+	/** rb_str_tr_s_bang
+	 *
+	 */
+	public RubyObject tr_s_bang(RubyObject[] args) {
+		String newStr = tr(args, true);
+		if (newStr.equals(getValue())) {
+			return getRuby().getNil();
+		}
+		setValue(newStr);
+		return this;
+	}
+
+	/** rb_str_each_line
+	 *
+	 */
+	public RubyObject each_line(RubyObject[] args) {
+		int strLen = getValue().length();
+		if (strLen == 0) {
+			return this;
+		}
+		String sep = null;
+		if (argCount(args, 0, 1) == 1) {
+			sep = RubyRegexp.quote(stringValue(args[0]).getValue());
+		}
+		if (sep == null) {
+			sep = "(?:\\n|\\r\\n?)";
+		} else if (sep.length() == 0) {
+			sep = "(?:\\n|\\r\\n?){2,}";
+		}
+		RubyRegexp pat = RubyRegexp.newRegexp(getRuby(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE);
+		int start = 0;
+		while (pat.search(this, start) != -1) {
+			RubyMatchData md = (RubyMatchData) getRuby().getBackref();
+			getRuby().yield(md.group(0));
+			start = md.matchEndPosition();
+		}
+		if (start < strLen) {
+			getRuby().yield(substr(start, strLen - start));
+		}
+		return this;
+	}
+
+	/**
+	 * rb_str_each_byte
+	 */
+	public RubyString each_byte() {
 		try
 		{
 			byte[] lByteValue = value.getBytes(RubyMarshal.sEncoding);
-        int lLength = lByteValue.length;
-        for (int i = 0; i < lLength; i++)
-            ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+			int lLength = lByteValue.length;
+			for (int i = 0; i < lLength; i++)
+				ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
 
 		} catch(java.io.UnsupportedEncodingException e)
 		{
 			throw new RubyBugException("unsupported encoding " + RubyMarshal.sEncoding);
 		}
-        return this;
-    }
+		return this;
+	}
 
-    /** rb_str_intern
-     *
-     */
-    public RubySymbol intern() {
-        return RubySymbol.newSymbol(getRuby(), getValue());
-    }
+	/** rb_str_intern
+	 *
+	 */
+	public RubySymbol intern() {
+		return RubySymbol.newSymbol(getRuby(), getValue());
+	}
 
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('"');
-        output.dumpString(getValue());
-    }
+	public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('"');
+		output.dumpString(getValue());
+	}
 
-    public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        return RubyString.newString(input.getRuby(), input.unmarshalString());
-    }
+	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+		return RubyString.newString(input.getRuby(), input.unmarshalString());
+	}
 
-/**
- *    Decodes <i>str</i> (which may contain binary data) according to the format
- *       string, returning an array of each value extracted. 
- * 	  The format string consists of a sequence of single-character directives.<br/>
- * 	  Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
- *       remaining elements.  <br/>
- * 	  The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
- * 	  Spaces are ignored in the format string. 
- *           @see RubyArray#pack
- *       <table border="2" width="500" bgcolor="#ffe0e0">
- *           <tr>
- *             <td>
- * <P></P>
- *         <b>Directives for <a href="ref_c_string.html#String.unpack">
- *                   <code>String#unpack</code>
- *                 </a>
- *               </b>        <table class="codebox" cellspacing="0" border="0" cellpadding="3">
- * <tr bgcolor="#ff9999">
- *   <td valign="top">
- *                     <b>Format</b>
- *                   </td>
- *   <td valign="top">
- *                     <b>Function</b>
- *                   </td>
- *   <td valign="top">
- *                     <b>Returns</b>
- *                   </td>
- * </tr>
- * <tr>
- *   <td valign="top">A</td>
- *   <td valign="top">String with trailing nulls and spaces removed.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">a</td>
- *   <td valign="top">String.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">B</td>
- *   <td valign="top">Extract bits from each character (msb first).</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">b</td>
- *   <td valign="top">Extract bits from each character (lsb first).</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">C</td>
- *   <td valign="top">Extract a character as an unsigned integer.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">c</td>
- *   <td valign="top">Extract a character as an integer.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">d</td>
- *   <td valign="top">Treat <em>sizeof(double)</em> characters as a native
- *           double.</td>
- *   <td valign="top">Float</td>
- * </tr>
- * <tr>
- *   <td valign="top">E</td>
- *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
- *           little-endian byte order.</td>
- *   <td valign="top">Float</td>
- * </tr>
- * <tr>
- *   <td valign="top">e</td>
- *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
- *           little-endian byte order.</td>
- *   <td valign="top">Float</td>
- * </tr>
- * <tr>
- *   <td valign="top">f</td>
- *   <td valign="top">Treat <em>sizeof(float)</em> characters as a native float.</td>
- *   <td valign="top">Float</td>
- * </tr>
- * <tr>
- *   <td valign="top">G</td>
- *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
- *           network byte order.</td>
- *   <td valign="top">Float</td>
- * </tr>
- * <tr>
- *   <td valign="top">g</td>
- *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
- *           network byte order.</td>
- *   <td valign="top">Float</td>
- * </tr>
- * <tr>
- *   <td valign="top">H</td>
- *   <td valign="top">Extract hex nibbles from each character (most
- *           significant first).</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">h</td>
- *   <td valign="top">Extract hex nibbles from each character (least
- *           significant first).</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">I</td>
- *   <td valign="top">Treat <em>sizeof(int)</em>
- *                     <sup>1</sup> successive
- *           characters as an unsigned native integer.</td>
- *   <td valign="top">Integer</td>
- * </tr>
- * <tr>
- *   <td valign="top">i</td>
- *   <td valign="top">Treat <em>sizeof(int)</em>
- *                     <sup>1</sup> successive
- *           characters as a signed native integer.</td>
- *   <td valign="top">Integer</td>
- * </tr>
- * <tr>
- *   <td valign="top">L</td>
- *   <td valign="top">Treat four<sup>1</sup> successive
- *           characters as an unsigned native
- *           long integer.</td>
- *   <td valign="top">Integer</td>
- * </tr>
- * <tr>
- *   <td valign="top">l</td>
- *   <td valign="top">Treat four<sup>1</sup> successive
- *           characters as a signed native
- *           long integer.</td>
- *   <td valign="top">Integer</td>
- * </tr>
- * <tr>
- *   <td valign="top">M</td>
- *   <td valign="top">Extract a quoted-printable string.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">m</td>
- *   <td valign="top">Extract a base64 encoded string.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">N</td>
- *   <td valign="top">Treat four characters as an unsigned long in network
- *           byte order.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">n</td>
- *   <td valign="top">Treat two characters as an unsigned short in network
- *           byte order.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">P</td>
- *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer, and 
- *           return <em>len</em> characters from the referenced location.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">p</td>
- *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer to a 
- *           null-terminated string.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">S</td>
- *   <td valign="top">Treat two<sup>1</sup> successive characters as an unsigned
- *           short in
- *           native byte order.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">s</td>
- *   <td valign="top">Treat two<sup>1</sup> successive
- *           characters as a signed short in
- *           native byte order.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">U</td>
- *   <td valign="top">Extract UTF-8 characters as unsigned integers.</td>
- *   <td valign="top">Integer</td>
- * </tr>
- * <tr>
- *   <td valign="top">u</td>
- *   <td valign="top">Extract a UU-encoded string.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">V</td>
- *   <td valign="top">Treat four characters as an unsigned long in little-endian
- *           byte order.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">v</td>
- *   <td valign="top">Treat two characters as an unsigned short in little-endian
- *           byte order.</td>
- *   <td valign="top">Fixnum</td>
- * </tr>
- * <tr>
- *   <td valign="top">X</td>
- *   <td valign="top">Skip backward one character.</td>
- *   <td valign="top">---</td>
- * </tr>
- * <tr>
- *   <td valign="top">x</td>
- *   <td valign="top">Skip forward one character.</td>
- *   <td valign="top">---</td>
- * </tr>
- * <tr>
- *   <td valign="top">Z</td>
- *   <td valign="top">String with trailing nulls removed.</td>
- *   <td valign="top">String</td>
- * </tr>
- * <tr>
- *   <td valign="top">@</td>
- *   <td valign="top">Skip to the offset given by the length argument.</td>
- *   <td valign="top">---</td>
- * </tr>
- * <tr>
- *                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
- *                 </tr>
- *               </table>
- * <P></P>
- *         <sup>1</sup>&nbsp;May be modified by appending ``_'' to the directive.
- * <P></P>
- *       </td>
- *           </tr>
- *         </table>
- *
-**/	
-	public RubyArray unpack(RubyString iFmt)
-	{
-		char[] lFmt = iFmt.getValue().toCharArray();
-		int lFmtLength = lFmt.length;
-		RubyArray lResult = RubyArray.newArray(ruby);
-		int lValueLength = value.length();
-		int lCurValueIdx = 0;
-		for(int i = 0; i < lFmtLength;)
+	static char[] sHexDigits = "0123456789abcdef0123456789ABCDEFx".toCharArray();
+	/**
+	 *    Decodes <i>str</i> (which may contain binary data) according to the format
+	 *       string, returning an array of each value extracted. 
+	 * 	  The format string consists of a sequence of single-character directives.<br/>
+	 * 	  Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
+	 *       remaining elements.  <br/>
+	 * 	  The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
+	 * 	  Spaces are ignored in the format string. 
+	 *           @see RubyArray#pack
+	 *       <table border="2" width="500" bgcolor="#ffe0e0">
+	 *           <tr>
+	 *             <td>
+	 * <P></P>
+	 *         <b>Directives for <a href="ref_c_string.html#String.unpack">
+	 *                   <code>String#unpack</code>
+	 *                 </a>
+	 *               </b>        <table class="codebox" cellspacing="0" border="0" cellpadding="3">
+	 * <tr bgcolor="#ff9999">
+	 *   <td valign="top">
+	 *                     <b>Format</b>
+	 *                   </td>
+	 *   <td valign="top">
+	 *                     <b>Function</b>
+	 *                   </td>
+	 *   <td valign="top">
+	 *                     <b>Returns</b>
+	 *                   </td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">A</td>
+	 *   <td valign="top">String with trailing nulls and spaces removed.</td>
+	 *   <td valign="top">String</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">a</td>
+	 *   <td valign="top">String.</td>
+	 *   <td valign="top">String</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">B</td>
+	 *   <td valign="top">Extract bits from each character (msb first).</td>
+	 *   <td valign="top">String</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">b</td>
+	 *   <td valign="top">Extract bits from each character (lsb first).</td>
+	 *   <td valign="top">String</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">C</td>
+	 *   <td valign="top">Extract a character as an unsigned integer.</td>
+	 *   <td valign="top">Fixnum</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">c</td>
+	 *   <td valign="top">Extract a character as an integer.</td>
+	 *   <td valign="top">Fixnum</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">d</td>
+	 *   <td valign="top">Treat <em>sizeof(double)</em> characters as a native
+	 *           double.</td>
+	 *   <td valign="top">Float</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">E</td>
+	 *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+	 *           little-endian byte order.</td>
+	 *   <td valign="top">Float</td>
+	 * </tr>
+	 * <tr>
+	 *   <td valign="top">e</td>
+	*   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+		*           little-endian byte order.</td>
+		*   <td valign="top">Float</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">f</td>
+		*   <td valign="top">Treat <em>sizeof(float)</em> characters as a native float.</td>
+		*   <td valign="top">Float</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">G</td>
+		*   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+		*           network byte order.</td>
+		*   <td valign="top">Float</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">g</td>
+		*   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+		*           network byte order.</td>
+		*   <td valign="top">Float</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">H</td>
+		*   <td valign="top">Extract hex nibbles from each character (most
+				*           significant first).</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">h</td>
+		*   <td valign="top">Extract hex nibbles from each character (least
+				*           significant first).</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">I</td>
+		*   <td valign="top">Treat <em>sizeof(int)</em>
+		*                     <sup>1</sup> successive
+		*           characters as an unsigned native integer.</td>
+		*   <td valign="top">Integer</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">i</td>
+		*   <td valign="top">Treat <em>sizeof(int)</em>
+		*                     <sup>1</sup> successive
+		*           characters as a signed native integer.</td>
+		*   <td valign="top">Integer</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">L</td>
+		*   <td valign="top">Treat four<sup>1</sup> successive
+		*           characters as an unsigned native
+		*           long integer.</td>
+		*   <td valign="top">Integer</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">l</td>
+		*   <td valign="top">Treat four<sup>1</sup> successive
+		*           characters as a signed native
+		*           long integer.</td>
+		*   <td valign="top">Integer</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">M</td>
+		*   <td valign="top">Extract a quoted-printable string.</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">m</td>
+		*   <td valign="top">Extract a base64 encoded string.</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">N</td>
+		*   <td valign="top">Treat four characters as an unsigned long in network
+		*           byte order.</td>
+		*   <td valign="top">Fixnum</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">n</td>
+		*   <td valign="top">Treat two characters as an unsigned short in network
+		*           byte order.</td>
+		*   <td valign="top">Fixnum</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">P</td>
+		*   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer, and 
+		*           return <em>len</em> characters from the referenced location.</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">p</td>
+		*   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer to a 
+		*           null-terminated string.</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">S</td>
+		*   <td valign="top">Treat two<sup>1</sup> successive characters as an unsigned
+		*           short in
+		*           native byte order.</td>
+		*   <td valign="top">Fixnum</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">s</td>
+		*   <td valign="top">Treat two<sup>1</sup> successive
+		*           characters as a signed short in
+		*           native byte order.</td>
+		*   <td valign="top">Fixnum</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">U</td>
+		*   <td valign="top">Extract UTF-8 characters as unsigned integers.</td>
+		*   <td valign="top">Integer</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">u</td>
+		*   <td valign="top">Extract a UU-encoded string.</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">V</td>
+		*   <td valign="top">Treat four characters as an unsigned long in little-endian
+		*           byte order.</td>
+		*   <td valign="top">Fixnum</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">v</td>
+		*   <td valign="top">Treat two characters as an unsigned short in little-endian
+		*           byte order.</td>
+		*   <td valign="top">Fixnum</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">X</td>
+		*   <td valign="top">Skip backward one character.</td>
+		*   <td valign="top">---</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">x</td>
+		*   <td valign="top">Skip forward one character.</td>
+		*   <td valign="top">---</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">Z</td>
+		*   <td valign="top">String with trailing nulls removed.</td>
+		*   <td valign="top">String</td>
+		* </tr>
+		* <tr>
+		*   <td valign="top">@</td>
+		*   <td valign="top">Skip to the offset given by the length argument.</td>
+		*   <td valign="top">---</td>
+		* </tr>
+		* <tr>
+		*                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
+		*                 </tr>
+		*               </table>
+		* <P></P>
+		*         <sup>1</sup>&nbsp;May be modified by appending ``_'' to the directive.
+		* <P></P>
+		*       </td>
+		*           </tr>
+		*         </table>
+		*
+		**/	
+		public RubyArray unpack(RubyString iFmt)
 		{
-			int lLength = 0;
-			boolean lStar = false;
-			char lType = lFmt[i++];
-			char lNext = i < lFmtLength ? lFmt[i]: 0 ;
-			if (lNext == '_' || lNext == '!')
+			char[] lFmt = iFmt.getValue().toCharArray();
+			int lFmtLength = lFmt.length;
+			RubyArray lResult = RubyArray.newArray(ruby);
+			int lValueLength = value.length();
+			int lCurValueIdx = 0;
+			for(int i = 0; i < lFmtLength;)
 			{
-				if(RubyArray.sNatStr.indexOf(lType) != -1)
+				int lLength = 0;
+				boolean lStar = false;
+				char lType = lFmt[i++];
+				char lNext = i < lFmtLength ? lFmt[i]: 0 ;
+				if (lNext == '_' || lNext == '!')
 				{
+					if(RubyArray.sNatStr.indexOf(lType) != -1)
+					{
+						lNext  = ++i < lFmtLength ? lFmt[i]:0;
+					}
+					else
+						throw new ArgumentError(ruby, "'" + lNext +"' allowed only after types " + RubyArray.sNatStr);
+
+				}
+				if (i > lFmtLength)
+					lLength = 1;
+				else if (lNext == '*')
+				{
+					lStar = true;
+					lLength = value.length();
 					lNext  = ++i < lFmtLength ? lFmt[i]:0;
 				}
+				else if (Character.isDigit(lNext))
+				{
+					int lEndIndex = i;
+					for (; lEndIndex < lFmtLength ; lEndIndex++)
+						if (!Character.isDigit(lFmt[lEndIndex]))
+							break;
+					lLength = Integer.parseInt(new String(lFmt, i, lEndIndex-i));		//an exception may occur here if an int can't hold this but ...
+					i = lEndIndex;
+					lNext = (i < lFmtLength)? lFmt[i] : 0;
+				}
 				else
-					throw new ArgumentError(ruby, "'" + lNext +"' allowed only after types " + RubyArray.sNatStr);
-					
-			}
-			if (i > lFmtLength)
-				lLength = 1;
-			else if (lNext == '*')
-			{
-				lStar = true;
-				lLength = value.length();
-				lNext  = ++i < lFmtLength ? lFmt[i]:0;
-			}
-			else if (Character.isDigit(lNext))
-			{
-				int lEndIndex = i;
-				for (; lEndIndex < lFmtLength ; lEndIndex++)
-					if (!Character.isDigit(lFmt[lEndIndex]))
-						break;
-				lLength = Integer.parseInt(new String(lFmt, i, lEndIndex-i));		//an exception may occur here if an int can't hold this but ...
-				i = lEndIndex;
-				lNext = (i < lFmtLength)? lFmt[i] : 0;
-			}
-			else
-			{
-				lLength = lType == '@' ? 0 : 1;
-			}
-			switch (lType)
-			{
-				case '%':
-					throw new ArgumentError(ruby, "% is not supported");
-				case 'A':
-						if (lLength > lValueLength) lLength = lValueLength;
+				{
+					lLength = lType == '@' ? 0 : 1;
+				}
+				switch (lType)
+				{
+					case '%':
+						throw new ArgumentError(ruby, "% is not supported");
+					case 'A':
+						if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
 						{
 							int end =  lLength;
 							for (int t = lCurValueIdx + lLength -1; lLength > 0; lLength--, t--)
@@ -1967,11 +1968,11 @@ public class RubyString extends RubyObject {
 							lResult.push(newString(value.substring(lCurValueIdx, lCurValueIdx + lLength)));
 							lCurValueIdx+=end;
 						}
-						
+
 						break;
 
-				case 'Z':
-						if (lLength > lValueLength) lLength = lValueLength;
+					case 'Z':
+						if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
 						{
 							int end =  lLength;
 							for (int t = lCurValueIdx + lLength -1; lLength > 0; lLength--, t--)
@@ -1981,15 +1982,75 @@ public class RubyString extends RubyObject {
 						}
 						break;
 
-				case 'a':
-						if (lLength > lValueLength) lLength = lValueLength;
-
-							lResult.push(newString(value.substring(lCurValueIdx, lCurValueIdx + lLength)));
-							lCurValueIdx+=end;
+					case 'a':
+						if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
+						lResult.push(newString(value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+						lCurValueIdx+=lLength;
 						break;
+
+					case 'b':
+						{
+							if (lFmt[i-1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8) lLength = (lValueLength - lCurValueIdx)*8;
+							int bits = 0;
+							StringBuffer lElem = new StringBuffer(lLength);
+							for (int lCurByte=0; lCurByte<lLength; lCurByte++) {
+								if ((lCurByte & 7) != 0) 
+									bits >>>= 1;
+								else bits = value.charAt(lCurValueIdx++);
+								lElem.append( (bits & 1) != 0 ? '1' : '0');
+							}
+							lResult.push(newString(lElem.toString()));
+						}
+						break;
+						
+					case 'B':
+						{
+							if (lFmt[i-1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8) lLength = (lValueLength - lCurValueIdx)*8;
+							int bits = 0;
+							StringBuffer lElem = new StringBuffer(lLength);
+							for (int lCurByte=0; lCurByte<lLength; lCurByte++) {
+								if ((lCurByte & 7) != 0) 
+									bits <<= 1;
+								else 
+									bits = value.charAt(lCurValueIdx++);
+								lElem.append( (bits & 128) != 0 ? '1' : '0');
+							}
+							lResult.push(newString(lElem.toString()));
+						}
+						break;
+					case 'h':
+						{
+							if (lFmt[i-1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2) lLength = (lValueLength - lCurValueIdx)*2;
+							int bits = 0;
+							StringBuffer lElem = new StringBuffer(lLength);
+							for (int lCurByte=0; lCurByte<lLength; lCurByte++) {
+								if ((lCurByte & 1) != 0)
+									bits >>>=4;
+								else
+									bits = value.charAt(lCurValueIdx++);
+								lElem.append( sHexDigits[bits & 15]);
+							}
+							lResult.push(newString(lElem.toString()));
+						}
+						break;
+					case 'H':
+						{
+							if (lFmt[i-1] == '*' || lLength > (lValueLength - lCurValueIdx) * 2) lLength = (lValueLength - lCurValueIdx)*2;
+							int bits = 0;
+							StringBuffer lElem = new StringBuffer(lLength);
+							for (int lCurByte=0; lCurByte<lLength; lCurByte++) {
+								if ((lCurByte & 1) != 0)
+									bits <<=4;
+								else
+									bits = value.charAt(lCurValueIdx++);
+								lElem.append( sHexDigits[(bits>>>4) & 15]);
+							}
+							lResult.push(newString(lElem.toString()));
+						}
+						break;
+				}
 			}
+			return lResult;
 		}
-		return lResult;
-	}
-	
+
 }
