@@ -332,8 +332,8 @@ public class NodeFactory {
         return new ZSuperNode();
     }
     
-    public Node newArgs(Integer count, Node optNode, RubyId rest) {
-        return new ArgsNode(optNode, rest != null ? rest.intValue() : 0,
+    public Node newArgs(Integer count, Node optNode, int rest) {
+        return new ArgsNode(optNode, rest,
                                           count != null ? count.intValue() : 0);
     }
     
