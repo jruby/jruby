@@ -47,6 +47,7 @@ public class RubyFile extends RubyIO {
         fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("exists?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
+        fileClass.defineSingletonMethod("rename", CallbackFactory.getSingletonMethod(RubyFile.class, "rename", IRubyObject.class, IRubyObject.class));
         fileClass.defineSingletonMethod("delete", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
 		fileClass.defineSingletonMethod("dirname", CallbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
 		fileClass.defineSingletonMethod("join", CallbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
@@ -147,22 +148,29 @@ public class RubyFile extends RubyIO {
         return new FileStatClass(recv.getRuntime(), new File(name.getValue()));
     }
 
-	public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
-	    for (int i = 0; i < args.length; i++) {
-	        args[i].checkSafeString();
-			File lToDelete = new File(args[i].toString());
-			if (!lToDelete.exists())
-				 throw new IOError(recv.getRuntime(), " No such file or directory - \"" + args[i].toString() + "\"");
-	        if (!lToDelete.delete()) {
-	            return recv.getRuntime().getFalse();
-	        }
-	    }
-	    return RubyFixnum.newFixnum(recv.getRuntime(), args.length);
-	}
+    public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
+        for (int i = 0; i < args.length; i++) {
+            args[i].checkSafeString();
+            File lToDelete = new File(args[i].toString());
+            if (!lToDelete.exists())
+                throw new IOError(recv.getRuntime(), " No such file or directory - \"" + args[i].toString() + "\"");
+            if (!lToDelete.delete()) {
+                return recv.getRuntime().getFalse();
+            }
+        }
+        return RubyFixnum.newFixnum(recv.getRuntime(), args.length);
+    }
 
-	public static IRubyObject exist(IRubyObject recv, RubyString filename) {
-	    return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).exists());
-	}
+    public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
+        oldName.checkSafeString();
+        newName.checkSafeString();
+        new File(oldName.asSymbol()).renameTo(new File(newName.asSymbol()));
+        return RubyFixnum.zero(recv.getRuntime());
+    }
+
+    public static IRubyObject exist(IRubyObject recv, RubyString filename) {
+        return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).exists());
+    }
 
     public static RubyString dirname(IRubyObject recv, RubyString filename) {
 		String name = filename.toString();
