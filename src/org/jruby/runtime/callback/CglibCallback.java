@@ -65,15 +65,11 @@ public class CglibCallback extends ReflectionCallback {
             if (isRestArgs) {
                 arguments = packageRestArgumentsForReflection(arguments);
             }
-            return (IRubyObject) getFastMethod().invoke(recv, arguments);
+            return (IRubyObject) fastMethod.invoke(recv, arguments);
         }
 
         public Class[] reflectionArgumentTypes() {
             return argumentTypes;
-        }
-
-        private FastMethod getFastMethod() {
-            return fastMethod;
         }
     }
 }

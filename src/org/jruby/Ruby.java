@@ -67,7 +67,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
-import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
@@ -119,7 +118,7 @@ public final class Ruby {
 
     private IObjectFactory factory = new ObjectFactory(this);
 
-    private CallbackFactory callbackFactory = new ReflectionCallbackFactory();
+    private CallbackFactory callbackFactory = CallbackFactory.createFactory();
 
     // Default objects
     private IRubyObject nilObject;

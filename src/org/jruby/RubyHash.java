@@ -29,19 +29,19 @@
 
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
-import org.jruby.internal.runtime.builtin.definitions.HashDefinition;
+import org.jruby.exceptions.SecurityError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /** Implementation of the Hash class.
  *
@@ -119,8 +119,6 @@ public class RubyHash extends RubyObject {
 		return valueMap.entrySet().iterator();
 	}
 
-
-
 	/**
 	 * gets an iterator on a copy of the entries.
 	 * modifying this iterator will NOT modify the map.
@@ -132,85 +130,61 @@ public class RubyHash extends RubyObject {
 		return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
 	}
 
-    public static RubyClass createHashClass(Ruby runtime) {
-        return new HashDefinition(runtime).getType();
-    }
+    public static RubyClass createHashClass(Ruby ruby) {
+        RubyClass hashClass = ruby.defineClass("Hash", ruby.getClasses().getObjectClass());
+        hashClass.includeModule(ruby.getClasses().getEnumerableModule());
 
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case HashDefinition.INITIALIZE :
-                return initialize(args);
-            case HashDefinition.RBCLONE :
-                return rbClone();
-            case HashDefinition.REHASH :
-                return rehash();
-            case HashDefinition.TO_HASH :
-                return to_hash();
-            case HashDefinition.TO_A :
-                return to_a();
-            case HashDefinition.TO_S :
-                return to_s();
-            case HashDefinition.INSPECT :
-                return inspect();
-            case HashDefinition.EQUAL :
-                return equal(args[0]);
-            case HashDefinition.AREF :
-                return aref(args[0]);
-            case HashDefinition.FETCH :
-                return fetch(args);
-            case HashDefinition.ASET :
-                return aset(args[0], args[1]);
-            case HashDefinition.GETDEFAULTVALUE :
-                return getDefaultValue();
-            case HashDefinition.SETDEFAULTVALUE :
-                return setDefaultValue(args[0]);
-            case HashDefinition.INDEX :
-                return index(args[0]);
-            case HashDefinition.INDICES :
-                return indices(args);
-            case HashDefinition.SIZE :
-                return size();
-            case HashDefinition.EMPTY_P :
-                return empty_p();
-            case HashDefinition.EACH :
-                return each();
-            case HashDefinition.EACH_VALUE :
-                return each_value();
-            case HashDefinition.EACH_KEY :
-                return each_key();
-            case HashDefinition.SORT :
-                return sort();
-            case HashDefinition.KEYS :
-                return keys();
-            case HashDefinition.VALUES :
-                return values();
-            case HashDefinition.SHIFT :
-                return shift();
-            case HashDefinition.DELETE :
-                return delete(args[0]);
-            case HashDefinition.DELETE_IF :
-                return delete_if();
-            case HashDefinition.REJECT :
-                return reject();
-            case HashDefinition.REJECT_BANG :
-                return reject_bang();
-            case HashDefinition.CLEAR :
-                return clear();
-            case HashDefinition.INVERT :
-                return invert();
-            case HashDefinition.UPDATE :
-                return update(args[0]);
-            case HashDefinition.REPLACE :
-                return replace(args[0]);
-            case HashDefinition.HAS_KEY :
-                return has_key(args[0]);
-            case HashDefinition.HAS_VALUE :
-                return has_value(args[0]);
-            case HashDefinition.VALUES_AT :
-                return values_at(args);
-            default :
-                return super.callIndexed(index, args);
-        }
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+
+        hashClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyHash.class, "newInstance"));
+        hashClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod(RubyHash.class, "create"));
+        hashClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyHash.class, "initialize"));
+		hashClass.defineMethod("clone", callbackFactory.getMethod(RubyHash.class, "rbClone"));
+        hashClass.defineMethod("rehash", callbackFactory.getMethod(RubyHash.class, "rehash"));
+        hashClass.defineMethod("to_hash", callbackFactory.getMethod(RubyHash.class, "to_hash"));
+        hashClass.defineMethod("to_a", callbackFactory.getMethod(RubyHash.class, "to_a"));
+        hashClass.defineMethod("to_s", callbackFactory.getMethod(RubyHash.class, "to_s"));
+        hashClass.defineMethod("inspect", callbackFactory.getMethod(RubyHash.class, "inspect"));
+
+        hashClass.defineMethod("==", callbackFactory.getMethod(RubyHash.class, "equal", IRubyObject.class));
+        hashClass.defineMethod("[]", callbackFactory.getMethod(RubyHash.class, "aref", IRubyObject.class));
+        hashClass.defineMethod("fetch", callbackFactory.getOptMethod(RubyHash.class, "fetch"));
+        hashClass.defineMethod("[]=", callbackFactory.getMethod(RubyHash.class, "aset", IRubyObject.class, IRubyObject.class));
+        hashClass.defineMethod("store", callbackFactory.getMethod(RubyHash.class, "aset", IRubyObject.class, IRubyObject.class));
+		hashClass.defineMethod("default", callbackFactory.getMethod(RubyHash.class, "getDefaultValue"));
+		hashClass.defineMethod("default=", callbackFactory.getMethod(RubyHash.class, "setDefaultValue", IRubyObject.class));
+        hashClass.defineMethod("index", callbackFactory.getMethod(RubyHash.class, "index", IRubyObject.class));
+        hashClass.defineMethod("indexes", callbackFactory.getOptMethod(RubyHash.class, "indices"));
+        hashClass.defineMethod("indices", callbackFactory.getOptMethod(RubyHash.class, "indices"));
+        hashClass.defineMethod("size", callbackFactory.getMethod(RubyHash.class, "size"));
+        hashClass.defineMethod("length", callbackFactory.getMethod(RubyHash.class, "size"));
+        hashClass.defineMethod("empty?", callbackFactory.getMethod(RubyHash.class, "empty_p"));
+		hashClass.defineMethod("each", callbackFactory.getMethod(RubyHash.class, "each"));
+		hashClass.defineMethod("each_pair", callbackFactory.getMethod(RubyHash.class, "each"));
+		hashClass.defineMethod("each_value", callbackFactory.getMethod(RubyHash.class, "each_value"));
+		hashClass.defineMethod("each_key", callbackFactory.getMethod(RubyHash.class, "each_key"));
+		hashClass.defineMethod("sort", callbackFactory.getMethod(RubyHash.class, "sort"));
+		hashClass.defineMethod("keys", callbackFactory.getMethod(RubyHash.class, "keys"));
+		hashClass.defineMethod("values", callbackFactory.getMethod(RubyHash.class, "values"));
+
+		hashClass.defineMethod("shift", callbackFactory.getMethod(RubyHash.class, "shift"));
+		hashClass.defineMethod("delete", callbackFactory.getMethod(RubyHash.class, "delete", IRubyObject.class));
+		hashClass.defineMethod("delete_if", callbackFactory.getMethod(RubyHash.class, "delete_if"));
+		hashClass.defineMethod("reject", callbackFactory.getMethod(RubyHash.class, "reject"));
+		hashClass.defineMethod("reject!", callbackFactory.getMethod(RubyHash.class, "reject_bang"));
+		hashClass.defineMethod("clear", callbackFactory.getMethod(RubyHash.class, "clear"));
+		hashClass.defineMethod("invert", callbackFactory.getMethod(RubyHash.class, "invert"));
+        hashClass.defineMethod("update", callbackFactory.getMethod(RubyHash.class, "update", IRubyObject.class));
+        hashClass.defineMethod("replace", callbackFactory.getMethod(RubyHash.class, "replace", IRubyObject.class));
+        hashClass.defineMethod("include?", callbackFactory.getMethod(RubyHash.class, "has_key", IRubyObject.class));
+        hashClass.defineMethod("member?", callbackFactory.getMethod(RubyHash.class, "has_key", IRubyObject.class));
+        hashClass.defineMethod("has_key?", callbackFactory.getMethod(RubyHash.class, "has_key", IRubyObject.class));
+        hashClass.defineMethod("has_value?", callbackFactory.getMethod(RubyHash.class, "has_value", IRubyObject.class));
+        hashClass.defineMethod("key?", callbackFactory.getMethod(RubyHash.class, "has_key", IRubyObject.class));
+        hashClass.defineMethod("value?", callbackFactory.getMethod(RubyHash.class, "has_value", IRubyObject.class));
+        hashClass.defineMethod("values_at", callbackFactory.getOptMethod(RubyHash.class, "values_at"));
+
+        return hashClass;
     }
 
     /** rb_hash_modify
@@ -242,9 +216,7 @@ public class RubyHash extends RubyObject {
     public static RubyHash newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyHash hash = new RubyHash(recv.getRuntime());
         hash.setMetaClass((RubyClass) recv);
-
         hash.callInit(args);
-
         return hash;
     }
 

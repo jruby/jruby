@@ -1,7 +1,8 @@
 package org.jruby.runtime;
 
-import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
+import org.jruby.runtime.callback.ReflectionCallbackFactory;
 
 /**
  * Helper class to build Callback method.
@@ -156,5 +157,23 @@ public abstract class CallbackFactory {
                 return Arity.createArity(arity);
             }
         };
+    }
+
+    public static CallbackFactory createFactory() {
+        try {
+            // Check if we have CGLIB support compiled in.
+            Class factoryClass = Class.forName("org.jruby.runtime.callback.CglibCallbackFactory");
+            // Check if CGLIB is available.
+            Class.forName("net.sf.cglib.reflect.FastClass");
+            try {
+                return (CallbackFactory) factoryClass.newInstance();
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (ClassNotFoundException e) {
+            return new ReflectionCallbackFactory();
+        }
     }
 }
