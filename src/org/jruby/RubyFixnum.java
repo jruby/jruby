@@ -60,6 +60,7 @@ public class RubyFixnum extends RubyInteger {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
+        fixnumClass.defineMethod("quo", callbackFactory.getMethod(RubyFixnum.class, "quo", RubyNumeric.class));
         fixnumClass.defineMethod("to_f", callbackFactory.getMethod(RubyFixnum.class, "to_f"));
         fixnumClass.defineMethod("to_i", callbackFactory.getMethod(RubyFixnum.class, "to_i"));
         fixnumClass.defineMethod("to_s", callbackFactory.getMethod(RubyFixnum.class, "to_s"));
@@ -220,6 +221,10 @@ public class RubyFixnum extends RubyInteger {
        return other.multiplyWith(RubyFloat.newFloat(runtime, getLongValue()));
     }
 
+    public RubyNumeric quo(RubyNumeric other) {
+        return new RubyFloat(runtime, op_div(other).getDoubleValue());
+    }
+    
     public RubyNumeric op_div(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_div(other);

@@ -103,6 +103,7 @@ public class RubyBignum extends RubyInteger {
         result.defineMethod("remainder", callbackFactory.getMethod(RubyBignum.class, "remainder", RubyNumeric.class));
         result.defineMethod("hash", callbackFactory.getMethod(RubyBignum.class, "hash"));
         result.defineMethod("size", callbackFactory.getMethod(RubyBignum.class, "size"));
+        result.defineMethod("quo", callbackFactory.getMethod(RubyBignum.class, "quo", RubyNumeric.class));
         result.defineMethod("to_f", callbackFactory.getMethod(RubyBignum.class, "to_f"));
         result.defineMethod("to_i", callbackFactory.getMethod(RubyBignum.class, "to_i"));
         result.defineMethod("to_s", callbackFactory.getMethod(RubyBignum.class, "to_s"));
@@ -221,6 +222,10 @@ public class RubyBignum extends RubyInteger {
 
     public RubyNumeric multiplyWith(RubyFloat other) {
         return other.multiplyWith(RubyFloat.newFloat(getRuntime(), getDoubleValue()));
+    }
+    
+    public RubyNumeric quo(RubyNumeric other) {
+        return RubyFloat.newFloat(getRuntime(), op_div(other).getDoubleValue());
     }
 
     public RubyNumeric op_div(RubyNumeric other) {
