@@ -27,3 +27,17 @@ result = [1,2,3,4,5].collect {|v|
 }
 test_equal([1,2], values)
 test_ok(result.nil?)
+
+def method1
+  if id()   # Any non-toplevel method will do
+    yield
+  end
+end
+def method2
+  method1 {
+    yield
+  }
+end
+method2 {
+  test_ok(true)
+}
