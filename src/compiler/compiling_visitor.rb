@@ -278,6 +278,7 @@ module JRuby
         }
         @bytecodes << CreateMethod.new(node.getName,
                                        node.getArgsNode.getArgsCount)
+        @bytecodes << PushNil.new
       end
 
       def visitScopeNode(node)

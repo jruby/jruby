@@ -136,7 +136,7 @@ module JRuby
           generator.append(BCEL::ASTORE.new(arity.getIndex))
 
           # Create a callback
-          generator.append(factory.createNew("org.jruby.runtime.ReflectionCallbackMethod"))
+          generator.append(factory.createNew("org.jruby.runtime.ReflectionCallback"))
           generator.append(BCEL::DUP.new)
 
           generator.append(BCEL::ALOAD.new(klass.getIndex))
@@ -157,7 +157,7 @@ module JRuby
           arg_types[5] = BCEL::ObjectType.new("org.jruby.runtime.Arity")
 
           # Call constructor
-          generator.appendInvoke("org.jruby.runtime.ReflectionCallbackMethod",
+          generator.appendInvoke("org.jruby.runtime.ReflectionCallback",
                                  "<init>",
                                  BCEL::Type::VOID,
                                  arg_types,

@@ -18,7 +18,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments());
+        return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, false, Arity.noArguments());
     }
 
     /**
@@ -29,7 +29,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument());
+        return new ReflectionCallback(type, method, new Class[] { arg1 }, false, false, Arity.singleArgument());
     }
 
     /**
@@ -41,7 +41,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getMethod(Class type, String method, Class arg1, Class arg2) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2));
+        return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2));
     }
 
     /**
@@ -51,7 +51,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getSingletonMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, NULL_CLASS_ARRAY, false, true, Arity.noArguments());
+        return new ReflectionCallback(type, method, NULL_CLASS_ARRAY, false, true, Arity.noArguments());
     }
 
     /**
@@ -62,7 +62,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getSingletonMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1 }, false, true, Arity.singleArgument());
+        return new ReflectionCallback(type, method, new Class[] { arg1 }, false, true, Arity.singleArgument());
     }
 
     /**
@@ -72,11 +72,11 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getSingletonMethod(Class type, String method, Class arg1, Class arg2) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, arg2 }, false, true, Arity.fixed(2));
+        return new ReflectionCallback(type, method, new Class[] { arg1, arg2 }, false, true, Arity.fixed(2));
     }
 
     public static Callback getBlockMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(
+        return new ReflectionCallback(
             type,
             method,
             new Class[] { IRubyObject.class, IRubyObject.class },
@@ -93,7 +93,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getOptSingletonMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, IRubyObject[].class }, true, true, Arity.optional());
+        return new ReflectionCallback(type, method, new Class[] { arg1, IRubyObject[].class }, true, true, Arity.optional());
     }
 
     /**
@@ -105,7 +105,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getOptSingletonMethod(Class type, String method, Class[] args) {
-        return new ReflectionCallbackMethod(type, method, args, true, true, Arity.optional());
+        return new ReflectionCallback(type, method, args, true, true, Arity.optional());
     }
 
     /**
@@ -115,7 +115,7 @@ public final class CallbackFactory {
     * @return a CallBack object corresponding to the appropriate method
     **/
     public static Callback getOptSingletonMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { IRubyObject[].class }, true, true, Arity.optional());
+        return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, true, Arity.optional());
     }
 
     /**
@@ -125,7 +125,7 @@ public final class CallbackFactory {
     * @return a CallBack object corresponding to the appropriate method
     **/
     public static Callback getOptMethod(Class type, String method) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional());
+        return new ReflectionCallback(type, method, new Class[] { IRubyObject[].class }, true, false, Arity.optional());
     }
 
     /**
@@ -136,7 +136,7 @@ public final class CallbackFactory {
     * @return a CallBack object corresponding to the appropriate method
     **/
     public static Callback getOptMethod(Class type, String method, Class arg1) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, IRubyObject[].class }, true, false, Arity.optional());
+        return new ReflectionCallback(type, method, new Class[] { arg1, IRubyObject[].class }, true, false, Arity.optional());
     }
 
     public static Callback getFalseMethod(final int arity) {

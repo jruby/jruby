@@ -61,7 +61,7 @@ code = compile("nil")
 test_equal([PushNil], code.collect {|c| c.class})
 
 code = compile("def hello(x); x * 2; end; hello(3)")
-test_equal([CreateMethod, PushSelf, PushFixnum, Call],
+test_equal([CreateMethod, PushNil, PushSelf, PushFixnum, Call],
            code.collect {|c| c.class})
 
 
@@ -82,7 +82,7 @@ def test_compiled(expected, source)
 
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
-#  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
+  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
 
   result = JRubyUtil::TestHelper.loadAndCall(:dummy,
                                              classgen.getClassName,
@@ -105,6 +105,7 @@ test_compiled([1..2, 1...3], "[1..2, 1...3]")
 test_compiled(:hello, ":hello")
 test_compiled(2, "unless true; 1; else; 2; end")
 
-#test_compiled(6, "def hello(x); x * 2; end; hello(3)")
+test_compiled(nil, "def hello(x); x * 2; end")
+test_compiled(6, "def hello(x); x * 2; end; hello(3)")
 
 test_print_report

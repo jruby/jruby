@@ -42,7 +42,7 @@ import java.lang.reflect.InvocationTargetException;
  * @author  jpetersen
  * @version $Revision$
  */
-public final class ReflectionCallbackMethod implements Callback {
+public final class ReflectionCallback implements Callback {
     private Class klass = null;
     private String methodName = null;
     private Class[] args = null;
@@ -52,7 +52,7 @@ public final class ReflectionCallbackMethod implements Callback {
 
     private Method method = null;
 
-    public ReflectionCallbackMethod(
+    public ReflectionCallback(
         Class klass,
         String methodName,
         Class[] args,
