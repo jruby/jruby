@@ -47,6 +47,7 @@ import java.util.Map;
  */
 public class JRubySerialize extends Task {
     private File destdir = null;
+    private boolean verbose = false;
 
     private List fileSets = new ArrayList();
     private Mapper mapperElement = null;
@@ -95,6 +96,7 @@ public class JRubySerialize extends Task {
                 Map.Entry entry = (Map.Entry) iter.next();
                 try {
                     ((File) entry.getValue()).getParentFile().mkdirs();
+                    if (verbose) System.out.println(entry.getKey());
                     ASTSerializer.serialize((File) entry.getKey(), (File) entry.getValue());
                 } catch (IOException ioExcpn) {
                 }
@@ -111,6 +113,10 @@ public class JRubySerialize extends Task {
      */
     public void addFileset(FileSet set) {
         fileSets.add(set);
+    }
+    
+    public void setVerbose(boolean verbose) {
+    	this.verbose = verbose;
     }
 
     /**
