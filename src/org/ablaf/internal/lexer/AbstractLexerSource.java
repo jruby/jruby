@@ -77,7 +77,7 @@ public abstract class AbstractLexerSource implements ILexerSource {
      */
     public char read() {
         synchronized (buffer) {
-            if (lastRead == '\n') {
+            if (offset > 0 && buffer.charAt(offset-1) == '\n') {
                 // The \n has already been read, but we increment on first char
                 // of new line
                 line++;
@@ -110,13 +110,12 @@ public abstract class AbstractLexerSource implements ILexerSource {
             }
             lastRead = result;
 
-// todo: create a test case where this code matters (and works):
-//            if (offset > 0 && buffer.charAt(offset-1)=='\n')
-//            {
+            if (offset > 0 && buffer.charAt(offset-1) == '\n')
+            {
                 // We have just unread the first char of a new line, so
                 // now we decrement the line number
-//                line--;
-//            }
+                line--;
+            }
 
             return;
         }
