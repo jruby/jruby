@@ -44,6 +44,10 @@
   <target name="init" description="initialize the build">
     <xmlproperty file="build-config.xml" keepRoot="false"
                  collapseAttributes="true"/>
+    <tstamp>
+      <format property="build.date" pattern="yyyy-MM-dd"/>
+    </tstamp>
+    <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
   </target>
 
   <target name="check-for-optional-packages"

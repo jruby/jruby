@@ -33,9 +33,10 @@ package org.jruby.runtime;
 
 
 public interface Constants {
-    public static final String RUBY_MAJOR_VERSION = "1.6";
-    public static final String RUBY_VERSION = "1.6.7";
-    public static final String COMPILE_DATE = "2002-08-08"; // replace with ant filter
+    public static final String RUBY_MAJOR_VERSION = "${version.ruby}";
+    public static final String RUBY_VERSION = "${version.ruby}";
+    public static final String COMPILE_DATE = "${build.date}";
+    public static final String VERSION = "${version.jruby}";
     public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
