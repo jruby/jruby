@@ -54,7 +54,6 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
-import org.jruby.runtime.IGlobalVariables;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ObjectSpace;
@@ -138,7 +137,7 @@ public final class Ruby {
     private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
-    private IGlobalVariables globalVariables = new GlobalVariables(this);
+    private GlobalVariables globalVariables = new GlobalVariables(this);
     private RubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
     // Contains a list of all blocks (as Procs) that should be called when
@@ -863,7 +862,7 @@ public final class Ruby {
     public void setTraceFunction(RubyProc traceFunction) {
         this.traceFunction = traceFunction;
     }
-    public IGlobalVariables getGlobalVariables() {
+    public GlobalVariables getGlobalVariables() {
         return globalVariables;
     }
 
