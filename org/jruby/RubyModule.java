@@ -1164,6 +1164,63 @@ public class RubyModule extends RubyObject {
 			}
 		}
 	}
+	
+	/** rb_method_boundp
+	 * 
+	 */
+	private boolean isMethodBound(RubyId id, int ex) {
+		RubyMethodCacheEntry entry = RubyMethodCacheEntry.getEntry(getRuby(), this, id);
+		
+		if (entry != null) {
+			if (ex != 0 && (entry.getNoex() & Constants.NOEX_PRIVATE) != 0) {
+				return false;
+			} else if (entry.getMethod() == null) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+
+		GetMethodBodyResult gmbr = getMethodBody(id, ex);
+		
+		if (gmbr != null) {
+			if (ex != 0 && (gmbr.getNoex() & Constants.NOEX_PRIVATE) != 0) {
+				return false;
+			} else {
+				return true;
+			}
+	    }
+	    return false;
+	}
+
+	public RubyObject newMethod(RubyObject recv, RubyId id, RubyClass methodClass) {
+		RubyClass originalClass = (RubyClass)this;
+		RubyId originalId = id;
+
+		GetMethodBodyResult gmbr = getMethodBody(id, 0);
+		if (gmbr == null) {
+			// printUndef();
+			return getRuby().getNil();
+		}
+		
+		while (gmbr.getBody() instanceof ZSuperNode) {
+			gmbr = gmbr.getRecvClass().getSuperClass().getMethodBody(gmbr.getId(), 0);
+			if (gmbr == null) {
+				// printUndef();
+				return getRuby().getNil();
+			}
+		}
+		
+		RubyMethod newMethod = new RubyMethod(getRuby(), methodClass);
+		newMethod.setReceiverClass((RubyClass)gmbr.getRecvClass());
+		newMethod.setReceiver(recv);
+		newMethod.setMethodId(gmbr.getId());
+		newMethod.setBodyNode(gmbr.getBody());
+		newMethod.setOriginalClass(originalClass);
+		newMethod.setOriginalId(originalId);
+		
+		return newMethod;
+	}
 
 	// Methods of the Module Class (rb_mod_*):
 
@@ -1771,7 +1828,23 @@ public class RubyModule extends RubyObject {
 
 		return this;
 	}
+	
+	public RubyObject m_method_defined(RubyObject symbol) {
+		return isMethodBound(symbol.toId(), 1) ? getRuby().getTrue() : getRuby().getFalse();
+	}
 
+	public RubyObject m_public_class_method(RubyObject[] args) {
+		getRubyClass().setMethodVisibility(args, Constants.NOEX_PUBLIC);
+		
+		return this;
+	}
+	
+	public RubyObject m_private_class_method(RubyObject[] args) {
+		getRubyClass().setMethodVisibility(args, Constants.NOEX_PRIVATE);
+
+		return this;
+	}
+	
 	private static class GetMethodBodyResult {
 		private Node body;
 		private RubyModule recvClass;

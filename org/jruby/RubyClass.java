@@ -123,7 +123,7 @@ public class RubyClass extends RubyModule {
     public RubyObject m_superclass() {
         RubyModule superClass = getSuperClass();
         
-        while (superClass.isIncluded()) {
+        while (superClass != null && superClass.isIncluded()) {
             superClass = superClass.getSuperClass();
         }
         

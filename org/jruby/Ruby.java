@@ -60,6 +60,8 @@ public final class Ruby {
      */
     private RubyMap globalMap;
     
+    public LinkedList objectSpace = new LinkedList();
+    
     private int securityLevel = 0;
     
     // private RubyInterpreter rubyInterpreter = null;

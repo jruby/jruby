@@ -155,7 +155,11 @@ public class RubyJavaObject extends RubyObject {
         	int modifiers = fields[i].getModifiers();
         	if (Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers)) {
         		try {
-	        		newRubyClass.defineConstant(fields[i].getName(), JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
+        			String name = fields[i].getName();
+        			if (Character.isLowerCase(name.charAt(0))) {
+        				name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        			}
+	        		newRubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
         		} catch (IllegalAccessException iaExcptn) {
         		}
         	}

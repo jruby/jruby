@@ -209,7 +209,7 @@ public class RubyClasses {
         classClass.setRubyClass(metaClass);
         metaClass.attachSingletonClass(classClass);
         
-        kernelModule = RBKernel.createKernelModule(ruby);
+        kernelModule = RbKernel.createKernelModule(ruby);
         objectClass.includeModule(kernelModule);
         
         objectClass.definePrivateMethod("initialize", DefaultCallbackMethods.getMethodNil());
@@ -244,6 +244,10 @@ public class RubyClasses {
         javaObjectClass = RbJavaObject.createJavaObjectClass(ruby);
         
         exceptionClass = RbException.createExceptionClass(ruby);
+
+        methodClass = RubyMethod.createMethodClass(ruby);
+        
+        objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
     }
     
     /** Returns the reference to the Binding class.
