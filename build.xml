@@ -2,8 +2,7 @@
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
 <project basedir="." default="all" name="JRuby">
     <property name="build.dir" value="build"/>
-    <property name="bsf.jar" value="lib/bsf.jar"/>
-    <property name="junit.jar" value="lib/junit.jar"/>
+    <property name="jar.file" value="${build.dir}/jruby.jar"/>
     
     <!--<property name="build.compiler" value="jikes"/-->
     <property name="build.compiler" value="modern"/>
@@ -23,29 +22,40 @@
     <property name="src.dir" value="."/>
     <property name="base.dir" value="."/>
 
+    <path id="classpath">
+        <fileset dir="lib" includes="*.jar"/>
+    </path>
+
     <target name="check_for_optional_packages">
-        <available classname="java.lang.CharSequence" property="jdk1.4+"/>
-        <available file="lib/bsf.jar" property="bsf"/> 
-        <available file="lib/junit.jar" property="junit"/> 
+        <available property="jdk1.4+" classname="java.lang.CharSequence" />
+        <available property="bsf.present"
+                   classname="com.ibm.bsf.BSFManager"
+                   classpathref="classpath" />
+        <available property="junit.present"
+                   classname="junit.framework.TestCase"
+                   classpathref="classpath" />
     </target>
+
     <target name="test" depends="compile">
-       <junit printsummary="yes">
-          <formatter type="plain"/>
-          <test name="org.jruby.test.MainTestSuite"/>
-       </junit>
+        <junit printsummary="yes">
+            <formatter type="plain"/>
+            <test name="org.jruby.test.MainTestSuite"/>
+            <classpath>
+                <pathelement path="${classpath}" />
+                <pathelement location="${jar.file}" />
+            </classpath>
+        </junit>
     </target>
+
     <target depends="check_for_optional_packages" name="compile">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.dest}"/>
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
+            <classpath refid="classpath" />
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
             <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf"/>
             <exclude unless="junit" name="**/test/**"/>
             <exclude name="**/tars/**"/>
-            <classpath>
-                <path path="${bsf.jar}"/>
-                <path path="${junit.jar}"/>
-            </classpath>
         </javac>
         <copy todir="${build.dest}">
             <fileset dir="${src.dir}">
@@ -53,7 +63,7 @@
             </fileset>
         </copy>
         <!-- Create jar in build dir -->
-        <jar basedir="${build.dest}" compress="true" jarfile="${build.dir}/jruby.jar" manifest="jruby.mf"/>
+        <jar basedir="${build.dest}" compress="true" jarfile="${jar.file}" manifest="jruby.mf"/>
     </target>
 
     <target depends="compile" name="bin-gz">
