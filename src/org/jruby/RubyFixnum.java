@@ -1,30 +1,30 @@
 /*
  * RubyFixnum.java - Implementation of the Fixnum class.
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -32,7 +32,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.internal.runtime.builtin.definitions.FixnumDefinition;
 
 /** Implementation of the Fixnum class.
@@ -59,15 +58,13 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
 
         fixnumClass.includeModule(runtime.getClasses().getPrecisionModule());
 
-        fixnumClass.defineMethod("|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
-        fixnumClass.defineMethod("^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
-        fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
-
         return fixnumClass;
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
+        case FixnumDefinition.AREF:
+            return aref(args[0]);
         case FixnumDefinition.TO_F:
             return to_f();
         case FixnumDefinition.TO_S:
@@ -102,6 +99,10 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
             return op_le(args[0]);
         case FixnumDefinition.OP_AND:
             return op_and(args[0]);
+        case FixnumDefinition.OP_OR:
+            return op_or(args[0]);
+        case FixnumDefinition.OP_XOR:
+            return op_xor(args[0]);
         case FixnumDefinition.SIZE:
             return size();
         case FixnumDefinition.HASH:
@@ -346,26 +347,29 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         return newFixnum(value & otherLong);
     }
 
-    public RubyInteger op_or(RubyInteger other) {
+    public RubyInteger op_or(IRubyObject other) {
         if (other instanceof RubyBignum) {
             return (RubyInteger) other.callMethod("|", this);
         }
-        return newFixnum(value | other.getLongValue());
+        RubyNumeric otherNumeric = numericValue(other);
+        return newFixnum(value | otherNumeric.getLongValue());
     }
 
-    public RubyInteger op_xor(RubyInteger other) {
+    public RubyInteger op_xor(IRubyObject other) {
         if (other instanceof RubyBignum) {
             return (RubyInteger) other.callMethod("^", this);
         }
-        return newFixnum(value ^ other.getLongValue());
+        RubyNumeric otherNumeric = numericValue(other);
+        return newFixnum(value ^ otherNumeric.getLongValue());
     }
 
     public RubyFixnum size() {
         return newFixnum((long) Math.ceil(BIT_SIZE / 8.0));
     }
 
-    public RubyFixnum aref(RubyInteger pos) {
-        long mask = 1 << pos.getLongValue();
+    public RubyFixnum aref(IRubyObject position) {
+        RubyNumeric numericPosition = numericValue(position);
+        long mask = 1 << numericPosition.getLongValue();
         return newFixnum((value & mask) == 0 ? 0 : 1);
     }
 

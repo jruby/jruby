@@ -78,18 +78,19 @@
       <arity>1</arity>
       <java>op_and</java>
     </method>
-
-<!--
-    <method name="|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
-    <method name="^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
--->
-
+    <method name="|">
+      <arity>1</arity>
+      <java>op_or</java>
+    </method>
+    <method name="^">
+      <arity>1</arity>
+      <java>op_xor</java>
+    </method>
     <method name="size"/>
-
-<!--
-    <method name="[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
--->
-
+    <method name="[]">
+      <arity>1</arity>
+      <java>aref</java>
+    </method>
     <method name="hash"/>
     <method name="id2name"/>
     <method name="~">
