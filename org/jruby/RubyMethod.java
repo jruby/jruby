@@ -240,7 +240,7 @@ public class RubyMethod extends RubyObject {
         try {
             recv.getRuntime().getIterStack().push(Iter.ITER_CUR);
             recv.getRuntime().getFrameStack().push();
-            return RubyKernel.proc(recv);
+            return KernelModule.proc(recv);
         } finally {
             recv.getRuntime().getFrameStack().pop();
             recv.getRuntime().getIterStack().pop();

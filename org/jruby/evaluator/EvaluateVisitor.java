@@ -41,7 +41,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyKernel;
+import org.jruby.KernelModule;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -1152,7 +1152,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
     public void visitOptNNode(OptNNode iVisited) {
-        while (RubyKernel.gets(runtime.getTopSelf(), new IRubyObject[0]).isTrue()) {
+        while (KernelModule.gets(runtime.getTopSelf(), new IRubyObject[0]).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
                     eval(iVisited.getBodyNode());

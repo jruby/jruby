@@ -52,7 +52,7 @@ public class RubyTestCase extends TestCase {
 
         initRuby(ruby);
 
-        RubyKernel.require(ruby.getTopSelf(), new RubyString(ruby, filePath));
+        KernelModule.require(ruby.getTopSelf(), new RubyString(ruby, filePath));
 
         return ruby;
     }

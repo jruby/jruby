@@ -35,88 +35,19 @@ import java.util.*;
 import java.io.*;
 
 import org.jruby.exceptions.*;
+import org.jruby.internal.runtime.builtin.definitions.Kernel;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
+ * @author jpetersen
+ * @version $Revision$
  */
+public class KernelModule {
 
-public class RubyKernel {
-
-    public static RubyModule createKernelModule(Ruby ruby) {
-        RubyModule kernelModule = ruby.defineModule("Kernel");
-
-        kernelModule.defineModuleFunction("open", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "open"));
-        kernelModule.defineModuleFunction("format", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
-        kernelModule.defineModuleFunction("gets", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gets"));
-        kernelModule.defineModuleFunction("p", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "p"));
-        kernelModule.defineModuleFunction("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
-        kernelModule.defineModuleFunction("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
-        kernelModule.defineModuleFunction("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
-        kernelModule.defineModuleFunction("readline", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "readline"));
-        kernelModule.defineModuleFunction("readlines", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "readlines"));
-        kernelModule.defineModuleFunction("sprintf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
-        kernelModule.defineModuleFunction("gsub!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gsub_bang"));
-        kernelModule.defineModuleFunction("gsub", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gsub"));
-        kernelModule.defineModuleFunction("sub!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sub_bang"));
-        kernelModule.defineModuleFunction("sub", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sub"));
-
-        kernelModule.defineModuleFunction("chop!", CallbackFactory.getSingletonMethod(RubyKernel.class, "chop_bang"));
-        kernelModule.defineModuleFunction("chop", CallbackFactory.getSingletonMethod(RubyKernel.class, "chop"));
-        kernelModule.defineModuleFunction("chomp!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "chomp_bang"));
-        kernelModule.defineModuleFunction("chomp", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "chomp"));
-        kernelModule.defineModuleFunction("split", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "split"));
-        kernelModule.defineModuleFunction(
-            "scan",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "scan", IRubyObject.class));
-        kernelModule.defineModuleFunction(
-            "load",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "load", RubyString.class));
-        //kernelModule.defineMethod("autoload", CallbackFactory.getSingletonMethod(RubyKernel.class, "autoload", RubyString.class));
-        kernelModule.defineModuleFunction("raise", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "raise"));
-        kernelModule.defineModuleFunction(
-            "require",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "require", RubyString.class));
-        kernelModule.defineModuleFunction(
-            "global_variables",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "global_variables"));
-        kernelModule.defineModuleFunction(
-            "local_variables",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "local_variables"));
-        kernelModule.defineModuleFunction("block_given?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
-        kernelModule.defineModuleFunction("iterator?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
-        kernelModule.defineModuleFunction("proc", CallbackFactory.getSingletonMethod(RubyKernel.class, "proc"));
-        kernelModule.defineModuleFunction("loop", CallbackFactory.getSingletonMethod(RubyKernel.class, "loop"));
-        kernelModule.defineModuleFunction(
-            "eval",
-            CallbackFactory.getOptSingletonMethod(RubyKernel.class, "eval", RubyString.class));
-        kernelModule.defineModuleFunction("caller", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "caller"));
-        kernelModule.defineModuleFunction(
-            "catch",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "rbCatch", IRubyObject.class));
-        kernelModule.defineModuleFunction(
-            "throw",
-            CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rbThrow", IRubyObject.class));
-        kernelModule.defineModuleFunction("singleton_method_added", CallbackFactory.getNilMethod(1));
-        kernelModule.defineModuleFunction(
-            "set_trace_func",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "set_trace_func", IRubyObject.class));
-        kernelModule.defineModuleFunction(
-            "sleep",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "sleep", IRubyObject.class));
-        kernelModule.defineModuleFunction(
-            "`",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "backquote", RubyString.class));
-        kernelModule.defineModuleFunction("exit", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "exit"));
-        kernelModule.defineModuleFunction(
-            "srand",
-            CallbackFactory.getSingletonMethod(RubyKernel.class, "srand", IRubyObject.class));
-        kernelModule.defineModuleFunction("rand", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rand"));
-
-        kernelModule.defineAlias("lambda", "proc");
-
-        return kernelModule;
+    public static RubyModule createKernelModule(Ruby runtime) {
+        return new Kernel(runtime).getModule();
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
@@ -395,33 +326,35 @@ public class RubyKernel {
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
      * @param file the name of the file to require
      **/
-    public static IRubyObject require(IRubyObject recv, RubyString file) {
+    public static IRubyObject require(IRubyObject recv, IRubyObject file) {
         if (recv.getRuntime().getLoadService().require(file.toString())) {
             return recv.getRuntime().getTrue();
         }
         return recv.getRuntime().getFalse();
     }
 
-    public static IRubyObject load(IRubyObject recv, RubyString file) {
+    public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
+        RubyString file = (RubyString)args[0];
         if (recv.getRuntime().getLoadService().load(file.toString())) {
             return recv.getRuntime().getTrue();
         }
         return recv.getRuntime().getFalse();
     }
 
-    public static IRubyObject eval(IRubyObject recv, RubyString src, IRubyObject[] args) {
-        IRubyObject scope = args.length > 0 ? args[0] : recv.getRuntime().getNil();
+    public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
+        RubyString src = (RubyString)args[0];
+        IRubyObject scope = args.length > 0 ? args[1] : recv.getRuntime().getNil();
         String file = "(eval)";
         int line = 1;
 
-        if (args.length > 1) {
+        if (args.length > 2) {
             // +++
-            file = args[1].toString();
+            file = args[2].toString();
             // ---
         }
 
-        if (args.length > 2) {
-            line = RubyFixnum.fix2int(args[2]);
+        if (args.length > 3) {
+            line = RubyFixnum.fix2int(args[3]);
         }
 
         // +++
@@ -464,8 +397,8 @@ public class RubyKernel {
         }
     }
 
-    public static IRubyObject rbThrow(IRubyObject recv, IRubyObject tag, IRubyObject[] args) {
-        throw new ThrowJump(tag.toId(), args.length > 0 ? args[0] : recv.getRuntime().getNil());
+    public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args) {
+        throw new ThrowJump(args[0].toId(), args.length > 1 ? args[1] : recv.getRuntime().getNil());
     }
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func) {
@@ -490,20 +423,19 @@ public class RubyKernel {
         }
     }
 
-    public static IRubyObject backquote(IRubyObject recv, RubyString aString) {
-        // XXX use other methods
+    public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
+        // FIXME clean this up.
         try {
             String lShellProp = System.getProperty("jruby.shell");
             Process aProcess;
             String lCommand = aString.toString();
             String lSwitch = "-c";
             if (lShellProp != null) {
-                if (!lShellProp.endsWith("sh")) //case windowslike
+                if (!lShellProp.endsWith("sh")) { //case windowslike
                     lSwitch = "/c";
-                //				System.out.println("command: " + lShellProp + " " + lSwitch +  " " + lCommand);
+                }
                 aProcess = Runtime.getRuntime().exec(new String[] { lShellProp, lSwitch, lCommand });
             } else {
-                //				System.out.println("command: " + lCommand);
                 aProcess = Runtime.getRuntime().exec(lCommand);
             }
 
@@ -524,10 +456,15 @@ public class RubyKernel {
         }
     }
 
-    public static RubyInteger srand(IRubyObject recv, IRubyObject arg) {
+    public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
+        
         long oldRandomSeed = recv.getRuntime().randomSeed;
-        RubyInteger integerSeed = (RubyInteger) arg.convertToType("Integer", "to_int", true);
-        recv.getRuntime().randomSeed = integerSeed.getLongValue();
+        if (args.length > 0) {
+            RubyInteger integerSeed = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
+            recv.getRuntime().randomSeed = integerSeed.getLongValue();
+        } else {
+            recv.getRuntime().randomSeed = System.currentTimeMillis(); // FIXME
+        }
         recv.getRuntime().random.setSeed(recv.getRuntime().randomSeed);
         return RubyFixnum.newFixnum(recv.getRuntime(), oldRandomSeed);
     }

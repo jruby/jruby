@@ -267,7 +267,7 @@ public class Main {
         int lNbRequire = sRequireFirst.size();
         try {
 			for (int i = 0; i < lNbRequire; i++)
-				RubyKernel.require(ruby.getTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
+				KernelModule.require(ruby.getTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
             INode lScript = ruby.parse(iReader2Eval, iFileName);
 

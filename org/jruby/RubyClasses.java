@@ -214,7 +214,7 @@ public class RubyClasses {
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
-        kernelModule = RubyKernel.createKernelModule(ruby);
+        kernelModule = KernelModule.createKernelModule(ruby);
         objectClass.includeModule(kernelModule);
 
         objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod(-1));

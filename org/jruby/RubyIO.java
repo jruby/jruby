@@ -310,7 +310,7 @@ public class RubyIO extends RubyObject {
     public static IRubyObject foreach(IRubyObject recv, RubyString filename, IRubyObject[] args) {
         filename.checkSafeString();
 
-        RubyIO io = (RubyIO) RubyKernel.open(recv, new IRubyObject[] { filename });
+        RubyIO io = (RubyIO) KernelModule.open(recv, new IRubyObject[] { filename });
 
         if (!io.isNil()) {
             try {
@@ -595,7 +595,7 @@ public class RubyIO extends RubyObject {
     }
 
     public static IRubyObject printf(IRubyObject recv, IRubyObject args[]) {
-        recv.callMethod("write", RubyKernel.sprintf(recv, args));
+        recv.callMethod("write", KernelModule.sprintf(recv, args));
 
         return recv.getRuntime().getNil();
     }
@@ -635,7 +635,7 @@ public class RubyIO extends RubyObject {
             separatorArguments = new IRubyObject[0];
         }
 
-        RubyIO file = (RubyIO) RubyKernel.open(recv, new IRubyObject[] { fileName });
+        RubyIO file = (RubyIO) KernelModule.open(recv, new IRubyObject[] { fileName });
 
         return file.readlines(separatorArguments);
     }
