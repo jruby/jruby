@@ -718,11 +718,7 @@ public class RubyObject {
      *
      */
     public RubyClass type() {
-        RubyClass type = getRubyClass();
-        while (type.isSingleton() || type.isIncluded()) {
-            type = type.getSuperClass();
-        }
-        return type;
+        return getRubyClass().getRealClass();
     }
 
     /** rb_obj_clone

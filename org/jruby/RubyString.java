@@ -40,7 +40,6 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
-
     private static RubyModule pfClass;
 
     private String value;
@@ -966,14 +965,12 @@ public class RubyString extends RubyObject {
     public RubyObject format(RubyObject arg) {
         if (pfClass == null) {
             try {
-                Class c = Class.forName("org.jruby.util.PrintfFormat");
-                pfClass = (RubyClass)RubyJavaObject.loadClass(getRuby(), c, null);
+                pfClass = getRuby().getJavaSupport().loadClass(Class.forName("org.jruby.util.PrintfFormat"), null);
             } catch (ClassNotFoundException ex) {
                 throw new RubyBugException("couldn't find PrintfFormat class");
             }
         }
-        RubyObject pfObject = pfClass.funcall("new", this);
-        return pfObject.funcall("sprintf", arg);
+        return pfClass.funcall("new", this).funcall("sprintf", arg);
     }
 
     /** rb_str_succ

@@ -81,6 +81,8 @@
                 <include name="COPYING"/>
                 <include name="README"/>
                 <include name="test.rb"/>
+                <include name="jruby.bat"/>
+                <include name="jruby.sh"/>
                 <include name="samples/**/*"/>
             </fileset>
             <fileset dir="${build.dir}">

@@ -1,0 +1,9 @@
+<changelog>
+	<release version="0.3.1">
+		<change type="new" description="Start to implement IO class, add IOError and EOFError." author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
+		<change type="api" description="Add org.jruby.runtime.RubyOptions class" author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
+		<change type="api" description="Add org.jruby.javasupport.JavaSupport class. Move some fields and methods from RubyObject and Ruby to this class. Update some classes to use is class." author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
+		<change type="new" description="If a Java class is loaded in JRuby also the super classes will be loaded" author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
+		<change type="bug" description="#496357" author="jpetersen" date="24  Dec  2001 00:54:43 +0100"/>
+	</release>
+</changelog>

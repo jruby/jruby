@@ -146,11 +146,11 @@ public class RubyKernel {
 				ruby.getRuntime().getErrorStream().println("[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
 			}
 			else {
-				try {
+				/*try {
 					ClassLoader javaClassLoader = new URLClassLoader(new URL[] { jarFile.toURL()}, ruby.getJavaClassLoader());
 					ruby.setJavaClassLoader(javaClassLoader);
 				} catch (MalformedURLException murlExcptn) {
-				}
+				}*/
 			}
 		} else {
 			if (!arg1.getValue().endsWith(".rb")) {

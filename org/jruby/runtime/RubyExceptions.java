@@ -26,6 +26,9 @@ public class RubyExceptions {
     
     private RubyClass regexpError = null;
     
+    private RubyClass ioError = null;
+    private RubyClass eofError = null;
+    
     private Ruby ruby = null;
     
     public RubyExceptions(Ruby ruby) {
@@ -57,6 +60,9 @@ public class RubyExceptions {
         noMemError = ruby.defineClass("NoMemError", exceptionClass);
         
         regexpError = ruby.defineClass("RegexpError", standardError);
+        
+        ioError = ruby.defineClass("IOError", standardError);
+        eofError = ruby.defineClass("EOFError", ioError);
     }
     /**
      * Gets the argumentError
@@ -179,11 +185,28 @@ public class RubyExceptions {
     public RubyClass getTypeError() {
         return typeError;
     }
+    
     /**
      * Gets the regexpError
      * @return Returns a RubyClass
      */
     public RubyClass getRegexpError() {
         return regexpError;
+    }
+    
+    /**
+     * Gets the ioError
+     * @return Returns a RubyClass
+     */
+    public RubyClass getIOError() {
+        return ioError;
+    }
+    
+    /**
+     * Gets the eofError
+     * @return Returns a RubyClass
+     */
+    public RubyClass getEOFError() {
+        return eofError;
     }
 }

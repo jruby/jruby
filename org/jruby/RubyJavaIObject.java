@@ -115,7 +115,7 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
         Class[] interfaces = new Class[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            interfaces[i] = loadJavaClass(getRuby(), (RubyString)args[i]);
+            interfaces[i] = getRuby().getJavaSupport().loadJavaClass((RubyString)args[i]);
         }
 
         try {

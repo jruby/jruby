@@ -124,6 +124,13 @@ public class RubyClass extends RubyModule {
 
         return type != null ? type : getRuby().getClasses().getClassClass();
     }
+    
+	public RubyClass getRealClass() {
+        if (isSingleton() || isIncluded()) {
+            return getSuperClass().getRealClass();
+        }
+        return this;
+    }
 
     /** rb_singleton_class_attached
      *

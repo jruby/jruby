@@ -76,7 +76,7 @@ public class RubyModule extends RubyObject {
     public void setSuperClass(RubyClass superClass) {
         this.superClass = superClass;
     }
-
+    
     public RubyMap getMethods() {
         return this.methods;
     }
@@ -424,8 +424,8 @@ public class RubyModule extends RubyObject {
         }
         
         try {
-            Class javaClass = RubyJavaObject.loadJavaClass(getRuby(), RubyString.newString(getRuby(), name));
-        	return RubyJavaObject.loadClass(getRuby(), javaClass, null);
+            Class javaClass = getRuby().getJavaSupport().loadJavaClass(RubyString.newString(getRuby(), name));
+        	return getRuby().getJavaSupport().loadClass(javaClass, null);
         } catch(RubyNameException excptn) {
         }
 

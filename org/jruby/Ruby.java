@@ -47,19 +47,19 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public final class Ruby {
-	public static final int FIXNUM_CACHE_MAX = 0xff;
+    public static final int FIXNUM_CACHE_MAX = 0xff;
 
-	public static final String RUBY_VERSION = "1.6";
-	public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
+    public static final String RUBY_VERSION = "1.6";
+    public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
 
-	private HashMap methodCache = new HashMap();
+    private HashMap methodCache = new HashMap();
 
-	/** rb_global_tbl
-	 *
-	 */
-	private RubyMap globalMap;
+    /** rb_global_tbl
+     *
+     */
+    private RubyMap globalMap;
 
-	public LinkedList objectSpace = new LinkedList();
+    public LinkedList objectSpace = new LinkedList();
 
     private int securityLevel = 0;
 
@@ -118,7 +118,7 @@ public final class Ruby {
     private boolean initialized = false;
 
     // Java support
-    private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
+    private JavaSupport javaSupport;
 
     // pluggable Regexp engine
     private Class regexpAdapterClass;
@@ -132,6 +132,8 @@ public final class Ruby {
         nilObject = RubyObject.nilObject(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
+
+        javaSupport = new JavaSupport(this);
     }
 
     /**
@@ -782,18 +784,8 @@ public final class Ruby {
         getRubyScope().setValue(1, match);
     }
 
-    /** Getter for property javaClassLoader.
-     * @return Value of property javaClassLoader.
-     */
-    public ClassLoader getJavaClassLoader() {
-        return javaClassLoader;
-    }
-
-    /** Setter for property javaClassLoader.
-     * @param javaClassLoader New value of property javaClassLoader.
-     */
-    public void setJavaClassLoader(ClassLoader javaClassLoader) {
-        this.javaClassLoader = javaClassLoader;
+    public JavaSupport getJavaSupport() {
+        return javaSupport;
     }
 
     /** Getter for property iter.
@@ -884,103 +876,96 @@ public final class Ruby {
         this.runtime = runtime;
     }
 
-	/**
-	 * Gets the exceptions
-	 * @return Returns a RubyExceptions
-	 */
-	public RubyExceptions getExceptions() {
-		return exceptions;
-	}    /** defines a readonly global variable
-		  * 
-		  */
-	public void defineReadonlyVariable(String name, RubyObject value) {
-		RubyGlobalEntry.defineReadonlyVariable(this, name, value);
-	}
+    /**
+     * Gets the exceptions
+     * @return Returns a RubyExceptions
+     */
+    public RubyExceptions getExceptions() {
+        return exceptions;
+    } /** defines a readonly global variable
+    	  * 
+    	  */
+    public void defineReadonlyVariable(String name, RubyObject value) {
+        RubyGlobalEntry.defineReadonlyVariable(this, name, value);
+    }
 
-	/**
-	 * Init the LOAD_PATH variable.
-	 * MRI: eval.c:void Init_load()
-	 * 		from programming ruby
+    /**
+     * Init the LOAD_PATH variable.
+     * MRI: eval.c:void Init_load()
+     * 		from programming ruby
      *			
-	 *   An array of strings, where each string specifies a directory to be searched
-	 *   for Ruby scripts and binary extensions used by the load and require 
-	 *   The initial value is the value of the arguments passed via the -I command-line
-	 *	 option, followed by an installation-defined standard library location, followed
-	 *   by the current directory (``.''). This variable may be set from within a program to alter
-	 *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
-	 *   Warning: the ioAdditionalDirectory list will be modified by this process!
-	 *   @param ioAdditionalDirectory the directory specified on the command line
-	 **/
-	public void initLoad(ArrayList ioAdditionalDirectory) {
-		//	don't know what this is used for in MRI, it holds the handle of all loaded libs
-		//		ruby_dln_librefs = rb_ary_new();
+     *   An array of strings, where each string specifies a directory to be searched
+     *   for Ruby scripts and binary extensions used by the load and require 
+     *   The initial value is the value of the arguments passed via the -I command-line
+     *	 option, followed by an installation-defined standard library location, followed
+     *   by the current directory (``.''). This variable may be set from within a program to alter
+     *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
+     *   Warning: the ioAdditionalDirectory list will be modified by this process!
+     *   @param ioAdditionalDirectory the directory specified on the command line
+     **/
+    public void initLoad(ArrayList ioAdditionalDirectory) {
+        //	don't know what this is used for in MRI, it holds the handle of all loaded libs
+        //		ruby_dln_librefs = rb_ary_new();
 
+        //in MRI the ruby installation path is determined from the place where the ruby lib is found
+        //of course we can't do that, let's just use the org.jruby.HOME property
+        String lRubyHome = System.getProperty("org.jruby.HOME");
+        String lRubyLib = System.getProperty("org.jruby.LIB");
+        for (int i = ioAdditionalDirectory.size() - 1; i >= 0; i--)
+            ioAdditionalDirectory.set(i, new RubyString(this, (String) ioAdditionalDirectory.get(i)));
 
-		//in MRI the ruby installation path is determined from the place where the ruby lib is found
-		//of course we can't do that, let's just use the org.jruby.HOME property
-		String lRubyHome = System.getProperty("org.jruby.HOME");
-		String lRubyLib = System.getProperty("org.jruby.LIB");
-		for (int i = ioAdditionalDirectory.size()-1; i >= 0; i--)
-			ioAdditionalDirectory.set(i, new RubyString(this, (String)ioAdditionalDirectory.get(i)));
+        if (lRubyLib != null && lRubyLib.length() != 0)
+            ioAdditionalDirectory.add(new RubyString(this, lRubyLib));
+        if (lRubyHome != null && lRubyHome.length() != 0) {
+            //FIXME: use the version number in some other way than hardcoded here
+            String lRuby =
+                lRubyHome + java.io.File.separatorChar + "lib" + java.io.File.separatorChar + "ruby" + java.io.File.separatorChar;
+            String lSiteRuby = lRuby + "site_ruby";
+            String lSiteRubyVersion = lSiteRuby + java.io.File.separatorChar + RUBY_VERSION;
+            ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
+            String lArch = java.io.File.separatorChar + "JAVA";
+            ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
+            ioAdditionalDirectory.add(new RubyString(this, lSiteRuby));
+            String lRubyVersion = lRuby + RUBY_VERSION;
+            ioAdditionalDirectory.add(new RubyString(this, lRubyVersion));
+            ioAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
+        }
+        //FIXME: safe level pb here
+        ioAdditionalDirectory.add(new RubyString(this, "."));
+        RubyArray rb_load_path = new RubyArray(this, ioAdditionalDirectory);
+        defineReadonlyVariable("$:", rb_load_path);
+        defineReadonlyVariable("$-I", rb_load_path);
+        defineReadonlyVariable("$LOAD_PATH", rb_load_path);
+        RubyArray rb_features = new RubyArray(this);
+        defineReadonlyVariable("$\"", rb_features);
+    }
 
-		if (lRubyLib != null && lRubyLib.length()!= 0) 
-			ioAdditionalDirectory.add(new RubyString(this, lRubyLib));
-		if (lRubyHome != null && lRubyHome.length()!= 0) {
-			//FIXME: use the version number in some other way than hardcoded here
-			String lRuby = lRubyHome + java.io.File.separatorChar + "lib" 
-				+ java.io.File.separatorChar + "ruby" 
-				+ java.io.File.separatorChar;
-			String lSiteRuby = lRuby + "site_ruby";
-			String lSiteRubyVersion = lSiteRuby + java.io.File.separatorChar + RUBY_VERSION;
-			ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
-			String lArch = java.io.File.separatorChar + "JAVA";
-			ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
-			ioAdditionalDirectory.add(new RubyString(this, lSiteRuby));
-			String lRubyVersion = lRuby + RUBY_VERSION;
-			ioAdditionalDirectory.add(new RubyString(this, lRubyVersion));
-			ioAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
-		}
-		//FIXME: safe level pb here
-		ioAdditionalDirectory.add(new RubyString(this, "."));
-		RubyArray rb_load_path = new RubyArray(this, ioAdditionalDirectory);
-		defineReadonlyVariable("$:", rb_load_path);
-		defineReadonlyVariable("$-I", rb_load_path);
-		defineReadonlyVariable("$LOAD_PATH", rb_load_path);
-		RubyArray rb_features = new RubyArray(this);
-		defineReadonlyVariable("$\"", rb_features);
-	}
-
-	
-	/**
-	 * this method uses the appropriate lookup strategy to find a file.
-	 * It is used by Kernel#require.
-	 * NOTE: this is only public for unit testing reasons.
-	 * 		 it should have package (default) protection
-	 *  (matz Ruby: rb_find_file)
-	 *  @param ruby the ruby interpreter
-	 *  @param i2find the file to find, this is a path name
-	 *  @return the correct file
-	 */
-	public File findFile(File i2find)
-	{
-		RubyArray lLoadPath = (RubyArray)getGlobalVar("$:");
-		int lPathNb = lLoadPath.getLength();
-		String l2Find = i2find.getPath();
-		for(int i = 0; i < lPathNb; i++)
-		{
-			String lCurPath = ((RubyString)lLoadPath.entry(i)).getValue();
-			File lCurFile = new File(lCurPath + File.separatorChar + l2Find);
-			if (lCurFile.exists())
-			{
-				i2find = lCurFile;
-				break;
-			}
-		}
-		if (i2find.exists())
-			return i2find;
-		else 
-			throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
-	}
-
-
+    /**
+     * this method uses the appropriate lookup strategy to find a file.
+     * It is used by Kernel#require.
+     * NOTE: this is only public for unit testing reasons.
+     * 		 it should have package (default) protection
+     *  (matz Ruby: rb_find_file)
+     *  @param ruby the ruby interpreter
+     *  @param i2find the file to find, this is a path name
+     *  @return the correct file
+     */
+    public File findFile(File i2find) {
+        RubyArray lLoadPath = (RubyArray) getGlobalVar("$:");
+        int lPathNb = lLoadPath.getLength();
+        String l2Find = i2find.getPath();
+        for (int i = 0; i < lPathNb; i++) {
+            String lCurPath = ((RubyString) lLoadPath.entry(i)).getValue();
+            File lCurFile = new File(lCurPath + File.separatorChar + l2Find);
+            if (lCurFile.exists()) {
+                i2find = lCurFile;
+                break;
+            }
+        }
+        if (i2find.exists()) {
+            return i2find;
+        } else {
+            throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
+        }
+    }
 }

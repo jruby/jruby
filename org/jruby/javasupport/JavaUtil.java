@@ -235,7 +235,7 @@ public class JavaUtil {
             }
             return RubyHash.create(ruby, null, items);
         } else {
-            return new RubyJavaObject(ruby, (RubyClass) RubyJavaObject.loadClass(ruby, javaClass, null), object);
+            return new RubyJavaObject(ruby, (RubyClass)ruby.getJavaSupport().loadClass(javaClass, null), object);
         }
     }
 }
