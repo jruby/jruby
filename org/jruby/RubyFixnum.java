@@ -29,7 +29,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
-import org.jruby.marshal.*;
+import org.jruby.runtime.marshal.*;
 import org.jruby.util.Asserts;
 
 /** Implementation of the Fixnum class.

@@ -9,7 +9,7 @@ import java.net.URL;
 import org.jruby.*;
 import org.jruby.util.*;
 import org.jruby.javasupport.*;
-import org.jruby.regexp.JDKRegexpAdapter;
+import org.jruby.runtime.regexp.JDKRegexpAdapter;
 
 public class RubyTestCase extends TestCase {
     private static final RubyObject[] EMPTY_ARRAY = new RubyObject[0];

@@ -32,7 +32,7 @@ import java.text.*;
 import java.util.*;
 
 import org.jruby.runtime.*;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.exceptions.TypeError;
 
 /**

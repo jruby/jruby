@@ -31,7 +31,7 @@ import java.math.*;
 import java.io.IOException;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
-import org.jruby.marshal.*;
+import org.jruby.runtime.marshal.*;
 
 /**
  *

@@ -31,10 +31,10 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.parser.ReOptions;
-import org.jruby.regexp.*;
+import org.jruby.runtime.regexp.*;
 import org.jruby.runtime.*;
 import org.jruby.util.PrintfFormat;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.runtime.marshal.MarshalStream;
 
 /**
  *

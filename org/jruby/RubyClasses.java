@@ -33,6 +33,7 @@ package org.jruby;
 import java.util.Iterator;
 
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
 
 /** In this class there are references to the core (or built-in) classes
@@ -587,8 +588,8 @@ public class RubyClasses {
         if (result != null) {
             return result;
         }
-        RubyObject evaluatedPath = ruby.evalScript(path);
-        RubyClass type = evaluatedPath.type();
+        IRubyObject evaluatedPath = ruby.evalScript(path);
+        RubyClass type = evaluatedPath.getType();
         if (type != getClassClass() && type != getModuleClass()) {
             return null;
         }

@@ -45,14 +45,14 @@ import org.jruby.exceptions.RubySecurityException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.classes.IRubyObject;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyMapMethod;
@@ -423,8 +423,8 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyObject eval(INode n) {
-        return n == null ? getRuby().getNil() : 
-            EvaluateVisitor.createVisitor(this).eval(n);
+        // FIXME REMOVE CAST
+        return (RubyObject)EvaluateVisitor.createVisitor(this).eval(n);
     }
 
     public final void callInit(final RubyObject[] args) {
@@ -1036,6 +1036,13 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public RubyObject toRubyObject() {
         return this;
+    }
+
+    /**
+     * @see org.jruby.runtime.classes.IRubyObject#getType()
+     */
+    public RubyClass getType() {
+        return type();
     }
 
 }

@@ -28,7 +28,7 @@
  * 
  */
 
-package org.jruby.marshal;
+package org.jruby.runtime.marshal;
 
 import java.io.*;
 import java.util.*;

@@ -24,7 +24,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.runtime.classes;
+package org.jruby.runtime.builtin;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -35,7 +35,7 @@ import org.jruby.RubyString;
  * are avaiable for all Ruby objects.
  *
  * @author  jpetersen
- * @version $Revision: 1.1 $
+ * @version $Revision$
  */
 public interface IRubyObject {
     /** SHOULD REMOVED */
@@ -60,6 +60,8 @@ public interface IRubyObject {
      * @return boolean
      */
     boolean isNil();
+    
+    boolean isTrue();
 
     /**
      * Method funcall.
@@ -80,5 +82,29 @@ public interface IRubyObject {
      * @return RubyObject
      */
     RubyObject getInstanceVariable(String string);
+
+    /**
+     * Method isTaint.
+     * @return boolean
+     */
+    boolean isTaint();
+
+    /**
+     * Method isFrozen.
+     * @return boolean
+     */
+    boolean isFrozen();
+
+    /**
+     * Method getSingletonClass.
+     * @return RubyClass
+     */
+    RubyClass getSingletonClass();
+
+    /**
+     * Method getType.
+     * @return RubyClass
+     */
+    RubyClass getType();
 
 }

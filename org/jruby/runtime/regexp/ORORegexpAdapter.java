@@ -21,7 +21,7 @@
  * 
  */
 
-package org.jruby.regexp;
+package org.jruby.runtime.regexp;
 
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.oro.text.regex.MatchResult;

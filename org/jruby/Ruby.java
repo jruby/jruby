@@ -82,12 +82,13 @@ import org.jruby.runtime.RubyRuntime;
 import org.jruby.runtime.RubyVarmap;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
-import org.jruby.regexp.IRegexpAdapter;
+import org.jruby.runtime.regexp.IRegexpAdapter;
 
 /**
  * The jruby runtime.
@@ -229,18 +230,18 @@ public final class Ruby {
      * @return the result Object
      */
     public Object evalScript(String script, Class returnClass) {
-        RubyObject result = evalScript(script);
-        return JavaUtil.convertRubyToJava(this, result, returnClass);
+        IRubyObject result = evalScript(script);
+        return JavaUtil.convertRubyToJava(this, result.toRubyObject(), returnClass);
     }
 
     /**
      * Evaluates a script and returns a RubyObject.
      */
-    public RubyObject evalScript(String script) {
+    public IRubyObject evalScript(String script) {
         return eval(compile(script, "<script>", 1));
     }
 
-    public RubyObject eval(INode node) {
+    public IRubyObject eval(INode node) {
         return getRubyTopSelfEvaluateVisitor().eval(node);
     }
 

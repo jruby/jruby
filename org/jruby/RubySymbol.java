@@ -33,7 +33,7 @@ package org.jruby;
 import java.util.*;
 import java.lang.ref.*;
 import org.jruby.runtime.*;
-import org.jruby.marshal.*;
+import org.jruby.runtime.marshal.*;
 import org.jruby.exceptions.TypeError;
 import org.jruby.util.Asserts;
 

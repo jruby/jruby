@@ -28,7 +28,7 @@
  * 
  */
 
-package org.jruby.regexp;
+package org.jruby.runtime.regexp;
 
 import gnu.regexp.*;
 

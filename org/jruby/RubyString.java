@@ -34,7 +34,7 @@ import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
-import org.jruby.marshal.*;
+import org.jruby.runtime.marshal.*;
 
 /**
  *

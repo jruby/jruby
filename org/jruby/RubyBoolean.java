@@ -31,7 +31,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
-import org.jruby.marshal.MarshalStream;
+import org.jruby.runtime.marshal.MarshalStream;
 
 /**
  *

@@ -35,6 +35,7 @@ import org.jruby.ast.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /** This visitor is used to evaluate a defined? statement.
  *
@@ -114,7 +115,7 @@ public class DefinedVisitor extends AbstractVisitor {
     public void visitCallNode(CallNode iVisited) {
         if (getDefinition(iVisited.getReceiverNode()) != null) {
             try {
-                RubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
+                IRubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
                 
                 int noex = receiver.getInternalClass().getMethodNoex(iVisited.getName());
 
@@ -343,7 +344,7 @@ public class DefinedVisitor extends AbstractVisitor {
      */
     public void visitColon2Node(Colon2Node iVisited) {
         try {
-            RubyObject left = EvaluateVisitor.createVisitor(self).eval(iVisited.getLeftNode());
+            IRubyObject left = EvaluateVisitor.createVisitor(self).eval(iVisited.getLeftNode());
             if (left instanceof RubyModule) {
                 if (((RubyModule)left).isConstantDefinedAt(iVisited.getName())) {
                     definition = "constant";

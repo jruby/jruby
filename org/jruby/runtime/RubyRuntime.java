@@ -33,6 +33,7 @@ import java.io.*;
 import org.ablaf.ast.INode;
 import org.jruby.*;
 import org.jruby.exceptions.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @version $Revision$
@@ -203,41 +204,47 @@ public class RubyRuntime {
 		loadFile(new File(fname.getValue()), wrap);
 	}
 
-	/** Call the traceFunction
-	 * 
-	 * MRI: eval.c - call_trace_func
-	 * 
-	 */
-	public synchronized void callTraceFunction(String event, String file, int line, RubyObject self, String name, RubyObject type) {
-		if (!tracing && traceFunction != null) {
-			tracing = true;
+    /** Call the traceFunction
+     * 
+     * MRI: eval.c - call_trace_func
+     * 
+     */
+    public synchronized void callTraceFunction(String event,
+                                               String file,
+                                               int line,
+                                               RubyObject self,
+                                               String name,
+                                               IRubyObject type) {
+        if (!tracing && traceFunction != null) {
+            tracing = true;
 
-			// XXX
+            // XXX
 
-			if (file == null) {
-				file = "(ruby)";
-			}
-			if (type == null)
-				type = ruby.getFalse();
+            if (file == null) {
+                file = "(ruby)";
+            }
+            if (type == null)
+                type = ruby.getFalse();
 
-			
-			ruby.getFrameStack().push();
-			try {
-				traceFunction.call(new RubyObject[] {
-					RubyString.newString(ruby, event),
-					RubyString.newString(ruby, file),
-					RubyFixnum.newFixnum(ruby, line),
-					RubySymbol.newSymbol(ruby, name),
-					self, // XXX
-					type});
-			} finally {
-				ruby.getFrameStack().pop();
-				tracing = false;
+            ruby.getFrameStack().push();
+            try {
+                traceFunction
+                    .call(new RubyObject[] {
+                        RubyString.newString(ruby, event),
+                        RubyString.newString(ruby, file),
+                        RubyFixnum.newFixnum(ruby, line),
+                        RubySymbol.newSymbol(ruby, name),
+                        self,
+                    // XXX
+                    type.toRubyObject() });
+            } finally {
+                ruby.getFrameStack().pop();
+                tracing = false;
 
-				// XXX
-			}
-		}
-	}
+                // XXX
+            }
+        }
+    }
 
 	/** Prints an error with backtrace to the error stream.
 	 * 

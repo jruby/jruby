@@ -35,6 +35,7 @@ import org.jruby.ast.ArrayNode;
 import org.jruby.ast.ExpandArrayNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -92,7 +93,7 @@ public final class ArgsUtil {
             return (RubyObject[]) list.toArray(new RubyObject[list.size()]);
         }
 
-        final RubyObject args = visitor.eval(node);
+        IRubyObject args = visitor.eval(node);
 
         ruby.setSourceFile(file);
         ruby.setSourceLine(line);
@@ -100,7 +101,7 @@ public final class ArgsUtil {
         if (args instanceof RubyArray) {
             return ((RubyArray) args).toJavaArray();
         } else {
-            return new RubyObject[] { args };
+            return new RubyObject[] { args.toRubyObject() };
         }
     }
 }

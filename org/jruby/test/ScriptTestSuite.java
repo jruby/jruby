@@ -36,6 +36,7 @@ package org.jruby.test;
 import java.io.*;
 import junit.framework.*;
 import org.jruby.*;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author Anders
@@ -122,7 +123,7 @@ public class ScriptTestSuite extends TestSuite {
         	script.append("test_load('").append(scriptName()).append("')").append('\n');
             script.append("test_get_last_failed()").append('\n');
 
-            RubyObject lastFailed = ruby.evalScript(script.toString());
+            IRubyObject lastFailed = ruby.evalScript(script.toString());
             if (! lastFailed.isNil()) {
 				RubyString message = (RubyString) lastFailed.callMethod("to_s");
                 fail(message.getValue());

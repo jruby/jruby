@@ -33,7 +33,7 @@ package org.jruby;
 import java.io.*;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.*;
-import org.jruby.marshal.*;
+import org.jruby.runtime.marshal.*;
 
 /**
  * Marshal module

@@ -37,6 +37,7 @@ import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.common.IErrors;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.RubyVarmap;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -80,14 +81,14 @@ public class AssignmentVisitor extends AbstractVisitor {
     public void visitCallNode(CallNode iVisited) {
         EvaluateVisitor evaluator = EvaluateVisitor.createVisitor(self);
 
-        RubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
+        IRubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.getInternalClass().call(receiver, iVisited.getName(), new RubyObject[] {value}, 0);
+            receiver.getInternalClass().call(receiver.toRubyObject(), iVisited.getName(), new RubyObject[] {value}, 0);
         } else { // element set
             RubyArray args = (RubyArray) evaluator.eval(iVisited.getArgsNode());
             args.append(value);
-            receiver.getInternalClass().call(receiver, iVisited.getName(), args.toJavaArray(), 0);
+            receiver.getInternalClass().call(receiver.toRubyObject(), iVisited.getName(), args.toJavaArray(), 0);
         }
     }
 

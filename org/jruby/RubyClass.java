@@ -35,8 +35,8 @@ import java.util.Map;
 
 import org.jruby.exceptions.RubyFrozenException;
 import org.jruby.exceptions.TypeError;
-import org.jruby.marshal.MarshalStream;
-import org.jruby.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 
