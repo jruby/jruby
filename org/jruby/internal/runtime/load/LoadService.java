@@ -31,16 +31,15 @@ public class LoadService implements ILoadService {
     /**
      * Constructor for LoadService.
      */
-    public LoadService() {
+    public LoadService(Ruby runtime) {
         super();
+        this.runtime = runtime;
     }
 
     /**
      * @see org.jruby.runtime.load.ILoadService#init(Ruby, List)
      */
     public void init(Ruby runtime, List additionalDirectories) {
-        this.runtime = runtime;
-
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
             loadPath.add(RubyString.newString(runtime, (String)iter.next()));
         }
@@ -82,9 +81,10 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#require(String)
      */
     public boolean require(String file) {
-        if (!loadedFeatures.contains(file)) {
+        RubyString name = RubyString.newString(runtime, file);
+        if (!loadedFeatures.contains(name)) {
             if (load(file)) {
-                loadedFeatures.add(file);
+                loadedFeatures.add(name);
                 return true;
             }
         }

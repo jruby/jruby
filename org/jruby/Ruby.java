@@ -74,6 +74,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
+import org.jruby.util.Asserts;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyStack;
@@ -160,7 +161,7 @@ public final class Ruby {
     private Parser parser = new Parser(this);
 
     private LastCallStatus lastCallStatus = new LastCallStatus();
-    private ILoadService loadService = LoadServiceFactory.createLoadService();
+    private ILoadService loadService = LoadServiceFactory.createLoadService(this);
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -659,7 +660,8 @@ public final class Ruby {
     /** Getter for property runtime.
      * @return Value of property runtime.
      */
-    public org.jruby.runtime.RubyRuntime getRuntime() {
+    public RubyRuntime getRuntime() {
+        Asserts.assertTrue(this.runtime != null, "runtime shouldn't be null");
         return this.runtime;
     }
 

@@ -1,5 +1,6 @@
 package org.jruby.runtime.load;
 
+import org.jruby.Ruby;
 import org.jruby.internal.runtime.load.LoadService;
 
 /**
@@ -17,7 +18,7 @@ public final class LoadServiceFactory {
         super();
     }
 
-    public static ILoadService createLoadService() {
-        return new LoadService();
+    public static ILoadService createLoadService(Ruby runtime) {
+        return new LoadService(runtime);
     }
 }

@@ -38,6 +38,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Asserts;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 
@@ -168,10 +169,10 @@ public class RubyClass extends RubyModule {
      *
      */
     public void attachSingletonClass(IRubyObject object) {
+        // Asserts.assertTrue(isSingleton(), "attachSingletonClass called on a non singleton class.");
+
         if (isSingleton()) {
             setInstanceVariable("__atached__", object);
-        } else {
-            getRuntime().getRuntime().printBug("attachSingletonClass called on a non singleton class.");
         }
     }
 

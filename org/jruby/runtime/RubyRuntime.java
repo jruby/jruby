@@ -44,8 +44,6 @@ public class RubyRuntime {
 	private static final int TRACE_TAIL = 5;
 	private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
 
-	private boolean printBugs = false;
-
 	private Ruby ruby;
 
 	private RubyProc traceFunction;
@@ -53,16 +51,6 @@ public class RubyRuntime {
 
 	public RubyRuntime(Ruby ruby) {
 		this.ruby = ruby;
-	}
-
-	/** Print a bug report to the Error stream if bug
-	 * reporting is enabled
-	 *
-	 */
-	public void printBug(String description) {
-		if (printBugs) {
-			getErrorStream().println("[BUG] " + description);
-		}
 	}
 
 	/** Call the current method in the superclass of the current object
@@ -354,21 +342,6 @@ public class RubyRuntime {
 			ruby.setGlobalVar("$>", stdout);
 		}
 		ruby.setGlobalVar("$stdout", stdout);
-	}
-
-	/**
-	 * Gets the printBugs
-	 * @return Returns a boolean
-	 */
-	public boolean getPrintBugs() {
-		return printBugs;
-	}
-	/**
-	 * Sets the printBugs
-	 * @param printBugs The printBugs to set
-	 */
-	public void setPrintBugs(boolean printBugs) {
-		this.printBugs = printBugs;
 	}
 
 	/**
