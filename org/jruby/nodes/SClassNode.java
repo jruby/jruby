@@ -49,7 +49,7 @@ public class SClassNode extends Node {
         if (rubyClass.isSpecialConst()) {
             throw new RubyTypeException(ruby, "no virtual class for " + rubyClass.getRubyClass().toName());
         }
-        if (ruby.getSecurityLevel() >= 4 && !rubyClass.isTaint()) {
+        if (ruby.getSafeLevel() >= 4 && !rubyClass.isTaint()) {
             throw new RubySecurityException(ruby, "Insecure: can't extend object");
         }
         if (rubyClass.getRubyClass().isSingleton()) {

@@ -109,9 +109,8 @@ public class DefnNode extends Node {
             }
             
             Node defn = getDefnNode().copyNodeScope(ruby.getCRef());
+            ruby.getMethodCache().clearByName(getMId());
             rubyClass.addMethod(getMId(), defn, noex);
-            
-            // rb_clear_cache_by_id(node.nd_mid());
             
             if (ruby.getActMethodScope() == Constants.SCOPE_MODFUNC) {
                 rubyClass.getSingletonClass().addMethod(getMId(), defn, Constants.NOEX_PUBLIC);

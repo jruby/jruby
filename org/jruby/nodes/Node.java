@@ -51,6 +51,7 @@ public class Node {
 	private Object u1;
 	private Object u2;
 	private Object u3;
+
 	protected String stringOrNull(Object io) {
 		if (io == null)
 			return "null";
@@ -214,6 +215,10 @@ public class Node {
 
 	public int getCount() {
 		return u3 == null ? 0 : ((Integer)u3).intValue();
+	}
+	
+	public void setCount(int newCount) {
+		u3 = newCount == 0 ? null : new Integer(newCount);
 	}
 
 	public ExtendedList getTable() {

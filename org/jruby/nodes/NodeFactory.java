@@ -199,7 +199,7 @@ public class NodeFactory {
 	}
 
 	public Node newGAsgn(String vid, Node valueNode) {
-		return setFileNLine(new GAsgnNode(/*vid, */ valueNode, RubyGlobalEntry.getGlobalEntry(ruby, vid)));
+		return setFileNLine(new GAsgnNode(/*vid, */ valueNode, ruby.getGlobalEntry(vid)));
 	}
 
 	public Node newLAsgn(String vid, Node valueNode) {
@@ -251,7 +251,7 @@ public class NodeFactory {
 	}
 
 	public Node newGVar(String id) {
-		return setFileNLine(new GVarNode(RubyGlobalEntry.getGlobalEntry(ruby, id)));
+		return setFileNLine(new GVarNode(ruby.getGlobalEntry(id)));
 	}
 
 	public Node newLVar(String vid) {

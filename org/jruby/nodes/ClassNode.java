@@ -86,7 +86,7 @@ public class ClassNode extends Node {
                     // end goto
                 }
             }
-            if (ruby.getSecurityLevel() >= 4) {
+            if (ruby.getSafeLevel() >= 4) {
                 throw new RubySecurityException(ruby, "extending class prohibited");
             }
             // rb_clear_cache();

@@ -39,43 +39,81 @@ import org.jruby.runtime.*;
  * @version $Revision$
  */
 public class DotNode extends Node {
+    private boolean flip = false;
+
     private boolean exclusive;
-    
+
     private boolean cannotCached = false;
     private RubyObject cachedValue = null;
-    
+
     public DotNode(Node beginNode, Node endNode, boolean exclusive) {
-        super(exclusive ? Constants.NODE_DOT3 : Constants.NODE_DOT2,
-                                            beginNode, endNode, null);
+        super(exclusive ? Constants.NODE_DOT3 : Constants.NODE_DOT2, beginNode, endNode, null);
         this.exclusive = exclusive;
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        if (cachedValue != null) {
+        if (flip) {
+            if (exclusive) {
+            	return evalFlip3(ruby, self);
+            } else {
+            	return evalFlip2(ruby, self);
+            }
+        } else if (cachedValue != null) {
             return cachedValue;
         }
 
-        RubyObject result = RubyRange.newRange(ruby, 
-              self.eval(getBeginNode()), self.eval(getEndNode()), exclusive);
-        
+        RubyObject result = RubyRange.newRange(ruby, self.eval(getBeginNode()), self.eval(getEndNode()), exclusive);
+
         if (cannotCached) {
             return result;
-        } else if (getBeginNode() instanceof LitNode && getEndNode() instanceof LitNode && 
-                   getBeginNode().getLiteral() instanceof RubyFixnum &&
-                   getEndNode().getLiteral() instanceof RubyFixnum) {
+        } else if (getBeginNode().getLiteral() instanceof RubyFixnum && getEndNode().getLiteral() instanceof RubyFixnum) {
             cachedValue = result;
         } else {
             cannotCached = true;
         }
-        
+
         return result;
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitDotNode(this);
-	}
+
+    private RubyObject evalFlip2(Ruby ruby, RubyObject self) {
+        if (ruby.getRubyScope().getValue(getCount()).isFalse()) {
+            if (getBeginNode().eval(ruby, self).isTrue()) {
+                ruby.getRubyScope().setValue(getCount(), getEndNode().eval(ruby, self).isTrue() ? ruby.getFalse() : ruby.getTrue());
+                return ruby.getTrue();
+            } else {
+                return ruby.getFalse();
+            }
+        } else {
+            if (getEndNode().eval(ruby, self).isTrue()) {
+                ruby.getRubyScope().setValue(getCount(), ruby.getFalse());
+            }
+            return ruby.getTrue();
+        }
+    }
+
+    private RubyObject evalFlip3(Ruby ruby, RubyObject self) {
+        if (ruby.getRubyScope().getValue(getCount()).isFalse()) {
+            RubyObject result = getBeginNode().eval(ruby, self).isTrue() ? ruby.getFalse() : ruby.getTrue();
+            ruby.getRubyScope().setValue(getCount(), result);
+            return result;
+        } else {
+            if (getEndNode().eval(ruby, self).isTrue()) {
+                ruby.getRubyScope().setValue(getCount(), ruby.getFalse());
+            }
+            return ruby.getTrue();
+        }
+
+    }
+
+    public void setFlip(boolean newFlip) {
+        flip = newFlip;
+    }
+
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDotNode(this);
+    }
 }

@@ -48,7 +48,7 @@ public class DefsNode extends Node {
         if (getDefnNode() != null) {
             RubyObject recv = getRecvNode().eval(ruby, self);
             
-            if (ruby.getSecurityLevel() >= 4 && !recv.isTaint()) {
+            if (ruby.getSafeLevel() >= 4 && !recv.isTaint()) {
                 throw new RubySecurityException(ruby, "Insecure; can't define singleton method");
             }
                 /*if (FIXNUM_P(recv) || SYMBOL_P(recv)) {
@@ -63,7 +63,7 @@ public class DefsNode extends Node {
             
             Node body = (Node)rubyClass.getMethods().get(getMId());
             if (body != null) {
-                if (ruby.getSecurityLevel() >= 4) {
+                if (ruby.getSafeLevel() >= 4) {
                     throw new RubySecurityException(ruby, "redefining method prohibited");
                 }
                 /*if (RTEST(ruby_verbose)) {
@@ -72,9 +72,9 @@ public class DefsNode extends Node {
             }
             Node defn = getDefnNode().copyNodeScope(ruby.getCRef());
             defn.setRefValue(ruby.getCRef());
+            ruby.getMethodCache().clearByName(getMId());
             rubyClass.addMethod(getMId(), defn, Constants.NOEX_PUBLIC | 
                     (body != null ? body.getNoex() & Constants.NOEX_UNDEF : 0));
-            // rb_clear_cache_by_id(node.nd_mid());
             recv.funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
         }
         return ruby.getNil();

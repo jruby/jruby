@@ -64,7 +64,7 @@ public class ModuleNode extends Node {
                 throw new RubyTypeException(moduleName.toName() + " is not a module");
                 
             }*/
-            if (ruby.getSecurityLevel() >= 4) {
+            if (ruby.getSafeLevel() >= 4) {
                 throw new RubySecurityException(ruby, "extending module prohibited");
             }
         } else {

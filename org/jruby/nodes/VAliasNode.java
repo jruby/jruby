@@ -44,7 +44,7 @@ public class VAliasNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyGlobalEntry.getGlobalEntry(ruby, getOldId()).alias(getNewId());
+        ruby.getGlobalEntry(getOldId()).alias(getNewId());
         
         return ruby.getNil();
     }
