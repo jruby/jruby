@@ -65,7 +65,7 @@ public class </text>
     <text>Class</text>
   </if>
   <text>Definition { 
-    private static final int </text>
+    private static final int _</text>
   <call-template name="uc">
     <with-param name="value" select="//module/name"/>
   </call-template>
@@ -77,7 +77,7 @@ public class </text>
     <text>0xf000</text>
   </if>
   <text>;
-    private static final int STATIC = </text>
+    private static final int STATIC = _</text>
   <call-template name="uc">
     <with-param name="value" select="//module/name"/>
   </call-template>
@@ -145,6 +145,7 @@ public class </text>
   <apply-templates select="@name"/>
   <text> = </text>
   <if test="name(..)='instance-methods'">
+    <text>_</text>
     <call-template name="uc">
       <with-param name="value" select="//module/name"/>
     </call-template>
