@@ -31,8 +31,8 @@ public interface ILoadService {
     boolean load(String file);
     boolean require(String file);
 
-    ArrayList getLoadPath();
-    ArrayList getLoadedFeatures();
+    List getLoadPath();
+    List getLoadedFeatures();
 
     boolean isAutoloadDefined(String name);
     IRubyObject autoload(String name);
