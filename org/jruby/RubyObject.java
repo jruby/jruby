@@ -262,7 +262,10 @@ public class RubyObject {
     protected int argCount(RubyObject[] args, int min, int max) {
         int len = args.length;
         if (len < min || (max > -1 && len > max)) {
-            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
+            String msg = "Wrong number of arguments for method '" + ruby.getRubyFrame().getLastFunc() + 
+                         "' in class " + getRubyClass().toName() + ". " + args.length +
+                         " is not in Range " + min + ".." + max;
+            throw new RubyArgumentException(getRuby(), msg);
         }
         return len;
     }

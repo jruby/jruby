@@ -79,7 +79,7 @@ public class RubyGlobal {
         // Global functions
 
         // IO, $_ String
-        ruby.defineGlobalFunction("open", CallbackFactory.getSingletonMethod(RubyGlobal.class, "open", RubyString.class));
+        ruby.defineGlobalFunction("open", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "open"));
 
         ruby.defineGlobalFunction("format", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "sprintf"));
         ruby.defineGlobalFunction("gets", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "gets"));
@@ -126,13 +126,13 @@ public class RubyGlobal {
 
     // Global functions.
 
-    public static RubyObject open(Ruby ruby, RubyObject recv, RubyString filename) {
-        if (filename.toString().startsWith("|")) {
+    public static RubyObject open(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        if (args[0].toString().startsWith("|")) {
             // +++
             return ruby.getNil();
             // ---
         }
-        return RubyFile.open(ruby, ruby.getClasses().getFileClass(), new RubyObject[] { filename });
+        return RubyFile.open(ruby, ruby.getClasses().getFileClass(), args);
     }
 
     public static RubyString gets(Ruby ruby, RubyObject recv, RubyObject[] args) {
