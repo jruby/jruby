@@ -45,10 +45,18 @@ import org.jruby.internal.runtime.methods.CallbackMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.LastCallStatus;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.Namespace;
+import org.jruby.runtime.Iter;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 import org.jruby.util.RubyHashMap;
@@ -1000,11 +1008,6 @@ public class RubyModule extends RubyObject {
         declareClassVar(name, value);
     }
 
-    /** 
-     * 
-     * @mri rb_attr
-     *
-     */
     public void addAttribute(String name, boolean read, boolean write, boolean ex) {
         Visibility attributeScope = Visibility.PUBLIC;
 

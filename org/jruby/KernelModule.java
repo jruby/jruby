@@ -410,8 +410,9 @@ public class KernelModule {
             recv.getRuntime().getRuntime().setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
             throw new TypeError(recv.getRuntime(), "trace_func needs to be Proc.");
+        } else {
+            recv.getRuntime().getRuntime().setTraceFunction((RubyProc) trace_func);
         }
-        recv.getRuntime().getRuntime().setTraceFunction((RubyProc) trace_func);
         return trace_func;
     }
 
