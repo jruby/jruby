@@ -6,7 +6,20 @@ def testMethod
     "some output"
 end
 
-
 test_ok("some output" == testMethod)
 test_ok($toto)
+def testMethodWithArgs(a,b)
+end
+begin
+	testMethodWithArgs()
+	
+rescue ArgumentError => boom
+	test_ok(true)
+end
+begin
+	testMethodWithArgs(1)
+rescue ArgumentError => boom
+	test_ok(true)
+end
+
 

@@ -78,6 +78,10 @@ if [ -f "$JAVA_HOME/lib/tools.jar" ] ; then
   CP=$CP:"$JAVA_HOME/lib/tools.jar"
 fi
 
+for i in $JRUBY_HOME/lib/*.jar; do
+  CP=$CP:$i
+done
+
 
 # ----- Cygwin Windows Paths Setup --------------------------------------------
 
@@ -114,6 +118,9 @@ fi
   $JAVA_HOME/bin/java $DEBUG -classpath $CP \
   -Djruby.base=$JRUBY_BASE \
   -Djruby.home=$JRUBY_HOME \
+  -Djruby.lib=$JRUBY_BASE/lib \
+  -Djruby.script=jruby.sh \
+  -Djruby.shell=/bin/sh \
      org.jruby.Main $JRUBY_OPTS "$@" 
 #     \
 #  >> $JRUBY_BASE/logs/jruby.out 2>&1 &

@@ -1,11 +1,8 @@
-#
-# testSuite.rb - 
-# 
-# launch all tests written in ruby
+# testSuite.rb - Launch all unit tests written in ruby.
 #
 # Created on 10 jan 2002
 # 
-# Copyright (C) 2001 Jan Arne Petersen, Benoit Cerrina
+# Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
 # Jan Arne Petersen <jpetersen@uni-bonn.de>
 # Benoit Cerrina <benoit.cerrina@writeme.com>
 # 
@@ -45,8 +42,11 @@ test_load('test/testRange.rb')
 test_load('test/testString.rb')
 test_load('test/testException.rb')
 test_load('test/testSpecialVar.rb')
+test_load('test/testFile.rb')
+test_load('test/testThread.rb')
 
-#MRI Ruby tests:
+# MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
+
 test_load('test/mri/testAssignment.rb')
 test_load('test/mri/testCondition.rb')
 test_load('test/mri/testCase.rb')
@@ -59,13 +59,9 @@ test_load('test/mri/testIterator.rb')
 test_load('test/mri/testFloat.rb')
 test_load('test/mri/testBignum.rb')
 test_load('test/mri/testString.rb')
-test_load('test/mri/testAssignment2.rb') #doesn't exists (yet?)
+test_load('test/mri/testAssignment2.rb')
+test_load('test/mri/testCall.rb')
 
-#Output result
 puts
-#if $failed > 0
-#   printf "test: %d failed %d\n", $ntest, $failed
-#else
-#   printf "end of test(test: %d)\n", $ntest
-#end
+
 test_print_report

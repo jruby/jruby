@@ -10,6 +10,6 @@ class Hello
 end
 
 hello = Hello.new
-test_ok("Hello World." == hello.saveHelloWorld)
-test_ok("Hello World." == hello.getHelloWorld)
+test_equal("Hello World." , hello.saveHelloWorld)
+test_equal("Hello World." , hello.getHelloWorld)
 

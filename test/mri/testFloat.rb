@@ -1,6 +1,7 @@
 require 'minirunit'
 
 test_check "float"
+
 test_ok(2.6.floor == 2)
 test_ok(-2.6.floor == -3)
 test_ok(2.6.ceil == 3)

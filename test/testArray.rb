@@ -15,4 +15,11 @@ test_ok("second" == arr.shift());
 
 test_ok(Array == ["zero", "first"].type)
 test_ok("Array" == Array.to_s)
-
+Java::import "org.jruby.test"
+array = TestHelper::createArray(4)
+array.each {		# this should not generate an exception
+	|test|
+	true
+}
+test_ok(true)		#this is always true but it is used to count the iteration on ARGV as a test
+test_equal(array.length,  4)

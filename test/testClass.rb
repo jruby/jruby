@@ -13,4 +13,14 @@ end
 
 class Bottom < Middle
 end
-test_ok([Top, Middle, Bottom] == $hierarchy)
+
+test_equal([Top, Middle, Bottom] , $hierarchy)
+
+
+class AttrTest
+  attr :attribute1
+  attr_writer :attribute1
+end
+attrTest = AttrTest.new
+attrTest.attribute1 = 1
+test_equal(1 , attrTest.attribute1)

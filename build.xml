@@ -28,32 +28,38 @@
     </path>
 
     <target name="check_for_optional_packages">
-        <available classname="java.lang.CharSequence" property="jdk1.4+"/>
-        <available classname="com.ibm.bsf.BSFManager" classpathref="classpath" property="bsf.present"/>
-        <available classname="junit.framework.TestCase" classpathref="classpath" property="junit.present"/>
-        <available classname="org.apache.oro.text.regex.Perl5Pattern" classpathref="classpath" property="oro.present"/>
+        <available property="jdk1.4+" classname="java.lang.CharSequence" />
+        <available property="bsf.present"
+                   classname="com.ibm.bsf.BSFManager"
+                   classpathref="classpath" />
+        <available property="junit.present"
+                   classname="junit.framework.TestCase"
+                   classpathref="classpath" />
+        <available property="oro.present"
+                   classname="org.apache.oro.text.regex.Perl5Pattern"
+                   classpathref="classpath" />
     </target>
 
-    <target depends="compile" description="runs automated tests" name="test">
+    <target name="test" depends="compile">
 		<junit printsummary="yes">
             <formatter type="plain"/>
             <test name="org.jruby.test.MainTestSuite"/>
             <classpath>
-                <pathelement path="${classpath}"/>
-                <pathelement location="${jar.file}"/>
+                <pathelement path="${classpath}" />
+                <pathelement location="${jar.file}" />
             </classpath>
         </junit>
     </target>
 
-    <target depends="check_for_optional_packages" description="compiler jruby and create the jruby.jar" name="compile">
+    <target depends="check_for_optional_packages" name="compile">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.dest}"/>
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
-            <classpath refid="classpath"/>
-            <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf.present"/>
-            <exclude name="**/test/**" unless="junit.present"/>
-            <exclude name="org/jruby/regexp/ORORegexpAdapter.java" unless="oro.present"/>
+            <classpath refid="classpath" />
+            <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
+            <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
+            <exclude unless="junit.present" name="**/test/**"/>
+            <exclude unless="oro.present" name="org/jruby/regexp/ORORegexpAdapter.java"/>
             <exclude name="**/tars/**"/>
         </javac>
         <copy todir="${build.dest}">
@@ -66,7 +72,7 @@
         <jar basedir="${build.dest}" compress="true" jarfile="${jar.file}" manifest="jruby.mf"/>
     </target>
 
-    <target depends="compile" description="builds a binary distribution" name="bin-gz">
+    <target depends="compile" name="bin-gz">
         <mkdir dir="${build.tars.base}"/>
         <mkdir dir="${build.tars}"/>
         
@@ -91,7 +97,9 @@
 
         <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
 
-        <!--<delete dir="${build.tars}"/>          <delete file="${build.dir}/jruby.tar"/>         <delete file="${build.dir}/jruby.jar"/>-->
+        <!--<delete dir="${build.tars}"/> 
+        <delete file="${build.dir}/jruby.tar"/>
+        <delete file="${build.dir}/jruby.jar"/>-->
     </target>
 
     <target depends="bin-gz" description="Create source archive." name="src-gz">
