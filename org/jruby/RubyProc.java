@@ -38,8 +38,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyProc extends RubyObject {
-    // private originalThread = null
-
     private Block block = null;
     private RubyModule wrapper = null;
 
@@ -53,6 +51,7 @@ public class RubyProc extends RubyObject {
         procClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
         
         procClass.defineMethod("call", CallbackFactory.getOptMethod(RubyProc.class, "call"));
+        procClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyProc.class, "call"));
 
         return procClass;
     }
