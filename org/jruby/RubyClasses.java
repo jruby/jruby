@@ -254,6 +254,7 @@ public class RubyClasses {
 
         objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
         mathModule = RubyMath.createMathModule(ruby);
+        timeClass = RubyTime.createTimeClass(ruby);
     }
 
     /** Returns the reference to the Binding class.

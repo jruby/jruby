@@ -12,6 +12,7 @@ public class MainTestSuite extends TestSuite {
         TestSuite suite = new TestSuite();
         suite.addTest(new TestSuite(org.jruby.test.TestRubyNil.class));
         suite.addTest(new TestSuite(org.jruby.test.TestRubyHash.class));
+        suite.addTest(new TestSuite(org.jruby.test.TestRubyTime.class));
         return suite;
     }
 }
