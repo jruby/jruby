@@ -72,8 +72,11 @@ public class UnmarshalStream extends FilterInputStream {
         } else {
           result = unmarshalObjectDirectly(type);
         }
-        cache.register(result);
         return result;
+    }
+
+    public void register(IRubyObject newObject) {
+        cache.register(newObject);
     }
 
     private IRubyObject unmarshalObjectDirectly(int type) throws IOException {
@@ -179,6 +182,7 @@ public class UnmarshalStream extends FilterInputStream {
         Asserts.assertNotNull(type, "type shouldn't be null.");
 
         IRubyObject result = runtime.getFactory().newObject(type);
+        register(result);
 
         for (int i = 0, count = unmarshalInt(); i < count; i++) {
             result.setInstanceVariable(unmarshalObject().toId(), unmarshalObject());
@@ -191,8 +195,10 @@ public class UnmarshalStream extends FilterInputStream {
         String className = ((RubySymbol) unmarshalObject()).toId();
         String marshaled = unmarshalString();
         RubyModule classInstance = runtime.getRubyModule(className);
-        return classInstance.callMethod(
+        IRubyObject result = classInstance.callMethod(
             "_load",
             RubyString.newString(runtime, marshaled));
+        register(result);
+        return result;
     }
 }

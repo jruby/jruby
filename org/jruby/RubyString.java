@@ -1790,7 +1790,9 @@ public class RubyString extends RubyObject implements IndexCallable {
 	}
 
 	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-		return RubyString.newString(input.getRuntime(), input.unmarshalString());
+		RubyString result = RubyString.newString(input.getRuntime(), input.unmarshalString());
+        input.register(result);
+        return result;
 	}
 
     /**

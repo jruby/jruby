@@ -529,6 +529,7 @@ public class RubyHash extends RubyObject {
 
     public static RubyHash unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyHash result = newHash(input.getRuntime());
+        input.register(result);
         int size = input.unmarshalInt();
         for (int i = 0; i < size; i++) {
             IRubyObject key = input.unmarshalObject();

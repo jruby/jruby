@@ -390,6 +390,8 @@ public class RubyBignum extends RubyInteger {
             value = value.negate();
         }
 
-        return newBignum(input.getRuntime(), value);
+        RubyBignum result = newBignum(input.getRuntime(), value);
+        input.register(result);
+        return result;
     }
 }

@@ -1767,6 +1767,7 @@ public class RubyModule extends RubyObject {
         if (result == null) {
             throw new NameError(ruby, "uninitialized constant " + name);
         }
+        input.register(result);
         return result;
     }
 

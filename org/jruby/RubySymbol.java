@@ -177,7 +177,9 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     }
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        return RubySymbol.newSymbol(input.getRuntime(), input.unmarshalString());
+        RubySymbol result = RubySymbol.newSymbol(input.getRuntime(), input.unmarshalString());
+        input.register(result);
+        return result;
     }
 
     public static class SymbolTable {

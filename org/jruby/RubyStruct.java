@@ -425,7 +425,9 @@ public class RubyStruct extends RubyObject {
             values[i] = input.unmarshalObject();
         }
         
-        return newStruct(rbClass, values);
+        RubyStruct result = newStruct(rbClass, values);
+        input.register(result);
+        return result;
     }
 
     private static RubyClass pathToClass(Ruby ruby, String path) {
