@@ -347,6 +347,10 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject callMethod(String name, IRubyObject arg) {
         return callMethod(name, new IRubyObject[] { arg });
     }
+    
+    public IRubyObject instance_variable_get(IRubyObject var) {
+    	return getInstanceVariable(var.asSymbol());
+    }
 
     /** rb_iv_get / rb_ivar_get
      *
@@ -357,6 +361,11 @@ public class RubyObject implements Cloneable, IRubyObject {
             return getRuntime().getNil();
         }
         return (IRubyObject) getInstanceVariables().get(name);
+    }
+    
+    public IRubyObject instance_variable_set(IRubyObject var, IRubyObject value) {
+    	setInstanceVariable(var.asSymbol(), value);
+    	return value;
     }
 
     public IRubyObject setInstanceVariable(String name, IRubyObject value,
@@ -1036,6 +1045,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         module.defineMethod("instance_eval", callbackFactory.getOptMethod(RubyObject.class, "instance_eval"));
         module.defineMethod("instance_of?", callbackFactory.getMethod(RubyObject.class, "instance_of", IRubyObject.class));
         module.defineMethod("instance_variables", callbackFactory.getMethod(RubyObject.class, "instance_variables"));
+        module.defineMethod("instance_variable_get", callbackFactory.getMethod(RubyObject.class, "instance_variable_get", IRubyObject.class));
+        module.defineMethod("instance_variable_set", callbackFactory.getMethod(RubyObject.class, "instance_variable_set", IRubyObject.class, IRubyObject.class));
         module.defineMethod("method", callbackFactory.getMethod(RubyObject.class, "method", IRubyObject.class));
         module.defineMethod("methods", callbackFactory.getOptMethod(RubyObject.class, "methods"));
         //module.defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
