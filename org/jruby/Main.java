@@ -1,30 +1,30 @@
 /*
  * Main.java - No description
  * Created on 18. September 2001, 21:48
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -206,7 +206,7 @@ public class Main {
         if (sBenchmarkMode)
             now = System.currentTimeMillis();
         if (sScript.length() > 0) {
-            runInterpreter(sScript, "-e", argv);
+            runInterpreter(new StringReader(sScript), "-e", argv);
         } else if (sFileName != null) {
             runInterpreterOnFile(sFileName, argv);
         } else {
@@ -251,7 +251,7 @@ public class Main {
      * @param iFileName the name of the File from which the string comes.
      * @fixme implement the -p and -n options
      */
-    protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
+    protected static void runInterpreter(Reader iReader2Eval, String iFileName, String[] args) {
         // Initialize Runtime
         Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter);
 
@@ -275,7 +275,7 @@ public class Main {
 			for (int i = 0; i < lNbRequire; i++)
 				RubyKernel.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
-            INode lScript = ruby.parse(iString2Eval, iFileName, 0);
+            INode lScript = ruby.parse(iReader2Eval, iFileName);
 
             //				DumpVisitor laVisitor = new DumpVisitor();
             //				lScript.accept(laVisitor);
@@ -307,7 +307,7 @@ public class Main {
             ruby.getRuntime().getErrorStream().print(lBug.getMessage());
         }
         // ---
-        // to look nicer 
+        // to look nicer
         // That isn't Ruby compatible.
         // ruby.getRuntime().getOutputStream().println("");
     }
@@ -324,15 +324,9 @@ public class Main {
             System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
         } else {
             try {
-                StringBuffer sb = new StringBuffer((int) rubyFile.length());
                 BufferedReader br = new BufferedReader(new FileReader(rubyFile));
-                String line;
-                while ((line = br.readLine()) != null) {
-                    sb.append(line).append('\n');
-                }
+                runInterpreter(br, fileName, args);
                 br.close();
-                runInterpreter(sb.toString(), fileName, args);
-
             } catch (IOException ioExcptn) {
                 System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
                 System.out.println("IOEception: " + ioExcptn.getMessage());

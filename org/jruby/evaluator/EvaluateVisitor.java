@@ -696,20 +696,10 @@ public final class EvaluateVisitor implements NodeVisitor {
     public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {
             RubyParserConfiguration config = new RubyParserConfiguration();
-//            config.setLocalVariables(ruby.getScope().getLocalNames());
-
             config.setBlockVariables(RubyVarmap.getNames(ruby));
-
-//            ruby.getInternalParser().init(config);
-
-//            IRubyParserResult result = (IRubyParserResult) ruby.getInternalParser().parse(LexerFactory.getInstance().getSource("#{}", iVisited.getValue()));
-
-//            ruby.getScope().setLocalNames(result.getLocalVariables());
-
             INode node = ruby.getParser().parse("#{}", iVisited.getValue(), config);
             iVisited.setEvaluatedNode(node);
         }
-
         eval(iVisited.getEvaluatedNode());
     }
 

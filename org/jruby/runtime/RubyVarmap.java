@@ -45,8 +45,6 @@ public class RubyVarmap {
     private RubyObject val = null;
     private RubyVarmap next = null;
 
-    private static Map oldMap = new HashMap();
-
     /** Creates new RubyVarmap */
     public RubyVarmap(String name, RubyObject val, RubyVarmap next) {
         this.name = name;

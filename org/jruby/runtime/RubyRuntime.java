@@ -1,30 +1,30 @@
 /*
  * RubyRuntime.java - No description
  * Created on 09. November 2001, 15:47
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.runtime;
 
@@ -55,9 +55,9 @@ public class RubyRuntime {
 		this.ruby = ruby;
 	}
 
-	/** Print a bug report to the Error stream if bug 
+	/** Print a bug report to the Error stream if bug
 	 * reporting is enabled
-	 * 
+	 *
 	 */
 	public void printBug(String description) {
 		if (printBugs) {
@@ -66,7 +66,7 @@ public class RubyRuntime {
 	}
 
 	/** Call the current method in the superclass of the current object
-	 * 
+	 *
 	 * @matz rb_call_super
 	 */
 	public RubyObject callSuper(RubyObject[] args) {
@@ -147,7 +147,7 @@ public class RubyRuntime {
 			// FIXME
 			ruby.setInEval(ruby.getInEval() + 1);
 
-			INode node = ruby.parse(source.toString(), scriptName.getValue(), 0);
+			INode node = ruby.parse(source.toString(), scriptName.getValue());
 
 			// ---
 			ruby.setInEval(ruby.getInEval() - 1);
@@ -205,9 +205,9 @@ public class RubyRuntime {
 	}
 
     /** Call the traceFunction
-     * 
+     *
      * MRI: eval.c - call_trace_func
-     * 
+     *
      */
     public synchronized void callTraceFunction(String event,
                                                String file,
@@ -247,9 +247,9 @@ public class RubyRuntime {
     }
 
 	/** Prints an error with backtrace to the error stream.
-	 * 
+	 *
 	 * MRI: eval.c - error_print()
-	 * 
+	 *
 	 */
 	public void printError(RubyException excp) {
 		if (excp == null || excp.isNil()) {

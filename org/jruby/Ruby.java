@@ -30,6 +30,7 @@
 package org.jruby;
 
 import java.io.File;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -229,7 +230,7 @@ public final class Ruby {
      * Evaluates a script and returns a RubyObject.
      */
     public IRubyObject evalScript(String script) {
-        return eval(parse(script, "<script>", 1));
+        return eval(parse(script, "<script>"));
     }
 
     public IRubyObject eval(INode node) {
@@ -846,7 +847,11 @@ public final class Ruby {
         }
     }
 
-    public INode parse(String content, String file, int line) {
+    public INode parse(Reader content, String file) {
+        return parser.parse(file, content);
+    }
+
+    public INode parse(String content, String file) {
         return parser.parse(file, content);
     }
 

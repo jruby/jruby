@@ -620,7 +620,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             // ruby_errinfo = Qnil;
             
             // FIXME
-            INode node = getRuby().parse(src.toString(), file, line);
+            INode node = getRuby().parse(src.toString(), file);
             
             // if (ruby_nerrs > 0) {
             // 	compile_error(0);

@@ -34,6 +34,8 @@ import org.jruby.Ruby;
 import org.jruby.common.RubyErrorHandler;
 
 import java.util.ArrayList;
+import java.io.Reader;
+import java.io.StringReader;
 
 public class Parser {
     private final Ruby ruby;
@@ -45,10 +47,18 @@ public class Parser {
     }
 
     public INode parse(String file, String content) {
+        return parse(file, new StringReader(content));
+    }
+
+    public INode parse(String file, Reader content) {
         return parse(file, content, new RubyParserConfiguration());
     }
 
     public INode parse(String file, String content, RubyParserConfiguration config) {
+        return parse(file, new StringReader(content), config);
+    }
+
+    public INode parse(String file, Reader content, RubyParserConfiguration config) {
         config.setLocalVariables(ruby.getScope().getLocalNames());
         internalParser.init(config);
         ILexerSource lexerSource = LexerFactory.getInstance().getSource(file, content);
