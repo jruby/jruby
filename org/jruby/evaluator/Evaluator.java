@@ -27,6 +27,8 @@ import org.jruby.Ruby;
 import org.jruby.util.collections.IStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.runtime.*;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.ablaf.ast.INode;
 
 public class Evaluator {
     private final Ruby ruby;
@@ -59,5 +61,9 @@ public class Evaluator {
 
     public Iter getCurrentIter() {
         return (Iter) getIterStack().peek();
+    }
+
+    public IRubyObject eval(INode node) {
+        return EvaluateVisitor.createVisitor(ruby.getRubyTopSelf()).eval(node);
     }
 }

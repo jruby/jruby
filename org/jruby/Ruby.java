@@ -189,7 +189,9 @@ public final class Ruby {
     /**
      * Create and initialize a new jruby Runtime.
      */
-    public Ruby() {
+    private Ruby(Class regexpAdapterClass) {
+        this.regexpAdapterClass = regexpAdapterClass;
+
         globalMap = new RubyHashMap();
 
         nilObject = RubyObject.nilObject(this);
@@ -211,9 +213,7 @@ public final class Ruby {
         if (regexpAdapterClass == null) {
             regexpAdapterClass = IRegexpAdapter.getAdapterClass();
         }
-
-        Ruby ruby = new Ruby();
-        ruby.setRegexpAdapterClass(regexpAdapterClass);
+        Ruby ruby = new Ruby(regexpAdapterClass);
         ruby.init();
         return ruby;
     }
@@ -238,15 +238,11 @@ public final class Ruby {
     }
 
     public IRubyObject eval(INode node) {
-        return EvaluateVisitor.createVisitor(rubyTopSelf).eval(node);
+        return evaluator.eval(node);
     }
 
     public Class getRegexpAdapterClass() {
         return regexpAdapterClass;
-    }
-
-    public void setRegexpAdapterClass(Class iRegexpAdapterClass) {
-        regexpAdapterClass = iRegexpAdapterClass;
     }
 
     public RubyClasses getClasses() {

@@ -60,8 +60,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     private IRubyObject self;
     private IRubyObject result;
 
-    private ISourcePosition _curPos;
-
     public EvaluateVisitor(Ruby ruby, RubyObject self) {
         this.ruby = ruby;
         this.self = self;
