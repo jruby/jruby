@@ -34,7 +34,6 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
@@ -181,6 +180,6 @@ public class JavaObject extends RubyObject {
     }
     
     public IRubyObject is_java_proxy() {
-        return RubyBoolean.createTrueClass(getRuntime());
+        return getRuntime().getTrue();
     }
 }
