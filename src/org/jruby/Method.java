@@ -29,6 +29,7 @@
  */
 package org.jruby;
 
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
@@ -103,6 +104,11 @@ public class Method extends RubyObject {
         if (args == null) {
             args = IRubyObject.NULL_ARRAY;
         }
+
+        if (args.length != method.getArity().getValue()) {
+        	throw new ArgumentError(getRuntime(), "");
+        }
+        
         getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return implementationModule.call0(receiver, methodName, args, method, false);
