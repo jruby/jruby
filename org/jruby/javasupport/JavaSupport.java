@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 
 import org.jruby.exceptions.NameError;
@@ -74,44 +71,6 @@ public class JavaSupport {
         addDefaultModules(rubyClass);
 
         return rubyClass;
-    }
-
-    private RubyModule createRubyInterface(Class javaInterface, String rubyName) {
-        RubyModule newInterface = ruby.defineModule(rubyName);
-
-        Map methods = getMethodsByName(javaInterface);
-
-        for (Iterator iter = methods.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-
-            newInterface.defineModuleFunction((String) entry.getKey(),
-            new JavaInterfaceMethod((String) entry.getKey(), (Set) entry.getValue()));
-        }
-
-        newInterface.defineModuleFunction("new" + rubyName, new JavaInterfaceConstructor(javaInterface));
-
-        return newInterface;
-    }
-
-	/**
-	 * @return a Map (String --> Set) of methods by name
-	 */
-	private static Map getMethodsByName(Class javaClass) {
-		Method[] methods = javaClass.getMethods();
-		List methodList = Arrays.asList(methods);
-        Map result = new HashMap(methods.length);
-
-        Iterator iter = methodList.iterator();
-        while (iter.hasNext()) {
-            Method method = (Method) iter.next();
-			String name = method.getName();
-
-            if (! result.containsKey(name)) {
-                result.put(name, new HashSet());
-            }
-            ((Set) result.get(name)).add(method);
-        }
-        return result;
     }
 
     private void defineConstants(Class javaClass, RubyClass rubyClass) {
