@@ -33,6 +33,8 @@ import org.jruby.RubyInteger;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
 
+import java.lang.reflect.Array;
+
 public class JavaArray extends JavaObject implements IndexCallable {
 
     public JavaArray(Ruby runtime, Object array) {
@@ -47,8 +49,11 @@ public class JavaArray extends JavaObject implements IndexCallable {
     }
 
     public RubyFixnum length() {
-        int length = ((Object[]) getValue()).length;
-        return RubyFixnum.newFixnum(getRuntime(), length);
+        return RubyFixnum.newFixnum(getRuntime(), getLength());
+    }
+
+    private int getLength() {
+        return Array.getLength(getValue());
     }
 
     public IRubyObject aref(IRubyObject index) {
@@ -56,13 +61,12 @@ public class JavaArray extends JavaObject implements IndexCallable {
             throw new TypeError(getRuntime(), index, getRuntime().getClasses().getIntegerClass());
         }
         int intIndex = (int) ((RubyInteger) index).getLongValue();
-        Object[] array = ((Object[]) getValue());
-        if (intIndex < 0 || intIndex >= array.length) {
+        if (intIndex < 0 || intIndex >= getLength()) {
             throw new ArgumentError(getRuntime(),
                                     "index out of bounds for java array (" + intIndex +
-                                    " for length " + array.length + ")");
+                                    " for length " + getLength() + ")");
         }
-        Object result = array[intIndex];
+        Object result = Array.get(getValue(), intIndex);
         if (result == null) {
             return getRuntime().getNil();
         }
@@ -77,18 +81,17 @@ public class JavaArray extends JavaObject implements IndexCallable {
         if (! (value instanceof JavaObject)) {
             throw new TypeError(getRuntime(), "not a java object:" + value);
         }
-        Object[] array = ((Object[]) getValue());
         Object javaObject = ((JavaObject) value).getValue();
         try {
-            array[intIndex] = javaObject;
+            Array.set(getValue(), intIndex, javaObject);
         } catch (IndexOutOfBoundsException e) {
             throw new ArgumentError(getRuntime(),
                                     "index out of bounds for java array (" + intIndex +
-                                    " for length " + array.length + ")");
+                                    " for length " + getLength() + ")");
         } catch (ArrayStoreException e) {
             throw new ArgumentError(getRuntime(),
                                     "wrong element type " + javaObject.getClass() + "(array is " +
-                                    array.getClass() + ")");
+                                    getValue().getClass() + ")");
         }
         return value;
     }
