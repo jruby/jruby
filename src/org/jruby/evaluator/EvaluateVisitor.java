@@ -431,50 +431,23 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCaseNode(CaseNode)
      */
     public void visitCaseNode(CaseNode iVisited) {
+        IRubyObject expression = null;
         if (iVisited.getCaseNode() != null) {
-            IRubyObject expression = eval(iVisited.getCaseNode());
-
-            Iterator iter = iVisited.getWhenNodes().iterator();
-            for (int i = 0, size = iVisited.getWhenNodes().size(); i < size; i++) {
-                WhenNode whenNode = (WhenNode) iter.next();
-
-                threadContext.setPosition(whenNode.getPosition());
-                if (isTrace()) {
-                    callTraceFunction(
-                        "line",
-                            self
-                    );
-                }
-
-                RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
-
-                for (int j = 0, len = expressions.getLength(); j < len; j++) {
-                    if (expressions.entry(j).callMethod("===", expression).isTrue()) {
-                        eval(whenNode);
-                        return;
-                    }
-                }
+            expression = eval(iVisited.getCaseNode());
+        }
+        Iterator iter = iVisited.getWhenNodes().iterator();
+        while (iter.hasNext()) {
+            WhenNode whenNode = (WhenNode) iter.next();
+            threadContext.setPosition(whenNode.getPosition());
+            if (isTrace()) {
+                callTraceFunction("line", self);
             }
-        } else {
-            Iterator iter = iVisited.getWhenNodes().iterator();
-            while (iter.hasNext()) {
-                WhenNode whenNode = (WhenNode) iter.next();
-
-                threadContext.setPosition(whenNode.getPosition());
-                if (isTrace()) {
-                    callTraceFunction(
-                        "line",
-                            self
-                    );
-                }
-
-                RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
-
-                for (int i = 0; i < expressions.getLength(); i++) {
-                    if (expressions.entry(i).isTrue()) {
-                        eval(whenNode);
-                        return;
-                    }
+            RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
+            for (int i = 0; i < expressions.getLength(); i++) {
+                if ((expression != null && expressions.entry(i).callMethod("===", expression).isTrue())
+                        || (expression == null && expressions.entry(i).isTrue())) {
+                    eval(whenNode.getBodyNode());
+                    return;
                 }
             }
         }
@@ -1380,7 +1353,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitWhenNode(WhenNode)
      */
     public void visitWhenNode(WhenNode iVisited) {
-        eval(iVisited.getBodyNode());
+        Asserts.notReached();
     }
 
     /**

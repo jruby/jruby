@@ -42,6 +42,3 @@ else
   x = 'c'
 end
 test_equal('c', x)
-
-test_print_report
-
