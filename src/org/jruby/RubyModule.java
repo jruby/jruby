@@ -514,7 +514,11 @@ public class RubyModule extends RubyObject {
         }
         result = new CacheEntry(name, this);
         method.initializeCacheEntry(result);
-        methodCache.put(name, result);
+        // Be careful not to store cache entries that contain classes from super classes of singleton classes
+        // because they cannot be cleared in addMethod() and would therefore keep old method definition alive.
+        if (result.getOrigin() == this || !(this instanceof MetaClass)) {
+        	methodCache.put(name, result);
+        }
         return result;
     }
 
