@@ -65,15 +65,10 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#load(String)
      */
     public boolean load(String file) {
-        if (file.endsWith(".jar")) {
-            // FIXME
-            return false;
-        } else {
-            if (!file.endsWith(".rb")) {
-                file += ".rb";
-            }
-            runtime.getRuntime().loadFile(findFile(file), false);
+        if (!file.endsWith(".rb")) {
+            file += ".rb";
         }
+        runtime.getRuntime().loadFile(findFile(file), false);
         return true;
     }
 
@@ -83,6 +78,10 @@ public class LoadService implements ILoadService {
     public boolean require(String file) {
         RubyString name = RubyString.newString(runtime, file);
         if (!loadedFeatures.contains(name)) {
+            if (file.endsWith(".jar")) {
+                runtime.getJavaSupport().addToClasspath(findFile(file));
+                return true;
+            }
             if (load(file)) {
                 loadedFeatures.add(name);
                 return true;

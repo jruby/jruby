@@ -1,8 +1,12 @@
 package org.jruby.javasupport;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 
 import org.jruby.*;
@@ -264,6 +268,13 @@ public class JavaSupport {
             }
         }
         throw new NameError(ruby, "cannot load Java class: " + className);
+    }
+    
+    public void addToClasspath(File file) {
+        try {
+            javaClassLoader = new URLClassLoader(new URL[]{file.toURL()}, javaClassLoader);
+        } catch (MalformedURLException murlExcptn) {
+        }
     }
 
     public void addImportPackage(String packageName) {

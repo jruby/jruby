@@ -43,6 +43,6 @@ public class LoadError extends RaiseException {
      * @param msg the detail message.
      */
     public LoadError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getTypeError(), msg);
+        super(ruby, ruby.getExceptions().getLoadError(), msg);
     }
 }
