@@ -108,6 +108,26 @@ Java::JavaClass:
         Returns a list of the names of the interfaces implemented by this
         Java class.
 
+    cls.primitive? -> true or false
+        Returns true if the Java class represents a primitive type
+        ('int', 'boolean', etc.), false otherwise.
+
+    cls.assignable_from?( aJavaClass ) -> true or false
+        Returns true if instances of the given Java class can be assigned
+        to variables of this Java class.
+
+        Example:
+            object_class.assignable_from?(string_class)  # -> true
+            string_class.assignable_from?(object_class)  # -> false
+
+    cls.component_type -> aJavaClass
+        If this Java class is an array class, then a JavaClass for the
+        type of the elements is returned.
+
+        If this Java class isn't an array class, then a TypeError is
+        raised.
+
+
 Java::JavaMethod:
 
     instance methods:

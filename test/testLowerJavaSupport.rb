@@ -171,6 +171,9 @@ if defined? Java
   test_equal("java.lang.String", string_array_class.component_type.name)
   test_ok(constructed_array[3].nil?)
   test_exception(ArgumentError) { constructed_array[10] }
+  constructed_array[3] = Java.primitive_to_java("hello")
+  test_equal("hello", Java.java_to_primitive(constructed_array[3]))
+  test_ok(constructed_array[4].nil?)
 
   list = arraylist_class.constructor().new_instance()
   returned_array = arraylist_class.java_method(:toArray).invoke(list)

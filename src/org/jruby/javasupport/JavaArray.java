@@ -69,6 +69,24 @@ public class JavaArray extends JavaObject implements IndexCallable {
         return JavaObject.wrap(getRuntime(), result);
     }
 
+    public IRubyObject aset(IRubyObject index, IRubyObject value) {
+         if (! (index instanceof RubyInteger)) {
+            throw new TypeError(getRuntime(), index, getRuntime().getClasses().getIntegerClass());
+        }
+        int intIndex = (int) ((RubyInteger) index).getLongValue();
+        if (! (value instanceof JavaObject)) {
+            throw new TypeError(getRuntime(), "not a java object:" + value);
+        }
+        Object[] array = ((Object[]) getValue());
+        try {
+            array[intIndex] = ((JavaObject) value).getValue();
+        } catch (IndexOutOfBoundsException e) {
+            throw new ArgumentError(getRuntime(),
+                                    "index out of bounds for java array (" + intIndex +
+                                    " for length " + array.length + ")");
+        }
+        return value;
+    }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {

@@ -39,7 +39,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
-import org.jruby.util.Asserts;
 import org.jruby.exceptions.TypeError;
 
 /**
@@ -58,7 +57,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
     protected JavaObject(Ruby ruby, Object value) {
         this(ruby, ruby.getClasses().getJavaObjectClass(), value);
     }
-    
+
     public static synchronized JavaObject wrap(Ruby runtime, Object value) {
         JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
         if (wrapper == null) {
@@ -90,6 +89,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
     private static final int JAVA_CLASS = 5;
     private static final int LENGTH = 6;
     private static final int AREF = 7;
+    private static final int ASET = 8;
 
     public static RubyClass createJavaObjectClass(Ruby ruby) {
         RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
@@ -102,6 +102,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
         javaObjectClass.defineMethod("java_class", IndexedCallback.create(JAVA_CLASS, 0));
         javaObjectClass.defineMethod("length", IndexedCallback.create(LENGTH, 0));
         javaObjectClass.defineMethod("[]", IndexedCallback.create(AREF, 1));
+        javaObjectClass.defineMethod("[]=", IndexedCallback.create(ASET, 2));
 
         javaObjectClass.getMetaClass().undefMethod("new");
 
@@ -141,6 +142,10 @@ public class JavaObject extends RubyObject implements IndexCallable {
         throw new TypeError(getRuntime(), "not a java array");
     }
 
+    public IRubyObject aset(IRubyObject index, IRubyObject value) {
+        throw new TypeError(getRuntime(), "not a java array");
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case TO_S :
@@ -157,6 +162,8 @@ public class JavaObject extends RubyObject implements IndexCallable {
                 return length();
             case AREF :
                 return aref(args[0]);
+            case ASET :
+                return aset(args[0], args[1]);
             default :
                 return super.callIndexed(index, args);
         }
