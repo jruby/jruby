@@ -25,6 +25,8 @@
  */
 package org.jruby.javasupport.bsf;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 
 import org.apache.bsf.BSFDeclaredBean;
@@ -149,6 +151,7 @@ public class JRubyEngine extends BSFEngineImpl {
         super.initialize(mgr, lang, declaredBeans);
 
         runtime = Ruby.getDefaultInstance();
+        runtime.getLoadService().init(getClassPath(mgr));
 
         for (int i = 0, size = declaredBeans.size(); i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
@@ -158,6 +161,10 @@ public class JRubyEngine extends BSFEngineImpl {
         }
 
         runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(mgr, this)));
+    }
+    
+    private List getClassPath(BSFManager mgr) {
+    	return Arrays.asList(mgr.getClassPath().split(System.getProperty("path.separator")));
     }
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {

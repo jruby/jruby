@@ -50,7 +50,7 @@ public class TestRuby extends TestRubyBase {
     }
     
     public void testVarAndMet() throws Exception {
-        runtime.getLoadService().init(runtime, new ArrayList());
+        runtime.getLoadService().init(new ArrayList());
         eval("load './test/testVariableAndMethod.rb'");
         assertEquals("Hello World", eval("puts($a)"));
         assertEquals("dlroW olleH", eval("puts $b"));

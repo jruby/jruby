@@ -165,7 +165,7 @@ public class Main {
         defineGlobal(runtime, "$-l", commandline.processLineEnds);
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", runtime.newString(filename)));
-        runtime.getLoadService().init(runtime, commandline.loadPaths());
+        runtime.getLoadService().init(commandline.loadPaths());
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
             String scriptName = (String) iter.next();

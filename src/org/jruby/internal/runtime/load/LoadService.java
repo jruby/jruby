@@ -54,27 +54,21 @@ import org.jruby.util.PreparsedScript;
  * @version $Revision$
  */
 public class LoadService implements ILoadService {
-    private List loadPath = new ArrayList();
-    private List loadedFeatures = new ArrayList();
-    private Map builtinLibraries = new HashMap();
+    private final List loadPath = new ArrayList();
+    private final List loadedFeatures = new ArrayList();
+    private final Map builtinLibraries = new HashMap();
 
-    private Map autoloadMap = new HashMap();
+    private final Map autoloadMap = new HashMap();
 
     private final Ruby runtime;
-    /**
-     * Constructor for LoadService.
-     */
+    
     public LoadService(Ruby runtime) {
-        super();
         this.runtime = runtime;
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#init(Ruby, List)
-     */
-    public void init(Ruby runtime, List additionalDirectories) {
+    public void init(List additionalDirectories) {
         for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
-            addPath((String)iter.next());
+            addPath((String) iter.next());
         }
         if (runtime.getSafeLevel() == 0) {
             String jrubyLib = System.getProperty("jruby.lib");
@@ -83,16 +77,16 @@ public class LoadService implements ILoadService {
             }
         }
 
-
         String jrubyHome = System.getProperty("jruby.home");
         if (jrubyHome != null) {
-            String rubyDir = jrubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
+            char sep = File.separatorChar;
+			String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
-            addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION);
-            addPath(rubyDir + "site_ruby" + File.separatorChar + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+            addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
+            addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION + sep + "java");
             addPath(rubyDir + "site_ruby");
             addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
-            addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + File.separatorChar + "java");
+            addPath(rubyDir + Constants.RUBY_MAJOR_VERSION + sep + "java");
         }
 
         if (runtime.getSafeLevel() == 0) {
@@ -104,9 +98,6 @@ public class LoadService implements ILoadService {
         loadPath.add(runtime.newString(path));
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#load(String)
-     */
     public boolean load(String file) {
         String[] suffixes = new String[] { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };
         Library library = null;
@@ -141,9 +132,6 @@ public class LoadService implements ILoadService {
         }
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#require(String)
-     */
     public boolean require(String file) {
         RubyString name = runtime.newString(file);
         if (loadedFeatures.contains(name)) {
@@ -156,30 +144,18 @@ public class LoadService implements ILoadService {
         return false;
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#getLoadPath()
-     */
     public List getLoadPath() {
         return loadPath;
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#getLoadedFeatures()
-     */
     public List getLoadedFeatures() {
         return loadedFeatures;
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#isAutoloadDefined(String)
-     */
     public boolean isAutoloadDefined(String name) {
         return autoloadMap.containsKey(name);
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#autoload(String)
-     */
     public IRubyObject autoload(String name) {
         IAutoloadMethod loadMethod = (IAutoloadMethod)autoloadMap.get(name);
         if (loadMethod != null) {
@@ -188,16 +164,10 @@ public class LoadService implements ILoadService {
         return null;
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#addAutoload(String, IAutoloadMethod)
-     */
     public void addAutoload(String name, IAutoloadMethod loadMethod) {
         autoloadMap.put(name, loadMethod);
     }
 
-    /**
-     * @see org.jruby.runtime.load.ILoadService#registerBuiltin(String, Library)
-     */
     public void registerBuiltin(String name, Library library) {
         builtinLibraries.put(name, library);
     }

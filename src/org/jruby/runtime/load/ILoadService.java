@@ -2,7 +2,6 @@ package org.jruby.runtime.load;
 
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -25,7 +24,7 @@ public interface ILoadService {
      * search path; typically, programs use $: &lt;&lt; dir to append
      * dir to the path.
      */
-    void init(Ruby runtime, List additionalDirectories);
+    void init(List additionalDirectories);
 
     boolean load(String file);
     boolean require(String file);
