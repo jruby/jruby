@@ -32,6 +32,8 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Iter;
@@ -84,7 +86,7 @@ public class RubyProc extends RubyObject {
         return proc;
     }
 
-    public static RubyProc newProc(Ruby ruby) {
+    public static RubyProc newProc(Ruby ruby, boolean isLambda) {
         if (!ruby.isBlockGiven() && !ruby.isFBlockGiven()) {
             throw new ArgumentError(ruby, "tried to create Proc object without a block");
         }
@@ -94,8 +96,13 @@ public class RubyProc extends RubyObject {
         newProc.block = ruby.getBlockStack().getCurrent().cloneBlock();
         newProc.wrapper = ruby.getWrapper();
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
+        newProc.block.isLambda = isLambda;
 
         return newProc;
+    }
+    
+    public static RubyProc newProc(Ruby ruby) {
+    	return newProc(ruby, false);
     }
 
     public IRubyObject call(IRubyObject[] args) {
@@ -103,13 +110,24 @@ public class RubyProc extends RubyObject {
     }
 
     public IRubyObject call(IRubyObject[] args, IRubyObject self) {
-        ThreadContext threadContext = getRuntime().getCurrentContext();
-        RubyModule oldWrapper = threadContext.getWrapper();
-        threadContext.setWrapper(wrapper);
+        ThreadContext context = getRuntime().getCurrentContext();
+        RubyModule oldWrapper = context.getWrapper();
+        context.setWrapper(wrapper);
         try {
             return block.call(args, self);
+        } catch (ReturnJump e) {
+        	if (block.isLambda) {
+        		return e.getReturnValue();
+        	}
+        	
+        	if (context.getFrameStack().getPrevious() == block.getFrame()) {
+        			throw e;
+	        }
+        	
+		  	throw new RaiseException(getRuntime(), 
+		  			getRuntime().getExceptions().getLocalJumpError(), "unexpected return");
         } finally {
-            threadContext.setWrapper(oldWrapper);
+            context.setWrapper(oldWrapper);
         }
     }
 

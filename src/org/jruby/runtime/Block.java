@@ -48,6 +48,7 @@ public class Block implements StackElement {
     private RubyModule klass;
     private Iter iter;
     private DynamicVariableSet dynamicVariables;
+    public boolean isLambda = false;
 
     private Block next;
 
@@ -109,6 +110,8 @@ public class Block implements StackElement {
 
     public Block cloneBlock() {
         Block newBlock = new Block(var, method, self, frame, scope, klass, iter, new DynamicVariableSet(dynamicVariables));
+        
+        newBlock.isLambda = isLambda;
 
         if (getNext() != null) {
             newBlock.setNext(((Block)getNext()));

@@ -598,7 +598,7 @@ public class KernelModule {
     }
 
     public static RubyProc proc(IRubyObject recv) {
-        return RubyProc.newProc(recv.getRuntime());
+        return RubyProc.newProc(recv.getRuntime(), true);
     }
 
     public static IRubyObject loop(IRubyObject recv) {

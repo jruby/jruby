@@ -40,7 +40,9 @@ import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -99,6 +101,13 @@ public final class DefaultMethod extends AbstractMethod {
             return receiver.eval(body.getBodyNode());
 
         } catch (ReturnJump re) {
+        	Block current = context.getBlockStack().getCurrent();
+
+        	if (current != null && context.getFrameStack().getPrevious() == current.getFrame() &&
+        		current.getIter() == Iter.ITER_CUR) {
+    			throw re;
+            }
+
             return re.getReturnValue();
         } finally {
             context.popClass();
