@@ -24,5 +24,6 @@ rescue Exception => boom
 	end
   }
   test_ok([10,13,13] == result)
+  p boom.backtrace
 end
 

@@ -75,7 +75,7 @@ echo Using JAVA_HOME:  %JAVA_HOME%
 
 rem ----- Execute The Requested Command ---------------------------------------
 
-%_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" org.jruby.Main %JRUBY_OPTS% %1 %2 %3 %4 %5 %6 %7 %8 %9
+%_STARTJAVA% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" org.jruby.Main %JRUBY_OPTS% %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 rem ----- Restore Environment Variables ---------------------------------------
 
