@@ -69,11 +69,12 @@ end
 
 # test methods
 
-def testMethod 
+def testMethod(output)
+    puts output
     puts "method tested."
 end
 
-testMethod
+testMethod "some output"
 
 # test classes
 
@@ -99,5 +100,5 @@ puts "Float test\n"
 puts 3.5 + 5.7
 puts 3.0 * 3.3
 puts 2.5 / 2.1
-puts 2.5 ** 4.0
+puts 2.5 ** 4
 puts 2.56

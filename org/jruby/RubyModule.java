@@ -538,7 +538,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         interpreter.getRubyFrame().setLastFunc(id);
         interpreter.getRubyFrame().setLastClass(noSuper ? null : this);
         interpreter.getRubyFrame().setSelf(recv);
-        interpreter.getRubyFrame().setArgs(args);
+        interpreter.getRubyFrame().setArgs(new ShiftableList(args));
         
         RubyObject result = null;
         
@@ -553,7 +553,10 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             }
             case NODE_SCOPE: {
                 NODE savedCref = null;
-                VALUE[] localVars = null;
+                // VALUE[] localVars = null;
+                
+                ShiftableList argsList = new ShiftableList(args);
+                ShiftableList localVarsList = null;
                 
                 getRuby().rubyScope.push();
                 
@@ -563,16 +566,17 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                     interpreter.getRubyFrame().setCbase(body.nd_rval());
                 }
                 if (body.nd_tbl() != null) {
-                    localVars = new VALUE[body.nd_tbl().length];
-                    // System.arraycopy(body.nd_tbl(), 0, local_vars, 0, body.nd_tbl().length);
+                    // ? +++
+                    List tmpList = Collections.nCopies(body.nd_tbl()[0].intValue() + 1, getRuby().getNil());
+                    // ? ---
+                    localVarsList = new ShiftableList(new ArrayList(tmpList));
+                    localVarsList.set(0, body);
+                    localVarsList.shift(1);
                     
-                    RubyId[] tmp = new RubyId[body.nd_tbl().length];
-                    System.arraycopy(body.nd_tbl(), 0, tmp, 0, body.nd_tbl().length);
-                    
-                    getRuby().rubyScope.setLocalTbl(tmp);
-                    getRuby().rubyScope.setLocalVars(localVars);
+                    getRuby().rubyScope.setLocalTbl(body.nd_tbl());
+                    getRuby().rubyScope.setLocalVars(localVarsList.getList());
                 } else {
-                    localVars = getRuby().rubyScope.getLocalVars();
+                    localVarsList = getRuby().rubyScope.getLocalVars();
                     
                     getRuby().rubyScope.setLocalVars(null);
                     getRuby().rubyScope.setLocalTbl(null);
@@ -583,7 +587,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 // PUSH_VARS();
                 // PUSH_TAG(PROT_FUNC);
                 
-                // try {
+                try {
                     NODE node = null;
                     int i;
                     
@@ -615,43 +619,46 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                             if (opt < (args != null ? args.length : 0)) {
                                 throw new RubyArgumentException("wrong # of arguments(" + args.length + " for " + opt + ")");
                             }
-                            RubyObject[] tmp = new RubyObject[opt];
-                            // System.arraycopy(localVars, 2, tmp, 0, opt);
-                            interpreter.getRubyFrame().setArgs(tmp);
+                            
+                            interpreter.getRubyFrame().setArgs(localVarsList != null ? localVarsList.getList(2) : null);
                         }
 
-                        if (localVars != null) {
-/*                            if (i > 0) {
-                                MEMCPY(local_vars+2, argv, VALUE, i);
+                        if (localVarsList != null) {
+                            if (i > 0) {
+                                localVarsList.shift(2);
+                                for (int j = 0; j < i; j++ ) {
+                                    localVarsList.set(j, argsList.get(j));
+                                }
+                                localVarsList.shiftLeft(2);
                             }
                             
-                            argv += i; argc -= i;
+                            argsList.shift(i);
                             
                             if (node.nd_opt() != null) {
                                 NODE opt = node.nd_opt();
 
-                                while (opt != null && args.length != 0) {
-                                    assign(recv, opt->nd_head, *argv, 1);
-                                    argv++; argc--;
-                                    opt = opt->nd_next;
+                                while (opt != null && argsList.size() != 0) {
+                                    interpreter.assign(recv, opt.nd_head(), (RubyObject)argsList.get(0), true);
+                                    argsList.shift(1);
+                                    opt = opt.nd_next();
                                 }
-                                rb_eval(recv, opt);
+                                interpreter.eval(recv, opt);
                             }
-                            if (node->nd_rest >= 0) {
-                                VALUE v;
-
-                                if (argc > 0)
-                                    v = rb_ary_new4(argc,argv);
-                                else
-                                    v = rb_ary_new2(0);
-                                local_vars[node->nd_rest] = v;
-                            }*/
+                            if (node.nd_rest() >= 0) {
+                                RubyArray array = null;
+                                if (argsList.size() > 0) {
+                                    array = RubyArray.m_newArray(getRuby(), argsList);
+                                } else {
+                                    array = RubyArray.m_newArray(getRuby(), 0);
+                                }
+                                localVarsList.set(node.nd_rest(), array);
+                            }
                         }
                     }
 
                     result = interpreter.eval(recv, body);
-                // } catch (ReturnException rExcptn) {
-                // }
+                } catch (ReturnException rExcptn) {
+                }
                 
                 getRuby().rubyScope.pop();
                 interpreter.ruby_cref = savedCref;

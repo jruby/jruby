@@ -26,8 +26,11 @@
 
 package org.jruby.interpreter;
 
+import java.util.*;
+
 import org.jruby.*;
 import org.jruby.original.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -39,7 +42,7 @@ public class Frame {
     public static final int FRAME_MALLOC = 1;
     
     private RubyObject self         = null;
-    private RubyObject[] args       = null;
+    private List args               = null;
     private RubyId lastFunc         = null;
     private RubyModule lastClass    = null;
     private VALUE cbase             = null;
@@ -53,7 +56,7 @@ public class Frame {
     public Frame() {
     }
     
-    public Frame(RubyObject self, RubyObject[] args, RubyId lastFunc, RubyModule lastClass,
+    public Frame(RubyObject self, List args, RubyId lastFunc, RubyModule lastClass,
                  VALUE cbase, Frame prev, Frame tmp, String file, int line, int iter, int flags) {
         this();
         
@@ -70,33 +73,17 @@ public class Frame {
         this.flags = flags;
     }
     
-    /** Indexed getter for property args.
-     * @param index Index of the property.
-     * @return Value of the property at <CODE>index</CODE>.
-     */
-    public RubyObject getArgs(int index) {
-        return args[index];
-    }
-    
     /** Getter for property args.
      * @return Value of property args.
      */
-    public RubyObject[] getArgs() {
+    public List getArgs() {
         return args;
-    }
-    
-    /** Indexed setter for property args.
-     * @param index Index of the property.
-     * @param args New value of the property at <CODE>index</CODE>.
-     */
-    public void setArgs(int index, RubyObject args) {
-        this.args[index] = args;
     }
     
     /** Setter for property args.
      * @param args New value of property args.
      */
-    public void setArgs(RubyObject[] args) {
+    public void setArgs(List args) {
         this.args = args;
     }
     

@@ -62,7 +62,7 @@ public class NODE implements node_type, VALUE, Scope {
     public NODE nd_1st() { return (NODE)u1; }
     public NODE nd_2nd() { return (NODE)u2; }
 
-    NODE nd_stts() { return (NODE)u1; }
+    public NODE nd_stts() { return (NODE)u1; }
 
     public global_entry nd_entry() { return (global_entry)u3; }
     public ID nd_vid() { return (ID)u1; }

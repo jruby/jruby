@@ -60,6 +60,10 @@ public class RubyFloat extends RubyNumeric {
         return value;
     }
     
+    public long getLongValue() {
+        return (long)value;
+    }
+    
     // Float methods (flo_*)
     
     /**
@@ -99,6 +103,35 @@ public class RubyFloat extends RubyNumeric {
     
     public RubyNumeric op_pow(RubyNumeric other) {
         return RubyFloat.m_newFloat(getRuby(), Math.pow(getDoubleValue(), getDoubleValue()));
+    }
+    
+    public RubyNumeric op_cmp(RubyNumeric other) {
+        if (getDoubleValue() == other.getDoubleValue()) {
+            return RubyFixnum.m_newFixnum(getRuby(), 0);
+        } else if (getDoubleValue() > other.getDoubleValue()) {
+            return RubyFixnum.m_newFixnum(getRuby(), 1);
+        } else if (getDoubleValue() < other.getDoubleValue()) {
+            return RubyFixnum.m_newFixnum(getRuby(), 1);
+        }
+        // HACK +++
+        throw new RuntimeException();
+        // HACK ---
+    }
+    
+    public RubyBoolean op_gt(RubyNumeric other) {
+        return getDoubleValue() > other.getDoubleValue() ? getRuby().getTrue() : getRuby().getFalse();
+    }
+    
+    public RubyBoolean op_ge(RubyNumeric other) {
+        return getDoubleValue() >= other.getDoubleValue() ? getRuby().getTrue() : getRuby().getFalse();
+    }
+    
+    public RubyBoolean op_lt(RubyNumeric other) {
+        return getDoubleValue() < other.getDoubleValue() ? getRuby().getTrue() : getRuby().getFalse();
+    }
+    
+    public RubyBoolean op_le(RubyNumeric other) {
+        return getDoubleValue() <= other.getDoubleValue() ? getRuby().getTrue() : getRuby().getFalse();
     }
     
     public RubyString m_to_s() {

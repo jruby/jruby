@@ -45,13 +45,13 @@ public class RbFloat {
  */
     private static RubyCallbackMethod methodToS = null;
     
-/*    private static RubyCallbackMethod methodEqual = null;
+//    private static RubyCallbackMethod methodEqual = null;
     private static RubyCallbackMethod methodCmp = null;
     private static RubyCallbackMethod methodGt = null;
     private static RubyCallbackMethod methodGe = null;
     private static RubyCallbackMethod methodLt = null;
     private static RubyCallbackMethod methodLe = null;
-*/    
+    
     public static RubyClass createFloat(Ruby ruby) {
         RubyClass floatClass = ruby.defineClass("Float", (RubyClass)ruby.getRubyClass("Numeric"));
         
@@ -66,11 +66,11 @@ public class RbFloat {
         floatClass.defineMethod("**", getMethodPow());
         
         // floatClass.defineMethod("==", getMethodEqual());
-        // floatClass.defineMethod("<=>", getMethodCmp());
-        // floatClass.defineMethod(">", getMethodGt());
-        // floatClass.defineMethod(">=", getMethodGe());
-        // floatClass.defineMethod("<", getMethodLt());
-        // floatClass.defineMethod("<=", getMethodLe());
+        floatClass.defineMethod("<=>", getMethodCmp());
+        floatClass.defineMethod(">", getMethodGt());
+        floatClass.defineMethod(">=", getMethodGe());
+        floatClass.defineMethod("<", getMethodLt());
+        floatClass.defineMethod("<=", getMethodLe());
         
         return floatClass;
     }
@@ -202,7 +202,7 @@ public class RbFloat {
         }
         return methodEqual;
     }
-
+*/
     public static RubyCallbackMethod getMethodCmp() {
         if (methodCmp == null) {
             methodCmp = new RubyCallbackMethod() {
@@ -211,7 +211,7 @@ public class RbFloat {
                         throw new RubyArgumentException("a Numeric excepted");
                     }
                     
-                    return ((RubyFixnum)recv).op_cmp((RubyFixnum)args[0]);
+                    return ((RubyFloat)recv).op_cmp((RubyNumeric)args[0]);
                 }
             };
         }
@@ -226,7 +226,7 @@ public class RbFloat {
                         throw new RubyArgumentException("a Numeric excepted");
                     }
                     
-                    return ((RubyFixnum)recv).op_gt((RubyFixnum)args[0]);
+                    return ((RubyFloat)recv).op_gt((RubyNumeric)args[0]);
                 }
             };
         }
@@ -241,7 +241,7 @@ public class RbFloat {
                         throw new RubyArgumentException("a Numeric excepted");
                     }
                     
-                    return ((RubyFixnum)recv).op_ge((RubyFixnum)args[0]);
+                    return ((RubyFloat)recv).op_ge((RubyNumeric)args[0]);
                 }
             };
         }
@@ -256,7 +256,7 @@ public class RbFloat {
                         throw new RubyArgumentException("a Numeric excepted");
                     }
                     
-                    return ((RubyFixnum)recv).op_lt((RubyFixnum)args[0]);
+                    return ((RubyFloat)recv).op_lt((RubyNumeric)args[0]);
                 }
             };
         }
@@ -271,10 +271,10 @@ public class RbFloat {
                         throw new RubyArgumentException("a Numeric excepted");
                     }
                     
-                    return ((RubyFixnum)recv).op_le((RubyFixnum)args[0]);
+                    return ((RubyFloat)recv).op_le((RubyNumeric)args[0]);
                 }
             };
         }
         return methodLe;
-    }*/
+    }
 }

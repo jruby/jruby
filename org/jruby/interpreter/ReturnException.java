@@ -1,6 +1,6 @@
 /*
- * RubyInteger.java - No description
- * Created on 10. September 2001, 17:49
+ * RetryException.java - No description
+ * Created on 10. September 2001, 17:54
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
  * Jan Arne Petersen <japetersen@web.de>
@@ -24,20 +24,26 @@
  * 
  */
 
-package org.jruby;
+package org.jruby.interpreter;
+
+import org.jruby.*;
 
 /**
  *
  * @author  jpetersen
  * @version 
  */
-public abstract class RubyInteger extends RubyNumeric {
+public class ReturnException extends RuntimeException {
+    private RubyObject returnValue;
 
-    public RubyInteger(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    public ReturnException(RubyObject returnValue) {
+        this.returnValue = returnValue;
     }
- 
-    public RubyBoolean m_int_p() {
-        return getRuby().getTrue();
+    
+    /** Getter for property returnValue.
+     * @return Value of property returnValue.
+     */
+    public RubyObject getReturnValue() {
+        return returnValue;
     }
 }

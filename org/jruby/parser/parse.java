@@ -33,6 +33,7 @@ import java.io.*;
 
 import org.jruby.*;
 import org.jruby.original.*;
+import org.jruby.util.*;
 
 public class parse /*extends Ruby*/ implements lex_state, node_type, re_options {
     private NODE ruby_eval_tree_begin;
@@ -3727,7 +3728,8 @@ case 432:
 
             if (i < len) {
                 if (i == 0 || (ruby.rubyScope.getFlags() & 1 /*SCOPE_MALLOC*/) == 0) {
-                    VALUE[] vars = new VALUE[len + 1];
+                    // SHIFTABLE +++
+		    /*VALUE[] vars = new VALUE[len + 1];
                     int vi = 0;
                     if (ruby.rubyScope.getLocalVars() != null) {
                         vars[vi++] = ruby.rubyScope.getLocalVars(-1);
@@ -3737,7 +3739,21 @@ case 432:
                     } else {
                         vars[vi++] = null;
                         // rb_mem_clear(vars, len);
-                    }
+                    }*/
+		    // SHIFTABLE ---
+		    List tmp = Collections.nCopies(len + 1, ruby.getNil()); // do rb_mem_clear
+		    ShiftableList vars = new ShiftableList(new ArrayList(tmp));
+		    if (ruby.rubyScope.getLocalVars() != null) {
+			vars.set(0, ruby.rubyScope.getLocalVars(-1));
+	                vars.shift(1);
+			for (int j = 0; j < i; j++) {
+			    vars.set(j, ruby.rubyScope.getLocalVars(j));
+			}
+		    } else {
+			vars.set(0, null);
+			vars.shift(1);
+		    }
+			    
                     ruby.rubyScope.setLocalVars(vars);
                     ruby.rubyScope.setFlags(ruby.rubyScope.getFlags() | 1); // SCOPE_MALLOC;
                 } else {

@@ -61,8 +61,11 @@ public final class Ruby implements token {
     private RubyClass classClass;
     private RubyClass moduleClass;
     private RubyClass objectClass;
+    
     private RubyClass fixnumClass;
+    private RubyClass bignumClass;
     private RubyClass floatClass;
+    
     private RubyClass nilClass;
     private RubyClass trueClass;
     private RubyClass falseClass;
@@ -309,6 +312,10 @@ public final class Ruby implements token {
     
     public RubyClass getFixnumClass() {
         return fixnumClass;
+    }
+    
+    public RubyClass getBignumClass() {
+        return bignumClass;
     }
     
     public RubyClass getFloatClass() {

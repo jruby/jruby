@@ -50,6 +50,8 @@ public abstract class RubyNumeric extends RubyObject {
     
     public abstract double getDoubleValue();
     
+    public abstract long getLongValue();
+    
     /* Numeric methods. (num_*)
      *
      */

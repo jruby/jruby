@@ -31,6 +31,7 @@ import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.original.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -596,16 +597,13 @@ public class RubyInterpreter implements node_type, Scope {
                     return result;
                     
                 case NODE_RETURN:
-                    // if (node.s)
-/*                if (node->nd_stts) {
-                    return_value(rb_eval(self, node->nd_stts));
-                } else {
-                    return_value(Qnil);
-                }
-                return_check();
-                JUMP_TAG(TAG_RETURN);
-                break;
- */
+                    if (node.nd_stts() != null) {
+                        result = eval(self, node.nd_stts());
+                    } else {
+                        result = ruby.getNil();
+                    }
+                    throw new ReturnException(result);
+                    
                 case NODE_ARGSCAT:
                     return ((RubyArray)eval(self, node.nd_head())).m_concat(eval(self, node.nd_body()));
                     
@@ -646,7 +644,8 @@ public class RubyInterpreter implements node_type, Scope {
                         throw new RubyNameException("superclass method '" + rubyFrame.getLastFunc().toName() + "' disabled");
                     }
                     if (node.nd_type() == NODE_ZSUPER) {
-                        args = rubyFrame.getArgs();
+                        List argsList = rubyFrame.getArgs();
+                        args = (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]);
                     } else {
                         tmpBlock = BEGIN_CALLARGS();
                         args = setupArgs(self, node.nd_args());
@@ -674,10 +673,11 @@ public class RubyInterpreter implements node_type, Scope {
                     }*/
                     
                     if (node.nd_tbl() != null) {
-                        RubyObject[] vars = new RubyObject[node.nd_tbl()[0].intValue() + 1];
-                        // *vars++ = (VALUE)node;
+                        List tmp = Collections.nCopies(node.nd_tbl()[0].intValue() + 1, ruby.getNil());
+                        ShiftableList vars = new ShiftableList(new ArrayList(tmp));
+                        vars.set(0, (VALUE)node);
+                        vars.shift(1);
                         getRuby().rubyScope.setLocalVars(vars);
-                        // rb_mem_clear(ruby_scope->local_vars, node->nd_tbl[0]);
                         getRuby().rubyScope.setLocalTbl(node.nd_tbl());
                     } else {
                         getRuby().rubyScope.setLocalVars(null);
@@ -1321,10 +1321,10 @@ public class RubyInterpreter implements node_type, Scope {
         ruby_dyna_vars.push();
 
         if (node.nd_tbl() != null) {
-            VALUE[] vars = new VALUE[node.nd_tbl()[0].intValue() + 1];
-            // vars[0] = (VALUE) node;
-            getRuby().rubyScope.setLocalVars(vars);
-            // rb_mem_clear( ruby_scope->local_vars, node->nd_tbl[ 0 ] );
+            List tmp = Collections.nCopies(node.nd_tbl()[0].intValue() + 1, ruby.getNil());
+            ShiftableList vars = new ShiftableList(new ArrayList(tmp));
+            vars.set(0, (VALUE)node);
+            vars.shift(1);
             getRuby().rubyScope.setLocalTbl(node.nd_tbl());
         } else {
             getRuby().rubyScope.setLocalVars(null);

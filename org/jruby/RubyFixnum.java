@@ -57,7 +57,25 @@ public class RubyFixnum extends RubyInteger {
     }
     
     public double getDoubleValue() {
+        return (double)value;
+    }
+    
+    public long getLongValue() {
         return value;
+    }
+    
+    protected boolean needBignumAdd(long value) {
+        if ((getValue() < 0) && (value < 0)) {
+            return (getValue() + value) >= 0;
+        } else if ((getValue() > 0) && (value > 0)) {
+            return (getValue() + value) < 0;
+        }
+        return false;
+    }
+    
+    protected boolean needBignumMul(long value) {
+        long product = getValue() * value;
+        return (product / value) != getValue();
     }
     
     // Methods of the Fixnum Class (fix_*):
@@ -68,58 +86,122 @@ public class RubyFixnum extends RubyInteger {
         return new RubyFixnum(ruby, value);
     }
     
-    public RubyFixnum op_plus(RubyFixnum other) {
-        return m_newFixnum(getRuby(), getValue() + other.getValue());
+    public RubyNumeric op_plus(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_plus(other);
+        } else if (other instanceof RubyBignum || needBignumAdd(other.getLongValue())) {
+            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_plus(other);
+        } else {
+            return m_newFixnum(getRuby(), getValue() + other.getLongValue());
+        }
     }
     
-    public RubyFixnum op_minus(RubyFixnum other) {
-        return m_newFixnum(getRuby(), getValue() - other.getValue());
+    public RubyNumeric op_minus(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_minus(other);
+        } else if (other instanceof RubyBignum  || needBignumAdd(other.getLongValue())) {
+            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_minus(other);
+        } else {
+            return m_newFixnum(getRuby(), getValue() - other.getLongValue());
+        }
     }
     
-    public RubyFixnum op_mul(RubyFixnum other) {
-        return m_newFixnum(getRuby(), getValue() * other.getValue());
+    public RubyNumeric op_mul(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_mul(other);
+        } else if (other instanceof RubyBignum  || needBignumMul(other.getLongValue())) {
+            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_mul(other);
+        } else {
+            return m_newFixnum(getRuby(), getValue() * other.getLongValue());
+        }
     }
     
-    public RubyFixnum op_div(RubyFixnum other) {
-        return m_newFixnum(getRuby(), getValue() / other.getValue());
+    public RubyNumeric op_div(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_div(other);
+        } else if (other instanceof RubyBignum) {
+            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_div(other);
+        } else {
+            return m_newFixnum(getRuby(), getValue() / other.getLongValue());
+        }
     }
     
-    public RubyFixnum op_mod(RubyFixnum other) {
-        return m_newFixnum(getRuby(), getValue() % other.getValue());
+    public RubyNumeric op_mod(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_mod(other);
+        } else if (other instanceof RubyBignum) {
+            return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_mod(other);
+        } else {
+            return m_newFixnum(getRuby(), getValue() % other.getLongValue());
+        }
     }
     
-    public RubyFixnum op_exp(RubyFixnum other) {
-        return m_newFixnum(getRuby(), (long)Math.pow(getValue(), other.getValue()));
+    public RubyNumeric op_pow(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_pow(other);
+        } else {
+            if (other.getLongValue() == 0) {
+                return m_newFixnum(getRuby(), 1);
+            } else if (other.getLongValue() == 1) {
+                return this;
+            } else if (other.getLongValue() > 1) {
+                return RubyBignum.m_newBignum(getRuby(), getLongValue()).op_pow(other);
+            } else {
+                return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_pow(other);
+            }
+        }
     }
     
-    public RubyBoolean op_equal(RubyFixnum other) {
-        return getValue() == other.getValue() ? getRuby().getTrue() : getRuby().getFalse();
+    public RubyBoolean op_equal(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyBoolean.m_newBoolean(getRuby(), getDoubleValue() == other.getDoubleValue());
+        } else {
+            return RubyBoolean.m_newBoolean(getRuby(), getLongValue() == other.getLongValue());
+        }
     }
     
-    public RubyFixnum op_cmp(RubyFixnum other) {
-        if (getValue() == other.getValue()) {
+    public RubyNumeric op_cmp(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_cmp(other);
+        } else if (getLongValue() == other.getLongValue()) {
             return m_newFixnum(getRuby(), 0);
-        } else if (getValue() > other.getValue()) {
+        } else if (getLongValue() > other.getLongValue()) {
             return m_newFixnum(getRuby(), 1);
         } else {
             return m_newFixnum(getRuby(), -1);
         }
     }
     
-    public RubyBoolean op_gt(RubyFixnum other) {
-        return getValue() > other.getValue() ? getRuby().getTrue() : getRuby().getFalse();
+    public RubyBoolean op_gt(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_gt(other);
+        } else {
+            return getLongValue() > other.getLongValue() ? getRuby().getTrue() : getRuby().getFalse();
+        }
     }
     
-    public RubyBoolean op_ge(RubyFixnum other) {
-        return getValue() >= other.getValue() ? getRuby().getTrue() : getRuby().getFalse();
+    public RubyBoolean op_ge(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_ge(other);
+        } else {
+            return getLongValue() >= other.getLongValue() ? getRuby().getTrue() : getRuby().getFalse();
+        }
     }
     
-    public RubyBoolean op_lt(RubyFixnum other) {
-        return getValue() < other.getValue() ? getRuby().getTrue() : getRuby().getFalse();
+    public RubyBoolean op_lt(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_lt(other);
+        } else {
+            return getLongValue() < other.getLongValue() ? getRuby().getTrue() : getRuby().getFalse();
+        }
     }
     
-    public RubyBoolean op_le(RubyFixnum other) {
-        return getValue() <= other.getValue() ? getRuby().getTrue() : getRuby().getFalse();
+    public RubyBoolean op_le(RubyNumeric other) {
+        if (other instanceof RubyFloat) {
+            return RubyFloat.m_newFloat(getRuby(), getDoubleValue()).op_le(other);
+        } else {
+            return getLongValue() <= other.getLongValue() ? getRuby().getTrue() : getRuby().getFalse();
+        }
     }
     
     public RubyString m_to_s() {

@@ -41,7 +41,7 @@ public class RbFixnum {
     private static RubyCallbackMethod methodMul = null;
     private static RubyCallbackMethod methodDiv = null;
     private static RubyCallbackMethod methodMod = null;
-    private static RubyCallbackMethod methodExp = null;
+    private static RubyCallbackMethod methodPow = null;
     
     private static RubyCallbackMethod methodEqual = null;
     private static RubyCallbackMethod methodCmp = null;
@@ -64,7 +64,7 @@ public class RbFixnum {
         fixnumClass.defineMethod("*", getMethodMul());
         fixnumClass.defineMethod("/", getMethodDiv());
         fixnumClass.defineMethod("%", getMethodMod());
-        fixnumClass.defineMethod("**", getMethodExp());
+        fixnumClass.defineMethod("**", getMethodPow());
         
         fixnumClass.defineMethod("==", getMethodEqual());
         fixnumClass.defineMethod("<=>", getMethodCmp());
@@ -175,19 +175,19 @@ public class RbFixnum {
         return methodMod;
     }
 
-    public static RubyCallbackMethod getMethodExp() {
-        if (methodExp == null) {
-            methodExp = new RubyCallbackMethod() {
+    public static RubyCallbackMethod getMethodPow() {
+        if (methodPow == null) {
+            methodPow = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException("a Numeric excepted");
                     }
                     
-                    return ((RubyFixnum)recv).op_exp((RubyFixnum)args[0]);
+                    return ((RubyFixnum)recv).op_pow((RubyFixnum)args[0]);
                 }
             };
         }
-        return methodExp;
+        return methodPow;
     }
 
     public static RubyCallbackMethod getMethodEqual() {

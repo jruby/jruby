@@ -216,6 +216,10 @@ public class RubyArray extends RubyObject {
         return new RubyArray(ruby, Arrays.asList(new RubyObject[] {car, cdr}));
     }
     
+    public static RubyArray m_newArray(Ruby ruby, List list) {
+        return new RubyArray(ruby, list);
+    }
+    
     /** rb_ary_push_m
      *
      */

@@ -26,8 +26,11 @@
 
 package org.jruby.interpreter;
 
+import java.util.*;
+
 import org.jruby.*;
 import org.jruby.original.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -37,7 +40,7 @@ import org.jruby.original.*;
 public class RubyScope {
     private RubyObject  superObject = null;
     private RubyId[]    localTbl    = null;
-    private VALUE[]     localVars   = null;
+    private ShiftableList localVars = null;
     private int         flags       = 0;
     
     private RubyScope   old         = null;
@@ -123,13 +126,13 @@ public class RubyScope {
      * @return Value of the property at <CODE>index</CODE>.
      */
     public VALUE getLocalVars(int index) {
-        return localVars[index];
+        return (VALUE)localVars.get(index);
     }
     
     /** Getter for property localVars.
      * @return Value of property localVars.
      */
-    public VALUE[] getLocalVars() {
+    public ShiftableList getLocalVars() {
         return localVars;
     }
     
@@ -140,16 +143,17 @@ public class RubyScope {
     public void setLocalVars(int index, VALUE newValue) {
         // HACK +++
         if (localVars == null) {
-            localVars = new VALUE[index + 1];
+            localVars = new ShiftableList(new ArrayList());
+            localVars.shiftLeft(index + 1);
         }
         // HACK ---
-        localVars[index] = newValue;
+        localVars.set(index, newValue);
     }
     
     /** Setter for property localVars.
      * @param localVars New value of property localVars.
      */
-    public void setLocalVars(VALUE[] localVars) {
+    public void setLocalVars(ShiftableList localVars) {
         this.localVars = localVars;
     }
     
@@ -166,5 +170,4 @@ public class RubyScope {
     public void setSuperObject(RubyObject superObject) {
         this.superObject = superObject;
     }
-    
 }
