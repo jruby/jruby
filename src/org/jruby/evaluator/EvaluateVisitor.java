@@ -672,39 +672,54 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDefnNode(DefnNode)
      */
     public void visitDefnNode(DefnNode iVisited) {
-        RubyModule rubyClass = threadContext.getRubyClass();
-        if (rubyClass == null) {
+        RubyModule containingClass = threadContext.getRubyClass();
+        if (containingClass == null) {
             throw new TypeError(runtime, "No class to add method.");
         }
 
         String name = iVisited.getName();
-        if (rubyClass == runtime.getClasses().getObjectClass() && name.equals("initialize")) {
+        if (containingClass == runtime.getClasses().getObjectClass() && name.equals("initialize")) {
             runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
 
         Visibility visibility = threadContext.getCurrentVisibility();
         if (name.equals("initialize") || visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
-        } else if (visibility.isPublic() && rubyClass == runtime.getClasses().getObjectClass()) {
+        } else if (visibility.isPublic() && containingClass == runtime.getClasses().getObjectClass()) {
             visibility = iVisited.getVisibility();
         }
 
+        MetaClass singletonClass = null;
+        // if defining in a singleton, pop it and use visitDefs-style definition below
+        if (runtime.getRubyClass().isSingleton()) {
+        	singletonClass = (MetaClass)threadContext.popClass();
+        	containingClass = threadContext.getRubyClass();
+        }
+        
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
-                                                    runtime.getRubyClass());
+                                                    threadContext.getRubyClass());
         
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
         
-        rubyClass.addMethod(name, newMethod);
+        containingClass.addMethod(name, newMethod);
 
         if (threadContext.getCurrentVisibility().isModuleFunction()) {
-            rubyClass.getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
-            rubyClass.callMethod("singleton_method_added", builtins.toSymbol(name));
+            containingClass.getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
+            containingClass.callMethod("singleton_method_added", builtins.toSymbol(name));
         }
-
-        rubyClass.callMethod("method_added", builtins.toSymbol(name));
+        
+        if (singletonClass != null) {
+        	threadContext.pushClass(singletonClass);
+        	singletonClass.addMethod(iVisited.getName(), newMethod);
+        	// FIXME: need to call someone's singleton_method_added (receiver is lost at this point)!
+        	//.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
+        } else {
+        	containingClass.callMethod("method_added", builtins.toSymbol(name));
+        }
     }
+
 
     /**
      * @see NodeVisitor#visitDefsNode(DefsNode)
