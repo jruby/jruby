@@ -3,7 +3,8 @@ JRuby TODO
 ----------
 $Id$
 
-Items marked '-' are done and will be available in the next release.
+Items marked '-' are done and will be available in the next
+release.
 
 
 * Documentation
@@ -13,13 +14,21 @@ Items marked '-' are done and will be available in the next release.
     * Convert docs to HTML (Docbook?)
 
 * Builtin class implementation
-	* Implement FileTest module
+    * Implement FileTest module
 
 * Internal class restructuring
     * Move Ruby class creation and method init into classes separate from
       method implementation.
     * Convert all callbacks to IndexedCallback.
     * Generate class creation code from XML specifications.
+
+* Evaluator
+    * Replace lexer with a generated one
+    * Frames
+        * Overhaul Frame stacks
+        * Binding
+        * Continuation
+    * Bytecode generation
 
 * Java support
     * Loading classes with colliding names.
@@ -28,16 +37,14 @@ Items marked '-' are done and will be available in the next release.
 
 * Thread support
     * Implement Mutex, ConditionVariable and Queue as native Java libs
+    * Examine interactions with non-Ruby threads in the VM
 
 * Usability
-    * Simplify installation (replace mkconfig.rb?)
-
-* Parse cache?
+    * Simplify installation
+    * Unify startup scripts
 
 * Marshalling
     * Make bignum marshaling work for all bignum values
-
-* Bytecode generation
 
 * Warnings
 
