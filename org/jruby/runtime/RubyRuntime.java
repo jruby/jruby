@@ -275,7 +275,7 @@ public class RubyRuntime {
 		RubyClass type = excp.getRubyClass();
 		String info = excp.toString();
 
-		if (type == ruby.getExceptions().getRuntimeError() && info.length() == 0) {
+		if (type == ruby.getExceptions().getRuntimeError() && (info == null || info.length() == 0)) {
 			getErrorStream().print(": unhandled exception\n");
 		} else {
 			String path = type.getClassPath().toString();
