@@ -1662,4 +1662,10 @@ public class RubyString extends RubyObject {
     public RubySymbol intern() {
         return RubySymbol.newSymbol(getRuby(), getValue());
     }
+
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('"');
+		output.dumpString(getValue());
+    }
 }

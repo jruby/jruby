@@ -245,4 +245,16 @@ public class RubyFloat extends RubyNumeric {
         return RubyFixnum.newFixnum(getRuby(), getLongValue());
         // HACK ---
     }
+
+	public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('f');
+		String strValue = this.toString();
+		double value = getValue();
+		if (Double.isInfinite(value)) {
+			strValue = (value < 0 ? "-inf" : "inf");
+		} else if (Double.isNaN(value)) {
+			strValue = "nan";
+		}
+		output.dumpString(strValue);
+	}
 }

@@ -253,6 +253,7 @@ public class RubyClasses {
         procClass = RubyProc.createProcClass(ruby);
 
         objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
+	marshalModule = RubyMarshal.createMarshalModule(ruby);
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
         

@@ -30,6 +30,7 @@
 package org.jruby;
 
 import java.lang.ref.*;
+import java.util.*;
 
 import org.ablaf.ast.*;
 
@@ -46,7 +47,8 @@ import org.jruby.util.*;
  *
  * @author  jpetersen
  */
-public class RubyObject implements Cloneable {
+public class RubyObject implements Cloneable, Marshalable {
+
     // A reference to the JRuby runtime.
     protected transient Ruby ruby;
 
@@ -1018,5 +1020,22 @@ public class RubyObject implements Cloneable {
         } finally {
             getRuby().getIterStack().pop();
         }
+    }
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('o');
+		RubySymbol classname = getRubyClass().getClassname().intern();
+		output.dumpObject(classname);
+
+		output.dumpInt(getInstanceVariables().size());
+		Iterator iter = getInstanceVariables().entrySet().iterator();
+		while (iter.hasNext()) {
+			Map.Entry entry = (Map.Entry) iter.next();
+			String name = (String) entry.getKey();
+			RubyObject value = (RubyObject) entry.getValue();
+
+			output.dumpObject(RubySymbol.newSymbol(ruby, name));
+			output.dumpObject(value);
+		}
     }
 }

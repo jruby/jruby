@@ -304,4 +304,10 @@ public class RubyFixnum extends RubyInteger {
     public RubyFixnum size() {
         return newFixnum(64);
     }
+
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('i');
+		output.dumpInt((int) value);
+    }
 }

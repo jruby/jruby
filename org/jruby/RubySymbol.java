@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.runtime.*;
+import java.io.IOException;
 
 /**
  *
@@ -110,5 +111,10 @@ public class RubySymbol extends RubyObject {
         } else {
             return getRuby().getFalse();
         }
+    }
+
+    public void marshalTo(MarshalStream output) throws IOException {
+		output.write(':');
+		output.dumpString(symbol);
     }
 }

@@ -159,4 +159,9 @@ public class RubyBoolean extends RubyObject {
             return getRuby().getFalse();
         }
     }
+
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write(isTrue() ? 'T' : 'F');
+	}
 }
