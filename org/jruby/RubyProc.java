@@ -29,10 +29,14 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.Iter;
 import org.jruby.util.Asserts;
+import org.jruby.exceptions.ArgumentError;
 
 /**
  * @author  jpetersen
@@ -80,19 +84,17 @@ public class RubyProc extends RubyObject implements IndexCallable {
     // Proc class
 
     public static RubyProc newInstance(IRubyObject receiver, IRubyObject[] args) {
-        RubyProc proc = newProc(receiver.getRuntime(), receiver.getRuntime().getClasses().getProcClass());
-
+        RubyProc proc = newProc(receiver.getRuntime());
         proc.callInit(args);
-
         return proc;
     }
 
-    public static RubyProc newProc(Ruby ruby, RubyClass rubyClass) {
+    public static RubyProc newProc(Ruby ruby) {
         if (!ruby.isBlockGiven() && !ruby.isFBlockGiven()) {
             throw new ArgumentError(ruby, "tried to create Proc object without a block");
         }
 
-        RubyProc newProc = new RubyProc(ruby, rubyClass);
+        RubyProc newProc = new RubyProc(ruby, ruby.getClasses().getProcClass());
 
         newProc.block = ruby.getBlockStack().getCurrent().cloneBlock();
         newProc.wrapper = ruby.getWrapper();

@@ -40,7 +40,7 @@ public class JavaInterfaceMethod implements Callback {
         RubyString sendMethod = null;
 
         if (recv.getRuntime().isBlockGiven()) {
-            proc = RubyProc.newProc(recv.getRuntime(), recv.getRuntime().getClasses().getProcClass());
+            proc = RubyProc.newProc(recv.getRuntime());
         } else {
             if (args.length == 2) {
                 sendRecv = args[0];

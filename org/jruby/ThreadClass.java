@@ -112,14 +112,13 @@ public class ThreadClass extends RubyObject implements IndexCallable {
             thread.callInit(args);
         }
 
-        final RubyProc proc = RubyProc.newProc(runtime, runtime.getClasses().getProcClass());
+        final RubyProc proc = RubyProc.newProc(runtime);
 
         final Frame currentFrame = runtime.getCurrentFrame();
         final Block currentBlock = runtime.getBlockStack().getCurrent();
 
         thread.jvmThread = new Thread(new Runnable() {
             public void run() {
-                // Thread started
                 synchronized (thread.hasStartedLock) {
                     thread.hasStarted = true;
                     thread.hasStartedLock.notifyAll();
@@ -151,7 +150,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     private void pollReceivedExceptions() {
         if (receivedException != null) {
             RubyModule kernelModule = getRuntime().getClasses().getKernelModule();
-            kernelModule.callMethod("raise", new IRubyObject[] { receivedException });
+            kernelModule.callMethod("raise", receivedException);
         }
     }
 
@@ -173,9 +172,9 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         return globalAbortOnException ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
-    public static IRubyObject abort_on_exception_set(IRubyObject recv, IRubyObject val) {
-        globalAbortOnException = val.isTrue();
-        return val;
+    public static IRubyObject abort_on_exception_set(IRubyObject recv, IRubyObject value) {
+        globalAbortOnException = value.isTrue();
+        return value;
     }
 
     public static ThreadClass current(IRubyObject recv) {

@@ -31,7 +31,7 @@ public class RubyJava {
         if (args.length > 1) {
             handler = (RubyProc)args[1];
         } else {
-            handler = RubyProc.newProc(recv.getRuntime(), recv.getRuntime().getClasses().getProcClass());
+            handler = RubyProc.newProc(recv.getRuntime());
         }
         recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 

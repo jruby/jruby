@@ -42,7 +42,7 @@ public final class DefaultMethod extends AbstractMethod {
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         RubyProc optionalBlockArg = null;
         if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
-            optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+            optionalBlockArg = RubyProc.newProc(ruby);
         }
 
         ruby.getScope().push();
