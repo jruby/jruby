@@ -126,7 +126,7 @@ public class Namespace {
             if (ns.getNamespaceModule() == null) {
                 return self.getInternalClass().getConstant(name);
             } else if (! ns.getNamespaceModule().getInstanceVariable(name).isNil()) {
-                return (IRubyObject) ns.getNamespaceModule().getInstanceVariables().get(name);
+                return (IRubyObject) ns.getNamespaceModule().getInstanceVariable(name);
             }
         }
         return getNamespaceModule().getConstant(name);

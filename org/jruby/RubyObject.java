@@ -31,7 +31,6 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Collections;
 
 import org.ablaf.ast.INode;
@@ -40,18 +39,15 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
-
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
-
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
@@ -59,7 +55,6 @@ import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -157,6 +152,13 @@ public class RubyObject implements Cloneable, IRubyObject {
             return false;
         }
         return getInstanceVariables().containsKey(name);
+    }
+
+    public IRubyObject removeInstanceVariable(String name) {
+        if (getInstanceVariables() == null) {
+            return null;
+        }
+        return (IRubyObject) getInstanceVariables().remove(name);
     }
 
     public RubyMap getInstanceVariables() {

@@ -985,7 +985,7 @@ public class RubyModule extends RubyObject {
             throw new FrozenError(getRuntime(), "class/module");
         }
 
-        IRubyObject value = (IRubyObject) getInstanceVariables().remove(name.toId());
+        IRubyObject value = removeInstanceVariable(name.toId());
 
         if (value != null) {
             return value;
@@ -1600,11 +1600,8 @@ public class RubyModule extends RubyObject {
             throw new FrozenError(getRuntime(), "class/module");
         }
 
-        if (getInstanceVariables() != null) {
-            Object value = getInstanceVariables().remove(id);
-            if (value != null) {
-                return (IRubyObject) value;
-            }
+        if (hasInstanceVariable(id)) {
+            return removeInstanceVariable(id);
         }
 
         if (isClassVarDefined(id)) {
