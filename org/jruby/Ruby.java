@@ -734,6 +734,11 @@ public final class Ruby {
         return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
     }
 
+    public void setPosition(ISourcePosition position) {
+        setSourceFile(position.getFile());
+        setSourceLine(position.getLine());
+    }
+
     public void pushDynamicVars() {
         getCurrentContext().pushDynamicVars();
     }

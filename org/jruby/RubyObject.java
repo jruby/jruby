@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
@@ -576,12 +577,10 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     /**@fixme*/
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
-        String fileSave = runtime.getSourceFile();
-        int lineSave = runtime.getSourceLine();
+        ISourcePosition savedPosition = runtime.getPosition();
         Iter iter = runtime.getCurrentFrame().getIter();
         if (file == null) {
             file = runtime.getSourceFile();
-            line = runtime.getSourceLine();
         }
         if (scope.isNil()) {
             if (runtime.getFrameStack().getPrevious() != null) {
@@ -598,8 +597,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             if (scope.isNil()) {
                 runtime.getCurrentFrame().setIter(iter);
             }
-            runtime.setSourceFile(fileSave);
-            runtime.setSourceLine(lineSave);
+            runtime.setPosition(savedPosition);
         }
         return result;
     }

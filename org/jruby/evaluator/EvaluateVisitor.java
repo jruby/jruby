@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
 import org.jruby.Builtins;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -157,7 +158,6 @@ import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Visibility;
@@ -420,8 +420,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             for (int i = 0, size = iVisited.getWhenNodes().size(); i < size; i++) {
                 WhenNode whenNode = (WhenNode) iter.next();
 
-                ruby.setSourceLine(whenNode.getPosition().getLine());
-                ruby.setSourceFile(whenNode.getPosition().getFile());
+                ruby.setPosition(whenNode.getPosition());
                 if (isTrace()) {
                     callTraceFunction(
                         "line",
@@ -875,15 +874,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         try {
             while (true) {
                 try {
-                    String file = ruby.getSourceFile();
-                    int line = ruby.getSourceLine();
+                    ISourcePosition position = ruby.getPosition();
 
                     Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
                     IRubyObject recv = eval(iVisited.getIterNode());
                     ArgsUtil.endCallArgs(ruby, tmpBlock);
 
-                    ruby.setSourceFile(file);
-                    ruby.setSourceLine(line);
+                    ruby.setPosition(position);
                     result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
 
                     return;
@@ -1080,8 +1077,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitNewlineNode(NewlineNode iVisited) {
         if (iVisited.getPosition() != null) {
-            ruby.setSourceFile(iVisited.getPosition().getFile());
-            ruby.setSourceLine(iVisited.getPosition().getLine());
+            ruby.setPosition(iVisited.getPosition());
 
             if (isTrace()) {
                 callTraceFunction(

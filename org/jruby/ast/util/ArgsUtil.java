@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
 import org.jruby.*;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.ExpandArrayNode;
@@ -60,16 +61,11 @@ public final class ArgsUtil {
         ruby.getIterStack().pop();
     }
 
-    public final static IRubyObject[] setupArgs(
-        final Ruby ruby,
-        final EvaluateVisitor visitor,
-        final INode node) {
+    public static IRubyObject[] setupArgs(Ruby ruby, EvaluateVisitor visitor, INode node) {
         if (node == null) {
             return new IRubyObject[0];
         }
-
-        final String file = ruby.getSourceFile();
-        final int line = ruby.getSourceLine();
+        final ISourcePosition position = ruby.getPosition();
 
         if (node instanceof ArrayNode) {
             final int size = ((ArrayNode) node).size();
@@ -84,16 +80,14 @@ public final class ArgsUtil {
                 }
             }
 
-            ruby.setSourceFile(file);
-            ruby.setSourceLine(line);
+            ruby.setPosition(position);
 
             return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
 
         IRubyObject args = visitor.eval(node);
 
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
+        ruby.setPosition(position);
 
         if (args instanceof RubyArray) {
             return ((RubyArray) args).toJavaArray();
