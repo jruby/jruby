@@ -62,7 +62,7 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public static RubyClass createMethodClass(Ruby runtime) {
-		RubyClass methodClass = runtime.defineClass("RubyMethod", runtime.getClasses().getObjectClass());
+		RubyClass methodClass = runtime.defineClass("Method", runtime.getClasses().getObjectClass());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         

@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyUnboundMethod extends RubyMethod {
     protected RubyUnboundMethod(Ruby runtime) {
-        super(runtime, runtime.getClass("RubyUnboundMethod"));
+        super(runtime, runtime.getClasses().getUnboundMethodClass());
     }
 
     public static RubyUnboundMethod newUnboundMethod(
@@ -62,7 +62,8 @@ public class RubyUnboundMethod extends RubyMethod {
     }
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass = runtime.defineClass("RubyUnboundMethod", runtime.getClass("RubyMethod"));
+        RubyClass newClass = 
+        	runtime.defineClass("UnboundMethod", runtime.getClasses().getMethodClass());
 
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyUnboundMethod.class);
         newClass.defineMethod("[]", callbackFactory.getOptMethod("call"));
