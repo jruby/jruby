@@ -150,7 +150,7 @@
   <target name="test" description="runs junit tests" depends="create-test-jar">
     <mkdir dir="${test.dir}/report"/>
     <mkdir dir="${tmp.dir}/test-results"/>
-    <junit haltonfailure="yes">
+    <junit fork="yes" haltonfailure="yes" dir="${base.dir}">
       <classpath>
         <path refid="build.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
