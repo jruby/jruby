@@ -1631,9 +1631,9 @@ public class RubyYaccLexer {
             } catch (NumberFormatException e) {
                 warnings.warn(src.getPosition(), "Float " + number + " out of range.");
                 if (number.startsWith("-")) {
-                    d = Double.valueOf(Double.NEGATIVE_INFINITY);
+                    d = new Double(Double.NEGATIVE_INFINITY);
                 } else {
-                    d = Double.valueOf(Double.POSITIVE_INFINITY);
+                    d = new Double(Double.POSITIVE_INFINITY);
                 }
             }
             yaccValue = d;
