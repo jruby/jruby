@@ -43,7 +43,7 @@ public class ObjectSpace {
     private ReferenceQueue deadReferences = new ReferenceQueue();
 
     public void add(IRubyObject object) {
-		cleanup();
+        cleanup();
         references.put(new WeakReference(object, deadReferences), null);
     }
 
@@ -95,9 +95,7 @@ public class ObjectSpace {
                 }
                 WeakReference ref = (WeakReference) iterator.next();
                 next = (IRubyObject) ref.get();
-                if (next == null) {
-                    references.remove(ref);
-                } else if (next.isKindOf(rubyClass)) {
+                if (next != null && next.isKindOf(rubyClass)) {
                     return;
                 }
             }
