@@ -71,15 +71,14 @@ public class RubyObject implements Cloneable {
         this(ruby, rubyClass, true);
     }
 
-    public RubyObject(Ruby ruby, RubyClass rubyClass, boolean objectSpace) {
+    public RubyObject(Ruby ruby, RubyClass rubyClass, boolean useObjectSpace) {
         this.ruby = ruby;
         this.rubyClass = rubyClass;
         this.frozen = false;
         this.taint = false;
 
-        // Add this Object in the ObjectSpace
-        if (objectSpace) {
-            ruby.objectSpace.add(new SoftReference(this));
+        if (useObjectSpace) {
+            ruby.objectSpace.add(this);
         }
     }
 
@@ -272,6 +271,17 @@ public class RubyObject implements Cloneable {
             throw new ArgumentError(getRuby(), "Wrong # of arguments for method. " + args.length + " is not in Range " + min + ".." + max);
         }
         return len;
+    }
+
+    public boolean isKindOf(RubyModule type) {
+        RubyClass currType = getRubyClass();
+        while (currType != null) {
+            if (currType == type || currType.getMethods().keySet().containsAll(type.getMethods().keySet())) {
+                return true;
+            }
+            currType = currType.getSuperClass();
+        }
+        return false;
     }
 
     /** SPECIAL_SINGLETON(x,c)
@@ -910,14 +920,7 @@ public class RubyObject implements Cloneable {
      *
      */
     public RubyBoolean kind_of(RubyModule type) {
-        RubyClass currType = getRubyClass();
-        while (currType != null) {
-            if (currType == type || currType.getMethods().keySet().containsAll(type.getMethods().keySet())) {
-                return getRuby().getTrue();
-            }
-            currType = currType.getSuperClass();
-        }
-        return getRuby().getFalse();
+        return RubyBoolean.newBoolean(ruby, isKindOf(type));
     }
 
     /** rb_obj_methods

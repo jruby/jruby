@@ -118,7 +118,7 @@ public class DefinedVisitor extends AbstractVisitor {
                 
                 int noex = receiver.getRubyClass().getMethodBody(iVisited.getName(), 0).getNoex();
                 
-                if ((noex & Constants.NOEX_PRIVATE) == 0 && ((noex & Constants.NOEX_PROTECTED) == 0 || self.kind_of(receiver.getRubyClass().getRealClass()).isTrue())) {
+                if ((noex & Constants.NOEX_PRIVATE) == 0 && ((noex & Constants.NOEX_PROTECTED) == 0 || self.isKindOf(receiver.getRubyClass().getRealClass()))) {
                     if (receiver.getRubyClass().isMethodBound(iVisited.getName(), 0)) {
                         definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
                         return;

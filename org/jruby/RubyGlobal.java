@@ -115,7 +115,7 @@ public class RubyGlobal {
             super(ruby, name, value);
         }
         public RubyObject set(RubyObject value) {
-            if (!value.isNil() && value.kind_of(ruby.getClasses().getExceptionClass()).isFalse()) {
+            if (!value.isNil() && ! value.isKindOf(ruby.getClasses().getExceptionClass())) {
                 throw new TypeError(ruby, "assigning non-exception to $!");
             }
             return super.set(value);

@@ -276,9 +276,9 @@ public class JavaUtil {
             return RubyHash.create(ruby, null, items);
         } else {
             // Look if a RubyObject exists which already represents object.
-            Iterator iter = ruby.objectSpace.iterator();
+            Iterator iter = ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
             while (iter.hasNext()) {
-                RubyObject rubyObject = (RubyObject)((Reference)iter.next()).get();
+                RubyObject rubyObject = (RubyObject) iter.next();
                 if (rubyObject instanceof RubyJavaObject) {
                     if (((RubyJavaObject)rubyObject).getValue() == object) {
                         return rubyObject;

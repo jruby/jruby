@@ -1710,7 +1710,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         // TMP_PROTECT;
 
         if (exceptionNodes == null) {
-            return actExcptn.kind_of(ruby.getExceptions().getStandardError()).isTrue();
+            return actExcptn.isKindOf(ruby.getExceptions().getStandardError());
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);

@@ -50,42 +50,16 @@ public class RubyObjectSpace {
     }
 
     public static RubyObject each_object(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        if (args.length == 1) {
-            Iterator iter = new LinkedList(ruby.objectSpace).iterator();
-
-            while (iter.hasNext()) {
-                SoftReference ref = (SoftReference) iter.next();
-                RubyObject obj = (RubyObject) ref.get();
-                if (obj != null) {
-                    if (obj instanceof RubyModule && (((RubyModule) obj).isSingleton() || ((RubyModule) obj).isIncluded())) {
-                        continue;
-                    } else {
-                        if (obj.kind_of((RubyModule) args[0]).isTrue()) {
-                            ruby.yield(obj);
-                        }
-                    }
-                } else {
-                    ruby.objectSpace.remove(ref);
-                }
-            }
-            return ruby.getNil();
+        RubyModule rubyClass;
+        if (args.length == 0) {
+            rubyClass = ruby.getClasses().getObjectClass();
         } else {
-            Iterator iter = new LinkedList(ruby.objectSpace).iterator();
-
-            while (iter.hasNext()) {
-                SoftReference ref = (SoftReference) iter.next();
-                RubyObject obj = (RubyObject) ref.get();
-                if (obj != null) {
-                    if (obj instanceof RubyModule && (((RubyModule) obj).isSingleton() || ((RubyModule) obj).isIncluded())) {
-                        continue;
-                    } else {
-                        ruby.yield(obj);
-                    }
-                } else {
-                    ruby.objectSpace.remove(ref);
-                }
-            }
-            return ruby.getNil();
+            rubyClass = (RubyModule) args[0];
         }
+        Iterator iter = ruby.objectSpace.iterator(rubyClass);
+        while (iter.hasNext()) {
+            ruby.yield((RubyObject) iter.next());
+        }
+        return ruby.getNil();
     }
 }

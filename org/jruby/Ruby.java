@@ -75,7 +75,7 @@ public final class Ruby {
      */
     private RubyMap globalMap;
 
-    public LinkedList objectSpace = new LinkedList();
+    public ObjectSpace objectSpace = new ObjectSpace();
 
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
 

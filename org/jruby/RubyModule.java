@@ -1868,7 +1868,7 @@ public class RubyModule extends RubyObject {
                 return RubyMapMethod.STOP;
             }
 
-            if (value.kind_of(getRuby().getClasses().getModuleClass()).isTrue()) {
+            if (value.isKindOf(getRuby().getClasses().getModuleClass())) {
                 if (value.getInstanceVariables() == null) {
                     return RubyMapMethod.CONTINUE;
                 }

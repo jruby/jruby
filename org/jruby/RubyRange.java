@@ -262,7 +262,7 @@ public class RubyRange extends RubyObject {
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
-        } else if (begin.kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
+        } else if (begin.isKindOf(getRuby().getClasses().getNumericClass())) {
             if (!isExclusive) {
                 end = end.funcall("+", RubyFixnum.one(getRuby()));
             }
