@@ -331,14 +331,6 @@ public class RubyModule extends RubyObject {
         // 0 = pointer
     }
 
-    /** rb_cvar_singleton
-     *
-     *@deprecated since Ruby 1.6.7
-     */
-    public RubyModule getClassVarSingleton() {
-        return this;
-    }
-
     /** rb_cvar_set
      *
      */
@@ -402,9 +394,6 @@ public class RubyModule extends RubyObject {
         return false;
     }
 
-    /**
-     *
-     */
     public void setConstant(String name, IRubyObject value) {
         setAv(name, value, true);
     }

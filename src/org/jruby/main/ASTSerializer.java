@@ -66,7 +66,7 @@ public class ASTSerializer {
         RubyParserConfiguration config = new RubyParserConfiguration();
         config.setBlockVariables(new ArrayList());
         config.setLocalVariables(new ArrayList());
-        
+
         IParser parser = null;
         IRubyParserResult result = null;
         try {
