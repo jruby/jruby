@@ -1,31 +1,31 @@
 /*
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -39,7 +39,6 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-
 
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.SecurityError;
@@ -55,14 +54,15 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-import org.jruby.util.IdUtil;
+
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyMapMethod;
-import org.jruby.runtime.*;import org.jruby.runtime.*;
+
 /**
  *
  * @author  jpetersen
@@ -406,14 +406,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         return false;
     }
 
-    /** rb_cvar_singleton
-     *
-     *@deprecated  since Ruby 1.6.7
-     */
-    public RubyModule getClassVarSingleton() {
-        return getInternalClass();
-    }
-
     /** rb_eval
      *
      */
@@ -621,7 +613,6 @@ public class RubyObject implements Cloneable, IRubyObject {
      * methods are included in the search only if the optional second
      * parameter evaluates to true.
      *
-     * @mri rb_obj_respond_to
      * @return true if this responds to the given method
      */
     public RubyBoolean respond_to(IRubyObject[] args) {
@@ -949,7 +940,6 @@ public class RubyObject implements Cloneable, IRubyObject {
      * k.send :hello, "gentle", "readers"
      * </pre>
      *
-     * @mri rb_f_send
      * @return the result of invoking the method identified by aSymbol.
      */
     public IRubyObject send(IRubyObject[] args) {
@@ -990,7 +980,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
     }
     /**
-     * @see org.jruby.runtime.classes.IRubyObject#getType()
+     * @see org.jruby.runtime.builtin.IRubyObject#getType()
      */
     public RubyClass getType() {
         return type();

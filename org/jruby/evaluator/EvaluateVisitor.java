@@ -156,12 +156,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.Namespace;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
@@ -174,6 +169,7 @@ import org.jruby.util.Asserts;
  */
 public final class EvaluateVisitor implements NodeVisitor {
     private Ruby runtime;
+    private ThreadContext threadContext;
     private Builtins builtins;
 
     private IRubyObject self;
@@ -181,6 +177,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     public EvaluateVisitor(Ruby ruby, IRubyObject self) {
         this.runtime = ruby;
+        this.threadContext = runtime.getCurrentContext();
         this.self = self;
 
         builtins = new Builtins(ruby);
@@ -331,17 +328,17 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(runtime, "wrong argument type " + block.getInternalClass().toName() + " (expected Proc)");
         }
 
-        Block oldBlock = runtime.getBlockStack().getCurrent();
-        runtime.getBlockStack().push(((RubyProc) block).getBlock());
+        Block oldBlock = threadContext.getBlockStack().getCurrent();
+        threadContext.getBlockStack().push(((RubyProc) block).getBlock());
 
-        runtime.getIterStack().push(Iter.ITER_PRE);
-        runtime.getCurrentFrame().setIter(Iter.ITER_PRE);
+        threadContext.getIterStack().push(Iter.ITER_PRE);
+        threadContext.getCurrentFrame().setIter(Iter.ITER_PRE);
 
         try {
             eval(iVisited.getIterNode());
         } finally {
-            runtime.getIterStack().pop();
-            runtime.getBlockStack().setCurrent(oldBlock);
+            threadContext.getIterStack().pop();
+            threadContext.getBlockStack().setCurrent(oldBlock);
         }
     }
 

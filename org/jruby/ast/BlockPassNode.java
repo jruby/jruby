@@ -27,12 +27,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
 
 /**
  * Block passed explicitly as an argument in a method call.
@@ -55,128 +54,6 @@ public class BlockPassNode extends AbstractNode {
         
         this.bodyNode = bodyNode;
     }
-
-/*    public RubyObject eval(Ruby ruby, RubyObject self) {
-        RubyObject block = getBodyNode().eval(ruby, self);
-
-        RubyObject result = ruby.getNil();
-
-        if (block.isNil()) {
-            return self.eval(getIterNode());
-        } else if (block.kind_of(ruby.getClasses().getMethodClass()).isTrue()) {
-            block = methodProc(ruby, (RubyMethod)block);
-        } else if (!(block instanceof RubyProc)) {
-            throw new TypeError(ruby, "wrong argument type " + block.getRubyClass().toName() + " (expected Proc)");
-        }
-
-        RubyBlock oldBlock = ruby.getBlock();
-        ruby.setBlock(((RubyProc) block).getBlock());
-
-        ruby.getIter().push(RubyIter.ITER_PRE);
-        ruby.getRubyFrame().setIter(RubyIter.ITER_PRE);
-
-        try {
-            return self.eval(getIterNode());
-        } finally {
-            ruby.getIter().pop();
-            ruby.setBlock(oldBlock);
-        }
-
-        // return result;
-
-        // Data_Get_Struct(block, struct BLOCK, data);
-        // orphan = blk_orphan(data);
-
-        /* PUSH BLOCK from data */
-        /*old_block = ruby_block;
-        _block = *data;
-        ruby_block = &_block;
-        PUSH_ITER(ITER_PRE);
-        ruby_frame->iter = ITER_PRE;
-        
-        PUSH_TAG(PROT_NONE);
-        state = EXEC_TAG();
-        if (state == 0) {
-        proc_set_safe_level(block);
-        if (safe > ruby_safe_level)
-            ruby_safe_level = safe;
-        result = rb_eval(self, node->nd_iter);
-        }
-        POP_TAG();
-        POP_ITER();
-        if (_block.tag->dst == state) {
-        if (orphan) {
-            state &= TAG_MASK;
-        }
-        else {
-            struct BLOCK *ptr = old_block;
-        
-            while (ptr) {
-        	if (ptr->scope == _block.scope) {
-        	    ptr->tag->dst = state;
-        	    break;
-        	}
-        	ptr = ptr->prev;
-            }
-            if (!ptr) {
-        	state &= TAG_MASK;
-            }
-        }
-        }
-        ruby_block = old_block;
-        ruby_safe_level = safe;
-        
-        switch (state) {/* escape from orphan procedure */
-        /*case 0:
-        break;
-        case TAG_BREAK:
-        if (orphan) {
-          rb_raise(rb_eLocalJumpError, "break from proc-closure");
-        }
-        break;
-        case TAG_RETRY:
-        rb_raise(rb_eLocalJumpError, "retry from proc-closure");
-        break;
-        case TAG_RETURN:
-        if (orphan) {
-          rb_raise(rb_eLocalJumpError, "return from proc-closure");
-        }
-        default:
-        JUMP_TAG(state);
-        }
-        
-        return result;
-        */
-   /* }
-
-    public static RubyObject mproc(Ruby ruby, RubyObject recv) {
-        try {
-            ruby.getIter().push(RubyIter.ITER_CUR);
-            ruby.getRubyFrame().push();
-            return RubyGlobal.lambda(ruby, null);
-        } finally {
-            ruby.getRubyFrame().pop();
-            ruby.getIter().pop();
-        }
-    }
-
-    private static RubyObject methodProc(Ruby ruby, RubyMethod method) {
-        return ruby.iterate(
-            CallbackFactory.getSingletonMethod(BlockPassNode.class, "mproc"),
-            null,
-            CallbackFactory.getBlockMethod(BlockPassNode.class, "bmcall"),
-            method);
-    }
-
-    // Block method
-
-    public static RubyObject bmcall(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        if (blockArg instanceof RubyArray) {
-        	return ((RubyMethod) arg1).call(((RubyArray)blockArg).toJavaArray());
-        } else {
-           	return ((RubyMethod) arg1).call(new RubyObject[]{blockArg});
-        }
-    }*/
 
     /**
      * Accept for the visitor pattern.

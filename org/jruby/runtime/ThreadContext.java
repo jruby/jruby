@@ -113,7 +113,7 @@ public class ThreadContext {
         this.currentThread = currentThread;
     }
 
-    public IRubyObject eval(Ruby ruby1, INode node) {
+    public IRubyObject eval(INode node) {
         return EvaluateVisitor.createVisitor(ruby.getTopSelf()).eval(node);
     }
 
