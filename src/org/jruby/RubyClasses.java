@@ -29,15 +29,15 @@
  */
 package org.jruby;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.ObjectInputStream;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.HashMap;
 
+import org.ablaf.ast.INode;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
@@ -247,13 +247,15 @@ public class RubyClasses {
     }
 
     private void loadBuiltin(String name) {
-        InputStream in = getClass().getResourceAsStream("/builtin/" + name + ".rb");
-        Reader reader = new BufferedReader(new InputStreamReader(in));
-        runtime.loadScript("init-builtin", reader, false);
+        InputStream in = getClass().getResourceAsStream("/builtin/" + name + ".rb.ast.ser");
         try {
-            reader.close();
+            ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
+            runtime.loadNode("init-builtin", (INode)oin.readObject(), false);
+            oin.close();
         } catch (IOException e) {
             Asserts.notReached("IOException: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            Asserts.notReached("ClassNotFoundException: " + e.getMessage());
         }
     }
 

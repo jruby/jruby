@@ -52,6 +52,8 @@
  */
 package org.ablaf.internal.lexer;
 
+import java.io.Serializable;
+
 import org.ablaf.common.*;
 
 /**
@@ -59,55 +61,54 @@ import org.ablaf.common.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class DefaultLexerPosition implements ISourcePosition {
-	private String file;
-	private int line;
-	private int column;
+public class DefaultLexerPosition implements ISourcePosition, Serializable {
+    private String file;
+    private int line;
+    private int column;
 
-	public boolean equals(Object iOther)
-	{
-		if (iOther instanceof DefaultLexerPosition)
-		{
-			DefaultLexerPosition lOther = (DefaultLexerPosition)iOther;
-			return file.equals(lOther.file) && line == lOther.line && column == lOther.column;
-		}
-		return false;
-	}
-	public String toString()
-	{
-		return file + ":" + line + ":" + column;
-	}
-	/**
-	 * hashcode based on the position value.
-	 **/
-	public int hashCode(){
-		return file.hashCode() ^ line ^ column;
-	}
+    public DefaultLexerPosition(String file, int line, int column) {
+        this.file = file;
+        this.line = line;
+        this.column = column;
+    }
 
-	public DefaultLexerPosition(String file, int line, int column) {
-		this.file = file;
-		this.line = line;
-		this.column = column;
-	}
+    /**
+     * @see ILexerPosition#getFile()
+     */
+    public String getFile() {
+        return file;
+    }
 
-	/**
-	 * @see ILexerPosition#getFile()
-	 */
-	public String getFile() {
-		return file;
-	}
+    /**
+     * @see ILexerPosition#getLine()
+     */
+    public int getLine() {
+        return line;
+    }
 
-	/**
-	 * @see ILexerPosition#getLine()
-	 */
-	public int getLine() {
-		return line;
-	}
+    /**
+     * @see ILexerPosition#getColumn()
+     */
+    public int getColumn() {
+        return column;
+    }
 
-	/**
-	 * @see ILexerPosition#getColumn()
-	 */
-	public int getColumn() {
-		return column;
-	}
+    public boolean equals(Object iOther) {
+        if (iOther instanceof DefaultLexerPosition) {
+            DefaultLexerPosition lOther = (DefaultLexerPosition) iOther;
+            return file.equals(lOther.file) && line == lOther.line && column == lOther.column;
+        }
+        return false;
+    }
+
+    /**
+     * hashcode based on the position value.
+     **/
+    public int hashCode() {
+        return file.hashCode() ^ line ^ column;
+    }
+
+    public String toString() {
+        return file + ":" + line + ":" + column;
+    }
 }

@@ -26,6 +26,8 @@
  */
 package org.jruby.ast;
 
+import java.io.Serializable;
+
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 
@@ -34,7 +36,7 @@ import org.ablaf.common.ISourcePosition;
  * @author  jpetersen
  * @version $Revision$
  */
-public abstract class AbstractNode implements INode {
+public abstract class AbstractNode implements INode, Serializable {
     private ISourcePosition position;
 
 	/**
@@ -55,7 +57,4 @@ public abstract class AbstractNode implements INode {
     public ISourcePosition getPosition() {
         return position;
     }
-
- 
-	
 }

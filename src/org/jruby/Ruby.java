@@ -970,6 +970,54 @@ public final class Ruby {
             setWrapper(wrapper);
         }
     }
+    
+    public void loadNode(String scriptName, INode node, boolean wrap) {
+        IRubyObject self = getTopSelf();
+        Namespace savedNamespace = getNamespace();
+
+        pushDynamicVars();
+
+        RubyModule wrapper = getWrapper();
+        setNamespace(getTopNamespace());
+
+        if (!wrap) {
+            secure(4); /* should alter global state */
+            pushClass(getClasses().getObjectClass());
+            setWrapper(null);
+        } else {
+            /* load in anonymous module as toplevel */
+            setWrapper(RubyModule.newModule(this));
+            pushClass(getWrapper());
+            self = getTopSelf().rbClone();
+            self.extendObject(getRubyClass());
+            setNamespace(new Namespace(getWrapper(), getNamespace()));
+        }
+
+        String last_func = getCurrentFrame().getLastFunc();
+
+        getFrameStack().push();
+        getCurrentFrame().setLastFunc(null);
+        getCurrentFrame().setLastClass(null);
+        getCurrentFrame().setSelf(self);
+        getCurrentFrame().setNamespace(new Namespace(getRubyClass(), null));
+        getScope().push();
+
+        /* default visibility is private at loading toplevel */
+        setCurrentVisibility(Visibility.PRIVATE);
+
+        try {
+            self.eval(node);
+
+        } finally {
+            getCurrentFrame().setLastFunc(last_func);
+            setNamespace(savedNamespace);
+            getScope().pop();
+            getFrameStack().pop();
+            popClass();
+            popDynamicVars();
+            setWrapper(wrapper);
+        }
+    }
 
 
     /** Loads, compiles and interprets a Ruby file.

@@ -71,7 +71,6 @@
     <copy todir="${tmp.dir}/src">
       <fileset dir="${src.dir}">
         <patternset refid="java.src.pattern"/>
-        <patternset refid="ruby.src.pattern"/>
         <patternset refid="other.src.pattern"/>
       </fileset>
       <filterchain>
@@ -84,6 +83,16 @@
       <src path="${tmp.dir}/src"/>
       <patternset refid="java.src.pattern"/>
     </javac>
+    
+    <taskdef name="jruby-serialize" classname="org.jruby.util.ant.JRubySerialize">
+      <classpath path="${tmp.dir}/src"/>
+    </taskdef>
+
+    <jruby-serialize destdir="${tmp.dir}/src">
+      <fileset dir="${src.dir}">
+        <patternset refid="ruby.src.pattern"/>
+      </fileset>
+    </jruby-serialize>
   </target>
 
   <target name="create-jar" description="create the jruby.jar" depends="compile">
@@ -91,7 +100,7 @@
       <fileset dir="${tmp.dir}/src">
         <include name="**/*.class"/>
 	    <include name="**/*.properties"/>
-	    <include name="**/*.rb"/>
+	    <include name="**/*.rb.ast.ser"/>
       </fileset>
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
@@ -170,5 +179,11 @@
       <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2002 Jan Arne Petersen. All Rights Reserved.</i>]]></bottom>
     </javadoc>
+  </target>
+  
+  <target name="clean-tmp" description="clean the ${tmp.dir} dir without the eclipse stuff" depends="init">
+    <delete>
+      <fileset dir="${tmp.dir}" excludes="eclipse-src/**"/>
+    </delete>
   </target>
 </project>

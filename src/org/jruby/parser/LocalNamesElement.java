@@ -158,7 +158,7 @@ public class LocalNamesElement implements StackElement {
      * @return Returns a List
      */
     public List getLocalNames() {
-        return localNames != null ? Collections.unmodifiableList(localNames) : Collections.EMPTY_LIST;
+        return localNames != null ? localNames : new ArrayList(0);
     }
 
     /**
