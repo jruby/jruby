@@ -78,8 +78,15 @@ public class Split {
         RubyString rubySplitee = RubyString.newString(runtime, splitee);
 		while ((beg = pattern.search(rubySplitee, pos)) > -1) {
 			hits++;
-			int end = ((RubyMatchData) runtime.getBackref()).matchEndPosition();
+			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();
+			int end = matchData.matchEndPosition();
 			addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
+			// Add to list any /(.)/ matched.
+			long extraPatterns = matchData.getSize();
+			for (int i = 1; i < extraPatterns; i++) {
+			    addResult(((RubyString) matchData.group(i)).getValue());
+			}
+
 			pos = (end == beg) ? beg + 1 : end;
 			if (hits + 1 == limit) {
 				break;
