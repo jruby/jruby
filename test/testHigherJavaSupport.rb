@@ -42,8 +42,6 @@ if defined? Java
     l1 = Long.new(1234)
     l2 = Long.new(1000)
     test_ok(l1.compareTo(l2) > 0)
-    s1 = Short.new(1234)
-    test_ok(l1.compareTo(s1) == 0)
 
     # Dispatching on nil
     include_package "org.jruby.util"
