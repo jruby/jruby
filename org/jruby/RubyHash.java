@@ -50,7 +50,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyHash(Ruby ruby, RubyObject defaultValue) {
-		this(ruby, new RubyHashMap(), defaultValue);
+        this(ruby, new RubyHashMap(), defaultValue);
     }
 
     public RubyHash(Ruby ruby, Map valueMap, RubyObject defaultValue) {
@@ -151,7 +151,7 @@ public class RubyHash extends RubyObject {
 
         hashClass.defineMethod("==", CallbackFactory.getMethod(RubyHash.class, "equal", RubyObject.class));
         hashClass.defineMethod("[]", CallbackFactory.getMethod(RubyHash.class, "aref", RubyObject.class));
-        //    rb_define_method(rb_cHash,"fetch", rb_hash_fetch, -1);
+        hashClass.defineMethod("fetch", CallbackFactory.getOptMethod(RubyHash.class, "fetch"));
         hashClass.defineMethod("[]=", CallbackFactory.getMethod(RubyHash.class, "aset", RubyObject.class, RubyObject.class));
         hashClass.defineMethod("store", CallbackFactory.getMethod(RubyHash.class, "aset", RubyObject.class, RubyObject.class));
 		hashClass.defineMethod("default", CallbackFactory.getMethod(RubyHash.class, "getDefaultValue"));
@@ -324,7 +324,26 @@ public class RubyHash extends RubyObject {
 
         return value != null ? value : getDefaultValue();
     }
-    
+
+    public RubyObject fetch(RubyObject[] args) {
+        if (args.length < 1) {
+            throw new ArgumentError(ruby, args.length, 1);
+        }
+        RubyObject key = args[0];
+        RubyObject result = (RubyObject) valueMap.get(key);
+        if (result == null) {
+            if (args.length > 1) {
+                return args[1];
+            } else if (ruby.isBlockGiven()) {
+                return ruby.yield(key);
+            } else {
+                throw new RubyIndexException(ruby, "key not found");
+            }
+        }
+        return result;
+    }
+
+
     public RubyBoolean has_key(RubyObject key) {
         return RubyBoolean.newBoolean(ruby, valueMap.containsKey(key));
     }

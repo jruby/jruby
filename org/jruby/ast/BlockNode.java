@@ -82,20 +82,4 @@ public class BlockNode extends AbstractNode implements IListNode {
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitBlockNode(this);
     }
-
-    /**
-     * Gets the list.
-     * @return Returns a List
-     */
-    private List getList() {
-        return list;
-    }
-
-    /**
-     * Sets the list.
-     * @param list The list to set
-     */
-    private void setList(List list) {
-        this.list = list;
-    }
 }

@@ -45,12 +45,12 @@ public abstract class AbstractNode implements INode {
 	 * constructor without a position.
 	 * This should only be used in node constructor where no good position can be computed
 	 **/
-	public AbstractNode()
-	{}
-			
+ 	public AbstractNode() {
+    }
+
     public AbstractNode(ISourcePosition position) {
         this.position = position;
-		if (position == null ) throw new IllegalArgumentException("position is not valid");
+        //		if (position == null ) throw new IllegalArgumentException("position is not valid");
     }
 
     /**

@@ -12,3 +12,8 @@ test_equal(2, h[1])
 test_equal(300, h[3])
 test_equal(400, h[4])
 
+h = {1=>2,3=>4}
+test_exception(IndexError) { h.fetch(10) }
+test_equal(2, h.fetch(1))
+test_equal("hello", h.fetch(10, "hello"))
+test_equal("hello 10", h.fetch(10) { |e| "hello #{e}" })
