@@ -60,6 +60,26 @@ public class ShiftableList extends AbstractList {
         delegate.add(start + index, element);
     }
     
+    public void fill(List newValues, int len) {
+        fill(newValues, 0, len);
+    }
+    
+    public void fill(List newValues, int start, int len) {
+        for (int i = start; i < (start + len); i++) {
+            set(i, newValues.get(i));
+        }
+    }
+    
+    public void fill(Object newValue, int len) {
+        fill(newValue, 0, len);
+    }
+    
+    public void fill(Object newValue, int start, int len) {
+        for (int i = start; i < (start + len); i++) {
+            set(i, newValue);
+        }
+    }
+    
     public Object get(int index) {
         return delegate.get(start + index);
     }
@@ -81,6 +101,14 @@ public class ShiftableList extends AbstractList {
     
     public Object set(int index, Object element) {
         return delegate.set(start + index, element);
+    }
+    
+    public void setSize(int newSize) {
+        if (size() < newSize) {
+            addAll(Collections.nCopies(newSize - size(), null));
+        } else if (size() > newSize) {
+            removeRange(newSize - 1, size() - 1);
+        }
     }
     
     public void shiftLeft(int shift) {

@@ -85,6 +85,14 @@ public class RubyFixnum extends RubyInteger {
         return (product / value) != getValue();
     }
     
+    public static RubyFixnum zero(Ruby ruby) {
+        return m_newFixnum(ruby, 0);
+    }
+    
+    public static RubyFixnum one(Ruby ruby) {
+        return m_newFixnum(ruby, 1);
+    }
+    
     // Methods of the Fixnum Class (fix_*):
     
     public static RubyFixnum m_newFixnum(Ruby ruby, long value) {

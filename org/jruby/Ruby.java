@@ -33,8 +33,9 @@ import java.util.*;
 import java.io.*;
 
 import org.jruby.core.*;
-import org.jruby.original.*;
 import org.jruby.interpreter.*;
+import org.jruby.original.*;
+import org.jruby.parser.*;
 import org.jruby.util.*;
 
 /**
@@ -67,15 +68,24 @@ public final class Ruby implements token {
     // Default classes
     private RubyClasses classes;
     
-    private RubyObject rubyTopSelf;
+    //
+    private ParserHelper parserHelper = null;
+    private RubyParser rubyParser = null;
     
     private RubyOriginalMethods originalMethods;
     
+    private RubyObject rubyTopSelf;
+    
+    // Eval
+    
     private RubyScope rubyScope = new RubyScope();
     private RubyVarmap dynamicVars = null;
+    private RubyModule rubyClass = null;
     
     private String sourceFile;
     private int sourceLine;
+    
+    private int inEval;
     
     private boolean verbose;
     
@@ -469,6 +479,66 @@ public final class Ruby implements token {
      */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
+    }
+    
+    /** Getter for property dynamicVars.
+     * @return Value of property dynamicVars.
+     */
+    public org.jruby.interpreter.RubyVarmap getDynamicVars() {
+        return dynamicVars;
+    }
+    
+    /** Setter for property dynamicVars.
+     * @param dynamicVars New value of property dynamicVars.
+     */
+    public void setDynamicVars(org.jruby.interpreter.RubyVarmap dynamicVars) {
+        this.dynamicVars = dynamicVars;
+    }
+    
+    /** Getter for property rubyClass.
+     * @return Value of property rubyClass.
+     */
+    public org.jruby.RubyModule getRubyClass() {
+        return rubyClass;
+    }
+    
+    /** Setter for property rubyClass.
+     * @param rubyClass New value of property rubyClass.
+     */
+    public void setRubyClass(org.jruby.RubyModule rubyClass) {
+        this.rubyClass = rubyClass;
+    }
+    
+    /** Getter for property parserHelper.
+     * @return Value of property parserHelper.
+     */
+    public ParserHelper getParserHelper() {
+        if (parserHelper == null) {
+            parserHelper = new ParserHelper(this);
+            parserHelper.init();
+        }
+        return parserHelper;
+    }
+    
+    public RubyParser getRubyParser() {
+        if (rubyParser == null) {
+            rubyParser = new DefaultRubyParser(this);
+        }
+        return rubyParser;
+    }
+    
+    /** Getter for property inEval.
+     * @return Value of property inEval.
+     */
+    public int getInEval() {
+        return inEval;
+    }
+    
+    /** Setter for property inEval.
+     * @param inEval New value of property inEval.
+     */
+    public void setInEval(int inEval) {
+        this.inEval = inEval;
     }
     
 }

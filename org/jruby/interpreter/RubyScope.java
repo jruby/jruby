@@ -38,6 +38,11 @@ import org.jruby.util.*;
  * @version 
  */
 public class RubyScope {
+    public static final int SCOPE_ALLOCA = 0;
+    public static final int SCOPE_MALLOC = 1;
+    public static final int SCOPE_NOSTACK = 2;
+    public static final int SCOPE_DONT_RECYCLE = 4;
+    
     private RubyObject  superObject = null;
     private RubyId[]    localTbl    = null;
     private ShiftableList localVars = null;

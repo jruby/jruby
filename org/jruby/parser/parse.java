@@ -451,10 +451,10 @@ public class parse /*extends Ruby*/ implements lex_state, node_type, re_options 
 case 1:
 					// line 246 "parse.y"
   {
-		        yyVal = ruby.getInterpreter().getDynamicVars();// ruby_dyna_vars;
+		        yyVal = ruby.getDynamicVars();// ruby_dyna_vars;
 			lex_state = EXPR_BEG;
                         top_local_init();
-			if (ruby.getInterpreter().getRubyClass() == ruby.getClasses().getObjectClass()/*(VALUE)ruby_class == rb_cObject*/) class_nest = 0;
+			if (ruby.getRubyClass() == ruby.getClasses().getObjectClass()/*(VALUE)ruby_class == rb_cObject*/) class_nest = 0;
 			else class_nest = 1;
 		    }
   break;
@@ -475,7 +475,7 @@ case 2:
 			ruby_eval_tree = block_append(ruby_eval_tree, ((NODE)yyVals[0+yyTop]));
                         top_local_setup();
 			class_nest = 0;
-		        ruby.getInterpreter().setDynamicVars((RubyVarmap)yyVals[-1+yyTop]);
+		        ruby.setDynamicVars((RubyVarmap)yyVals[-1+yyTop]);
 		    }
   break;
 case 3:
@@ -3712,7 +3712,7 @@ case 432:
         else {
             lvtbl.tbl = null;
         }
-        if (ruby.getInterpreter().getDynamicVars() != null)
+        if (ruby.getDynamicVars() != null)
             lvtbl.dlev = 1;
         else
             lvtbl.dlev = 0;
@@ -3775,7 +3775,7 @@ case 432:
     }
 
     private RubyVarmap dyna_push() {
-	RubyVarmap vars = ruby.getInterpreter().getDynamicVars();
+	RubyVarmap vars = ruby.getDynamicVars();
 
 	rb_dvar_push(null, null);
 	lvtbl.dlev++;
@@ -3784,7 +3784,7 @@ case 432:
 
     private void dyna_pop(RubyVarmap vars) {
 	lvtbl.dlev--;
-	ruby.getInterpreter().setDynamicVars(vars);
+	ruby.setDynamicVars(vars);
     }
 
     private boolean dyna_in_block() {
@@ -6312,22 +6312,22 @@ case 432:
     }
 
     /** Creates a new regular expression from "s" */
-    VALUE rb_reg_new(String s, int len, int options) {
+    RubyObject rb_reg_new(String s, int len, int options) {
         //XXX well...
         return new RubyRegexp(ruby, (RubyString)rb_str_new(s, len), options);
     }
 
     /** Creates a new integer object (Fixnum or Bignum) from "s" */
-    VALUE rb_cstr2inum(String s, int radix) {
+    RubyObject rb_cstr2inum(String s, int radix) {
         //XXX no support for _ or leading and trailing spaces
         return new RubyFixnum(ruby, Integer.parseInt(s, radix));
     }
 
     /** (Added to reduce the need for casts) */
-    VALUE rb_funcall(VALUE v1, char c, int j, VALUE v) {
+    RubyObject rb_funcall(VALUE v1, char c, int j, VALUE v) {
         return rb_funcall(v1, ruby.intern(String.valueOf(c)), j, v);
     }
-    VALUE rb_funcall(VALUE v1, ID i, int j, VALUE v) {
+    RubyObject rb_funcall(VALUE v1, ID i, int j, VALUE v) {
     	return ((RubyObject)v1).funcall((RubyId)i, (RubyObject)v);
     }
 
@@ -6345,7 +6345,7 @@ case 432:
     // ------------
 
     /** Adds second value (a string or char) to first value */
-    VALUE rb_str_concat(VALUE v, VALUE w) {
+    RubyObject rb_str_concat(VALUE v, VALUE w) {
         //XXX need to keep identity and tainting
         RubyString vs = (RubyString)v;
         if (FIXNUM_P(w))
@@ -6356,21 +6356,21 @@ case 432:
     }
 
     /** Creates a new string object. */
-    VALUE rb_str_new(String s, int len) {
+    RubyObject rb_str_new(String s, int len) {
         return new RubyString(ruby, s.substring(0, len));
     }
 
     /** Creates a new string object. */
-    VALUE rb_str_new2(String s) {
+    RubyObject rb_str_new2(String s) {
         return rb_str_new(s, s.length());
     }
 
     // Number stuff
     // ------------
     /** Creates a new float object */
-    VALUE rb_float_new(double d) { return RubyFloat.m_newFloat(ruby, d); }
-    VALUE INT2FIX(int i) { return new RubyFixnum(ruby, i); }
-    VALUE INT2FIX(long i) { return new RubyFixnum(ruby, i); }
+    RubyObject rb_float_new(double d) { return RubyFloat.m_newFloat(ruby, d); }
+    RubyObject INT2FIX(int i) { return new RubyFixnum(ruby, i); }
+    RubyObject INT2FIX(long i) { return new RubyFixnum(ruby, i); }
     boolean FIXNUM_P(VALUE v) {return v instanceof RubyFixnum;}
     long FIX2LONG(VALUE v) {return FIX2INT(v);}
     int FIX2INT(VALUE v) { return (int)((RubyFixnum)v).getValue(); }
@@ -6381,10 +6381,10 @@ case 432:
     boolean SYMBOL_P(ID id) {
         return (id.intValue() & 255) == SYMBOL_FLAG;
     }*/
-    VALUE ID2SYM(ID id) {
+    RubyObject ID2SYM(ID id) {
         return RubySymbol.m_newSymbol(ruby, (RubyId)id);
     }
-    ID SYM2ID(VALUE symbol) {
+    RubyId SYM2ID(VALUE symbol) {
         return ((RubySymbol)symbol).getId();
     }
 
@@ -6411,26 +6411,15 @@ case 432:
     // -----------------
 
     boolean rb_dvar_defined(ID id) {
-	if (ruby.getInterpreter().getDynamicVars() == null) {
-	    return false;
-	}
-	
-	return ruby.getInterpreter().getDynamicVars().isDefined((RubyId)id);
+        return RubyVarmap.isDefined(ruby, (RubyId)id);
     }
 
     boolean rb_dvar_curr(ID id) {
-	if (ruby.getInterpreter().getDynamicVars() == null) {
-	    return false;
-	}	    
-        return ruby.getInterpreter().getDynamicVars().isCurrent((RubyId)id);
+        return RubyVarmap.isCurrent(ruby, (RubyId)id);
     }
 
     void rb_dvar_push(ID id, VALUE value) {
-	if (ruby.getInterpreter().getDynamicVars() == null) {
-		ruby.getInterpreter().setDynamicVars(new_dvar(id, value, null));
-	} else {
-		ruby.getInterpreter().getDynamicVars().push((RubyId)id, (RubyObject)value);
-	}
+        RubyVarmap.push(ruby, (RubyId)id, (RubyObject)value);
     }
 
     private RubyVarmap new_dvar(ID id, VALUE value, RubyVarmap prev) {
@@ -6448,27 +6437,27 @@ case 432:
     }
 
     /** Creates an array object with default size */
-    VALUE rb_ary_new() {
+    RubyObject rb_ary_new() {
         return rb_ary_new2(16);
     }
 
     /** Creates an array object with the given size */
-    VALUE rb_ary_new2(int size) {
-        return rom.rb_ary_new2(size);
+    RubyObject rb_ary_new2(int size) {
+        return RubyArray.m_newArray(ruby, size);
     }
 
     // Hash stuff
     // ----------
 
-    VALUE rb_hash_aref(VALUE hash, VALUE key) {throw missing();}
+    RubyObject rb_hash_aref(VALUE hash, VALUE key) {throw missing();}
     void rb_hash_aset(VALUE hash, VALUE key, VALUE value) {throw missing();}
 
     int rb_safe_level() { return 0; }
     boolean rb_const_defined(VALUE clazz, ID name) {
         return rom.rb_const_defined(clazz, name);
     }
-    VALUE rb_const_get(VALUE clazz, ID name) {
-    	return rom.rb_const_get(clazz, name);
+    RubyObject rb_const_get(VALUE clazz, ID name) {
+    	return ((RubyModule)clazz).getConstant((RubyId)name);
     }
 
     global_entry rb_global_entry(ID v) {

@@ -107,11 +107,18 @@ public class Main {
         // Initialize Runtime
         Ruby ruby = new Ruby();
 
-        // Initialize Parser
-        parse p = new parse(ruby);
-
         // Parse and interpret file
         RubyString rs = RubyString.m_newString(ruby, iString2Eval);
+        
+        // New Version
+        // 
+        // ruby.getInterpreter().eval(ruby.getClasses().getObjectClass(), ruby.getRubyParser().compileString(iFileName, rs, 0));
+        
+        // Old Version
+        // 
+        
+        // Initialize Parser
+        parse p = new parse(ruby);
         ruby.getInterpreter().eval(ruby.getClasses().getObjectClass(), p.rb_compile_string(iFileName, rs, 0));
     }
 

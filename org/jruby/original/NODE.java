@@ -36,8 +36,8 @@ public class NODE implements node_type, VALUE, Scope {
 
     private NODE() {}
 
-    public static NODE MINUS_ONE = new NODE();
-    public static NODE ONE = new NODE();
+    public static NODE MINUS_ONE = new NODE(0, null, new Integer(-1), null);
+    public static NODE ONE = new NODE(0, null, new Integer(0), null);
     public static NODE undefined = new NODE(); //XXX
 
     private Object u1;
@@ -88,8 +88,8 @@ public class NODE implements node_type, VALUE, Scope {
     public ID nd_aid() { return (ID)u3; }
     public void nd_aid(ID id) { u3 = id; }
 
-    public VALUE nd_lit() { return (VALUE)u1; }
-    public void nd_lit(VALUE v) { u1 = v; }
+    public RubyObject nd_lit() { return (RubyObject)u1; }
+    public void nd_lit(RubyObject v) { u1 = v; }
 
     //NODE nd_frml() { return (NODE)u1; }
     public int nd_rest() { return u2 == null ? 0 : ((Integer)u2).intValue(); }

@@ -47,12 +47,12 @@ public class RubyInterpreter implements node_type, Scope {
     
     // public RubyVarmap ruby_dyna_vars = new RubyVarmap();
     
-    private RubyVarmap dynamicVars = null;
+    // private RubyVarmap dynamicVars = null;
     private Iter rubyIter = new Iter(); // HACK 
     
     // C
     
-    private RubyModule ruby_class;
+    // private RubyModule ruby_class;
     private RubyModule ruby_cbase;
     private RubyModule ruby_wrapper;
     
@@ -63,7 +63,7 @@ public class RubyInterpreter implements node_type, Scope {
     public RubyInterpreter(Ruby ruby) {
         this.ruby = ruby;
         
-        ruby_class = ruby.getClasses().getObjectClass();
+        ruby.setRubyClass(ruby.getClasses().getObjectClass());
         ruby_cbase = null;
         rubyBlock = new RubyBlock(ruby);
     }
@@ -121,7 +121,7 @@ public class RubyInterpreter implements node_type, Scope {
         // PUSH_TAG( PROT_NONE );
         // if ((state = EXEC_TAG()) == 0) {
             // rb_call_inits();
-            ruby_class = getRuby().getClasses().getObjectClass();
+            ruby.setRubyClass(getRuby().getClasses().getObjectClass());
             // ruby_frame.self = ruby_top_self;
             top_cref = new NODE(NODE_CREF, getRuby().getClasses().getObjectClass(), null, null);
             ruby_cref = top_cref;
@@ -180,23 +180,23 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 /* nodes for speed-up(default match) */
                 case NODE_MATCH:
-                    //return rom.rb_reg_match2(node.nd_head().nd_lit());
+                    // return rb_reg_match2(node.nd_head().nd_lit());
                     return getRuby().getNil();
                     
                 /* nodes for speed-up(literal match) */
                 case NODE_MATCH2:
-                    //return rom.rb_reg_match(eval(node.nd_recv()), eval(node.nd_value()));
+                    // return rb_reg_match(eval(node.nd_recv()), eval(node.nd_value()));
                     return getRuby().getNil();
                     
                 /* nodes for speed-up(literal match) */
                 case NODE_MATCH3:
-                    //VALUE r = eval(node.nd_recv());
-                    //VALUE l = eval(node.nd_value());
-                    //if (r instanceof RubyString) {
-                    //    return rom.rb_reg_match(l, r);
-                    //} else {
-                    //    return rom.rb_funcall(r, match, 1, l);
-                    //}
+                    RubyObject r = eval(self, node.nd_recv());
+                    RubyObject l = eval(self, node.nd_value());
+                    if (l instanceof RubyString) {
+                        // return rb_reg_match(r, l);
+                    } else {
+                        return l.funcall(ruby.intern("=~"), r);
+                    }
                     return getRuby().getNil();
                     
                 /* node for speed-up(top-level loop for -n/-p) */
@@ -785,11 +785,11 @@ public class RubyInterpreter implements node_type, Scope {
                     return result;
                     
                 case NODE_CDECL:
-                    if (ruby_class == null) {
+                    if (ruby.getRubyClass() == null) {
                         throw new RubyTypeException("no class/module to define constant");
                     }
                     result = eval(self, node.nd_value());
-                    ruby_class.setConstant((RubyId)node.nd_vid(), result);
+                    ruby.getRubyClass().setConstant((RubyId)node.nd_vid(), result);
                     return result;
                     
                 case NODE_CVDECL:
@@ -816,7 +816,7 @@ public class RubyInterpreter implements node_type, Scope {
                     return (RubyObject)getRuby().getRubyScope().getLocalVars(node.nd_cnt());
                     
                 case NODE_DVAR:
-                    return getDynamicVars().getRef((RubyId)node.nd_vid());
+                    return ruby.getDynamicVars().getRef((RubyId)node.nd_vid());
                     
                 case NODE_GVAR:
                     return ((RubyGlobalEntry)node.nd_entry()).get();
@@ -989,7 +989,7 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_DEFN:
                     if (node.nd_defn() != null) {
                         int noex;
-                        if (ruby_class == null) {
+                        if (ruby.getRubyClass() == null) {
                             throw new RubyTypeException("no class to add method");
                         }
                         
@@ -1001,7 +1001,7 @@ public class RubyInterpreter implements node_type, Scope {
                         //}
                         // ruby_class.setFrozen(true);
                         
-                        SearchMethodResult smr = ruby_class.searchMethod((RubyId)node.nd_mid());
+                        SearchMethodResult smr = ruby.getRubyClass().searchMethod((RubyId)node.nd_mid());
                         NODE body = smr.getBody();
                         RubyObject origin = smr.getOrigin();
                         
@@ -1018,26 +1018,26 @@ public class RubyInterpreter implements node_type, Scope {
                             noex = NOEX_PRIVATE;
                         } else if (isScope(SCOPE_PROTECTED)) {
                             noex = NOEX_PROTECTED;
-                        } else if (ruby_class == getRuby().getClasses().getObjectClass()) {
+                        } else if (ruby.getRubyClass() == getRuby().getClasses().getObjectClass()) {
                             noex =  node.nd_noex();
                         } else {
                             noex = NOEX_PUBLIC;
                         }
-                        if (body != null && origin == ruby_class && (body.nd_noex() & NOEX_UNDEF) != 0) {
+                        if (body != null && origin == ruby.getRubyClass() && (body.nd_noex() & NOEX_UNDEF) != 0) {
                             noex |= NOEX_UNDEF;
                         }
                         
                         NODE defn = node.nd_defn().copyNodeScope(ruby_cref);
-                        ruby_class.addMethod((RubyId)node.nd_mid(), defn, noex);
+                        ruby.getRubyClass().addMethod((RubyId)node.nd_mid(), defn, noex);
                         // rb_clear_cache_by_id(node.nd_mid());
                         if (actMethodScope == SCOPE_MODFUNC) {
-                            ruby_class.getSingletonClass().addMethod((RubyId)node.nd_mid(), defn, NOEX_PUBLIC);
-                            ruby_class.funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                            ruby.getRubyClass().getSingletonClass().addMethod((RubyId)node.nd_mid(), defn, NOEX_PUBLIC);
+                            ruby.getRubyClass().funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         }
-                        if (ruby_class.isSingleton()) {
-                            ruby_class.getInstanceVar("__attached__").funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                        if (ruby.getRubyClass().isSingleton()) {
+                            ruby.getRubyClass().getInstanceVar("__attached__").funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         } else {
-                            ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                            ruby.getRubyClass().funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         }
                     }
                     return getRuby().getNil();
@@ -1077,19 +1077,19 @@ public class RubyInterpreter implements node_type, Scope {
                     return getRuby().getNil();
                     
                 case NODE_UNDEF:
-                    if (ruby_class == null) {
+                    if (ruby.getRubyClass() == null) {
                         throw new RubyTypeException("no class to undef method");
                     }
-                    ruby_class.undef((RubyId)node.nd_mid());
+                    ruby.getRubyClass().undef((RubyId)node.nd_mid());
                     
                     return getRuby().getNil();
                     
                 case NODE_ALIAS:
-                    if (ruby_class == null) {
+                    if (ruby.getRubyClass() == null) {
                         throw new RubyTypeException("no class to make alias");
                     }
-                    ruby_class.aliasMethod((RubyId)node.nd_new(), (RubyId)node.nd_old());
-                    ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                    ruby.getRubyClass().aliasMethod((RubyId)node.nd_new(), (RubyId)node.nd_old());
+                    ruby.getRubyClass().funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
                     
                     return getRuby().getNil();
                     
@@ -1101,7 +1101,7 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_CLASS:
                     RubyModule superClass;
                     
-                    if (ruby_class == null) {
+                    if (ruby.getRubyClass() == null) {
                         throw new RubyTypeException("no outer class/module");
                     }
                     if (node.nd_super() != null) {
@@ -1114,8 +1114,8 @@ public class RubyInterpreter implements node_type, Scope {
                     // if ((ruby_class == getRuby().getObjectClass()) && rb_autoload_defined(node.nd_cname())) {
                     //     rb_autoload_load(node.nd_cname());
                     // }
-                    if (ruby_class.isConstantDefined((RubyId)node.nd_cname())) {
-                        rubyClass = (RubyClass)ruby_class.getConstant((RubyId)node.nd_cname());
+                    if (ruby.getRubyClass().isConstantDefined((RubyId)node.nd_cname())) {
+                        rubyClass = (RubyClass)ruby.getRubyClass().getConstant((RubyId)node.nd_cname());
                     }
                     if (rubyClass != null) {
                         if (!rubyClass.isClass()) {
@@ -1136,8 +1136,8 @@ public class RubyInterpreter implements node_type, Scope {
                                     superClass = getRuby().getClasses().getObjectClass();
                                 }
                                 rubyClass = getRuby().defineClassId((RubyId)node.nd_cname(), (RubyClass)superClass);
-                                ruby_class.setConstant((RubyId)node.nd_cname(), rubyClass);
-                                rubyClass.setClassPath((RubyClass)ruby_class, ((RubyId)node.nd_cname()).toName());
+                                ruby.getRubyClass().setConstant((RubyId)node.nd_cname(), rubyClass);
+                                rubyClass.setClassPath(ruby.getRubyClass(), ((RubyId)node.nd_cname()).toName());
                                 // end goto
                             }
                         }
@@ -1151,8 +1151,8 @@ public class RubyInterpreter implements node_type, Scope {
                             superClass = getRuby().getClasses().getObjectClass();
                         }
                         rubyClass = getRuby().defineClassId((RubyId)node.nd_cname(), (RubyClass)superClass);
-                        ruby_class.setConstant((RubyId)node.nd_cname(), rubyClass);
-                        rubyClass.setClassPath((RubyClass)ruby_class, ((RubyId)node.nd_cname()).toName());
+                        ruby.getRubyClass().setConstant((RubyId)node.nd_cname(), rubyClass);
+                        rubyClass.setClassPath(ruby.getRubyClass(), ((RubyId)node.nd_cname()).toName());
                     }
                     if (ruby_wrapper != null) {
                         rubyClass.getSingletonClass().includeModule(ruby_wrapper);
@@ -1162,17 +1162,17 @@ public class RubyInterpreter implements node_type, Scope {
                     return setupModule(rubyClass, node.nd_body());
                     
                 case NODE_MODULE:
-                    if (ruby_class == null) {
+                    if (ruby.getRubyClass() == null) {
                         throw new RubyTypeException("no outer class/module");
                     }
                     
                     RubyModule module = null;
                     
-                    if ((ruby_class == getRuby().getClasses().getObjectClass()) && getRuby().isAutoloadDefined((RubyId)node.nd_cname())) {
+                    if ((ruby.getRubyClass() == getRuby().getClasses().getObjectClass()) && getRuby().isAutoloadDefined((RubyId)node.nd_cname())) {
                         // getRuby().rb_autoload_load(node.nd_cname());
                     }
-                    if (ruby_class.isConstantDefined((RubyId)node.nd_cname())) {
-                        module = (RubyModule)ruby_class.getConstant((RubyId)node.nd_cname());
+                    if (ruby.getRubyClass().isConstantDefined((RubyId)node.nd_cname())) {
+                        module = (RubyModule)ruby.getRubyClass().getConstant((RubyId)node.nd_cname());
                     }
                     if (module != null) {
                         if (!(module instanceof RubyModule)) {
@@ -1184,8 +1184,8 @@ public class RubyInterpreter implements node_type, Scope {
                         }
                     } else {
                         module = getRuby().defineModuleId((RubyId)node.nd_cname());
-                        ruby_class.setConstant((RubyId)node.nd_cname(), module);
-                        module.setClassPath(ruby_class, ((RubyId)node.nd_cname()).toName());
+                        ruby.getRubyClass().setConstant((RubyId)node.nd_cname(), module);
+                        module.setClassPath(ruby.getRubyClass(), ((RubyId)node.nd_cname()).toName());
                     }
                     if (ruby_wrapper != null) {
                         module.getSingletonClass().includeModule(ruby_wrapper);
@@ -1244,11 +1244,11 @@ public class RubyInterpreter implements node_type, Scope {
     private RubyStack classStack = new RubyStack(new LinkedList());
     
     public void pushClass() {
-        classStack.push(ruby_class);
+        classStack.push(ruby.getRubyClass());
     }
 
     private void popClass() {
-        ruby_class = (RubyModule)classStack.pop();
+        ruby.setRubyClass((RubyModule)classStack.pop());
     }
 
     public NODE ruby_cref = null;
@@ -1300,7 +1300,7 @@ public class RubyInterpreter implements node_type, Scope {
         rubyFrame = frame;
 
         pushClass();
-        ruby_class = module;
+        ruby.setRubyClass(module);
         getRuby().getRubyScope().push();
         RubyVarmap.push(ruby);
 
@@ -1326,7 +1326,7 @@ public class RubyInterpreter implements node_type, Scope {
             //     call_trace_func("class", file, line, ruby_class, 
             //                     ruby_frame->last_func, ruby_frame->last_class );
             // }
-            result = eval(ruby_class, node.nd_next());
+            result = eval(ruby.getRubyClass(), node.nd_next());
         // }
             
         // POP_TAG();
@@ -1427,7 +1427,7 @@ public class RubyInterpreter implements node_type, Scope {
                 break;
 
             case NODE_CDECL:
-                ruby_class.setConstant((RubyId)lhs.nd_vid(), val);
+                ruby.getRubyClass().setConstant((RubyId)lhs.nd_vid(), val);
                 break;
 
             case NODE_CVDECL:
@@ -1541,12 +1541,12 @@ public class RubyInterpreter implements node_type, Scope {
         rubyBlock.pop();
         
         if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
-            dynamicVars = new RubyVarmap(null, null, block.dynamicVars);
+            ruby.setDynamicVars(new RubyVarmap(null, null, block.dynamicVars));
         } else {
-            dynamicVars = block.dynamicVars;
+            ruby.setDynamicVars(block.dynamicVars);
         }
         
-        ruby_class = (klass != null) ? klass : block.klass;
+        ruby.setRubyClass((klass != null) ? klass : block.klass);
         if (klass == null) {
             self = (RubyObject)block.self;
         }
@@ -1687,20 +1687,6 @@ public class RubyInterpreter implements node_type, Scope {
         rubyIter.pop();
     }
     
-    /** Getter for property dynamicVars.
-     * @return Value of property dynamicVars.
-     */
-    public RubyVarmap getDynamicVars() {
-        return dynamicVars;
-    }
-    
-    /** Setter for property dynamicVars.
-     * @param dynamicVars New value of property dynamicVars.
-     */
-    public void setDynamicVars(RubyVarmap dynamicVars) {
-        this.dynamicVars = dynamicVars;
-    }
-    
     /** Getter for property rubyIter.
      * @return Value of property rubyIter.
      */
@@ -1727,20 +1713,6 @@ public class RubyInterpreter implements node_type, Scope {
      */
     public void setRubyBlock(org.jruby.interpreter.RubyBlock rubyBlock) {
         this.rubyBlock = rubyBlock;
-    }
-    
-    /** Getter for property ruby_class.
-     * @return Value of property ruby_class.
-     */
-    public org.jruby.RubyModule getRubyClass() {
-        return ruby_class;
-    }
-    
-    /** Setter for property ruby_class.
-     * @param ruby_class New value of property ruby_class.
-     */
-    public void setRubyClass(org.jruby.RubyModule ruby_class) {
-        this.ruby_class = ruby_class;
     }
     
     /** Getter for property actMethodScope.

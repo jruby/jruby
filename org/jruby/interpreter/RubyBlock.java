@@ -89,15 +89,15 @@ public class RubyBlock {
         body = b;
         self = newSelf;
         frame = ruby.getInterpreter().getRubyFrame();
-        klass = ruby.getInterpreter().getRubyClass();
-    //    _block.frame.file = ruby_sourcefile;
-    //    _block.frame.line = ruby_sourceline;
+        klass = ruby.getRubyClass();
+        frame.setFile(ruby.getSourceFile());
+        frame.setLine(ruby.getSourceLine());
         scope = ruby.getRubyScope();
         prev = oldBlock;
         iter = ruby.getInterpreter().getRubyIter().getIter();
         vmode = ruby.getInterpreter().getActMethodScope();
         flags = BLOCK_D_SCOPE;
-        dynamicVars = ruby.getInterpreter().getDynamicVars();
+        dynamicVars = ruby.getDynamicVars();
     }
 
     public void pop() {

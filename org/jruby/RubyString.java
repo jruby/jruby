@@ -159,6 +159,15 @@ public class RubyString extends RubyObject {
         return this;
     }
     
+    
+    /** rb_str_cat
+     *
+     */
+    public RubyString m_cat(RubyString str) {
+        value = value + str.getValue();
+        return this;
+    }
+    
     /** rb_str_to_s
      *
      */
