@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.lang.reflect.*;
+import java.sql.*;
 import java.util.*;
 
 import org.jruby.exceptions.*;
@@ -87,7 +88,7 @@ public class RubyJavaObject extends RubyObject {
 
         javaObjectClass.getRubyClass().undefMethod("new");
         
-        ruby.defineClass("Java", javaObjectClass);
+        ruby.defineGlobalConstant("Java", javaObjectClass);
 
         return javaObjectClass;
     }
@@ -158,14 +159,62 @@ public class RubyJavaObject extends RubyObject {
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             methods = (Method[]) ((List) entry.getValue()).toArray(new Method[((List) entry.getValue()).size()]);
-            newRubyClass.defineMethod((String) entry.getKey(), new JavaMethod(methods));
+            
+            String javaName = (String)entry.getKey();
+            if (javaName.equals("getElementAt")) {
+                javaName = "[]";
+            } else if (javaName.equals("getValueAt")) {
+                javaName = "[]";
+            } else if (javaName.equals("setValueAt")) {
+                javaName = "[]=";
+            } else if (javaName.startsWith("get")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4);
+            } else if (javaName.startsWith("is")) {
+                javaName = Character.toLowerCase(javaName.charAt(2)) + javaName.substring(3) + "?";
+            } else if (javaName.startsWith("can")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
+            } else if (javaName.startsWith("has")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
+            } else if (javaName.startsWith("set")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "=";
+            } else if (javaName.equals("compareTo")) {
+                newRubyClass.includeModule(ruby.getClasses().getComparableModule());
+                javaName = "<=>";
+            }
+            
+            newRubyClass.defineMethod(javaName, new JavaMethod(methods));
+        }
+        
+        if (methodMap.keySet().contains("hasNext") && methodMap.keySet().contains("next")) {
+            newRubyClass.includeModule(ruby.getClasses().getEnumerableModule());
+            newRubyClass.defineMethod("each", new JavaEachMethod("next?", "next"));
+        } else if (methodMap.keySet().contains("hasMoreElements") && methodMap.keySet().contains("nextElement")) {
+            newRubyClass.includeModule(ruby.getClasses().getEnumerableModule());
+            newRubyClass.defineMethod("each", new JavaEachMethod("moreElements?", "nextElement"));
+        } else if (ResultSet.class.isAssignableFrom(javaClass) && methodMap.keySet().contains("next")) {
+            newRubyClass.includeModule(ruby.getClasses().getEnumerableModule());
+            newRubyClass.defineMethod("each", new JavaEachMethod("next?", null));
         }
 
         iter = singletonMethodMap.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             methods = (Method[]) ((List) entry.getValue()).toArray(new Method[((List) entry.getValue()).size()]);
-            newRubyClass.defineSingletonMethod((String) entry.getKey(), new JavaMethod(methods, true));
+            
+            String javaName = (String)entry.getKey();
+            if (javaName.startsWith("get")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4);
+            } else if (javaName.startsWith("is")) {
+                javaName = Character.toLowerCase(javaName.charAt(2)) + javaName.substring(3) + "?";
+            } else if (javaName.startsWith("can")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
+            } else if (javaName.startsWith("has")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "?";
+            } else if (javaName.startsWith("set")) {
+                javaName = Character.toLowerCase(javaName.charAt(3)) + javaName.substring(4) + "=";
+            }
+            
+            newRubyClass.defineSingletonMethod(javaName, new JavaMethod(methods, true));
         }
 
         // add constants

@@ -1023,7 +1023,7 @@ public class ParserHelper {
                     new RuntimeException("[BUG] want to replace DOT3 with FLIP3").printStackTrace();
                     // node.setReplacedNode(new Flip3Node(node.getBeginNode(), node.getEndNode(), local_append(newId(0))));
                 }
-                // node.nd_cnt(local_append(newId(0)));
+                //node.setnd_cnt(local_append(newId(0)));
                 warning_unless_e_option("range literal in condition");
                 break;
             case Constants.NODE_LIT :
