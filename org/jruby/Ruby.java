@@ -58,7 +58,7 @@ import org.jruby.util.collections.*;
  * 		   value objects with the same value (this would apply to String and number specifically)
  */
 public final class Ruby {
-	
+
     public static final String RUBY_MAJOR_VERSION = "1.6";
     public static final String RUBY_VERSION = "1.6.7";
 
@@ -143,7 +143,7 @@ public final class Ruby {
 
     // pluggable Regexp engine
     private Class regexpAdapterClass;
-    
+
     private IParser parser;
 
     /**
@@ -198,7 +198,7 @@ public final class Ruby {
      * Evaluates a script and returns a RubyObject.
      */
     public RubyObject evalScript(String script) {
-	return getRubyTopSelf().eval(compile(script, "<script>", 1));
+        return getRubyTopSelf().eval(compile(script, "<script>", 1));
     }
 
     /**
@@ -282,7 +282,7 @@ public final class Ruby {
 
         RubyClass newClass = RubyClass.newClass(this, superClass);
         newClass.setName(name);
-        
+
         newClass.makeMetaClass(superClass.getRubyClass());
 
         newClass.inheritedBy(superClass);
@@ -478,23 +478,23 @@ public final class Ruby {
                             value = RubyArray.newArray(this, 0);
                         }
 
-                        RubyObject[] args = {value};
+                        RubyObject[] args = { value };
 
                         // XXX
                         if (value instanceof RubyArray) {
-                            args = ((RubyArray)value).toJavaArray();
+                            args = ((RubyArray) value).toJavaArray();
                         }
                         // XXX
-                        
+
                         return method.execute(this, self, null, args, false);
-                                      
+
                         /*if (method instanceof ExecutableNode) {
                         if (value == null) {
                             value = RubyArray.newArray(this, 0);
                         }
                         // FIXME
-/*                        return ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
-                    } else {
+                        /*                        return ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
+                        } else {
                         return node.eval(this, self);*/
                     }
                 } catch (RedoJump rExcptn) {
@@ -585,15 +585,15 @@ public final class Ruby {
         setActMethodScope(Constants.SCOPE_PRIVATE);
 
         try {
-			classes = new RubyClasses(this);
-			classes.initCoreClasses();
+            classes = new RubyClasses(this);
+            classes.initCoreClasses();
 
-			RubyGlobal.createGlobals(this);
+            RubyGlobal.createGlobals(this);
 
-			exceptions = new RubyExceptions(this);
-			exceptions.initDefaultExceptionClasses();
+            exceptions = new RubyExceptions(this);
+            exceptions.initDefaultExceptionClasses();
 
-			rubyTopSelf = new RubyObject(this, classes.getObjectClass());
+            rubyTopSelf = new RubyObject(this, classes.getObjectClass());
 
             rubyClass = getClasses().getObjectClass();
             getActFrame().setSelf(rubyTopSelf);
@@ -730,7 +730,7 @@ public final class Ruby {
     }
 
     public Frame getActFrame() {
-        return (Frame)getFrameStack().peek();
+        return (Frame) getFrameStack().peek();
     }
 
     /** Getter for property topFrame.
@@ -774,7 +774,7 @@ public final class Ruby {
      * @param iter New value of property iter.
      */
     public Iter getActIter() {
-        return (Iter)getIterStack().peek();
+        return (Iter) getIterStack().peek();
     }
 
     /** Getter for property block.
@@ -923,7 +923,7 @@ public final class Ruby {
      *   by the current directory (``.''). This variable may be set from within a program to alter
      *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
      *   Warning: the ioAdditionalDirectory list will be modified by this process!
-	 *   @param ioAdditionalDirectory the directory specified on the command line
+     *   @param ioAdditionalDirectory the directory specified on the command line
      *   @fixme: use the version number in some other way than hardcoded here
      *   @fixme: safe level pb here
      **/
@@ -965,8 +965,8 @@ public final class Ruby {
         //FIXME: safe level pb here
         ioAdditionalDirectory.add(new RubyString(this, "."));
 
-		RubyArray loadPath = (RubyArray) getGlobalVar("$:");
-		loadPath.getList().addAll(ioAdditionalDirectory);
+        RubyArray loadPath = (RubyArray) getGlobalVar("$:");
+        loadPath.getList().addAll(ioAdditionalDirectory);
     }
 
     /**
@@ -979,7 +979,7 @@ public final class Ruby {
      *  @param i2find the file to find, this is a path name
      *  @return the correct file
      */
-    public File findFile(Ruby ruby, File i2find) {
+    public File findFile(File i2find) {
         RubyArray lLoadPath = (RubyArray) getGlobalVar("$:");
         int lPathNb = lLoadPath.getLength();
         String l2Find = i2find.getPath();
@@ -998,20 +998,20 @@ public final class Ruby {
 //            throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
         }
     }
-    
+
     /**
-	 * @fixme
-	 **/	
+     * @fixme
+     **/
     public INode compile(String content, String file, int line) {
         // FIXME
         RubyParserConfiguration config = new RubyParserConfiguration();
 
         config.setLocalVariables(getScope().getLocalNames());
-        
+
         getParser().init(config);
 
-        IRubyParserResult result = (IRubyParserResult)getParser().parse(LexerFactory.getInstance().getSource(file, content));
-        
+        IRubyParserResult result = (IRubyParserResult) getParser().parse(LexerFactory.getInstance().getSource(file, content));
+
         if (result.getLocalVariables() != null) {
             getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
             if (getScope().getLocalNames() != null && getScope().getLocalNames().size() > 0) {

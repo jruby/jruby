@@ -193,11 +193,11 @@ public class RubyGlobal {
 
     public static RubyObject exit(Ruby ruby, RubyObject recv, RubyObject args[]) {
         int status = 0;
-        
+
         if (args.length > 0) {
             status = RubyNumeric.fix2int(args[0]);
         }
-        
+
         System.exit(status);
         return ruby.getNil();
     }
@@ -546,50 +546,23 @@ public class RubyGlobal {
     public static RubyObject backquote(Ruby ruby, RubyObject recv, RubyString aString) {
         // XXX use other methods
         try {
-			String lShellProp = System.getProperty("jruby.shell");
-			Process aProcess;
-			if (lShellProp != null)
-	            aProcess = Runtime.getRuntime().exec(new String[] { System.getProperty("jruby.shell"), "-c", aString.toString()});
-			else
-	            aProcess = Runtime.getRuntime().exec(aString.toString());
+            String lShellProp = System.getProperty("jruby.shell");
+            Process aProcess;
+            if (lShellProp != null)
+                aProcess = Runtime.getRuntime().exec(new String[] { System.getProperty("jruby.shell"), "-c", aString.toString()});
+            else
+                aProcess = Runtime.getRuntime().exec(aString.toString());
 
             final StringBuffer sb = new StringBuffer();
-			//Benoit why not simply:
-			//it works at least on windows, why use the thread for something which is not going to be asynchrone (we do the wait immediately)
-//            final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));
-//			String line;
-//			while ((line = reader.readLine()) != null) 
-//			{
-//				sb.append(line).append('\n');
-//			}
-//
-			
-			final BufferedInputStream bin = new BufferedInputStream(aProcess.getInputStream());
-
-            new Thread(new Runnable() {
-                /**
-                 * @see Runnable#run()
-                 */
-                public void run() {
-                    try {
-                        synchronized (sb) {
-                            int next = bin.read();
-                            while (next != -1) {
-                                sb.append((char) next);
-                                next = bin.read();
-                            }
-                        }
-                    } catch (IOException ioExcptn) {
-                    }
-                }
-
-            }).start();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
 
             aProcess.waitFor();
 
-            synchronized (sb) {
-                return RubyString.newString(ruby, sb.toString());
-            }
+            return RubyString.newString(ruby, sb.toString());
         } catch (Exception excptn) {
             excptn.printStackTrace();
 
