@@ -205,6 +205,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     public IRubyObject eval(INode node) {
+        // FIXME: Poll from somewhere else in the code?
+        threadContext.pollThreadEvents();
+
         result = runtime.getNil();
         if (node != null) {
             node.accept(this);

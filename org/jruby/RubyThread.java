@@ -58,6 +58,7 @@ public class RubyThread extends RubyObject {
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private RaiseException exitingException = null;
+    private IRubyObject receivedException = null;
 
     private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
@@ -72,10 +73,10 @@ public class RubyThread extends RubyObject {
         threadClass.defineSingletonMethod(
             "abort_on_exception=",
             CallbackFactory.getSingletonMethod(RubyThread.class, "abort_on_exception_set", RubyBoolean.class));
-        threadClass.defineSingletonMethod("critical", CallbackFactory.getSingletonMethod(RubyThread.class, "critical"));
-        threadClass.defineSingletonMethod(
-            "critical=",
-            CallbackFactory.getSingletonMethod(RubyThread.class, "critical_set", RubyBoolean.class));
+//        threadClass.defineSingletonMethod("critical", CallbackFactory.getSingletonMethod(RubyThread.class, "critical"));
+//        threadClass.defineSingletonMethod(
+//            "critical=",
+//            CallbackFactory.getSingletonMethod(RubyThread.class, "critical_set", RubyBoolean.class));
         threadClass.defineSingletonMethod("current", CallbackFactory.getSingletonMethod(RubyThread.class, "current"));
         threadClass.defineSingletonMethod("exit", CallbackFactory.getSingletonMethod(RubyThread.class, "exit"));
         threadClass.defineSingletonMethod(
@@ -113,7 +114,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineMethod(
             "priority=",
             CallbackFactory.getMethod(RubyThread.class, "priority_set", RubyFixnum.class));
-        threadClass.defineMethod("raise", CallbackFactory.getMethod(RubyThread.class, "raise", RubyException.class));
+        threadClass.defineMethod("raise", CallbackFactory.getMethod(RubyThread.class, "raise", IRubyObject.class));
         threadClass.defineMethod("run", CallbackFactory.getMethod(RubyThread.class, "run"));
         threadClass.defineMethod("safe_level", CallbackFactory.getMethod(RubyThread.class, "safe_level"));
         threadClass.defineMethod("status", CallbackFactory.getMethod(RubyThread.class, "status"));
@@ -199,6 +200,18 @@ public class RubyThread extends RubyObject {
         return thread;
     }
 
+    public void pollThreadEvents() {
+        Asserts.assertExpression(Thread.currentThread() == jvmThread);
+        pollReceivedExceptions();
+    }
+
+    private void pollReceivedExceptions() {
+        if (receivedException != null) {
+            RubyModule kernelModule = getRuntime().getClasses().getKernelModule();
+            kernelModule.callMethod("raise", new IRubyObject[] { receivedException });
+        }
+    }
+
     protected RubyThread(Ruby ruby) {
         this(ruby, ruby.getClasses().getThreadClass());
     }
@@ -220,14 +233,6 @@ public class RubyThread extends RubyObject {
     public static RubyBoolean abort_on_exception_set(IRubyObject recv, RubyBoolean val) {
         static_abort_on_exception = val.isTrue();
         return val;
-    }
-
-    public static RubyBoolean critical(IRubyObject recv) {
-        throw new NotImplementedError();
-    }
-
-    public static RubyBoolean critical_set(IRubyObject recv, RubyBoolean val) {
-        throw new NotImplementedError();
     }
 
     public static RubyThread current(IRubyObject recv) {
@@ -317,8 +322,8 @@ public class RubyThread extends RubyObject {
         return priority;
     }
 
-    public void raise(RubyException exc) {
-        throw new NotImplementedError();
+    public void raise(IRubyObject exc) {
+        receivedException = exc;
     }
 
     public IRubyObject status() {
@@ -332,9 +337,6 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    /**
-     * Method ensureStarted.
-     */
     private void ensureStarted() {
         synchronized (hasStartedLock) {
             if (!hasStarted) {

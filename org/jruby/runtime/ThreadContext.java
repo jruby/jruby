@@ -250,4 +250,11 @@ public class ThreadContext {
         new AssignmentVisitor(ruby, self).assign(blockVariableNode, value, checkArguments);
         return value;
     }
+
+    public void pollThreadEvents() {
+        if (getCurrentThread() == null) {
+            return;
+        }
+        getCurrentThread().pollThreadEvents();
+    }
 }

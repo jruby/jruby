@@ -34,10 +34,14 @@ package org.jruby;
 import java.util.*;
 import java.io.*;
 
-import org.jruby.exceptions.*;
 import org.jruby.internal.runtime.builtin.definitions.Kernel;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThrowJump;
+import org.jruby.exceptions.NotImplementedError;
 
 /**
  *
@@ -322,7 +326,6 @@ public class KernelModule {
      * Require.
      * MRI allows to require ever .rb files or ruby extension dll (.so or .dll depending on system).
      * we allow requiring either .rb files or jars.
-     * @param ruby the ruby interpreter to use.
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
      * @param file the name of the file to require
      **/
