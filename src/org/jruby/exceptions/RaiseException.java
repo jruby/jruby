@@ -137,7 +137,7 @@ public class RaiseException extends JumpException {
         ruby.stackTraces++;
 
         if (newException.callMethod("backtrace").isNil() && ruby.getSourceFile() != null) {
-            newException.callMethod("set_backtrace", createBacktrace(ruby, -1));
+            newException.callMethod("set_backtrace", createBacktrace(ruby, 1));
         }
 
         ruby.stackTraces--;
