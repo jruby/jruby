@@ -640,29 +640,29 @@ public final class Ruby {
     }
 
     public IRubyObject getLastline() {
-        if (getScope().hasLocalValues()) {
+        if (getScope().hasLocalVariables()) {
             return getScope().getValue(0);
         }
         return RubyString.nilString(this);
     }
 
     public void setLastline(IRubyObject value) {
-        if (! getScope().hasLocalValues()) {
-            getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
+        if (! getScope().hasLocalVariables()) {
+            getScope().resetLocalVariables(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
         }
         getScope().setValue(0, value);
     }
 
     public IRubyObject getBackref() {
-        if (getScope().hasLocalValues()) {
+        if (getScope().hasLocalVariables()) {
             return getScope().getValue(1);
         }
         return getNil();
     }
 
     public void setBackref(IRubyObject match) {
-        if (! getScope().hasLocalValues()) {
-            getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
+        if (! getScope().hasLocalVariables()) {
+            getScope().resetLocalVariables(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
         }
         getScope().setValue(1, match);
     }

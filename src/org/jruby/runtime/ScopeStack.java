@@ -27,13 +27,11 @@
 package org.jruby.runtime;
 
 import java.util.List;
-import java.util.Iterator;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.AbstractStack;
 import org.jruby.util.collections.StackElement;
-import org.jruby.util.Asserts;
 
 /**
  *
@@ -49,7 +47,7 @@ public class ScopeStack extends AbstractStack {
 
     public void push(List localNames) {
         push();
-        setLocalNames(localNames);
+        resetLocalVariables(localNames);
     }
 
     public void push(StackElement newElement) {
@@ -90,12 +88,16 @@ public class ScopeStack extends AbstractStack {
         return current().getLocalNames();
     }
 
-    public void setLocalNames(List localName) {
-        current().setLocalNames(localName);
+    public void resetLocalVariables(List localNames) {
+        current().resetLocalVariables(localNames);
     }
 
-    public boolean hasLocalValues() {
-        return current().getLocalValues() != null;
+    public void addLocalVariables(List localNames) {
+        current().addLocalVariables(localNames);
+    }
+
+    public boolean hasLocalVariables() {
+        return current().hasLocalVariables();
     }
 
     public IRubyObject getValue(int count) {

@@ -157,7 +157,7 @@ public class ThreadContext {
     }
 
     public IRubyObject getBackref() {
-        if (getScopeStack().hasLocalValues()) {
+        if (getScopeStack().hasLocalVariables()) {
             return getScopeStack().getValue(1);
         }
         return ruby.getNil();

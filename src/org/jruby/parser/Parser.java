@@ -34,7 +34,6 @@ import org.ablaf.lexer.ILexerSource;
 import org.ablaf.lexer.LexerFactory;
 import org.jruby.Ruby;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.io.Reader;
 import java.io.StringReader;
@@ -78,9 +77,18 @@ public class Parser {
         }
 
         if (hasNewLocalVariables(result)) {
-            runtime.getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
+            addLocalVariables(result.getLocalVariables());
         }
         return result.getAST();
+    }
+
+    private void addLocalVariables(List localVariables) {
+        int oldSize = 0;
+        if (runtime.getScope().getLocalNames() != null) {
+            oldSize = runtime.getScope().getLocalNames().size();
+        }
+        List newNames = localVariables.subList(oldSize, localVariables.size());
+        runtime.getScope().addLocalVariables(newNames);
     }
 
     private boolean hasNewLocalVariables(IRubyParserResult result) {
@@ -89,7 +97,7 @@ public class Parser {
             newSize = result.getLocalVariables().size();
         }
         int oldSize = 0;
-        if (runtime.getScope().getLocalNames() != null) {
+        if (runtime.getScope().hasLocalVariables()) {
             oldSize = runtime.getScope().getLocalNames().size();
         }
         return newSize > oldSize;

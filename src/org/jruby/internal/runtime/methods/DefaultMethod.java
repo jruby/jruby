@@ -54,7 +54,7 @@ public final class DefaultMethod extends AbstractMethod {
         ruby.getCurrentFrame().setNamespace(namespace);
 
         if (body.getLocalNames() != null) {
-            ruby.getScope().setLocalNames(body.getLocalNames());
+            ruby.getScope().resetLocalVariables(body.getLocalNames());
         }
 
         ruby.pushDynamicVars();
@@ -101,7 +101,7 @@ public final class DefaultMethod extends AbstractMethod {
             ruby.getCurrentFrame().setArgs(args);
         }
 
-        if (ruby.getScope().hasLocalValues()) {
+        if (ruby.getScope().hasLocalVariables()) {
             if (expectedArgsCount > 0) {
                 for (int i = 0; i < expectedArgsCount; i++) {
                     ruby.getScope().setValue(i + 2, args[i]);

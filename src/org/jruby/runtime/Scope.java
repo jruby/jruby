@@ -96,7 +96,7 @@ public class Scope implements StackElement {
      * Sets the localNames.
      * @param localNames The localNames to set
      */
-    public void setLocalNames(List localNames) {
+    public void resetLocalVariables(List localNames) {
         if (localNames == null || localNames.isEmpty()) {
             this.localNames = null;
             this.localValues = null;
@@ -106,12 +106,24 @@ public class Scope implements StackElement {
         }
     }
 
-    /**
-     * Gets the localValues.
-     * @return Returns a ArrayList
-     */
-    List getLocalValues() {
+    public void addLocalVariables(List localNames) {
+        if (this.localNames == null || this.localNames.isEmpty()) {
+            this.localNames = new ArrayList(localNames.size());
+            this.localValues = new ArrayList(localNames.size());
+        }
+        this.localNames.addAll(localNames);
+        this.localValues.addAll(Collections.nCopies(localNames.size(), ruby.getNil()));
+    }
+
+    public List getLocalValues() {
         return localValues;
+    }
+
+    public boolean hasLocalVariables() {
+        if (localNames == null) {
+            return false;
+        }
+        return ! localNames.isEmpty();
     }
 
 	public IRubyObject getValue(int count) {
