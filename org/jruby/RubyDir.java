@@ -69,8 +69,8 @@ public class RubyDir extends RubyObject {
         dirClass.defineSingletonMethod("delete", CallbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
         dirClass.defineSingletonMethod("entries", CallbackFactory.getSingletonMethod(RubyDir.class, "entries", RubyString.class));
         dirClass.defineSingletonMethod("foreach", CallbackFactory.getBlockMethod(RubyDir.class, "foreach"));
-        dirClass.defineSingletonMethod("getwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd", RubyString.class));
-        dirClass.defineSingletonMethod("pwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd", RubyString.class));
+        dirClass.defineSingletonMethod("getwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
+        dirClass.defineSingletonMethod("pwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
         // dirClass.defineAlias("pwd", "getwd");
         dirClass.defineSingletonMethod("mkdir", CallbackFactory.getOptSingletonMethod(RubyDir.class, "mkdir", RubyString.class));
         dirClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyDir.class, "open", RubyString.class));
