@@ -3,7 +3,9 @@
  * Created on 18.01.2002, 22:26:09
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -92,7 +94,7 @@ public class RaiseException extends JumpException {
             Frame previous = null;
             if (frames.hasNext() && (previous = (Frame)frames.next()).getLastFunc() != null) {
                 sb.append(frame.getFile()).append(':').append(frame.getLine());
-                sb.append(":in '").append(previous.getLastFunc()).append('\'');
+                sb.append(":in `").append(previous.getLastFunc()).append('\'');
             } else {
                 sb.append(frame.getFile()).append(':').append(frame.getLine());
             }
