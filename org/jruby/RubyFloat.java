@@ -82,27 +82,27 @@ public class RubyFloat extends RubyNumeric {
     }
     
     public RubyNumeric op_plus(RubyNumeric other) {
-        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() + getDoubleValue());
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() + other.getDoubleValue());
     }
     
     public RubyNumeric op_minus(RubyNumeric other) {
-        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() - getDoubleValue());
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() - other.getDoubleValue());
     }
     
     public RubyNumeric op_mul(RubyNumeric other) {
-        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() * getDoubleValue());
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() * other.getDoubleValue());
     }
     
     public RubyNumeric op_div(RubyNumeric other) {
-        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() / getDoubleValue());
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() / other.getDoubleValue());
     }
     
     public RubyNumeric op_mod(RubyNumeric other) {
-        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() % getDoubleValue());
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() % other.getDoubleValue());
     }
     
     public RubyNumeric op_pow(RubyNumeric other) {
-        return RubyFloat.m_newFloat(getRuby(), Math.pow(getDoubleValue(), getDoubleValue()));
+        return RubyFloat.m_newFloat(getRuby(), Math.pow(getDoubleValue(), other.getDoubleValue()));
     }
     
     public RubyNumeric op_cmp(RubyNumeric other) {

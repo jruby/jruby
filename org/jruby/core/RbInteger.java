@@ -35,41 +35,30 @@ import org.jruby.exceptions.*;
  * @version 
  */
 public class RbInteger {
-    private static RubyCallbackMethod methodIntP = null;
-
-    private static RubyCallbackMethod methodTimes = null;
     
     public static RubyClass createIntegerClass(Ruby ruby) {
         RubyClass integerClass = ruby.defineClass("Integer", ruby.getNumericClass());
      
-        integerClass.defineMethod("integer?", getMethodIntP());
+        integerClass.defineMethod("chr", new ReflectionCallbackMethod(RubyInteger.class, "m_chr"));
+        integerClass.defineMethod("downto", new ReflectionCallbackMethod(RubyInteger.class, "m_downto", RubyNumeric.class));
+        integerClass.defineMethod("integer?", new ReflectionCallbackMethod(RubyInteger.class, "m_int_p"));
+        integerClass.defineMethod("next", new ReflectionCallbackMethod(RubyInteger.class, "m_succ"));
+        integerClass.defineMethod("step", new ReflectionCallbackMethod(RubyInteger.class, "m_step", new Class[] {RubyNumeric.class, RubyNumeric.class}));
+        integerClass.defineMethod("succ", new ReflectionCallbackMethod(RubyInteger.class, "m_succ"));
+        integerClass.defineMethod("times", new ReflectionCallbackMethod(RubyInteger.class, "m_times"));
+        integerClass.defineMethod("upto", new ReflectionCallbackMethod(RubyInteger.class, "m_upto", RubyNumeric.class));
         
-        integerClass.defineMethod("times", getMethodTimes());
-        
+/*    
+    rb_define_method(rb_cInteger, "succ", int_succ, 0);
+    rb_define_method(rb_cInteger, "next", int_succ, 0);
+    rb_define_method(rb_cInteger, "chr", int_chr, 0);
+    rb_define_method(rb_cInteger, "to_i", int_to_i, 0);
+    rb_define_method(rb_cInteger, "to_int", int_to_i, 0);
+    rb_define_method(rb_cInteger, "floor", int_to_i, 0);
+    rb_define_method(rb_cInteger, "ceil", int_to_i, 0);
+    rb_define_method(rb_cInteger, "round", int_to_i, 0);
+    rb_define_method(rb_cInteger, "truncate", int_to_i, 0);*/
+
         return integerClass;
-    }
-
-    public static RubyCallbackMethod getMethodIntP() {
-        if (methodIntP == null) {
-            methodIntP = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return ((RubyNumeric)recv).m_int_p();
-                }
-            };
-        }
-        
-        return methodIntP;
-    }
-
-    public static RubyCallbackMethod getMethodTimes() {
-        if (methodTimes == null) {
-            methodTimes = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    return ((RubyInteger)recv).m_times();
-                }
-            };
-        }
-        
-        return methodTimes;
     }
 }

@@ -26,6 +26,8 @@
 
 package org.jruby;
 
+import org.jruby.exceptions.*;
+
 /**
  *
  * @author  jpetersen
@@ -37,14 +39,74 @@ public abstract class RubyInteger extends RubyNumeric {
         super(ruby, rubyClass);
     }
  
+    public RubyString m_chr() {
+        if (getLongValue() < 0 || getLongValue() > 0xff) {
+            // throw new RubyRangeException();
+            // HACK +++
+            throw new RuntimeException();
+            // HACK ---
+        }
+        
+        return RubyString.m_newString(getRuby(), new String(new char[]{(char)getLongValue()}));
+    }
+    
+    public RubyObject m_downto(RubyNumeric to) {
+        RubyNumeric i = this;
+        while (true) {
+            if (((RubyBoolean)i.funcall(getRuby().intern("<"), to)).isTrue()) {
+                break;
+            }
+            getRuby().yield(i);
+            i = (RubyNumeric)i.funcall(getRuby().intern("-"), RubyFixnum.m_newFixnum(getRuby(), 1));
+        }
+        return this;
+    }
+    
     public RubyBoolean m_int_p() {
         return getRuby().getTrue();
+    }
+    
+    public RubyObject m_step(RubyNumeric to, RubyNumeric step) {
+        RubyNumeric i = this;
+        if (step.getLongValue() == 0) {
+            throw new RubyArgumentException("step cannot be 0");
+        }
+        
+        RubyId cmp = getRuby().intern("<");
+        if (((RubyBoolean)step.funcall(cmp, RubyFixnum.m_newFixnum(getRuby(), 0))).isFalse()) {
+            cmp = getRuby().intern(">");
+        }
+        
+        while (true) {
+            if (((RubyBoolean)i.funcall(cmp, to)).isTrue()) {
+                break;
+            }
+            getRuby().yield(i);
+            i = (RubyNumeric)i.funcall(getRuby().intern("+"), step);
+        }
+        return this;
     }
     
     public RubyObject m_times() {
         RubyNumeric i = RubyFixnum.m_newFixnum(getRuby(), 0);
         while (true) {
             if (((RubyBoolean)i.funcall(getRuby().intern("<"), this)).isFalse()) {
+                break;
+            }
+            getRuby().yield(i);
+            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.m_newFixnum(getRuby(), 1));
+        }
+        return this;
+    }
+    
+    public RubyObject m_succ() {
+        return funcall(getRuby().intern("+"), RubyFixnum.m_newFixnum(getRuby(), 1));
+    }
+    
+    public RubyObject m_upto(RubyNumeric to) {
+        RubyNumeric i = this;
+        while (true) {
+            if (((RubyBoolean)i.funcall(getRuby().intern(">"), to)).isTrue()) {
                 break;
             }
             getRuby().yield(i);

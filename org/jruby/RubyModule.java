@@ -547,7 +547,19 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         switch (body.nd_type()) {
             case NODE_CFUNC: {
-                result = ((RubyCallbackMethod)body.nd_cfnc()).execute(recv, args, getRuby());
+                // HACK +++
+                try {
+                // HACK ---
+                    result = ((RubyCallbackMethod)body.nd_cfnc()).execute(recv, args, getRuby());
+                // HACK +++
+                } catch (RubyArgumentException raExcptn) {
+                    System.out.print("Cannot call method \"" + id.toName() + "\". ");
+                    System.out.println(raExcptn.getMessage());
+                // } catch (RuntimeException rExcptn) {
+                //     System.out.print("Cannot call method \"" + id.toName() + "\". ");
+                //     System.out.println(rExcptn.getMessage());
+                }
+                // HACK ---
                 break;
             }
             case NODE_ZSUPER:

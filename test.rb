@@ -1,5 +1,5 @@
 #
-# Ruby.java - No description
+# test.rb - No description
 # Created on 04. Juli 2001, 22:53
 # 
 # Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
@@ -118,5 +118,15 @@ puts 2.56
 # Block test
 
 5.times do |i|
-  puts i
+   print i, " "
 end
+
+puts
+
+2.step 10, 2 do |i|
+    print i, " "
+end
+
+puts
+
+puts 78.chr
