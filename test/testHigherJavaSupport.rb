@@ -186,5 +186,32 @@ if defined? Java
   
   # High-level java should only deal with proxies and not low-level JavaClass
   test_ok(a.getClass().class != "Java::JavaClass")
-  
+
+
+  include_class 'org.jruby.util.TestHelper' 
+  include_class 'java.lang.RuntimeException' 
+  include_class 'java.lang.NullPointerException' 
+  include_class 'org.jruby.util.TestHelper$TestHelperException' do |p,c| "THException"; end
+  # Handle rescue of java Exceptions
+  begin
+    TestHelper.throwTestHelperException
+  rescue THException => e
+  end  
+
+  begin
+    TestHelper.throwTestHelperException
+  rescue NullPointerException => e
+    test_fail("Should not rescue")
+  rescue THException => e
+  end  
+
+  begin
+    TestHelper.throwTestHelperException
+  rescue RuntimeException => e
+  end  
+
+  begin
+    TestHelper.throwTestHelperException
+  rescue NativeException => e
+  end  
 end

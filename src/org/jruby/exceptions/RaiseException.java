@@ -33,6 +33,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.exceptions;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -58,14 +62,28 @@ public class RaiseException extends JumpException {
 		super(msg);
         setException(RubyException.newException(runtime, excptnClass, msg), nativeException);
     }
+    
+    public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
+        NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
+        return new RaiseException(cause, nativeException);
+    }
 
-    public RaiseException(Ruby runtime, String excptnClassName, String msg) {
-		super(msg);
-        RubyClass excptnClass = runtime.getClass(excptnClassName);
-        if (excptnClass == null) {
-            System.err.println(excptnClassName);
-        }
-        setException(RubyException.newException(runtime, excptnClass, msg), false);
+    private static String buildMessage(Throwable exception) {
+	    StringWriter stackTrace = new StringWriter();
+	    exception.printStackTrace(new PrintWriter(stackTrace));
+	
+	    StringBuffer sb = new StringBuffer();
+	    sb.append("Native Exception: '");
+	    sb.append(exception.getClass()).append("\'; Message: ");
+	    sb.append(exception.getMessage());
+	    sb.append("; StackTrace: ");
+	    sb.append(stackTrace.getBuffer().toString());
+	    return sb.toString();
+    }
+
+    public RaiseException(Throwable cause, NativeException nativeException) {
+        super(buildMessage(cause), cause);
+        setException(nativeException, false);
     }
 
     /** 

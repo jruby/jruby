@@ -269,6 +269,13 @@ END
       # TODO: Come up with cleaner way for defining methods for a particular interface
       # TODO: Default and Block Comparator should only get defined once
       def proxy_class.create_instance_methods(java_class)
+        if Java::JavaClass.for_name('java.lang.Exception').assignable_from? java_class
+          class <<self
+            def ===(rhs)
+              (NativeException == rhs.class) && (java_class.assignable_from?(rhs.cause.java_class))
+            end
+          end
+        end
         if Java::JavaClass.for_name('java.util.Map').assignable_from? java_class
           class_eval(<<END
             def each(&block)

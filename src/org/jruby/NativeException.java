@@ -11,8 +11,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -26,45 +25,34 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.exceptions;
+package org.jruby;
 
-/**
- * This class should be used for performance reasons if the 
- * Exception don't need a stack trace.
- * 
- * @author jpetersen
- * @version $Revision$
- */
-public abstract class JumpException extends RuntimeException {
+import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 
-    /**
-     * Constructor for JumpException.
-     */
-    public JumpException() {
-        super();
+
+public class NativeException extends RubyException {
+
+    private final JavaObject cause;
+    public static final String CLASS_NAME = "NativeException";
+
+    public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
+        super(runtime, rubyClass);
+        this.cause = JavaObject.wrap(runtime, cause);
     }
+    
+    public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
+    	RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass);
+    	
+		CallbackFactory callbackFactory = runtime.callbackFactory(NativeException.class);
+		exceptionClass.defineMethod("cause", 
+				callbackFactory.getMethod("cause"));		
 
-    /**
-     * Constructor for JumpException.
-     * @param msg
-     */
-    public JumpException(String msg) {
-        super(msg);
+		return exceptionClass;
     }
-
-    public JumpException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
-
-    /** This method don't do anything for performance reasons.
-     * 
-     * @see Throwable#fillInStackTrace()
-     */
-    public Throwable fillInStackTrace() {
-        return this;
-    }    
-
-    protected Throwable originalFillInStackTrace() {
-        return super.fillInStackTrace();
+    
+    public IRubyObject cause() {
+        return cause;
     }
 }

@@ -34,6 +34,7 @@
 package org.jruby.runtime;
 
 import org.jruby.IErrno;
+import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -75,6 +76,7 @@ public class RubyExceptions implements IErrno {
 
     private Ruby runtime = null;
     private RubyModule errnoModule;
+    private RubyClass nativeException;
 
     public RubyExceptions(Ruby runtime) {
         this.runtime = runtime;
@@ -114,6 +116,7 @@ public class RubyExceptions implements IErrno {
         threadError = runtime.defineClass("ThreadError", standardError);
         systemStackError = runtime.defineClass("SystemStackError", exceptionClass);
 
+        nativeException = NativeException.createClass(runtime, runtimeError);
         errnoModule = runtime.defineModule("Errno");
 
         setSysErr(ENOTEMPTY, "ENOTEMPTY");   

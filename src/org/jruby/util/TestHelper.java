@@ -156,6 +156,10 @@ public class TestHelper {
     public static String getClassName(Class klass) {
     	return klass.getName();
     }
+    
+    public static void throwTestHelperException() {
+        throw new TestHelperException();
+    }
 
     private static class Loader extends ClassLoader {
 
@@ -223,4 +227,7 @@ public class TestHelper {
         }
     }
 
+    private static class TestHelperException extends RuntimeException {
+        
+    }
 }

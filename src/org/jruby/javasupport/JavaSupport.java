@@ -31,8 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -107,18 +105,7 @@ public class JavaSupport {
     }
 
     private RaiseException createRaiseException(Throwable exception) {
-        StringWriter stackTrace = new StringWriter();
-        exception.printStackTrace(new PrintWriter(stackTrace));
-
-        StringBuffer sb = new StringBuffer();
-        sb.append("Native Exception: '");
-        sb.append(exception.getClass()).append("\'; Message: ");
-        sb.append(exception.getMessage());
-        sb.append("; StackTrace: ");
-        sb.append(stackTrace.getBuffer().toString());
-        RaiseException result = new RaiseException(runtime, "RuntimeError", sb.toString());
-        result.initCause(exception);
-        return result;
+        return RaiseException.createNativeRaiseException(runtime, exception);
     }
 
     private static Class primitiveClass(String name) {

@@ -47,7 +47,7 @@ public class RubyException extends RubyObject {
     private RubyArray backtrace;
     public IRubyObject message;
 
-    private RubyException(Ruby runtime, RubyClass rubyClass) {
+    protected RubyException(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
     }
 
