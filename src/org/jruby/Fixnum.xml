@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Fixnum</name>
+  <superclass>Integer</superclass>
+  <implementation>org.jruby.RubyFixnum</implementation>
+
+
+<!--
+        fixnumClass.includeModule(ruby.getClasses().getPrecisionModule());
+-->
+
+  <instance-methods>
+    <method name="to_f"/>
+    <method name="to_s"/>
+    <method-alias name="to_str" original="to_s"/>
+    <method name="taint"/>
+    <method name="freeze"/>
+    <method name="<<">
+      <arity>1</arity>
+      <java>op_lshift</java>
+    </method>
+    <method name=">>">
+      <arity>1</arity>
+      <java>op_rshift</java>
+    </method>
+    <method name="+">
+      <arity>1</arity>
+      <java>op_plus</java>
+    </method>
+    <method name="-">
+      <arity>1</arity>
+      <java>op_minus</java>
+    </method>
+    <method name="*">
+      <arity>1</arity>
+      <java>op_mul</java>
+    </method>
+    <method name="/">
+      <arity>1</arity>
+      <java>op_div</java>
+    </method>
+    <method name="%">
+      <arity>1</arity>
+      <java>op_mod</java>
+    </method>
+    <method name="**">
+      <arity>1</arity>
+      <java>op_pow</java>
+    </method>
+    <method name="==">
+      <arity>1</arity>
+      <java>equal</java>
+    </method>
+    <method-alias name="eql?" original="=="/>
+    <method-alias name="equal?" original="=="/>
+    <method name="<=>">
+      <arity>1</arity>
+      <java>op_cmp</java>
+    </method>
+    <method name=">">
+      <arity>1</arity>
+      <java>op_gt</java>
+    </method>
+    <method name=">=">
+      <arity>1</arity>
+      <java>op_ge</java>
+    </method>
+    <method name="<">
+      <arity>1</arity>
+      <java>op_lt</java>
+    </method>
+    <method name="<=">
+      <arity>1</arity>
+      <java>op_le</java>
+    </method>
+    <method name="&">
+      <arity>1</arity>
+      <java>op_and</java>
+    </method>
+
+<!--
+    <method name="|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
+    <method name="^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
+-->
+
+    <method name="size"/>
+
+<!--
+    <method name="[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
+-->
+
+    <method name="hash"/>
+    <method name="id2name"/>
+    <method name="~">
+      <java>invert</java>
+    </method>
+    <method name="id"/>
+  </instance-methods>
+
+  <class-methods>
+    <method name="induced_from">
+      <arity>1</arity>
+    </method>
+  </class-methods>
+
+</module>
