@@ -4,20 +4,20 @@ package org.jruby.util;
  * 
  * @author jpetersen
  */
-public class AssertionError extends Error {
+public class AssertError extends Error {
 
     /**
-     * Constructor for AssertionError.
+     * Constructor for AssertError.
      */
-    public AssertionError() {
+    public AssertError() {
         super();
     }
 
     /**
-     * Constructor for AssertionError.
+     * Constructor for AssertError.
      * @param message
      */
-    public AssertionError(String message) {
+    public AssertError(String message) {
         super(message);
     }
 }

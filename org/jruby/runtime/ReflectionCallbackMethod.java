@@ -30,9 +30,9 @@ import java.lang.reflect.*;
 
 import org.jruby.*;
 import org.jruby.exceptions.*;
+import org.jruby.util.AssertError;
 import org.jruby.util.Asserts;
 import org.jruby.util.ErrorMessage;
-import org.jruby.util.AssertionError;
 
 /**
  *
@@ -181,7 +181,7 @@ public class ReflectionCallbackMethod implements Callback {
                 }
             });
         }
-        throw new AssertionError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
+        throw new AssertError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
     }
 
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {

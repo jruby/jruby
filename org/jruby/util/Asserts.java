@@ -38,7 +38,7 @@ public final class Asserts {
      */    
     public static void assertExpression(boolean condition) {
         if (ENABLE_ASSERTS && !condition) {
-            throw new AssertionError("assertTrue failed.");
+            throw new AssertError("assertTrue failed.");
         }
     }
 
@@ -47,7 +47,7 @@ public final class Asserts {
      */    
     public static void assertNotReached() {
         if (ENABLE_ASSERTS) {
-            throw new AssertionError("assertNotReached failed.");
+            throw new AssertError("assertNotReached failed.");
         }
     }
 	/** If the assertion fails (i.e. the method is invoked), an error 
@@ -61,7 +61,7 @@ public final class Asserts {
             StringBuffer buffer = new StringBuffer(200);
             buffer.append("assertNotReached failed.\n");
             errorMessage.generate(buffer);
-            throw new AssertionError(buffer.toString());
+            throw new AssertError(buffer.toString());
         }
 	}
 }
