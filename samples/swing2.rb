@@ -23,6 +23,6 @@ button.addActionListener(action)
 frame.getContentPane().add(button)
 
 # Show frame
-# frame.defaultCloseOperation = JFrame::EXIT_ON_CLOSE
+frame.setDefaultCloseOperation(JFrame::EXIT_ON_CLOSE)
 frame.pack()
 frame.setVisible(true)
