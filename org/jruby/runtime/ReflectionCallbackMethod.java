@@ -43,20 +43,20 @@ public class ReflectionCallbackMethod implements Callback {
     private Class klass = null;
     private String methodName = null;
     private Class[] args = null;
-    private boolean staticMethod = false;
-    private boolean restArgs = false;
+    private boolean isStaticMethod = false;
+    private boolean isRestArgs = false;
     private int arity;
 
     private Method method = null;
 
-    public ReflectionCallbackMethod(Class klass, String methodName, Class[] args, boolean restArgs, boolean staticMethod, int arity) {
+    public ReflectionCallbackMethod(Class klass, String methodName, Class[] args, boolean isRestArgs, boolean isStaticMethod, int arity) {
         super();
 
         this.klass = klass;
         this.methodName = methodName;
         this.args = args != null ? args : new Class[0];
-        this.restArgs = restArgs;
-        this.staticMethod = staticMethod;
+        this.isRestArgs = isRestArgs;
+        this.isStaticMethod = isStaticMethod;
         this.arity = arity;
     }
     
@@ -68,7 +68,7 @@ public class ReflectionCallbackMethod implements Callback {
         if (method == null) {
             try {
                 Class[] newArgs = args;
-                if (staticMethod) {
+                if (isStaticMethod) {
                     newArgs = new Class[args.length + 2];
                     System.arraycopy(args, 0, newArgs, 2, args.length);
                     newArgs[0] = Ruby.class;
@@ -87,18 +87,85 @@ public class ReflectionCallbackMethod implements Callback {
     }
 
     protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
-        if (restArgs) {
+        if (isRestArgs) {
             if (methodArgs.length < (args.length - 1)) {
-                throw new ArgumentError(ruby, getExceptedArgsString(methodArgs));
+                throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
             }
         } else {
             if (methodArgs.length != args.length) {
-                throw new ArgumentError(ruby, getExceptedArgsString(methodArgs));
+                throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
             }
         }
     }
 
-    protected String getExceptedArgsString(RubyObject[] methodArgs) {
+    protected RubyObject invokeMethod(RubyObject recv, Object[] methodArgs, Ruby ruby) {
+        Object[] reflectionArguments = packageArgumentsForReflection(methodArgs, ruby, recv);
+        try {
+            return (RubyObject) getMethod().invoke(isStaticMethod ? null : recv, reflectionArguments);
+        } catch (InvocationTargetException itExcptn) {
+            if (itExcptn.getTargetException() instanceof RaiseException) {
+                throw (RaiseException) itExcptn.getTargetException();
+            } else if (itExcptn.getTargetException() instanceof RuntimeException) {
+                throw (RuntimeException) itExcptn.getTargetException();
+            } else {
+                System.err.println("[ERROR] Calling method: " + klass + "#" + method);
+                itExcptn.getTargetException().printStackTrace();
+                return ruby.getNil();
+            }
+        } catch (IllegalAccessException iaExcptn) {
+            throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
+        } catch (IllegalArgumentException iaExcptn) {
+            throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
+        }
+    }
+
+    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+        args = (args != null) ? args : new RubyObject[0];
+        testArgsCount(ruby, args);
+        // testArgsClass(args);
+        return invokeMethod(recv, args, ruby);
+    }
+
+    private Object[] packageArgumentsForReflection(Object[] arguments, Ruby ruby, RubyObject rubyClass) {
+        Object[] result = arguments;
+        if (isRestArgs) {
+            result = packageRestArgumentsForReflection(result);
+        }
+        if (isStaticMethod) {
+            result = packageStaticArgumentsForReflection(result, ruby, rubyClass);
+        }
+        return result;
+    }
+
+    private Object[] packageStaticArgumentsForReflection(Object[] arguments, Ruby ruby, RubyObject rubyClass) {
+        Object[] result = new Object[arguments.length + 2];
+        result[0] = ruby;
+        result[1] = rubyClass;
+        System.arraycopy(arguments, 0, result, 2, arguments.length);
+        return result;
+    }
+
+
+    private Object[] packageRestArgumentsForReflection(Object[] originalArgs) {
+        RubyObject[] restArray = new RubyObject[originalArgs.length - (args.length - 1)];
+        Object[] result = new Object[args.length];
+        try {
+            System.arraycopy(originalArgs,
+                             args.length - 1,
+                             restArray,
+                             0,
+                             originalArgs.length - (args.length - 1));
+        } catch (ArrayIndexOutOfBoundsException aioobExcptn) {
+            throw new RuntimeException("Cannot call \"" + methodName + "\" in class \"" +
+                                       klass.getName() + "\". " +
+                                       getExpectedArgsString((RubyObject[]) originalArgs));
+        }
+        System.arraycopy(originalArgs, 0, result, 0, args.length - 1);
+        result[args.length - 1] = restArray;
+        return result;
+    }
+
+    protected String getExpectedArgsString(RubyObject[] methodArgs) {
         StringBuffer sb = new StringBuffer();
         sb.append("Wrong arguments:");
 
@@ -137,64 +204,12 @@ public class ReflectionCallbackMethod implements Callback {
                 String className = args[i].getName();
                 sb.append("a").append(className.substring(className.lastIndexOf(".Ruby") + 5));
             }
-            if (restArgs) {
+            if (isRestArgs) {
                 sb.append(", ...");
             }
             sb.append(") excepted.");
         }
 
         return sb.toString();
-    }
-
-    protected RubyObject invokeMethod(RubyObject recv, Object[] methodArgs, Ruby ruby) {
-        if (restArgs) {
-            RubyObject[] restArray = new RubyObject[methodArgs.length - (args.length - 1)];
-            Object[] newMethodArgs = new Object[args.length];
-            try {
-                System.arraycopy(methodArgs, args.length - 1, restArray, 0, methodArgs.length - (args.length - 1));
-            } catch (ArrayIndexOutOfBoundsException aioobExcptn) {
-                throw new RuntimeException(
-                    "Cannot call \""
-                        + methodName
-                        + "\" in class \""
-                        + klass.getName()
-                        + "\". "
-                        + getExceptedArgsString((RubyObject[]) methodArgs));
-            }
-            System.arraycopy(methodArgs, 0, newMethodArgs, 0, args.length - 1);
-            newMethodArgs[args.length - 1] = restArray;
-            methodArgs = newMethodArgs;
-        }
-        if (staticMethod) {
-            Object[] newMethodArgs = new Object[methodArgs.length + 2];
-            System.arraycopy(methodArgs, 0, newMethodArgs, 2, methodArgs.length);
-            newMethodArgs[0] = ruby;
-            newMethodArgs[1] = recv;
-            methodArgs = newMethodArgs;
-        }
-        try {
-            return (RubyObject) getMethod().invoke(staticMethod ? null : recv, methodArgs);
-        } catch (InvocationTargetException itExcptn) {
-            if (itExcptn.getTargetException() instanceof RaiseException) {
-                throw (RaiseException) itExcptn.getTargetException();
-            } else if (itExcptn.getTargetException() instanceof RuntimeException) {
-                throw (RuntimeException) itExcptn.getTargetException();
-            } else {
-                System.err.println("[ERROR] Calling method: " + klass + "#" + method);
-                itExcptn.getTargetException().printStackTrace();
-                return ruby.getNil();
-            }
-        } catch (IllegalAccessException iaExcptn) {
-            throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
-        } catch (IllegalArgumentException iaExcptn) {
-            throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
-        }
-    }
-
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        args = (args != null) ? args : new RubyObject[0];
-        testArgsCount(ruby, args);
-        // testArgsClass(args);
-        return invokeMethod(recv, args, ruby);
     }
 }
