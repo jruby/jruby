@@ -1,0 +1,7 @@
+
+* Move Ruby class creation and method init into classes separate from method implementation.
+* Convert all callbacks to IndexedCallback.
+
+* Improved interface for accessing Java classes.
+* Loading external libraries written in Java.
+
