@@ -39,7 +39,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getMethod(Class type, String method, Class arg1, Class arg2) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, arg2 }, false, false, Arity.createArity(2));
+        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, arg2 }, false, false, Arity.fixed(2));
     }
 
     /**
@@ -70,7 +70,7 @@ public final class CallbackFactory {
      * @return a CallBack object corresponding to the appropriate method
      **/
     public static Callback getSingletonMethod(Class type, String method, Class arg1, Class arg2) {
-        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, arg2 }, false, true, Arity.createArity(2));
+        return new ReflectionCallbackMethod(type, method, new Class[] { arg1, arg2 }, false, true, Arity.fixed(2));
     }
 
     public static Callback getBlockMethod(Class type, String method) {
@@ -80,7 +80,7 @@ public final class CallbackFactory {
             new Class[] { IRubyObject.class, IRubyObject.class },
             false,
             true,
-            Arity.createArity(2));
+            Arity.fixed(2));
     }
 
     /**

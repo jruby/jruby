@@ -23,7 +23,7 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.ast.ArgsNode;
+import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,11 +41,17 @@ public class Arity {
         return new Arity(value);
     }
 
+    public static Arity fixed(int arity) {
+        Asserts.assertExpression(arity >= 0);
+        return createArity(arity);
+    }
+
     public static Arity optional() {
         return createArity(-1);
     }
 
     public static Arity required(int minimum) {
+        Asserts.assertExpression(minimum >= 0);
         return createArity(-(1 + minimum));
     }
 

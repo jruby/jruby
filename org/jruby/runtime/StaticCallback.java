@@ -43,8 +43,7 @@ public final class StaticCallback implements Callback {
      * Create a callback with a fixed # of arguments
      */
     public static StaticCallback create(IStaticCallable callable, int index, int arity) {
-        Asserts.assertExpression(arity >= 0);
-        return new StaticCallback(callable, index, Arity.createArity(arity));
+        return new StaticCallback(callable, index, Arity.fixed(arity));
     }
 
 

@@ -43,8 +43,7 @@ public final class IndexedCallback implements Callback {
      * Create a callback with a fixed # of arguments
      */
     public static IndexedCallback create(int index, int arity) {
-        Asserts.assertExpression(arity >= 0);
-        return new IndexedCallback(index, Arity.createArity(arity));
+        return new IndexedCallback(index, Arity.fixed(arity));
     }
 
     /**
