@@ -8,19 +8,21 @@
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -208,17 +210,72 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         return RubyString.m_newString(getRuby(), "<" + s + " 01x" + Integer.toHexString(hashCode()) + ">"); // 0 = pointer
     }
     
-    public void setCvar(RubyId id, RubyObject value) {
+    /** rb_cvar_singleton
+     *
+     */
+    public RubyModule getClassVarSingleton() {
+        return this;
     }
     
-    public void declareCvar(RubyId id, RubyObject value) {
+    /** rb_cvar_set
+     *
+     */
+    public void setClassVar(RubyId id, RubyObject value) {
+        RubyModule tmp = this;
+        while (tmp != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
+                if (tmp.isTaint() && getRuby().getSecurityLevel() >= 4) {
+                    throw new RubySecurityException("Insecure: can't modify class variable");
+                }
+                tmp.getInstanceVariables().put(id, value);
+            }
+            tmp = tmp.getSuperClass();
+        }
+        throw new RubyNameException("uninitialized class variable " + id.toName() + " in " + toName());
     }
     
-    public RubyObject getCvar(RubyId id) {
-        return null;
+    /** rb_cvar_declare
+     *
+     */
+    public void declareClassVar(RubyId id, RubyObject value) {
+        RubyModule tmp = this;
+        while (tmp != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
+                if (tmp.isTaint() && getRuby().getSecurityLevel() >= 4) {
+                    throw new RubySecurityException("Insecure: can't modify class variable");
+                }
+                tmp.getInstanceVariables().put(id, value);
+            }
+            tmp = tmp.getSuperClass();
+        }
+        setAv(id, value, false);
     }
     
-    public boolean isCvarDefined(RubyId id) {
+    /** rb_cvar_get
+     *
+     */
+    public RubyObject getClassVar(RubyId id) {
+        RubyModule tmp = this;
+        while (tmp != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
+                return (RubyObject)tmp.getInstanceVariables().get(id);
+            }
+            tmp = tmp.getSuperClass();
+        }
+        throw new RubyNameException("uninitialized class variable " + id.toName() + " in " + toName());
+    }
+    
+    /** rb_cvar_defined
+     *
+     */
+    public boolean isClassVarDefined(RubyId id) {
+        RubyModule tmp = this;
+        while (tmp != null) {
+            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(id) != null) {
+                return true;
+            }
+            tmp = tmp.getSuperClass();
+        }
         return false;
     }
     
@@ -401,7 +458,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             RubyModule c = this;
 
             if (c.isSingleton()) {
-                RubyObject obj = getIv("__attached__");
+                RubyObject obj = getInstanceVar("__attached__");
 
                 if (obj instanceof RubyModule) {
                     c = (RubyModule)obj;
@@ -861,7 +918,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             return value;
         }
 
-        if (isCvarDefined(id)) {
+        if (isClassVarDefined(id)) {
             throw new RubyNameException("cannot remove " + id.toName() + " for " + toName());
         }
         
@@ -878,7 +935,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             throw new RubyNameException("wrong class variable name " + name);
         }
         
-        declareCvar(id, value);
+        declareClassVar(id, value);
     }
     
     /** rb_attr
@@ -937,7 +994,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         RubyModule rbModule = this;
         
         if (isSingleton()) {
-            rbModule = ((RubyObject)rbModule.getIv("__atached__")).getCvarSingleton();
+            rbModule = ((RubyObject)rbModule.getInstanceVar("__atached__")).getClassVarSingleton();
         }
         
         while (rbModule != null) {

@@ -141,7 +141,14 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
                     sb.append(", ");
                 }
                 String className = methodArgs[i].getClass().getName();
-                sb.append("a").append(className.substring(className.lastIndexOf(".Ruby") + 5));
+                className = className.substring(className.lastIndexOf(".Ruby") + 5);
+                sb.append("a");
+                if (className.charAt(0) == 'A' || className.charAt(0) == 'E' || 
+                    className.charAt(0) == 'I' || className.charAt(0) == 'O' || 
+                    className.charAt(0) == 'U') {
+                    sb.append("n");
+                }
+                sb.append(className);
             }
             sb.append(")");
         }

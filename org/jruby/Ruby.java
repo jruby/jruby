@@ -224,6 +224,8 @@ public final class Ruby implements token {
         floatClass = RbFloat.createFloat(this);
         
         stringClass = RbString.createStringClass(this);
+        
+        RbRange.createRangeClass(this);
     }
     
     /** rb_define_class

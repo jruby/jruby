@@ -91,12 +91,16 @@ puts ""
 # test classes
 
 class Hello
+    def saveHelloWorld
+        @hello = "Hello World."
+    end
     def sayHelloWorld
-        puts "Hello World."
+        puts @hello
     end
 end
 
 hello = Hello.new
+hello.saveHelloWorld
 hello.sayHelloWorld
 
 # number test
@@ -130,3 +134,9 @@ end
 puts
 
 puts 78.chr
+
+#Range test
+
+(5..10).each do |i|
+    print i, " * ", i, " = " , i * i, "\n"
+end

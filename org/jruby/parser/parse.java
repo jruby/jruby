@@ -4372,7 +4372,7 @@ case 432:
     }
 
     /** Compiles the given RString "s" */
-    NODE rb_compile_string(String f, VALUE s, int line) {
+    public NODE rb_compile_string(String f, VALUE s, int line) {
 	lex_file_io = false;
 	lex_gets_ptr = 0;
         lex_input = s;

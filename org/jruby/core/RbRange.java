@@ -1,6 +1,6 @@
 /*
- * RubySecurityException.java - No description
- * Created on 04. Juli 2001, 22:53
+ * RbRange.java - No description
+ * Created on 10. September 2001, 17:56
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
  * Jan Arne Petersen <japetersen@web.de>
@@ -26,23 +26,32 @@
  * 
  */
 
-package org.jruby.exceptions;
+package org.jruby.core;
+
+import org.jruby.*;
+import org.jruby.exceptions.*;
 
 /**
  *
  * @author  jpetersen
+ * @version 
  */
-public class RubySecurityException extends RubyException {
-
-    public RubySecurityException() {
+public class RbRange {
+    
+    public static RubyClass createRangeClass(Ruby ruby) {
+        RubyClass rangeClass = ruby.defineClass("Range", ruby.getObjectClass());
+     
+        rangeClass.defineMethod("each", getMethod("m_each"));
+        rangeClass.defineMethod("initialize", getRestArgsMethod("m_initialize"));
+        
+        return rangeClass;
     }
-
-
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public RubySecurityException(String msg) {
-        super(msg);
+    
+    public static RubyCallbackMethod getRestArgsMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyRange.class, methodName, true);
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyRange.class, methodName);
     }
 }

@@ -8,19 +8,21 @@
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -271,31 +273,64 @@ public class RubyObject implements VALUE {
     /** rb_iv_get
      *
      */
-    public RubyObject getIv(String name) {
-        return getIvar(getRuby().intern(name));
+    public RubyObject getInstanceVar(String name) {
+        return getInstanceVar(getRuby().intern(name));
     }
     
     /** rb_iv_set
      *
      */
-    public void setIv(String name, RubyObject value) {
-        setIvar(getRuby().intern(name), value);
+    public void setInstanceVar(String name, RubyObject value) {
+        setInstanceVar(getRuby().intern(name), value);
     }
     
-    public RubyObject getIvar(RubyId id) {
-        return null;
+    /** rb_ivar_get
+     *
+     */
+    public RubyObject getInstanceVar(RubyId id) {
+        if (getInstanceVariables() != null) {
+            RubyObject value = (RubyObject)getInstanceVariables().get(id);
+            if (value != null) {
+                return value;
+            }
+        }
+        
+        // todo: add warn if verbose
+        
+        return getRuby().getNil();
     }
     
-    public boolean isIvarDefined(RubyId id) {
+    public boolean isInstanceVarDefined(RubyId id) {
+        if (getInstanceVariables() != null) {
+            if (getInstanceVariables().get(id) != null) {
+                return true;
+            }
+        }
         return false;
     }
     
-    public RubyObject setIvar(RubyId id, RubyObject value) {
-        return null;
+    /** rb_ivar_set
+     *
+     */
+    public RubyObject setInstanceVar(RubyId id, RubyObject value) {
+        if (isTaint() && getRuby().getSecurityLevel() >= 4) {
+            throw new RubySecurityException("Insecure: can't modify instance variable");
+        }
+        if (isFrozen()) {
+            throw new RubyFrozenException();
+        }
+        if (getInstanceVariables() == null) {
+            setInstanceVariables(new RubyHashMap());
+        }
+        getInstanceVariables().put(id, value);
+        return value;
     }
     
-    public RubyModule getCvarSingleton() {
-        return null;
+    /** rb_cvar_singleton
+     *
+     */
+    public RubyModule getClassVarSingleton() {
+        return getRubyClass();
     }
     
     /** rb_eval

@@ -1,5 +1,5 @@
 /*
- * RbNumeric.java - No description
+ * RbInteger.java - No description
  * Created on 10. September 2001, 17:56
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
@@ -8,19 +8,21 @@
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -39,26 +41,33 @@ public class RbInteger {
     public static RubyClass createIntegerClass(Ruby ruby) {
         RubyClass integerClass = ruby.defineClass("Integer", ruby.getNumericClass());
      
-        integerClass.defineMethod("chr", new ReflectionCallbackMethod(RubyInteger.class, "m_chr"));
-        integerClass.defineMethod("downto", new ReflectionCallbackMethod(RubyInteger.class, "m_downto", RubyNumeric.class));
-        integerClass.defineMethod("integer?", new ReflectionCallbackMethod(RubyInteger.class, "m_int_p"));
-        integerClass.defineMethod("next", new ReflectionCallbackMethod(RubyInteger.class, "m_succ"));
-        integerClass.defineMethod("step", new ReflectionCallbackMethod(RubyInteger.class, "m_step", new Class[] {RubyNumeric.class, RubyNumeric.class}));
-        integerClass.defineMethod("succ", new ReflectionCallbackMethod(RubyInteger.class, "m_succ"));
-        integerClass.defineMethod("times", new ReflectionCallbackMethod(RubyInteger.class, "m_times"));
-        integerClass.defineMethod("upto", new ReflectionCallbackMethod(RubyInteger.class, "m_upto", RubyNumeric.class));
+        integerClass.defineMethod("ceil", getIntegerMethod("m_to_i"));
+        integerClass.defineMethod("chr", getIntegerMethod("m_chr"));
+        integerClass.defineMethod("downto", getIntegerMethod("m_downto", RubyNumeric.class));
+        integerClass.defineMethod("floor", getIntegerMethod("m_to_i"));
+        integerClass.defineMethod("integer?", getIntegerMethod("m_int_p"));
+        integerClass.defineMethod("next", getIntegerMethod("m_succ"));
+        integerClass.defineMethod("round", getIntegerMethod("m_to_i"));
+        integerClass.defineMethod("step", getIntegerMethod("m_step", RubyNumeric.class, RubyNumeric.class));
+        integerClass.defineMethod("succ", getIntegerMethod("m_succ"));
+        integerClass.defineMethod("times", getIntegerMethod("m_times"));
+        integerClass.defineMethod("to_i", getIntegerMethod("m_to_i"));
+        integerClass.defineMethod("to_int", getIntegerMethod("m_to_i"));
+        integerClass.defineMethod("truncate", getIntegerMethod("m_to_i"));
+        integerClass.defineMethod("upto", getIntegerMethod("m_upto", RubyNumeric.class));
         
-/*    
-    rb_define_method(rb_cInteger, "succ", int_succ, 0);
-    rb_define_method(rb_cInteger, "next", int_succ, 0);
-    rb_define_method(rb_cInteger, "chr", int_chr, 0);
-    rb_define_method(rb_cInteger, "to_i", int_to_i, 0);
-    rb_define_method(rb_cInteger, "to_int", int_to_i, 0);
-    rb_define_method(rb_cInteger, "floor", int_to_i, 0);
-    rb_define_method(rb_cInteger, "ceil", int_to_i, 0);
-    rb_define_method(rb_cInteger, "round", int_to_i, 0);
-    rb_define_method(rb_cInteger, "truncate", int_to_i, 0);*/
-
         return integerClass;
+    }
+    
+    public static RubyCallbackMethod getIntegerMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyInteger.class, methodName, arg1);
+    }
+    
+    public static RubyCallbackMethod getIntegerMethod(String methodName, Class arg1, Class arg2) {
+        return new ReflectionCallbackMethod(RubyInteger.class, methodName, new Class[] {arg1, arg2});
+    }
+    
+    public static RubyCallbackMethod getIntegerMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyInteger.class, methodName);
     }
 }

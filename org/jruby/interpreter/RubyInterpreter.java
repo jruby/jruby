@@ -107,7 +107,7 @@ public class RubyInterpreter implements node_type, Scope {
         // Init_stack(0);
         // Init_heap();
             
-        // PUSH_SCOPE();
+        getRuby().rubyScope.push();// PUSH_SCOPE();
         getRuby().rubyScope.setLocalVars(null);
         getRuby().rubyScope.setLocalVars(null);
         // top_scope = getRuby().ruby_scope;
@@ -120,8 +120,8 @@ public class RubyInterpreter implements node_type, Scope {
             // rb_call_inits();
             ruby_class = getRuby().getObjectClass();
             // ruby_frame.self = ruby_top_self;
-            // top_cref = new NODE(NODE_CREF, getRuby().getObjectClass(), null, null);
-            // ruby_cref = top_cref;
+            top_cref = new NODE(NODE_CREF, getRuby().getObjectClass(), null, null);
+            ruby_cref = top_cref;
             rubyFrame.setCbase((VALUE)ruby_cref);
             // rb_define_global_const( "TOPLEVEL_BINDING", rb_f_binding( ruby_top_self ) );
             // ruby_prog_init();
@@ -130,7 +130,7 @@ public class RubyInterpreter implements node_type, Scope {
         // if (state != 0) {
             // error_print();
         // }
-        // POP_SCOPE();
+        getRuby().rubyScope.pop();// POP_SCOPE();
         // ruby_scope = top_scope;
     }
 
@@ -751,7 +751,7 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_OP_ASGN_OR:
                     cond = (RubyBoolean)eval(self, node.nd_head());
                     
-                    if ((node.nd_aid() != null && !self.isIvarDefined((RubyId)node.nd_aid())) || cond.isFalse()) {
+                    if ((node.nd_aid() != null && !self.isInstanceVarDefined((RubyId)node.nd_aid())) || cond.isFalse()) {
                         node = node.nd_value();
                         break;
                     }
@@ -785,7 +785,7 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 case NODE_IASGN:
                     result = eval(self, node.nd_value());
-                    self.setIvar((RubyId)node.nd_vid(), result);
+                    self.setInstanceVar((RubyId)node.nd_vid(), result);
                     return result;
                     
                 case NODE_CDECL:
@@ -802,15 +802,15 @@ public class RubyInterpreter implements node_type, Scope {
                     }
                     result = eval(self, node.nd_value());
                     if (ruby_cbase.isSingleton()) {
-                        ruby_cbase.getIv("__attached__").getCvarSingleton().declareCvar((RubyId)node.nd_vid(), result);
+                        ruby_cbase.getInstanceVar("__attached__").getClassVarSingleton().declareClassVar((RubyId)node.nd_vid(), result);
                         return result;
                     }
-                    ruby_cbase.declareCvar((RubyId)node.nd_vid(), result);
+                    ruby_cbase.declareClassVar((RubyId)node.nd_vid(), result);
                     return result;
                     
                 case NODE_CVASGN:
                     result = eval(self, node.nd_value());
-                    self.getCvarSingleton().setCvar((RubyId)node.nd_vid(), result);
+                    self.getClassVarSingleton().setClassVar((RubyId)node.nd_vid(), result);
                     return result;
                     
                 case NODE_LVAR:
@@ -826,23 +826,23 @@ public class RubyInterpreter implements node_type, Scope {
                     return ((RubyGlobalEntry)node.nd_entry()).get();
                     
                 case NODE_IVAR:
-                    return self.getIvar((RubyId)node.nd_vid());
+                    return self.getInstanceVar((RubyId)node.nd_vid());
                     
                 case NODE_CONST:
                     return getConstant((NODE)rubyFrame.getCbase(), (RubyId)node.nd_vid(), self);
                     
                 case NODE_CVAR:     /* normal method */
                     if (ruby_cbase == null) {
-                        return self.getRubyClass().getCvar((RubyId)node.nd_vid());
+                        return self.getRubyClass().getClassVar((RubyId)node.nd_vid());
                     }
                     if (!ruby_cbase.isSingleton()) {
-                        return ruby_cbase.getCvar((RubyId)node.nd_vid());
+                        return ruby_cbase.getClassVar((RubyId)node.nd_vid());
                     }
                     
-                    return ruby_cbase.getIv("__attached__").getCvarSingleton().getCvar((RubyId)node.nd_vid());
+                    return ruby_cbase.getInstanceVar("__attached__").getClassVarSingleton().getClassVar((RubyId)node.nd_vid());
                     
                 case NODE_CVAR2:		/* singleton method */
-                    return self.getCvarSingleton().getCvar((RubyId)node.nd_vid());
+                    return self.getClassVarSingleton().getClassVar((RubyId)node.nd_vid());
                     
                 case NODE_BLOCK_ARG:
                     if (ruby.rubyScope.getLocalVars() == null) {
@@ -989,7 +989,7 @@ public class RubyInterpreter implements node_type, Scope {
                     if (rubyFrame.getArgs().size() != 1) {
                         throw new RubyArgumentException("wrong # of arguments(" + rubyFrame.getArgs().size() + "for 1)");
                     }
-                    return self.setIvar((RubyId)node.nd_vid(), (RubyObject)rubyFrame.getArgs().get(0));
+                    return self.setInstanceVar((RubyId)node.nd_vid(), (RubyObject)rubyFrame.getArgs().get(0));
                     
                 case NODE_DEFN:
                     if (node.nd_defn() != null) {
@@ -1039,7 +1039,7 @@ public class RubyInterpreter implements node_type, Scope {
                             ruby_class.funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         }
                         if (ruby_class.isSingleton()) {
-                            ruby_class.getIv("__attached__").funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
+                            ruby_class.getInstanceVar("__attached__").funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         } else {
                             // ruby_class.funcall(getRuby().intern("method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         }
@@ -1406,7 +1406,7 @@ public class RubyInterpreter implements node_type, Scope {
                 break;
 
             case NODE_IASGN:
-                self.setIvar((RubyId)lhs.nd_vid(), val);
+                self.setInstanceVar((RubyId)lhs.nd_vid(), val);
                 break;
 
             case NODE_LASGN:
@@ -1430,13 +1430,13 @@ public class RubyInterpreter implements node_type, Scope {
 
             case NODE_CVDECL:
                 if (!ruby_cbase.isSingleton()) {
-                    ruby_cbase.declareCvar((RubyId)lhs.nd_vid(), val);
+                    ruby_cbase.declareClassVar((RubyId)lhs.nd_vid(), val);
                     break;
                 }
-                self = ruby_cbase.getIv("__attached__");
+                self = ruby_cbase.getInstanceVar("__attached__");
                 /* fall through */
             case NODE_CVASGN:
-                self.getCvarSingleton().setCvar((RubyId)lhs.nd_vid(), val);
+                self.getClassVarSingleton().setClassVar((RubyId)lhs.nd_vid(), val);
                 break;
 
             case NODE_MASGN:
