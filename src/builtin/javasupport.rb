@@ -79,6 +79,25 @@ module JavaUtilities
       proxy = proxy_class.new_proxy
       proxy.java_class = java_class
       proxy.java_object = java_object
+
+      unless real_type.public?
+        # If the instance is private, but implements public interfaces
+        # then we want the methods on those available.
+
+        interfaces = real_type.interfaces.collect {|name|
+          Java::JavaClass.for_name(name)
+        }
+        public_interfaces =
+          interfaces.select {|interface| interface.public? }
+
+        interface_proxies = public_interfaces.collect {|interface|
+          new_proxy_class(interface.name)
+        }
+        interface_proxies.each {|interface_proxy|
+          proxy.extend(interface_proxy)
+        }
+      end
+
       proxy
     end
 
@@ -109,6 +128,7 @@ module JavaUtilities
     def setup_proxy_class(java_class, proxy_class)
       class << proxy_class
         alias_method(:new_proxy, :new)
+        attr_reader :java_class
       end
       if java_class.interface?
 	create_interface_constructor(java_class, proxy_class)

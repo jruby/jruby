@@ -58,7 +58,7 @@ if defined? Java
 
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",
-               Character::UnicodeBlock.class_eval("@java_class.name"))
+               Character::UnicodeBlock.java_class.name)
     test_ok(Character::UnicodeBlock.methods.include?("of"))
 
     # Subclasses and their return types
@@ -79,6 +79,9 @@ if defined? Java
     iter = h.entrySet.iterator
     test_equal("java.util.Iterator", iter.java_class.name)
     inner_instance_entry = iter.next
-    #test_equal("a", inner_instance_entry.getKey)
+    # The class implements a public interface, MapEntry, so the methods
+    # on that should be available, even though the instance is of a
+    # private class.
+    test_equal("a", inner_instance_entry.getKey)
   end
 end
