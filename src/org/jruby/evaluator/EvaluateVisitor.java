@@ -162,19 +162,25 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
+     * @see NodeVisitor#visitArgsCatNode(ArgsCatNode)
+     */
+    public void visitArgsCatNode(ArgsCatNode iVisited) {
+        IRubyObject args = eval(iVisited.getFirstNode());
+        IRubyObject secondArgs = splatValue(eval(iVisited.getSecondNode()));
+        RubyArray list = args instanceof RubyArray ? (RubyArray) args :
+            RubyArray.newArray(runtime, args);
+        
+        result = list.concat(secondArgs); 
+    }
+
+    /**
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
     public void visitArrayNode(ArrayNode iVisited) {
         ArrayList list = new ArrayList(iVisited.size());
 
-        Iterator iterator = iVisited.iterator();
-        for (int i = 0, size = iVisited.size(); i < size; i++) {
-            final INode node = (INode) iterator.next();
-            if (node instanceof ExpandArrayNode) {
-                list.addAll(((RubyArray) eval(node)).getList());
-            } else {
-                list.add(eval(node));
-            }
+        for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
+            list.add(eval((INode) iterator.next()));
         }
         
         result = RubyArray.newArray(runtime, list);
@@ -331,7 +337,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         IRubyObject[] args = null;
         try {
             receiver = eval(iVisited.getReceiverNode());
-            args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
+            args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
         } finally {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
@@ -632,7 +638,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
+            args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
         } finally {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
@@ -794,7 +800,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
         } catch (BreakJump bExcptn) {
             IRubyObject breakValue = bExcptn.getBreakValue();
-            
+
             result = breakValue == null ? runtime.getNil() : breakValue;
         } finally {
             threadContext.getIterStack().pop();
@@ -923,7 +929,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
 
-        IRubyObject[] args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
+        IRubyObject[] args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
 
         IRubyObject firstValue = receiver.callMethod("[]", args);
 
@@ -1074,9 +1080,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                     INode exceptionNodes = rescueNode.getExceptionNodes();
                     IListNode exceptionNodesList;
                     
-                    // The grammar may store an ExpandArrayNode in place of
-                    // the list we want.  If so, then eval it into a list.
-                    if (exceptionNodes instanceof ExpandArrayNode) {
+                    if (exceptionNodes instanceof SplatNode) {                    
                         exceptionNodesList = (IListNode) eval(exceptionNodes);
                     } else {
                         exceptionNodesList = (IListNode) exceptionNodes;
@@ -1100,13 +1104,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                 runtime.getGlobalVariables().set("$!", runtime.getNil());
             }
         }
-    }
-
-    /**
-     * @see NodeVisitor#visitRestArgsNode(RestArgsNode)
-     */
-    public void visitRestArgsNode(RestArgsNode iVisited) {
-        result = builtins.toArray(eval(iVisited.getArgumentNode()));
     }
 
     /**
@@ -1178,11 +1175,22 @@ public final class EvaluateVisitor implements NodeVisitor {
         result = self;
     }
 
+    public void visitSplatNode(SplatNode iVisited) {
+        result = splatValue(eval(iVisited.getValue()));
+    }
+    
     /**
      * @see NodeVisitor#visitStrNode(StrNode)
      */
     public void visitStrNode(StrNode iVisited) {
         result = builtins.toString(iVisited.getValue());
+    }
+
+    /**
+     * @see NodeVisitor#visitSValueNode(StrNode)
+     */
+    public void visitSValueNode(SValueNode iVisited) {
+        result = aValueSplat(eval(iVisited.getValue()));
     }
 
     /**
@@ -1197,11 +1205,18 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
+            args = ArgsUtil.setupArgs(runtime, threadContext, this, iVisited.getArgsNode());
         } finally {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
         result = threadContext.callSuper(args);
+    }
+
+    /**
+     * @see NodeVisitor#visitToAryNode(ToAryNode)
+     */
+    public void visitToAryNode(ToAryNode iVisited) {
+        result = aryToAry(eval(iVisited.getValue()));
     }
 
     /**
@@ -1305,11 +1320,8 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitYieldNode(YieldNode iVisited) {
         eval(iVisited.getArgsNode());
-        if (iVisited.getArgsNode() instanceof ExpandArrayNode && ((RubyArray) result).getLength() == 1) {
-            result = ((RubyArray) result).first();
-        }
-
-        result = threadContext.yield(result, null, null, true);
+        
+        result = threadContext.yield(result, null, null, false, iVisited.getCheckState());
     }
 
     /**
@@ -1365,20 +1377,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         result = builtins.toSymbol(iVisited.getName());
     }
 
-    /**
-     * @see NodeVisitor#visitExpandArrayNode(ExpandArrayNode)
-     */
-    public void visitExpandArrayNode(ExpandArrayNode iVisited) {
-        eval(iVisited.getExpandNode());
-        if (!(result instanceof RubyArray)) {
-            if (result.isNil()) {
-                result = RubyArray.newArray(runtime, 0);
-            } else {
-                result = RubyArray.newArray(runtime, result);
-            }
-        }
-    }
-
     /** Evaluates the body in a class or module definition statement.
      *
      */
@@ -1420,7 +1418,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(threadContext, this, exceptionNodes);
+            args = ArgsUtil.setupArgs(runtime, threadContext, this, exceptionNodes);
         } finally {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
@@ -1434,5 +1432,49 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
         }
         return false;
+    }
+    
+    private IRubyObject aryToAry(IRubyObject value) {
+        if (value instanceof RubyArray) {
+            return value;
+        }
+        
+        if (value.respondsTo("to_ary")) {
+            return value.convertToType("Array", "to_ary", false);
+        }
+        
+        return RubyArray.newArray(runtime, value);
+    }
+    
+    private IRubyObject splatValue(IRubyObject value) {
+        if (value.isNil()) {
+            return RubyArray.newArray(runtime, value);
+        }
+        
+        return arrayValue(value);
+    }
+
+    private IRubyObject aValueSplat(IRubyObject value) {
+        if (value instanceof RubyArray == false || 
+            ((RubyArray)value).length().getLongValue() == 0) {
+            return runtime.getNil();
+        }
+        
+        RubyArray array = (RubyArray) value;
+        
+        return array.getLength() == 1 ? array.first() : array;
+    }
+
+    /* HACK: .... */
+    private RubyArray arrayValue(IRubyObject value) {
+        IRubyObject newValue = value.convertToType("Array", "to_ary", false);
+
+        if (newValue.isNil()) {
+            // XXXEnebo: We should call to_a except if it is kernel def....
+            // but we will forego for now.
+            newValue = RubyArray.newArray(runtime, value);
+        }
+        
+        return (RubyArray) newValue;
     }
 }

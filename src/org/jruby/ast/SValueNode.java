@@ -1,12 +1,9 @@
 /*
- * RestArgsNode.java - No description
- * Created on 05. November 2001, 21:46
+ * SValueNode.java - description
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
+ *
  * JRuby - http://jruby.sourceforge.net
  * 
  * This file is part of JRuby
@@ -33,34 +30,19 @@ import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
-public class RestArgsNode extends AbstractNode {
-    static final long serialVersionUID = 1764985988483521070L;
-
-    private final INode argumentNode;
-
-    public RestArgsNode(ISourcePosition position, INode argumentNode) {
+public class SValueNode extends AbstractNode {
+    private INode node;
+    
+    public SValueNode(ISourcePosition position, INode node) {
         super(position);
-        this.argumentNode = argumentNode;
+        this.node = node;
     }
 
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitRestArgsNode(this);
+    public void accept(INodeVisitor visitor) {
+        ((NodeVisitor)visitor).visitSValueNode(this);
     }
-
-    /**
-     * Gets the argumentNode.
-     * @return Returns a INode
-     */
-    public INode getArgumentNode() {
-        return argumentNode;
+    
+    public INode getValue() {
+        return node;
     }
 }

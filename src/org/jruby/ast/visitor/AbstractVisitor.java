@@ -71,6 +71,14 @@ public abstract class AbstractVisitor implements NodeVisitor {
 
     
     /**
+     * @see NodeVisitor#visitArgsCatNode(ArgsCatNode)
+     */
+    public void visitArgsCatNode(ArgsCatNode iVisited) {
+        visitNode(iVisited);
+    }
+
+    
+    /**
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
     public void visitArgsNode(ArgsNode iVisited) {
@@ -520,13 +528,6 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitRestArgsNode(RestArgsNode)
-     */
-    public void visitRestArgsNode(RestArgsNode iVisited) {
-        visitNode(iVisited);
-    }
-
-    /**
      * @see NodeVisitor#visitRetryNode(RetryNode)
      */
     public void visitRetryNode(RetryNode iVisited) {
@@ -560,6 +561,13 @@ public abstract class AbstractVisitor implements NodeVisitor {
     public void visitSelfNode(SelfNode iVisited) {
         visitNode(iVisited);
     }
+    
+    /**
+     * @see NodeVisitor#visitSplatNode(SplatNode)
+     */
+    public void visitSplatNode(SplatNode iVisited) {
+        visitNode(iVisited);
+    }
 
     /**
      * @see NodeVisitor#visitStrNode(StrNode)
@@ -569,9 +577,23 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     /**
+     * @see NodeVisitor#visitSValueNode(SplatNode)
+     */
+    public void visitSValueNode(SValueNode iVisited) {
+        visitNode(iVisited);
+    }
+
+    /**
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
+        visitNode(iVisited);
+    }
+
+    /**
+     * @see NodeVisitor#visitToAryNode(ToAryNode)
+     */
+    public void visitToAryNode(ToAryNode iVisited) {
         visitNode(iVisited);
     }
 
@@ -683,13 +705,6 @@ public abstract class AbstractVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
     public void visitSymbolNode(SymbolNode iVisited) {
-        visitNode(iVisited);
-    }
-
-    /**
-     * @see NodeVisitor#visitExpandArrayNode(ExpandArrayNode)
-     */
-    public void visitExpandArrayNode(ExpandArrayNode iVisited) {
         visitNode(iVisited);
     }
 }

@@ -405,15 +405,21 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @fixme error handling
      */
     public IRubyObject convertToType(String targetType, String convertMethod, boolean raise) {
+        // No need to convert something already of the correct type.
+        // XXXEnebo - Could this pass actual class reference instead of String?
+        if (targetType.equals(getMetaClass().getName())) {
+            return this;
+        }
+        
         if (!respondsTo(convertMethod)) {
             if (raise) {
                 throw new TypeError(
                     runtime,
                     "Failed to convert " + getMetaClass().getName() + " into " + targetType + ".");
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
-            } else {
-                return runtime.getNil();
-            }
+            } 
+
+            return runtime.getNil();
         }
         return callMethod(convertMethod);
     }
@@ -536,7 +542,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 try {
                     IRubyObject valueInYield = args[0];
                     IRubyObject selfInYield = args[0];
-                    return context.yield(valueInYield, selfInYield, context.getRubyClass(), false);
+                    return context.yield(valueInYield, selfInYield, context.getRubyClass(), false, false);
                 } catch (BreakJump e) {
                     IRubyObject breakValue = e.getBreakValue();
                     

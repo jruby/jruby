@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -33,7 +34,10 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ThreadClass;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
@@ -46,6 +50,9 @@ import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -190,7 +197,7 @@ public class ThreadContext {
         }
     }
 
-    public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
+    public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean yieldProc, boolean aValue) {
         if (! isBlockGiven()) {
             throw new RaiseException(runtime, runtime.getExceptions().getLocalJumpError(), "yield called out of block");
         }
@@ -212,8 +219,41 @@ public class ThreadContext {
         if (klass == null) {
             self = currentBlock.getSelf();
         }
-        if (value == null) {
-            value = RubyArray.newArray(runtime, 0);
+        
+        INode blockVar = currentBlock.getVar();
+        if (blockVar != null) {
+            if (blockVar instanceof ZeroArgNode) {
+                // Better not have arguments for a no-arg block.
+                if (yieldProc && arrayLength(value) != 0) { 
+                    throw new ArgumentError(runtime, "wrong # of arguments(" + 
+                            ((RubyArray)value).getLength() + "for 0)");
+                }
+            } else if (blockVar instanceof MultipleAsgnNode) {
+                if (!aValue) {
+                    value = sValueToMRHS(value, ((MultipleAsgnNode)blockVar).getHeadNode());
+                }
+
+                value = mAssign(self, (MultipleAsgnNode)blockVar, (RubyArray)value, yieldProc);
+            } else {
+                if (aValue) {
+                    int length = arrayLength(value);
+                    
+                    if (length == 0) {
+                        value = runtime.getNil();
+                    } else if (length == 1) {
+                        value = ((RubyArray)value).first();
+                    } else {
+                        // XXXEnebo - Should be warning not error.
+                        //throw new ArgumentError(runtime, "wrong # of arguments(" + 
+                        //        length + "for 1)");
+                    }
+                } else if (value == null) { 
+                    // XXXEnebo - Should be warning not error.
+                    //throw new ArgumentError(runtime, "wrong # of arguments(0 for 1)");
+                }
+
+                new AssignmentVisitor(runtime, self).assign(blockVar, value, yieldProc); 
+            }
         }
 
         ICallable method = currentBlock.getMethod();
@@ -223,8 +263,8 @@ public class ThreadContext {
         }
 
         getIterStack().push(currentBlock.getIter());
-
-        IRubyObject[] args = prepareArguments(value, self, currentBlock.getVar(), checkArguments);
+        
+        IRubyObject[] args = ArgsUtil.arrayify(runtime, value);
 
         try {
             while (true) {
@@ -248,51 +288,66 @@ public class ThreadContext {
             dynamicVarsStack.pop();
         }
     }
+    
+    public IRubyObject mAssign(IRubyObject self, MultipleAsgnNode node, RubyArray value, boolean pcall) {
+        // Assign the values.
+        int valueLen = value.getLength();
+        int varLen = ListNodeUtil.getLength(node.getHeadNode());
+        
+        Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
+        for (int i = 0; i < valueLen && iter.hasNext(); i++) {
+            INode lNode = (INode) iter.next();
+            new AssignmentVisitor(runtime, self).assign(lNode, value.entry(i), pcall);
+        }
 
+        if (pcall && iter.hasNext()) {
+            throw new ArgumentError(runtime, "Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        }
+
+        if (node.getArgsNode() != null) {
+            if (node.getArgsNode() instanceof StarNode) {
+                // no check for '*'
+            } else if (varLen < valueLen) {
+                ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
+                new AssignmentVisitor(runtime, self).assign(node.getArgsNode(), RubyArray.newArray(runtime, newList), pcall);
+            } else {
+                new AssignmentVisitor(runtime, self).assign(node.getArgsNode(), RubyArray.newArray(runtime, 0), pcall);
+            }
+        } else if (pcall && valueLen < varLen) {
+            throw new ArgumentError(runtime, "Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+        }
+
+        while (iter.hasNext()) {
+            new AssignmentVisitor(runtime, self).assign((INode)iter.next(), runtime.getNil(), pcall);
+        }
+        
+        return value;
+    }
+
+    private IRubyObject sValueToMRHS(IRubyObject value, INode leftHandSide) {
+        if (value == null) {
+            return RubyArray.newArray(runtime, 0);
+        }
+        
+        if (leftHandSide == null) {
+            return RubyArray.newArray(runtime, value);
+        }
+        
+        IRubyObject newValue = value.convertToType("Array", "to_ary", false);
+
+        if (newValue.isNil()) {
+            return RubyArray.newArray(runtime, value);
+        }
+        
+        return newValue;
+    }
+    
+    private int arrayLength(IRubyObject node) {
+        return node instanceof RubyArray ? ((RubyArray)node).getLength() : 0;
+    }
+    
     public boolean isBlockGiven() {
         return getCurrentFrame().isBlockGiven();
-    }
-
-    private IRubyObject[] prepareArguments(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
-        value = prepareBlockVariable(value, self, blockVariableNode, checkArguments);
-
-        if (blockVariableNode == null) {
-            if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                value = ((RubyArray) value).first();
-            }
-        }
-
-        return arrayify(value);
-    }
-
-    private IRubyObject[] arrayify(IRubyObject value) {
-        if (value instanceof RubyArray) {
-            return ((RubyArray) value).toJavaArray();
-        } else {
-            return new IRubyObject[] { value };
-        }
-    }
-
-    private IRubyObject prepareBlockVariable(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
-        if (blockVariableNode == null) {
-            return value;
-        }
-
-        if (checkArguments && value instanceof RubyArray) {
-            RubyArray arrayValue = ((RubyArray) value);
-            if (blockVariableNode instanceof ZeroArgNode) {
-                if (arrayValue.getLength() != 0) {
-                    throw new ArgumentError(runtime, arrayValue.getLength(), 0);
-                }
-            }
-            if (!(blockVariableNode instanceof MultipleAsgnNode)) {
-                if (arrayValue.getLength() == 1) {
-                    value = arrayValue.first();
-                }
-            }
-        }
-        new AssignmentVisitor(runtime, self).assign(blockVariableNode, value, checkArguments);
-        return value;
     }
 
     public void pollThreadEvents() {
@@ -329,10 +384,8 @@ public class ThreadContext {
 
     public IRubyObject getDynamicValue(String name) {
         IRubyObject result = ((DynamicVariableSet) dynamicVarsStack.peek()).get(name);
-        if (result == null) {
-            return runtime.getNil();
-        }
-        return result;
+
+        return result == null ? runtime.getNil() : result;
     }
 
     public IRubyObject getConstant(String name) {

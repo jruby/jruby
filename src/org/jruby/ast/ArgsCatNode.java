@@ -1,10 +1,7 @@
 /*
- * YieldNode.java - description
- * Created on 01.03.2002, 20:38:42
+ * ArgsCatNode.java - description
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Copyright (C) 2004 Thomas E Enebo
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -33,40 +30,26 @@ import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
 
-/** Represents a yield statement.
- *
- * @author  jpetersen
- * @version $Revision$
- */
-public class YieldNode extends AbstractNode {
-    static final long serialVersionUID = -4136185449481135660L;
+public class ArgsCatNode extends AbstractNode {
+    private INode firstNode;
+    private INode secondNode;
 
-    private final INode argsNode;
-    private final boolean checkState;
-
-    public YieldNode(ISourcePosition position, INode argsNode, boolean checkState) {
+    public ArgsCatNode(ISourcePosition position, INode node1, INode node2) {
         super(position);
-        this.argsNode = argsNode;
-        this.checkState = checkState;
+        
+        this.firstNode = node1;
+        this.secondNode = node2;
     }
 
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitYieldNode(this);
-    }
-
-    /**
-     * Gets the argsNode.
-     * @return Returns a Node
-     */
-    public INode getArgsNode() {
-        return argsNode;
+    public void accept(INodeVisitor visitor) {
+        ((NodeVisitor)visitor).visitArgsCatNode(this);
     }
     
-    public boolean getCheckState() {
-        return checkState;
+    public INode getFirstNode() {
+        return firstNode;
+    }
+    
+    public INode getSecondNode() {
+        return secondNode;
     }
 }

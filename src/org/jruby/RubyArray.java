@@ -329,12 +329,12 @@ public class RubyArray extends RubyObject {
     public static RubyArray arrayValue(IRubyObject other) {
         if (other instanceof RubyArray) {
             return (RubyArray) other;
-        } else {
-            try {
-                return (RubyArray) other.convertType(RubyArray.class, "Array", "to_ary");
-            } catch (Exception ex) {
-                throw new ArgumentError(other.getRuntime(), "can't convert arg to Array: " + ex.getMessage());
-            }
+        } 
+        
+        try {
+            return (RubyArray) other.convertType(RubyArray.class, "Array", "to_ary");
+        } catch (Exception ex) {
+            throw new ArgumentError(other.getRuntime(), "can't convert arg to Array: " + ex.getMessage());
         }
     }
 
@@ -1304,7 +1304,7 @@ public class RubyArray extends RubyObject {
 
     class BlockComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            IRubyObject result = getRuntime().yield(RubyArray.newArray(getRuntime(), (IRubyObject) o1, (IRubyObject) o2));
+            IRubyObject result = getRuntime().yield(RubyArray.newArray(getRuntime(), (IRubyObject) o1, (IRubyObject) o2), null, null, true);
             return (int) ((RubyNumeric) result).getLongValue();
         }
 

@@ -3,8 +3,10 @@
  * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -73,7 +75,16 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         }
     }
 
-
+    // XXXEnebo - Just guessed.
+    public void visitArgsCatNode(ArgsCatNode iVisited) {
+        iVisited.accept(_Payload);
+        if (iVisited.getFirstNode() != null) {
+            iVisited.getFirstNode().accept(this);
+        }
+        if (iVisited.getSecondNode() != null) {
+            iVisited.getSecondNode().accept(this);
+        }
+    }
     public void visitArrayNode(ArrayNode iVisited) {
         iVisited.accept(_Payload);
         Iterator iterator = iVisited.iterator();
@@ -385,10 +396,6 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         }*/
     }
 
-    public void visitRestArgsNode(RestArgsNode iVisited) {
-        iVisited.accept(_Payload);
-    }
-
     public void visitRetryNode(RetryNode iVisited) {
         iVisited.accept(_Payload);
     }
@@ -411,8 +418,16 @@ public class DefaultIteratorVisitor implements NodeVisitor {
     public void visitSelfNode(SelfNode iVisited) {
         iVisited.accept(_Payload);
     }
-
+    
+    public void visitSplatNode(SplatNode iVisited) {
+        iVisited.accept(_Payload);
+    }
+    
     public void visitStrNode(StrNode iVisited) {
+        iVisited.accept(_Payload);
+    }
+    
+    public void visitSValueNode(SValueNode iVisited) {
         iVisited.accept(_Payload);
     }
 
@@ -420,6 +435,10 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         iVisited.accept(_Payload);
     }
 
+    public void visitToAryNode(ToAryNode iVisited) {
+        iVisited.accept(_Payload);
+    }
+    
     public void visitTrueNode(TrueNode iVisited) {
         iVisited.accept(_Payload);
     }
@@ -499,13 +518,6 @@ public class DefaultIteratorVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
     public void visitSymbolNode(SymbolNode iVisited) {
-        iVisited.accept(_Payload);
-    }
-
-    /**
-     * @see NodeVisitor#visitExpandArrayNode(ExpandArrayNode)
-     */
-    public void visitExpandArrayNode(ExpandArrayNode iVisited) {
         iVisited.accept(_Payload);
     }
 }

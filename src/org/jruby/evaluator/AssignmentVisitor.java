@@ -41,19 +41,12 @@ import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.common.IErrors;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 
 /**
  *
@@ -166,47 +159,6 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
     public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-        // Make sure value is an array.
-        if (value == null) {
-            value = RubyArray.newArray(ruby, 0);
-        } else if (!(value instanceof RubyArray)) {
-            IRubyObject newValue = value.convertToType("Array", "to_ary", false);
-            if (newValue.isNil()) {
-                newValue = RubyArray.newArray(ruby, value);
-            }
-            value = newValue;
-        }
-
-        // Assign the values.
-        int valueLen = ((RubyArray)value).getLength();
-        int varLen = ListNodeUtil.getLength(iVisited.getHeadNode());
-
-        Iterator iter = iVisited.getHeadNode() != null ? iVisited.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
-        for (int i = 0; i < valueLen && iter.hasNext(); i++) {
-            new AssignmentVisitor(ruby, self).assign((INode)iter.next(), ((RubyArray)value).entry(i), check);
-        }
-
-        if (check && varLen > valueLen) {
-            throw new ArgumentError(ruby, "Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        }
-
-        if (iVisited.getArgsNode() != null) {
-            if (iVisited.getArgsNode() instanceof StarNode) {
-                // no check for '*'
-            } else if (varLen < valueLen) {
-                ArrayList newList = new ArrayList(((RubyArray)value).getList().subList(varLen, valueLen));
-                new AssignmentVisitor(ruby, self).assign(iVisited.getArgsNode(), RubyArray.newArray(ruby, newList), check);
-            } else {
-                new AssignmentVisitor(ruby, self).assign(iVisited.getArgsNode(), RubyArray.newArray(ruby, 0), check);
-            }
-        } else if (check && valueLen < varLen) {
-            throw new ArgumentError(ruby, "Wrong # of arguments (" + valueLen + " for " + varLen + ")");
-        }
-
-        while (iter.hasNext()) {
-            new AssignmentVisitor(ruby, self).assign((INode)iter.next(), ruby.getNil(), check);
-        }
-
-        result = value;
+        result = threadContext.mAssign(self, iVisited, (RubyArray)value, check);
     }
 }

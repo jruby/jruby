@@ -391,6 +391,8 @@ public class RubyModule extends RubyObject {
         if (isFrozen()) {
             throw new FrozenError(getRuntime(), "class/module");
         }
+        // Clear cache for any instance methods
+        methodCache.remove(name);
         getMethods().put(name, method);
         clearMethodCache(name);
     }
@@ -555,7 +557,8 @@ public class RubyModule extends RubyObject {
     public static void clearMethodCache(Ruby runtime, String methodName) {
         Iterator iter = runtime.getClasses().getClassMap().values().iterator();
         while (iter.hasNext()) {
-            ((RubyModule) iter.next()).methodCache.remove(methodName);
+            RubyModule module = (RubyModule) iter.next();
+            module.methodCache.remove(methodName);
         }
     }
 

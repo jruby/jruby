@@ -30,7 +30,6 @@ package org.jruby.ast;
 import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -49,7 +48,7 @@ public class BlockPassNode extends AbstractNode {
     /** Used by the arg_blk_pass and new_call, new_fcall and new_super
      * methods in ParserSupport to temporary save the args node.
      */
-    private IListNode argsNode;
+    private INode argsNode;
 
     public BlockPassNode(ISourcePosition position, INode bodyNode) {
         super(position);
@@ -92,7 +91,7 @@ public class BlockPassNode extends AbstractNode {
      * Gets the argsNode.
      * @return Returns a IListNode
      */
-    public IListNode getArgsNode() {
+    public INode getArgsNode() {
         return argsNode;
     }
 
@@ -100,7 +99,7 @@ public class BlockPassNode extends AbstractNode {
      * Sets the argsNode.
      * @param argsNode The argsNode to set
      */
-    public void setArgsNode(IListNode argsNode) {
+    public void setArgsNode(INode argsNode) {
         this.argsNode = argsNode;
     }
 

@@ -3,8 +3,10 @@
  * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -43,6 +45,7 @@ public interface NodeVisitor extends INodeVisitor {
     public void visitAliasNode(AliasNode iVisited);
     public void visitAndNode(AndNode iVisited);
     public void visitArgsNode(ArgsNode iVisited);
+    public void visitArgsCatNode(ArgsCatNode iVisited);
     public void visitArrayNode(ArrayNode iVisited);
     public void visitAttrSetNode(AttrSetNode iVisited);
     public void visitBackRefNode(BackRefNode iVisited);
@@ -73,7 +76,6 @@ public interface NodeVisitor extends INodeVisitor {
     public void visitDotNode(DotNode iVisited);
     public void visitEnsureNode(EnsureNode iVisited);
     public void visitEvStrNode(EvStrNode iVisited);
-    public void visitExpandArrayNode(ExpandArrayNode iVisited);
     public void visitFCallNode(FCallNode iVisited);
     public void visitFalseNode(FalseNode iVisited);
     public void visitFixnumNode(FixnumNode iVisited);
@@ -110,15 +112,17 @@ public interface NodeVisitor extends INodeVisitor {
     public void visitRegexpNode(RegexpNode iVisited);
     public void visitRescueBodyNode(RescueBodyNode iVisited);
     public void visitRescueNode(RescueNode iVisited);
-    public void visitRestArgsNode(RestArgsNode iVisited);
     public void visitRetryNode(RetryNode iVisited);
     public void visitReturnNode(ReturnNode iVisited);
     public void visitSClassNode(SClassNode iVisited);
     public void visitScopeNode(ScopeNode iVisited);
     public void visitSelfNode(SelfNode iVisited);
+    public void visitSplatNode(SplatNode iVisited);
     public void visitStrNode(StrNode iVisited);
     public void visitSuperNode(SuperNode iVisited);
+    public void visitSValueNode(SValueNode iVisited);
     public void visitSymbolNode(SymbolNode iVisited);
+    public void visitToAryNode(ToAryNode iVisited);
     public void visitTrueNode(TrueNode iVisited);
     public void visitUndefNode(UndefNode iVisited);
     public void visitUntilNode(UntilNode iVisited);

@@ -44,7 +44,6 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CallbackFactory;
@@ -347,7 +346,7 @@ public final class Ruby {
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
-        return getCurrentContext().yield(value, self, klass, 0, checkArguments);
+        return getCurrentContext().yield(value, self, klass, false, checkArguments);
     }
 
     private Scope currentScope() {

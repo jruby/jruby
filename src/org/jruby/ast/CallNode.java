@@ -31,7 +31,6 @@ package org.jruby.ast;
 import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -45,9 +44,9 @@ public final class CallNode extends AbstractNode {
 
     private final INode receiverNode;
     private final String name;
-    private final IListNode argsNode;
+    private final INode argsNode;
 
-    public CallNode(ISourcePosition position, INode receiverNode, String name, IListNode argsNode) {
+    public CallNode(ISourcePosition position, INode receiverNode, String name, INode argsNode) {
         super(position);
         this.receiverNode = receiverNode;
         this.name = name.intern();
@@ -67,7 +66,7 @@ public final class CallNode extends AbstractNode {
 	 * argsNode representing the method's arguments' value for this call.
      * @return argsNode
      */
-    public IListNode getArgsNode() {
+    public INode getArgsNode() {
         return argsNode;
     }
 

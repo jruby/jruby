@@ -3,10 +3,12 @@
  * Created on 23.02.2002, 13:41:01
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -33,6 +35,7 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.AndNode;
+import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BlockNode;
@@ -69,11 +72,14 @@ import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.SValueNode;
 import org.jruby.ast.SelfNode;
+import org.jruby.ast.SplatNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.VCallNode;
+import org.jruby.ast.YieldNode;
 import org.jruby.ast.types.IAssignableNode;
 import org.jruby.ast.types.IListNode;
 import org.jruby.ast.types.ILiteralNode;
@@ -81,7 +87,6 @@ import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.ast.util.NodeUtil;
 import org.jruby.ast.visitor.UselessStatementVisitor;
 import org.jruby.common.IErrors;
-import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
@@ -125,12 +130,16 @@ public class ParserSupport {
     public String getOperatorName(int operatorName) {
         if (operatorName >= Token.tUPLUS && operatorName <= Token.tCOLON2) {
             return Token.operators[operatorName - Token.tUPLUS];
-        } else {
-            return String.valueOf((char) operatorName);
-        }
+        } 
+
+        return String.valueOf((char) operatorName);
+    }
+    
+    public INode arg_concat(ISourcePosition position, INode node1, INode node2) {
+        return node2 == null ? node1 : new ArgsCatNode(position, node1, node2);
     }
 
-    public INode arg_blk_pass(IListNode firstNode, BlockPassNode secondNode) {
+    public INode arg_blk_pass(INode firstNode, BlockPassNode secondNode) {
         if (secondNode != null) {
             secondNode.setArgsNode(firstNode);
             return secondNode;
@@ -189,37 +198,6 @@ public class ParserSupport {
         return null;
     }
 
-    /**
-     * Returns a Node representing the access of the
-     * variable or constant named id.
-     *
-     * see gettable() in MRI
-     *@param id The name of the variable or constant.
-     *@return   A node representing the access.
-     */
-    public INode getAccessNode(String id, ISourcePosition iPosition) {
-        if (IdUtil.isLocal(id)) {
-            if (blockNames.isInBlock() && blockNames.isDefined(id)) {
-                return new DVarNode(iPosition, id);
-            } else if (getLocalNames().isLocalRegistered(id)) {
-                return new LocalVarNode(iPosition, getLocalNames().getLocalIndex(id));
-            }
-            return new VCallNode(iPosition, id); // Method call without arguments.
-        } else if (IdUtil.isGlobal(id)) {
-            return new GlobalVarNode(iPosition, id);
-        } else if (IdUtil.isInstanceVariable(id)) {
-            return new InstVarNode(iPosition, id);
-        } else if (IdUtil.isConstant(id)) {
-            return new ConstNode(iPosition, id);
-        } else if (IdUtil.isClassVariable(id)) {
-            /* [REMOVED 1.6.7] if (isInSingle()) {
-                return new CVar2Node(iPosition, id);
-            }*/
-            return new ClassVarNode(iPosition, id);
-        }
-        Asserts.notReached();
-        return null;
-    }
     
     public void yyerror(String message) {
         errorHandler.handleError(IErrors.SYNTAX_ERROR, null, message, null);
@@ -279,49 +257,6 @@ public class ParserSupport {
         
         return null;
     }
-    
-    /**
-     * Returns a Node representing the assignment of value to
-     * the variable or constant named id.
-     *
-     * cf assignable in MRI
-     *
-     *@param name The name of the variable or constant.
-     *@param valueNode A Node representing the value which should be assigned.
-     *@return A Node representing the assignment.
-	 * @fixme need to handle positions
-     */
-    public IAssignableNode getAssignmentNode(String name, INode valueNode, ISourcePosition position) {
-        checkExpression(valueNode);
-
-        if (IdUtil.isLocal(name)) {
-            if (blockNames.isDefined(name)) {
-                return new DAsgnNode(position, name, valueNode);
-            } else if (getLocalNames().isLocalRegistered(name) || !blockNames.isInBlock()) {
-                return new LocalAsgnNode(position, name, getLocalNames().getLocalIndex(name), valueNode);
-            } else {
-                blockNames.add(name);
-                return new DAsgnNode(position, name, valueNode);
-            }
-        } else if (IdUtil.isGlobal(name)) {
-            return new GlobalAsgnNode(position, name, valueNode);
-        } else if (IdUtil.isInstanceVariable(name)) {
-            return new InstAsgnNode(position, name, valueNode);
-        } else if (IdUtil.isConstant(name)) {
-            if (isInDef() || isInSingle()) {
-                errorHandler.handleError(IErrors.SYNTAX_ERROR, position, "Dynamic constant assignment.");
-            }
-            return new ConstDeclNode(position, name, valueNode);
-        } else if (IdUtil.isClassVariable(name)) {
-            if (isInDef() || isInSingle()) {
-                return new ClassVarAsgnNode(position, name, valueNode);
-            }
-            return new ClassVarDeclNode(position, name, valueNode);
-        } else {
-            Asserts.notReached("Id '" + name + "' not allowed for variable.");
-            return null;
-        }
-    }
 
     /**
      *  Wraps node with NEWLINE node.
@@ -329,12 +264,8 @@ public class ParserSupport {
      *@param node
      *@return a NewlineNode or null if node is null.
      */
-    public INode newline_node(INode node, ISourcePosition iPosition) {
-        if (node != null) {
-			return new NewlineNode(iPosition, node);
-        } else {
-            return null;
-        }
+    public INode newline_node(INode node, ISourcePosition position) {
+        return node == null ? null : new NewlineNode(position, node); 
     }
 
     public INode appendToBlock(INode head, INode tail) {
@@ -386,7 +317,7 @@ public class ParserSupport {
         }
     }
 
-    public INode getElementAssignmentNode(INode recv, IListNode idx) {
+    public INode getElementAssignmentNode(INode recv, INode idx) {
         checkExpression(recv);
 
         return new CallNode(recv.getPosition(), recv, "[]=", idx);
@@ -421,18 +352,22 @@ public class ParserSupport {
         INode result = lhs;
 
         checkExpression(rhs);
-
         if (lhs instanceof IAssignableNode) {
-            ((IAssignableNode) lhs).setValueNode(rhs);
+    	    ((IAssignableNode) lhs).setValueNode(rhs);
         } else if (lhs instanceof CallNode) {
 			CallNode lCallLHS = (CallNode) lhs;
-			IListNode lArgs = lCallLHS.getArgsNode();
+			INode lArgs = lCallLHS.getArgsNode();
+
 			if (lArgs == null) {
 				lArgs = new ArrayNode(lhs.getPosition());
 				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
+			} else if (lArgs instanceof IListNode == false) {
+				lArgs = new ArrayNode(lhs.getPosition()).add(lArgs);
+				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
 			}
-            lArgs.add(rhs);
+            ((IListNode)lArgs).add(rhs);
         }
+        
         return result;
     }
     
@@ -440,15 +375,12 @@ public class ParserSupport {
         if (node != null) {
             if (node instanceof BlockPassNode) {
                 errorHandler.handleError(IErrors.COMPILE_ERROR, position, "Dynamic constant assignment.");
+            } else if (node instanceof ArrayNode &&
+                    ((ArrayNode)node).size() == 1) {
+                node = (INode) ((ArrayNode)node).iterator().next();
+            } else if (node instanceof SplatNode) {
+                node = new SValueNode(position, node);
             }
-
-            if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-        	    node = (INode) ((ArrayNode)node).iterator().next();
-        	}
-        	/* TODO: SPLAT rule...
-        	if (node != null && node instanceof RestArgsNode) {
-        	    node = NEW_SVALUE(node);
-        	}*/
         }
         
         return node;
@@ -489,9 +421,9 @@ public class ParserSupport {
                 errorHandler.handleError(IErrors.WARN, null, "Found '=' in conditional, should be '=='.", null);
             }
             return true;
-        } else {
-            return false;
-        }
+        } 
+
+        return false;
     }
 
     private INode cond0(INode node) {
@@ -517,9 +449,9 @@ public class ParserSupport {
             getLocalNames().ensureLocalRegistered("_");
             getLocalNames().ensureLocalRegistered("~");
             return new MatchNode(node.getPosition(), new RegexpNode(node.getPosition(), ((StrNode) node).getValue(), 0));
-        } else {
-            return node;
-        }
+        } 
+
+        return node;
     }
 
     public INode getConditionNode(INode node) {
@@ -527,9 +459,9 @@ public class ParserSupport {
             return null;
         } else if (node instanceof NewlineNode) {
             return new NewlineNode(node.getPosition(), cond0(((NewlineNode) node).getNextNode()));
-        } else {
-            return cond0(node);
-        }
+        } 
+
+        return cond0(node);
     }
 
     private INode getFlipConditionNode(INode node) {
@@ -539,9 +471,9 @@ public class ParserSupport {
             return ((NewlineNode) node).getNextNode();
         } else if (node instanceof FixnumNode) {
             return getOperatorCallNode(node, "==", new GlobalVarNode(node.getPosition(), "$."));
-        } else {
-            return node;
-        }
+        } 
+
+        return node;
     }
 
     public AndNode newAndNode(INode left, INode right) {
@@ -569,10 +501,19 @@ public class ParserSupport {
 
     public INode new_call(INode receiverNode, String name, INode args) {
         if (args != null && args instanceof BlockPassNode) {
-            ((BlockPassNode) args).setIterNode(new CallNode(receiverNode.getPosition(), receiverNode, name, ((BlockPassNode) args).getArgsNode()));
+            INode node = ((BlockPassNode) args).getArgsNode();
+            IListNode argsNode = null;
+            
+            if (node instanceof ArrayNode) {
+                argsNode = (IListNode) node;
+            } else if (node != null){
+                argsNode = new ArrayNode(node.getPosition()).add(node);
+            }
+            
+            ((BlockPassNode) args).setIterNode(new CallNode(receiverNode.getPosition(), receiverNode, name, argsNode));
             return args;
         }
-        return new CallNode(receiverNode.getPosition(), receiverNode, name, (IListNode) args);
+        return new CallNode(receiverNode.getPosition(), receiverNode, name, args);
     }
 
     public INode new_fcall(String name, INode args, ISourcePosition iPosition) {
@@ -580,7 +521,7 @@ public class ParserSupport {
             ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new FCallNode(iPosition, name, (IListNode) args);
+        return new FCallNode(iPosition, name, args);
     }
 
     public INode new_super(INode args, ISourcePosition iPosition) {
@@ -773,5 +714,41 @@ public class ParserSupport {
         }
         
         return new EvStrNode(position, head);
+    }
+    
+    public INode new_yield(ISourcePosition position, INode node) {
+        boolean state = true;
+        
+        if (node != null) {
+            if (node instanceof BlockPassNode) {
+                errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Block argument should not be given.", null);
+            }
+            
+            if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
+                node = (INode) ((ArrayNode)node).iterator().next();
+                state = false;
+            }
+            
+            if (node != null && node instanceof SplatNode) {
+                state = true;
+            }
+        } else {
+            state = false;
+        }
+
+        return new YieldNode(position, node, state);
+    }
+    
+    public IListNode list_concat(IListNode first, INode second) {
+        if (second instanceof IListNode == false) {
+            return first.add(second);
+        }
+        IListNode concatee = (IListNode) second;
+        
+        for (Iterator iterator = concatee.iterator(); iterator.hasNext();) {
+            first.add((INode)iterator.next());
+        }
+        
+        return first;
     }
 }

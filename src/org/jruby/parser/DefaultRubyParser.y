@@ -137,8 +137,8 @@ public class DefaultRubyParser implements IParser {
 %type <INode>  compstmt bodystmt stmts stmt expr arg primary command command_call method_call
 %type <IListNode> qword_list word_list 
 %type <INode>  expr_value primary_value opt_else cases
-%type <INode>  if_tail exc_var opt_ensure
-%type <INode>  call_args call_args2 open_args paren_args opt_paren_args
+%type <INode>  if_tail exc_var opt_ensure paren_args opt_paren_args
+%type <INode>  call_args call_args2 open_args
 %type <INode>  command_args var_ref 
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
 %type <INode>  superclass block_call block_command
@@ -147,13 +147,13 @@ public class DefaultRubyParser implements IParser {
 %type <INode> undef_list backref string_dvar
 %type <INode> block_var opt_block_var lhs none
 %type <IterNode> brace_block do_block cmd_brace_block 
-%type <INode> mlhs_item mlhs_node
-%type <INode> mrhs mlhs mlhs_basic mlhs_entry arg_value case_body 
+%type <INode> mrhs mlhs_item mlhs_node arg_value case_body 
+%type <MultipleAsgnNode> mlhs mlhs_basic mlhs_entry
 %type <IListNode> args when_args mlhs_head assocs assoc 
-%type <INode> exc_list 
+%type <INode> exc_list aref_args 
 %type <RescueBodyNode> opt_rescue
 %type <Object> variable var_lhs
-%type <IListNode> none_list aref_args assoc_list f_optarg 
+%type <IListNode> none_list assoc_list f_optarg 
 %type <String>   fitem sym symbol operation operation2 operation3
 %type <String>   cname fname op 
 %type <Integer>  f_norm_arg f_arg f_rest_arg
@@ -342,11 +342,10 @@ stmt          : kALIAS fitem {
                 }
               | mlhs '=' command_call {
                     support.checkExpression($3);
-		    if ($1 instanceof MultipleAsgnNode && 
-			((MultipleAsgnNode) $1).getHeadNode() == null) {
-		        $<IAssignableNode>1.setValueNode(new ArrayNode(getPosition()).add($3));
+		    if ($1.getHeadNode() != null) {
+		        $1.setValueNode(new ToAryNode(getPosition(), $3));
 		    } else {
-                        $<IAssignableNode>1.setValueNode($3);
+		        $1.setValueNode(new ArrayNode(getPosition()).add($3));
 		    }
 		    $$ = $1;
                 }
@@ -394,14 +393,13 @@ stmt          : kALIAS fitem {
                     $$ = null;
                 }
               | lhs '=' mrhs {
-                    $$ = support.node_assign($1, $3);
+                    $$ = support.node_assign($1, new SValueNode(getPosition(), $3));
                 }
  	      | mlhs '=' arg_value {
-                    if ($1 instanceof MultipleAsgnNode && 
-			((MultipleAsgnNode) $1).getHeadNode() == null) {
-		        $<IAssignableNode>1.setValueNode(new ArrayNode(getPosition()).add($3));
+                    if ($1.getHeadNode() != null) {
+		        $1.setValueNode(new ToAryNode(getPosition(), $3));
 		    } else {
-                        $<IAssignableNode>1.setValueNode($3);
+		        $1.setValueNode(new ArrayNode(getPosition()).add($3));
 		    }
 		    $$ = $1;
 		}
@@ -485,8 +483,7 @@ command       : operation command_args  %prec tLOWEST {
 		    }
 		 }
               | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
-		      /* not in ruby support.checkExpression($1); */
-                    $$ = support.new_call($1, $3, $4); //.setPosFrom($1);
+                    $$ = support.new_call($1, $3, $4);
                 }
  	      | primary_value tCOLON2 operation2 command_args cmd_brace_block {
                     $$ = support.new_call($1, $3, $4); 
@@ -502,7 +499,7 @@ command       : operation command_args  %prec tLOWEST {
 		    $$ = support.new_super($2, getPosition()); // .setPosFrom($2);
 		}
               | kYIELD command_args {
-	            $$ = new YieldNode(getPosition(), $2); // .setPosFrom($2);
+                    $$ = support.new_yield(getPosition(), $2);
 		}
 
 mlhs          : mlhs_basic
@@ -696,7 +693,6 @@ reswords	: k__LINE__ | k__FILE__  | klBEGIN | klEND
 		| kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
 
 arg           : lhs '=' arg {
-		      /* not in ruby support.checkExpression($3); */
                     $$ = support.node_assign($1, $3);
                 }
 	      | lhs '=' arg kRESCUE_MOD arg {
@@ -887,7 +883,7 @@ arg_value     : arg {
 	            $$ = $1;   
 		}
 
-aref_args     : none_list
+aref_args     : none
               | command opt_nl {
 		    errorHandler.handleError(IErrors.WARN, null, "parenthesize argument(s) for future version");
                     $$ = new ArrayNode(getPosition()).add($1);
@@ -897,18 +893,17 @@ aref_args     : none_list
                 }
               | args ',' tSTAR arg opt_nl {
                     support.checkExpression($4);
-                    $$ = $1.add(new ExpandArrayNode($4));
+                    $$ = support.arg_concat(getPosition(), $1, $4);
                 }
               | assocs trailer {
                     $$ = new ArrayNode(getPosition()).add(new HashNode($1));
                 }
               | tSTAR arg opt_nl {
                     support.checkExpression($2);
-
-                    $$ = new ArrayNode(getPosition()).add(new ExpandArrayNode($2));
+		    $$ = new NewlineNode(getPosition(), new SplatNode(getPosition(), $2));
                 }
 
-paren_args    : '(' none ')' {
+paren_args    : '(' none_list ')' {
                     $$ = $2;
                 }
               | '(' call_args opt_nl ')' {
@@ -924,7 +919,7 @@ paren_args    : '(' none ')' {
                 }
 
 opt_paren_args: none
-              | paren_args
+              | paren_args 
 
 call_args     : command {
 		    errorHandler.handleError(IErrors.WARN, null, "parenthesize argument(s) for future version");
@@ -934,66 +929,72 @@ call_args     : command {
                     $$ = support.arg_blk_pass($1, $2);
                 }
               | args ',' tSTAR arg_value opt_block_arg {
-                    $$ = support.arg_blk_pass($1.add(new ExpandArrayNode($4)), $5);
+                    $$ = support.arg_concat(getPosition(), $1, $4);
+                    $$ = support.arg_blk_pass((INode)$$, $5);
                 }
               | assocs opt_block_arg {
-                    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new HashNode($1)), $2);
+                    $$ = new ArrayNode(getPosition()).add(new HashNode($1));
+                    $$ = support.arg_blk_pass((INode)$$, $2);
                 }
               | assocs ',' tSTAR arg_value opt_block_arg {
-                    $$ = support.arg_blk_pass($1.add(new ExpandArrayNode($4)), $5);
+                    $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode($1)), $4);
+                    $$ = support.arg_blk_pass((INode)$$, $5);
                 }
               | args ',' assocs opt_block_arg {
-                    $$ = support.arg_blk_pass($1.add(new HashNode($3)), $4);
+                    $$ = $1.add(new HashNode($3));
+                    $$ = support.arg_blk_pass((INode)$$, $4);
                 }
               | args ',' assocs ',' tSTAR arg opt_block_arg {
                     support.checkExpression($6);
-                    $$ = support.arg_blk_pass($1.add(new HashNode($3)).add(new ExpandArrayNode($6)), $7);
+		    $$ = support.arg_concat(getPosition(), $1.add(new HashNode($3)), $6);
+                    $$ = support.arg_blk_pass((INode)$$, $7);
                 }
               | tSTAR arg_value opt_block_arg {
-		    // FIXME
-                    // $$ = support.arg_blk_pass(new RestArgsNode(getPosition(), $2), $3);
-		    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new ExpandArrayNode($2)), $3);
+                    $$ = support.arg_blk_pass(new SplatNode(getPosition(), $2), $3);
                 }
               | block_arg {
 	        }
 
 call_args2	: arg_value ',' args opt_block_arg {
-		      $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add($3), $4);
+                      $$ = support.arg_blk_pass(support.list_concat(new ArrayNode(getPosition()).add($1), $3), $4);
 		  }
 		| arg_value ',' block_arg {
                       $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1), $3);
                   }
 		| arg_value ',' tSTAR arg_value opt_block_arg {
-                      $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add(new ExpandArrayNode($4)), $5);
+                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add($1), $4);
+                      $$ = support.arg_blk_pass((INode)$$, $5);
 		  }
 		| arg_value ',' args ',' tSTAR arg_value opt_block_arg {
-                      $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add(new HashNode($3)).add(new ExpandArrayNode($6)), $7);
+                      $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), new HashNode($3)), $6);
+                      $$ = support.arg_blk_pass((INode)$$, $7);
 		  }
 		| assocs opt_block_arg {
-		    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new HashNode($1)), $2);
+                      $$ = new ArrayNode(getPosition()).add(new HashNode($1));
+                      $$ = support.arg_blk_pass((INode)$$, $2);
 		  }
 		| assocs ',' tSTAR arg_value opt_block_arg {
-		    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new ExpandArrayNode($1)).add($4), $5);
+                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode($1)), $4);
+                      $$ = support.arg_blk_pass((INode)$$, $5);
 		  }
 		| arg_value ',' assocs opt_block_arg {
-		    // list_append and I just added the hash
-		    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add(new ExpandArrayNode($3)), $4);
+                      $$ = new ArrayNode(getPosition()).add($1).add(new HashNode($3));
+                      $$ = support.arg_blk_pass((INode)$$, $4);
 		  }
 		| arg_value ',' args ',' assocs opt_block_arg {
-		    // list_append and I just added the hash
-	            $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add($3).add(new ExpandArrayNode($5)), $6);
+                      $$ = support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode($5));
+                      $$ = support.arg_blk_pass((INode)$$, $6);
 		  }
 		| arg_value ',' assocs ',' tSTAR arg_value opt_block_arg {
-		    // list_append and I just added the hash
-		    $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add(new ExpandArrayNode($3)).add($6), $7);
+                      $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add($1).add(new HashNode($3)), $6);
+                      $$ = support.arg_blk_pass((INode)$$, $7);
 		  }
 		| arg_value ',' args ',' assocs ',' tSTAR arg_value opt_block_arg {
-		    // list_append and I just added the hash
-		      $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add($1).add($3).add(new ExpandArrayNode($5)).add($8), $9);
+                      $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode($5)), $8);
+                      $$ = support.arg_blk_pass((INode)$$, $9);
 		  }
 		| tSTAR arg_value opt_block_arg {
-		      // This may be a fixme (see tStar in last production)
-		      $$ = support.arg_blk_pass(new ArrayNode(getPosition()).add(new ExpandArrayNode($2)), $3);
+                      $$ = support.arg_blk_pass(new SplatNode(getPosition(), $2), $3);
 		  }
 		| block_arg {}
 
@@ -1035,19 +1036,14 @@ args          : arg_value {
                     $$ = $1.add($3);
                 }
 
-// ENEBO: By making this an INodeList ExpandArrayNode is broken.  
-// I think mrhs should be an INode which checks to see if it is a list
-// or ExpandArrayNode at visit time.  Then it should eval the Expand Array
-// node which should create an Node list.  Then it treat like a list.
 mrhs          : args ',' arg_value {
 		    $$ = $1.add($3);
                 }
  	      | args ',' tSTAR arg_value {
-	            // Append?
-		      $$ = $1.add($4);
+                    $$ = support.arg_concat(getPosition(), $1, $4);
 		}
               | tSTAR arg_value {  
-                    $$ = new ExpandArrayNode($2);
+                    $$ = new SplatNode(getPosition(), $2);
 		}
 
 primary       : literal
@@ -1084,7 +1080,7 @@ primary       : literal
                 }
               | tLBRACK aref_args ']' {
                     if ($2 == null) {
-                        $$ = new ArrayNode(getPosition()); /* zero length array*/
+                        $$ = new ZArrayNode(getPosition()); /* zero length array*/
                     } else {
                         $$ = $2;
                     }
@@ -1096,13 +1092,13 @@ primary       : literal
 		    $$ = new ReturnNode(getPosition(), null);
                 }
               | kYIELD '(' call_args ')' {
-                    $$ = new YieldNode(getPosition(), $3);
+                    $$ = support.new_yield(getPosition(), $3);
                 }
               | kYIELD '(' ')' {
-                    $$ = new YieldNode(getPosition(), null);
+                    $$ = new YieldNode(getPosition(), null, false);
                 }
               | kYIELD {
-                    $$ = new YieldNode(getPosition(), null);
+                    $$ = new YieldNode(getPosition(), null, false);
                 }
               | kDEFINED opt_nl '(' {
 	            support.setInDefined(true);
@@ -1297,7 +1293,7 @@ opt_else      : none
                 }
 
 block_var     : lhs
-              | mlhs
+              | mlhs {}
 
 opt_block_var : none
               | '|' /* none */ '|' {

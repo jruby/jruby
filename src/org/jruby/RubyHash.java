@@ -363,7 +363,7 @@ public class RubyHash extends RubyObject {
         while (iter.hasNext()) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-			runtime.yield(RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
+			runtime.yield(RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
         }
         return this;
     }
@@ -489,7 +489,7 @@ public class RubyHash extends RubyObject {
 		while (iter.hasNext()) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = runtime.yield(RubyArray.newArray(runtime, key, value));
+			IRubyObject shouldDelete = runtime.yield(RubyArray.newArray(runtime, key, value), null, null, true);
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;

@@ -41,6 +41,7 @@ import org.jruby.util.CommandlineParser;
 
 import java.io.Reader;
 import java.util.Iterator;
+import java.util.Properties;
 
 /**
  * Class used to launch the interpreter.
@@ -130,6 +131,14 @@ public class Main {
         runtime.setVerbose(commandline.verbose);
         defineGlobal(runtime, "$VERBOSE", commandline.verbose);
         runtime.defineGlobalConstant("ARGV", argumentArray);
+
+        // I guess ENV is not a hash, but should support a to_hash, though
+        // it supposedly supports methods of a Hash?  Also, I think that
+        // RubyGlobal may need to create an empty ENV var in the case that
+        // the runtime is not initialized by Main.
+        Properties envs = new Properties();
+        runtime.defineGlobalConstant("ENV", RubyHash.newHash(runtime, envs, null));
+
         defineGlobal(runtime, "$-p", commandline.assumePrinting);
         defineGlobal(runtime, "$-n", commandline.assumeLoop);
         defineGlobal(runtime, "$-a", commandline.sDoSplit);
