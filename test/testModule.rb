@@ -23,6 +23,13 @@ test_equal(4, TestModule_Foo.new.abc(2))
 test_equal(10, TestModule_Foo::XYZ)
 test_equal(TestModule_Foo, TestModule_Foo::ABC)
 
+class TestModule2
+end
+TestModule2.module_eval("def abc(x); 3 * x; end; XYZ = 12; ABC = self")
+test_equal(6, TestModule2.new.abc(2))
+test_equal(12, TestModule2::XYZ)
+test_equal(TestModule2, TestModule2::ABC)
+
 module A
   module B
     module C

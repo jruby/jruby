@@ -464,7 +464,15 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             */
             IRubyObject file = args.length > 1 ? args[1] : RubyString.newString(getRuntime(), "(eval)");
             IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
-            return evalUnder(mod, args[0], file, line);
+
+            Scope currentScope = runtime.getScope().current();
+            Visibility savedVisibility = currentScope.getVisibility();
+            currentScope.setVisibility(Visibility.PUBLIC);
+            try {
+                return evalUnder(mod, args[0], file, line);
+            } finally {
+                currentScope.setVisibility(savedVisibility);
+            }
         }
     }
 
@@ -478,11 +486,14 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         */
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                return args[0].eval(
-                    args[1],
-                    self.getRuntime().getNil(),
-                    ((RubyString) args[2]).getValue(),
-                    RubyNumeric.fix2int(args[3]));
+                IRubyObject under = args[0];
+                IRubyObject src = args[1];
+                IRubyObject file = args[2];
+                IRubyObject line = args[3];
+                return under.eval(src,
+                                  self.getRuntime().getNil(),
+                                  ((RubyString) file).getValue(),
+                                  RubyNumeric.fix2int(line));
             }
 
             public Arity getArity() {
@@ -494,16 +505,21 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     private IRubyObject yieldUnder(RubyModule under) {
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                // Fixme: What good is this copying, when it is referenced frame and scope objects
-                // that are modified here? Some other modifications?
-                Block savedBlock = runtime.getBlockStack().getCurrent().cloneBlock();
-                Namespace ns = runtime.getCurrentFrame().getNamespace();
-                runtime.getBlockStack().getCurrent().getFrame().setNamespace(ns);
-                runtime.getBlockStack().getCurrent().getScope().setVisibility(Visibility.PUBLIC);
+                ThreadContext context = runtime.getCurrentContext();
+
+                Block currentBlock = context.getBlockStack().getCurrent();
+                Namespace savedNamespace = currentBlock.getFrame().getNamespace();
+                Visibility savedVisibility = currentBlock.getScope().getVisibility();
+
+                currentBlock.getFrame().setNamespace(context.getCurrentFrame().getNamespace());
+                currentBlock.getScope().setVisibility(Visibility.PUBLIC);
                 try {
-                    return runtime.yield(args[0], args[0], runtime.getRubyClass(), false);
+                    IRubyObject valueInYield = args[0];
+                    IRubyObject selfInYield = args[0];
+                    return context.yield(valueInYield, selfInYield, context.getRubyClass(), false);
                 } finally {
-                    runtime.getBlockStack().setCurrent(savedBlock);
+                    currentBlock.getFrame().setNamespace(savedNamespace);
+                    currentBlock.getScope().setVisibility(savedVisibility);
                 }
             }
 
