@@ -18,7 +18,8 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ * Copyright (C) 2005 Kiel Hodges <jruby-devel@selfsosoft.com>
+ *  
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -39,6 +40,7 @@ import java.util.Properties;
 
 import org.jruby.ast.Node;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.SystemExit;
 import org.jruby.exceptions.ThrowJump;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
@@ -113,21 +115,33 @@ public class Main {
 
     private static int runInterpreter(Reader reader, String filename) {
         Ruby runtime = Ruby.getDefaultInstance();
-        int status = 0;
-        try {
-            initializeRuntime(runtime, filename);
-            Node parsedScript = getParsedScript(runtime, reader, filename);
-            runtime.eval(parsedScript);
 
+        try {
+        	runInterpreter(runtime, reader, filename);
+        	return 0;
+        	
+        } catch (SystemExit e) {
+        	RubyFixnum status = (RubyFixnum)e.getException().getInstanceVariable("status");
+        	
+        	return RubyNumeric.fix2int(status);
         } catch (RaiseException rExcptn) {
             runtime.printError(rExcptn.getException());
-            status = 1;
+            return 1;
         } catch (ThrowJump throwJump) {
             runtime.printError(throwJump.getNameError());
-            status = 1;
+            return 1;
         }
-        runtime.tearDown();
-        return status;
+    }
+    
+    private static void runInterpreter(Ruby runtime, Reader reader, String filename) {
+    	try {
+    		initializeRuntime(runtime, filename);
+    		Node parsedScript = getParsedScript(runtime, reader, filename);
+    		runtime.eval(parsedScript);
+    	
+    	} finally {
+    		runtime.tearDown();
+    	}
     }
 
     private static Node getParsedScript(Ruby runtime, Reader reader, String filename) {
