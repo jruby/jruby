@@ -53,6 +53,7 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
     private static final int INVOKE = 5;
     private static final int ARGUMENT_TYPES = 6;
     private static final int INSPECT = 7;
+    private static final int STATIC_P = 8;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaMethodClass =
@@ -64,6 +65,7 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE, 1));
         javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
         javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
+        javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
 
         return javaMethodClass;
     }
@@ -175,6 +177,10 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         return RubyString.newString(getRuntime(), result.toString());
     }
 
+    public RubyBoolean static_p() {
+        return RubyBoolean.newBoolean(getRuntime(), Modifier.isStatic(method.getModifiers()));
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case NAME :
@@ -191,6 +197,8 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
                 return argument_types();
             case INSPECT :
                 return inspect();
+            case STATIC_P :
+                return static_p();
             default :
                 return super.callIndexed(index, args);
         }

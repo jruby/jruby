@@ -29,6 +29,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubyJavaObject;
+import org.jruby.RubyArray;
 import org.jruby.util.Asserts;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
@@ -45,6 +46,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
     private static final int ARITY = 1;
     private static final int NEW_INSTANCE = 2;
     private static final int INSPECT = 3;
+    private static final int ARGUMENT_TYPES = 4;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaConstructorClass =
@@ -53,6 +55,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         javaConstructorClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
         javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE, 1));
         javaConstructorClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
+        javaConstructorClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
 
         return javaConstructorClass;
     }
@@ -81,12 +84,15 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         Object[] constructorArguments = new Object[args.length - 1];
         Class[] types = constructor.getParameterTypes();
         for (int i = 1; i < args.length; i++) {
-            constructorArguments[i - 1] = JavaUtil.convertRubyToJava(getRuntime(), args[i], types[i - 1]);
+            constructorArguments[i - 1] = convertArgument(args[i], types[i - 1]);
         }
         try {
             Object result = constructor.newInstance(constructorArguments);
             return new RubyJavaObject(getRuntime(), returnType, result);
 
+        } catch (IllegalArgumentException iae) {
+            throw new TypeError(getRuntime(), "expected " + argument_types().inspect() +
+                                              ", got [" + constructorArguments[0].getClass().getName() + ", ...]");
         } catch (IllegalAccessException iae) {
             throw new TypeError(getRuntime(), "illegal access");
         } catch (InvocationTargetException ite) {
@@ -112,6 +118,33 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         return RubyString.newString(getRuntime(), result.toString());
     }
 
+    public RubyArray argument_types() {
+        Class[] parameterTypes = constructor.getParameterTypes();
+        RubyArray result = RubyArray.newArray(getRuntime(), parameterTypes.length);
+        for (int i = 0; i < parameterTypes.length; i++) {
+            result.append(RubyString.newString(getRuntime(), parameterTypes[i].getName()));
+        }
+        return result;
+    }
+
+    private Object convertArgument(Object argument, Class parameterType) {
+        Object result = argument;
+        if (result instanceof RubyJavaObject) {
+            result = ((RubyJavaObject) result).getValue();
+        }
+        // FIXME: do convertions for all numeric types
+        if (parameterType.equals(Integer.class) || parameterType.equals(Integer.TYPE)) {
+            if (result instanceof Long) {
+                result = new Integer(((Long) result).intValue());
+            }
+        } else if (parameterType.equals(Long.class) || parameterType.equals(Long.TYPE)) {
+            if (result instanceof Integer) {
+                result = new Long(((Integer) result).longValue());
+            }
+        }
+        return result;
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case ARITY :
@@ -120,6 +153,8 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
                 return new_instance(args);
             case INSPECT :
                 return inspect();
+            case ARGUMENT_TYPES :
+                return argument_types();
             default :
                 return super.callIndexed(index, args);
         }

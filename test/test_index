@@ -29,6 +29,7 @@ testPackUnpack.rb
 testRandom.rb
 testStruct.rb
 testGC.rb
+testLowerJavaSupport.rb
 testJavaSupport.rb
 testDir.rb
 testVisibility.rb

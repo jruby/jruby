@@ -24,8 +24,12 @@
 module JavaProxy
   attr :java_class, true
 
-  def convert_arguments(arguments)
+  def JavaProxy.convert_arguments(arguments)
     arguments.collect {|v| Java.primitive_to_java(v) }
+  end
+
+  def convert_arguments(arguments)
+    JavaProxy.convert_arguments(arguments)
   end
 end
 
@@ -91,6 +95,7 @@ class Module
       if constructor.nil?
         raise NameError.new("wrong # of arguments for constructor")
       end
+      args = JavaProxy.convert_arguments(args)
       result = constructor.new_instance(self, *args)
       result.java_class = @java_class
       result
