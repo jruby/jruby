@@ -50,13 +50,30 @@ public class RubyException extends RubyObject {
         
         exceptionClass.defineMethod("to_s", CallbackFactory.getMethod(RubyException.class, "to_s"));
         exceptionClass.defineMethod("to_str", CallbackFactory.getMethod(RubyException.class, "to_s"));
+        exceptionClass.defineMethod("message", CallbackFactory.getMethod(RubyException.class, "to_s"));
         exceptionClass.defineMethod("inspect", CallbackFactory.getMethod(RubyException.class, "inspect"));
+        
+        exceptionClass.defineMethod("backtrace", CallbackFactory.getMethod(RubyException.class, "backtrace"));
+        exceptionClass.defineMethod("set_backtrace", CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyObject.class));
         
         // exceptionClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
         
         return exceptionClass;
     }
-
+    
+    private RubyArray createBacktrace(RubyObject newBackTrace) {
+        if (newBackTrace instanceof RubyString) {
+            return RubyArray.newArray(ruby, newBackTrace);
+        } else if (newBackTrace instanceof RubyArray) {
+            for (int i = 0; i < ((RubyArray)newBackTrace).getLength(); i++) {
+                if (!(((RubyArray)newBackTrace).entry(i) instanceof RubyString)) {
+                    throw new TypeError(ruby, "backtrace must be Array of String");
+                }
+            }
+            return (RubyArray)newBackTrace;
+        }
+        throw new TypeError(ruby, "backtrace must be Array of String");
+    }
 
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
         RubyException newException = new RubyException(ruby, excptnClass);
@@ -70,6 +87,17 @@ public class RubyException extends RubyObject {
             newException.setInstanceVar("mesg", args[0]);
         }
         return newException;
+    }
+    
+    public RubyArray backtrace() {
+        if (!isInstanceVarDefined("bt")) {
+            return RubyArray.nilArray(ruby);
+        }
+        return (RubyArray)getInstanceVar("bt");
+    }
+
+    public RubyArray set_backtrace(RubyObject newBacktrace) {
+        return (RubyArray)setInstanceVar("bt", createBacktrace(newBacktrace));
     }
 
     public RubyException exception(RubyObject[] args) {

@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import java.io.*;
 import java.util.ArrayList;
 
 import org.jruby.exceptions.RaiseException;
@@ -273,11 +274,21 @@ public class Main {
                 ruby.getRubyTopSelf().eval(lScript);
             }
         } catch (RaiseException rExcptn) {
-            System.out.println(rExcptn.getActException().to_s().getValue());
+            // +++ Move to another class
+            PrintStream err = ruby.getRuntime().getErrorStream();
+            err.print(rExcptn.getActException().getRubyClass().toName());
+            err.print(": ");
+            err.println(rExcptn.getActException().to_s());
+
+            RubyArray backtrace = (RubyArray)rExcptn.getActException().funcall("backtrace");
+            for (int i = 0; i < backtrace.getLength(); i++) {
+                err.println(backtrace.entry(i));
+            }
+            // ---
         }
         // ---
 		// to look nicer
-		System.out.println("");
+		ruby.getRuntime().getOutputStream().println("");
     }
 
     /**

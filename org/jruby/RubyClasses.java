@@ -262,6 +262,8 @@ public class RubyClasses {
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
         
+        structClass = RubyStruct.createStructClass(ruby);
+        
         RubyGlobal.createGlobals(ruby);
     }
 

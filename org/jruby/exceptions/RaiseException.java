@@ -1,12 +1,9 @@
 /*
  * RaiseException.java - No description
- * Created on 10. September 2001, 17:54
+ * Created on 18.01.2002, 22:26:09
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,10 +24,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.exceptions;
 
 import org.jruby.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -41,19 +38,62 @@ public class RaiseException extends RuntimeException {
     private RubyException actException;
 
     public RaiseException(RubyException actException) {
-        this.actException = actException;
+        setActException(actException);
     }
 
     public RaiseException(Ruby ruby, RubyClass excptnClass, String msg) {
-        this.actException = RubyException.newException(ruby, excptnClass, msg);
+        setActException(RubyException.newException(ruby, excptnClass, msg));
     }
 
     public RaiseException(Ruby ruby, String excptnClass, String msg) {
-        this.actException =
-            RubyException.newException(
-                ruby,
-                (RubyClass) ruby.getRubyModule(excptnClass),
-                msg);
+        setActException(RubyException.newException(ruby, (RubyClass) ruby.getRubyModule(excptnClass), msg));
+    }
+
+    /** Create an Array with backtrace information.
+     * 
+     * MRI: eval.c - backtrace
+     * 
+     */
+    public static RubyArray createBacktrace(Ruby ruby, int level) {
+        RubyFrame frame = ruby.getRubyFrame();
+
+        RubyArray backtrace = RubyArray.newArray(ruby);
+
+        if (level < 0) {
+            StringBuffer sb = new StringBuffer(100);
+
+            if (frame.getLastFunc() != null) {
+                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
+                sb.append(":in '").append(frame.getLastFunc()).append('\'');
+            } else if (ruby.getSourceLine() == 0) {
+                sb.append(ruby.getSourceFile());
+            } else {
+                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
+            }
+            backtrace.push(RubyString.newString(ruby, sb.toString()));
+        } else {
+            while (level-- > 0) {
+                frame = frame.getPrev();
+                if (frame == null) {
+                    return RubyArray.nilArray(ruby);
+                }
+            }
+        }
+
+        while (frame != null && frame.getFile() != null) {
+            StringBuffer sb = new StringBuffer(100);
+            if (frame.getPrev() != null && frame.getPrev().getLastFunc() != null) {
+                sb.append(frame.getFile()).append(':').append(frame.getLine());
+                sb.append(":in '").append(frame.getPrev().getLastFunc()).append('\'');
+            } else {
+                sb.append(frame.getFile()).append(':').append(frame.getLine());
+            }
+            backtrace.push(RubyString.newString(ruby, sb.toString()));
+
+            frame = frame.getPrev();
+        }
+
+        return backtrace;
     }
 
     /**
@@ -68,8 +108,11 @@ public class RaiseException extends RuntimeException {
      * Sets the actException
      * @param actException The actException to set
      */
-    public void setActException(RubyException actException) {
+    protected void setActException(RubyException actException) {
         this.actException = actException;
-    }
 
+        if (actException.funcall("backtrace").isNil() && actException.getRuby().getSourceFile() != null) {
+            actException.funcall("set_backtrace", createBacktrace(actException.getRuby(), -1));
+        }
+    }
 }
