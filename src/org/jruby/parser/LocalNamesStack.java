@@ -70,6 +70,10 @@ public class LocalNamesStack extends AbstractStack {
         return ((LocalNamesElement)getTop()).registerLocal(name);
     }
 
+    public void ensureLocalRegistered(String name) {
+        ((LocalNamesElement)getTop()).ensureLocalRegistered(name);
+    }
+
     public List getNames() {
         return ((LocalNamesElement)getTop()).getLocalNames();
     }

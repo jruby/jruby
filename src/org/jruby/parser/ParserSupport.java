@@ -238,7 +238,7 @@ public class ParserSupport {
     }
 
     public INode getMatchNode(INode firstNode, INode secondNode) {
-        getLocalNames().getLocalIndex("~");
+        getLocalNames().ensureLocalRegistered("~");
 
         if (firstNode instanceof DRegexpNode || firstNode instanceof RegexpNode) {
             return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
@@ -343,8 +343,8 @@ public class ParserSupport {
         checkAssignmentInCondition(node);
 
         if (node instanceof DRegexpNode) {
-            getLocalNames().getLocalIndex("_");
-            getLocalNames().getLocalIndex("~");
+            getLocalNames().ensureLocalRegistered("_");
+            getLocalNames().ensureLocalRegistered("~");
             return new Match2Node(node.getPosition(), node, new GlobalVarNode(node.getPosition(), "$_"));
         } else if (node instanceof DotNode) {
             FlipNode flipNode =
@@ -359,8 +359,8 @@ public class ParserSupport {
         } else if (node instanceof RegexpNode) {
             return new MatchNode(node.getPosition(), node);
         } else if (node instanceof StrNode) {
-            getLocalNames().getLocalIndex("_");
-            getLocalNames().getLocalIndex("~");
+            getLocalNames().ensureLocalRegistered("_");
+            getLocalNames().ensureLocalRegistered("~");
             return new MatchNode(node.getPosition(), new RegexpNode(node.getPosition(), ((StrNode) node).getValue(), 0));
         } else {
             return node;

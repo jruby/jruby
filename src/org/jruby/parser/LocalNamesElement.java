@@ -101,6 +101,12 @@ public class LocalNamesElement implements StackElement {
         return registerLocal(name);
     }
 
+    public void ensureLocalRegistered(String name) {
+        if (! isLocalRegistered(name)) {
+            registerLocal(name);
+        }
+    }
+
     /**
      * Register the local variable name 'name' in the table
      * of registered variable names.
