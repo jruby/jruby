@@ -700,11 +700,11 @@ public class RubyModule extends RubyObject {
 			ent.setMid(id);
 			ent.setOrigin((RubyModule) fbody.getOrigin());
 			ent.setMid0(fbody.getMId());
-			ent.setMethod(fbody.getBodyNode());
+			ent.setMethod(fbody.getHeadNode());
 
 			result.setRecvClass((RubyModule) fbody.getOrigin());
 			result.setId(fbody.getMId());
-			body = fbody.getBodyNode();
+			body = fbody.getHeadNode();
 		} else {
 			ent.setMid(id);
 			ent.setMid0(id);
