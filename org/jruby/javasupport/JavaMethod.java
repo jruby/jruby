@@ -85,7 +85,7 @@ public class JavaMethod implements Callback {
         
         if (executeMethods.isEmpty()) {
             if (callSuper) {
-            	ruby.getRuntime().callSuper(args);
+            	return ruby.getRuntime().callSuper(args);
             } else {
             	throw new ArgumentError(ruby, "wrong argument count or types.");
             }
