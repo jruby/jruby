@@ -52,7 +52,7 @@ public class RubyFileTest {
         fileTestModule.defineSingletonMethod("writable_real?", callbackFactory.getSingletonMethod("writable_p", RubyString.class));
         fileTestModule.defineSingletonMethod("zero?", callbackFactory.getSingletonMethod("zero_p", RubyString.class));
         
-//        fileTestModule.defineMethod("file?", callbackFactory.getSingletonMethod("file_p", RubyString.class));
+        fileTestModule.defineMethod("file?", callbackFactory.getSingletonMethod("file_p", RubyString.class));
         fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod("directory_p", RubyString.class));
         fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
         fileTestModule.defineMethod("exists?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));

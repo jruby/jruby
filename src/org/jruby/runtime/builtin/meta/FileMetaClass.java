@@ -34,7 +34,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
-import org.jruby.RubyFileTest;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -104,8 +103,6 @@ public class FileMetaClass extends IOMetaClass {
         // TODO: Define instance methods: lstat, mtime, path
 		defineMethod("initialize", Arity.optional());
 		defineMethod("truncate", Arity.singleArgument());
-
-        defineSingletonMethod("file?", Arity.singleArgument(), "file_p");
     }
 
 	public RubyClass newSubClass(String name, RubyModule parentModule) {
@@ -199,10 +196,6 @@ public class FileMetaClass extends IOMetaClass {
             extractedPath = path.getAbsolutePath();
         }
         return getRuntime().newString(extractedPath);
-    }
-    
-    public IRubyObject file_p(IRubyObject arg) {
-    	return RubyFileTest.file_p(this, RubyString.stringValue(arg));
     }
     
     public RubyString join(IRubyObject[] args) {
