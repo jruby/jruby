@@ -31,8 +31,6 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
-//import sun.security.krb5.internal.*;
-//import sun.security.krb5.internal.crypto.*;
 
 /**
  * @author jpetersen
