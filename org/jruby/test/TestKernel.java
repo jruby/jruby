@@ -51,38 +51,35 @@ import java.io.File;
  **/
 public class TestKernel extends TestRubyBase {
 
-	public TestKernel(String name) {
-		super(name);
-	}
+    public TestKernel(String name) {
+	super(name);
+    }
 
-	public void setUp() {
-		ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
-		ruby.initLoad(new ArrayList());
-	}
+    public void setUp() {
+	ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+	ruby.initLoad(new ArrayList());
+    }
 
-	public void testLoad() 
-	{
-		//load should work several times in a row
-		assertEquals("0", eval("load 'test/loadTest'"));
-		assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest'"));
-	}
+    public void testLoad()  {
+	//load should work several times in a row
+	assertEquals("0", eval("load 'test/loadTest'"));
+	assertEquals("load did not load the same file several times", "1", eval("load 'test/loadTest'"));
+    }
 
-	public void testRequire()
-	{
-		//reset the $loadTestvar
-		eval("$loadTest = nil");
-		assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
-		assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
-		
-		assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
-	}
-	
-	private void assertTrue(RubyObject iObj)
-	{
-		assertTrue(iObj.isTrue());
-	}
-	public void tearDown() {
-		super.tearDown();
-	}
+    public void testRequire() {
+	//reset the $loadTestvar
+	eval("$loadTest = nil");
+	assertEquals("failed to load the file test/loadTest", "0", eval("require 'test/loadTest'"));
+	assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
+
+	assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
+    }
+
+    private void assertTrue(RubyObject iObj) {
+	assertTrue(iObj.isTrue());
+    }
+    public void tearDown() {
+	super.tearDown();
+    }
 
 }

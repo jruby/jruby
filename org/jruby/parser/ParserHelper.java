@@ -267,6 +267,7 @@ public class ParserHelper {
      * Returns a Node representing the access of the 
      * variable or constant named id.
      *
+     * see gettable() in MRI
      *@param id The name of the variable or constant.
      *@return   A node representing the access.
      */
@@ -319,7 +320,7 @@ public class ParserHelper {
     /**
      * Returns a Node representing the assignment of value to
      * the variable or constant named id.
-     *
+     * cf assignable in MRI
      *@param id The name of the variable or constant.
      *@param valueNode A Node representing the value which should be assigned.
      *@return A Node representing the assignment.
@@ -961,9 +962,9 @@ public class ParserHelper {
 
     /**
      * Register the local variable name 'name' in the table 
-     * of registered variable names. Returns the index of the
-     * added local variable name in the table.
-     *
+     * of registered variable names. 
+     * Returns the index of the added local variable name in the table.
+     * cf local_append in MRI
      *@param name The name of the local variable.
      *@return The index of the local variable name in the table.
      */
@@ -994,7 +995,7 @@ public class ParserHelper {
      * If name is not registered yet, register the variable name.
      * 
      * If name == null returns the count of registered variable names.
-     *
+     * cf local_cnt in MRI
      *@param name The name of the local variable
      *@return The index in the table of registered variable names.
      */
@@ -1019,6 +1020,7 @@ public class ParserHelper {
      * Returns true if there was already an assignment to a local
      * variable named id, false otherwise.
      * 
+     * cf local_id in MRI
      * @param id The name of the local variable.
      * @return true if there was already an assignment to a local
      * variable named id.

@@ -1,3 +1,6 @@
+require 'minirunit'
+test_check "Test regexp substitutions:"
+
 #########    test1   #################
 rgx1 = /[a-z]+/
 str1 = "redrum".sub(rgx1, "<\\&>")

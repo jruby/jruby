@@ -15,8 +15,8 @@ def test_ok(cond)
   if cond
     printf "ok %d\n", $testnum
   else
-    where = caller[0]
-    printf "not ok %s %d -- %s\n", $what, $testnum, where
+	#    where = caller[0]
+    printf "not ok %s %d -- \n", $what, $testnum
     $failed+=1 
   end
 end

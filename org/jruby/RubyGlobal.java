@@ -240,6 +240,7 @@ public class RubyGlobal {
                 // ((RubyIO)value).fileno = 0;
 
                 entry.setData(value);
+				((RubyIO)value).setAsRubyInputStream();
             }
         }
     }
@@ -259,6 +260,8 @@ public class RubyGlobal {
                 // ((RubyIO)value).fileno = 0;
 
                 entry.setData(value);
+				//set the ruby outputstream to match
+				((RubyIO)value).setAsRubyOutputStream();
             }
         }
     }
@@ -278,6 +281,7 @@ public class RubyGlobal {
                 // ((RubyIO)value).f= 0;
 
                 entry.setData(value);
+				((RubyIO)value).setAsRubyErrorStream();
             }
         }
     }

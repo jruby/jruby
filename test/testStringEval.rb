@@ -1,3 +1,5 @@
+require 'minirunit'
+test_check "Test string evaluation:"
 
 #########    test1   #################
 test_ok('Seconds/day: 86400' == "Seconds/day: #{24*60*60}")

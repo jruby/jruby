@@ -447,4 +447,29 @@ public class RubyIO extends RubyObject {
         }
         return ruby.getNil();
     }
+
+	/**
+	 * Set this IO object outputstream as Ruby's outputstream.
+	 **/
+	public void setAsRubyOutputStream()
+	{
+		ruby.getRuntime().setOutputStream(new java.io.PrintStream(outStream));
+	}
+
+	/**
+	 * Set this IO object outputstream as Ruby's errorstream.
+	 **/
+	public void setAsRubyErrorStream()
+	{
+		ruby.getRuntime().setErrorStream(new java.io.PrintStream(outStream));
+	}
+
+	/**
+	 * Set this IO object inputStream as Ruby's inputstream.
+	 **/
+	public void setAsRubyInputStream()
+	{
+		ruby.getRuntime().setInputStream(inStream);
+	}
+
 }

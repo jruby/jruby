@@ -26,21 +26,19 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # 
-
-
-
 require 'minirunit'
-# make sure conditional operators work
-test_check "Test regexp substitutions:"
-load('test/testRegexp')
-
-test_check "Test string evaluation:"
-load('test/testStringEval')
-
-
-
-
-
+load('test/testRegexp.rb')
+load('test/testStringEval.rb')
+load('test/testHereDocument.rb')
+load('test/testClass.rb')
+load('test/testArray.rb')
+load('test/testVariableAndMethod.rb')
+load('test/testIf.rb')
+load('test/testLoops.rb')
+load('test/testMethods.rb')
+load('test/testGlobalVars.rb')
+load('test/testClasses.rb')
+load('test/testNumber.rb')
 
 
 
