@@ -113,7 +113,14 @@ DEBUG=""
 if [ "$1" = "JAVA_DEBUG" ]; then
   DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"
   shift
+else
+  if [ "$1" = "JPROFILER" ]; then
+    export LD_LIBRARY_PATH=/home/jpetersen/jprofiler/bin/linux-x86
+    DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/home/jpetersen/jprofiler/bin/agent.jar"
+    shift
+  fi
 fi
+
 	
   $JAVA_HOME/bin/java $DEBUG -classpath $CP \
   -Djruby.base=$JRUBY_BASE \
