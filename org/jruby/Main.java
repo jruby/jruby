@@ -63,15 +63,13 @@ public class Main {
     private static String sFileName = null;
     //list of libraries to require first
     private static ArrayList sRequireFirst = new ArrayList();
-    private static boolean sYyDebug = false;
     private static boolean sBenchmarkMode = false;
-    private static boolean sCheckOnly = false;
     private static boolean sDoLoop = false;
     private static boolean sDoPrint = false;
     private static boolean sDoLine = false;
     private static boolean sDoSplit = false;
-    private static boolean warning = false;
-    private static boolean version = false;
+    private static boolean verbose = false;
+    private static boolean showVersion = false;
     private static class ArgIter {
         int idxArg;
         int idxChar;
@@ -121,21 +119,15 @@ public class Main {
                             lBuf.append(grabValue(args, " -e must be followed by an expression to evaluate", lIter)).append("\n");
                             break FOR;
                         case 'b' :
-                            // Benchmark
                             sBenchmarkMode = true;
                             break;
                         case 'R' :
                             sRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate", lIter);
                             break FOR;
-                        case 'c' :
-                            sCheckOnly = true;
-                            break;
-                        case 'y' :
-                            sYyDebug = true;
-                            break;
                         case 'p' :
                             sDoPrint = true;
-                            //fall through on purpose
+                            sDoLoop = true;
+                            break;
                         case 'n' :
                             sDoLoop = true;
                             break;
@@ -147,14 +139,14 @@ public class Main {
                             break;
                         case 'v' :
                             System.out.println("ruby " + Constants.RUBY_MAJOR_VERSION + " () [java]");
-                            warning = true;
+                            verbose = true;
                             break;
                         case 'w' :
-                            warning = true;
+                            verbose = true;
                             break;
                         case '-' :
                             if (args[lIter.idxArg].equals("--version")) {
-                                version = true;
+                                showVersion = true;
                                 break FOR;
                             }
                         default :
@@ -168,9 +160,9 @@ public class Main {
             }
         }
         sScript = lBuf.toString();
-        String[] lRet = new String[lenArg - lIter.idxArg];
-        System.arraycopy(args, lIter.idxArg, lRet, 0, lRet.length);
-        return lRet;
+        String[] result = new String[lenArg - lIter.idxArg];
+        System.arraycopy(args, lIter.idxArg, result, 0, result.length);
+        return result;
     }
 
     /**
@@ -181,7 +173,7 @@ public class Main {
         // Benchmark
         long now = -1;
         String[] argv = processArgs(args);
-        if (version) {
+        if (showVersion) {
             System.out.print("ruby ");
             System.out.print(Constants.RUBY_VERSION);
             System.out.print(" (");
@@ -199,11 +191,10 @@ public class Main {
             runInterpreterOnFile(sFileName, argv);
         } else {
             System.err.println("nothing to interpret");
-            printUsage(); //interpreting from the command line not supported yet
+            printUsage();
             return;
         }
-        // Benchmark
-        if (now != -1) {
+        if (sBenchmarkMode) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
     }
@@ -215,8 +206,6 @@ public class Main {
      *           -b             benchmark mode
      *           -Idirectory    specify $LOAD_PATH directory (may be used more than once)
      *           -R 'adapter'  used to select a regexp engine
-     *           -c 			check syntax and dump parse tree
-     *           -y 			debug parser
      */
     protected static void printUsage() {
         if (!sPrintedUsage) {
@@ -225,8 +214,6 @@ public class Main {
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
             System.out.println("    -R 'name'       The regexp engine to use, for now can be JDK, GNU or ORO");
-            System.out.println("    -c 				check syntax and dump parse tree");
-            System.out.println("    -y 				activate parser traces.");
             sPrintedUsage = true;
         }
     }
@@ -245,8 +232,8 @@ public class Main {
         // Parse and interpret file
         IRubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
 
-        ruby.setVerbose(warning);
-        ruby.defineReadonlyVariable("$VERBOSE", warning ? ruby.getTrue() : ruby.getNil());
+        ruby.setVerbose(verbose);
+        ruby.defineReadonlyVariable("$VERBOSE", verbose ? ruby.getTrue() : ruby.getNil());
 
         ruby.defineGlobalConstant("ARGV", lArgv);
         ruby.defineReadonlyVariable("$-p", (sDoPrint ? ruby.getTrue() : ruby.getNil()));
@@ -268,13 +255,7 @@ public class Main {
                 lScript = new ParserSupport().appendWhileLoopToBlock(lScript, sDoLine, sDoSplit);
             }
 
-            if (sCheckOnly) {
-                //DumpVisitor lVisitor = new DumpVisitor();
-                //lScript.accept(lVisitor);
-                //ruby.getRuntime().getOutputStream().println(lVisitor.dump());
-            } else {
-                ruby.eval(lScript);
-            }
+            ruby.eval(lScript);
         } catch (RaiseException rExcptn) {
             ruby.getRuntime().printError(rExcptn.getException());
         } catch (ThrowJump throwJump) {
@@ -289,17 +270,16 @@ public class Main {
      * @param fileName the name of the file to interpret
      */
     protected static void runInterpreterOnFile(String fileName, String[] args) {
-        File rubyFile = new File(fileName);
-        if (!rubyFile.canRead()) {
-            System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
+        File file = new File(fileName);
+        if (!file.canRead()) {
+            System.out.println("Cannot read source file: \"" + fileName + "\"");
         } else {
             try {
-                BufferedReader br = new BufferedReader(new FileReader(rubyFile));
-                runInterpreter(br, fileName, args);
-                br.close();
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                runInterpreter(reader, fileName, args);
+                reader.close();
             } catch (IOException ioExcptn) {
-                System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
-                System.out.println("IOEception: " + ioExcptn.getMessage());
+                System.out.println("Error reading source file: " + ioExcptn.getMessage());
             }
         }
     }
