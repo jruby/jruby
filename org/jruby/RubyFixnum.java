@@ -121,7 +121,7 @@ public class RubyFixnum extends RubyInteger {
 
     public static RubyFixnum newFixnum(Ruby ruby, long value) {
         RubyFixnum fixnum;
-        if (value >= 0 && value < ruby.fixnumCache.size) {
+        if (value >= 0 && value < ruby.fixnumCache.length) {
             fixnum = ruby.fixnumCache[(int) value];
             if (fixnum == null) {
                 fixnum = new RubyFixnum(ruby, value);
