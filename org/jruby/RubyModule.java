@@ -1033,7 +1033,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (!id.isConstId()) {
-            throw new RubyNameException("wrong constnt name " + name);
+            throw new RubyNameException("bad constant name " + name);
         }
         
         setConstant(id, value);

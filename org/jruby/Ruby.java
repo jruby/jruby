@@ -109,7 +109,9 @@ public final class Ruby {
  
  	// plugable Regexp engine	
 	private Class regexpAdapterClass = GNURegexpAdapter.class;
-    /** Create and initialize a new jruby Runtime.
+
+    /**
+     * Create and initialize a new jruby Runtime.
      */    
     public Ruby() {
         RubyOperatorEntry.initOperatorTable(this);
@@ -121,15 +123,13 @@ public final class Ruby {
         falseObject = new RubyBoolean(this, false);
     }
    
-	public Class getRegexpAdapterClass()
-	{
-		return regexpAdapterClass;
-	}
+    public Class getRegexpAdapterClass() {
+        return regexpAdapterClass;
+    }
 
-	public void setRegexpAdapterClass(Class iRegexpAdapterClass)
-	{
-		regexpAdapterClass = iRegexpAdapterClass;
-	}
+    public void setRegexpAdapterClass(Class iRegexpAdapterClass) {
+        regexpAdapterClass = iRegexpAdapterClass;
+    }
 	
     public RubyClasses getClasses() {
         return classes;
@@ -237,9 +237,6 @@ public final class Ruby {
     }
     public void secure(int security) {
     }
-    
-    /*public void defineGlobalConst(String name, RubyObject obj) {
-    }*/
     
     public RubyFixnum getFixnumInstance(long value) {
         return new RubyFixnum(this, value);

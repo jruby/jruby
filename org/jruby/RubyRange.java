@@ -240,7 +240,7 @@ public class RubyRange extends RubyObject {
                 getRuby().yield(RubyFixnum.m_newFixnum(getRuby(), i));
             }
         } else if (begin instanceof RubyString) {
-            // rb_str_upto(b, e, EXCL(range));
+            ((RubyString)begin).upto(end, exclusive);
         } else if (begin.m_kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
         /*
 	b = rb_Integer(b);

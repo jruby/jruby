@@ -64,11 +64,11 @@ public class RbString {
         stringClass.defineMethod("empty?", getMethod("m_empty", false));
         stringClass.defineMethod("=~", getMethod("m_match", RubyObject.class));
         stringClass.defineMethod("~", getMethod("m_match2", false));
-//    rb_define_method(rb_cString, "succ", rb_str_succ, 0);
-//    rb_define_method(rb_cString, "succ!", rb_str_succ_bang, 0);
-//    rb_define_method(rb_cString, "next", rb_str_succ, 0);
-//    rb_define_method(rb_cString, "next!", rb_str_succ_bang, 0);
-//    rb_define_method(rb_cString, "upto", rb_str_upto_m, 1);
+        stringClass.defineMethod("succ", getMethod("m_succ", false));
+        stringClass.defineMethod("succ!", getMethod("m_succ_bang", false));
+        stringClass.defineMethod("next", getMethod("m_succ", false));
+        stringClass.defineMethod("next!", getMethod("m_succ_bang", false));
+        stringClass.defineMethod("upto", getMethod("m_upto", RubyObject.class));
         stringClass.defineMethod("index", getMethod("m_index", true));
         stringClass.defineMethod("rindex", getMethod("m_rindex", true));
         stringClass.defineMethod("replace", getMethod("m_replace", RubyObject.class));

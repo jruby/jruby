@@ -27,6 +27,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.*;
+import org.jruby.util.PrintfFormat;
 
 /**
  *
@@ -373,17 +374,16 @@ public class RubyString extends RubyObject {
                 sb.append('\\').append('t');
             } else if (c == '\f') {
                 sb.append('\\').append('f');
-            } else if (c == '\u0013') {
+            } else if (c == '\u000B') {
                 sb.append('\\').append('v');
             } else if (c == '\u0007') {
                 sb.append('\\').append('a');
-            } else if (c == '\u0033') {
+            } else if (c == '\u001B') {
                 sb.append('\\').append('e');
-                
-            /* There may be other not printable characters. */
-                
-            } else {
+            } else if (isPrint(c)) {
                 sb.append(c);
+            } else {
+                sb.append(new PrintfFormat("\\%.3o").sprintf(c));
             }
         }
         
@@ -804,6 +804,123 @@ public class RubyString extends RubyObject {
         }
         RubyObject pfObject = pfClass.funcall(getRuby().intern("new"), this);
         return pfObject.funcall(getRuby().intern("sprintf"), arg);
+    }
+    
+    /** rb_str_succ
+     *
+     */
+    public RubyObject m_succ() {
+        return succ(false);
+    }
+
+    /** rb_str_succ_bang
+     *
+     */
+    public RubyObject m_succ_bang() {
+        return succ(true);
+    }
+
+    private RubyString succ(boolean bang) {
+        if (getValue().length() == 0) {
+            return bang ? this : (RubyString)m_dup();
+        }
+        StringBuffer sbuf = new StringBuffer(getValue());
+        boolean alnumSeen = false;
+        int pos = -1;
+        char c = 0;
+        char n = 0;
+        for (int i = sbuf.length() - 1; i >= 0; i--) {
+            c = sbuf.charAt(i);
+            if (isAlnum(c)) {
+                alnumSeen = true;
+                if ((isDigit(c) && c < '9') || (isLower(c) && c < 'z') || (isUpper(c) && c < 'Z')) {
+                    sbuf.setCharAt(i, (char)(c + 1));
+                    pos = -1;
+                    break;
+                } else {
+                    pos = i;
+                    n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
+                    sbuf.setCharAt(i, n);
+                }
+            }
+        }
+        if (!alnumSeen) {
+            for (int i = sbuf.length() - 1; i >= 0; i--) {
+                c = sbuf.charAt(i);
+                if (c < 0xff) {
+                    sbuf.setCharAt(i, (char)(c + 1));
+                    pos = -1;
+                    break;
+                } else {
+                    pos = i;
+                    n = 1;
+                    sbuf.setCharAt(i, n);
+                }
+            }
+        }
+        if (pos > -1) {
+            sbuf.insert(pos, n);
+        }
+
+        if (bang) {
+            setValue(sbuf.toString());
+            return this;
+        } else {
+            RubyString newStr = (RubyString)m_dup();
+            newStr.setValue(sbuf.toString());
+            return newStr;
+        }
+    }
+    
+    /** rb_str_upto_m
+     *
+     */
+    public RubyObject m_upto(RubyObject str) {
+        return upto(str, false);
+    }
+    
+    /* rb_str_upto */
+    RubyObject upto(RubyObject str, boolean excl) {
+        RubyString current = this;
+        RubyString end = get_str(str);
+        while (current.cmp(end) <= 0) {
+            getRuby().yield(current);
+            if (current.cmp(end) == 0) {
+                break;
+            }
+            current = current.succ(false);
+            if (excl && current.cmp(end) == 0) {
+                break;
+            }
+            if (current.getValue().length() > end.getValue().length()) {
+                break;
+            }
+        }
+        return this;
+    }
+    
+    public static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+    
+    public static boolean isUpper(char c) {
+        return c >= 'A' && c <= 'Z';
+    }
+    
+    public static boolean isLower(char c) {
+        return c >= 'a' && c <= 'z';
+    }
+    
+    public static boolean isLetter(char c) {
+        return isUpper(c) || isLower(c);
+    }
+    
+    public static boolean isAlnum(char c) {
+        return isUpper(c) || isLower(c) || isDigit(c);
+    }
+    
+    public static boolean isPrint(char c) {
+        return c >= 0x20 && c <= 0x7E;
     }
     
 }

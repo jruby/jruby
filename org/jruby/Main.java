@@ -85,8 +85,7 @@ public class Main {
                     } else {
                         try {
                             sRegexpAdapter = Class.forName(args[i]);
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             System.err.println("invalid argument " + i );
                             System.err.println("failed to load RegexpAdapter: " + args[i]);
                             System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
