@@ -1295,7 +1295,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             singletonClass = receiver.getSingletonClass();
-            singletonClass.setParentModule(runtime.getRubyClass());
         }
 
         if (threadContext.getWrapper() != null) {
@@ -1314,6 +1313,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         try {
             eval(iVisited.getBodyNode());
+            System.out.println(iVisited.getBodyNode().getClass().getName());
         } finally {
             threadContext.getScopeStack().pop();
             threadContext.getFrameStack().pop();
