@@ -135,6 +135,10 @@ public class ThreadContext {
     	return classStack;
     }
 
+    public void setClassStack(ArrayStack classStack) {
+    	this.classStack = classStack;
+    }
+
     public Frame getCurrentFrame() {
         return (Frame) getFrameStack().peek();
     }
