@@ -27,11 +27,13 @@
 package org.jruby.runtime;
 
 import java.util.List;
+import java.util.Iterator;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.AbstractStack;
 import org.jruby.util.collections.StackElement;
+import org.jruby.util.Asserts;
 
 /**
  *

@@ -372,36 +372,28 @@ public class KernelModule {
     }
 
     public static IRubyObject eval(IRubyObject recv, IRubyObject[] args) {
-        RubyString src = (RubyString)args[0];
-        IRubyObject scope = args.length > 1 ? args[1] : recv.getRuntime().getNil();
+        Ruby runtime = recv.getRuntime();
+        RubyString src = (RubyString) args[0];
+        IRubyObject scope = args.length > 1 ? args[1] : runtime.getNil();
+
         String file = "(eval)";
-        int line = 1;
-
         if (args.length > 2) {
-            // +++
             file = args[2].toString();
-            // ---
         }
-
+        int line = 1;
         if (args.length > 3) {
             line = RubyFixnum.fix2int(args[3]);
         }
-
-        // +++
         src.checkSafeString();
-        // ---
 
-        if (scope.isNil() && recv.getRuntime().getFrameStack().getPrevious() != null) {
+        if (scope.isNil() && runtime.getFrameStack().getPrevious() != null) {
             try {
-                // XXX
-                recv.getRuntime().getFrameStack().push(recv.getRuntime().getFrameStack().getPrevious());
-
+                runtime.getFrameStack().push(runtime.getFrameStack().getPrevious());
                 return recv.eval(src, scope, file, line);
             } finally {
-                recv.getRuntime().getFrameStack().pop();
+                runtime.getFrameStack().pop();
             }
         }
-
         return recv.eval(src, scope, file, line);
     }
 

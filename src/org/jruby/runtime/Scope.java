@@ -35,6 +35,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
+import org.jruby.util.Asserts;
 
 /**
  * A Scope in the Ruby Stack of scopes.
@@ -97,8 +98,11 @@ public class Scope implements StackElement {
      * @param localNames The localNames to set
      */
     public void setLocalNames(List localNames) {
-        this.localNames = localNames;
-        if (localNames != null) {
+        if (localNames == null || localNames.isEmpty()) {
+            this.localNames = null;
+            this.localValues = null;
+        } else {
+            this.localNames = localNames;
             this.localValues = new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil()));
         }
     }
