@@ -45,7 +45,7 @@ import java.util.TimeZone;
  * @author chadfowler, jpetersen
  */
 public class RubyTime extends RubyObject {
-    private static final String UTC = "UTC";
+    public static final String UTC = "UTC";
 	private Calendar cal;
     private long usec;
 
