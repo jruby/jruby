@@ -59,6 +59,14 @@ public class RubyHash extends RubyObject {
         this.defaultValue = defaultValue;
     }
 
+    public static RubyHash nilHash(Ruby ruby) {
+        return new RubyHash(ruby) {
+            public boolean isNil() {
+                return true;
+            }
+        };
+    }
+
     public RubyObject getDefaultValue() {
         return (defaultValue == null) ? getRuby().getNil() : defaultValue;
     }
@@ -124,6 +132,7 @@ public class RubyHash extends RubyObject {
 		return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
 	}
 
+
     public static RubyClass createHashClass(Ruby ruby) {
         RubyClass hashClass = ruby.defineClass("Hash", ruby.getClasses().getObjectClass());
         hashClass.includeModule(ruby.getClasses().getEnumerableModule());
@@ -168,10 +177,8 @@ public class RubyHash extends RubyObject {
 		hashClass.defineMethod("reject!", CallbackFactory.getMethod(RubyHash.class, "reject_bang"));
 		hashClass.defineMethod("clear", CallbackFactory.getMethod(RubyHash.class, "clear"));
 		hashClass.defineMethod("invert", CallbackFactory.getMethod(RubyHash.class, "invert"));
-
-        //    rb_define_method(rb_cHash,"update", rb_hash_update, 1);
-        //    rb_define_method(rb_cHash,"replace", rb_hash_replace, 1);
-
+        hashClass.defineMethod("update", CallbackFactory.getMethod(RubyHash.class, "update", RubyObject.class));
+        hashClass.defineMethod("replace", CallbackFactory.getMethod(RubyHash.class, "replace", RubyObject.class));
         hashClass.defineMethod("include?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
         hashClass.defineMethod("member?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
         hashClass.defineMethod("has_key?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
@@ -433,7 +440,7 @@ public class RubyHash extends RubyObject {
 		return result;
 	}
 
-	public RubyObject reject_bang() {
+	public RubyHash reject_bang() {
 		modify();
 		boolean isModified = false;
 		Iterator iter = keyIterator();
@@ -449,7 +456,7 @@ public class RubyHash extends RubyObject {
 		if (isModified) {
 			return this;
 		} else {
-			return ruby.getNil();
+			return nilHash(ruby);
 		}
 	}
 
@@ -471,6 +478,20 @@ public class RubyHash extends RubyObject {
 		return result;
 	}
 
+    public RubyHash update(RubyObject freshElements) {
+        RubyHash freshElementsHash =
+            (RubyHash) freshElements.convertType(RubyHash.class, "Hash", "to_hash");
+        valueMap.putAll(freshElementsHash.valueMap);
+        return this;
+    }
+
+    public RubyHash replace(RubyObject replacement) {
+        RubyHash replacementHash =
+            (RubyHash) replacement.convertType(RubyHash.class, "Hash", "to_hash");
+        valueMap.clear();
+        valueMap.putAll(replacementHash.valueMap);
+        return this;
+    }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
 		output.write('{');
