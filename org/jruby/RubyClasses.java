@@ -607,6 +607,13 @@ public class RubyClasses {
         return fileClass;
     }
 
+    public RubyClass getFileStatClass() {
+        if (fileStatClass == null) {
+            fileStatClass = FileStatClass.createFileStatClass(ruby);
+        }
+        return fileStatClass;
+    }
+
     /**
      * Returns the reference to the NilClass class.
      *
@@ -626,15 +633,6 @@ public class RubyClasses {
             arrayClass = RubyArray.createArrayClass(ruby);
         }
         return arrayClass;
-    }
-
-    /**
-     * Returns the reference to the File::Stat class.
-     *
-     * @return The File::Stat class.
-     */
-    public RubyClass getFileStatClass() {
-        return fileStatClass;
     }
 
     /**

@@ -335,10 +335,10 @@ public class KernelModule {
      * MRI allows to require ever .rb files or ruby extension dll (.so or .dll depending on system).
      * we allow requiring either .rb files or jars.
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
-     * @param file the name of the file to require
+     * @param name the name of the file to require
      **/
-    public static IRubyObject require(IRubyObject recv, IRubyObject file) {
-        if (recv.getRuntime().getLoadService().require(file.toString())) {
+    public static IRubyObject require(IRubyObject recv, IRubyObject name) {
+        if (recv.getRuntime().getLoadService().require(name.toString())) {
             return recv.getRuntime().getTrue();
         }
         return recv.getRuntime().getFalse();

@@ -21,10 +21,12 @@ public class RubyFile extends RubyIO {
 
     public static RubyClass createFileClass(Ruby ruby) {
         RubyClass fileClass = ruby.defineClass("File", ruby.getClasses().getIoClass());
-        
+
         fileClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
         fileClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
-        
+        fileClass.defineSingletonMethod("chmod", CallbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
+        fileClass.defineSingletonMethod("lstat", CallbackFactory.getSingletonMethod(RubyFile.class, "lstat", RubyString.class));
+
         fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("exists?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
@@ -35,7 +37,7 @@ public class RubyFile extends RubyIO {
 		fileClass.defineSingletonMethod("basename", CallbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
 
 		fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
-        
+
         return fileClass;
     }
     
@@ -101,24 +103,17 @@ public class RubyFile extends RubyIO {
 	
 	public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
 	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
-	    
 	    if (args.length == 0) {
 	        throw new ArgumentError(recv.getRuntime(), "");
 	    }
-	    
 	    args[0].checkSafeString();
 	    file.path = args[0].toString();
-	    
 	    String mode = "r";
-	    
 	    if (args.length > 1 && args[1] instanceof RubyString) {
 	        mode = ((RubyString)args[1]).getValue();
 	    }
-	    
 	    file.closeStreams();
-	    
 	    file.openInternal(file.path, mode);
-	    
 	    if (recv.getRuntime().isBlockGiven()) {
 	        try {
 	            recv.getRuntime().yield(file);
@@ -126,9 +121,17 @@ public class RubyFile extends RubyIO {
 	            file.closeStreams();
 	        }
 	    }
-	    
 	    return file;
 	}
+
+    public static IRubyObject chmod(IRubyObject recv, RubyInteger mode, IRubyObject[] names) {
+        // no-op for now
+        return RubyFixnum.newFixnum(recv.getRuntime(), 0);
+    }
+
+    public static IRubyObject lstat(IRubyObject recv, RubyString name) {
+        return new FileStatClass(recv.getRuntime(), new File(name.getValue()));
+    }
 
 	public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
 	    for (int i = 0; i < args.length; i++) {
