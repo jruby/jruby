@@ -22,6 +22,7 @@ TestModule_Foo.module_eval {||
   ABC = self
   LOCAL1 = testmodule_local_variable
 }
+test_ok(! defined? abc)
 test_equal(4, TestModule_Foo.new.abc(2))
 test_equal(10, TestModule_Foo::XYZ)
 test_equal(TestModule_Foo, TestModule_Foo::ABC)

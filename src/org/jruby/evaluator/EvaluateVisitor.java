@@ -637,8 +637,8 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
-                                                    runtime.getNamespace(),
-                                                    visibility);
+                                                    visibility,
+                                                    runtime.getRubyClass());
 
         rubyClass.addMethod(name, newMethod);
 
@@ -674,8 +674,8 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
-                                                    runtime.getNamespace(),
-                                                    Visibility.PUBLIC);
+                                                    Visibility.PUBLIC,
+                                                    runtime.getRubyClass());
         rubyClass.addMethod(iVisited.getName(), newMethod);
         receiver.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
 

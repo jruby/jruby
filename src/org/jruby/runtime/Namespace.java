@@ -59,13 +59,7 @@ import org.jruby.RubyModule;
  * @version $Revision$
  */
 public class Namespace {
-    private final RubyModule module;
 
     public Namespace(RubyModule namespaceModule) {
-        this.module = namespaceModule;
-    }
-
-    public RubyModule getModule() {
-        return module;
     }
 }
