@@ -64,6 +64,7 @@ public class RubyDir extends RubyObject {
 
 		dirClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyDir.class, "newInstance"));
         dirClass.defineSingletonMethod("glob", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
+        dirClass.defineSingletonMethod("entries", CallbackFactory.getSingletonMethod(RubyDir.class, "entries", RubyString.class));
         dirClass.defineSingletonMethod("[]", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
         // dirClass.defineAlias("[]", "glob");
         dirClass.defineSingletonMethod("chdir", CallbackFactory.getSingletonMethod(RubyDir.class, "chdir", RubyString.class));
@@ -135,6 +136,20 @@ public class RubyDir extends RubyObject {
     public static RubyArray glob(IRubyObject recv, RubyString pat) {
         String pattern = pat.toString();
         String[] files = new Glob(pattern).getNames();
+        return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+    }
+
+    /**
+     * Returns an array containing all of the filenames in the given directory.
+     */
+    public static RubyArray entries(IRubyObject recv, RubyString path) {
+        if (".".equals(path.toString().trim())) {
+            path = new RubyString(recv.getRuntime(), System.getProperty("user.dir"));
+        }
+        List fileList = getContents(new File(path.toString()));
+		fileList.add(0,".");
+		fileList.add(1,"..");
+        Object[] files = fileList.toArray();
         return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 

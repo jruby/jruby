@@ -20,7 +20,11 @@ test_equal(['.', '..'], d.entries)
   }
 }
 
+test_equal(['.', '..', "file1", "file2"], Dir.entries('./testDir_1').sort)
 test_equal(['.', '..', "file1", "file2"], Dir.new('./testDir_1').entries.sort)
+Dir.chdir("./testDir_1")
+test_equal(['.', '..', "file1", "file2"], Dir.entries('.').sort)
+Dir.chdir("..")
 
 files = []
 Dir.foreach('./testDir_1') {|f|
