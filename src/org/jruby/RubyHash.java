@@ -3,9 +3,11 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -50,7 +52,13 @@ import java.util.Map;
  */
 public class RubyHash extends RubyObject {
     private Map valueMap;
+    
+    // Value returned by various functions if no such hash element exists
     private IRubyObject defaultValue;
+    
+    // Proc which gets run by various function if no such hash element exists.
+    // Sometimes this proc will be run even if a default_value exists.
+    private IRubyObject defaultProc;
 
     private boolean isRehashing = false;
 
@@ -66,6 +74,7 @@ public class RubyHash extends RubyObject {
         super(ruby, ruby.getClass("Hash"));
         this.valueMap = new HashMap(valueMap);
         this.defaultValue = defaultValue;
+        this.defaultProc = ruby.getNil();
     }
 
     public static RubyHash nilHash(Ruby ruby) {
@@ -140,6 +149,7 @@ public class RubyHash extends RubyObject {
         hashClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod(RubyHash.class, "create"));
         hashClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyHash.class, "initialize"));
 		hashClass.defineMethod("clone", callbackFactory.getMethod(RubyHash.class, "rbClone"));
+        hashClass.defineMethod("default_proc", callbackFactory.getMethod(RubyHash.class, "default_proc")); 
         hashClass.defineMethod("rehash", callbackFactory.getMethod(RubyHash.class, "rehash"));
         hashClass.defineMethod("to_hash", callbackFactory.getMethod(RubyHash.class, "to_hash"));
         hashClass.defineMethod("to_a", callbackFactory.getMethod(RubyHash.class, "to_a"));
@@ -184,6 +194,9 @@ public class RubyHash extends RubyObject {
         hashClass.defineMethod("value?", callbackFactory.getMethod(RubyHash.class, "has_value", IRubyObject.class));
         hashClass.defineMethod("values_at", callbackFactory.getOptMethod(RubyHash.class, "values_at"));
 
+        hashClass.defineMethod("merge", callbackFactory.getMethod(RubyHash.class, "merge", IRubyObject.class));
+        hashClass.defineAlias("merge!", "update");
+        
         return hashClass;
     }
 
@@ -206,7 +219,7 @@ public class RubyHash extends RubyObject {
     // Hash methods
 
     public static RubyHash newHash(Ruby ruby) {
-        return newInstance(ruby.getClass("Hash"), IRubyObject.NULL_ARRAY);
+    	return new RubyHash(ruby);
     }
 
 	public static RubyHash newHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {
@@ -215,23 +228,30 @@ public class RubyHash extends RubyObject {
 
     public static RubyHash newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyHash hash = new RubyHash(recv.getRuntime());
+
+        // A block to represent 'default' value for unknown values
+        if (recv.getRuntime().isBlockGiven()) {
+        	System.out.println("BLOCK IS GIVEN");
+        	hash.defaultProc = RubyProc.newProc(recv.getRuntime());
+        }
+        
         hash.setMetaClass((RubyClass) recv);
         hash.callInit(args);
         return hash;
     }
 
     public static RubyHash create(IRubyObject recv, IRubyObject[] args) {
-        RubyHash hsh = new RubyHash(recv.getRuntime());
+        RubyHash hash = new RubyHash(recv.getRuntime());
         if (args.length == 1) {
-            hsh.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
+            hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
         } else if (args.length % 2 != 0) {
             throw new ArgumentError(recv.getRuntime(), "odd number of args for Hash");
         } else {
             for (int i = 0; i < args.length; i += 2) {
-                hsh.aset(args[i], args[i + 1]);
+                hash.aset(args[i], args[i + 1]);
             }
         }
-        return hsh;
+        return hash;
     }
 
     public IRubyObject initialize(IRubyObject[] args) {
@@ -242,24 +262,25 @@ public class RubyHash extends RubyObject {
         }
         return this;
     }
+    
+    public IRubyObject default_proc() {
+    	return defaultProc;
+    }
 
     public RubyString inspect() {
         final String sep = ", ";
         final String arrow = "=>";
-
         final StringBuffer sb = new StringBuffer("{");
-
-        Iterator iter = valueMap.entrySet().iterator();
         boolean firstEntry = true;
-        while (iter.hasNext()) {
+        
+        for (Iterator iter = valueMap.entrySet().iterator(); iter.hasNext(); ) {
             Map.Entry entry = (Map.Entry) iter.next();
             IRubyObject key = (IRubyObject) entry.getKey();
             IRubyObject value = (IRubyObject) entry.getValue();
             if (!firstEntry) {
                 sb.append(sep);
             }
-            sb.append(key.callMethod("inspect"));
-            sb.append(arrow);
+            sb.append(key.callMethod("inspect")).append(arrow);
             sb.append(value.callMethod("inspect"));
             firstEntry = false;
         }
@@ -277,8 +298,8 @@ public class RubyHash extends RubyObject {
 
     public RubyArray to_a() {
         RubyArray result = RubyArray.newArray(getRuntime(), length());
-        Iterator iter = valueMap.entrySet().iterator();
-        while (iter.hasNext()) {
+        
+        for(Iterator iter = valueMap.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             IRubyObject key = (IRubyObject) entry.getKey();
             IRubyObject value = (IRubyObject) entry.getValue();
@@ -314,7 +335,7 @@ public class RubyHash extends RubyObject {
 
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         modify();
-
+        
         if (!(key instanceof RubyString) || valueMap.get(key) != null) {
             valueMap.put(key, value);
         } else {
@@ -328,7 +349,16 @@ public class RubyHash extends RubyObject {
     public IRubyObject aref(IRubyObject key) {
         IRubyObject value = (IRubyObject) valueMap.get(key);
 
-        return value != null ? value : getDefaultValue();
+        if (value != null) {
+        	return value;
+        }
+        
+        if (defaultProc.isNil() == false) {
+        	IRubyObject args[] = {this, key};
+        	return ((RubyProc) defaultProc).call(args, this);
+        } 
+
+        return getDefaultValue(); 
     }
 
     public IRubyObject fetch(IRubyObject[] args) {
@@ -342,9 +372,9 @@ public class RubyHash extends RubyObject {
                 return args[1];
             } else if (runtime.isBlockGiven()) {
                 return runtime.yield(key);
-            } else {
-                throw new IndexError(runtime, "key not found");
-            }
+            } 
+
+            throw new IndexError(runtime, "key not found");
         }
         return result;
     }
@@ -359,8 +389,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyHash each() {
-        Iterator iter = entryIterator();
-        while (iter.hasNext()) {
+        for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
 			runtime.yield(RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
@@ -375,8 +404,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyHash each_value() {
-		Iterator iter = valueIterator();
-		while (iter.hasNext()) {
+		for (Iterator iter = valueIterator(); iter.hasNext();) {
             checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
 			runtime.yield(value);
@@ -385,8 +413,7 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash each_key() {
-		Iterator iter = keyIterator();
-		while (iter.hasNext()) {
+		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			checkRehashing();
             IRubyObject key = (IRubyObject) iter.next();
 			runtime.yield(key);
@@ -395,14 +422,11 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyArray sort() {
-		RubyArray result = to_a();
-		result.sort_bang();
-		return result;
+		return (RubyArray) to_a().sort_bang();
 	}
 
     public IRubyObject index(IRubyObject value) {
-        Iterator iter = valueMap.keySet().iterator();
-        while (iter.hasNext()) {
+        for (Iterator iter = valueMap.keySet().iterator(); iter.hasNext(); ) {
             Object key = iter.next();
             if (value.equals(valueMap.get(key))) {
                 return (IRubyObject) key;
@@ -438,8 +462,7 @@ public class RubyHash extends RubyObject {
             return runtime.getFalse();
         }
 
-        Iterator iter = modifiableEntryIterator();
-        while (iter.hasNext()) {
+        for (Iterator iter = modifiableEntryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
 
@@ -466,9 +489,9 @@ public class RubyHash extends RubyObject {
 			return result;
 		} else if (runtime.isBlockGiven()) {
 			return runtime.yield(key);
-		} else {
-			return getDefaultValue();
-		}
+		} 
+
+		return getDefaultValue();
 	}
 
 	public RubyHash delete_if() {
@@ -485,8 +508,7 @@ public class RubyHash extends RubyObject {
 	public RubyHash reject_bang() {
 		modify();
 		boolean isModified = false;
-		Iterator iter = keyIterator();
-		while (iter.hasNext()) {
+		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
 			IRubyObject shouldDelete = runtime.yield(RubyArray.newArray(runtime, key, value), null, null, true);
@@ -495,11 +517,8 @@ public class RubyHash extends RubyObject {
 				isModified = true;
 			}
 		}
-		if (isModified) {
-			return this;
-		} else {
-			return nilHash(runtime);
-		}
+
+		return isModified ? this : nilHash(runtime); 
 	}
 
 	public RubyHash clear() {
@@ -510,12 +529,11 @@ public class RubyHash extends RubyObject {
 
 	public RubyHash invert() {
 		RubyHash result = newHash(runtime);
-		Iterator iter = modifiableEntryIterator();
-		while (iter.hasNext()) {
+		
+		for (Iterator iter = modifiableEntryIterator(); iter.hasNext();) {
 			Map.Entry entry = (Map.Entry) iter.next();
-			IRubyObject key = (IRubyObject) entry.getKey();
-			IRubyObject value = (IRubyObject) entry.getValue();
-			result.aset(value, key);
+			result.aset((IRubyObject) entry.getValue(), 
+					(IRubyObject) entry.getKey());
 		}
 		return result;
 	}
@@ -526,6 +544,10 @@ public class RubyHash extends RubyObject {
             (RubyHash) freshElements.convertType(RubyHash.class, "Hash", "to_hash");
         valueMap.putAll(freshElementsHash.valueMap);
         return this;
+    }
+    
+    public RubyHash merge(IRubyObject freshElements) {
+        return ((RubyHash) dup()).update(freshElements);
     }
 
     public RubyHash replace(IRubyObject replacement) {
@@ -549,13 +571,12 @@ public class RubyHash extends RubyObject {
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
 		output.write('{');
 		output.dumpInt(getValueMap().size());
-		Iterator iter = entryIterator();
-		while (iter.hasNext()) {
+		
+		for (Iterator iter = entryIterator(); iter.hasNext();) {
 			Map.Entry entry = (Map.Entry) iter.next();
-			IRubyObject key = (IRubyObject) entry.getKey();
-			IRubyObject value = (IRubyObject) entry.getValue();
-			output.dumpObject(key);
-			output.dumpObject(value);
+			
+			output.dumpObject((IRubyObject) entry.getKey());
+			output.dumpObject((IRubyObject) entry.getValue());
 		}
 	}
 
