@@ -289,17 +289,23 @@ public class JavaSupport {
         if (handler != null) {
             handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(ruby, exception)});
         } else {
-            StringWriter stackTrace = new StringWriter();
-            exception.printStackTrace(new PrintWriter(stackTrace));
-
-            StringBuffer sb = new StringBuffer();
-            sb.append("Native Exception: '");
-            sb.append(exception.getClass()).append("\'; Message: ");
-            sb.append(exception.getMessage());
-            sb.append("; StackTrace: ");
-            sb.append(stackTrace.getBuffer().toString());
-            throw new RaiseException(ruby, "RuntimeError", sb.toString());
+            throw createRaiseException(exception);
         }
+    }
+
+    private RaiseException createRaiseException(Exception exception) {
+        StringWriter stackTrace = new StringWriter();
+        exception.printStackTrace(new PrintWriter(stackTrace));
+
+        StringBuffer sb = new StringBuffer();
+        sb.append("Native Exception: '");
+        sb.append(exception.getClass()).append("\'; Message: ");
+        sb.append(exception.getMessage());
+        sb.append("; StackTrace: ");
+        sb.append(stackTrace.getBuffer().toString());
+        RaiseException result = new RaiseException(ruby, "RuntimeError", sb.toString());
+        result.initCause(exception);
+        return result;
     }
 
     private static Class primitiveClass(String name) {

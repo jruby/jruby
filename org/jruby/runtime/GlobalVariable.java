@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.*;
+import org.jruby.util.Asserts;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class GlobalVariable {
@@ -42,6 +43,7 @@ public class GlobalVariable {
     private IRubyObject value;
 
     public GlobalVariable(Ruby ruby, String name, IRubyObject value) {
+        Asserts.assertExpression(name.startsWith("$"));
         this.ruby = ruby;
         this.name = name;
         this.value = value;
