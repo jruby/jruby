@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 17:05:53
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * a For statement.
@@ -40,14 +40,14 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ForNode extends AbstractNode {
+public class ForNode extends Node {
     static final long serialVersionUID = -8319863477790150586L;
 
-    private final INode varNode;
-    private final INode bodyNode;
-    private final INode iterNode;
+    private final Node varNode;
+    private final Node bodyNode;
+    private final Node iterNode;
 
-    public ForNode(ISourcePosition position, INode varNode, INode bodyNode, INode iterNode) {
+    public ForNode(SourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         super(position);
         this.varNode = varNode;
         this.bodyNode = bodyNode;
@@ -58,16 +58,16 @@ public class ForNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitForNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitForNode(this);
     }
 
     /**
      * Gets the bodyNode.
 	 * bodyNode is the expression after the in, it is the expression which will have its each() method called.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
@@ -75,18 +75,18 @@ public class ForNode extends AbstractNode {
      * Gets the iterNode.
 	 * iterNode is the block which will be executed when the each() method of the bodyNode will yield.
 	 * 
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getIterNode() {
+    public Node getIterNode() {
         return iterNode;
     }
 
     /**
      * Gets the varNode.
 	 * varNode is the equivalent of the block variable in a regular method call with block type of iteration
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getVarNode() {
+    public Node getVarNode() {
         return varNode;
     }
 }

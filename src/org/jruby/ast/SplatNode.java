@@ -1,25 +1,48 @@
+/*
+ * SplatNode.java
+ * 
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
+ *
+ * JRuby - http://jruby.sourceforge.net
+ * 
+ * This file is part of JRuby
+ * 
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * 
+ */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 
-public class SplatNode extends AbstractNode {
+public class SplatNode extends Node {
     static final long serialVersionUID = -1649004231006940340L;
-    private INode node;
+    private Node node;
 
-    public SplatNode(ISourcePosition position, INode node) {
+    public SplatNode(SourcePosition position, Node node) {
         super(position);
         this.node = node;
     }
 
-    public void accept(INodeVisitor visitor) {
-        ((NodeVisitor)visitor).visitSplatNode(this);
+    public void accept(NodeVisitor visitor) {
+        visitor.visitSplatNode(this);
     }
     
-    public INode getValue() {
+    public Node getValue() {
         return node;
     }
 }

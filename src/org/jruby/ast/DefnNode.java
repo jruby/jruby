@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 14:02:24
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -38,15 +38,15 @@ import org.jruby.runtime.Visibility;
  * @author  jpetersen
  * @version $Revision$
  */
-public class DefnNode extends AbstractNode {
+public class DefnNode extends Node {
     static final long serialVersionUID = -7634791007500033454L;
 
     private String name;
-    private INode argsNode;
+    private Node argsNode;
     private ScopeNode bodyNode;
     private Visibility visibility;
     
-    public DefnNode(ISourcePosition position, String name, INode argsNode, ScopeNode bodyNode, Visibility visibility) {
+    public DefnNode(SourcePosition position, String name, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
         super(position);
         
         this.name = name.intern();
@@ -55,15 +55,15 @@ public class DefnNode extends AbstractNode {
         this.visibility = visibility;
     }
 
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitDefnNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDefnNode(this);
     }
 
     /**
      * Gets the argsNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
 

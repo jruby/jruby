@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 16:51:07
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,19 +28,18 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a 'retry' statement.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RetryNode extends AbstractNode {
+public class RetryNode extends Node {
     static final long serialVersionUID = 4648280998968560181L;
 
-    public RetryNode(ISourcePosition position) {
+    public RetryNode(SourcePosition position) {
         super(position);
     }
 
@@ -46,7 +47,7 @@ public class RetryNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitRetryNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitRetryNode(this);
     }
 }

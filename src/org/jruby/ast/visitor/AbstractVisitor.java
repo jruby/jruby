@@ -26,7 +26,6 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.INode;
 import org.jruby.ast.*;
 
 /** This visitor calls by default the visitNode method for each visited Node.
@@ -41,13 +40,13 @@ public abstract class AbstractVisitor implements NodeVisitor {
      * You have to overwrite this method.
      * 
      */
-    protected abstract void visitNode(INode iVisited);
+    protected abstract void visitNode(Node iVisited);
 
     public void visitNullNode() {
         visitNode(null);
     }
     
-    public void acceptNode(INode node) {
+    public void acceptNode(Node node) {
         if (node == null) {
             visitNullNode();
         } else {

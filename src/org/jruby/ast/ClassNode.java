@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 16:27:26
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * A class statement.
@@ -41,14 +41,14 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ClassNode extends AbstractNode {
+public class ClassNode extends Node {
     static final long serialVersionUID = -1369424045737867587L;
 
     private final String className;
     private final ScopeNode bodyNode;
-    private final INode superNode;
+    private final Node superNode;
     
-    public ClassNode(ISourcePosition position, String className, ScopeNode bodyNode, INode superNode) {
+    public ClassNode(SourcePosition position, String className, ScopeNode bodyNode, Node superNode) {
         super(position);
         this.className = className;
         this.bodyNode = bodyNode;
@@ -59,8 +59,8 @@ public class ClassNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitClassNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitClassNode(this);
     }
     /**
      * Gets the bodyNode.
@@ -80,9 +80,9 @@ public class ClassNode extends AbstractNode {
 
     /**
      * Gets the superNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getSuperNode() {
+    public Node getSuperNode() {
         return superNode;
     }
 }

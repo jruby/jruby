@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 21:59:43
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,19 +28,18 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * a call to super in a method.
  * @author  jpetersen
  * @version $Revision$
  */
-public class ZSuperNode extends AbstractNode {
+public class ZSuperNode extends Node {
     static final long serialVersionUID = 6109129030317216863L;
 
-    public ZSuperNode(ISourcePosition position) {
+    public ZSuperNode(SourcePosition position) {
         super(position);
     }
 
@@ -46,7 +47,7 @@ public class ZSuperNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitZSuperNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitZSuperNode(this);
     }
 }

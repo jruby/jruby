@@ -1,9 +1,8 @@
 /*
- * AbstractNode.java - description
- * Created on 26.02.2002, 16:04:07
+ * Node.java - Base of all nodes which can have an assignment
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,37 +25,36 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
-
-import java.io.Serializable;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
+ * @author enebo
  *
- * @author  jpetersen
- * @version $Revision$
+ * To change the template for this generated type comment go to
+ * Window - Preferences - Java - Code Generation - Code and Comments
  */
-public abstract class AbstractNode implements INode, Serializable {
-    static final long serialVersionUID = -5962822607672530224L;
+public abstract class AssignableNode extends Node {
+    private Node valueNode;
 
-    private final ISourcePosition position;
+	public AssignableNode() { super(); }
+
+	public AssignableNode(SourcePosition position) {
+		super(position);
+	}
 
 	/**
-	 * constructor without a position.
-	 * This should only be used in node constructor where no good position can be computed
-	 **/
- 	public AbstractNode() {
-        this(null);
-    }
-
-    public AbstractNode(ISourcePosition position) {
-        this.position = position;
+     * Gets the valueNode.
+     * @return Returns a Node
+     */
+    public Node getValueNode() {
+        return valueNode;
     }
 
     /**
-     * @see INode#getPosition()
+     * Sets the valueNode.
+     * @param valueNode The valueNode to set
      */
-    public ISourcePosition getPosition() {
-        return position;
+    public void setValueNode(Node valueNode) {
+        this.valueNode = valueNode;
     }
 }

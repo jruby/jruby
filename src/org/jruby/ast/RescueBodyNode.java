@@ -3,8 +3,8 @@
  * Created on 01.03.2002, 23:54:04
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,32 +28,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RescueBodyNode extends AbstractNode implements IListNode {
+public class RescueBodyNode extends ListNode {
     static final long serialVersionUID = -6414517081810625663L;
 
-    private final INode exceptionNodes;
-    private final INode bodyNode;
+    private final Node exceptionNodes;
+    private final Node bodyNode;
     private final RescueBodyNode optRescueNode;
 
-    private List list = null;
-
-    public RescueBodyNode(ISourcePosition position, INode exceptionNodes, INode bodyNode, RescueBodyNode optRescueNode) {
+    public RescueBodyNode(SourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
         super(position);
         this.exceptionNodes = exceptionNodes;
         this.bodyNode = bodyNode;
@@ -61,50 +51,18 @@ public class RescueBodyNode extends AbstractNode implements IListNode {
     }
 
     /**
-     * @see IListNode#add(INode)
-     */
-    public IListNode add(INode node) {
-        if (list == null) {
-            list = new ArrayList();
-        }
-        list.add(node);
-        return this;
-    }
-
-    /**
-     * @see IListNode#iterator()
-     */
-    public Iterator iterator() {
-        if (list == null) {
-            return Collections.EMPTY_LIST.iterator();
-        } else {
-            return list.iterator();
-        }
-    }
-    
-    /**
-     * @see org.jruby.ast.types.IListNode#size()
-     */
-    public int size() {
-        if (list == null) {
-            return 0;
-        }
-        return list.size();
-    }
-
-    /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitRescueBodyNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitRescueBodyNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
@@ -117,9 +75,9 @@ public class RescueBodyNode extends AbstractNode implements IListNode {
 
     /**
      * Gets the exceptionNodes.
-     * @return Returns a IListNode
+     * @return Returns a Node
      */
-    public INode getExceptionNodes() {
+    public Node getExceptionNodes() {
         return exceptionNodes;
     }
 }

@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 18:26:10
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,9 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Global scope node.
@@ -40,12 +41,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class Colon3Node extends AbstractNode {
+public class Colon3Node extends Node {
     static final long serialVersionUID = 8860717109371016871L;
 
     private final String name;
 
-    public Colon3Node(ISourcePosition position, String name) {
+    public Colon3Node(SourcePosition position, String name) {
         super(position);
         this.name = name;
     }
@@ -54,8 +55,8 @@ public class Colon3Node extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitColon3Node(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitColon3Node(this);
     }
 
     /**

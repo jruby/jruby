@@ -3,7 +3,9 @@
  * Created on 27.02.2002, 21:01:19
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,21 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class AttrSetNode extends AbstractNode {
+public class AttrSetNode extends Node {
     static final long serialVersionUID = 3891623889734854578L;
 
     private final String attributeName;
 
-    public AttrSetNode(ISourcePosition position, String attributeName) {
+    public AttrSetNode(SourcePosition position, String attributeName) {
         super(position);
         this.attributeName = attributeName;
     }
@@ -49,8 +50,8 @@ public class AttrSetNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitAttrSetNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitAttrSetNode(this);
     }
 
     /**

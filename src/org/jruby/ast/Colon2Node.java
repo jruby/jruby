@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 16:52:54
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,24 +28,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a '::' constant access or method call.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class Colon2Node extends AbstractNode implements INameNode {
+public class Colon2Node extends Node implements INameNode {
     static final long serialVersionUID = -3250593470034657352L;
 
-    private final INode leftNode;
+    private final Node leftNode;
     private final String name;
 
-    public Colon2Node(ISourcePosition position, INode leftNode, String name) {
+    public Colon2Node(SourcePosition position, Node leftNode, String name) {
         super(position);
         this.leftNode = leftNode;
         this.name = name;
@@ -53,15 +53,15 @@ public class Colon2Node extends AbstractNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitColon2Node(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitColon2Node(this);
     }
 
     /**
      * Gets the leftNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getLeftNode() {
+    public Node getLeftNode() {
         return leftNode;
     }
 

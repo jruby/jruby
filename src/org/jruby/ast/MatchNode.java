@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:28:23
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,22 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class MatchNode extends AbstractNode {
+public class MatchNode extends Node {
     static final long serialVersionUID = 9098121695708691474L;
 
-    private final INode regexpNode;
+    private final Node regexpNode;
 
-    public MatchNode(ISourcePosition position, INode regexpNode) {
+    public MatchNode(SourcePosition position, Node regexpNode) {
         super(position);
         this.regexpNode = regexpNode;
     }
@@ -50,15 +50,15 @@ public class MatchNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitMatchNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitMatchNode(this);
     }
 
     /**
      * Gets the regexpNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getRegexpNode() {
+    public Node getRegexpNode() {
         return regexpNode;
     }
 }

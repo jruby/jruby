@@ -26,28 +26,24 @@
  */
  package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Node representing symbol in a form like ':"3jane"'.
  * 
  * @author enebo
  */
-public class DSymbolNode extends AbstractNode {
+public class DSymbolNode extends Node {
 	DStrNode node;
 
-	public DSymbolNode(ISourcePosition position, DStrNode node) {
+	public DSymbolNode(SourcePosition position, DStrNode node) {
 		super(position);
 		this.node = node;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.ablaf.ast.INode#accept(org.ablaf.ast.visitor.INodeVisitor)
-	 */
-	public void accept(INodeVisitor visitor) {
-		((NodeVisitor)visitor).visitDSymbolNode(this);
+	public void accept(NodeVisitor visitor) {
+		visitor.visitDSymbolNode(this);
 	}
 	
 	public DStrNode getNode() {

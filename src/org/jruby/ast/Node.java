@@ -1,9 +1,10 @@
 /*
- * IRubyParserConfiguration.java - description
- * Created on 04.03.2002, 01:48:07
+ * Node.java - Base of all Nodes
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -24,21 +25,41 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.parser;
+package org.jruby.ast;
 
-import org.ablaf.common.IConfiguration;
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
-import java.util.List;
+import java.io.Serializable;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IRubyParserConfiguration extends IConfiguration {
-    public boolean isClassNest();
-    public boolean isCompileForEval();
+public abstract class Node implements Serializable {
+    static final long serialVersionUID = -5962822607672530224L;
 
-    public List getLocalVariables();
-    public List getBlockVariables();
+    private SourcePosition position;
+
+	/**
+	 * constructor without a position.
+	 * This should only be used in node constructor where no good position can be computed
+	 **/
+ 	public Node() {
+ 		this(null);
+    }
+
+    public Node(SourcePosition position) {
+        this.position = position;
+    }
+
+    /**
+     * Location of this node within the source
+     */
+    public SourcePosition getPosition() {
+        return position;
+    }
+    
+	public abstract void accept(NodeVisitor visitor);
 }

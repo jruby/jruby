@@ -3,7 +3,9 @@
  * Created on 04.03.2002, 12:47:19
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,9 +28,9 @@
  */
 package org.jruby.common;
 
-import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.parser.SyntaxErrorState;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,14 +63,14 @@ public class RubyErrorHandler implements IRubyErrorHandler {
     /**
      * @see org.ablaf.common.IErrorHandler#handleError(int, ISourcePosition, String, Object)
      */
-    public void handleError(int type, ISourcePosition position, String message, Object args) {
+    public void handleError(int type, SourcePosition position, String message, Object args) {
         if (isHandled(type)) {
             if (type == IErrors.WARN || type == IErrors.WARNING) {
                 message = "warning: " + message;
             }
 
             if (position != null) {
-                message = position.getFile() + ": [" + position.getLine() + ", " + position.getColumn() + "] " + message;
+                message = position.getFile() + ":" + position.getLine() + " " + message;
             }
 
             writeError(message + "\n");
@@ -100,7 +102,7 @@ public class RubyErrorHandler implements IRubyErrorHandler {
     /**
      * @see org.ablaf.common.IErrorHandler#handleError(int, ISourcePosition, String)
      */
-    public void handleError(int type, ISourcePosition position, String message) {
+    public void handleError(int type, SourcePosition position, String message) {
         handleError(type, position, message, null);
     }
 

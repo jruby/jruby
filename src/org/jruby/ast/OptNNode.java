@@ -3,10 +3,11 @@
  * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ * Thomas E Enebo <enebo@acm.org>
  * JRuby - http://jruby.sourceforge.net
  * 
  * This file is part of JRuby
@@ -28,22 +29,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class OptNNode extends AbstractNode {
+public class OptNNode extends Node {
     static final long serialVersionUID = -742216664550880045L;
 
-    private final INode bodyNode;
+    private final Node bodyNode;
 
-    public OptNNode(ISourcePosition position, INode bodyNode) {
+    public OptNNode(SourcePosition position, Node bodyNode) {
         super(position);
         this.bodyNode = bodyNode;
     }
@@ -52,15 +51,15 @@ public class OptNNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitOptNNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitOptNNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 }

@@ -29,7 +29,6 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.INode;
 import org.jruby.ast.*;
 
 import java.util.Iterator;
@@ -89,7 +88,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         iVisited.accept(_Payload);
         Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
-            ((INode) iterator.next()).accept(this);
+            ((Node) iterator.next()).accept(this);
         }
 
     }
@@ -114,7 +113,7 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         iVisited.accept(_Payload);
         Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
-            ((INode) iterator.next()).accept(this);
+            ((Node) iterator.next()).accept(this);
         }
     }
 

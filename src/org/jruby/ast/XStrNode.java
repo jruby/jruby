@@ -3,7 +3,9 @@
  * Created on 24.02.2002, 13:43:38
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Backtick string
@@ -37,12 +38,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class XStrNode extends AbstractNode implements ILiteralNode {
+public class XStrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 1371310021447439748L;
 
     private final String value;
 
-    public XStrNode(ISourcePosition position, String value) {
+    public XStrNode(SourcePosition position, String value) {
         super(position);
         this.value = value;
     }
@@ -51,8 +52,8 @@ public class XStrNode extends AbstractNode implements ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitXStrNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitXStrNode(this);
     }
 
     /**

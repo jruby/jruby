@@ -26,7 +26,7 @@
  */
 package org.jruby.ast.util;
 
-import org.ablaf.ast.INode;
+import org.jruby.ast.Node;
 import org.jruby.ast.visitor.BreakStatementVisitor;
 import org.jruby.ast.visitor.ExpressionVisitor;
 
@@ -40,11 +40,11 @@ public final class NodeUtil {
     private static ExpressionVisitor expressionVisitor = new ExpressionVisitor();
     private static BreakStatementVisitor breakStatementVisitor = new BreakStatementVisitor();
 
-    public static final boolean isExpression(INode node) {
+    public static final boolean isExpression(Node node) {
         return expressionVisitor.isExpression(node);
     }
 
-    public static final boolean isBreakStatement(INode node) {
+    public static final boolean isBreakStatement(Node node) {
         return breakStatementVisitor.isBreakStatement(node);
     }
 }

@@ -3,8 +3,10 @@
  * Created on 05. November 2001, 21:15
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,10 +29,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * arguments for a function.
@@ -50,11 +50,11 @@ import org.jruby.ast.visitor.NodeVisitor;
  *
  * @author  jpetersen
  */
-public class ArgsNode extends AbstractNode {
+public class ArgsNode extends Node {
     static final long serialVersionUID = 3709437716296564785L;
 
     private final int argsCount;
-    private final IListNode optArgs;
+    private final ListNode optArgs;
     private final int restArg;
     private final BlockArgNode blockArgNode;
 
@@ -69,8 +69,8 @@ public class ArgsNode extends AbstractNode {
      * @param argsCount number of regular arguments
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
-    public ArgsNode(ISourcePosition iPosition, int argsCount, IListNode optArgs, int restArg, BlockArgNode blockArgNode) {
-        super(iPosition);
+    public ArgsNode(SourcePosition position, int argsCount, ListNode optArgs, int restArg, BlockArgNode blockArgNode) {
+        super(position);
 
         this.argsCount = argsCount;
         this.optArgs = optArgs;
@@ -82,8 +82,8 @@ public class ArgsNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitArgsNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitArgsNode(this);
     }
 
     /**
@@ -96,9 +96,9 @@ public class ArgsNode extends AbstractNode {
 
     /**
      * Gets the optArgs.
-     * @return Returns a IListNode
+     * @return Returns a ListNode
      */
-    public IListNode getOptArgs() {
+    public ListNode getOptArgs() {
         return optArgs;
     }
 

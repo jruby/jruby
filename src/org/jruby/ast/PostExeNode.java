@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 22:49:55
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,19 +28,18 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class PostExeNode extends AbstractNode {
+public class PostExeNode extends Node {
     static final long serialVersionUID = -2851659895226590014L;
 
-    public PostExeNode(ISourcePosition position) {
+    public PostExeNode(SourcePosition position) {
         super(position);
     }
 
@@ -46,7 +47,7 @@ public class PostExeNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitPostExeNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitPostExeNode(this);
     }
 }

@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:06:01
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,22 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents an alias of a global variable.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class VAliasNode extends AbstractNode {
+public class VAliasNode extends Node {
     static final long serialVersionUID = 8647860367861922838L;
 
     private final String oldName;
     private final String newName;
 
-    public VAliasNode(ISourcePosition position, String newName, String oldName) {
+    public VAliasNode(SourcePosition position, String newName, String oldName) {
         super(position);
         this.oldName = oldName;
         this.newName = newName;
@@ -51,8 +52,8 @@ public class VAliasNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitVAliasNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitVAliasNode(this);
     }
 
     /**

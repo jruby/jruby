@@ -3,9 +3,11 @@
  * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -28,23 +30,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class OpAsgnOrNode extends AbstractNode {
+public class OpAsgnOrNode extends Node {
     static final long serialVersionUID = -1503963105325984745L;
 
-    private final INode firstNode;
-    private final INode secondNode;
+    private final Node firstNode;
+    private final Node secondNode;
 
-    public OpAsgnOrNode(ISourcePosition position, INode headNode, INode valueNode) {
+    public OpAsgnOrNode(SourcePosition position, Node headNode, Node valueNode) {
         super(position);
         firstNode = headNode;
         secondNode = valueNode;
@@ -54,23 +54,23 @@ public class OpAsgnOrNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitOpAsgnOrNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitOpAsgnOrNode(this);
     }
 
     /**
      * Gets the firstNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getFirstNode() {
+    public Node getFirstNode() {
         return firstNode;
     }
 
     /**
      * Gets the secondNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getSecondNode() {
+    public Node getSecondNode() {
         return secondNode;
     }
 }

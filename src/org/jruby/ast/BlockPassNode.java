@@ -3,8 +3,10 @@
  * Created on 20.01.2002, 20:06:22
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,10 +29,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Block passed explicitly as an argument in a method call.
@@ -39,18 +39,18 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class BlockPassNode extends AbstractNode {
+public class BlockPassNode extends Node {
     static final long serialVersionUID = 7201862349971094217L;
 
-    private final INode bodyNode;
-    private INode iterNode;
+    private final Node bodyNode;
+    private Node iterNode;
 
     /** Used by the arg_blk_pass and new_call, new_fcall and new_super
      * methods in ParserSupport to temporary save the args node.
      */
-    private INode argsNode;
+    private Node argsNode;
 
-    public BlockPassNode(ISourcePosition position, INode bodyNode) {
+    public BlockPassNode(SourcePosition position, Node bodyNode) {
         super(position);
         this.bodyNode = bodyNode;
     }
@@ -59,23 +59,23 @@ public class BlockPassNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitBlockPassNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitBlockPassNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
     /**
      * Gets the iterNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getIterNode() {
+    public Node getIterNode() {
         return iterNode;
     }
 
@@ -83,7 +83,7 @@ public class BlockPassNode extends AbstractNode {
      * Sets the iterNode.
      * @param iterNode The iterNode to set
      */
-    public void setIterNode(INode iterNode) {
+    public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
     }
 
@@ -91,7 +91,7 @@ public class BlockPassNode extends AbstractNode {
      * Gets the argsNode.
      * @return Returns a IListNode
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
 
@@ -99,7 +99,7 @@ public class BlockPassNode extends AbstractNode {
      * Sets the argsNode.
      * @param argsNode The argsNode to set
      */
-    public void setArgsNode(INode argsNode) {
+    public void setArgsNode(Node argsNode) {
         this.argsNode = argsNode;
     }
 

@@ -26,7 +26,6 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.INode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BreakNode;
@@ -37,6 +36,7 @@ import org.jruby.ast.IfNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
@@ -52,7 +52,7 @@ import org.jruby.ast.util.ListNodeUtil;
 public class ExpressionVisitor extends AbstractVisitor {
     private boolean expression = false;
     
-    public boolean isExpression(INode node) {
+    public boolean isExpression(Node node) {
         acceptNode(node);
        	return isExpression();
     }
@@ -76,7 +76,7 @@ public class ExpressionVisitor extends AbstractVisitor {
     /**
      * @see AbstractVisitor#visitNode(Node)
      */
-    protected void visitNode(INode iVisited) {
+    protected void visitNode(Node iVisited) {
         expression = true;
     }
 

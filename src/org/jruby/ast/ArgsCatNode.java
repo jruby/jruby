@@ -25,31 +25,29 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
-public class ArgsCatNode extends AbstractNode {
-    private INode firstNode;
-    private INode secondNode;
+public class ArgsCatNode extends Node {
+    private Node firstNode;
+    private Node secondNode;
 
-    public ArgsCatNode(ISourcePosition position, INode node1, INode node2) {
+    public ArgsCatNode(SourcePosition position, Node node1, Node node2) {
         super(position);
         
         this.firstNode = node1;
         this.secondNode = node2;
     }
 
-    public void accept(INodeVisitor visitor) {
-        ((NodeVisitor)visitor).visitArgsCatNode(this);
+    public void accept(NodeVisitor visitor) {
+        visitor.visitArgsCatNode(this);
     }
     
-    public INode getFirstNode() {
+    public Node getFirstNode() {
         return firstNode;
     }
     
-    public INode getSecondNode() {
+    public Node getSecondNode() {
         return secondNode;
     }
 }

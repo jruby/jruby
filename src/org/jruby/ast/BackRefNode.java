@@ -3,7 +3,9 @@
  * Created on 25.02.2002, 00:11:17
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,9 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *	Regexp backref.
@@ -47,7 +48,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class BackRefNode extends AbstractNode {
+public class BackRefNode extends Node {
     static final long serialVersionUID = 5321267679438359590L;
 
 	/**
@@ -55,7 +56,7 @@ public class BackRefNode extends AbstractNode {
 	 **/
     private final char type;
 
-    public BackRefNode(ISourcePosition position, char type) {
+    public BackRefNode(SourcePosition position, char type) {
         super(position);
         this.type = type;
     }
@@ -64,8 +65,8 @@ public class BackRefNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitBackRefNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitBackRefNode(this);
     }
 
     /**

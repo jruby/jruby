@@ -22,7 +22,7 @@
  */
 package org.jruby.ast.util;
 
-import org.jruby.ast.types.IListNode;
+import org.jruby.ast.ListNode;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.Asserts;
 
@@ -68,6 +68,7 @@ public final class AstPersistenceDelegates {
         // create Node delegates
         add(load("AliasNode"), "newName", "oldName");
         add(load("AndNode"), "firstNode", "secondNode");
+        add(load("ArgsCatNode"), "firstNode", "secondNode");
         add(load("ArgsNode"), new String[] {"position", "argsCount", "optArgs", "restArg", "blockArgNode"});
         addListNode(load("ArrayNode"), new String[] {"position"});
         add(load("AttrSetNode"), "attributeName");
@@ -95,11 +96,11 @@ public final class AstPersistenceDelegates {
         add(load("DotNode"), "beginNode", "endNode", "exclusive");
         addListNode(load("DRegexpNode"), new String[] {"position", "options", "once"});
         addListNode(load("DStrNode"), new String[] {"position"});
+        add(load("DSymbolNode"), "node");
         add(load("DVarNode"), "name");
         addListNode(load("DXStrNode"), new String[] {"position"});
         add(load("EnsureNode"), "bodyNode", "ensureNode");
         add(load("EvStrNode"), "value");
-        add(load("ExpandArrayNode"), "expandNode");
         add(load("FalseNode"));
         add(load("FCallNode"), "name", "argsNode");
         add(load("FixnumNode"), "value");
@@ -109,6 +110,7 @@ public final class AstPersistenceDelegates {
         add(load("GlobalAsgnNode"), "name", "valueNode");
         add(load("GlobalVarNode"), "name");
         add(load("HashNode"), "listNode");
+        add(load("HereDocNode"), "value"); // Not sure this really is a node
         add(load("IfNode"), "condition", "thenBody", "elseBody");
         add(load("InstAsgnNode"), "name", "valueNode");
         add(load("InstVarNode"), "name");
@@ -136,15 +138,19 @@ public final class AstPersistenceDelegates {
         add(load("RegexpNode"), "value", "options");
         addListNode(load("RescueBodyNode"), new String[] {"position", "exceptionNodes", "bodyNode"});
         add(load("RescueNode"), "bodyNode", "rescueNodes", "elseNode");
-        add(load("RestArgsNode"), "argumentNode");
         add(load("RetryNode"));
         add(load("ReturnNode"), "valueNode");
         add(load("SClassNode"), "receiverNode", "bodyNode");
         add(load("ScopeNode"), "localNames", "bodyNode");
         add(load("SelfNode"));
+        add(load("SplatNode"), "value");
+        add(load("StarNode"));
         add(load("StrNode"), "value");
+        add(load("StrTermNode"), "value"); // Is this a real node?
         add(load("SuperNode"), "argsNode");
+        add(load("SValueNode"), "value");
         add(load("SymbolNode"), "name");
+        add(load("ToAryNode"), "value");
         add(load("TrueNode"));
         add(load("UndefNode"), "name");
         add(load("UntilNode"), "conditionNode", "bodyNode");
@@ -155,9 +161,10 @@ public final class AstPersistenceDelegates {
         add(load("XStrNode"), "value");
         add(load("YieldNode"), "argsNode");
         add(load("ZArrayNode"));
+        add(load("ZeroArgNode"));
         add(load("ZSuperNode"));
         
-        add(loadClass("org.ablaf.internal.lexer.DefaultLexerPosition"), new String[] {"file", "line", "column"});
+        add(loadClass("org.jruby.lexer.yacc.SourcePosition"), new String[] {"file", "line"});
         addVisibility();
     }
     
@@ -187,7 +194,7 @@ public final class AstPersistenceDelegates {
              * @see java.beans.PersistenceDelegate#initialize(Class, Object, Object, Encoder)
              */
             protected void initialize(Class type, Object oldInstance, Object newInstance, Encoder out) {
-                IListNode listNode = (IListNode)oldInstance;
+                ListNode listNode = (ListNode)oldInstance;
                 Iterator iter = listNode.iterator();
                 while (iter.hasNext()) {
                     out.writeStatement(new Statement(oldInstance, "add", new Object[] {iter.next()}));

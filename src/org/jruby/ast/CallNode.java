@@ -3,9 +3,11 @@
  * Created on 19.01.2002, 19:05:17
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -28,10 +30,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * A method or operator call.
@@ -39,14 +39,14 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public final class CallNode extends AbstractNode {
+public final class CallNode extends Node {
     static final long serialVersionUID = -1993752395320088525L;
 
-    private final INode receiverNode;
+    private final Node receiverNode;
     private final String name;
-    private final INode argsNode;
+    private final Node argsNode;
 
-    public CallNode(ISourcePosition position, INode receiverNode, String name, INode argsNode) {
+    public CallNode(SourcePosition position, Node receiverNode, String name, Node argsNode) {
         super(position);
         this.receiverNode = receiverNode;
         this.name = name.intern();
@@ -57,8 +57,8 @@ public final class CallNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitCallNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitCallNode(this);
     }
 
     /**
@@ -66,7 +66,7 @@ public final class CallNode extends AbstractNode {
 	 * argsNode representing the method's arguments' value for this call.
      * @return argsNode
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
 
@@ -84,7 +84,7 @@ public final class CallNode extends AbstractNode {
 	 * receiverNode is the object on which the method is being called
      * @return receiverNode
      */
-    public INode getReceiverNode() {
+    public Node getReceiverNode() {
         return receiverNode;
     }
 }

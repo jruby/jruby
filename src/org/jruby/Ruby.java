@@ -31,8 +31,7 @@
  */
 package org.jruby;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.Node;
 import org.jruby.common.IRubyErrorHandler;
 import org.jruby.common.RubyErrorHandler;
 import org.jruby.exceptions.BreakJump;
@@ -46,6 +45,7 @@ import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.parser.Parser;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.CallbackFactory;
@@ -186,7 +186,7 @@ public final class Ruby {
         return eval(parse(script, "<script>"));
     }
 
-    public IRubyObject eval(INode node) {
+    public IRubyObject eval(Node node) {
         return getCurrentContext().eval(node);
     }
 
@@ -529,11 +529,11 @@ public final class Ruby {
         globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
 
-    public INode parse(Reader content, String file) {
+    public Node parse(Reader content, String file) {
         return parser.parse(file, content);
     }
 
-    public INode parse(String content, String file) {
+    public Node parse(String content, String file) {
         return parser.parse(file, content);
     }
 
@@ -561,7 +561,7 @@ public final class Ruby {
         return threadService.getCurrentContext();
     }
 
-    public ISourcePosition getPosition() {
+    public SourcePosition getPosition() {
         return getCurrentContext().getPosition();
     }
 
@@ -569,7 +569,7 @@ public final class Ruby {
         getCurrentContext().setPosition(file, line);
     }
 
-    public void setPosition(ISourcePosition position) {
+    public void setPosition(SourcePosition position) {
         getCurrentContext().setPosition(position);
     }
 
@@ -750,9 +750,8 @@ public final class Ruby {
         setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            INode node = parse(source, scriptName);
+        	Node node = parse(source, scriptName);
             self.eval(node);
-
         } finally {
             context.getCurrentFrame().setLastFunc(last_func);
             context.getScopeStack().pop();
@@ -763,7 +762,7 @@ public final class Ruby {
         }
     }
 
-    public void loadNode(String scriptName, INode node, boolean wrap) {
+    public void loadNode(String scriptName, Node node, boolean wrap) {
         IRubyObject self = getTopSelf();
 
         ThreadContext context = getCurrentContext();
@@ -832,14 +831,14 @@ public final class Ruby {
      */
     public synchronized void callTraceFunction(
         String event,
-        ISourcePosition position,
+        SourcePosition position,
         IRubyObject self,
         String name,
         IRubyObject type) {
         if (!isWithinTrace && traceFunction != null) {
             isWithinTrace = true;
 
-            ISourcePosition savePosition = getPosition();
+            SourcePosition savePosition = getPosition();
             String file = position.getFile();
 
             if (file == null) {

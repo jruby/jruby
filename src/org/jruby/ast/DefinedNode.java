@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 01:42:33
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,22 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * a defined statement.
  * @author  jpetersen
  * @version $Revision$
  */
-public class DefinedNode extends AbstractNode {
+public class DefinedNode extends Node {
     static final long serialVersionUID = -6942286690645861964L;
 
-    private final INode expressionNode;
+    private final Node expressionNode;
 
-    public DefinedNode(ISourcePosition position, INode expressionNode) {
+    public DefinedNode(SourcePosition position, Node expressionNode) {
         super(position);
         this.expressionNode = expressionNode;
     }
@@ -50,15 +50,15 @@ public class DefinedNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitDefinedNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDefinedNode(this);
     }
 
     /**
      * Gets the expressionNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getExpressionNode() {
+    public Node getExpressionNode() {
         return expressionNode;
     }
 }

@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:23:50
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
@@ -37,14 +37,14 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class IterNode extends AbstractNode {
+public class IterNode extends Node {
     static final long serialVersionUID = -9181965000180892184L;
 
-    private final INode varNode;
-    private final INode bodyNode;
-    private INode iterNode;
+    private final Node varNode;
+    private final Node bodyNode;
+    private Node iterNode;
 
-    public IterNode(ISourcePosition position, INode varNode, INode bodyNode, INode iterNode) {
+    public IterNode(SourcePosition position, Node varNode, Node bodyNode, Node iterNode) {
         super(position);
         this.varNode = varNode;
         this.bodyNode = bodyNode;
@@ -55,23 +55,23 @@ public class IterNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitIterNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitIterNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
     /**
      * Gets the iterNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getIterNode() {
+    public Node getIterNode() {
         return iterNode;
     }
 
@@ -79,15 +79,15 @@ public class IterNode extends AbstractNode {
      * Sets the iterNode.
      * @param iterNode The iterNode to set
      */
-    public void setIterNode(INode iterNode) {
+    public void setIterNode(Node iterNode) {
         this.iterNode = iterNode;
     }
 
     /**
      * Gets the varNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getVarNode() {
+    public Node getVarNode() {
         return varNode;
     }
 }

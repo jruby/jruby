@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 00:19:51
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * A new (logical) source code line.
@@ -45,12 +45,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class NewlineNode extends AbstractNode {
+public class NewlineNode extends Node {
     static final long serialVersionUID = -6180129177863553832L;
 
-    private final INode nextNode;
+    private final Node nextNode;
 
-    public NewlineNode(ISourcePosition position, INode nextNode) {
+    public NewlineNode(SourcePosition position, Node nextNode) {
         super(position);
 
         this.nextNode = nextNode;
@@ -61,15 +61,15 @@ public class NewlineNode extends AbstractNode {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitNewlineNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitNewlineNode(this);
     }
 
     /**
      * Gets the nextNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getNextNode() {
+    public Node getNextNode() {
         return nextNode;
     }
 

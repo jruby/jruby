@@ -1,14 +1,37 @@
+/*
+ * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ *
+ * JRuby - http://jruby.sourceforge.net
+ *
+ * This file is part of JRuby
+ *
+ * JRuby is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with JRuby; if not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307 USA
+ */
 package org.ablaf.internal.common;
 
-import org.ablaf.common.IErrorHandler;
-import org.ablaf.common.ISourcePosition;
+import org.jruby.common.IRubyErrorHandler;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class NullErrorHandler implements IErrorHandler {
+public class NullErrorHandler implements IRubyErrorHandler {
 
     /**
      * Constructor for NullErrorHandler.
@@ -18,27 +41,53 @@ public class NullErrorHandler implements IErrorHandler {
     }
 
     /**
-     * @see IErrorHandler#isHandled(int)
+     * @see org.jruby.common.IRubyErrorHandler#isHandled(int)
      */
     public boolean isHandled(int type) {
         return false;
     }
 
     /**
-     * @see IErrorHandler#handleError(int, String)
+     * @see org.jruby.common.IRubyErrorHandler#handleError(int, String)
      */
     public void handleError(int type, String message) {
     }
 
     /**
-     * @see IErrorHandler#handleError(int, ISourcePosition, String)
+     * @see org.jruby.common.IRubyErrorHandler#handleError(int, ISourcePosition, String)
      */
-    public void handleError(int type, ISourcePosition position, String message) {
+    public void handleError(int type, SourcePosition position, String message) {
     }
 
     /**
-     * @see IErrorHandler#handleError(int, ISourcePosition, String, Object)
+     * @see org.jruby.common.IRubyErrorHandler#handleError(int, ISourcePosition, String, Object)
      */
-    public void handleError(int type, ISourcePosition position, String message, Object args) {
+    public void handleError(int type, SourcePosition position, String message, Object args) {
     }
+
+	/**
+	 * @see org.jruby.common.IRubyErrorHandler#warn(java.lang.String)
+	 */
+	public void warn(String message) {
+	}
+
+	/**
+	 * @see org.jruby.common.IRubyErrorHandler#warning(java.lang.String)
+	 */
+	public void warning(String message) {
+	}
+
+	/**
+	 * @see org.jruby.common.IRubyErrorHandler#isVerbose()
+	 */
+	public boolean isVerbose() {
+		return false;
+	}
+
+	/**
+	 * @see org.jruby.common.IRubyErrorHandler#setVerbose(boolean)
+	 */
+	public void setVerbose(boolean verbose) {
+
+	}
 }

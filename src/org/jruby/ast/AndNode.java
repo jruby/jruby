@@ -3,7 +3,9 @@
  * Created on 26.02.2002, 16:28:08
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,37 +28,35 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** An AndNode represents a && operator.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class AndNode extends AbstractNode {
+public class AndNode extends Node {
     static final long serialVersionUID = 1716928209521564017L;
 
-    private final INode firstNode;
-    private final INode secondNode;
+    private final Node firstNode;
+    private final Node secondNode;
 
-    public AndNode(ISourcePosition position, INode firstNode, INode secondNode) {
+    public AndNode(SourcePosition position, Node firstNode, Node secondNode) {
         super(position);
         this.firstNode = firstNode;
         this.secondNode = secondNode;
     }
 
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitAndNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitAndNode(this);
     }
 
     /**
      * Gets the secondNode.
      * @return Returns a Node
      */
-    public INode getSecondNode() {
+    public Node getSecondNode() {
         return secondNode;
     }
 
@@ -64,7 +64,7 @@ public class AndNode extends AbstractNode {
      * Gets the firstNode.
      * @return Returns a Node
      */
-    public INode getFirstNode() {
+    public Node getFirstNode() {
         return firstNode;
     }
 }

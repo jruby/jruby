@@ -1,6 +1,9 @@
 /*
- * Copyright (C) 2002 Jan Arne Petersen  <jpetersen@uni-bonn.de>
- *
+ * Copyright (C) 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
  * JRuby - http://jruby.sourceforge.net
  *
  * This file is part of JRuby
@@ -22,7 +25,6 @@
  */
 package org.jruby.javasupport.bsf;
 
-import org.ablaf.ast.INode;
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
@@ -30,6 +32,7 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.ast.Node;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ReturnJump;
@@ -67,7 +70,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
             runtime.setPosition(file, line);
 
-            INode node = runtime.getParser().parse(file, funcBody.toString());
+            Node node = runtime.getParser().parse(file, funcBody.toString());
             return convertToJava(runtime.getTopSelf().eval(node), Object.class);
         } finally {
             threadContext.getScopeStack().pop();

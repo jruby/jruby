@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 20:29:49
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,21 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents an undef statement.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class UndefNode extends AbstractNode {
+public class UndefNode extends Node {
     static final long serialVersionUID = -8829084073375820727L;
 
     private final String name;
 
-    public UndefNode(ISourcePosition position, String name) {
+    public UndefNode(SourcePosition position, String name) {
         super(position);
         this.name = name;
     }
@@ -49,8 +50,8 @@ public class UndefNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitUndefNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitUndefNode(this);
     }
 
     /**

@@ -1,9 +1,6 @@
 /*
- * IAssignableNode.java - description
- * Created on 01.03.2002, 23:59:19
+ * ListNode.java - Base of all nodes which are a list
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
  * Thomas E Enebo <enebo@acm.org>
  *
@@ -26,16 +23,43 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jruby.ast.types;
+package org.jruby.ast;
 
-import org.ablaf.ast.INode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
- *
- * @author  jpetersen
- * @version $Revision$
+ * @author enebo
  */
-public interface IAssignableNode extends INode {
-    public INode getValueNode();
-    public void setValueNode(INode node);
+public abstract class ListNode extends Node {
+    private List list = null;
+
+	public ListNode() { 
+		super(); 
+	}
+
+	public ListNode(SourcePosition position) {
+		super(position);
+	}
+	
+    public ListNode add(Node node) {
+        if (list == null) {
+            list = new ArrayList();
+        }
+        list.add(node);
+        return this;
+    }
+
+    public Iterator iterator() {
+        return list == null ? Collections.EMPTY_LIST.iterator() : 
+        	list.iterator();
+    }
+    
+    public int size() {
+        return list == null ? 0 : list.size();
+    }
 }

@@ -3,7 +3,9 @@
  * Created on 23.02.2002, 22:23:09
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,10 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 import java.math.BigInteger;
 
@@ -38,18 +39,18 @@ import java.math.BigInteger;
  * @author  jpetersen
  * @version $Revision$
  */
-public class BignumNode extends AbstractNode implements ILiteralNode {
+public class BignumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -8646636291868912747L;
 
     private final BigInteger value;
 
-    public BignumNode(ISourcePosition position, BigInteger value) {
+    public BignumNode(SourcePosition position, BigInteger value) {
         super(position);
         this.value = value;
     }
 
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitBignumNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitBignumNode(this);
     }
 
     /**

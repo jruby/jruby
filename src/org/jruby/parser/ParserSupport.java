@@ -31,12 +31,10 @@
  */
 package org.jruby.parser;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.IErrorHandler;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.BlockPassNode;
@@ -60,6 +58,7 @@ import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
+import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Match2Node;
@@ -68,6 +67,7 @@ import org.jruby.ast.MatchNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NilNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
@@ -80,20 +80,20 @@ import org.jruby.ast.SuperNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.YieldNode;
-import org.jruby.ast.types.IAssignableNode;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.ast.util.NodeUtil;
 import org.jruby.ast.visitor.UselessStatementVisitor;
 import org.jruby.common.IErrors;
+import org.jruby.common.IRubyErrorHandler;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.util.IdUtil;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/** Ruby 1.6.7 compatible.
+/** Ruby 1.8.1 compatible.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -110,9 +110,9 @@ public class ParserSupport {
     private int classNest;
 
     // Abstract Language Framework
-    private IErrorHandler errorHandler;
+    private IRubyErrorHandler errorHandler;
 
-    private IRubyParserConfiguration configuration;
+    private RubyParserConfiguration configuration;
     private RubyParserResult result;
 
     public void reset() {
@@ -135,11 +135,11 @@ public class ParserSupport {
         return String.valueOf((char) operatorName);
     }
     
-    public INode arg_concat(ISourcePosition position, INode node1, INode node2) {
+    public Node arg_concat(SourcePosition position, Node node1, Node node2) {
         return node2 == null ? node1 : new ArgsCatNode(position, node1, node2);
     }
 
-    public INode arg_blk_pass(INode firstNode, BlockPassNode secondNode) {
+    public Node arg_blk_pass(Node firstNode, BlockPassNode secondNode) {
         if (secondNode != null) {
             secondNode.setArgsNode(firstNode);
             return secondNode;
@@ -147,11 +147,11 @@ public class ParserSupport {
         return firstNode;
     }
 
-    public INode appendPrintToBlock(INode block) {
+    public Node appendPrintToBlock(Node block) {
         return appendToBlock(block, new FCallNode(null, "print", new ArrayNode(block.getPosition()).add(new GlobalVarNode(block.getPosition(), "$_"))));
     }
 
-    public INode appendWhileLoopToBlock(INode block, boolean chop, boolean split) {
+    public Node appendWhileLoopToBlock(Node block, boolean chop, boolean split) {
         if (split) {
             block = appendToBlock(new GlobalAsgnNode(null, "$F", new CallNode(null, new GlobalVarNode(null, "$_"), "split", null)), block);
         }
@@ -162,7 +162,7 @@ public class ParserSupport {
     }
     
     /// TODO: We make self,nil,true,false twice....
-    public INode gettable(String id, ISourcePosition position) {
+    public Node gettable(String id, SourcePosition position) {
         if (id.equals("self")) {
             return new SelfNode(position);
         } else if (id.equals("nil")) {
@@ -203,7 +203,7 @@ public class ParserSupport {
         errorHandler.handleError(IErrors.SYNTAX_ERROR, null, message, null);
     }
     
-    public INode assignable(ISourcePosition position, Object id, INode value) {
+    public Node assignable(SourcePosition position, Object id, Node value) {
         checkExpression(value);
         
         if (id instanceof SelfNode) {
@@ -264,11 +264,11 @@ public class ParserSupport {
      *@param node
      *@return a NewlineNode or null if node is null.
      */
-    public INode newline_node(INode node, ISourcePosition position) {
+    public Node newline_node(Node node, SourcePosition position) {
         return node == null ? null : new NewlineNode(position, node); 
     }
 
-    public INode appendToBlock(INode head, INode tail) {
+    public Node appendToBlock(Node head, Node tail) {
         if (tail == null) {
             return head;
         } else if (head == null) {
@@ -279,33 +279,33 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (errorHandler.isHandled(IErrors.VERBOSE) && NodeUtil.isBreakStatement(ListNodeUtil.getLast((IListNode) head))) {
+        if (errorHandler.isHandled(IErrors.VERBOSE) && NodeUtil.isBreakStatement(ListNodeUtil.getLast((ListNode) head))) {
             errorHandler.handleError(IErrors.WARNING, tail.getPosition(), "Statement not reached.", null);
         }
 
         if (tail instanceof BlockNode) {
-            ListNodeUtil.addAll((IListNode) head, (IListNode) tail);
+            ListNodeUtil.addAll((ListNode) head, (ListNode) tail);
         } else {
-            ((IListNode) head).add(tail);
+            ((ListNode) head).add(tail);
         }
 
         return head;
     }
 
-    public INode getOperatorCallNode(INode firstNode, String operator) {
+    public Node getOperatorCallNode(Node firstNode, String operator) {
         checkExpression(firstNode);
 
         return new CallNode(firstNode.getPosition(), firstNode, operator, null);
     }
 
-    public INode getOperatorCallNode(INode firstNode, String operator, INode secondNode) {
+    public Node getOperatorCallNode(Node firstNode, String operator, Node secondNode) {
         checkExpression(firstNode);
         checkExpression(secondNode);
 
         return new CallNode(firstNode.getPosition(), firstNode, operator, new ArrayNode(secondNode.getPosition()).add(secondNode));
     }
 
-    public INode getMatchNode(INode firstNode, INode secondNode) {
+    public Node getMatchNode(Node firstNode, Node secondNode) {
         getLocalNames().ensureLocalRegistered("~");
 
         if (firstNode instanceof DRegexpNode || firstNode instanceof RegexpNode) {
@@ -317,13 +317,13 @@ public class ParserSupport {
         }
     }
 
-    public INode getElementAssignmentNode(INode recv, INode idx) {
+    public Node getElementAssignmentNode(Node recv, Node idx) {
         checkExpression(recv);
 
         return new CallNode(recv.getPosition(), recv, "[]=", idx);
     }
 
-    public INode getAttributeAssignmentNode(INode recv, String name) {
+    public Node getAttributeAssignmentNode(Node recv, String name) {
         checkExpression(recv);
 
         return new CallNode(recv.getPosition(), recv, name + "=", null);
@@ -332,7 +332,7 @@ public class ParserSupport {
 	/**
 	 * @fixme need to handle positions
 	 **/
-    public void backrefAssignError(INode node) {
+    public void backrefAssignError(Node node) {
         if (node instanceof NthRefNode) {
             // FIXME: position
             errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Can't set variable $" + ((NthRefNode) node).getMatchNumber() + '.', null);
@@ -345,39 +345,39 @@ public class ParserSupport {
 	/**
 	 * @fixme position
 	 **/
-    public INode node_assign(INode lhs, INode rhs) {
+    public Node node_assign(Node lhs, Node rhs) {
         if (lhs == null) {
             return null;
         }
-        INode result = lhs;
+        Node result = lhs;
 
         checkExpression(rhs);
-        if (lhs instanceof IAssignableNode) {
-    	    ((IAssignableNode) lhs).setValueNode(rhs);
+        if (lhs instanceof AssignableNode) {
+    	    ((AssignableNode) lhs).setValueNode(rhs);
         } else if (lhs instanceof CallNode) {
 			CallNode lCallLHS = (CallNode) lhs;
-			INode lArgs = lCallLHS.getArgsNode();
+			Node lArgs = lCallLHS.getArgsNode();
 
 			if (lArgs == null) {
 				lArgs = new ArrayNode(lhs.getPosition());
 				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
-			} else if (lArgs instanceof IListNode == false) {
+			} else if (lArgs instanceof ListNode == false) {
 				lArgs = new ArrayNode(lhs.getPosition()).add(lArgs);
 				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
 			}
-            ((IListNode)lArgs).add(rhs);
+            ((ListNode)lArgs).add(rhs);
         }
         
         return result;
     }
     
-    public INode ret_args(INode node, ISourcePosition position) {
+    public Node ret_args(Node node, SourcePosition position) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
                 errorHandler.handleError(IErrors.COMPILE_ERROR, position, "Dynamic constant assignment.");
             } else if (node instanceof ArrayNode &&
                     ((ArrayNode)node).size() == 1) {
-                node = (INode) ((ArrayNode)node).iterator().next();
+                node = (Node) ((ArrayNode)node).iterator().next();
             } else if (node instanceof SplatNode) {
                 node = new SValueNode(position, node);
             }
@@ -386,13 +386,13 @@ public class ParserSupport {
         return node;
     }
 
-    public void checkExpression(INode node) {
+    public void checkExpression(Node node) {
         if (!NodeUtil.isExpression(node)) {
             errorHandler.handleError(IErrors.SYNTAX_ERROR, node.getPosition(), "Void value expression.", null);
         }
     }
 
-    public void checkUselessStatement(INode node) {
+    public void checkUselessStatement(Node node) {
         if (errorHandler.isHandled(IErrors.VERBOSE)) {
             new UselessStatementVisitor(errorHandler).acceptNode(node);
         }
@@ -402,7 +402,7 @@ public class ParserSupport {
         if (errorHandler.isHandled(IErrors.VERBOSE)) {
             Iterator iterator = blockNode.iterator();
             while (iterator.hasNext()) {
-                checkUselessStatement((INode) iterator.next());
+                checkUselessStatement((Node) iterator.next());
             }
         }
     }
@@ -410,13 +410,13 @@ public class ParserSupport {
 	/**
 	 * @fixme error handling
 	 **/
-    private boolean checkAssignmentInCondition(INode node) {
+    private boolean checkAssignmentInCondition(Node node) {
         if (node instanceof MultipleAsgnNode) {
             // FIXME
             errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Multiple assignment in conditional.", null);
             return true;
         } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
-            INode valueNode = ((IAssignableNode) node).getValueNode();
+            Node valueNode = ((AssignableNode) node).getValueNode();
             if (valueNode instanceof ILiteralNode || valueNode instanceof NilNode || valueNode instanceof TrueNode || valueNode instanceof FalseNode) {
                 errorHandler.handleError(IErrors.WARN, null, "Found '=' in conditional, should be '=='.", null);
             }
@@ -426,7 +426,7 @@ public class ParserSupport {
         return false;
     }
 
-    private INode cond0(INode node) {
+    private Node cond0(Node node) {
         checkAssignmentInCondition(node);
 
         if (node instanceof DRegexpNode) {
@@ -454,7 +454,7 @@ public class ParserSupport {
         return node;
     }
 
-    public INode getConditionNode(INode node) {
+    public Node getConditionNode(Node node) {
         if (node == null) {
             return null;
         } else if (node instanceof NewlineNode) {
@@ -464,7 +464,7 @@ public class ParserSupport {
         return cond0(node);
     }
 
-    private INode getFlipConditionNode(INode node) {
+    private Node getFlipConditionNode(Node node) {
         node = getConditionNode(node);
 
         if (node instanceof NewlineNode) {
@@ -476,12 +476,12 @@ public class ParserSupport {
         return node;
     }
 
-    public AndNode newAndNode(INode left, INode right) {
+    public AndNode newAndNode(Node left, Node right) {
         checkExpression(left);
         return new AndNode(left.getPosition(), getConditionNode(left), getConditionNode(right));
     }
 
-    public OrNode newOrNode(INode left, INode right) {
+    public OrNode newOrNode(Node left, Node right) {
         checkExpression(left);
         return new OrNode(left.getPosition(), getConditionNode(left), getConditionNode(right));
     }
@@ -489,9 +489,9 @@ public class ParserSupport {
 	/**
 	 * @fixme position
 	 **/
-    public INode getReturnArgsNode(INode node) {
-        if (node instanceof ArrayNode && ListNodeUtil.getLength((IListNode) node) == 1) {
-            return (INode) ((IListNode) node).iterator().next();
+    public Node getReturnArgsNode(Node node) {
+        if (node instanceof ArrayNode && ListNodeUtil.getLength((ListNode) node) == 1) {
+            return (Node) ((ListNode) node).iterator().next();
         } else if (node instanceof BlockPassNode) {
             // FIXME: position
             errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Block argument should not be given.", null);
@@ -499,9 +499,9 @@ public class ParserSupport {
         return node;
     }
 
-    public INode new_call(INode receiverNode, String name, INode args) {
+    public Node new_call(Node receiverNode, String name, Node args) {
     	/*
-        INode node = ((BlockPassNode) args).getArgsNode();
+        Node node = ((BlockPassNode) args).getArgsNode();
         IListNode argsNode = null;
         
         if (node instanceof IListNode) {
@@ -514,7 +514,7 @@ public class ParserSupport {
         return args;
         */
         if (args != null && args instanceof BlockPassNode) {
-            INode argsNode = ((BlockPassNode) args).getArgsNode();
+            Node argsNode = ((BlockPassNode) args).getArgsNode();
             
             ((BlockPassNode) args).setIterNode(new CallNode(receiverNode.getPosition(), receiverNode, name, argsNode));
             return args;
@@ -523,7 +523,7 @@ public class ParserSupport {
         return new CallNode(receiverNode.getPosition(), receiverNode, name, args);
     }
 
-    public INode new_fcall(String name, INode args, ISourcePosition iPosition) {
+    public Node new_fcall(String name, Node args, SourcePosition iPosition) {
         if (args != null && args instanceof BlockPassNode) {
             ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
             return args;
@@ -531,7 +531,7 @@ public class ParserSupport {
         return new FCallNode(iPosition, name, args);
     }
 
-    public INode new_super(INode args, ISourcePosition iPosition) {
+    public Node new_super(Node args, SourcePosition iPosition) {
         if (args != null && args instanceof BlockPassNode) {
             ((BlockPassNode) args).setIterNode(new SuperNode(args.getPosition(), ((BlockPassNode) args).getArgsNode()));
             return args;
@@ -662,7 +662,7 @@ public class ParserSupport {
      * Gets the configuration.
      * @return Returns a IRubyParserConfiguration
      */
-    public IRubyParserConfiguration getConfiguration() {
+    public RubyParserConfiguration getConfiguration() {
         return configuration;
     }
 
@@ -670,7 +670,7 @@ public class ParserSupport {
      * Sets the configuration.
      * @param configuration The configuration to set
      */
-    public void setConfiguration(IRubyParserConfiguration configuration) {
+    public void setConfiguration(RubyParserConfiguration configuration) {
         this.configuration = configuration;
     }
 
@@ -678,32 +678,32 @@ public class ParserSupport {
      * Sets the errorHandler.
      * @param errorHandler The errorHandler to set
      */
-    public void setErrorHandler(IErrorHandler errorHandler) {
+    public void setErrorHandler(IRubyErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
     }
     
-    public INode literal_concat(ISourcePosition position, INode head, 
+    public Node literal_concat(SourcePosition position, Node head, 
             Object tail) {
-        IListNode list;
+        ListNode list;
         
         if (head == null) {
             list = new DStrNode(position);
         } else if (head instanceof EvStrNode) {
             list = new DStrNode(position).add(head);
         } else {
-            list = (IListNode) head;
+            list = (ListNode) head;
         }
         
         if (tail instanceof String) {
             tail = new StrNode(position, (String)tail);
         }
-        list.add((INode)tail);
+        list.add((Node)tail);
         
         return list;
     }
     
-    public INode newEvStrNode(ISourcePosition position, INode node) {
-        INode head = node;
+    public Node newEvStrNode(SourcePosition position, Node node) {
+        Node head = node;
         while (true) {
             if (node != null) {
                 if (node instanceof StrNode ||
@@ -723,7 +723,7 @@ public class ParserSupport {
         return new EvStrNode(position, head);
     }
     
-    public INode new_yield(ISourcePosition position, INode node) {
+    public Node new_yield(SourcePosition position, Node node) {
         boolean state = true;
         
         if (node != null) {
@@ -732,7 +732,7 @@ public class ParserSupport {
             }
             
             if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
-                node = (INode) ((ArrayNode)node).iterator().next();
+                node = (Node) ((ArrayNode)node).iterator().next();
                 state = false;
             }
             
@@ -746,14 +746,14 @@ public class ParserSupport {
         return new YieldNode(position, node, state);
     }
     
-    public IListNode list_concat(IListNode first, INode second) {
-        if (second instanceof IListNode == false) {
+    public ListNode list_concat(ListNode first, Node second) {
+        if (second instanceof ListNode == false) {
             return first.add(second);
         }
-        IListNode concatee = (IListNode) second;
+        ListNode concatee = (ListNode) second;
         
         for (Iterator iterator = concatee.iterator(); iterator.hasNext();) {
-            first.add((INode)iterator.next());
+            first.add((Node)iterator.next());
         }
         
         return first;

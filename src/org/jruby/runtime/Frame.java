@@ -28,8 +28,8 @@
  */
 package org.jruby.runtime;
 
-import org.ablaf.common.ISourcePosition;
 import org.jruby.RubyModule;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -42,14 +42,14 @@ public class Frame {
     private IRubyObject[] args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
-    private final ISourcePosition position;
+    private final SourcePosition position;
     private Iter iter = Iter.ITER_NOT;
 
     public Frame(IRubyObject self,
                  IRubyObject[] args,
                  String lastFunc,
                  RubyModule lastClass,
-                 ISourcePosition position,
+                 SourcePosition position,
                  Iter iter)
     {
         this.self = self;
@@ -78,12 +78,11 @@ public class Frame {
         this.args = args;
     }
 
-    public ISourcePosition getPosition() {
+    /**
+     * @return the frames current position
+     */
+    public SourcePosition getPosition() {
         return position;
-    }
-
-    public String getFile() {
-        return position.getFile();
     }
 
     /** Getter for property iter.
@@ -130,13 +129,6 @@ public class Frame {
      */
     public void setLastFunc(String lastFunc) {
         this.lastFunc = lastFunc;
-    }
-
-    /** Getter for property line.
-     * @return Value of property line.
-     */
-    public int getLine() {
-        return position.getLine();
     }
 
     /** Getter for property self.

@@ -29,16 +29,9 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.IErrorHandler;
-import org.ablaf.common.ISourcePosition;
-import org.ablaf.lexer.ILexerSource;
 import org.jruby.ast.*;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.RegexpNode;
-import org.jruby.ast.StrTermNode;
 import org.jruby.common.IErrors;
+import org.jruby.common.IRubyErrorHandler;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Token;
@@ -47,34 +40,45 @@ import org.jruby.util.IdUtil;
 import java.io.IOException;
 import java.math.BigInteger;
 
-/** This is a port of the MRI lexer to Java it is compatible to Ruby 1.6.7.
+/** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  *
- * @author  jpetersen
+ * @author  jpetersen,enebo
  * @version $Revision$
  */
 public class RubyYaccLexer {
-    // YaccLexer:
+    // Last token read via yylex().
     private int token = 0;
+    
+    // Value of last token which had a value associated with it.
     private Object yaccValue;
 
-    // LexerSource:
-    private RubyLexerSupport support;
+    // Stream of data that yylex() examines.
+    private LexerSource src;
     
+    // Used for tiny smidgen of grammar in lexer (see setParserSupport())
     private ParserSupport parserSupport = null;
 
-    // ErrorHandler:
-    private IErrorHandler errorHandler;
+    // The current location of the lexer immediately after a call to yylex()
+    private SourcePosition currentPos;
 
-    // Lexer:
+    // What handles errors
+    private IRubyErrorHandler errorHandler;
+
+    // Additional context surrounding tokens that both the lexer and
+    // grammar use.
     private LexState lex_state;
-    private StringBuffer tokenBuffer = new StringBuffer(60); // FIX: replace with special class.
+    
+    // Tempory buffer to build up a potential token.
+    private StringBuffer tokenBuffer = new StringBuffer(60);
 
     private StackState conditionState = new StackState();
     private StackState cmdArgumentState = new StackState();
-    
-    private INode lex_strterm = null;
+    private Node lex_strterm = null;
     private boolean commandStart = true;
-    
+
+    // Give a name to a value.  Enebo: This should be used more.
+    private static final int EOF = 0;
+
     // ruby constants for strings (should this be moved somewhere else?)
     private final int STR_FUNC_ESCAPE=0x01;
     private final int STR_FUNC_EXPAND=0x02;
@@ -93,85 +97,127 @@ public class RubyYaccLexer {
     private final int str_ssym   = STR_FUNC_SYMBOL;
     private final int str_dsym   = STR_FUNC_SYMBOL|STR_FUNC_EXPAND;
     
-    // YaccLexer implementation:
+    /**
+     * How the parser advances to the next token.
+     * 
+     * @returns true if not at end of file (EOF).
+     */
     public boolean advance() throws IOException {
         return (token = yylex()) != EOF;
     }
     
-    public void setParserSupport(ParserSupport parserSupport) {
-        this.parserSupport = parserSupport;
-    }
-    
-    public INode strTerm() {
-        return lex_strterm;
-    }
-    
-    public void setStrTerm(INode strterm) {
-        this.lex_strterm = strterm;
-    }
-
+    /**
+     * Last token read from the lexer at the end of a call to yylex()
+     * 
+     * @return last token read
+     */
     public int token() {
         return token;
     }
 
+    /**
+     * Value of last token (if it is a token which has a value).
+     * 
+     * @return value of last value-laden token
+     */
     public Object value() {
         return yaccValue;
+    }
+
+    /**
+     * Position from where last token came from.
+     * 
+     * @return the last tokens position from the source
+     */
+    public SourcePosition getPosition() {
+        return currentPos;
+    }
+
+    /**
+     * Parse must pass its support object for some check at bottom of
+     * yylex().  Ruby does it this way as well (i.e. a little parsing
+     * logic in the lexer).
+     * 
+     * @param parserSupport
+     */
+    public void setParserSupport(ParserSupport parserSupport) {
+        this.parserSupport = parserSupport;
+    }
+
+    /**
+     * Allow the parser to set the source for its lexer.
+     * 
+     * @param source where the lexer gets raw data
+     */
+    public void setSource(LexerSource source) {
+        this.src = source;
+    }
+
+    public Node strTerm() {
+        return lex_strterm;
+    }
+    
+    public void setStrTerm(Node strterm) {
+        this.lex_strterm = strterm;
     }
 
     public void resetStacks() {
         conditionState.reset();
         cmdArgumentState.reset();
     }
+    
+    public void setErrorHandler(IRubyErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
+    }
 
-    private String tok() {
-        return tokenBuffer.toString();
+
+    public void setState(LexState state) {
+        this.lex_state = (LexState) state;
     }
-    
-    private void tokadd(char c) {
-        tokenBuffer.append(c);
+
+    public StackState getCmdArgumentState() {
+        return cmdArgumentState;
     }
-    
+
+    public StackState getConditionState() {
+        return conditionState;
+    }
+
     private boolean isNext_identchar() {
-        char c = support.read();
-        boolean test = (c != EOF && (Character.isLetterOrDigit(c) || c == '-'));
+        char c = src.read();
+        src.unread(c);
 
-        support.unread();
-        return test;
+        return (c != EOF && (Character.isLetterOrDigit(c) || c == '-'));
     }
     
-    private int toklen() {
-        return tokenBuffer.length();
+    private static final Object getInteger(String value, int radix) {
+        try {
+            return Long.valueOf(value, radix);
+        } catch (NumberFormatException e) {
+            return new BigInteger(value, radix);
+        }
     }
 
-    private char toklast() {
-        return tokenBuffer.charAt(toklen() - 1);
-    }
-
-    private void newToken() {
-        tokenBuffer.setLength(0);
-    }
-
-    private boolean peek(char compareChar) {
-        return support.getCharAt(0) == compareChar;
-    }
-    
     private boolean whole_match_p(String match, boolean indent) {
         int length = match.length();
-        int j = 0;
+        StringBuffer buf = new StringBuffer();
+        
         if (indent) {
-            for (char c = support.read(); 
-            	Character.isWhitespace(c);
-            	c = support.read()) {
-                j++;
-            }
-            // Put back non-space (EOF?)
-            support.unread();
+        	char c;
+        	while ((c = src.read()) != '\0') {
+        		if (!Character.isWhitespace(c)) {
+        			src.unread(c);
+        			break;
+        		}
+            	buf.append(c);
+        	}
         }
         
         for (int i = 0; i < length; i++) {
-            char c = support.read();
+            char c = src.read();
+            buf.append(c);
             if (match.charAt(i) != c) {
-                support.unreadMany(i+j+1);
+                unreadMany(buf);
                 return false;
             }
         }
@@ -179,20 +225,233 @@ public class RubyYaccLexer {
     }
     
     private boolean was_bol() {
-        return support.getColumn() == 1;
+        return src.getColumn() == 1;
     }
     
     private boolean ISUPPER(char c) {
         return Character.toUpperCase(c) == c;
     }
+
+    /**
+     * Get character ahead of current position by offset positions.
+     * 
+     * @param offset is location past current position to get char at
+     * @return character index positions ahead of source location or EOF
+     */
+    private char getCharAt(int offset) {
+    	StringBuffer buf = new StringBuffer(offset);
+
+    	// read next offset chars
+        for (int i = 0; i < offset; i++) {
+            buf.append(src.read());
+        }
+        
+        int length = buf.length();
+        
+        // Whoops not enough chars left EOF!
+        if (length == 0){
+        	return '\0';
+        }
+        
+        // Push chars back now that we found it
+        for (int i = 0; i < length; i++) {
+            src.unread(buf.charAt(i));
+        }
+        
+        return buf.charAt(length - 1);
+    }
+
+    /**
+	 * Do the next characters from the source match provided String.  If so,
+	 * then consume those characters and return true.  Otherwise, consume 
+	 * none of them.
+	 * 
+	 * @param string to be matched against
+     * @return true if string matches 
+     */ 
+    private boolean isNext(String string) {
+    	StringBuffer buf = new StringBuffer();
+    	
+        for (int i = 0; i < string.length(); i++) {
+        	char c = src.read();
+        	buf.append(c);
+            if (string.charAt(i) != c) {
+            	unreadMany(buf);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+	 * Do the next characters from the source match provided String in a case
+	 * insensitive manner.  If so, then consume those characters and return 
+	 * true.  Otherwise, consume none of them.
+	 * 
+	 * @param string to be matched against
+     * @return true if string matches
+     * @see isNext(String string) 
+     */ 
+    private boolean isNextNoCase(String s) {
+    	StringBuffer buf = new StringBuffer();
+    	
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            char r = src.read();
+            buf.append(r);
+            
+            if (Character.toLowerCase(c) != r &&
+                Character.toUpperCase(c) != r) {
+            	unreadMany(buf);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String readLine() {
+        StringBuffer sb = new StringBuffer(80);
+        for (char c = src.read(); c != '\n' && c != '\0'; c = src.read()) {
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    private void unreadMany(StringBuffer buf) {
+    	int length = buf.length();
+        for (int i = length - 1; i >= 0; i--) {
+            src.unread(buf.charAt(i));
+        }
+    }
+
+	/**
+	 * @return true if character is a hex value (0-9a-f)
+	 */
+    private static final boolean isHexChar(char c) {
+        return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
+    }
+
+    /**
+	 * @return true if character is an octal value (0-7)
+	 */
+    private static final boolean isOctChar(char c) {
+        return ('0' <= c && c <= '7');
+    }
+    
+    /**
+     * @param c is character to be compared
+     * @return whether c is an identifier or not
+     */
+    private static final boolean isIdentifierChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_';
+    }
+    
+    private int scanOct(int count) {
+    	int value = 0;
+    	
+    	for (int i = 0; i < count; i++) {
+    		char c = src.read();
+    		
+    		if (!isOctChar(c)) {
+        		src.unread(c);
+    			break;
+    		}
+    		
+    		value <<= 3;
+    		value |= Integer.parseInt(""+c, 8);
+    	}
+    	
+    	return value;
+    }
+
+    private int scanHex(int count) {
+    	int value = 0;
+    	
+    	for (int i = 0; i < count; i++) {
+    		char c = src.read();
+    		
+    		if (!isHexChar(c)) {
+        		src.unread(c);
+    			break;
+    		}
+    		
+    		value <<= 4;
+    		value |= Integer.parseInt(""+c, 16) & 15;
+    	}
+    	
+    	return value;
+    }
+
     
     private char read_escape() {
-        try {
-            return support.readEscape();
-        } catch (LexerException lExcptn) {
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, support.getPosition(), lExcptn.getMessage());
+        char c = src.read();
+
+        switch (c) {
+            case '\\' : // backslash
+                return c;
+            case 'n' : // newline
+                return '\n';
+            case 't' : // horizontal tab
+                return '\t';
+            case 'r' : // carriage return
+                return '\r';
+            case 'f' : // form feed
+                return '\f';
+            case 'v' : // vertical tab
+                return '\u0013';
+            case 'a' : // alarm(bell)
+                return '\u0007';
+            case 'e' : // escape
+                return '\u0033';
+            case '0' : case '1' : case '2' : case '3' : // octal constant
+            case '4' : case '5' : case '6' : case '7' :
+                src.unread(c);
+                return (char) scanOct(3);
+            case 'x' : // hex constant
+            	int offset = src.getColumn();
+            	char hexValue = (char) scanHex(2);
+            	
+            	// No hex value after the 'x'.
+            	if (offset == src.getColumn()) {
+                    yyerror("Invalid escape character syntax");
+                    return '\0';
+            	}
+                return hexValue;
+            case 'b' : // backspace
+                return '\010';
+            case 's' : // space
+                return ' ';
+            case 'M' :
+                if ((c = src.read()) != '-') {
+                    src.unread(c);
+                    yyerror("Invalid escape character syntax");
+                } else if ((c = src.read()) == '\\') {
+                    return (char) (read_escape() | 0x80);
+                } else if (c == '\0') {
+                    yyerror("Invalid escape character syntax");
+                } 
+                return (char) ((c & 0xff) | 0x80);
+            case 'C' :
+                if ((c = src.read()) != '-') {
+                    src.unread(c);
+                    yyerror("Invalid escape character syntax");
+                }
+            case 'c' :
+                if ((c = src.read()) == '\\') {
+                    c = read_escape();
+                } else if (c == '?') {
+                    return '\u0177';
+                } else if (c == '\0') {
+                    yyerror("Invalid escape character syntax");
+                }
+                return (char) (c & 0x9f);
+            case '\0' :
+                yyerror("Invalid escape character syntax");
+            default :
+                return c;
         }
-        return '\0';
     }
     
     private int regx_options() {
@@ -200,8 +459,8 @@ public class RubyYaccLexer {
         int options = 0;
         char c;
 
-        newToken();
-        while ((c = support.read()) != EOF  && Character.isLetter(c) == true) {
+        tokenBuffer.setLength(0);
+        while ((c = src.read()) != EOF  && Character.isLetter(c) == true) {
     	switch (c) {
     	  case 'i':
     	    options |= ReOptions.RE_OPTION_IGNORECASE;
@@ -228,14 +487,14 @@ public class RubyYaccLexer {
     	    kcode = 64;
     	    break;
     	  default:
-    	    tokadd(c);
+    	    tokenBuffer.append(c);
     	    break;
     	}
         }
-        support.unread();
-        if (toklen() != 0) {
+        src.unread(c);
+        if (tokenBuffer.length() != 0) {
             rb_compile_error("unknown regexp option" +
-                    (toklen() > 1 ? "s" : "") + " - " + tok());
+                    (tokenBuffer.length() > 1 ? "s" : "") + " - " + tokenBuffer.toString());
         }
         return options | kcode;
     }
@@ -250,27 +509,27 @@ public class RubyYaccLexer {
     }
     
     private void rb_warn(String message) {
-        errorHandler.handleError(IErrors.WARN, support.getPosition(), message); 
+        errorHandler.handleError(IErrors.WARN, src.getPosition(), message); 
     }
 
     private void rb_warning(String message) {
-        errorHandler.handleError(IErrors.WARNING, support.getPosition(), message); 
+        errorHandler.handleError(IErrors.WARNING, src.getPosition(), message); 
     }
     
     private void rb_compile_error(String message) {
-        errorHandler.handleError(IErrors.COMPILE_ERROR, support.getPosition(),
+        errorHandler.handleError(IErrors.COMPILE_ERROR, src.getPosition(),
                 message);
     }
     
     private void yyerror(String message) {
-        errorHandler.handleError(IErrors.ERROR, support.getPosition(),
+        errorHandler.handleError(IErrors.ERROR, src.getPosition(),
                 message);
     }
 
     // HACK::::
-    int scan_hex_len(int tryLen) {
+    private int scan_hex_len(int tryLen) {
         for (int i = 0; i < tryLen; i++) {
-            if (Character.digit(support.getCharAt(i), 16) == 0) {
+            if (Character.digit(getCharAt(i), 16) == 0) {
                 return i;
             }
         }
@@ -279,24 +538,24 @@ public class RubyYaccLexer {
     }
 
     // Was a goto in original ruby lexer
-    boolean escaped(int term) {
+    private boolean escaped(int term) {
         char c;
         
-        if ((c = support.read()) == '\\') {
+        if ((c = src.read()) == '\\') {
             return tokadd_escape(term);
         } 
         if (c == EOF) {
             yyerror("Invalid escape character syntax");
             return false;
         }
-        tokadd(c);
+        tokenBuffer.append(c);
         return true;
     }
     
-    boolean tokadd_escape(int term) {
+    private boolean tokadd_escape(int term) {
         char c;
 
-        switch (c = support.read()) {
+        switch (c = src.read()) {
         case '\n':
             return true;		/* just ignore */
 
@@ -305,19 +564,19 @@ public class RubyYaccLexer {
         {
             int i;
 
-            tokadd('\\');
-            tokadd(c);
+            tokenBuffer.append('\\');
+            tokenBuffer.append(c);
             for (i=0; i<2; i++) {
-                c = support.read();
+                c = src.read();
                 if (c == EOF) {
                     yyerror("Invalid escape character syntax");
                     return false;
                 }
                 if (c < '0' || '7' < c) {
-                    support.unread();
+                    src.unread(c);
                     break;
                 }
-                tokadd(c);
+                tokenBuffer.append(c);
             }
         }
         return true;
@@ -326,39 +585,39 @@ public class RubyYaccLexer {
         {
             int numlen;
 
-            tokadd('\\');
-            tokadd(c);
+            tokenBuffer.append('\\');
+            tokenBuffer.append(c);
             numlen = scan_hex_len(2);
             if (numlen == 0) {
                 yyerror("Invalid escape character syntax");
                 return false;
             }
             while (numlen-- >= 0) {
-                tokadd(support.read());
+                tokenBuffer.append(src.read());
             }
         }
         return true;
 
         case 'M':
-            if ((c = support.read()) != '-') {
+            if ((c = src.read()) != '-') {
                 yyerror("Invalid escape character syntax");
-                support.unread();
+                src.unread(c);
                 return false;
             }
-            tokadd('\\'); tokadd('M'); tokadd('-');
+            tokenBuffer.append('\\'); tokenBuffer.append('M'); tokenBuffer.append('-');
             return escaped(term);
 
         case 'C':
-            if ((c = support.read()) != '-') {
+            if ((c = src.read()) != '-') {
                 yyerror("Invalid escape character syntax");
-                support.unread();
+                src.unread(c);
                 return false;
             }
-            tokadd('\\'); tokadd('C'); tokadd('-');
+            tokenBuffer.append('\\'); tokenBuffer.append('C'); tokenBuffer.append('-');
             return escaped(term);
 
         case 'c':
-            tokadd('\\'); tokadd('c');
+            tokenBuffer.append('\\'); tokenBuffer.append('c');
             return escaped(term);
 
         case 0:
@@ -367,68 +626,72 @@ public class RubyYaccLexer {
 
         default:
             if (c != '\\' || c != term)
-                tokadd('\\');
-            tokadd(c);
+				tokenBuffer.append('\\');
+            tokenBuffer.append(c);
         }
         return true;
     }
     
-    char tokadd_string(StrTermNode node) {
+    private char tokadd_string(StrTermNode node) {
         int func = node.getFunc();
         int paren = node.getParen();
         int term = node.getTerm();
         char c;
 
-        while ((c = support.read()) != EOF) {
+        while ((c = src.read()) != EOF) {
             if (paren != 0 && c == paren) {
                 node.setNest(node.getNest()+1);
             }
             else if (c == term) {
                 if (node.getNest() == 0) {
-                    support.unread();
+                    src.unread(c);
                     break;
                 }
                 node.setNest(node.getNest()-1);
             }
-            else if ((func & STR_FUNC_EXPAND) != 0 && c == '#' && support.isEOL() == false) {
-                char c2 = support.read();
+            else if ((func & STR_FUNC_EXPAND) != 0 && c == '#' && 
+            		 src.peek('\n') == false) {
+                char c2 = src.read();
                 
                 if (c2 == '$' || c2 == '@' || c2 == '{') {
-                    support.unreadMany(2); // c2,c
+                    src.unread(c2);
+                    src.unread(c);
                     break;
                 }
-                support.unread();
+                src.unread(c2);
             }
             else if (c == '\\') {
-                c = support.read();
+                c = src.read();
                 switch (c) {
                 case '\n':
                     if ((func & STR_FUNC_QWORDS) != 0) break;
                     if ((func & STR_FUNC_EXPAND) != 0) continue;
-                    tokadd('\\');
+                    tokenBuffer.append('\\');
                     break;
 
                 case '\\':
-                    if ((func & STR_FUNC_ESCAPE) != 0) tokadd((char)c);
+                    if ((func & STR_FUNC_ESCAPE) != 0)
+						tokenBuffer.append(((char)c));
                     break;
 
                 default:
                     if ((func & STR_FUNC_REGEXP) != 0) {
-                        support.unread();
+                        src.unread(c);
                         if (tokadd_escape(term) == false)
                             return 0;
                         continue;
                     }
                     else if ((func & STR_FUNC_EXPAND) != 0) {
-                        support.unread();
-                        if ((func & STR_FUNC_ESCAPE) != 0) tokadd('\\');
+                        src.unread(c);
+                        if ((func & STR_FUNC_ESCAPE) != 0)
+							tokenBuffer.append('\\');
                         c = (char)read_escape();
                     }
                     else if ((func & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
                         /* ignore backslashed spaces in %w */
                     }
                     else if (c != term && !(paren != 0 && c == paren)) {
-                        tokadd('\\');
+                        tokenBuffer.append('\\');
                     }
                 }
             }
@@ -436,12 +699,12 @@ public class RubyYaccLexer {
                 int i, len = mbclen(c)-1;
 
                 for (i = 0; i < len; i++) {
-                    tokadd(c);
-                    c = support.read();
+                    tokenBuffer.append(c);
+                    c = src.read();
                 }
             }
             else if ((func & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
-                support.unread();
+                src.unread(c);
                 break;
             }
             if (c == 0 && (func & STR_FUNC_SYMBOL) != 0) {
@@ -449,7 +712,7 @@ public class RubyYaccLexer {
                 rb_compile_error("symbol cannot contain '\\0'");
                 continue;
             }
-            tokadd(c);
+            tokenBuffer.append(c);
         }
         return c;
     }
@@ -462,7 +725,7 @@ public class RubyYaccLexer {
             term = c;
             c = 'Q';
         } else {
-            term = support.read();
+            term = src.read();
             if (Character.isLetterOrDigit(term) || ismbchar(term)) {
                 yyerror("unknown type of %string");
                 return 0;
@@ -481,54 +744,54 @@ public class RubyYaccLexer {
 
         switch (c) {
         case 'Q':
-            lex_strterm = new StrTermNode(support.getPosition(), str_dquote, term, paren);
+            lex_strterm = new StrTermNode(src.getPosition(), str_dquote, term, paren);
             return Token.tSTRING_BEG;
 
         case 'q':
-            lex_strterm = new StrTermNode(support.getPosition(), str_squote, term, paren);
+            lex_strterm = new StrTermNode(src.getPosition(), str_squote, term, paren);
             return Token.tSTRING_BEG;
 
         case 'W':
-            lex_strterm = new StrTermNode(support.getPosition(), str_dquote | STR_FUNC_QWORDS, term, paren);
-            do {c = support.read();} while (Character.isWhitespace(c));
-            support.unread();
+            lex_strterm = new StrTermNode(src.getPosition(), str_dquote | STR_FUNC_QWORDS, term, paren);
+            do {c = src.read();} while (Character.isWhitespace(c));
+            src.unread(c);
             return Token.tWORDS_BEG;
 
         case 'w':
-            lex_strterm = new StrTermNode(support.getPosition(), str_squote | STR_FUNC_QWORDS, term, paren);
-            do {c = support.read();} while (Character.isWhitespace(c));
-            support.unread();
+            lex_strterm = new StrTermNode(src.getPosition(), str_squote | STR_FUNC_QWORDS, term, paren);
+            do {c = src.read();} while (Character.isWhitespace(c));
+            src.unread(c);
             return Token.tQWORDS_BEG;
 
         case 'x':
-            lex_strterm = new StrTermNode(support.getPosition(), str_xquote, term, paren);
+            lex_strterm = new StrTermNode(src.getPosition(), str_xquote, term, paren);
             return Token.tXSTRING_BEG;
 
         case 'r':
-            lex_strterm = new StrTermNode(support.getPosition(), str_regexp, term, paren);
+            lex_strterm = new StrTermNode(src.getPosition(), str_regexp, term, paren);
             return Token.tREGEXP_BEG;
 
         case 's':
-            lex_strterm = new StrTermNode(support.getPosition(), str_ssym, term, paren);
+            lex_strterm = new StrTermNode(src.getPosition(), str_ssym, term, paren);
             lex_state = LexState.EXPR_FNAME;
             return Token.tSYMBEG;
 
         default:
             errorHandler.handleError(
                     IErrors.SYNTAX_ERROR,
-                    support.getPosition(),
+                    src.getPosition(),
                     Messages.getString("unknown_quotation_type", String.valueOf(c)));
             return 0;
         }
     }
     
-    void heredoc_restore() {
+    private void heredoc_restore() {
         HereDocNode here = (HereDocNode) lex_strterm;
         
-        support.setBuffer(here.getLastLine(), here.getPosition());
+        unreadMany(new StringBuffer(here.getLastLine()));
     }
 
-    int hereDocument() {
+    private int hereDocument() {
         HereDocNode here = (HereDocNode) lex_strterm;
         char c;
         String eos = here.getValue();
@@ -537,13 +800,12 @@ public class RubyYaccLexer {
         boolean indent = (func & STR_FUNC_INDENT) != 0;
         StringBuffer str = new StringBuffer();
 
-        if ((c = support.read()) == EOF) {
+        if ((c = src.read()) == EOF) {
             rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
             heredoc_restore();
             lex_strterm = null;
             return 0;
         }
-
         if (was_bol() && whole_match_p(eos, indent)) {
             heredoc_restore();
             return Token.tSTRING_END;
@@ -552,7 +814,7 @@ public class RubyYaccLexer {
         if ((func & STR_FUNC_EXPAND) == 0) {
             /*
             if (c == '\n') {
-                support.unread();
+                support.unread(c);
             }*/
             
             // Something missing here...
@@ -568,10 +830,10 @@ public class RubyYaccLexer {
             */
             
             do {
-                str.append(support.readLine());
+                str.append(readLine());
                 str.append("\n");
 
-                if (support.isEOF()) {
+                if (src.peek('\0')) {
                     rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
                     heredoc_restore();
                     lex_strterm = null;
@@ -579,34 +841,34 @@ public class RubyYaccLexer {
                 }
             } while (!whole_match_p(eos, indent));
         } else {
-            newToken();
+            tokenBuffer.setLength(0);
             if (c == '#') {
-                switch (c = support.read()) {
+                switch (c = src.read()) {
                     case '$':
                     case '@':
-                        support.unread();
+                        src.unread(c);
                         return Token.tSTRING_DVAR;
                     case '{':
                         return Token.tSTRING_DBEG;
                 }
-                tokadd('#');
+                tokenBuffer.append('#');
             }
 
-            support.unread();
+            src.unread(c);
             
             do {
-                if ((c = tokadd_string(new StrTermNode(support.getPosition(), func, '\n', 0))) == EOF) {
+                if ((c = tokadd_string(new StrTermNode(src.getPosition(), func, '\n', 0))) == EOF) {
                     rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
                     heredoc_restore();
                     lex_strterm = null;
                     return 0;
                 }
                 if (c != '\n') {
-                    yaccValue = tok();
+                    yaccValue = tokenBuffer.toString();
                     return Token.tSTRING_CONTENT;
                 }
-                tokadd(support.read());
-                if ((c = support.read()) == EOF) {
+                tokenBuffer.append(src.read());
+                if ((c = src.read()) == EOF) {
                     rb_compile_error("can't find string \"" + eos + "\" anywhere before EOF");
                     heredoc_restore();
                     lex_strterm = null;
@@ -614,13 +876,14 @@ public class RubyYaccLexer {
                 }
                 // We need to pushback so when whole match looks it did not
                 // lose a char during last EOF
-                support.unread();
+                src.unread(c);
             } while (!whole_match_p(eos, indent));
-            support.read(); // EAT EOL
-            str = new StringBuffer(tok());
+            src.read(); // EAT EOL
+            str = new StringBuffer(tokenBuffer.toString());
         }
+
         heredoc_restore();
-        lex_strterm = new StrTermNode(support.getPosition(), -1, 0, 0);
+        lex_strterm = new StrTermNode(src.getPosition(), -1, 0, 0);
         yaccValue = str.toString();
         return Token.tSTRING_CONTENT;
     }
@@ -634,9 +897,9 @@ public class RubyYaccLexer {
         int space = 0;
 
         if (func == -1) return Token.tSTRING_END;
-        c = support.read();
+        c = src.read();
         if ((func & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
-            do {c = support.read();} while (Character.isWhitespace(c));
+            do {c = src.read();} while (Character.isWhitespace(c));
             space = 1;
         }
 
@@ -648,46 +911,46 @@ public class RubyYaccLexer {
             if ((func & STR_FUNC_REGEXP) == 0) {
                 return Token.tSTRING_END;
             }
-            yaccValue = new RegexpNode(support.getPosition(), tok(), regx_options());
+            yaccValue = new RegexpNode(src.getPosition(), tokenBuffer.toString(), regx_options());
             return Token.tREGEXP_END;
         }
         if (space != 0) {
-            support.unread();
+            src.unread(c);
             return ' ';
         }
-        newToken();
+        tokenBuffer.setLength(0);
         if ((func & STR_FUNC_EXPAND) != 0 && c == '#') {
-            c = support.read();
+            c = src.read();
             switch (c) {
             case '$':
             case '@':
-                support.unread();
+                src.unread(c);
                 return Token.tSTRING_DVAR;
             case '{':
                 return Token.tSTRING_DBEG;
             }
-            tokadd('#');
+            tokenBuffer.append('#');
         }
-        support.unread();
+        src.unread(c);
         if (tokadd_string(quote) == 0) {
             // ruby -- ruby_sourceline = nd_line(quote);
             rb_compile_error("unterminated string meets end of file");
             return Token.tSTRING_END;
         }
 
-        yaccValue = tok();
+        yaccValue = tokenBuffer.toString();
         return Token.tSTRING_CONTENT;
     }
     
     
     private int hereDocumentIdentifier() {
-        char c = support.read(); 
+        char c = src.read(); 
         int term;
         int func = 0;
         int len;
 
         if (c == '-') {
-            c = support.read();
+            c = src.read();
             func = STR_FUNC_INDENT;
         }
         
@@ -700,62 +963,56 @@ public class RubyYaccLexer {
                 func = func | str_xquote; 
             }
 
-            newToken();
+            tokenBuffer.setLength(0);
             term = c;
-            while ((c = support.read()) != EOF && c != term) {
+            while ((c = src.read()) != EOF && c != term) {
                 len = mbclen(c);
                 do {
-                    tokadd(c);
-                } while (--len > 0 && (c = support.read()) != EOF);
+                    tokenBuffer.append(c);
+                } while (--len > 0 && (c = src.read()) != EOF);
             }
             if (c == EOF) {
                 errorHandler.handleError(IErrors.COMPILE_ERROR, 
-                    support.getPosition(), 
+                    src.getPosition(), 
                     "unterminated here document identifier");
                 return 0;
             }	
         } else {
             if (!isIdentifierChar(c)) {
-                support.unread();
+                src.unread(c);
                 if ((func & STR_FUNC_INDENT) != 0) {
-                    support.unread();
+                    src.unread(c);
                 }
                 return 0;
             }
-            newToken();
+            tokenBuffer.setLength(0);
             term = '"';
             func |= str_dquote;
             do {
                 len = mbclen(c);
                 do {
-                    tokadd(c);
-                } while (--len > 0 && (c = support.read()) != EOF);
-            } while ((c = support.read()) != EOF && isIdentifierChar(c));
-            support.unread();
+                    tokenBuffer.append(c);
+                } while (--len > 0 && (c = src.read()) != EOF);
+            } while ((c = src.read()) != EOF && isIdentifierChar(c));
+            src.unread(c);
         }
 
-        String line = support.readLine() + "\n";
-        String tok = tok();
-        lex_strterm = new HereDocNode(support.getPosition(), tok, func, line);
+        String line = readLine() + "\n";
+        String tok = tokenBuffer.toString();
+        lex_strterm = new HereDocNode(src.getPosition(), tok, func, line);
 
         return term == '`' ? Token.tXSTRING_BEG : Token.tSTRING_BEG;
     }
     
     private void arg_ambiguous() {
-        errorHandler.handleError(IErrors.WARNING, support.getPosition(), Messages.getString("ambiguous_first_argument")); //$NON-NLS-1$
+        errorHandler.handleError(IErrors.WARNING, src.getPosition(), Messages.getString("ambiguous_first_argument")); //$NON-NLS-1$
     }
 
-    ISourcePosition currentPos;
-
-    private static final int EOF = 0;
-    public ISourcePosition getPosition() {
-        return currentPos;
-    }
 
     /*
      * Not normally used, but is left in here since it can be useful in debugging
      * grammar and lexing problems.
-     */
+
     private void printToken(int token) {
         //System.out.print("LOC: " + support.getPosition() + " ~ ");
         
@@ -863,8 +1120,7 @@ public class RubyYaccLexer {
         }
     }
 
-    /*
-     * DEBUGGING HELP
+    // DEBUGGING HELP 
     private int yylex() {
         int token = yylex2();
         
@@ -904,13 +1160,13 @@ public class RubyYaccLexer {
             }
         }
 
-        currentPos = support.getPosition();
+        currentPos = src.getPosition();
         
         commandState = commandStart;
         commandStart = false;
         
         retry: for(;;) {
-            c = support.read();
+            c = src.read();
             switch(c) {
             case '\004':		/* ^D */
             case '\032':		/* ^Z */
@@ -923,7 +1179,7 @@ public class RubyYaccLexer {
                 spaceSeen = true;
                 continue retry;
             case '#':		/* it's a comment */
-                while ((c = support.read()) != '\n') {
+                while ((c = src.read()) != '\n') {
                     if (c == EOF) {
                         return 0;
                     }
@@ -943,13 +1199,13 @@ public class RubyYaccLexer {
                 return '\n';
                 
             case '*':
-                if ((c = support.read()) == '*') {
-                    if ((c = support.read()) == '=') {
+                if ((c = src.read()) == '*') {
+                    if ((c = src.read()) == '=') {
                         yaccValue = "**";
                         lex_state = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }
-                    support.unread();
+                    src.unread(c);
                     c = Token.tPOW;
                 } else {
                     if (c == '=') {
@@ -957,9 +1213,9 @@ public class RubyYaccLexer {
                         lex_state = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }
-                    support.unread();
+                    src.unread(c);
                     if (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c)) {
-                        errorHandler.handleError(IErrors.WARNING, support.getPosition(), "`*' interpreted as argument prefix");
+                        errorHandler.handleError(IErrors.WARNING, src.getPosition(), "`*' interpreted as argument prefix");
                         c = Token.tSTAR;
                     } else if (lex_state == LexState.EXPR_BEG || 
                             lex_state == LexState.EXPR_MID) {
@@ -978,58 +1234,58 @@ public class RubyYaccLexer {
 
             case '!':
                 lex_state = LexState.EXPR_BEG;
-                if ((c = support.read()) == '=') {
+                if ((c = src.read()) == '=') {
                     return Token.tNEQ;
                 }
                 if (c == '~') {
                     return Token.tNMATCH;
                 }
-                support.unread();
+                src.unread(c);
                 return '!';
 
             case '=':
                 // Skip documentation nodes
                 if (was_bol()) {
                     /* skip embedded rd document */
-                    if (support.isNextNoCase("begin")) {
-                        c = support.read();
+                    if (isNextNoCase("begin")) {
+                        c = src.read();
                         
                         if (Character.isWhitespace(c)) {
                             // In case last next was the newline.
-                            support.unread();
+                            src.unread(c);
                             for (;;) {
-                                c = support.read();
+                                c = src.read();
 
                                 // If a line is followed by a blank line put
                                 // it back.
                                 while (c == '\n') {
-				    c = support.read();
+				    c = src.read();
                                 }
 
                                 if (c == EOF) {
-                                    errorHandler.handleError(IErrors.COMPILE_ERROR, support.getPosition(), 
+                                    errorHandler.handleError(IErrors.COMPILE_ERROR, src.getPosition(), 
                                     	"embedded document meets end of file");
                                     return 0;
                                 }
                                 if (c != '=') continue;
-                                if (support.isNextNoCase("end")) {
-                                    if (support.isEOL()) {
+                                if (isNextNoCase("end")) {
+                                    if (src.peek('\n')) {
                                         break;
                                     } 
                                     
-                                    c = support.read();
+                                    c = src.read();
                                     
                                     if (Character.isWhitespace(c)) {
-                                        support.readLine();
+                                        readLine();
                                         break;
                                     } else {
-                                        support.unread();
+                                        src.unread(c);
                                     }
                                 }
                             }
                             continue retry;
                         } else {
-                            support.unread();
+                            src.unread(c);
                         }
                     }
                 }
@@ -1041,13 +1297,13 @@ public class RubyYaccLexer {
                     lex_state = LexState.EXPR_BEG;
                 }
 
-                c = support.read();
+                c = src.read();
                 if (c == '=') {
-                    c = support.read();
+                    c = src.read();
                     if (c == '=') {
                         return Token.tEQQ;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tEQ;
                 }
                 if (c == '~') {
@@ -1055,11 +1311,11 @@ public class RubyYaccLexer {
                 } else if (c == '>') {
                     return Token.tASSOC;
                 }
-                support.unread();
+                src.unread(c);
                 return '=';
                 
             case '<':
-                c = support.read();
+                c = src.read();
                 if (c == '<' &&
                         lex_state != LexState.EXPR_END &&
                         lex_state != LexState.EXPR_DOT &&
@@ -1076,22 +1332,22 @@ public class RubyYaccLexer {
                     lex_state = LexState.EXPR_BEG;
                 }
                 if (c == '=') {
-                    if ((c = support.read()) == '>') {
+                    if ((c = src.read()) == '>') {
                         return Token.tCMP;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tLEQ;
                 }
                 if (c == '<') {
-                    if ((c = support.read()) == '=') {
+                    if ((c = src.read()) == '=') {
                         yaccValue = "<<";
                         lex_state = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tLSHFT;
                 }
-                support.unread();
+                src.unread(c);
                 return '<';
                 
             case '>':
@@ -1102,23 +1358,23 @@ public class RubyYaccLexer {
                     lex_state = LexState.EXPR_BEG;
                 }
 
-                if ((c = support.read()) == '=') {
+                if ((c = src.read()) == '=') {
                     return Token.tGEQ;
                 }
                 if (c == '>') {
-                    if ((c = support.read()) == '=') {
+                    if ((c = src.read()) == '=') {
                         yaccValue = ">>";
                         lex_state = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tRSHFT;
                 }
-                support.unread();
+                src.unread(c);
                 return '>';
 
             case '"':
-                lex_strterm = new StrTermNode(support.getPosition(), str_dquote, '"', 0);
+                lex_strterm = new StrTermNode(src.getPosition(), str_dquote, '"', 0);
                 return Token.tSTRING_BEG;
 
             case '`':
@@ -1134,11 +1390,11 @@ public class RubyYaccLexer {
                     }
                     return c;
                 }
-                lex_strterm = new StrTermNode(support.getPosition(), str_xquote, '`', 0);
+                lex_strterm = new StrTermNode(src.getPosition(), str_xquote, '`', 0);
                 return Token.tXSTRING_BEG;
 
             case '\'':
-                lex_strterm = new StrTermNode(support.getPosition(), str_squote, '\'', 0);
+                lex_strterm = new StrTermNode(src.getPosition(), str_squote, '\'', 0);
                 return Token.tSTRING_BEG;
 
             case '?':
@@ -1147,9 +1403,9 @@ public class RubyYaccLexer {
                     lex_state = LexState.EXPR_BEG;
                     return '?';
                 }
-                c = support.read();
+                c = src.read();
                 if (c == EOF) {
-                    errorHandler.handleError(IErrors.COMPILE_ERROR, support.getPosition(), 
+                    errorHandler.handleError(IErrors.COMPILE_ERROR, src.getPosition(), 
                     	"incomplete character syntax");
                     return 0;
                 }
@@ -1182,18 +1438,18 @@ public class RubyYaccLexer {
                             rb_warn("invalid character syntax; use ?\\" + c2);
                         }
                     }
-                    support.unread();
+                    src.unread(c);
                     lex_state = LexState.EXPR_BEG;
                     return '?';
                 /*} else if (ismbchar(c)) { // ruby - we don't support them either?
                     rb_warn("multibyte character literal not supported yet; use ?\\" + c);
-                    support.unread();
+                    support.unread(c);
                     lexState = LexState.EXPR_BEG;
                     return '?';*/
                 } else if ((Character.isLetterOrDigit(c) || c == '_') &&
-                        	support.isEOL() == false &&
+                        	src.peek('\n') == false &&
                         	isNext_identchar()) {
-                    support.unread();
+                    src.unread(c);
                     lex_state = LexState.EXPR_BEG;
                     return '?';
                 } else if (c == '\\') {
@@ -1206,14 +1462,14 @@ public class RubyYaccLexer {
                 return Token.tINTEGER;
 
             case '&':
-                if ((c = support.read()) == '&') {
+                if ((c = src.read()) == '&') {
                     lex_state = LexState.EXPR_BEG;
-                    if ((c = support.read()) == '=') {
+                    if ((c = src.read()) == '=') {
                         yaccValue = "&&";
                         lex_state = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tANDOP;
                 }
                 else if (c == '=') {
@@ -1221,7 +1477,7 @@ public class RubyYaccLexer {
                     lex_state = LexState.EXPR_BEG;
                     return Token.tOP_ASGN;
                 }
-                support.unread();
+                src.unread(c);
                 if (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c)){
                     rb_warning("`&' interpreted as argument prefix");
                     c = Token.tAMPER;
@@ -1241,14 +1497,14 @@ public class RubyYaccLexer {
                 return c;
                 
             case '|':
-                if ((c = support.read()) == '|') {
+                if ((c = src.read()) == '|') {
                     lex_state = LexState.EXPR_BEG;
-                    if ((c = support.read()) == '=') {
+                    if ((c = src.read()) == '=') {
                         yaccValue = "||";
                         lex_state = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tOROP;
                 }
                 if (c == '=') {
@@ -1262,18 +1518,18 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
-                support.unread();
+                src.unread(c);
                 return '|';
 
             case '+':
-                c = support.read();
+                c = src.read();
                 if (lex_state == LexState.EXPR_FNAME || 
                     lex_state == LexState.EXPR_DOT) {
                     lex_state = LexState.EXPR_ARG;
                     if (c == '@') {
                         return Token.tUPLUS;
                     }
-                    support.unread();
+                    src.unread(c);
                     return '+';
                 }
                 if (c == '=') {
@@ -1286,7 +1542,7 @@ public class RubyYaccLexer {
                         (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c))) {
                     if (lex_state.isArgument()) arg_ambiguous();
                     lex_state = LexState.EXPR_BEG;
-                    support.unread();
+                    src.unread(c);
                     if (Character.isDigit(c)) {
                         c = '+';
                         return parseNumber(c);
@@ -1294,18 +1550,18 @@ public class RubyYaccLexer {
                     return Token.tUPLUS;
                 }
                 lex_state = LexState.EXPR_BEG;
-                support.unread();
+                src.unread(c);
                 return '+';
 
             case '-':
-                c = support.read();
+                c = src.read();
                 if (lex_state == LexState.EXPR_FNAME || 
                     lex_state == LexState.EXPR_DOT) {
                     lex_state = LexState.EXPR_ARG;
                     if (c == '@') {
                         return Token.tUMINUS;
                     }
-                    support.unread();
+                    src.unread(c);
                     return '-';
                 }
                 if (c == '=') {
@@ -1318,44 +1574,33 @@ public class RubyYaccLexer {
                         (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c))) {
                     if (lex_state.isArgument()) arg_ambiguous();
                     lex_state = LexState.EXPR_BEG;
-                    support.unread();
+                    src.unread(c);
                     if (Character.isDigit(c)) {
                         return Token.tUMINUS_NUM;
                     }
                     return Token.tUMINUS;
                 }
                 lex_state = LexState.EXPR_BEG;
-                support.unread();
+                src.unread(c);
                 return '-';
                 
             case '.':
                 lex_state = LexState.EXPR_BEG;
-                if ((c = support.read()) == '.') {
-                    if ((c = support.read()) == '.') {
+                if ((c = src.read()) == '.') {
+                    if ((c = src.read()) == '.') {
                         return Token.tDOT3;
                     }
-                    support.unread();
+                    src.unread(c);
                     return Token.tDOT2;
                 }
-                support.unread();
-                if (!Character.isDigit(c)) {
-                    lex_state = LexState.EXPR_DOT;
-                    return '.';
+                src.unread(c);
+                if (Character.isDigit(c)) {
+                	yyerror("no .<digit> floating literal anymore; put 0 before dot");
                 }
-                c = '.';
-                // fall through
-
-                //start_num:
-            case '0' :
-            case '1' :
-            case '2' :
-            case '3' :
-            case '4' :
-            case '5' :
-            case '6' :
-            case '7' :
-            case '8' :
-            case '9' :
+                lex_state = LexState.EXPR_DOT;
+                return '.';
+            case '0' : case '1' : case '2' : case '3' : case '4' :
+            case '5' : case '6' : case '7' : case '8' : case '9' :
                 return parseNumber(c);
                 
             case ']':
@@ -1367,7 +1612,7 @@ public class RubyYaccLexer {
                 return c;
 
             case ':':
-                c = support.read();
+                c = src.read();
                 if (c == ':') {
                     if (lex_state == LexState.EXPR_BEG ||
                         lex_state == LexState.EXPR_MID ||
@@ -1381,19 +1626,19 @@ public class RubyYaccLexer {
                 }
                 if (lex_state == LexState.EXPR_END || 
                     lex_state == LexState.EXPR_ENDARG || Character.isWhitespace(c)) {
-                    support.unread();
+                    src.unread(c);
                     lex_state = LexState.EXPR_BEG;
                     return ':';
                 }
                 switch (c) {
                 case '\'':
-                    lex_strterm = new StrTermNode(support.getPosition(), str_ssym, c, 0);
+                    lex_strterm = new StrTermNode(src.getPosition(), str_ssym, c, 0);
                     break;
                 case '"':
-                    lex_strterm = new StrTermNode(support.getPosition(), str_dsym, c, 0);
+                    lex_strterm = new StrTermNode(src.getPosition(), str_dsym, c, 0);
                     break;
                 default:
-                    support.unread();
+                    src.unread(c);
                     break;
                 }
                 lex_state = LexState.EXPR_FNAME;
@@ -1402,20 +1647,20 @@ public class RubyYaccLexer {
             case '/':
                 if (lex_state == LexState.EXPR_BEG || 
                     lex_state == LexState.EXPR_MID) {
-                    lex_strterm = new StrTermNode(support.getPosition(), str_regexp, '/', 0);
+                    lex_strterm = new StrTermNode(src.getPosition(), str_regexp, '/', 0);
                     return Token.tREGEXP_BEG;
                 }
                 
-                if ((c = support.read()) == '=') {
+                if ((c = src.read()) == '=') {
                     yaccValue = "/";
                     lex_state = LexState.EXPR_BEG;
                     return Token.tOP_ASGN;
                 }
-                support.unread();
+                src.unread(c);
                 if (lex_state.isArgument() && spaceSeen) {
                     if (!Character.isWhitespace(c)) {
                         arg_ambiguous();
-                        lex_strterm = new StrTermNode(support.getPosition(), str_regexp, '/', 0);
+                        lex_strterm = new StrTermNode(src.getPosition(), str_regexp, '/', 0);
                         return Token.tREGEXP_BEG;
                     }
                 }
@@ -1428,7 +1673,7 @@ public class RubyYaccLexer {
                 return '/';
 
             case '^':
-                if ((c = support.read()) == '=') {
+                if ((c = src.read()) == '=') {
                     yaccValue = "^";
                     lex_state = LexState.EXPR_BEG;
                     return Token.tOP_ASGN;
@@ -1439,7 +1684,7 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
-                support.unread();
+                src.unread(c);
                 return '^';
 
             case ';':
@@ -1451,8 +1696,8 @@ public class RubyYaccLexer {
             case '~':
                 if (lex_state == LexState.EXPR_FNAME || 
                     lex_state == LexState.EXPR_DOT) {
-                    if ((c = support.read()) != '@') {
-                        support.unread();
+                    if ((c = src.read()) != '@') {
+                        src.unread(c);
                     }
                 }
                 if (lex_state == LexState.EXPR_FNAME || 
@@ -1484,14 +1729,14 @@ public class RubyYaccLexer {
                 if (lex_state == LexState.EXPR_FNAME || 
                     lex_state == LexState.EXPR_DOT) {
                     lex_state = LexState.EXPR_ARG;
-                    if ((c = support.read()) == ']') {
-                        if ((c = support.read()) == '=') {
+                    if ((c = src.read()) == ']') {
+                        if ((c = src.read()) == '=') {
                             return Token.tASET;
                         }
-                        support.unread();
+                        src.unread(c);
                         return Token.tAREF;
                     }
-                    support.unread();
+                    src.unread(c);
                     return '[';
                 } else if (lex_state == LexState.EXPR_BEG || 
                            lex_state == LexState.EXPR_MID) {
@@ -1518,20 +1763,20 @@ public class RubyYaccLexer {
                 return c;
 
             case '\\':
-                c = support.read();
+                c = src.read();
                 if (c == '\n') {
                     spaceSeen = true;
                     continue retry; /* skip \\n */
                 }
-                support.unread();
+                src.unread(c);
                 return '\\';
 
             case '%':
                 if (lex_state == LexState.EXPR_BEG || 
                     lex_state == LexState.EXPR_MID) {
-                    return parseQuote(support.read());
+                    return parseQuote(src.read());
                 }
-                if ((c = support.read()) == '=') {
+                if ((c = src.read()) == '=') {
                     yaccValue = "%";
                     lex_state = LexState.EXPR_BEG;
                     return Token.tOP_ASGN;
@@ -1545,22 +1790,22 @@ public class RubyYaccLexer {
                 } else {
                     lex_state = LexState.EXPR_BEG;
                 }
-                support.unread();
+                src.unread(c);
                 return '%';
 
             case '$':
                 lex_state = LexState.EXPR_END;
-                newToken();
-                c = support.read();
+                tokenBuffer.setLength(0);
+                c = src.read();
                 switch (c) {
                 case '_':		/* $_: last read line string */
-                    c = support.read();
+                    c = src.read();
                     if (isIdentifierChar(c)) {
-                        tokadd('$');
-                        tokadd('_');
+                        tokenBuffer.append('$');
+                        tokenBuffer.append('_');
                         break;
                     }
-                    support.unread();
+                    src.unread(c);
                     c = '_';
                     /* fall through */
                 case '~':		/* $~: match-data */
@@ -1584,17 +1829,17 @@ public class RubyYaccLexer {
                 case '<':		/* $<: reading filename */
                 case '>':		/* $>: default output handle */
                 case '\"':		/* $": already loaded files */
-                    tokadd('$');
-                    tokadd(c);
-                    yaccValue = tok();
+                    tokenBuffer.append('$');
+                    tokenBuffer.append(c);
+                    yaccValue = tokenBuffer.toString();
                     return Token.tGVAR;
 
                 case '-':
-                    tokadd('$');
-                    tokadd(c);
-                    c = support.read();
-                    tokadd(c);
-                    yaccValue = tok();
+                    tokenBuffer.append('$');
+                    tokenBuffer.append(c);
+                    c = src.read();
+                    tokenBuffer.append(c);
+                    yaccValue = tokenBuffer.toString();
                     /* xxx shouldn't check if valid option variable */
                     return Token.tGVAR;
 
@@ -1602,49 +1847,48 @@ public class RubyYaccLexer {
                 case '`':		/* $`: string before last match */
                 case '\'':		/* $': string after last match */
                 case '+':		/* $+: string matches last paren. */
-                    yaccValue = new BackRefNode(support.getPosition(), c);
+                    yaccValue = new BackRefNode(src.getPosition(), c);
                     return Token.tBACK_REF;
 
                 case '1': case '2': case '3':
                 case '4': case '5': case '6':
                 case '7': case '8': case '9':
-                    tokadd('$');
+                    tokenBuffer.append('$');
                     do {
-                        tokadd(c);
-                        c = support.read();
+                        tokenBuffer.append(c);
+                        c = src.read();
                     } while (Character.isDigit(c));
-                    support.unread();
-                    yaccValue = new NthRefNode(support.getPosition(), Integer.parseInt(tok().substring(1)));
+                    src.unread(c);
+                    yaccValue = new NthRefNode(src.getPosition(), Integer.parseInt(tokenBuffer.substring(1)));
                     return Token.tNTH_REF;
 
                 default:
                     if (!isIdentifierChar(c)) {
-                        support.unread();
+                        src.unread(c);
                         return '$';
                     }
                 case '0':
-                    tokadd('$');
+                    tokenBuffer.append('$');
                 }
                 break;
 
             case '@':
-                c = support.read();
-                newToken();
-                tokadd('@');
+                c = src.read();
+                tokenBuffer.setLength(0);
+                tokenBuffer.append('@');
                 if (c == '@') {
-                    tokadd('@');
-                    c = support.read();
+                    tokenBuffer.append('@');
+                    c = src.read();
                 }
                 if (Character.isDigit(c)) {
-                    if (toklen() == 1) {
+                    if (tokenBuffer.length() == 1) {
                         rb_compile_error("`@" + c + "' is not allowed as an instance variable name");
-                    }
-                    else {
+                    } else {
                         rb_compile_error("`@@" + c + "' is not allowed as a class variable name");
                     }
                 }
                 if (!isIdentifierChar(c)) {
-                    support.unread();
+                    src.unread(c);
                     return '@';
                 }
                 break;
@@ -1653,7 +1897,7 @@ public class RubyYaccLexer {
                 if (was_bol() && whole_match_p("_END__", false)) {
                     return 0;
                 }
-                newToken();
+                tokenBuffer.setLength(0);
                 break;
 
             default:
@@ -1662,41 +1906,43 @@ public class RubyYaccLexer {
                     continue retry;
                 }
 
-                newToken();
+                tokenBuffer.setLength(0);
                 break;
             }
     
             do {
-                tokadd(c);
+                tokenBuffer.append(c);
                 if (ismbchar(c)) {
                     int i, len = mbclen(c)-1;
 
                     for (i = 0; i < len; i++) {
-                        c = support.read();
-                        tokadd(c);
+                        c = src.read();
+                        tokenBuffer.append(c);
                     }
                 }
-                c = support.read();
+                c = src.read();
             } while (isIdentifierChar(c));
             
-            char peek = support.read();
-            if ((c == '!' || c == '?') && isIdentifierChar(tok().charAt(0)) && peek != '=') {
-                support.unread(); // put peek back.
-                tokadd(c);
+            char peek = src.read();
+            if ((c == '!' || c == '?') && 
+                isIdentifierChar(tokenBuffer.charAt(0)) && peek != '=') {
+                src.unread(peek);
+                tokenBuffer.append(c);
             } else {
-                support.unreadMany(2); // put peek back.
+            	src.unread(peek);
+            	src.unread(c);
             }
             
             int result = 0;
 
-            switch (tok().charAt(0)) {
+            switch (tokenBuffer.charAt(0)) {
                 case '$':
                     lex_state = LexState.EXPR_END;
                     result = Token.tGVAR;
                     break;
                 case '@':
                     lex_state = LexState.EXPR_END;
-                    if (tok().charAt(1) == '@') {
+                    if (tokenBuffer.charAt(1) == '@') {
                         result = Token.tCVAR;
                     } else {
                         result = Token.tIVAR;
@@ -1704,30 +1950,52 @@ public class RubyYaccLexer {
                     break;
 
                 default:
-                    if (toklast() == '!' || toklast() == '?') {
+                	char last = tokenBuffer.charAt(tokenBuffer.length() - 1);
+                    if (last == '!' || last == '?') {
                         result = Token.tFID;
                     } else {
                         if (lex_state == LexState.EXPR_FNAME) {
-                            if ((c = support.read()) == '=' && !peek('~') && !peek('>') &&
-                                 (!peek('=') || (support.isEOL() && support.getCharAt(1) == '>'))) {
+                        	/*
+                        	// Enebo: This should be equivalent to below without
+                        	// so much read/unread action.
+                            if ((c = src.read()) == '=') { 
+                            	char c2 = src.read();
+                        	
+                            	if (c2 != '~' && c2 != '>' &&
+                            		(c2 != '=' || (c2 == '\n' && src.peek('>')))) {
+                            		result = Token.tIDENTIFIER;
+                            		tokenBuffer.append(c);
+                            	} else { 
+                            		src.unread(c2);
+                            		src.unread(c);
+                            	}
+                        	} else {
+                            	src.unread(c);
+                            }
+                            */
+                            
+                            if ((c = src.read()) == '=' && 
+                            	 !src.peek('~') && 
+								 !src.peek('>') &&
+                                 (!src.peek('=') || 
+                                 		(src.peek('\n') && 
+                                 	     getCharAt(1) == '>'))) {
                                 result = Token.tIDENTIFIER;
-                                tokadd(c);
-                            }
-                            else {
-                                support.unread();
+                                tokenBuffer.append(c);
+                            } else {
+                                src.unread(c);
                             }
                         }
-                        if (result == 0 && ISUPPER(tok().charAt(0))) {
+                        if (result == 0 && ISUPPER(tokenBuffer.charAt(0))) {
                             result = Token.tCONSTANT;
-                        }
-                        else {
+                        } else {
                             result = Token.tIDENTIFIER;
                         }
                     }
 
                     if (lex_state != LexState.EXPR_DOT) {
                         /* See if it is a reserved word.  */
-                        Keyword keyword = getKeyword(tok(), toklen());
+                        Keyword keyword = Keyword.getKeyword(tokenBuffer.toString(), tokenBuffer.length());
                         if (keyword != null) {
                             // enum lex_state
                             LexState state = lex_state;
@@ -1773,7 +2041,7 @@ public class RubyYaccLexer {
                         lex_state = LexState.EXPR_END;
                     }
             }	
-            yaccValue = tok();
+            yaccValue = tokenBuffer.toString();
 
             // Lame: parsing logic made it into lexer in ruby...So we
             // are emulating
@@ -1797,55 +2065,55 @@ public class RubyYaccLexer {
     private int parseNumber(char c) {
         lex_state = LexState.EXPR_END;
 
-        StringBuffer number = new StringBuffer();
+        tokenBuffer.setLength(0);
 
         if (c == '-') {
-            number.append(c);
-            c = support.read();
+        	tokenBuffer.append(c);
+            c = src.read();
         } else if (c == '+') {
-            c = support.read();
+        	// We don't append '+' since Java number parser gets confused
+            c = src.read();
         }
-
+        
         char nondigit = '\0';
 
         if (c == '0') {
-            int startLen = number.length();
+            int startLen = tokenBuffer.length();
 
-            switch ((c = support.read())) {
+            switch ((c = src.read())) {
                 case 'x' :
                 case 'X' : //  hexadecimal
-                    c = support.read();
-                    if (isHexDigit(c)) {
-                        for (;; c = support.read()) {
+                    c = src.read();
+                    if (isHexChar(c)) {
+                        for (;; c = src.read()) {
                             if (c == '_') {
                                 if (nondigit != '\0') {
                                     break;
                                 } else {
                                     nondigit = c;
                                 }
-                            } else if (isHexDigit(c)) {
+                            } else if (isHexChar(c)) {
                                 nondigit = '\0';
-                                number.append(c);
+                                tokenBuffer.append(c);
                             } else {
                                 break;
                             }
                         }
                     }
-                    support.unread();
+                    src.unread(c);
 
-                    if (number.length() == startLen) {
+                    if (tokenBuffer.length() == startLen) {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_hex_digits")); //$NON-NLS-1$
                     } else if (nondigit != '\0') {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
-                        // return decode_num(c, is_float, seen_uc, true);
                     }
-                    yaccValue = getInteger(number.toString(), 16);
+                    yaccValue = getInteger(tokenBuffer.toString(), 16);
                     return Token.tINTEGER;
                 case 'b' :
                 case 'B' : // binary
-                    c = support.read();
+                    c = src.read();
                     if (c == '0' || c == '1') {
-                        for (;; c = support.read()) {
+                        for (;; c = src.read()) {
                             if (c == '_') {
                                 if (nondigit != '\0') {
                                     break;
@@ -1854,27 +2122,26 @@ public class RubyYaccLexer {
                                 }
                             } else if (c == '0' || c == '1') {
                                 nondigit = '\0';
-                                number.append(c);
+                                tokenBuffer.append(c);
                             } else {
                                 break;
                             }
                         }
                     }
-                    support.unread();
+                    src.unread(c);
 
-                    if (number.length() == startLen) {
+                    if (tokenBuffer.length() == startLen) {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_bin_digits")); //$NON-NLS-1$
                     } else if (nondigit != '\0') {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
-                        // return decode_num(c, is_float, seen_uc, true);
                     }
-                    yaccValue = getInteger(number.toString(), 2);
+                    yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Token.tINTEGER;
                 case 'd' :
                 case 'D' : // decimal
-                    c = support.read();
+                    c = src.read();
                     if (Character.isDigit(c)) {
-                        for (;; c = support.read()) {
+                        for (;; c = src.read()) {
                             if (c == '_') {
                                 if (nondigit != '\0') {
                                     break;
@@ -1883,32 +2150,24 @@ public class RubyYaccLexer {
                                 }
                             } else if (Character.isDigit(c)) {
                                 nondigit = '\0';
-                                number.append(c);
+                                tokenBuffer.append(c);
                             } else {
                                 break;
                             }
                         }
                     }
-                    support.unread();
+                    src.unread(c);
 
-                    if (number.length() == startLen) {
+                    if (tokenBuffer.length() == startLen) {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_bin_digits")); //$NON-NLS-1$
                     } else if (nondigit != '\0') {
                         errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
-                        // return decode_num(c, is_float, seen_uc, true);
                     }
-                    yaccValue = getInteger(number.toString(), 2);
+                    yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Token.tINTEGER;
-                case '0' :
-                case '1' :
-                case '2' :
-                case '3' :
-                case '4' :
-                case '5' :
-                case '6' :
-                case '7' :
-                case '_' : // octal
-                    for (;; c = support.read()) {
+                case '0' : case '1' : case '2' : case '3' : case '4' : //Octal
+                case '5' : case '6' : case '7' : case '_' : 
+                    for (;; c = src.read()) {
                         if (c == '_') {
                             if (nondigit != '\0') {
                                 break;
@@ -1917,19 +2176,19 @@ public class RubyYaccLexer {
                             }
                         } else if (c >= '0' && c <= '7') {
                             nondigit = '\0';
-                            number.append(c);
+                            tokenBuffer.append(c);
                         } else {
                             break;
                         }
                     }
-                    if (number.length() > startLen) {
-                        support.unread();
+                    if (tokenBuffer.length() > startLen) {
+                        src.unread(c);
 
                         if (nondigit != '\0') {
                             errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
                         }
 
-                        yaccValue = getInteger(number.toString(), 8);
+                        yaccValue = getInteger(tokenBuffer.toString(), 8);
                         return Token.tINTEGER;
                     }
                 case '8' :
@@ -1939,10 +2198,10 @@ public class RubyYaccLexer {
                 case '.' :
                 case 'e' :
                 case 'E' :
-                    number.append('0');
+                	tokenBuffer.append('0');
                     break;
                 default :
-                    support.unread();
+                    src.unread(c);
                     yaccValue = new Long(0);
                     return Token.tINTEGER;
             }
@@ -1951,7 +2210,7 @@ public class RubyYaccLexer {
         boolean seen_point = false;
         boolean seen_e = false;
 
-        for (;; c = support.read()) {
+        for (;; c = src.read()) {
             switch (c) {
                 case '0' :
                 case '1' :
@@ -1964,28 +2223,30 @@ public class RubyYaccLexer {
                 case '8' :
                 case '9' :
                     nondigit = '\0';
-                    number.append(c);
+                    tokenBuffer.append(c);
                     break;
                 case '.' :
                     if (nondigit != '\0') {
-                        support.unread();
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, support.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        src.unread(c);
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
                     } else if (seen_point || seen_e) {
-                        support.unread();
-                        return getNumberToken(number.toString(), true, nondigit);
+                        src.unread(c);
+                        return getNumberToken(tokenBuffer.toString(), true, nondigit);
                     } else {
-                        if (!Character.isDigit(c = support.read())) {
-                            support.unread();
-                            support.unread();
-                            if (support.getLastRead() == '_') {
-
+                    	char c2;
+                        if (!Character.isDigit(c2 = src.read())) {
+                            src.unread(c2);
+                        	src.unread('.');
+                            if (c == '_') { 
+                            		// Enebo:  c can never be antrhign but '.'
+                            		// Why did I put this here?
                             } else {
-                                yaccValue = getInteger(number.toString(), 10);
+                                yaccValue = getInteger(tokenBuffer.toString(), 10);
                                 return Token.tINTEGER;
                             }
                         } else {
-                            number.append('.');
-                            number.append(c);
+                            tokenBuffer.append('.');
+                            tokenBuffer.append(c2);
                             seen_point = true;
                             nondigit = '\0';
                         }
@@ -1994,35 +2255,35 @@ public class RubyYaccLexer {
                 case 'e' :
                 case 'E' :
                     if (nondigit != '\0') {
-                        support.unread();
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, support.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        src.unread(c);
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
                         return 0;
                     } else if (seen_e) {
-                        support.unread();
-                        return getNumberToken(number.toString(), true, nondigit);
+                        src.unread(c);
+                        return getNumberToken(tokenBuffer.toString(), true, nondigit);
                     } else {
-                        number.append(c);
+                        tokenBuffer.append(c);
                         seen_e = true;
                         nondigit = c;
-                        c = support.read();
+                        c = src.read();
                         if (c == '-' || c == '+') {
-                            number.append(c);
+                            tokenBuffer.append(c);
                             nondigit = c;
                         } else {
-                            support.unread();
+                            src.unread(c);
                         }
                     }
                     break;
                 case '_' : //  '_' in number just ignored
                     if (nondigit != '\0') {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, support.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
                         return 0;
                     }
                     nondigit = c;
                     break;
                 default :
-                    support.unread();
-                    return getNumberToken(number.toString(), seen_e || seen_point, nondigit);
+                    src.unread(c);
+                return getNumberToken(tokenBuffer.toString(), seen_e || seen_point, nondigit);
             }
         }
     }
@@ -2037,7 +2298,7 @@ public class RubyYaccLexer {
             try {
                 d = Double.valueOf(number);
             } catch (NumberFormatException e) {
-                errorHandler.handleError(IErrors.WARN, support.getPosition(), Messages.getString("float_out_of_range", number)); //$NON-NLS-1$
+                errorHandler.handleError(IErrors.WARN, src.getPosition(), Messages.getString("float_out_of_range", number)); //$NON-NLS-1$
             }
             yaccValue = d;
             return Token.tFLOAT;
@@ -2045,49 +2306,5 @@ public class RubyYaccLexer {
             yaccValue = getInteger(number, 10);
             return Token.tINTEGER;
         }
-    }
-
-    private final boolean isArgState() {
-        return lex_state.isExprArg();
-    }
-
-    private static final Keyword getKeyword(String w, int len) {
-        return Keyword.getKeyword(w, len);
-    }
-
-    private static final Object getInteger(String value, int radix) {
-        try {
-            return Long.valueOf(value, radix);
-        } catch (NumberFormatException e) {
-            return new BigInteger(value, radix);
-        }
-    }
-
-    private static final boolean isIdentifierChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_';
-    }
-
-    private static final boolean isHexDigit(char c) {
-        return Character.isDigit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
-    }
-
-    public void setErrorHandler(IErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
-    }
-
-    public void setSource(ILexerSource source) {
-        this.support = new RubyLexerSupport(source);
-    }
-
-    public void setState(LexState state) {
-        this.lex_state = (LexState) state;
-    }
-
-    public StackState getCmdArgumentState() {
-        return cmdArgumentState;
-    }
-
-    public StackState getConditionState() {
-        return conditionState;
     }
 }

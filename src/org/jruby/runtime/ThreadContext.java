@@ -24,9 +24,6 @@
  */
 package org.jruby.runtime;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
-import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -34,6 +31,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ThreadClass;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.util.ArgsUtil;
@@ -45,6 +43,7 @@ import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.ArrayStack;
 
@@ -73,7 +72,7 @@ public class ThreadContext {
 
     private RubyModule wrapper;
 
-    private ISourcePosition sourcePosition = DefaultLexerPosition.getInstance("", 0);
+    private SourcePosition sourcePosition = SourcePosition.getInstance("", 0);
 
     /**
      * Constructor for Context.
@@ -119,7 +118,7 @@ public class ThreadContext {
         this.thread = thread;
     }
 
-    public IRubyObject eval(INode node) {
+    public IRubyObject eval(Node node) {
         return EvaluateVisitor.createVisitor(runtime.getTopSelf()).eval(node);
     }
 
@@ -143,27 +142,19 @@ public class ThreadContext {
         return (Iter) getIterStack().peek();
     }
 
-    public String getSourceFile() {
-        return getPosition().getFile();
-    }
-
     public Scope currentScope() {
         return getScopeStack().current();
     }
 
-    public int getSourceLine() {
-        return getPosition().getLine();
-    }
-
-    public ISourcePosition getPosition() {
+    public SourcePosition getPosition() {
         return sourcePosition;
     }
 
     public void setPosition(String file, int line) {
-        setPosition(DefaultLexerPosition.getInstance(file, line));
+        setPosition(SourcePosition.getInstance(file, line));
     }
 
-    public void setPosition(ISourcePosition position) {
+    public void setPosition(SourcePosition position) {
         sourcePosition = position;
     }
 
@@ -218,7 +209,7 @@ public class ThreadContext {
             self = currentBlock.getSelf();
         }
         
-        INode blockVar = currentBlock.getVar();
+        Node blockVar = currentBlock.getVar();
         if (blockVar != null) {
             if (blockVar instanceof ZeroArgNode) {
                 // Better not have arguments for a no-arg block.
@@ -294,7 +285,7 @@ public class ThreadContext {
         
         Iterator iter = node.getHeadNode() != null ? node.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
         for (int i = 0; i < valueLen && iter.hasNext(); i++) {
-            INode lNode = (INode) iter.next();
+            Node lNode = (Node) iter.next();
             new AssignmentVisitor(runtime, self).assign(lNode, value.entry(i), pcall);
         }
 
@@ -316,13 +307,13 @@ public class ThreadContext {
         }
 
         while (iter.hasNext()) {
-            new AssignmentVisitor(runtime, self).assign((INode)iter.next(), runtime.getNil(), pcall);
+            new AssignmentVisitor(runtime, self).assign((Node)iter.next(), runtime.getNil(), pcall);
         }
         
         return value;
     }
 
-    private IRubyObject sValueToMRHS(IRubyObject value, INode leftHandSide) {
+    private IRubyObject sValueToMRHS(IRubyObject value, Node leftHandSide) {
         if (value == null) {
             return RubyArray.newArray(runtime, 0);
         }

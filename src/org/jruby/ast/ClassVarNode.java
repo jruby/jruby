@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 22:32:20
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,9 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Access to a class variable.
@@ -36,12 +37,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ClassVarNode extends AbstractNode {
+public class ClassVarNode extends Node {
     static final long serialVersionUID = -228883683599457381L;
 
     private final String name;
 
-    public ClassVarNode(ISourcePosition position, String name) {
+    public ClassVarNode(SourcePosition position, String name) {
         super(position);
         this.name = name;
     }
@@ -50,8 +51,8 @@ public class ClassVarNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitClassVarNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitClassVarNode(this);
     }
 
     /**

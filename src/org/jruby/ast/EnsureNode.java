@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 15:53:13
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,23 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *	an ensure statement.
  * @author  jpetersen
  * @version $Revision$
  */
-public class EnsureNode extends AbstractNode {
+public class EnsureNode extends Node {
     static final long serialVersionUID = -409805241533215981L;
 
-    private final INode bodyNode;
-    private final INode ensureNode;
+    private final Node bodyNode;
+    private final Node ensureNode;
 
-    public EnsureNode(ISourcePosition position, INode bodyNode, INode ensureNode) {
+    public EnsureNode(SourcePosition position, Node bodyNode, Node ensureNode) {
         super(position);
         this.bodyNode = bodyNode;
         this.ensureNode = ensureNode;
@@ -52,23 +52,23 @@ public class EnsureNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitEnsureNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitEnsureNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
     /**
      * Gets the ensureNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getEnsureNode() {
+    public Node getEnsureNode() {
         return ensureNode;
     }
 }

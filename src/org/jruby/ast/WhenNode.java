@@ -3,8 +3,8 @@
  * Created on 01.03.2002, 23:50:53
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,25 +28,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class WhenNode extends AbstractNode {
+public class WhenNode extends Node {
     static final long serialVersionUID = 9099987602002276708L;
 
-    private final IListNode expressionNodes;
-    private final INode bodyNode;
-    private final INode nextCase;
+    private final ListNode expressionNodes;
+    private final Node bodyNode;
+    private final Node nextCase;
 
-    public WhenNode(ISourcePosition position, IListNode expressionNodes, INode bodyNode, INode nextCase) {
+    public WhenNode(SourcePosition position, ListNode expressionNodes, Node bodyNode, Node nextCase) {
         super(position);
         this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;
@@ -57,22 +54,22 @@ public class WhenNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitWhenNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitWhenNode(this);
     }
 
     /**
      * Gets the bodyNode.
      * @return Returns a INode
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
     
     /**
      * Gets the next case node (if any).
      */
-    public INode getNextCase() {
+    public Node getNextCase() {
         return nextCase;
     }
 
@@ -80,7 +77,7 @@ public class WhenNode extends AbstractNode {
      * Gets the expressionNodes.
      * @return Returns a IListNode
      */
-    public IListNode getExpressionNodes() {
+    public ListNode getExpressionNodes() {
         return expressionNodes;
     }
 }

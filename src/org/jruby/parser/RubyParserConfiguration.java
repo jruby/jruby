@@ -3,7 +3,9 @@
  * Created on 04.03.2002, 13:20:52
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -33,7 +35,7 @@ import java.util.List;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyParserConfiguration implements IRubyParserConfiguration {
+public class RubyParserConfiguration {
     private boolean classNest;
     private boolean compileForEval;
     private List blockVariables;

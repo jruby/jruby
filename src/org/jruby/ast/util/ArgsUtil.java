@@ -28,13 +28,13 @@
  */
 package org.jruby.ast.util;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.SplatNode;
 import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
@@ -65,18 +65,17 @@ public final class ArgsUtil {
         context.getIterStack().pop();
     }
 
-    public static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, EvaluateVisitor visitor, INode node) {
+    public static IRubyObject[] setupArgs(Ruby runtime, ThreadContext context, EvaluateVisitor visitor, Node node) {
         if (node == null) {
             return IRubyObject.NULL_ARRAY;
         }
-        final ISourcePosition position = context.getPosition();
 
         if (node instanceof ArrayNode) {
-            final int size = ((ArrayNode) node).size();
-            final ArrayList list = new ArrayList(size);
-            final Iterator iterator = ((ArrayNode) node).iterator();
-            for (int i = 0; i < size; i++) {
-                final INode next = (INode) iterator.next();
+        	SourcePosition position = context.getPosition();
+            ArrayList list = new ArrayList(((ArrayNode) node).size());
+            
+            for (Iterator iter=((ArrayNode)node).iterator(); iter.hasNext();){
+                final Node next = (Node) iter.next();
                 if (next instanceof SplatNode) {
                     list.addAll(((RubyArray) visitor.eval(next)).getList());
                 } else {
@@ -88,8 +87,6 @@ public final class ArgsUtil {
 
             return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
-
-        context.setPosition(position);
 
         return arrayify(runtime, visitor.eval(node));
     }

@@ -26,23 +26,21 @@
  *
  */package org.jruby.internal.runtime.methods;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.ScopeNode;
-import org.jruby.ast.types.IListNode;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -101,13 +99,6 @@ public final class DefaultMethod extends AbstractMethod {
             return receiver.eval(body.getBodyNode());
 
         } catch (ReturnJump re) {
-        	Block current = context.getBlockStack().getCurrent();
-
-        	if (current != null && context.getFrameStack().getPrevious() == current.getFrame() &&
-        		current.getIter() == Iter.ITER_CUR) {
-    			throw re;
-            }
-
             return re.getReturnValue();
         } finally {
             context.popClass();
@@ -144,17 +135,17 @@ public final class DefaultMethod extends AbstractMethod {
             }
 
             if (argsNode.getOptArgs() != null) {
-                IListNode optArgs = argsNode.getOptArgs();
+                ListNode optArgs = argsNode.getOptArgs();
 
                 Iterator iter = optArgs.iterator();
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
-                    new AssignmentVisitor(ruby, receiver).assign((INode)iter.next(), args[i], true);
+                    new AssignmentVisitor(ruby, receiver).assign((Node)iter.next(), args[i], true);
                     expectedArgsCount++;
                 }
 
                 // assign the default values.
                 while (iter.hasNext()) {
-                    EvaluateVisitor.createVisitor(receiver).eval((INode)iter.next());
+                    EvaluateVisitor.createVisitor(receiver).eval((Node)iter.next());
                 }
             }
 
@@ -173,7 +164,7 @@ public final class DefaultMethod extends AbstractMethod {
             return;
         }
 
-        ISourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
+        SourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
         if (position == null) {
             position = ruby.getPosition();
         }
@@ -186,7 +177,7 @@ public final class DefaultMethod extends AbstractMethod {
         }
         //a lot of complication to try to get a line number and a file name
         //without a NullPointerException
-        ISourcePosition lPosition = null;
+        SourcePosition lPosition = null;
         if (body != null)
             if (body.getBodyNode() != null)
                 if(body.getBodyNode().getPosition() != null)

@@ -25,10 +25,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
-public class StrTermNode extends AbstractNode {
+public class StrTermNode extends Node {
     int func;
     int termParen;
     int nest;
@@ -36,7 +36,7 @@ public class StrTermNode extends AbstractNode {
     /**
      * @param position
      */
-    public StrTermNode(ISourcePosition position, int func, int term, int paren) {
+    public StrTermNode(SourcePosition position, int func, int term, int paren) {
         super(position);
 
         this.func = func;
@@ -44,7 +44,7 @@ public class StrTermNode extends AbstractNode {
         this.nest = 0;
     }
 
-    public void accept(INodeVisitor visitor) {
+    public void accept(NodeVisitor visitor) {
     }
 
     public int getFunc() {

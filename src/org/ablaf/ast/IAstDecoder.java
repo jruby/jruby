@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -22,6 +23,8 @@
  */
 package org.ablaf.ast;
 
+import org.jruby.ast.Node;
+
 
 /**
  * 
@@ -29,7 +32,7 @@ package org.ablaf.ast;
  * @version $Revision$
  */
 public interface IAstDecoder {
-    INode readNode();
+    Node readNode();
 
     void close();
 }

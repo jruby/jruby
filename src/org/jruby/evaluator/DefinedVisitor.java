@@ -28,7 +28,6 @@
  */
 package org.jruby.evaluator;
 
-import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArrayNode;
@@ -54,6 +53,7 @@ import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NilNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
@@ -89,7 +89,7 @@ public class DefinedVisitor extends AbstractVisitor {
         this.threadContext = ruby.getCurrentContext();
     }
 
-    public String getDefinition(INode expression) {
+    public String getDefinition(Node expression) {
         definition = null;
 
         acceptNode(expression);
@@ -97,13 +97,13 @@ public class DefinedVisitor extends AbstractVisitor {
         return definition;
     }
 
-    public String getArgumentDefinition(INode node, String type) {
+    public String getArgumentDefinition(Node node, String type) {
         if (node == null) {
             return type;
         } else if (node instanceof ArrayNode) {
             Iterator iter = ((ArrayNode)node).iterator();
             while (iter.hasNext()) {
-                if (getDefinition((INode)iter.next()) == null) {
+                if (getDefinition((Node)iter.next()) == null) {
                     return null;
                 }
             }
@@ -114,9 +114,9 @@ public class DefinedVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see AbstractVisitor#visitNode(INode)
+     * @see AbstractVisitor#visitNode(Node)
      */
-    protected void visitNode(INode iVisited) {
+    protected void visitNode(Node iVisited) {
         try {
             EvaluateVisitor.createVisitor(self).eval(iVisited);
             definition = "expression";

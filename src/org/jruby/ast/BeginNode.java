@@ -3,7 +3,9 @@
  * Created on 27.02.2002, 21:08:17
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Begin/End block.
  *  A Begin ... End block without rescue.
@@ -37,12 +37,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class BeginNode extends AbstractNode {
+public class BeginNode extends Node {
     static final long serialVersionUID = 7295877486186461712L;
 
-    private final INode bodyNode;
+    private final Node bodyNode;
 
-    public BeginNode(ISourcePosition position, INode bodyNode) {
+    public BeginNode(SourcePosition position, Node bodyNode) {
         super(position);
         this.bodyNode = bodyNode;
     }
@@ -51,15 +51,15 @@ public class BeginNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitBeginNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitBeginNode(this);
     }
 
     /**
      * Gets the bodyNode.
      * @return Returns a INode
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 }

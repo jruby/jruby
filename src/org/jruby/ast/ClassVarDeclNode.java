@@ -3,8 +3,8 @@
  * Created on 02.03.2002, 00:05:56
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,12 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IAssignableNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Class variable declaration.
@@ -41,25 +38,25 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ClassVarDeclNode extends AbstractNode implements IAssignableNode, INameNode {
+public class ClassVarDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6227934966029974915L;
 
     private String name;
-    private INode valueNode;
 
-    public ClassVarDeclNode(ISourcePosition position, String name, INode valueNode) {
+    public ClassVarDeclNode(SourcePosition position, String name, Node valueNode) {
         super(position);
 
         this.name = name;
-        this.valueNode = valueNode;
+        
+        setValueNode(valueNode);
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitClassVarDeclNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitClassVarDeclNode(this);
     }
 
     /**
@@ -68,29 +65,5 @@ public class ClassVarDeclNode extends AbstractNode implements IAssignableNode, I
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets the valueNode.
-     * @return Returns a INode
-     */
-    public INode getValueNode() {
-        return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

@@ -3,7 +3,9 @@
  * Created on 26.02.2002, 16:38:40
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,21 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class LocalVarNode extends AbstractNode {
+public class LocalVarNode extends Node {
     static final long serialVersionUID = 8562701804939317217L;
 
     private final int count;
 
-    public LocalVarNode(ISourcePosition position, int count) {
+    public LocalVarNode(SourcePosition position, int count) {
         super(position);
         this.count = count;
     }
@@ -49,8 +50,8 @@ public class LocalVarNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitLocalVarNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitLocalVarNode(this);
     }
 
     /**

@@ -28,8 +28,6 @@
  */
 package org.jruby.evaluator;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.IErrorHandler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.CallNode;
@@ -41,8 +39,10 @@ import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.common.IErrors;
+import org.jruby.common.IRubyErrorHandler;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -58,7 +58,7 @@ public class AssignmentVisitor extends AbstractVisitor {
     private ThreadContext threadContext;
     private IRubyObject self;
 
-    private IErrorHandler errorHandler;
+    private IRubyErrorHandler errorHandler;
 
     private IRubyObject value;
     private boolean check;
@@ -70,7 +70,7 @@ public class AssignmentVisitor extends AbstractVisitor {
         this.threadContext = ruby.getCurrentContext();
     }
 
-    public IRubyObject assign(INode node, IRubyObject value, boolean check) {
+    public IRubyObject assign(Node node, IRubyObject value, boolean check) {
         this.value = value;
         this.check = check;
 
@@ -80,9 +80,9 @@ public class AssignmentVisitor extends AbstractVisitor {
     }
 
     /**
-     * @see AbstractVisitor#visitNode(INode)
+     * @see AbstractVisitor#visitNode(Node)
      */
-    protected void visitNode(INode iVisited) {
+    protected void visitNode(Node iVisited) {
         Asserts.notReached();
     }
 

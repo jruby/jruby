@@ -3,7 +3,9 @@
  * Created on 23.02.2002, 19:04:53
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,28 +28,27 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents an integer literal.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class FixnumNode extends AbstractNode implements ILiteralNode {
+public class FixnumNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 2236565825959274729L;
 
     private final long value;
 
-    public FixnumNode(ISourcePosition position, long value) {
+    public FixnumNode(SourcePosition position, long value) {
         super(position);
         this.value = value;
     }
 
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitFixnumNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitFixnumNode(this);
     }
 
     /**

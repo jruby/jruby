@@ -1,7 +1,5 @@
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.IErrorHandler;
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.CallNode;
@@ -22,6 +20,7 @@ import org.jruby.ast.InstVarNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NilNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.RegexpNode;
 import org.jruby.ast.SelfNode;
@@ -29,6 +28,7 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
 import org.jruby.common.IErrors;
+import org.jruby.common.IRubyErrorHandler;
 
 /**
  *
@@ -36,19 +36,19 @@ import org.jruby.common.IErrors;
  * @version $Revision$
  */
 public class UselessStatementVisitor extends AbstractVisitor {
-    private IErrorHandler errorHandler;
+    private IRubyErrorHandler errorHandler;
     
-    public UselessStatementVisitor(IErrorHandler errorHandler) {
+    public UselessStatementVisitor(IRubyErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
     }
 
     /**
-     * @see AbstractVisitor#visitNode(INode)
+     * @see AbstractVisitor#visitNode(Node)
      */
-    protected void visitNode(INode iVisited) {
+    protected void visitNode(Node iVisited) {
     }
 
-    private void handleUselessWarn(INode node, String useless) {
+    private void handleUselessWarn(Node node, String useless) {
         errorHandler.handleError(IErrors.WARN, node.getPosition(), "Useless use of " + useless + "in void context.", null);
     }
 

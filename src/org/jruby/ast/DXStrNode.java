@@ -3,7 +3,9 @@
  * Created on 24.02.2002, 17:45:15
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,17 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Dynamic backquote string.
@@ -45,53 +39,18 @@ import java.util.List;
  * @author  jpetersen
  * @version $Revision$
  */
-public class DXStrNode extends AbstractNode implements IListNode, ILiteralNode {
+public class DXStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7165988969190553667L;
 
-    private List list;
-
-    public DXStrNode(ISourcePosition position) {
+    public DXStrNode(SourcePosition position) {
         super(position);
-    }
-
-    /**
-     * @see IListNode#add(Node)
-     */
-    public IListNode add(INode node) {
-        if (list == null) {
-            list = new ArrayList();
-        }
-        list.add(node);
-
-        return this;
-    }
-
-    /**
-     * @see IListNode#iterator()
-     */
-    public Iterator iterator() {
-        if (list == null) {
-            return Collections.EMPTY_LIST.iterator();
-        } else {
-        	return list.iterator();
-        }
-    }
-    
-    /**
-     * @see org.jruby.ast.types.IListNode#size()
-     */
-    public int size() {
-        if (list == null) {
-            return 0;
-        }
-        return list.size();
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitDXStrNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDXStrNode(this);
     }
 }

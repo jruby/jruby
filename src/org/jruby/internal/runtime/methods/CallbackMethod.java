@@ -28,8 +28,8 @@
  */
 package org.jruby.internal.runtime.methods;
 
-import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
@@ -51,7 +51,7 @@ public class CallbackMethod extends AbstractMethod {
 
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         if (ruby.getTraceFunction() != null) {
-            ISourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
+            SourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
             if (position == null) {
                 position = ruby.getPosition();
             }

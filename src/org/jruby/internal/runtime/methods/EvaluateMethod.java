@@ -28,10 +28,10 @@
  */
 package org.jruby.internal.runtime.methods;
 
-import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
+import org.jruby.ast.Node;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
@@ -44,14 +44,14 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class EvaluateMethod extends AbstractMethod {
-    private final INode node;
+    private final Node node;
 
-    public EvaluateMethod(INode node, Visibility visibility) {
+    public EvaluateMethod(Node node, Visibility visibility) {
         super(visibility);
         this.node = node;
     }
 
-    public EvaluateMethod(INode node) {
+    public EvaluateMethod(Node node) {
         this(node, null);
     }
 
@@ -59,7 +59,7 @@ public class EvaluateMethod extends AbstractMethod {
         return EvaluateVisitor.createVisitor(receiver).eval(node);
     }
 
-    public INode getNode() {
+    public Node getNode() {
         return node;
     }
 

@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:07:45
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,9 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Method call without any arguments
@@ -36,12 +37,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class VCallNode extends AbstractNode {
+public class VCallNode extends Node {
     static final long serialVersionUID = -7678578490000574578L;
 
     private final String methodName;
 
-    public VCallNode(ISourcePosition position, String name) {
+    public VCallNode(SourcePosition position, String name) {
         super(position);
         this.methodName = name;
     }
@@ -50,8 +51,8 @@ public class VCallNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitVCallNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitVCallNode(this);
     }
 
     /**

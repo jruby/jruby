@@ -26,8 +26,8 @@
  */
 package org.jruby.ast.util;
 
-import org.ablaf.ast.INode;
-import org.jruby.ast.types.IListNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.Node;
 
 import java.util.Iterator;
 
@@ -37,34 +37,27 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public final class ListNodeUtil {
-    public static final IListNode addAll(IListNode self, IListNode other) {
+    public static final ListNode addAll(ListNode self, ListNode other) {
         if (other != null) {
-            Iterator iter = other.iterator();
-            int size = other.size();
-            for (int i = 0; i < size; i++) {
-                self.add((INode) iter.next());
+        	for (Iterator iter = other.iterator(); iter.hasNext();) {
+                self.add((Node) iter.next());
             }
         }
 
         return self;
     }
 
-    public static final INode getLast(IListNode self) {
-        INode result = null;
+    public static final Node getLast(ListNode self) {
+        Node result = null;
 
-        Iterator iterator = self.iterator();
-        while (iterator.hasNext()) {
-            result = (INode) iterator.next();
+        for(Iterator iterator = self.iterator(); iterator.hasNext(); ) {
+            result = (Node) iterator.next();
         }
 
         return result;
     }
 
-    public static final int getLength(IListNode self) {
-        if (self == null) {
-            return 0;
-        } else {
-            return self.size();
-        }
+    public static final int getLength(ListNode self) {
+    	return self == null ? 0 : self.size(); 
     }
 }

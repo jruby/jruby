@@ -3,8 +3,10 @@
  * Created on 05. November 2001, 21:45
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,10 +29,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * a Range in a boolean expression.
@@ -39,15 +39,15 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class FlipNode extends AbstractNode {
+public class FlipNode extends Node {
     static final long serialVersionUID = -4735579451657299802L;
 
-    private final INode beginNode;
-    private final INode endNode;
+    private final Node beginNode;
+    private final Node endNode;
     private final boolean exclusive;
     private int count;
     
-    public FlipNode(ISourcePosition position, INode beginNode, INode endNode, boolean exclusive) {
+    public FlipNode(SourcePosition position, Node beginNode, Node endNode, boolean exclusive) {
         super(position);
         this.beginNode = beginNode;
         this.endNode = endNode;
@@ -58,25 +58,25 @@ public class FlipNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitFlipNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitFlipNode(this);
     }
 
     /**
      * Gets the beginNode.
 	 * beginNode will set the FlipFlop the first time it is true
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBeginNode() {
+    public Node getBeginNode() {
         return beginNode;
     }
 
     /**
      * Gets the endNode.
 	 * endNode will reset the FlipFlop when it is true while the FlipFlop is set.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getEndNode() {
+    public Node getEndNode() {
         return endNode;
     }
 

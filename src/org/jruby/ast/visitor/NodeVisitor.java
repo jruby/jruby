@@ -29,7 +29,6 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.visitor.INodeVisitor;
 import org.jruby.ast.*;
 
 /**
@@ -41,7 +40,7 @@ import org.jruby.ast.*;
  * @author Benoit Cerrina
  * @version $Revision$
  **/
-public interface NodeVisitor extends INodeVisitor {
+public interface NodeVisitor {
     public void visitAliasNode(AliasNode iVisited);
     public void visitAndNode(AndNode iVisited);
     public void visitArgsNode(ArgsNode iVisited);

@@ -3,9 +3,11 @@
  * Created on 05. November 2001, 21:46
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -28,23 +30,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents an until statement.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class UntilNode extends AbstractNode {
+public class UntilNode extends Node {
     static final long serialVersionUID = -2929327250252365636L;
 
-    private final INode conditionNode;
-    private final INode bodyNode;
+    private final Node conditionNode;
+    private final Node bodyNode;
 
-    public UntilNode(ISourcePosition position, INode conditionNode, INode bodyNode) {
+    public UntilNode(SourcePosition position, Node conditionNode, Node bodyNode) {
         super(position);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
@@ -54,23 +54,23 @@ public class UntilNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitUntilNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitUntilNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
     /**
      * Gets the conditionNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getConditionNode() {
+    public Node getConditionNode() {
         return conditionNode;
     }
 }

@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:39:06
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,25 +28,23 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class OpAsgnNode extends AbstractNode {
+public class OpAsgnNode extends Node {
     static final long serialVersionUID = -1950295226516487753L;
 
-    private final INode receiverNode;
-    private final INode valueNode;
+    private final Node receiverNode;
+    private final Node valueNode;
     private final String variableName;
     private final String operatorName;
 
-    public OpAsgnNode(ISourcePosition position, INode receiverNode, INode valueNode, String variableName, String methodName) {
+    public OpAsgnNode(SourcePosition position, Node receiverNode, Node valueNode, String variableName, String methodName) {
         super(position);
         this.receiverNode = receiverNode;
         this.valueNode = valueNode;
@@ -56,8 +56,8 @@ public class OpAsgnNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitOpAsgnNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitOpAsgnNode(this);
     }
 
     /**
@@ -70,17 +70,17 @@ public class OpAsgnNode extends AbstractNode {
 
     /**
      * Gets the receiverNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getReceiverNode() {
+    public Node getReceiverNode() {
         return receiverNode;
     }
 
     /**
      * Gets the valueNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getValueNode() {
+    public Node getValueNode() {
         return valueNode;
     }
 

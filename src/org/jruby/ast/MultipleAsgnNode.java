@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:35:12
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,26 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IAssignableNode;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class MultipleAsgnNode extends AbstractNode implements IAssignableNode {
+public class MultipleAsgnNode extends AssignableNode {
     static final long serialVersionUID = 5016291105152162748L;
 
-    private final IListNode headNode;
-    private final INode argsNode;
-    private INode valueNode;
+    private final ListNode headNode;
+    private final Node argsNode;
 
-    public MultipleAsgnNode(ISourcePosition position, IListNode headNode, INode argsNode) {
+    public MultipleAsgnNode(SourcePosition position, ListNode headNode, Node argsNode) {
         super(position);
         this.headNode = headNode;
         this.argsNode = argsNode;
@@ -55,39 +52,23 @@ public class MultipleAsgnNode extends AbstractNode implements IAssignableNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitMultipleAsgnNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitMultipleAsgnNode(this);
     }
 
     /**
      * Gets the argsNode.
      * @return Returns a INode
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
 
     /**
      * Gets the headNode.
-     * @return Returns a IListNode
+     * @return Returns a ListNode
      */
-    public IListNode getHeadNode() {
+    public ListNode getHeadNode() {
         return headNode;
-    }
-
-    /**
-     * Gets the valueNode.
-     * @return Returns a INode
-     */
-    public INode getValueNode() {
-        return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

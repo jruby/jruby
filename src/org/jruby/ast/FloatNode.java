@@ -3,7 +3,9 @@
  * Created on 23.02.2002, 19:21:16
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,28 +28,27 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a float literal.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class FloatNode extends AbstractNode implements ILiteralNode {
+public class FloatNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -6358513813684285950L;
 
     private final double value;
     
-    public FloatNode(ISourcePosition position, double value) {
+    public FloatNode(SourcePosition position, double value) {
         super(position);
         this.value = value;
     }
 
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitFloatNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitFloatNode(this);
     }
 
     /**

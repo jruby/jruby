@@ -3,10 +3,12 @@
  * Created on 14.01.2002, 20:48:10
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -29,10 +31,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 import java.util.List;
 
@@ -47,19 +47,19 @@ import java.util.List;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ScopeNode extends AbstractNode {
+public class ScopeNode extends Node {
     static final long serialVersionUID = 3694868125861223886L;
 
     private final List localNames;
-    private final INode bodyNode;
+    private final Node bodyNode;
 
-    public ScopeNode(List table, INode bodyNode) {
+    public ScopeNode(List table, Node bodyNode) {
 		super();
 		this.localNames = table;
 		this.bodyNode = bodyNode;
     }
 
-    public ScopeNode(ISourcePosition position, List table, INode bodyNode) {
+    public ScopeNode(SourcePosition position, List table, Node bodyNode) {
         super(position);
         this.localNames =  table;
         this.bodyNode = bodyNode;
@@ -69,15 +69,15 @@ public class ScopeNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitScopeNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitScopeNode(this);
     }
 
     /**
      * Gets the bodyNode.
      * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 

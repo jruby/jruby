@@ -1,6 +1,9 @@
 /*
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- *
+ * Copyright (C) 2002 Anders Bengtsson
+ * Copyright (C) 2004 Thomas E Enebo
+ * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
  * JRuby - http://jruby.sourceforge.net
  *
  * This file is part of JRuby
@@ -27,12 +30,9 @@
 
 package org.jruby.parser;
 
-import org.ablaf.ast.INode;
-import org.ablaf.lexer.ILexerSource;
-import org.ablaf.lexer.LexerFactory;
-import org.ablaf.parser.IParser;
-import org.ablaf.parser.IParserPool;
 import org.jruby.Ruby;
+import org.jruby.ast.Node;
+import org.jruby.lexer.yacc.LexerSource;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -40,38 +40,32 @@ import java.util.List;
 
 public class Parser {
     private final Ruby runtime;
-    private final IParserPool pool;
+    private final RubyParserPool pool;
 
     public Parser(Ruby ruby) {
         this.runtime = ruby;
         this.pool = RubyParserPool.getInstance();
     }
 
-    public INode parse(String file, String content) {
+    public Node parse(String file, String content) {
         return parse(file, new StringReader(content));
     }
 
-    public INode parse(String file, Reader content) {
+    public Node parse(String file, Reader content) {
         return parse(file, content, new RubyParserConfiguration());
     }
 
-    public INode parse(String file, String content, List blockVariableNames) {
-        RubyParserConfiguration config = new RubyParserConfiguration();
-        config.setBlockVariables(blockVariableNames);
-        return parse(file, new StringReader(content), config);
-    }
-
-    private INode parse(String file, Reader content, RubyParserConfiguration config) {
+    private Node parse(String file, Reader content, RubyParserConfiguration config) {
         config.setLocalVariables(runtime.getScope().getLocalNames());
         
-        IParser parser = null;
-        IRubyParserResult result = null;
+        DefaultRubyParser parser = null;
+        RubyParserResult result = null;
         try {
             parser = pool.borrowParser();
             parser.setErrorHandler(runtime.getErrorHandler());
             parser.init(config);
-            ILexerSource lexerSource = LexerFactory.getInstance().getSource(file, content);
-            result = (IRubyParserResult) parser.parse(lexerSource);
+            LexerSource lexerSource = LexerSource.getSource(file, content);
+            result = (RubyParserResult) parser.parse(lexerSource);
         } finally {
             pool.returnParser(parser);
         }
@@ -91,7 +85,7 @@ public class Parser {
         runtime.getScope().addLocalVariables(newNames);
     }
 
-    private boolean hasNewLocalVariables(IRubyParserResult result) {
+    private boolean hasNewLocalVariables(RubyParserResult result) {
         int newSize = 0;
         if (result.getLocalVariables() != null) {
             newSize = result.getLocalVariables().size();

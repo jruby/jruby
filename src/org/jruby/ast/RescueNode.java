@@ -3,8 +3,8 @@
  * Created on 01.03.2002, 23:52:26
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,24 +28,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RescueNode extends AbstractNode {
+public class RescueNode extends Node {
     static final long serialVersionUID = -4757038578511808125L;
 
-    private INode bodyNode;
+    private Node bodyNode;
     private RescueBodyNode rescueNode;
-    private INode elseNode;
+    private Node elseNode;
     
-    public RescueNode(ISourcePosition position, INode bodyNode, RescueBodyNode rescueNode, INode elseNode) {
+    public RescueNode(SourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
         super(position);
         this.bodyNode = bodyNode;
         this.rescueNode = rescueNode;
@@ -56,29 +54,29 @@ public class RescueNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitRescueNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitRescueNode(this);
     }
 
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
     /**
      * Gets the elseNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getElseNode() {
+    public Node getElseNode() {
         return elseNode;
     }
 
     /**
      * Gets the first rescueNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
     public RescueBodyNode getRescueNode() {
         return rescueNode;

@@ -1,6 +1,9 @@
 /*
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- *
+ * Copyright (C) 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
  * JRuby - http://jruby.sourceforge.net
  *
  * This file is part of JRuby
@@ -22,9 +25,6 @@
  */
 package org.jruby.parser;
 
-import org.ablaf.parser.IParser;
-import org.ablaf.parser.IParserPool;
-
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Iterator;
@@ -36,8 +36,8 @@ import java.util.List;
  * @author jpetersen
  * @version $Revision$
  */
-public class RubyParserPool implements IParserPool {
-    private static IParserPool instance = new RubyParserPool();
+public class RubyParserPool {
+    private static RubyParserPool instance = new RubyParserPool();
 
     private List pool;
 
@@ -48,18 +48,18 @@ public class RubyParserPool implements IParserPool {
         pool = new LinkedList();
     }
 
-    public static IParserPool getInstance() {
+    public static RubyParserPool getInstance() {
         return instance;
     }
 
     /**
-     * @see org.ablaf.parser.IParserPool#borrowParser()
+     * @see org.ablaf.parser.RubyParserPool#borrowParser()
      */
-    public IParser borrowParser() {
+    public DefaultRubyParser borrowParser() {
         synchronized (pool) {
             Iterator iter = pool.iterator();
             while (iter.hasNext()) {
-                IParser parser = (IParser) ((Reference) iter.next()).get();
+                DefaultRubyParser parser = (DefaultRubyParser) ((Reference) iter.next()).get();
                 iter.remove();
                 if (parser != null) {
                     return parser;
@@ -72,7 +72,7 @@ public class RubyParserPool implements IParserPool {
     /**
      * @see org.ablaf.parser.IParserPool#returnParser(IParser)
      */
-    public void returnParser(IParser parser) {
+    public void returnParser(DefaultRubyParser parser) {
         synchronized (pool) {
             pool.add(new SoftReference(parser));
         }

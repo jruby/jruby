@@ -28,23 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a method call with self as receiver.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public final class FCallNode extends AbstractNode {
+public final class FCallNode extends Node {
     static final long serialVersionUID = 3590332973770104094L;
 
     private final String name;
-    private final INode argsNode;
+    private final Node argsNode;
 
-    public FCallNode(ISourcePosition position, String name, INode argsNode) {
+    public FCallNode(SourcePosition position, String name, Node argsNode) {
         super(position);
         this.name = name.intern();
         this.argsNode = argsNode;
@@ -54,15 +52,15 @@ public final class FCallNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitFCallNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitFCallNode(this);
     }
 
     /**
      * Gets the argsNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -25,7 +26,7 @@ package org.ablaf.internal.ast;
 import org.ablaf.ast.IAstDecoder;
 import org.ablaf.ast.IAstEncoder;
 import org.ablaf.ast.IAstMarshal;
-import org.ablaf.ast.INode;
+import org.jruby.ast.Node;
 import org.jruby.util.Asserts;
 
 import java.io.IOException;
@@ -51,9 +52,9 @@ public class SerializationAstMarshal implements IAstMarshal {
             final ObjectOutputStream oout = new ObjectOutputStream(output);
             return new IAstEncoder() {
                 /**
-                 * @see org.ablaf.ast.IAstEncoder#writeNode(INode)
+                 * @see org.ablaf.ast.IAstEncoder#writeNode(Node)
                  */
-                public void writeNode(INode node) {
+                public void writeNode(Node node) {
                     try {
                         oout.writeObject(node);
                     } catch (IOException e) {
@@ -88,9 +89,9 @@ public class SerializationAstMarshal implements IAstMarshal {
                 /**
                  * @see org.ablaf.ast.IAstDecoder#readNode()
                  */
-                public INode readNode() {
+                public Node readNode() {
                     try {
-                        return (INode)oin.readObject();
+                        return (Node)oin.readObject();
                     } catch (IOException e) {
                         Asserts.notReached("IOException: " + e.getMessage());
                         return null;

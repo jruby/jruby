@@ -3,7 +3,9 @@
  * Created on 23.02.2002, 19:29:50
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,31 +28,30 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a simple regular expression literal.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RegexpNode extends AbstractNode implements ILiteralNode {
+public class RegexpNode extends Node implements ILiteralNode {
     static final long serialVersionUID = -1566813018564622077L;
 
     private final String value;
     private final int options;
     
-    public RegexpNode(ISourcePosition position, String value, int options) {
+    public RegexpNode(SourcePosition position, String value, int options) {
         super(position);
         
         this.value = value;
         this.options = options;
     }
 
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitRegexpNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitRegexpNode(this);
     }
 
     /**

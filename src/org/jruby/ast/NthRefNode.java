@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 00:02:22
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,21 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a $number variable.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class NthRefNode extends AbstractNode {
+public class NthRefNode extends Node {
     static final long serialVersionUID = -3301605695065934063L;
 
     private final int matchNumber;
 
-    public NthRefNode(ISourcePosition position, int matchNumber) {
+    public NthRefNode(SourcePosition position, int matchNumber) {
         super(position);
         this.matchNumber = matchNumber;
     }
@@ -49,8 +50,8 @@ public class NthRefNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitNthRefNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitNthRefNode(this);
     }
 
     /**

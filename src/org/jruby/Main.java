@@ -3,10 +3,12 @@
  * Created on 18. September 2001, 21:48
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -29,7 +31,7 @@
  */
 package org.jruby;
 
-import org.ablaf.ast.INode;
+import org.jruby.ast.Node;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThrowJump;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -104,7 +106,7 @@ public class Main {
         Ruby runtime = Ruby.getDefaultInstance(commandline.sRegexpAdapter);
         try {
             initializeRuntime(runtime, filename);
-            INode parsedScript = getParsedScript(runtime, reader, filename);
+            Node parsedScript = getParsedScript(runtime, reader, filename);
             runtime.eval(parsedScript);
 
         } catch (RaiseException rExcptn) {
@@ -115,8 +117,8 @@ public class Main {
         runtime.tearDown();
     }
 
-    private static INode getParsedScript(Ruby runtime, Reader reader, String filename) {
-        INode result = runtime.parse(reader, filename);
+    private static Node getParsedScript(Ruby runtime, Reader reader, String filename) {
+        Node result = runtime.parse(reader, filename);
         if (commandline.assumePrinting) {
             result = new ParserSupport().appendPrintToBlock(result);
         }

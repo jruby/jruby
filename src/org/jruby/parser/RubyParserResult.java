@@ -3,7 +3,9 @@
  * Created on 04.03.2002, 12:47:27
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,19 +28,19 @@
  */
 package org.jruby.parser;
 
-import org.ablaf.ast.INode;
-
 import java.io.InputStream;
 import java.util.List;
+
+import org.jruby.ast.Node;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyParserResult implements IRubyParserResult {
-    private INode beginNodes;
-    private INode ast;
+public class RubyParserResult {
+    private Node beginNodes;
+    private Node ast;
     private List blockVariables;
     private List localVariables;
     private InputStream afterEndStream;
@@ -54,7 +56,7 @@ public class RubyParserResult implements IRubyParserResult {
      * Gets the beginNodes.
      * @return Returns a INode
      */
-    public INode getBeginNodes() {
+    public Node getBeginNodes() {
         return beginNodes;
     }
 
@@ -85,7 +87,7 @@ public class RubyParserResult implements IRubyParserResult {
     /**
      * @see IParserResult#getAST()
      */
-    public INode getAST() {
+    public Node getAST() {
         return ast;
     }
     /**
@@ -100,7 +102,7 @@ public class RubyParserResult implements IRubyParserResult {
      * Sets the ast.
      * @param ast The ast to set
      */
-    public void setAST(INode ast) {
+    public void setAST(Node ast) {
         this.ast = ast;
     }
 
@@ -108,7 +110,7 @@ public class RubyParserResult implements IRubyParserResult {
      * Sets the beginNodes.
      * @param beginNodes The beginNodes to set
      */
-    public void setBeginNodes(INode beginNodes) {
+    public void setBeginNodes(Node beginNodes) {
         this.beginNodes = beginNodes;
     }
 

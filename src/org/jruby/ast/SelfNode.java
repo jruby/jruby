@@ -3,8 +3,8 @@
  * Created on 01.03.2002, 22:09:29
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,21 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class SelfNode extends AbstractNode implements INameNode {
+public class SelfNode extends Node implements INameNode {
     static final long serialVersionUID = 7003057726029491707L;
 
 
-    public SelfNode(ISourcePosition position) {
+    public SelfNode(SourcePosition position) {
         super(position);
     }
 
@@ -50,8 +49,8 @@ public class SelfNode extends AbstractNode implements INameNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitSelfNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitSelfNode(this);
     }
     
     /**

@@ -3,7 +3,9 @@
  * Created on 26.02.2002, 16:40:59
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,38 +28,34 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IAssignableNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * local variable assignment node.
  * @author  jpetersen
  * @version $Revision$
  */
-public class LocalAsgnNode extends AbstractNode implements IAssignableNode, INameNode {
+public class LocalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 1118108700098164006L;
 
     private final int count;
-    private INode valueNode;
     private String name;
 
-    public LocalAsgnNode(ISourcePosition position, String name, int count, INode valueNode) {
+    public LocalAsgnNode(SourcePosition position, String name, int count, Node valueNode) {
         super(position);
         this.name = name;
         this.count = count;
-        this.valueNode = valueNode;
+        setValueNode(valueNode);
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitLocalAsgnNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitLocalAsgnNode(this);
     }
     
     /**
@@ -73,21 +71,5 @@ public class LocalAsgnNode extends AbstractNode implements IAssignableNode, INam
      */
     public int getCount() {
         return count;
-    }
-
-    /**
-     * Gets the valueNode.
-     * @return Returns a INode
-     */
-    public INode getValueNode() {
-        return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

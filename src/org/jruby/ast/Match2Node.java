@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 17:23:26
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,23 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class Match2Node extends AbstractNode {
+public class Match2Node extends Node {
     static final long serialVersionUID = -5637326290741724784L;
 
-    private final INode receiverNode;
-    private final INode valueNode;
+    private final Node receiverNode;
+    private final Node valueNode;
 
-    public Match2Node(ISourcePosition position, INode receiverNode, INode valueNode) {
+    public Match2Node(SourcePosition position, Node receiverNode, Node valueNode) {
         super(position);
 
         this.receiverNode = receiverNode;
@@ -53,23 +53,23 @@ public class Match2Node extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitMatch2Node(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitMatch2Node(this);
     }
 
     /**
      * Gets the receiverNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getReceiverNode() {
+    public Node getReceiverNode() {
         return receiverNode;
     }
 
     /**
      * Gets the valueNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getValueNode() {
+    public Node getValueNode() {
         return valueNode;
     }
 }

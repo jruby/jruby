@@ -30,10 +30,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a while stetement. This could be the both versions:
  * 
@@ -48,21 +46,18 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class WhileNode extends AbstractNode {
+public class WhileNode extends Node {
     static final long serialVersionUID = -5355364190446060873L;
 
-    private final INode conditionNode;
-    private final INode bodyNode;
+    private final Node conditionNode;
+    private final Node bodyNode;
     private final boolean evaluateAtStart;
 
-    public WhileNode(ISourcePosition position, INode conditionNode, INode bodyNode) {
-        super(position);
-        this.conditionNode = conditionNode;
-        this.bodyNode = bodyNode;
-        this.evaluateAtStart = true;
+    public WhileNode(SourcePosition position, Node conditionNode, Node bodyNode) {
+	this(position, conditionNode, bodyNode, true);
     }
 
-    public WhileNode(ISourcePosition position, INode conditionNode, INode bodyNode,
+    public WhileNode(SourcePosition position, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
         super(position);
         this.conditionNode = conditionNode;
@@ -74,22 +69,22 @@ public class WhileNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitWhileNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitWhileNode(this);
     }
     /**
      * Gets the bodyNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBodyNode() {
+    public Node getBodyNode() {
         return bodyNode;
     }
 
     /**
      * Gets the conditionNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getConditionNode() {
+    public Node getConditionNode() {
         return conditionNode;
     }
     

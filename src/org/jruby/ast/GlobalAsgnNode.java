@@ -3,8 +3,8 @@
  * Created on 01.03.2002, 16:46:20
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,12 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IAssignableNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Represents an assignment to a global variable.
@@ -41,17 +38,16 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class GlobalAsgnNode extends AbstractNode implements IAssignableNode, INameNode {
+public class GlobalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 2278414591762936906L;
 
     private String name;
-    private INode valueNode;
 
-    public GlobalAsgnNode(ISourcePosition position, String name, INode valueNode) {
+    public GlobalAsgnNode(SourcePosition position, String name, Node valueNode) {
         super(position);
 
         this.name = name;
-        this.valueNode = valueNode;
+        setValueNode(valueNode);
     }
 
     /**
@@ -59,8 +55,8 @@ public class GlobalAsgnNode extends AbstractNode implements IAssignableNode, INa
      * accepts the visitor 
      * @param iVisitor the visitor to accept
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitGlobalAsgnNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitGlobalAsgnNode(this);
     }
     /**
      * Gets the name.
@@ -68,29 +64,5 @@ public class GlobalAsgnNode extends AbstractNode implements IAssignableNode, INa
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets the valueNode.
-     * @return Returns a INode
-     */
-    public INode getValueNode() {
-        return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

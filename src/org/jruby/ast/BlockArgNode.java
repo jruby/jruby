@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 01:16:34
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,9 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *	a block argument.
@@ -40,12 +41,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class BlockArgNode extends AbstractNode {
+public class BlockArgNode extends Node {
     static final long serialVersionUID = 8374824536805365398L;
 
     private final int count;
 
-    public BlockArgNode(ISourcePosition position, int count) {
+    public BlockArgNode(SourcePosition position, int count) {
         super(position);
         this.count = count;
     }
@@ -54,8 +55,8 @@ public class BlockArgNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitBlockArgNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitBlockArgNode(this);
     }
 
     /**

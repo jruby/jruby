@@ -3,9 +3,11 @@
  * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -28,22 +30,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class SuperNode extends AbstractNode {
+public class SuperNode extends Node {
     static final long serialVersionUID = 5158689332796676417L;
 
-    private final INode argsNode;
+    private final Node argsNode;
 
-    public SuperNode(ISourcePosition position, INode argsNode) {
+    public SuperNode(SourcePosition position, Node argsNode) {
         super(position);
         this.argsNode = argsNode;
     }
@@ -52,15 +52,15 @@ public class SuperNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitSuperNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitSuperNode(this);
     }
 
     /**
      * Gets the argsNode.
      * @return Returns a Node
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
 }

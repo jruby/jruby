@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -25,7 +26,7 @@ package org.ablaf.internal.ast;
 import org.ablaf.ast.IAstDecoder;
 import org.ablaf.ast.IAstEncoder;
 import org.ablaf.ast.IAstMarshal;
-import org.ablaf.ast.INode;
+import org.jruby.ast.Node;
 
 import java.beans.PersistenceDelegate;
 import java.beans.XMLDecoder;
@@ -56,8 +57,8 @@ public class XmlAstMarshal implements IAstMarshal {
     public IAstDecoder openDecoder(InputStream input) {
         final XMLDecoder decoder = new XMLDecoder(new BufferedInputStream(input));
         return new IAstDecoder() {
-            public INode readNode() {
-                return (INode) decoder.readObject();
+            public Node readNode() {
+                return (Node) decoder.readObject();
             }
 
             public void close() {
@@ -78,7 +79,7 @@ public class XmlAstMarshal implements IAstMarshal {
         }
 
         return new IAstEncoder() {
-            public void writeNode(INode node) {
+            public void writeNode(Node node) {
                 encoder.writeObject(node);
             }
 

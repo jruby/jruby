@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 22:12:05
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Singleton class definition.
  * 
@@ -42,13 +42,13 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class SClassNode extends AbstractNode {
+public class SClassNode extends Node {
     static final long serialVersionUID = -3706492163082062224L;
 
-    private final INode receiverNode;
+    private final Node receiverNode;
     private final ScopeNode bodyNode;
 
-    public SClassNode(ISourcePosition position, INode recvNode, ScopeNode bodyNode) {
+    public SClassNode(SourcePosition position, Node recvNode, ScopeNode bodyNode) {
         super(position);
         this.receiverNode = recvNode;
         this.bodyNode = bodyNode;
@@ -58,8 +58,8 @@ public class SClassNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitSClassNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitSClassNode(this);
     }
 
     /**
@@ -72,9 +72,9 @@ public class SClassNode extends AbstractNode {
 
     /**
      * Gets the receiverNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getReceiverNode() {
+    public Node getReceiverNode() {
         return receiverNode;
     }
 }

@@ -31,8 +31,7 @@
  */
 package org.jruby;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.Node;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
@@ -42,6 +41,7 @@ import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -391,7 +391,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** rb_eval
      *
      */
-    public IRubyObject eval(INode n) {
+    public IRubyObject eval(Node n) {
         return EvaluateVisitor.createVisitor(this).eval(n);
     }
 
@@ -578,10 +578,10 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
         ThreadContext threadContext = runtime.getCurrentContext();
-        ISourcePosition savedPosition = threadContext.getPosition();
+        SourcePosition savedPosition = threadContext.getPosition();
         Iter iter = threadContext.getCurrentFrame().getIter();
         if (file == null) {
-            file = threadContext.getSourceFile();
+            file = threadContext.getPosition().getFile();
         }
         if (scope.isNil()) {
             FrameStack frameStack = threadContext.getFrameStack();
@@ -591,7 +591,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         IRubyObject result = getRuntime().getNil();
         try {
-            INode node = getRuntime().parse(src.toString(), file);
+            Node node = getRuntime().parse(src.toString(), file);
             result = eval(node);
         } finally {
             if (scope.isNil()) {

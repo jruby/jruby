@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 23:00:36
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,22 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a module definition.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class ModuleNode extends AbstractNode {
+public class ModuleNode extends Node {
     static final long serialVersionUID = 4938115602547834310L;
 
     private final String name;
     private final ScopeNode bodyNode;
 
-    public ModuleNode(ISourcePosition position, String name, ScopeNode bodyNode) {
+    public ModuleNode(SourcePosition position, String name, ScopeNode bodyNode) {
         super(position);
         this.name = name;
         this.bodyNode = bodyNode;
@@ -51,8 +52,8 @@ public class ModuleNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitModuleNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitModuleNode(this);
     }
 
     /**

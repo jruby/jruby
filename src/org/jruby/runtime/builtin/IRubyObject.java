@@ -1,6 +1,9 @@
 /*
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- *
+ * Copyright (C) 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
  * JRuby - http://jruby.sourceforge.net
  *
  * This file is part of JRuby
@@ -22,11 +25,11 @@
  */
 package org.jruby.runtime.builtin;
 
-import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.ast.Node;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 
@@ -148,7 +151,7 @@ public interface IRubyObject {
      * @param iNode
      * @return IRubyObject
      */
-    IRubyObject eval(INode iNode);
+    IRubyObject eval(Node iNode);
 
     /**
      * Method eval.

@@ -30,11 +30,6 @@ package org.jruby.parser;
 
 import java.math.*;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
-import org.ablaf.parser.*;
-
 import org.jruby.common.*;
 import org.jruby.lexer.yacc.*;
 import org.jruby.ast.*;
@@ -44,11 +39,11 @@ import org.jruby.ast.util.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
-public class DefaultRubyParser implements IParser {
+public class DefaultRubyParser {
     private ParserSupport support;
     private RubyYaccLexer lexer;
 
-    private IErrorHandler errorHandler;
+    private IRubyErrorHandler errorHandler;
 
     public DefaultRubyParser() {
         this.support = new ParserSupport();
@@ -57,7 +52,7 @@ public class DefaultRubyParser implements IParser {
 	this.lexer.setParserSupport(support);
     }
 
-    public void setErrorHandler(IErrorHandler errorHandler) {
+    public void setErrorHandler(IRubyErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
 
 	support.setErrorHandler(errorHandler);
@@ -126,34 +121,34 @@ public class DefaultRubyParser implements IParser {
 %token <String>  tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR
 %token <Number>  tINTEGER tFLOAT
 %token <String>  tSTRING_CONTENT
-%token <INode> tNTH_REF tBACK_REF
+%token <Node> tNTH_REF tBACK_REF
 %token <RegexpNode>    tREGEXP_END
 
-%type <INode>  singleton strings string string1 xstring regexp
-%type <INode>  string_contents xstring_contents string_content
-%type <INode>  words qwords word
-%type <INode>  literal numeric dsym 
+%type <Node>  singleton strings string string1 xstring regexp
+%type <Node>  string_contents xstring_contents string_content
+%type <Node>  words qwords word
+%type <Node>  literal numeric dsym 
 %type <Colon2Node> cpath
-%type <INode>  compstmt bodystmt stmts stmt expr arg primary command command_call method_call
-%type <IListNode> qword_list word_list 
-%type <INode>  expr_value primary_value opt_else cases
-%type <INode>  if_tail exc_var opt_ensure paren_args opt_paren_args
-%type <INode>  call_args call_args2 open_args
-%type <INode>  command_args var_ref 
+%type <Node>  compstmt bodystmt stmts stmt expr arg primary command command_call method_call
+%type <ListNode> qword_list word_list 
+%type <Node>  expr_value primary_value opt_else cases
+%type <Node>  if_tail exc_var opt_ensure paren_args opt_paren_args
+%type <Node>  call_args call_args2 open_args
+%type <Node>  command_args var_ref 
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
-%type <INode>  superclass block_call block_command
+%type <Node>  superclass block_call block_command
 %type <BlockArgNode> opt_f_block_arg f_block_arg 
-%type <INode> f_arglist f_args f_opt
-%type <INode> undef_list backref string_dvar
-%type <INode> block_var opt_block_var lhs none
+%type <Node> f_arglist f_args f_opt
+%type <Node> undef_list backref string_dvar
+%type <Node> block_var opt_block_var lhs none
 %type <IterNode> brace_block do_block cmd_brace_block 
-%type <INode> mrhs mlhs_item mlhs_node arg_value case_body 
+%type <Node> mrhs mlhs_item mlhs_node arg_value case_body 
 %type <MultipleAsgnNode> mlhs mlhs_basic mlhs_entry
-%type <IListNode> args when_args mlhs_head assocs assoc 
-%type <INode> exc_list aref_args 
+%type <ListNode> args when_args mlhs_head assocs assoc 
+%type <Node> exc_list aref_args 
 %type <RescueBodyNode> opt_rescue
 %type <Object> variable var_lhs
-%type <IListNode> none_list assoc_list f_optarg 
+%type <ListNode> none_list assoc_list f_optarg 
 %type <String>   fitem sym symbol operation operation2 operation3
 %type <String>   cname fname op 
 %type <Integer>  f_norm_arg f_arg f_rest_arg
@@ -244,7 +239,7 @@ bodystmt    : compstmt
               opt_rescue
               opt_else
               opt_ensure {
-                 INode node = $1;
+                 Node node = $1;
 
 		 if ($2 != null) {
 		    node = new RescueNode(getPosition(), $1, $2, $3);
@@ -354,20 +349,20 @@ stmt          : kALIAS fitem {
 		    if ($1 != null) {
 		        String name = $<INameNode>1.getName();
 		        if ($2.equals("||")) {
-	                    $<IAssignableNode>1.setValueNode($3);
-	                    $$ = new OpAsgnOrNode(getPosition(), support.gettable(name, getPosition()), $<INode>1);
+	                    $<AssignableNode>1.setValueNode($3);
+	                    $$ = new OpAsgnOrNode(getPosition(), support.gettable(name, getPosition()), $<Node>1);
 			    /* XXX
 			    if (is_asgn_or_id(vid)) {
 				$$->nd_aid = vid;
 			    }
 			    */
 			} else if ($2.equals("&&")) {
-	                    $<IAssignableNode>1.setValueNode($3);
-                            $$ = new OpAsgnAndNode(getPosition(), support.gettable(name, getPosition()), $<INode>1);
+	                    $<AssignableNode>1.setValueNode($3);
+                            $$ = new OpAsgnAndNode(getPosition(), support.gettable(name, getPosition()), $<Node>1);
 			} else {
 			    $$ = $1;
                             if ($$ != null) {
-                                $<IAssignableNode>$.setValueNode(support.getOperatorCallNode(support.gettable(name, getPosition()), $2, $3));
+                                $<AssignableNode>$.setValueNode(support.getOperatorCallNode(support.gettable(name, getPosition()), $2, $3));
                             }
 			}
 		    } else {
@@ -404,7 +399,7 @@ stmt          : kALIAS fitem {
 		    $$ = $1;
 		}
 	      | mlhs '=' mrhs {
-                    $<IAssignableNode>1.setValueNode($3);
+                    $<AssignableNode>1.setValueNode($3);
 		    $$ = $1;
 		}
               | expr
@@ -465,7 +460,7 @@ command       : operation command_args  %prec tLOWEST {
                         if ($$ instanceof BlockPassNode) {
                             errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
                         }
-                        $3.setIterNode($<INode>$);
+                        $3.setIterNode($<Node>$);
                         $$ = $2;
 		   }
                 }
@@ -478,7 +473,7 @@ command       : operation command_args  %prec tLOWEST {
 		        if ($$ instanceof BlockPassNode) {
                             errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
                         }
-                        $5.setIterNode($<INode>$);
+                        $5.setIterNode($<Node>$);
 			$$ = $5;
 		    }
 		 }
@@ -491,7 +486,7 @@ command       : operation command_args  %prec tLOWEST {
 		        if ($$ instanceof BlockPassNode) {
                             errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
                         }
-                        $5.setIterNode($<INode>$);
+                        $5.setIterNode($<Node>$);
 			$$ = $5;
 		    }
 	        }
@@ -704,20 +699,20 @@ arg           : lhs '=' arg {
 		        String name = $<INameNode>1.getName();
 
 		        if ($2.equals("||")) {
-	                    $<IAssignableNode>1.setValueNode($3);
-	                    $$ = new OpAsgnOrNode(getPosition(), support.gettable(name, getPosition()), $<INode>1);
+	                    $<AssignableNode>1.setValueNode($3);
+	                    $$ = new OpAsgnOrNode(getPosition(), support.gettable(name, getPosition()), $<Node>1);
 			    /* FIXME
 			    if (is_asgn_or_id(vid)) {
 				$$->nd_aid = vid;
 			    }
 			    */
 			} else if ($2.equals("&&")) {
-	                    $<IAssignableNode>1.setValueNode($3);
-                            $$ = new OpAsgnAndNode(getPosition(), support.gettable(name, getPosition()), $<INode>1);
+	                    $<AssignableNode>1.setValueNode($3);
+                            $$ = new OpAsgnAndNode(getPosition(), support.gettable(name, getPosition()), $<Node>1);
 			} else {
 			    $$ = $1;
                             if ($$ != null) {
-                                $<IAssignableNode>$.setValueNode(support.getOperatorCallNode(support.gettable(name, getPosition()), $2, $3));
+                                $<AssignableNode>$.setValueNode(support.getOperatorCallNode(support.gettable(name, getPosition()), $2, $3));
                             }
 			}
 		    } else {
@@ -788,12 +783,12 @@ arg           : lhs '=' arg {
                     $$ = support.getOperatorCallNode($1, "**", $3);
 
                     if (needNegate) {
-                        $$ = support.getOperatorCallNode($<INode>$, "-@");
+                        $$ = support.getOperatorCallNode($<Node>$, "-@");
                     }
 		    */
                 }
 	      | tUMINUS_NUM tINTEGER tPOW arg {
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode(($2 instanceof Long ? (INode) new FixnumNode(getPosition(), $<Long>2.longValue()) : (INode)new BignumNode(getPosition(), $<BigInteger>2)), "**", $4), "-@");
+                    $$ = support.getOperatorCallNode(support.getOperatorCallNode(($2 instanceof Long ? (Node) new FixnumNode(getPosition(), $<Long>2.longValue()) : (Node)new BignumNode(getPosition(), $<BigInteger>2)), "**", $4), "-@");
                 }
 	      | tUMINUS_NUM tFLOAT tPOW arg {
 	            $$ = support.getOperatorCallNode(support.getOperatorCallNode(new FloatNode(getPosition(), $<Double>1.doubleValue()), "**", $4), "-@");
@@ -930,24 +925,24 @@ call_args     : command {
                 }
               | args ',' tSTAR arg_value opt_block_arg {
                     $$ = support.arg_concat(getPosition(), $1, $4);
-                    $$ = support.arg_blk_pass((INode)$$, $5);
+                    $$ = support.arg_blk_pass((Node)$$, $5);
                 }
               | assocs opt_block_arg {
                     $$ = new ArrayNode(getPosition()).add(new HashNode($1));
-                    $$ = support.arg_blk_pass((INode)$$, $2);
+                    $$ = support.arg_blk_pass((Node)$$, $2);
                 }
               | assocs ',' tSTAR arg_value opt_block_arg {
                     $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode($1)), $4);
-                    $$ = support.arg_blk_pass((INode)$$, $5);
+                    $$ = support.arg_blk_pass((Node)$$, $5);
                 }
               | args ',' assocs opt_block_arg {
                     $$ = $1.add(new HashNode($3));
-                    $$ = support.arg_blk_pass((INode)$$, $4);
+                    $$ = support.arg_blk_pass((Node)$$, $4);
                 }
               | args ',' assocs ',' tSTAR arg opt_block_arg {
                     support.checkExpression($6);
 		    $$ = support.arg_concat(getPosition(), $1.add(new HashNode($3)), $6);
-                    $$ = support.arg_blk_pass((INode)$$, $7);
+                    $$ = support.arg_blk_pass((Node)$$, $7);
                 }
               | tSTAR arg_value opt_block_arg {
                     $$ = support.arg_blk_pass(new SplatNode(getPosition(), $2), $3);
@@ -963,35 +958,35 @@ call_args2	: arg_value ',' args opt_block_arg {
                   }
 		| arg_value ',' tSTAR arg_value opt_block_arg {
                       $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add($1), $4);
-                      $$ = support.arg_blk_pass((INode)$$, $5);
+                      $$ = support.arg_blk_pass((Node)$$, $5);
 		  }
 		| arg_value ',' args ',' tSTAR arg_value opt_block_arg {
                       $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), new HashNode($3)), $6);
-                      $$ = support.arg_blk_pass((INode)$$, $7);
+                      $$ = support.arg_blk_pass((Node)$$, $7);
 		  }
 		| assocs opt_block_arg {
                       $$ = new ArrayNode(getPosition()).add(new HashNode($1));
-                      $$ = support.arg_blk_pass((INode)$$, $2);
+                      $$ = support.arg_blk_pass((Node)$$, $2);
 		  }
 		| assocs ',' tSTAR arg_value opt_block_arg {
                       $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add(new HashNode($1)), $4);
-                      $$ = support.arg_blk_pass((INode)$$, $5);
+                      $$ = support.arg_blk_pass((Node)$$, $5);
 		  }
 		| arg_value ',' assocs opt_block_arg {
                       $$ = new ArrayNode(getPosition()).add($1).add(new HashNode($3));
-                      $$ = support.arg_blk_pass((INode)$$, $4);
+                      $$ = support.arg_blk_pass((Node)$$, $4);
 		  }
 		| arg_value ',' args ',' assocs opt_block_arg {
                       $$ = support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode($5));
-                      $$ = support.arg_blk_pass((INode)$$, $6);
+                      $$ = support.arg_blk_pass((Node)$$, $6);
 		  }
 		| arg_value ',' assocs ',' tSTAR arg_value opt_block_arg {
                       $$ = support.arg_concat(getPosition(), new ArrayNode(getPosition()).add($1).add(new HashNode($3)), $6);
-                      $$ = support.arg_blk_pass((INode)$$, $7);
+                      $$ = support.arg_blk_pass((Node)$$, $7);
 		  }
 		| arg_value ',' args ',' assocs ',' tSTAR arg_value opt_block_arg {
                       $$ = support.arg_concat(getPosition(), support.list_concat(new ArrayNode(getPosition()).add($1), $3).add(new HashNode($5)), $8);
-                      $$ = support.arg_blk_pass((INode)$$, $9);
+                      $$ = support.arg_blk_pass((Node)$$, $9);
 		  }
 		| tSTAR arg_value opt_block_arg {
                       $$ = support.arg_blk_pass(new SplatNode(getPosition(), $2), $3);
@@ -1187,7 +1182,7 @@ primary       : literal
                 } bodystmt 
 		  kEND {
   $$ = new ClassNode(getPosition(), $2.getName(), new ScopeNode(support.getLocalNames().getNames(), $5), $3);
-                    // $<INode>$.setLine($<Integer>4.intValue());
+                    // $<Node>$.setLine($<Integer>4.intValue());
                     support.getLocalNames().pop();
                     support.setClassNest(support.getClassNest() - 1);
                 }
@@ -1381,7 +1376,7 @@ cases         : opt_else
 opt_rescue    : kRESCUE exc_list exc_var then
 		compstmt
 		opt_rescue {
-                    INode node;
+                    Node node;
 		    if ($3 != null) {
                        node = support.appendToBlock(support.node_assign($3, new GlobalVarNode(getPosition(), "$!")), $5);
 		    } else {
@@ -1454,7 +1449,7 @@ xstring	      : tXSTRING_BEG xstring_contents tSTRING_END {
 
 regexp	      : tREGEXP_BEG xstring_contents tREGEXP_END {
 		    int options = $3.getOptions();
-		    INode node = $2;
+		    Node node = $2;
 
 		    if (node == null) {
 		        $$ = new RegexpNode(getPosition(), "", options & ~ReOptions.RE_OPTION_ONCE);
@@ -1480,7 +1475,7 @@ word_list      : /* none */ {
 		     $$ = null;
 		 }
 	       | word_list word ' ' {
-                     INode node = $2;
+                     Node node = $2;
 
                      if (node instanceof EvStrNode) {
 		       node = new DStrNode(getPosition()).add(node);
@@ -1544,7 +1539,7 @@ string_content	: tSTRING_CONTENT {
 		      lexer.setState(LexState.EXPR_BEG);
 		  } compstmt '}' {
 		      lexer.setStrTerm($2);
-		      INode node = $3;
+		      Node node = $3;
 
 		      if (node instanceof NewlineNode) {
 		        node = ((NewlineNode)node).getNextNode();
@@ -1596,13 +1591,13 @@ numeric       : tINTEGER {
 	            $$ = new FloatNode(getPosition(), $<Double>1.doubleValue());
 	        }
 	      | tUMINUS_NUM tINTEGER	       %prec tLOWEST {
-                    $$ = support.getOperatorCallNode(($2 instanceof Long ? (INode) new FixnumNode(getPosition(), $<Long>2.longValue()) : (INode) new BignumNode(getPosition(), $<BigInteger>2)), "-@");
+                    $$ = support.getOperatorCallNode(($2 instanceof Long ? (Node) new FixnumNode(getPosition(), $<Long>2.longValue()) : (Node) new BignumNode(getPosition(), $<BigInteger>2)), "-@");
 		}
 	      | tUMINUS_NUM tFLOAT	       %prec tLOWEST {
                     $$ = support.getOperatorCallNode(new FloatNode(getPosition(), $<Double>2.doubleValue()), "-@");
 		}
 
-		  /* Enebo: Now that variable is either a String or an INode
+		  /* Enebo: Now that variable is either a String or an Node
 		     All users of variable production must be examined
 		     to make sure we can cast to String or not...I am
 		     unsure.
@@ -1882,7 +1877,7 @@ none_block_pass     : {  $$ = null;
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public IParserResult parse(ILexerSource source) {
+    public RubyParserResult parse(LexerSource source) {
         support.reset();
         support.setResult(new RubyParserResult());
 
@@ -1896,8 +1891,8 @@ none_block_pass     : {  $$ = null;
         return support.getResult();
     }
 
-    public void init(IConfiguration configuration) {
-        support.setConfiguration((IRubyParserConfiguration)configuration);
+    public void init(RubyParserConfiguration configuration) {
+        support.setConfiguration(configuration);
     }
 
     // +++
@@ -1905,7 +1900,7 @@ none_block_pass     : {  $$ = null;
     
     void yyerrok() {}
 
-    private ISourcePosition getPosition() {
+    private SourcePosition getPosition() {
         return lexer.getPosition();
     }
 }

@@ -1,6 +1,9 @@
 /*
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- *
+ * Copyright (C) 2002 Anders Bengtsson
+ * Copyright (C) 2004 Thomas E Enebo
+ * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
  * JRuby - http://jruby.sourceforge.net
  *
  * This file is part of JRuby
@@ -23,8 +26,8 @@
 package org.jruby.util;
 
 import org.ablaf.ast.IAstDecoder;
-import org.ablaf.ast.INode;
 import org.jruby.Ruby;
+import org.jruby.ast.Node;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.load.Library;
@@ -46,7 +49,7 @@ public class BuiltinScript implements Library {
         runtime.loadNode("jruby builtin", getNode(runtime), false);
     }
 
-    private INode getNode(Ruby runtime) {
+    private Node getNode(Ruby runtime) {
         String resourceName = "/builtin/" + name + ".rb.ast.ser";
         InputStream in = getClass().getResourceAsStream(resourceName);
         if (in == null) {
@@ -54,7 +57,7 @@ public class BuiltinScript implements Library {
         }
         in = new BufferedInputStream(in);
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
-        INode result = decoder.readNode();
+        Node result = decoder.readNode();
         decoder.close();
         return result;
     }

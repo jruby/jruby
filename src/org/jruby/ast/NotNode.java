@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 17:27:06
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,22 +28,20 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class NotNode extends AbstractNode {
+public class NotNode extends Node {
     static final long serialVersionUID = -9044821606260233871L;
 
-    private final INode conditionNode;
+    private final Node conditionNode;
 
-    public NotNode(ISourcePosition position, INode conditionNode) {
+    public NotNode(SourcePosition position, Node conditionNode) {
         super(position);
         this.conditionNode = conditionNode;
     }
@@ -50,15 +50,15 @@ public class NotNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitNotNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitNotNode(this);
     }
 
     /**
      * Gets the conditionNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getConditionNode() {
+    public Node getConditionNode() {
         return conditionNode;
     }
 }

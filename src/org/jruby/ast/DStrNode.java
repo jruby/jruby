@@ -3,7 +3,9 @@
  * Created on 24.02.2002, 16:29:24
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,17 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
-
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * a Dynamic String node.
@@ -44,47 +38,18 @@ import java.util.List;
  * @author  jpetersen
  * @version $Revision$
  */
-public final class DStrNode extends AbstractNode implements IListNode, ILiteralNode {
+public final class DStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = -1488812415812799395L;
 
-    private List list;
-
-    public DStrNode(ISourcePosition position) {
+    public DStrNode(SourcePosition position) {
         super(position);
-    }
-
-    public IListNode add(INode node) {
-        if (list == null) {
-            list = new LinkedList();
-        }
-        list.add(node);
-        
-        return this;
-    }
-
-    public Iterator iterator() {
-        if (list == null) {
-            return Collections.EMPTY_LIST.iterator();
-        } else {
-            return list.iterator();
-        }
-    }
-    
-    /**
-     * @see org.jruby.ast.types.IListNode#size()
-     */
-    public int size() {
-        if (list == null) {
-            return 0;
-        }
-        return list.size();
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitDStrNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDStrNode(this);
     }
 }

@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 17:12:18
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * a Literal Hash.
@@ -38,16 +38,16 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class HashNode extends AbstractNode {
+public class HashNode extends Node {
     static final long serialVersionUID = -7554050553303344025L;
 
-    private final IListNode listNode;
+    private final ListNode listNode;
     
-    public HashNode(IListNode listNode) {
+    public HashNode(ListNode listNode) {
         this(null, listNode);
     }
 
-    public HashNode(ISourcePosition position, IListNode listNode) {
+    public HashNode(SourcePosition position, ListNode listNode) {
         super(position);
         this.listNode = listNode;
     }
@@ -56,15 +56,15 @@ public class HashNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitHashNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitHashNode(this);
     }
 
     /**
      * Gets the listNode.
      * @return Returns a IListNode
      */
-    public IListNode getListNode() {
+    public ListNode getListNode() {
         return listNode;
     }
 }

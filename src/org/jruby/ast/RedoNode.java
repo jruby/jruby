@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 16:49:36
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,19 +28,18 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RedoNode extends AbstractNode {
+public class RedoNode extends Node {
     static final long serialVersionUID = -356433067591852187L;
 
-    public RedoNode(ISourcePosition position) {
+    public RedoNode(SourcePosition position) {
         super(position);
     }
 
@@ -46,7 +47,7 @@ public class RedoNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitRedoNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitRedoNode(this);
     }
 }

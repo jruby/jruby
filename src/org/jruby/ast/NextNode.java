@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 16:47:49
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,27 +28,25 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a 'next' statement.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class NextNode extends AbstractNode {
+public class NextNode extends Node {
     static final long serialVersionUID = -6688896555206419923L;
 
-    private final INode valueNode;
+    private final Node valueNode;
     
-    public NextNode(ISourcePosition position) {
+    public NextNode(SourcePosition position) {
         super(position);
         valueNode = null;
     }
 
-    public NextNode(ISourcePosition position, INode valueNode) {
+    public NextNode(SourcePosition position, Node valueNode) {
         super(position);
         this.valueNode = valueNode;
     }
@@ -55,15 +55,15 @@ public class NextNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitNextNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitNextNode(this);
     }
     
     /**
      * Gets the valueNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getValueNode() {
+    public Node getValueNode() {
         return valueNode;
     }
 }

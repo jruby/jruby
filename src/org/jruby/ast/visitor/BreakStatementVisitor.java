@@ -26,10 +26,10 @@
  */
 package org.jruby.ast.visitor;
 
-import org.ablaf.ast.INode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
+import org.jruby.ast.Node;
 import org.jruby.ast.RedoNode;
 import org.jruby.ast.RetryNode;
 import org.jruby.ast.ReturnNode;
@@ -42,7 +42,7 @@ import org.jruby.ast.ReturnNode;
 public class BreakStatementVisitor extends AbstractVisitor {
     private boolean breakStatement = false;
     
-    public boolean isBreakStatement(INode node) {
+    public boolean isBreakStatement(Node node) {
         breakStatement = false;
 
         acceptNode(node);
@@ -51,9 +51,9 @@ public class BreakStatementVisitor extends AbstractVisitor {
     }
     
  	/**
-     * @see AbstractVisitor#visitNode(INode)
+     * @see AbstractVisitor#visitNode(Node)
      */
-    protected void visitNode(INode iVisited) {
+    protected void visitNode(Node iVisited) {
     }
 
     /**

@@ -3,7 +3,9 @@
  * Created on 28.02.2002, 22:45:58
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,24 +28,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * an 'if' statement.
  * @author  jpetersen
  * @version $Revision$
  */
-public class IfNode extends AbstractNode {
+public class IfNode extends Node {
     static final long serialVersionUID = -163780144332979551L;
 
-    private final INode condition;
-    private final INode thenBody;
-    private final INode elseBody;
+    private final Node condition;
+    private final Node thenBody;
+    private final Node elseBody;
 
-    public IfNode(ISourcePosition position, INode condition, INode thenBody, INode elseBody) {
+    public IfNode(SourcePosition position, Node condition, Node thenBody, Node elseBody) {
         super(position);
         this.condition = condition;
         this.thenBody = thenBody;
@@ -54,31 +54,31 @@ public class IfNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitIfNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitIfNode(this);
     }
 
     /**
      * Gets the condition.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getCondition() {
+    public Node getCondition() {
         return condition;
     }
 
     /**
      * Gets the elseBody.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getElseBody() {
+    public Node getElseBody() {
         return elseBody;
     }
 
     /**
      * Gets the thenBody.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getThenBody() {
+    public Node getThenBody() {
         return thenBody;
     }
 }

@@ -26,25 +26,23 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
-public class ToAryNode extends AbstractNode {
-    private INode node;
+public class ToAryNode extends Node {
+    private Node node;
 
-    public ToAryNode(ISourcePosition position, INode node) {
+    public ToAryNode(SourcePosition position, Node node) {
         super(position);
 
         this.node = node;
     }
 
-    public void accept(INodeVisitor visitor) {
-        ((NodeVisitor)visitor).visitToAryNode(this);
+    public void accept(NodeVisitor visitor) {
+        visitor.visitToAryNode(this);
     }
     
-    public INode getValue() {
+    public Node getValue() {
         return node;
     }
 }

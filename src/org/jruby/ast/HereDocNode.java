@@ -25,15 +25,15 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
-public class HereDocNode extends AbstractNode {
+public class HereDocNode extends Node {
     String value;
     int func;
     String lastLine;
     
-    public HereDocNode(ISourcePosition position, String value, int func, 
+    public HereDocNode(SourcePosition position, String value, int func, 
             String lastLine) {
         super(position);
         this.value = value;
@@ -53,6 +53,6 @@ public class HereDocNode extends AbstractNode {
         return lastLine;
     }
 
-    public void accept(INodeVisitor visitor) {
+    public void accept(NodeVisitor visitor) {
     }
 }

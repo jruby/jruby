@@ -28,23 +28,21 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a yield statement.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class YieldNode extends AbstractNode {
+public class YieldNode extends Node {
     static final long serialVersionUID = -4136185449481135660L;
 
-    private final INode argsNode;
+    private final Node argsNode;
     private final boolean checkState;
 
-    public YieldNode(ISourcePosition position, INode argsNode, boolean checkState) {
+    public YieldNode(SourcePosition position, Node argsNode, boolean checkState) {
         super(position);
         this.argsNode = argsNode;
         this.checkState = checkState;
@@ -54,15 +52,15 @@ public class YieldNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitYieldNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitYieldNode(this);
     }
 
     /**
      * Gets the argsNode.
      * @return Returns a Node
      */
-    public INode getArgsNode() {
+    public Node getArgsNode() {
         return argsNode;
     }
     

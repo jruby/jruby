@@ -3,8 +3,8 @@
  * Created on 28.02.2002, 00:12:36
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,26 +28,24 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents an #{} expression in a string. This Node is always a subnode
  * of a DStrNode, DXStrNode or a DRegexpNode.
  * 
  * Before this Node is evaluated it contains the code as a String (value). After
- * the first evaluation this String is parsed into the evaluatedNode INode.
+ * the first evaluation this String is parsed into the evaluatedNode Node.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class EvStrNode extends AbstractNode {
+public class EvStrNode extends Node {
     static final long serialVersionUID = 1681935012117120817L;
 
-    private INode body;
+    private Node body;
 
-    public EvStrNode(ISourcePosition position, INode body) {
+    public EvStrNode(SourcePosition position, Node body) {
         super(position);
         this.body = body;
     }
@@ -56,15 +54,15 @@ public class EvStrNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitEvStrNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitEvStrNode(this);
     }
 
     /**
      * Gets the evaluatedNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBody() {
+    public Node getBody() {
         return body;
     }
 }

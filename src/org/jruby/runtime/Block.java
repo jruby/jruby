@@ -3,7 +3,9 @@
  * Created on 02.03.2002, 17:46:25
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,10 +28,10 @@
  */
 package org.jruby.runtime;
 
-import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.util.collections.StackElement;
@@ -40,7 +42,7 @@ import org.jruby.util.collections.StackElement;
  * @version $Revision$
  */
 public class Block implements StackElement {
-    private INode var;
+    private Node var;
     private ICallable method;
     private IRubyObject self;
     private Frame frame;
@@ -52,7 +54,7 @@ public class Block implements StackElement {
 
     private Block next;
 
-    public static Block createBlock(INode var, ICallable method, IRubyObject self) {
+    public static Block createBlock(Node var, ICallable method, IRubyObject self) {
         Ruby ruby = self.getRuntime();
         ThreadContext context = ruby.getCurrentContext();
         return new Block(var,
@@ -66,7 +68,7 @@ public class Block implements StackElement {
     }
 
     private Block(
-        INode var,
+        Node var,
         ICallable method,
         IRubyObject self,
         Frame frame,
@@ -213,9 +215,9 @@ public class Block implements StackElement {
 
     /**
      * Gets the var.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getVar() {
+    public Node getVar() {
         return var;
     }
 }

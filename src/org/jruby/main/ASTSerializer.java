@@ -1,29 +1,9 @@
-package org.jruby.main;
-import org.ablaf.ast.IAstEncoder;
-import org.ablaf.internal.ast.XmlAstMarshal;
-import org.ablaf.internal.common.NullErrorHandler;
-import org.ablaf.lexer.ILexerSource;
-import org.ablaf.lexer.LexerFactory;
-import org.ablaf.parser.IParser;
-import org.jruby.ast.util.AstPersistenceDelegates;
-import org.jruby.ast.util.RubyAstMarshal;
-import org.jruby.parser.IRubyParserResult;
-import org.jruby.parser.RubyParserConfiguration;
-import org.jruby.parser.RubyParserPool;
-
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.util.ArrayList;
-
 /*
- * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- *
+ * Copyright (C) 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
  * JRuby - http://jruby.sourceforge.net
  *
  * This file is part of JRuby
@@ -43,6 +23,29 @@ import java.util.ArrayList;
  * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
  * Boston, MA  02111-1307 USA
  */
+package org.jruby.main;
+
+import org.ablaf.ast.IAstEncoder;
+import org.ablaf.internal.ast.XmlAstMarshal;
+import org.ablaf.internal.common.NullErrorHandler;
+import org.jruby.ast.util.AstPersistenceDelegates;
+import org.jruby.ast.util.RubyAstMarshal;
+import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.parser.DefaultRubyParser;
+import org.jruby.parser.RubyParserResult;
+import org.jruby.parser.RubyParserConfiguration;
+import org.jruby.parser.RubyParserPool;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.util.ArrayList;
+
 /**
  * 
  * @author jpetersen
@@ -67,14 +70,13 @@ public class ASTSerializer {
         config.setBlockVariables(new ArrayList());
         config.setLocalVariables(new ArrayList());
 
-        IParser parser = null;
-        IRubyParserResult result = null;
+        DefaultRubyParser parser = null;
+        RubyParserResult result = null;
         try {
             parser = RubyParserPool.getInstance().borrowParser();
             parser.setErrorHandler(new NullErrorHandler());
             parser.init(config);
-            ILexerSource lexerSource = LexerFactory.getInstance().getSource(input.toString(), reader);
-            result = (IRubyParserResult) parser.parse(lexerSource);
+            result = parser.parse(LexerSource.getSource(input.toString(), reader));
         } finally {
             RubyParserPool.getInstance().returnParser(parser);
         }

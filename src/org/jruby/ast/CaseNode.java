@@ -3,8 +3,8 @@
  * Created on 28.02.2002, 00:33:00
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,10 +28,8 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * A Case statement.
@@ -42,19 +40,19 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class CaseNode extends AbstractNode {
+public class CaseNode extends Node {
     static final long serialVersionUID = -2824917272720800901L;
 
 	/**
 	 * the case expression.
 	 **/
-    private final INode caseNode;
+    private final Node caseNode;
 	/**
 	 * the body of the case.
 	 */
-    private final INode caseBody;
+    private final Node caseBody;
     
-    public CaseNode(ISourcePosition position, INode caseNode, INode caseBody) {
+    public CaseNode(SourcePosition position, Node caseNode, Node caseBody) {
         super(position);
         this.caseNode = caseNode;
         this.caseBody = caseBody;
@@ -64,8 +62,8 @@ public class CaseNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitCaseNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitCaseNode(this);
     }
 
     /**
@@ -73,7 +71,7 @@ public class CaseNode extends AbstractNode {
 	 * caseNode is the case expression 
      * @return caseNode
      */
-    public INode getCaseNode() {
+    public Node getCaseNode() {
         return caseNode;
     }
 
@@ -82,7 +80,7 @@ public class CaseNode extends AbstractNode {
 	 * the body of the case statement, the first of a list of WhenNodes
      * @return whenNode
      */
-    public INode getFirstWhenNode() {
+    public Node getFirstWhenNode() {
         return caseBody;
     }
 }

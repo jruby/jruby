@@ -28,8 +28,6 @@
  */
 package org.jruby.evaluator;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.Builtins;
 import org.jruby.KernelModule;
 import org.jruby.MetaClass;
@@ -48,7 +46,6 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.ast.*;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -66,6 +63,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
@@ -122,7 +120,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         runtime.callTraceFunction(event, threadContext.getPosition(), self, name, type);
     }
 
-    public IRubyObject eval(INode node) {
+    public IRubyObject eval(Node node) {
         // FIXME: Poll from somewhere else in the code?
         threadContext.pollThreadEvents();
 
@@ -180,7 +178,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         ArrayList list = new ArrayList(iVisited.size());
 
         for (Iterator iterator = iVisited.iterator(); iterator.hasNext();) {
-            list.add(eval((INode) iterator.next()));
+            list.add(eval((Node) iterator.next()));
         }
         
         result = RubyArray.newArray(runtime, list);
@@ -238,7 +236,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitBlockNode(BlockNode iVisited) {
         Iterator iter = iVisited.iterator();
         while (iter.hasNext()) {
-            eval((INode) iter.next());
+            eval((Node) iter.next());
         }
     }
 
@@ -357,7 +355,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             expression = eval(iVisited.getCaseNode());
         }
         
-        INode aNode = (WhenNode) iVisited.getFirstWhenNode();
+        Node aNode = (WhenNode) iVisited.getFirstWhenNode();
         
         while (aNode != null) {
             if (aNode instanceof WhenNode == false) {
@@ -399,7 +397,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
     }
 
-    private RubyClass getSuperClassFromNode(INode superNode) {
+    private RubyClass getSuperClassFromNode(Node superNode) {
         if (superNode == null) {
             return null;
         }
@@ -426,7 +424,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon2Node(Colon2Node)
      */
     public void visitColon2Node(Colon2Node iVisited) {
-        INode node = iVisited.getLeftNode();
+        Node node = iVisited.getLeftNode();
 
         // TODO: Made this more colon3 friendly because of cpath production
         // rule in grammar (it is convenient to think of them as the same thing
@@ -473,7 +471,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
-            INode node = (INode) iterator.next();
+            Node node = (Node) iterator.next();
             sb.append(eval(node));
         }
 
@@ -488,7 +486,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         final Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
-            INode node = (INode) iterator.next();
+            Node node = (Node) iterator.next();
             sb.append(eval(node));
         }
 
@@ -503,7 +501,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         for (Iterator iterator = iVisited.getNode().iterator(); 
         	iterator.hasNext();) {
-            INode node = (INode) iterator.next();
+            Node node = (Node) iterator.next();
             sb.append(eval(node));
         }
 
@@ -526,7 +524,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         Iterator iterator = iVisited.iterator();
         while (iterator.hasNext()) {
-            INode node = (INode) iterator.next();
+            Node node = (Node) iterator.next();
             sb.append(eval(node));
         }
 
@@ -712,7 +710,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         try {
             while (true) {
                 try {
-                    ISourcePosition position = threadContext.getPosition();
+                    SourcePosition position = threadContext.getPosition();
                     Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
 
                     IRubyObject recv = null;
@@ -761,9 +759,9 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getListNode() != null) {
             Iterator iterator = iVisited.getListNode().iterator();
             while (iterator.hasNext()) {
-                IRubyObject key = eval((INode) iterator.next());
+                IRubyObject key = eval((Node) iterator.next());
                 if (iterator.hasNext()) {
-                    hash.aset(key, eval((INode) iterator.next()));
+                    hash.aset(key, eval((Node) iterator.next()));
                 } else {
                     // XXX
                     throw new RuntimeException("[BUG] odd number list for Hash");
@@ -895,7 +893,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNewlineNode(NewlineNode)
      */
     public void visitNewlineNode(NewlineNode iVisited) {
-        final ISourcePosition position = iVisited.getPosition();
+        final SourcePosition position = iVisited.getPosition();
         if (position != null) {
             threadContext.setPosition(position);
             if (isTrace()) {
@@ -1089,13 +1087,13 @@ public final class EvaluateVisitor implements NodeVisitor {
                 RescueBodyNode rescueNode = iVisited.getRescueNode();
 
                 while (rescueNode != null) {
-                    INode exceptionNodes = rescueNode.getExceptionNodes();
-                    IListNode exceptionNodesList;
+                    Node  exceptionNodes = rescueNode.getExceptionNodes();
+                    ListNode exceptionNodesList;
                     
                     if (exceptionNodes instanceof SplatNode) {                    
-                        exceptionNodesList = (IListNode) eval(exceptionNodes);
+                        exceptionNodesList = (ListNode) eval(exceptionNodes);
                     } else {
-                        exceptionNodesList = (IListNode) exceptionNodes;
+                        exceptionNodesList = (ListNode) exceptionNodes;
                     }
                     
                     if (isRescueHandled(raiseJump.getException(), exceptionNodesList)) {
@@ -1421,7 +1419,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
     }
 
-    private boolean isRescueHandled(RubyException currentException, IListNode exceptionNodes) {
+    private boolean isRescueHandled(RubyException currentException, ListNode exceptionNodes) {
         if (exceptionNodes == null) {
             return currentException.isKindOf(runtime.getExceptions().getStandardError());
         }

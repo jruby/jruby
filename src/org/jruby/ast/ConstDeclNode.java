@@ -3,8 +3,8 @@
  * Created on 28.02.2002, 16:04:27
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
@@ -28,12 +28,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IAssignableNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  * Declaration (and assignment) of a Constant.
@@ -41,24 +38,23 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ConstDeclNode extends AbstractNode implements IAssignableNode, INameNode {
+public class ConstDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6260931203887158208L;
 
     private final String name;
-    private INode valueNode;
 
-    public ConstDeclNode(ISourcePosition position, String name, INode valueNode) {
+    public ConstDeclNode(SourcePosition position, String name, Node valueNode) {
         super(position);
         this.name = name;
-        this.valueNode = valueNode;
+        setValueNode(valueNode);
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitConstDeclNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitConstDeclNode(this);
     }
 
     /**
@@ -68,23 +64,5 @@ public class ConstDeclNode extends AbstractNode implements IAssignableNode, INam
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Gets the valueNode.
-	 * The node to evaluate to get the actual value to assign to the constant
-     * @return valueNode
-     */
-    public INode getValueNode() {
-        return valueNode;
-    }
-
-    /**
-     * Sets the valueNode.
-	 * The node to evaluate to get the actual value to assign to the constant
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
     }
 }

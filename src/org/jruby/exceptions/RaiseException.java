@@ -33,6 +33,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
+import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 
@@ -89,8 +90,9 @@ public class RaiseException extends JumpException {
 	private static void addBackTraceElement(RubyArray backtrace, Frame frame, 
 			Frame previousFrame) {
         StringBuffer sb = new StringBuffer(100);
+        SourcePosition position = frame.getPosition();
 
-        sb.append(frame.getFile()).append(':').append(frame.getLine());
+        sb.append(position.getFile()).append(':').append(position.getLine());
         
         if (previousFrame != null && previousFrame.getLastFunc() != null) {
             sb.append(":in `").append(previousFrame.getLastFunc()).append('\'');

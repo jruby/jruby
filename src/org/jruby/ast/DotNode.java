@@ -3,7 +3,9 @@
  * Created on 01.03.2002, 15:42:44
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -26,24 +28,22 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.INode;
-import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /** Represents a range literal.
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class DotNode extends AbstractNode {
+public class DotNode extends Node {
     static final long serialVersionUID = 2763797850980107429L;
 
-    private final INode beginNode;
-    private final INode endNode;
+    private final Node beginNode;
+    private final Node endNode;
     private final boolean exclusive;
 
-    public DotNode(ISourcePosition position, INode beginNode, INode endNode, boolean exclusive) {
+    public DotNode(SourcePosition position, Node beginNode, Node endNode, boolean exclusive) {
         super(position);
         this.beginNode = beginNode;
         this.endNode = endNode;
@@ -54,23 +54,23 @@ public class DotNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(INodeVisitor iVisitor) {
-        ((NodeVisitor)iVisitor).visitDotNode(this);
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDotNode(this);
     }
 
     /**
      * Gets the beginNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getBeginNode() {
+    public Node getBeginNode() {
         return beginNode;
     }
 
     /**
      * Gets the endNode.
-     * @return Returns a INode
+     * @return Returns a Node
      */
-    public INode getEndNode() {
+    public Node getEndNode() {
         return endNode;
     }
 
