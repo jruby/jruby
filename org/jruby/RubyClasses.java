@@ -248,6 +248,7 @@ public class RubyClasses {
         exceptionClass = RbException.createExceptionClass(ruby);
 
         methodClass = RubyMethod.createMethodClass(ruby);
+        procClass = RubyProc.createProcClass(ruby);
 
         objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
         mathModule = RubyMath.createMathModule(ruby);

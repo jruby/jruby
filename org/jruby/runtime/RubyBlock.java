@@ -103,6 +103,11 @@ public class RubyBlock {
     }
 
     public void pop() {
+    	if (prev == null) {
+    		System.err.println("[BUG] Try to pop block from empty stack.");
+    		return;
+    	}
+    	
         this.var = prev.var;
         this.body = prev.body;
         this.self = prev.self;
@@ -123,6 +128,12 @@ public class RubyBlock {
                                            origThread, prev, ruby);
     }
 
+    public RubyBlock cloneBlock() {
+    	return new RubyBlock(var, body, self, frame, scope, klass,
+                                           iter, vmode, flags, dynamicVars,
+                                           origThread, prev != null ? prev.cloneBlock() : null, ruby);
+    }
+    
     public void setTmp(RubyBlock block) {
         this.var = block.var;
         this.body = block.body;

@@ -362,7 +362,7 @@ public final class Ruby {
         pushClass();
         RubyBlock tmpBlock = block.getTmp();
         
-        RubyFrame frame = tmpBlock.frame;
+        RubyFrame frame = block.frame; // tmpBlock.frame;
         frame.setPrev(getRubyFrame());
         setRubyFrame(frame);
         
