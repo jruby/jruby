@@ -25,6 +25,8 @@
  */
 package org.jruby.runtime.builtin.meta;
 
+import java.io.IOException;
+
 import org.jruby.BuiltinClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -35,6 +37,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.ThreadError;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,6 +64,7 @@ public class IOMetaClass extends BuiltinClass {
 
         defineSingletonMethod("foreach", Arity.optional(), "foreach");
         defineSingletonMethod("readlines", Arity.optional(), "readlines");
+        defineSingletonMethod("popen", Arity.optional(), "popen");
 
         CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyIO.class);
         defineMethod("<<", callbackFactory.getMethod("addString", IRubyObject.class));
@@ -153,6 +158,48 @@ public class IOMetaClass extends BuiltinClass {
         	return file.readlines(separatorArguments);
         } finally {
         	file.close();
+        }
+    }
+    
+    //XXX Hacked incomplete popen implementation to make
+    public IRubyObject popen(IRubyObject[] args) {
+    	Ruby runtime = getRuntime();
+    	checkArgumentCount(args, 1, 2);
+    	IRubyObject cmdObj = args[0].convertToString();
+    	cmdObj.checkSafeString();
+    	String command = cmdObj.toString();
+    	//TODO check mode (only r works)
+    	
+    	try {
+    		//TODO Unify with runInShell()
+	    	Process process;
+	    	String shell = System.getProperty("jruby.shell");
+	        if (shell != null) {
+	            String shellSwitch = "-c";
+	            if (!shell.endsWith("sh")) {
+	                shellSwitch = "/c";
+	            }
+	            process = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
+	        } else {
+	            process = Runtime.getRuntime().exec(command);
+	        }
+	    	
+	    	RubyIO io = new RubyIO(runtime, process);
+	    	
+	    	if (runtime.isBlockGiven()) {
+		        try {
+		        	runtime.yield(io);
+	    	        return runtime.getNil();
+		        } finally {
+		            io.close();
+		            runtime.getGlobalVariables().set("$?", runtime.newFixnum(process.waitFor() * 256));
+		        }
+		    }
+	    	return io;
+    	} catch (IOException e) {
+            throw IOError.fromException(runtime, e);
+        } catch (InterruptedException e) {
+        	throw new ThreadError(runtime, "unexpected interrupt");
         }
     }
 }

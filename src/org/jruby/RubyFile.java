@@ -32,6 +32,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
@@ -50,24 +52,39 @@ import org.jruby.util.IOModes;
 public class RubyFile extends RubyIO {
     protected String path;
     
-    public RubyFile(Ruby runtime, String path) {
-        super(runtime, runtime.getClasses().getFileClass());
-
-        this.path = path;
-        
-        try {
-            FileInputStream inputStream = new FileInputStream(new File(path));
-            handler = new IOHandlerUnseekable(runtime, inputStream, null);
-            modes = new IOModes(runtime, "r");
-        } catch (FileNotFoundException e) {
-            throw new IOError(runtime, e.getMessage());
-        }
-        
-        registerIOHandler(handler);
-    }
-    
 	public RubyFile(Ruby runtime, RubyClass type) {
 	    super(runtime, type);
+	}
+
+	public RubyFile(Ruby runtime, String path) {
+		this(runtime, path, open(runtime, path));
+    }
+
+	// use static function because constructor call must be first statement in above constructor 
+	private static InputStream open(Ruby runtime, String path) {
+		try {
+			return new FileInputStream(path);
+		} catch (FileNotFoundException e) {
+            throw new IOError(runtime, e.getMessage());
+        }
+	}
+    
+	// XXX This constructor is a hack to implement the __END__ syntax.
+	//     Converting a reader back into an InputStream doesn't generally work.
+	public RubyFile(Ruby runtime, String path, final Reader reader) {
+		this(runtime, path, new InputStream() {
+			public int read() throws IOException {
+				return reader.read();
+			}
+		});
+	}
+	
+	private RubyFile(Ruby runtime, String path, InputStream in) {
+		super(runtime, runtime.getClasses().getFileClass());
+		this.path = path;
+		this.handler = new IOHandlerUnseekable(runtime, in, null);
+		this.modes = handler.getModes();
+		registerIOHandler(handler);
 	}
 
     public static RubyClass createFileClass(Ruby runtime) {
