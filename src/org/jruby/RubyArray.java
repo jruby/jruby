@@ -290,15 +290,12 @@ public class RubyArray extends RubyObject {
         if (getLength() == 0) {
             return getRuntime().getNil();
         }
-
         if (offset < 0) {
             offset += getLength();
         }
-
         if (offset < 0 || getLength() <= offset) {
             return getRuntime().getNil();
         }
-
         return (IRubyObject) list.get((int) offset);
     }
 
@@ -308,7 +305,6 @@ public class RubyArray extends RubyObject {
     public RubyArray unshift(IRubyObject item) {
         modify();
         list.add(0, item);
-
         return this;
     }
 
@@ -464,9 +460,7 @@ public class RubyArray extends RubyObject {
     public static RubyArray newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyArray array = newArray(recv.getRuntime());
         array.setMetaClass((RubyClass) recv);
-
         array.callInit(args);
-
         return array;
     }
 
@@ -475,9 +469,7 @@ public class RubyArray extends RubyObject {
      */
     public static RubyArray create(IRubyObject recv, IRubyObject[] args) {
         RubyArray array = newArray(recv.getRuntime(), args);
-
         array.setMetaClass((RubyClass) recv);
-
         return array;
     }
 
@@ -528,7 +520,6 @@ public class RubyArray extends RubyObject {
         if (getLength() == 0) {
             return getRuntime().getNil();
         }
-
         return (IRubyObject) list.remove(0);
     }
 
@@ -551,9 +542,11 @@ public class RubyArray extends RubyObject {
 
     public RubyBoolean include_p(IRubyObject item) {
         return RubyBoolean.newBoolean(runtime, includes(item));
-    } /** rb_ary_frozen_p
-    	 *
-    	 */
+    }
+
+    /** rb_ary_frozen_p
+     *
+     */
     public RubyBoolean frozen() {
         return RubyBoolean.newBoolean(getRuntime(), isFrozen() || isTmpLock());
     }
@@ -1311,11 +1304,13 @@ public class RubyArray extends RubyObject {
         modify();
         setTmpLock(true);
 
+        Comparator comparator;
         if (getRuntime().isBlockGiven()) {
-            Collections.sort(list, new BlockComparator());
+            comparator = new BlockComparator();
         } else {
-            Collections.sort(list, new DefaultComparator());
+            comparator = new DefaultComparator();
         }
+        Collections.sort(list, comparator);
 
         setTmpLock(false);
         return this;

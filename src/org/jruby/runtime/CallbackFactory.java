@@ -142,7 +142,7 @@ public final class CallbackFactory {
     public static Callback getFalseMethod(final int arity) {
         return new Callback() {
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return (IRubyObject) recv.getRuntime().getFalse();
+                return recv.getRuntime().getFalse();
             }
 
             public Arity getArity() {
@@ -154,7 +154,7 @@ public final class CallbackFactory {
     public static Callback getTrueMethod(final int arity) {
         return new Callback() {
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return (IRubyObject)recv.getRuntime().getTrue();
+                return recv.getRuntime().getTrue();
             }
 
             public Arity getArity() {

@@ -631,30 +631,18 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      */
     public IRubyObject rbClone() {
         try {
-            IRubyObject clone = (IRubyObject) clone();
+            RubyObject clone = (RubyObject) clone();
             clone.setupClone(this);
             if (getInstanceVariables() != null) {
                 clone.setInstanceVariables(new HashMap(getInstanceVariables()));
             }
             return clone;
-        } catch (CloneNotSupportedException cnsExcptn) {
-            Asserts.notReached(cnsExcptn.getMessage());
+        } catch (CloneNotSupportedException e) {
+            Asserts.notReached(e.getMessage());
             return null;
         }
     }
     
-    protected void copyObjectTo(IRubyObject destination) {
-        if (destination.isFrozen()) {
-            throw new TypeError(runtime, "[bug] frozen object (" + destination.getType().toName() + ") allocated");
-        }
-        destination.setTaint(destination.isTaint() || isTaint());
-        destination.callMethod("become", this);
-        destination.setInstanceVariables(null);
-        if (getInstanceVariables() != null) {
-            destination.setInstanceVariables(new HashMap(getInstanceVariables()));
-        }
-    }
-
     /** rb_obj_dup
      *
      */
@@ -673,11 +661,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public RubyBoolean tainted() {
-        if (isTaint()) {
-            return getRuntime().getTrue();
-        } else {
-            return getRuntime().getFalse();
-        }
+        return RubyBoolean.newBoolean(runtime, isTaint());
     }
 
     /** rb_obj_taint
@@ -1028,5 +1012,4 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         Asserts.notReached("invalid index '" + index + "' on a " + this.getType());
         return null;
     }
-
 }

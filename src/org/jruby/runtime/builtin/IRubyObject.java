@@ -22,9 +22,6 @@
  */
 package org.jruby.runtime.builtin;
 
-import java.io.IOException;
-import java.util.Map;
-
 import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -32,6 +29,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
+
+import java.io.IOException;
 
 /** Object is the parent class of all classes in Ruby. Its methods are
  * therefore available to all objects unless explicitly overridden.
@@ -254,12 +253,6 @@ public interface IRubyObject {
      */
     boolean hasInstanceVariable(String string);
 
-    /**
-     * Method getInstanceVariables.
-     * @return Object
-     */
-    Map getInstanceVariables();
-
     public void callInit(IRubyObject[] args);
 
     /**
@@ -275,8 +268,6 @@ public interface IRubyObject {
      * @param callback
      */
     void defineSingletonMethod(String name, Callback callback);
-
-    void setInstanceVariables(Map map);
 
     boolean singletonMethodsAllowed();
 }
