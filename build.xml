@@ -82,7 +82,7 @@
 		description="Builds the Ant tasks that we need later on in the build">
     	<javac destdir="${jruby.classes.dir}" debug="true"
 			srcdir="${src.dir}"
-      		includes="org/jruby/util/ant/**/*.java">
+      		includes="org/jruby/util/ant/**/*.java" source="1.4">
       		<classpath refid="build.classpath"/>
     	</javac>
 
