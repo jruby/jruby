@@ -40,7 +40,7 @@ import org.jruby.util.*;
  */
 public class RubyHash extends RubyObject {
     private RubyMap valueMap;
-    private RubyObject defautValue;
+    private RubyObject defaultValue;
     
     public RubyHash(Ruby ruby) {
         this(ruby, new RubyHashMap());
@@ -53,15 +53,15 @@ public class RubyHash extends RubyObject {
     public RubyHash(Ruby ruby, RubyMap valueMap, RubyObject defaultValue) {
         super(ruby, ruby.getRubyClass("Hash"));
         this.valueMap = valueMap;
-        this.defautValue = defautValue;
+        this.defaultValue = defaultValue;
     }
     
     public RubyObject getDefautValue() {
-        return this.defautValue;
+        return this.defaultValue;
     }
     
-    public void setDefautValue(RubyObject defautValue) {
-        this.defautValue = defautValue;
+    public void setDefautValue(RubyObject defaultValue) {
+        this.defaultValue = defaultValue;
     }
     
     public RubyMap getValueMap() {

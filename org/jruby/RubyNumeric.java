@@ -83,6 +83,13 @@ public abstract class RubyNumeric extends RubyObject {
         return (int)val;
     }
 
+    public static RubyNumeric numericValue(RubyObject arg) {
+        if (!(arg instanceof RubyNumeric)) {
+            throw new RubyTypeException(arg.getRuby(), "argument not numeric");
+        }
+        return (RubyNumeric)arg;
+    }
+
     /**
      * Converts a string representation of an integer to the integer value. 
      * Parsing starts at the beginning of the string (after leading and 
@@ -93,7 +100,7 @@ public abstract class RubyNumeric extends RubyObject {
      * binary, or octal numbers, respectively.  If a non-zero base is given, 
      * only the prefix (if any) that is appropriate to that base will be 
      * parsed correctly.  For example, if the base is zero or 16, the string
-     * "0xff" will be converted to 256, but the base is 10, it will come out 
+     * "0xff" will be converted to 256, but if the base is 10, it will come out 
      * as zero, since 'x' is not a valid decimal digit.  If the string fails 
      * to parse as a number, zero is returned.
      * 
@@ -164,7 +171,7 @@ public abstract class RubyNumeric extends RubyObject {
     }
         
     /**
-     * Converts a string representation of an floating-point number to the 
+     * Converts a string representation of a floating-point number to the 
      * numeric value.  Parsing starts at the beginning of the string (after 
      * leading and trailing whitespace have been removed), and stops at the 
      * end or at the first character that can't be part of a number.  If 
@@ -203,7 +210,8 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_coerce
      *
      */
-    public RubyArray m_coerce(RubyNumeric other) {
+    public RubyArray m_coerce(RubyObject num) {
+        RubyNumeric other = numericValue(num);
         if (getRubyClass() == other.getRubyClass()) {
             return RubyArray.m_newArray(getRuby(), this, other);
         } else {

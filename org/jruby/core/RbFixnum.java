@@ -46,19 +46,19 @@ public class RbFixnum {
         fixnumClass.defineMethod("to_s", getMethod("m_to_s"));
         fixnumClass.defineMethod("to_str", getMethod("m_to_s"));
 
-        fixnumClass.defineMethod("+", getMethod("op_plus", RubyNumeric.class));
-        fixnumClass.defineMethod("-", getMethod("op_minus", RubyNumeric.class));
-        fixnumClass.defineMethod("*", getMethod("op_mul", RubyNumeric.class));
-        fixnumClass.defineMethod("/", getMethod("op_div", RubyNumeric.class));
-        fixnumClass.defineMethod("%", getMethod("op_mod", RubyNumeric.class));
-        fixnumClass.defineMethod("**", getMethod("op_pow", RubyNumeric.class));
+        fixnumClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
+        fixnumClass.defineMethod("-", getMethod("op_minus", RubyObject.class));
+        fixnumClass.defineMethod("*", getMethod("op_mul", RubyObject.class));
+        fixnumClass.defineMethod("/", getMethod("op_div", RubyObject.class));
+        fixnumClass.defineMethod("%", getMethod("op_mod", RubyObject.class));
+        fixnumClass.defineMethod("**", getMethod("op_pow", RubyObject.class));
 
         fixnumClass.defineMethod("==", getMethod("op_equal", RubyObject.class));
-        fixnumClass.defineMethod("<=>", getMethod("op_cmp", RubyNumeric.class));
-        fixnumClass.defineMethod(">", getMethod("op_gt", RubyNumeric.class));
-        fixnumClass.defineMethod(">=", getMethod("op_ge", RubyNumeric.class));
-        fixnumClass.defineMethod("<", getMethod("op_lt", RubyNumeric.class));
-        fixnumClass.defineMethod("<=", getMethod("op_le", RubyNumeric.class));
+        fixnumClass.defineMethod("<=>", getMethod("op_cmp", RubyObject.class));
+        fixnumClass.defineMethod(">", getMethod("op_gt", RubyObject.class));
+        fixnumClass.defineMethod(">=", getMethod("op_ge", RubyObject.class));
+        fixnumClass.defineMethod("<", getMethod("op_lt", RubyObject.class));
+        fixnumClass.defineMethod("<=", getMethod("op_le", RubyObject.class));
 
         return fixnumClass;
     }

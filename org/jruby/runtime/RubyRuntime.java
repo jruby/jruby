@@ -166,13 +166,15 @@ public class RubyRuntime {
             getErrorStream().println("IOEception: " + ioExcptn.getMessage());
         }
     }
-	/**
-	 * Gets the errorStream
-	 * @return Returns a PrintStream
-	 */
-	public PrintStream getErrorStream() {
-		return errorStream != null ? errorStream : System.err;
-	}
+
+    /**
+     * Gets the errorStream
+     * @return Returns a PrintStream
+     */
+    public PrintStream getErrorStream() {
+        return errorStream != null ? errorStream : System.err;
+    }
+
     /**
      * Sets the errorStream
      * @param errorStream The errorStream to set
@@ -181,13 +183,14 @@ public class RubyRuntime {
         this.errorStream = errorStream;
     }
 
-	/**
-	 * Gets the inputStream
-	 * @return Returns a InputStream
-	 */
-	public InputStream getInputStream() {
-		return inputStream != null ? inputStream : System.in;
-	}
+    /**
+     * Gets the inputStream
+     * @return Returns a InputStream
+     */
+    public InputStream getInputStream() {
+        return inputStream != null ? inputStream : System.in;
+    }
+
     /**
      * Sets the inputStream
      * @param inputStream The inputStream to set
@@ -196,13 +199,14 @@ public class RubyRuntime {
         this.inputStream = inputStream;
     }
 
-	/**
-	 * Gets the outputStream
-	 * @return Returns a PrintStream
-	 */
-	public PrintStream getOutputStream() {
-		return outputStream != null ? outputStream : System.out;
-	}
+    /**
+     * Gets the outputStream
+     * @return Returns a PrintStream
+     */
+    public PrintStream getOutputStream() {
+        return outputStream != null ? outputStream : System.out;
+    }
+
     /**
      * Sets the outputStream
      * @param outputStream The outputStream to set

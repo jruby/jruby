@@ -44,19 +44,19 @@ public class RbFloat {
         floatClass.defineMethod("to_i", getMethod("m_to_i"));
         floatClass.defineMethod("to_s", getMethod("m_to_s"));
         
-        floatClass.defineMethod("+", getMethod("op_plus", RubyNumeric.class));
-        floatClass.defineMethod("-", getMethod("op_minus", RubyNumeric.class));
-        floatClass.defineMethod("*", getMethod("op_mul", RubyNumeric.class));
-        floatClass.defineMethod("/", getMethod("op_div", RubyNumeric.class));
-        floatClass.defineMethod("%", getMethod("op_mod", RubyNumeric.class));
-        floatClass.defineMethod("**", getMethod("op_pow", RubyNumeric.class));
+        floatClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
+        floatClass.defineMethod("-", getMethod("op_minus", RubyObject.class));
+        floatClass.defineMethod("*", getMethod("op_mul", RubyObject.class));
+        floatClass.defineMethod("/", getMethod("op_div", RubyObject.class));
+        floatClass.defineMethod("%", getMethod("op_mod", RubyObject.class));
+        floatClass.defineMethod("**", getMethod("op_pow", RubyObject.class));
         
-        // floatClass.defineMethod("==", getMethodEqual());
-        floatClass.defineMethod("<=>", getMethod("op_cmp", RubyNumeric.class));
-        floatClass.defineMethod(">", getMethod("op_gt", RubyNumeric.class));
-        floatClass.defineMethod(">=", getMethod("op_ge", RubyNumeric.class));
-        floatClass.defineMethod("<", getMethod("op_lt", RubyNumeric.class));
-        floatClass.defineMethod("<=", getMethod("op_le", RubyNumeric.class));
+        floatClass.defineMethod("==", getMethod("op_equal", RubyObject.class));
+        floatClass.defineMethod("<=>", getMethod("op_cmp", RubyObject.class));
+        floatClass.defineMethod(">", getMethod("op_gt", RubyObject.class));
+        floatClass.defineMethod(">=", getMethod("op_ge", RubyObject.class));
+        floatClass.defineMethod("<", getMethod("op_lt", RubyObject.class));
+        floatClass.defineMethod("<=", getMethod("op_le", RubyObject.class));
         
         return floatClass;
     }

@@ -101,19 +101,19 @@ public class RbArray {
         arrayClass.defineMethod("delete_at", getMethod("m_delete_at", RubyObject.class));
         arrayClass.defineMethod("delete_if", getMethod("m_delete_if"));
         arrayClass.defineMethod("reject!", getMethod("m_reject_bang"));
-//        rb_define_method(rb_cArray, "replace", rb_ary_replace_m, 1);
+        arrayClass.defineMethod("replace", getMethod("m_replace", RubyObject.class));
         arrayClass.defineMethod("clear", getMethod("m_clear"));
         arrayClass.defineMethod("fill", getRestArgsMethod("m_fill"));
 
         arrayClass.defineMethod("include?", getMethod("m_includes", RubyObject.class));
     
-//        rb_define_method(rb_cArray, "<=>", rb_ary_cmp, 1);
+        arrayClass.defineMethod("<=>", getMethod("op_cmp", RubyObject.class));
 
         arrayClass.defineMethod("slice", getRestArgsMethod("m_aref"));
-//        rb_define_method(rb_cArray, "slice!", rb_ary_slice_bang, -1);
+        arrayClass.defineMethod("slice!", getRestArgsMethod("m_slice_bang"));
 
-//        rb_define_method(rb_cArray, "assoc", rb_ary_assoc, 1);
-//        rb_define_method(rb_cArray, "rassoc", rb_ary_rassoc, 1);
+        arrayClass.defineMethod("assoc", getMethod("m_assoc", RubyObject.class));
+        arrayClass.defineMethod("rassoc", getMethod("m_rassoc", RubyObject.class));
 
 //        rb_define_method(rb_cArray, "+", rb_ary_plus, 1);
 //        rb_define_method(rb_cArray, "*", rb_ary_times, 1);
@@ -126,9 +126,9 @@ public class RbArray {
 //        rb_define_method(rb_cArray, "uniq!", rb_ary_uniq_bang, 0);
         arrayClass.defineMethod("compact", getMethod("m_compact"));
         arrayClass.defineMethod("compact!", getMethod("m_compact_bang"));
-//        rb_define_method(rb_cArray, "flatten", rb_ary_flatten, 0);
-//        rb_define_method(rb_cArray, "flatten!", rb_ary_flatten_bang, 0);
-//        rb_define_method(rb_cArray, "nitems", rb_ary_nitems, 0);*/
+        arrayClass.defineMethod("flatten", getMethod("m_flatten"));
+        arrayClass.defineMethod("flatten!", getMethod("m_flatten_bang"));
+        arrayClass.defineMethod("nitems", getMethod("m_nitems"));
         
         return arrayClass;
     }
