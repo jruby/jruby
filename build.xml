@@ -12,8 +12,8 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.3.1"/>
-    <property name="version.file" value="0_3_1"/>
+    <property name="version" value="0.5.0"/>
+    <property name="version.file" value="0_5_0"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <property name="build.dest" value="${build.dir}/classes"/>
@@ -87,8 +87,9 @@
                 <include name="README"/>
                 <include name="test.rb"/>
                 <include name="jruby.bat"/>
-		<include name="jruby.sh"/>
+				<include name="jruby.sh"/>
                 <include name="samples/**/*"/>
+                <include name="lib/**/*"/>
             </fileset>
             <fileset dir="${build.dir}">
                 <include name="jruby.jar"/>
@@ -118,7 +119,8 @@
         </copy>
         
         <tar basedir="${build.tars.base}" tarfile="${build.dir}/jruby-src.tar">
-            <exclude name="jruby-${version.file}/jruby.jar"/>
+            <!-- <exclude name="jruby-${version.file}/jruby.jar"/> -->
+            <exclude name="**/*.jar"/>
         </tar>
 
         <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
