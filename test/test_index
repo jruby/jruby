@@ -38,6 +38,7 @@ testModule.rb
 #testRbConfig.rb
 testLoad.rb
 testKernel.rb
+testCase.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
