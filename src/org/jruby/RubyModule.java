@@ -938,11 +938,11 @@ public class RubyModule extends RubyObject {
         if (args.length == 1) {
             body = getRuntime().newProc();
             newMethod = new ProcMethod((RubyProc)body, visibility);
-        } else if (args[0].isKindOf(getRuntime().getClasses().getMethodClass())) {
-            body = args[0];
+        } else if (args[1].isKindOf(getRuntime().getClasses().getMethodClass())) {
+            body = args[1];
             newMethod = new MethodMethod(((RubyMethod)body).unbind(), visibility);
-        } else if (args[0].isKindOf(getRuntime().getClasses().getProcClass())) {
-            body = args[0];
+        } else if (args[1].isKindOf(getRuntime().getClasses().getProcClass())) {
+            body = args[1];
             newMethod = new ProcMethod((RubyProc)body, visibility);
         } else {
             throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/RubyMethod)");

@@ -70,10 +70,11 @@ def test_exception(type=Exception, &proc)
   raised = false
   begin
     proc.call
-  rescue type
+  rescue type=>e
     raised = true
   end
   test_ok(raised, "#{type} expected")
+  e
 end
 
 def test_get_last_failed

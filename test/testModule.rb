@@ -84,6 +84,8 @@ test_exception(TypeError) {
   class Kernel; end
 }
 
+
+################# test external reference to constant from included module
 module M1
   CONST = 7
 end
@@ -93,3 +95,16 @@ class C1
 end
 
 test_equal(7, C1::CONST)
+
+################ test define_method
+
+class C2
+  define_method( 'methodName', proc { 1 })
+  e = test_exception(TypeError) {
+    define_method( 'methodNameX', 'badParameter')
+  }
+  test_equal('wrong argument type String (expected Proc/RubyMethod)', e.message)
+end
+class C3 < C2
+  define_method( 'methodName2', instance_method(:methodName))
+end
