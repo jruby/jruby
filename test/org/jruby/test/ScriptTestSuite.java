@@ -54,8 +54,6 @@ public class ScriptTestSuite extends TestSuite {
     public static Test suite() throws java.io.IOException {
         TestSuite suite = new TestSuite();
 
-        Ruby ruby = setupInterpreter();
-
         File testIndex = new File("test/test_index");
 
         if (! testIndex.canRead()) {
@@ -76,6 +74,11 @@ public class ScriptTestSuite extends TestSuite {
             if (line.startsWith("#") || line.length() == 0) {
                 continue;
             }
+            
+            // Ensure we have a new interpreter for each test. Previous we were using the
+            //  same interpreter which caused problems as soon as one test failed.
+            Ruby ruby = setupInterpreter();
+            
             suite.addTest(new ScriptTest(ruby, line));
         }
 
@@ -124,6 +127,7 @@ public class ScriptTestSuite extends TestSuite {
             script.append("test_get_last_failed()").append('\n');
 
             IRubyObject lastFailed = ruby.evalScript(script.toString());
+            
             if (! lastFailed.isNil()) {
 				RubyString message = (RubyString) lastFailed.callMethod("to_s");
                 fail(message.getValue());
