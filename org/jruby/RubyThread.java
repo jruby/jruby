@@ -274,6 +274,9 @@ public class RubyThread extends RubyObject {
     }
 
     public RubyThread join() {
+        if (jvmThread == Thread.currentThread()) {
+            throw new ThreadError(getRuntime(), "thread tried to join itself");
+        }
         try {
             jvmThread.join();
         } catch (InterruptedException e) {
