@@ -34,6 +34,7 @@ import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.JarredScript;
 import org.jruby.runtime.load.Library;
+import org.jruby.util.PreparsedScript;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,8 +54,8 @@ import java.util.jar.JarFile;
  * @version $Revision$
  */
 public class LoadService implements ILoadService {
-    private ArrayList loadPath = new ArrayList();
-    private ArrayList loadedFeatures = new ArrayList();
+    private List loadPath = new ArrayList();
+    private List loadedFeatures = new ArrayList();
     private Map builtinLibraries = new HashMap();
 
     private Map autoloadMap = new HashMap();
@@ -107,7 +108,7 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#load(String)
      */
     public boolean load(String file) {
-        String[] suffixes = new String[] { "", ".rb", ".jar" };
+        String[] suffixes = new String[] { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };
         Library library = null;
         for (int i = 0; i < suffixes.length; i++) {
             library = findLibrary(file + suffixes[i]);
@@ -130,8 +131,11 @@ public class LoadService implements ILoadService {
         if (url == null) {
             return null;
         }
+
         if (file.endsWith(".jar")) {
             return new JarredScript(url);
+        } else if (file.endsWith(".rb.ast.ser")) {
+        	return new PreparsedScript(url);
         } else {
             return new ExternalScript(url, file);
         }
@@ -155,14 +159,14 @@ public class LoadService implements ILoadService {
     /**
      * @see org.jruby.runtime.load.ILoadService#getLoadPath()
      */
-    public ArrayList getLoadPath() {
+    public List getLoadPath() {
         return loadPath;
     }
 
     /**
      * @see org.jruby.runtime.load.ILoadService#getLoadedFeatures()
      */
-    public ArrayList getLoadedFeatures() {
+    public List getLoadedFeatures() {
         return loadedFeatures;
     }
 
@@ -206,13 +210,13 @@ public class LoadService implements ILoadService {
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private URL findFile(String name) {
+    private URL findFile(String name) {    	
         try {
             if (name.startsWith("jar:")) {
                 return new URL(name);
             }
-            for (int i = 0, size = loadPath.size(); i < size; i++) {
-                String entry = loadPath.get(i).toString();
+            for (Iterator pathIter = loadPath.iterator(); pathIter.hasNext();) {
+                String entry = pathIter.next().toString();
                 if (entry.startsWith("jar:")) {
                     try {
                         JarFile current = new JarFile(entry.substring(4));
@@ -235,9 +239,22 @@ public class LoadService implements ILoadService {
             if (current.exists() && current.isFile()) {
                 return current.toURL();
             }
+            
+            // otherwise, try to load from classpath
+            URL loc = Thread.currentThread().getContextClassLoader().getResource(name);
+            
+            // make sure resource URL has something available or return null
+            if (loc != null) {
+	            try {
+	            	loc.openStream().close();
+	            } catch (Exception ioe) {
+	            	loc = null;
+	            }
+            }
+            
+            return loc;
         } catch (MalformedURLException e) {
             throw new IOError(runtime, e.getMessage());
         }
-        return null;
     }
 }
