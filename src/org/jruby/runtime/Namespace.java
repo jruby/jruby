@@ -80,9 +80,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class Namespace {
-    private Namespace parent;
-
-    private RubyModule namespaceModule;
+    private final Namespace parent;
+    private final RubyModule namespaceModule;
 
     public Namespace(RubyModule namespaceModule) {
         this(namespaceModule, null);
@@ -101,24 +100,12 @@ public class Namespace {
         return parent;
     }
 
-    public void setParent(Namespace newParent) {
-        parent = newParent;
-    }
-
     /**
      * Gets the namespaceModule.
      * @return Returns a RubyModule
      */
     public RubyModule getNamespaceModule() {
         return namespaceModule;
-    }
-
-    /**
-     * Sets the namespaceModule.
-     * @param namespaceModule The namespaceModule to set
-     */
-    public void setNamespaceModule(RubyModule namespaceModule) {
-        this.namespaceModule = namespaceModule;
     }
 
     public IRubyObject getConstant(IRubyObject self, String name) {
