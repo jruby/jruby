@@ -217,7 +217,7 @@ public final class Ruby {
     }
 
     public IRubyObject eval(INode node) {
-        return getCurrentEvaluator().eval(node);
+        return getCurrentContext().eval(this, node);
     }
 
     public Class getRegexpAdapterClass() {

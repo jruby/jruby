@@ -28,8 +28,9 @@
 package org.jruby.parser;
 
 import org.ablaf.ast.INode;
-import org.ablaf.lexer.*;
 import org.ablaf.parser.IParser;
+import org.ablaf.lexer.ILexerSource;
+import org.ablaf.lexer.LexerFactory;
 import org.jruby.Ruby;
 import org.jruby.common.RubyErrorHandler;
 

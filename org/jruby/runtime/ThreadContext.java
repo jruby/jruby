@@ -5,8 +5,11 @@ import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.evaluator.Evaluator;
+import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.util.RubyStack;
+import org.ablaf.ast.INode;
 
 /**
  * @author jpetersen
@@ -83,4 +86,7 @@ public class ThreadContext {
         this.currentThread = currentThread;
     }
 
+    public IRubyObject eval(Ruby ruby1, INode node) {
+        return EvaluateVisitor.createVisitor(ruby.getRubyTopSelf()).eval(node);
+    }
 }

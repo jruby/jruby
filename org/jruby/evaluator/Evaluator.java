@@ -34,14 +34,11 @@ import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
 
 public class Evaluator {
-    private final Ruby ruby;
-
     private ScopeStack scopeStack;
     private FrameStack frameStack;
     private IStack iterStack;
 
     public Evaluator(Ruby ruby) {
-        this.ruby = ruby;
         scopeStack = new ScopeStack(ruby);
         frameStack = new FrameStack(ruby);
         iterStack = CollectionFactory.getInstance().newStack();
@@ -55,19 +52,15 @@ public class Evaluator {
         return frameStack;
     }
 
-    public Frame getCurrentFrame() {
-        return (Frame) getFrameStack().peek();
-    }
-
     public IStack getIterStack() {
         return iterStack;
     }
 
-    public Iter getCurrentIter() {
-        return (Iter) getIterStack().peek();
+    public Frame getCurrentFrame() {
+        return (Frame) getFrameStack().peek();
     }
 
-    public IRubyObject eval(INode node) {
-        return EvaluateVisitor.createVisitor(ruby.getRubyTopSelf()).eval(node);
+    public Iter getCurrentIter() {
+        return (Iter) getIterStack().peek();
     }
 }
