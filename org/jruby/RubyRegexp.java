@@ -438,4 +438,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         return RubyString.newString(getRuby(), sb.toString());
     }
+
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+	output.write('/');
+	output.dumpString(pattern);
+	output.dumpInt(options);
+    }
 }

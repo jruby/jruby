@@ -432,4 +432,18 @@ public class RubyHash extends RubyObject {
 		}
 		return result;
 	}
+
+
+	public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('{');
+		output.dumpInt(getValueMap().size());
+		Iterator iter = entryIterator();
+		while (iter.hasNext()) {
+			Map.Entry entry = (Map.Entry) iter.next();
+			RubyObject key = (RubyObject) entry.getKey();
+			RubyObject value = (RubyObject) entry.getValue();
+			output.dumpObject(key);
+			output.dumpObject(value);
+		}
+	}
 }

@@ -31,6 +31,7 @@
 package org.jruby;
 
 import java.io.*;
+import java.util.*;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -44,50 +45,85 @@ public class MarshalStream extends FilterOutputStream {
     private static final int MARSHAL_MAJOR = 4;
     private static final int MARSHAL_MINOR = 5;
 
-    // FIXME: remember written objects and link back to them
+	private Map dumpedObjects = new HashMap();
+	private Map dumpedSymbols = new HashMap();
+	private int objectCounter = 0;
+	private int symbolCounter = 0;
 
     public MarshalStream(OutputStream out) throws IOException {
-	super(out);
+		super(out);
 
-	out.write(MARSHAL_MAJOR);
-	out.write(MARSHAL_MINOR);
+		out.write(MARSHAL_MAJOR);
+		out.write(MARSHAL_MINOR);
     }
 
     public void dumpObject(RubyObject value) throws IOException {
-	if (value.isNil()) {
-	    out.write('0');
-	} else {
-	    value.marshalTo(this);
-	}
+		if (value.isNil()) {
+			out.write('0');
+			return;
+		}
+
+		if (dumpedObjects.containsKey(value)) {
+			writeLink(value);
+		} else {
+			dumpedObjects.put(value, new Integer(objectCounter));
+			objectCounter++;
+			value.marshalTo(this);
+		}
     }
 
+	public void dumpObject(RubySymbol value) throws IOException {
+		if (value.isNil()) {
+			out.write('0');
+			return;
+		}
+
+		if (dumpedSymbols.containsKey(value)) {
+			writeSymlink(value);
+		} else {
+			dumpedSymbols.put(value, new Integer(symbolCounter));
+			symbolCounter++;
+			value.marshalTo(this);
+		}
+	}
+
+	private void writeLink(RubyObject value) throws IOException {
+		out.write('@');
+		dumpInt(((Integer) dumpedObjects.get(value)).intValue());
+	}
+
+	private void writeSymlink(RubySymbol value) throws IOException {
+		out.write(';');
+		dumpInt(((Integer) dumpedSymbols.get(value)).intValue());
+	}
+
     public void dumpString(String value) throws IOException {
-	dumpInt(value.length());
-	out.write(value.getBytes());
+		dumpInt(value.length());
+		out.write(value.getBytes());
     }
 
     public void dumpInt(int value) throws IOException {
-	if (value == 0) {
-	    out.write(0);
-	} else if (0 < value && value < 123) {
-	    out.write(value + 5);
-	} else if (-124 < value && value < 0) {
-	    out.write((value - 5) & 0xff);
-	} else {
-	    int[] buf = new int[4];
-	    int i;
-	    for (i = 0; i < buf.length; i++) {
-		buf[i] = value & 0xff;
-		value = value >> 8;
-		if (value == 0 || value == -1) {
-		    break;
+		if (value == 0) {
+			out.write(0);
+		} else if (0 < value && value < 123) {
+			out.write(value + 5);
+		} else if (-124 < value && value < 0) {
+			out.write((value - 5) & 0xff);
+		} else {
+			int[] buf = new int[4];
+			int i;
+			for (i = 0; i < buf.length; i++) {
+				buf[i] = value & 0xff;
+				value = value >> 8;
+				if (value == 0 || value == -1) {
+					break;
+				}
+			}
+			int len = i + 1;
+			out.write(value < 0 ? -len : len);
+			for (i = 0; i < len; i++) {
+				out.write(buf[i]);
+			}
 		}
-	    }
-	    int len = i + 1;
-	    out.write(value < 0 ? -len : len);
-	    for (i = 0; i < len; i++) {
-		out.write(buf[i]);
-	    }
-	}
     }
 }

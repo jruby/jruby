@@ -1843,6 +1843,13 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+	output.write('m');
+	output.dumpString(name().toString());
+    }
+
+
     private static class FindClassPathResult {
         public String name;
         public RubyModule klass;

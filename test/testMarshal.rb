@@ -16,8 +16,13 @@ test_equal(MARSHAL_HEADER + ":\017somesymbol", Marshal.dump(:somesymbol))
 test_equal(MARSHAL_HEADER + "f\n2.002", Marshal.dump(2.002))
 test_equal(MARSHAL_HEADER + "f\013-2.002", Marshal.dump(-2.002))
 test_equal(MARSHAL_HEADER + "\"\nhello", Marshal.dump("hello"))
+test_equal(MARSHAL_HEADER + "[\010i\006i\ai\010", Marshal.dump([1,2,3]))
+test_equal(MARSHAL_HEADER + "{\006i\006i\a", Marshal.dump({1=>2}))
+test_equal(MARSHAL_HEADER + "c\013Object", Marshal.dump(Object))
+test_equal(MARSHAL_HEADER + "m\017Enumerable", Marshal.dump(Enumerable))
+test_equal(MARSHAL_HEADER + "/\013regexp\000", Marshal.dump(/regexp/))
 
-# FIXME: bignum, array, hash, class, regexp, ...
+# FIXME: bignum,  ...
 
 test_equal(MARSHAL_HEADER + "o:\013Object\000", Marshal.dump(Object.new))
 class MarshalTestClass
@@ -26,4 +31,14 @@ class MarshalTestClass
   end
 end
 test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar",
+	   Marshal.dump(MarshalTestClass.new))
+o = Object.new
+test_equal(MARSHAL_HEADER + "[\to:\013Object\000@\006@\006@\006",
+	   Marshal.dump([o, o, o, o]))
+class MarshalTestClass
+  def initialize
+    @foo = self
+  end
+end
+test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo@\000",
 	   Marshal.dump(MarshalTestClass.new))

@@ -1280,6 +1280,17 @@ public class RubyArray extends RubyObject {
         return this;
     }
 
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+	output.write('[');
+	output.dumpInt(getList().size());
+	Iterator iter = getList().iterator();
+	while (iter.hasNext()) {
+	    output.dumpObject((RubyObject) iter.next());
+	}
+    }
+
+
     class BlockComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             RubyObject result = getRuby().yield(RubyArray.newArray(getRuby(), (RubyObject) o1, (RubyObject) o2));

@@ -256,4 +256,10 @@ public class RubyClass extends RubyModule {
     public static RubyObject inherited(Ruby ruby, RubyClass subClass) {
         throw new TypeError(ruby, "can't make subclass of Class");
     }
+
+
+	public void marshalTo(MarshalStream output) throws java.io.IOException {
+		output.write('c');
+		output.dumpString(getClassname().toString());
+	}
 }
