@@ -308,6 +308,33 @@ public class RubyBignum extends RubyInteger {
         BigInteger absValue = value.abs();
 
         byte[] digits = absValue.toByteArray();
+        int byteCount = digits.length - 1; // exclude sign byte
+        boolean oddByteCount = byteCount % 2 == 1;
+
+        int shortLength = byteCount / 2;
+        if (oddByteCount) {
+			shortLength++;
+		}
+        output.dumpInt(shortLength);
+        
+        // write all bytes except sign
+        for (int i = digits.length - 1; i > 0; i--) {
+        	output.write(digits[i]);
+        }
+        
+        // pad to short with 0
+        if (oddByteCount) {
+            output.write(0);
+        }
+    }
+
+    public void marshalTo2(MarshalStream output) throws IOException {
+        output.write('l');
+        output.write(value.signum() >= 0 ? '+' : '-');
+
+        BigInteger absValue = value.abs();
+
+        byte[] digits = absValue.toByteArray();
 
         int shortLength = digits.length / 2;
         if (digits.length % 2 != 0) {
@@ -327,16 +354,18 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static RubyBignum unmarshalFrom(UnmarshalStream input) throws IOException {
-        int signum = input.readUnsignedByte() == '+' ? 1 : -1;
+        boolean positive = input.readUnsignedByte() == '+';
         int shortLength = input.unmarshalInt();
 
-        byte[] digits = new byte[shortLength * 2];
-        for (int i = digits.length - 1; i >= 0; i--) {
-            digits[i] = input.readSignedByte();
+        // BigInteger required a sign byte in incoming array
+        byte[] digits = new byte[shortLength * 2 + 1];
+
+        for (int i = digits.length - 1; i >= 1; i--) {
+        	digits[i] = input.readSignedByte();
         }
 
         BigInteger value = new BigInteger(digits);
-        if (signum == -1) {
+        if (!positive) {
             value = value.negate();
         }
 
