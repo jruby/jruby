@@ -31,21 +31,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CommandlineParser {
-    private String[] arguments;
+    private final String[] arguments;
 
     public String sRegexpAdapter;
-    public ArrayList sLoadDirectories = new ArrayList();
+    private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
     public String scriptFilename = null;
     private ArrayList requiredLibraries = new ArrayList();
-    public boolean sBenchmarkMode = false;
-    public boolean sDoLoop = false;
-    public boolean sDoPrint = false;
-    public boolean sDoLine = false;
+    public boolean isBenchmarking = false;
+    public boolean assumeLoop = false;
+    public boolean assumePrinting = false;
+    public boolean processLineEnds = false;
     public boolean sDoSplit = false;
     public boolean verbose = false;
     public boolean showVersion = false;
     public String[] scriptArguments = null;
+    private boolean shouldRunInterpreter = true;
 
     public int argumentIndex = 0;
     public int characterIndex = 0;
@@ -55,29 +56,9 @@ public class CommandlineParser {
         processArguments();
     }
 
-    /*
-     * helper function for args processing.
-     */
-    private String grabValue(String args[], String errorMessage) {
-        characterIndex++;
-        if (characterIndex < args[argumentIndex].length()) {
-            return args[argumentIndex].substring(characterIndex);
-        }
-        argumentIndex++;
-        if (argumentIndex < args.length) {
-            return args[argumentIndex];
-        } else {
-            System.err.println("invalid argument " + argumentIndex);
-            System.err.println(errorMessage);
-            Main.printUsage();
-            System.exit(1);
-        }
-        return null;
-    }
-
     private void processArguments() {
         while (argumentIndex < arguments.length && isInterpreterArgument(arguments[argumentIndex])) {
-            processArgument(arguments);
+            processArgument();
             argumentIndex++;
         }
         if (inlineScript.length() == 0) {//only get a filename if there were no -e
@@ -95,44 +76,44 @@ public class CommandlineParser {
         return argument.charAt(0) == '-';
     }
 
-    private void processArgument(String[] args) {
-        String argument = args[argumentIndex];
+    private void processArgument() {
+        String argument = arguments[argumentIndex];
         FOR : for (characterIndex = 1; characterIndex < argument.length(); characterIndex++) {
             switch (argument.charAt(characterIndex)) {
                 case 'h' :
                     Main.printUsage();
                     break;
                 case 'I' :
-                    sLoadDirectories.add(grabValue(args, " -I must be followed by a directory name to add to lib path"));
+                    loadPaths.add(grabValue(" -I must be followed by a directory name to add to lib path"));
                     break FOR;
                 case 'r' :
-                    requiredLibraries.add(grabValue(args, "-r must be followed by a package to require"));
+                    requiredLibraries.add(grabValue("-r must be followed by a package to require"));
                     break FOR;
                 case 'e' :
-                    inlineScript.append(grabValue(args, " -e must be followed by an expression to evaluate"));
+                    inlineScript.append(grabValue(" -e must be followed by an expression to evaluate"));
                     inlineScript.append('\n');
                     break FOR;
                 case 'b' :
-                    sBenchmarkMode = true;
+                    isBenchmarking = true;
                     break;
                 case 'R' :
-                    sRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate");
+                    sRegexpAdapter = grabValue(" -R must be followed by an expression to evaluate");
                     break FOR;
                 case 'p' :
-                    sDoPrint = true;
-                    sDoLoop = true;
+                    assumePrinting = true;
+                    assumeLoop = true;
                     break;
                 case 'n' :
-                    sDoLoop = true;
+                    assumeLoop = true;
                     break;
                 case 'a' :
                     sDoSplit = true;
                     break;
                 case 'l' :
-                    sDoLine = true;
+                    processLineEnds = true;
                     break;
                 case 'v' :
-                    Main.showVersion();
+                    showVersion = true;
                     verbose = true;
                     break;
                 case 'w' :
@@ -141,6 +122,7 @@ public class CommandlineParser {
                 case '-' :
                     if (argument.equals("--version")) {
                         showVersion = true;
+                        shouldRunInterpreter = false;
                         break FOR;
                     }
                 default :
@@ -148,6 +130,23 @@ public class CommandlineParser {
                     System.exit(1);
             }
         }
+    }
+
+    private String grabValue(String errorMessage) {
+        characterIndex++;
+        if (characterIndex < arguments[argumentIndex].length()) {
+            return arguments[argumentIndex].substring(characterIndex);
+        }
+        argumentIndex++;
+        if (argumentIndex < arguments.length) {
+            return arguments[argumentIndex];
+        } else {
+            System.err.println("invalid argument " + argumentIndex);
+            System.err.println(errorMessage);
+            Main.printUsage();
+            System.exit(1);
+        }
+        return null;
     }
 
     public boolean hasInlineScript() {
@@ -160,5 +159,13 @@ public class CommandlineParser {
 
     public List requiredLibraries() {
         return requiredLibraries;
+    }
+
+    public List loadPaths() {
+        return loadPaths;
+    }
+
+    public boolean shouldRunInterpreter() {
+        return shouldRunInterpreter;
     }
 }

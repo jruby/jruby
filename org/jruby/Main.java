@@ -62,10 +62,13 @@ public class Main {
 
         if (commandline.showVersion) {
             showVersion();
+        }
+        if (! commandline.shouldRunInterpreter()) {
             return;
         }
+
         long now = -1;
-        if (commandline.sBenchmarkMode)
+        if (commandline.isBenchmarking)
             now = System.currentTimeMillis();
         if (commandline.hasInlineScript()) {
             runInterpreter(new StringReader(commandline.inlineScript()), "-e", commandline.scriptArguments, commandline);
@@ -76,12 +79,12 @@ public class Main {
             printUsage();
             return;
         }
-        if (commandline.sBenchmarkMode) {
+        if (commandline.isBenchmarking) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
     }
 
-    public static void showVersion() {
+    private static void showVersion() {
         System.out.print("ruby ");
         System.out.print(Constants.RUBY_VERSION);
         System.out.print(" (");
@@ -123,16 +126,16 @@ public class Main {
         IRubyObject argumentArray = JavaUtil.convertJavaToRuby(runtime, args);
 
         runtime.setVerbose(commandline.verbose);
-        runtime.defineReadonlyVariable("$VERBOSE", commandline.verbose ? runtime.getTrue() : runtime.getNil());
-
+        defineGlobal(runtime, "$VERBOSE", commandline.verbose);
         runtime.defineGlobalConstant("ARGV", argumentArray);
-        runtime.defineReadonlyVariable("$-p", (commandline.sDoPrint ? runtime.getTrue() : runtime.getNil()));
-        runtime.defineReadonlyVariable("$-n", (commandline.sDoLoop ? runtime.getTrue() : runtime.getNil()));
-        runtime.defineReadonlyVariable("$-a", (commandline.sDoSplit ? runtime.getTrue() : runtime.getNil()));
-        runtime.defineReadonlyVariable("$-l", (commandline.sDoLine ? runtime.getTrue() : runtime.getNil()));
+        defineGlobal(runtime, "$-p", commandline.assumePrinting);
+        defineGlobal(runtime, "$-n", commandline.assumeLoop);
+        defineGlobal(runtime, "$-a", commandline.sDoSplit);
+        defineGlobal(runtime, "$-l", commandline.processLineEnds);
         runtime.defineReadonlyVariable("$*", argumentArray);
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
-        runtime.getLoadService().init(runtime, commandline.sLoadDirectories);
+
+        runtime.getLoadService().init(runtime, commandline.loadPaths());
         try {
             Iterator iter = commandline.requiredLibraries().iterator();
             while (iter.hasNext()) {
@@ -141,11 +144,11 @@ public class Main {
             }
 
             INode parsedScript = runtime.parse(reader, filename);
-            if (commandline.sDoPrint) {
+            if (commandline.assumePrinting) {
                 parsedScript = new ParserSupport().appendPrintToBlock(parsedScript);
             }
-            if (commandline.sDoLoop) {
-                parsedScript = new ParserSupport().appendWhileLoopToBlock(parsedScript, commandline.sDoLine, commandline.sDoSplit);
+            if (commandline.assumeLoop) {
+                parsedScript = new ParserSupport().appendWhileLoopToBlock(parsedScript, commandline.processLineEnds, commandline.sDoSplit);
             }
             runtime.eval(parsedScript);
 
@@ -154,6 +157,10 @@ public class Main {
         } catch (ThrowJump throwJump) {
             runtime.getRuntime().printError(throwJump.getNameError());
         }
+    }
+
+    private static void defineGlobal(Ruby runtime, String name, boolean value) {
+        runtime.defineReadonlyVariable(name, (value ? runtime.getTrue() : runtime.getNil()));
     }
 
     /**
