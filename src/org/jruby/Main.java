@@ -29,13 +29,7 @@
 package org.jruby;
 
 import java.util.Iterator;
-import java.io.StringReader;
 import java.io.Reader;
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,7 +39,6 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
 import org.jruby.util.CommandlineParser;
-import org.jruby.util.Asserts;
 import org.ablaf.ast.INode;
 
 /**
@@ -64,14 +57,6 @@ public class Main {
 
 
     public static void main(String args[]) {
-
-//        try {
-//            String.dumpOut = new java.io.BufferedWriter(new java.io.FileWriter("/tmp/string-dump"));
-//        } catch (java.io.IOException e) {
-//            String.dumpOut = null;
-//            throw new RuntimeException(e.toString());
-//        }
-
         commandline = new CommandlineParser(args);
 
         if (commandline.showVersion) {
@@ -86,7 +71,7 @@ public class Main {
             now = System.currentTimeMillis();
         }
 
-        runInterpreter(getScriptSource(), displayedFileName());
+        runInterpreter(commandline.getScriptSource(), commandline.displayedFileName());
 
         if (commandline.isBenchmarking) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
@@ -162,35 +147,4 @@ public class Main {
         runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
 
-    private static Reader getScriptSource() {
-        if (commandline.hasInlineScript()) {
-            return new StringReader(commandline.inlineScript());
-        } else if (sourceFromStdin()) {
-            return new InputStreamReader(System.in);
-        } else {
-            File file = new File(commandline.scriptFileName);
-            try {
-                return new BufferedReader(new FileReader(file));
-            } catch (IOException e) {
-                System.err.println("Error opening script file: " + e.getMessage());
-                System.exit(1);
-            }
-        }
-        Asserts.notReached();
-        return null;
-    }
-
-    private static boolean sourceFromStdin() {
-        return commandline.scriptFileName == null;
-    }
-
-    private static String displayedFileName() {
-        if (commandline.hasInlineScript()) {
-            return "-e";
-        } else if (sourceFromStdin()) {
-            return "-";
-        } else {
-            return commandline.scriptFileName;
-        }
-    }
 }

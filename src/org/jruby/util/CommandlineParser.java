@@ -29,6 +29,13 @@ import org.jruby.Main;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.InputStreamReader;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class CommandlineParser {
     private final String[] arguments;
@@ -61,7 +68,7 @@ public class CommandlineParser {
             processArgument();
             argumentIndex++;
         }
-        if (inlineScript.length() == 0) {//only get a filename if there were no -e
+        if (! hasInlineScript()) {
             if (argumentIndex < arguments.length) {
                 scriptFileName = arguments[argumentIndex]; //consume the file name
                 argumentIndex++;
@@ -167,5 +174,37 @@ public class CommandlineParser {
 
     public boolean shouldRunInterpreter() {
         return shouldRunInterpreter;
+    }
+
+    private boolean isSourceFromStdin() {
+        return scriptFileName == null;
+    }
+
+    public Reader getScriptSource() {
+        if (hasInlineScript()) {
+            return new StringReader(inlineScript());
+        } else if (isSourceFromStdin()) {
+            return new InputStreamReader(System.in);
+        } else {
+            File file = new File(scriptFileName);
+            try {
+                return new BufferedReader(new FileReader(file));
+            } catch (IOException e) {
+                System.err.println("Error opening script file: " + e.getMessage());
+                System.exit(1);
+            }
+        }
+        Asserts.notReached();
+        return null;
+    }
+
+    public String displayedFileName() {
+        if (hasInlineScript()) {
+            return "-e";
+        } else if (isSourceFromStdin()) {
+            return "-";
+        } else {
+            return scriptFileName;
+        }
     }
 }
