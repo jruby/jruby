@@ -93,7 +93,7 @@ public class UnboundMethod extends Method {
             } else if (
                 !(originModule.isModule() ? receiver.isKindOf(originModule) : receiver.getType() == originModule)) {
                 // FIX replace type() == ... with isInstanceOf(...)
-                throw new TypeError(runtime, "bind argument must be an instance of " + originModule.toName());
+                throw new TypeError(runtime, "bind argument must be an instance of " + originModule.getName());
             }
         }
         return Method.newMethod(implementationModule, methodName, receiverClass, originName, method, receiver);

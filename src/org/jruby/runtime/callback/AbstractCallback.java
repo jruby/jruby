@@ -41,7 +41,7 @@ public abstract class AbstractCallback implements Callback {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                String className = methodArgs[i].getType().toName();
+                String className = methodArgs[i].getType().getName();
                 sb.append("a");
                 if (className.charAt(0) == 'A'
                     || className.charAt(0) == 'E'

@@ -222,7 +222,7 @@ public class RubyGlobal {
             }
             if (! value.respondsTo("write")) {
                 throw new TypeError(ruby, name() + " must have write method, " +
-                                    value.getType().toName() + " given");
+                                    value.getType().getName() + " given");
             }
             return super.set(value);
         }

@@ -201,7 +201,7 @@ public class RubyClass extends RubyModule {
             } else {
                 throw new TypeError(
                     runtime,
-                    "wrong argument type " + superClass.getType().toName() + " (expected Class)");
+                    "wrong argument type " + superClass.getType().getName() + " (expected Class)");
             }
         }
 
@@ -241,7 +241,7 @@ public class RubyClass extends RubyModule {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('c');
-        output.dumpString(getClassname().toString());
+        output.dumpString(getName());
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {

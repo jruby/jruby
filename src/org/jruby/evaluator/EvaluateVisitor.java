@@ -253,7 +253,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } else if (block instanceof Method) {
             block = ((Method)block).to_proc();
         } else if (!(block instanceof RubyProc)) {
-            throw new TypeError(runtime, "wrong argument type " + block.getMetaClass().toName() + " (expected Proc)");
+            throw new TypeError(runtime, "wrong argument type " + block.getMetaClass().getName() + " (expected Proc)");
         }
 
         Block oldBlock = threadContext.getBlockStack().getCurrent();

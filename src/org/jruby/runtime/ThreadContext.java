@@ -360,7 +360,7 @@ public class ThreadContext {
             // though module.isModule() would work, but this expects
             // the class the module is defined in (except if it is
             // Object).
-            if (module.getClassname().equals("Object") == false) {
+            if (module.getName().equals("Object") == false) {
                  result.append(module);
             }
         }

@@ -64,7 +64,7 @@ public class TestRubyTime extends TestCase {
 
     public void testTimeCreated() {
         assertTrue(rubyTime != null);
-        assertEquals(rubyTime.getClassname(), "Time");
+        assertEquals(rubyTime.getName(), "Time");
     }
 
     public void testTimeNow() {

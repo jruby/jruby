@@ -408,7 +408,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             if (raise) {
                 throw new TypeError(
                     runtime,
-                    "Failed to convert " + getMetaClass().toName() + " into " + targetType + ".");
+                    "Failed to convert " + getMetaClass().getName() + " into " + targetType + ".");
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
             } else {
                 return runtime.getNil();
@@ -434,7 +434,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (!type.isAssignableFrom(result.getClass())) {
             throw new TypeError(
                 runtime,
-                getMetaClass().toName() + "#" + convertMethod + " should return " + targetType + ".");
+                getMetaClass().getName() + "#" + convertMethod + " should return " + targetType + ".");
         }
 
         return result;
@@ -454,7 +454,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (!(this instanceof RubyString)) {
             throw new TypeError(
                 getRuntime(),
-                "wrong argument type " + getMetaClass().toName() + " (expected String)");
+                "wrong argument type " + getMetaClass().getName() + " (expected String)");
         }
     }
 
@@ -841,7 +841,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyString to_s() {
-        String cname = getMetaClass().toName();
+        String cname = getMetaClass().getName();
         RubyString str = RubyString.newString(getRuntime(), "");
         /* 6:tags 16:addr 1:eos */
         str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
@@ -893,7 +893,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         String msg =
             new PrintfFormat(format).sprintf(
-                new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().toName()});
+                new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().getName()});
 
         throw new NoMethodError(getRuntime(), msg);
     }
@@ -937,7 +937,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('o');
-        RubySymbol classname = RubySymbol.newSymbol(runtime, getMetaClass().getClassname());
+        RubySymbol classname = RubySymbol.newSymbol(runtime, getMetaClass().getName());
         output.dumpObject(classname);
 
         if (getInstanceVariables() == null) {

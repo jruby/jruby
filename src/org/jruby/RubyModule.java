@@ -234,24 +234,6 @@ public class RubyModule extends RubyObject {
 
         return result.toString();
     }
-    
-    // Added until I can land changes for parentModule/classPath stuff
-    // Makes smaller diff
-    public String getClassname() {
-        return getName();
-    }
-    
-    // Added until I can land changes for parentModule/classPath stuff
-    // Makes smaller diff
-    public String toName() {
-        return getName();
-    }
-    
-    // Added until I can land changes for parentModule/classPath stuff
-    // Makes smaller diff
-    public String getClassPath() {
-        return getName();
-    }
 
     /** include_class_new
      *
@@ -296,7 +278,7 @@ public class RubyModule extends RubyObject {
             return module.getInstanceVariable(name);
         }
         
-        throw new NameError(getRuntime(), "uninitialized class variable " + name + " in " + toName());
+        throw new NameError(getRuntime(), "uninitialized class variable " + name + " in " + getName());
     }
 
     /** rb_cvar_defined
@@ -339,7 +321,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
         if (this != getRuntime().getClasses().getObjectClass()) {
-            throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol() + " at " + getClassPath());
+            throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol() + " at " + getName());
         } 
 
         throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol());
@@ -362,7 +344,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(arg instanceof RubyModule)) {
-            throw new TypeError(runtime, "Wrong argument type " + arg.getMetaClass().toName() + " (expected Module).");
+            throw new TypeError(runtime, "Wrong argument type " + arg.getMetaClass().getName() + " (expected Module).");
         }
 
         RubyModule module = (RubyModule) arg;
@@ -468,7 +450,7 @@ public class RubyModule extends RubyObject {
                 s0 = " module";
             }
 
-            throw new NameError(ruby, "Undefined method " + name + " for" + s0 + " '" + c.toName() + "'");
+            throw new NameError(ruby, "Undefined method " + name + " for" + s0 + " '" + c.getName() + "'");
         }
         addMethod(name, UndefinedMethod.getInstance());
     }
@@ -686,7 +668,7 @@ public class RubyModule extends RubyObject {
                 throw new NameError(runtime,
                                     "undefined method '" + name + "' for " +
                                     (isModule() ? "module" : "class") + " '" +
-                                    toName() + "'");
+                                    getName() + "'");
             }
         }
         getMethods().put(name, new AliasMethod(method, oldName));
@@ -707,7 +689,7 @@ public class RubyModule extends RubyObject {
             throw new FrozenError(getRuntime(), "class/module");
         }
         if (getMethods().remove(name) == null) {
-            throw new NameError(getRuntime(), "method '" + name + "' not defined in " + toName());
+            throw new NameError(getRuntime(), "method '" + name + "' not defined in " + getName());
         }
 
         clearMethodCache(name);
@@ -807,10 +789,10 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(name.asSymbol())) {
-            throw new NameError(getRuntime(), "cannot remove " + name.asSymbol() + " for " + toName());
+            throw new NameError(getRuntime(), "cannot remove " + name.asSymbol() + " for " + getName());
         }
 
-        throw new NameError(getRuntime(), "class variable " + name.asSymbol() + " not defined for " + toName());
+        throw new NameError(getRuntime(), "class variable " + name.asSymbol() + " not defined for " + getName());
     }
 
     private void addAccessor(String name, boolean readable, boolean writeable) {
@@ -863,7 +845,7 @@ public class RubyModule extends RubyObject {
         if (method.isUndefined()) {
             throw new NameError(
                 runtime,
-                "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + toName() + "'");
+                "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + getName() + "'");
         }
 
         if (method.getVisibility() != visibility) {
@@ -947,7 +929,7 @@ public class RubyModule extends RubyObject {
             body = args[0];
             newMethod = new ProcMethod((RubyProc)body, visibility);
         } else {
-            throw new TypeError(runtime, "wrong argument type " + args[0].getType().toName() + " (expected Proc/Method)");
+            throw new TypeError(runtime, "wrong argument type " + args[0].getType().getName() + " (expected Proc/Method)");
         }
 
         addMethod(name, newMethod);
@@ -996,7 +978,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString name() {
-        return RubyString.newString(runtime, toName());
+        return RubyString.newString(runtime, getName());
     }
 
     /** rb_mod_class_variables
@@ -1096,7 +1078,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString to_s() {
-        return RubyString.newString(runtime, toName());
+        return RubyString.newString(runtime, getName());
     }
 
     /** rb_mod_eqq
@@ -1165,7 +1147,7 @@ public class RubyModule extends RubyObject {
         if (!(obj instanceof RubyModule)) {
             throw new TypeError(
                 getRuntime(),
-                "<=> requires Class or Module (" + getMetaClass().toName() + " given)");
+                "<=> requires Class or Module (" + getMetaClass().getName() + " given)");
         }
 
         return RubyFixnum.newFixnum(getRuntime(), 
@@ -1434,9 +1416,9 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new NameError(getRuntime(), "cannot remove " + id + " for " + toName());
+            throw new NameError(getRuntime(), "cannot remove " + id + " for " + getName());
         }
-        throw new NameError(getRuntime(), "class variable " + id + " not defined for " + toName());
+        throw new NameError(getRuntime(), "class variable " + id + " not defined for " + getName());
     }
     
     public IRubyObject remove_const(IRubyObject name) {
@@ -1457,9 +1439,9 @@ public class RubyModule extends RubyObject {
         }
 
         if (isClassVarDefined(id)) {
-            throw new NameError(getRuntime(), "cannot remove " + id + " for " + toName());
+            throw new NameError(getRuntime(), "cannot remove " + id + " for " + getName());
         }
-        throw new NameError(getRuntime(), "constant " + id + " not defined for " + toName());
+        throw new NameError(getRuntime(), "constant " + id + " not defined for " + getName());
     }
     
     /** rb_mod_append_features

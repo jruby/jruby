@@ -316,7 +316,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(runtime, "#<" + getMetaClass().toName() + ">");
+        return RubyString.newString(runtime, "#<" + getMetaClass().getName() + ">");
     }
 
     public RubyString inspect() {
@@ -326,7 +326,7 @@ public class RubyStruct extends RubyObject {
 
         StringBuffer sb = new StringBuffer(100);
 
-        sb.append("#<").append(getMetaClass().toName()).append(' ');
+        sb.append("#<").append(getMetaClass().getName()).append(' ');
 
         for (int i = 0; i < member.getLength(); i++) {
             if (i > 0) {
@@ -398,7 +398,7 @@ public class RubyStruct extends RubyObject {
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('S');
 
-        String className = getMetaClass().getClassname();
+        String className = getMetaClass().getName();
         if (className == null) {
             throw new ArgumentError(runtime, "can't dump anonymous class");
         }

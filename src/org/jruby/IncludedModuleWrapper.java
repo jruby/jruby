@@ -67,7 +67,7 @@ public final class IncludedModuleWrapper extends RubyClass {
     }
 
     public String getClassname() {
-		return delegate.getClassname();
+		return delegate.getName();
     }
 
     public RubyModule getDelegate() {

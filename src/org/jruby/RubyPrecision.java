@@ -48,7 +48,7 @@ public class RubyPrecision {
     }
 
     public static IRubyObject induced_from(IRubyObject receiver, IRubyObject source) {
-        throw new TypeError(receiver.getRuntime(), "Undefined conversion from " + source.getMetaClass().toName() + " into " + ((RubyClass)receiver).toName());
+        throw new TypeError(receiver.getRuntime(), "Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
     }
 
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {

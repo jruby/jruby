@@ -28,7 +28,9 @@ public class ReflectionClassMap implements RubyToJavaClassMap {
     public Class getJavaClassForRubyClass(RubyClass rubyClass) {
         while (rubyClass != null) {
             try {
-                String rubyClassName = rubyClass.getClassname();
+                // TODO: This should get real class name of the class implementing
+                // the name.
+                String rubyClassName = rubyClass.getName();
                 String javaClassName = javaPackage + "." + rubyClassName;
                 return Class.forName(javaClassName);
             } catch (ClassNotFoundException ex) {
@@ -39,7 +41,7 @@ public class ReflectionClassMap implements RubyToJavaClassMap {
             }
             rubyClass = (RubyClass) rubyClass.superclass();
 
-            if (rubyClass != null && rubyClass.getClassname() == null) {
+            if (rubyClass != null && rubyClass.getName() == null) {
                 break;
             }
         }

@@ -686,7 +686,7 @@ public final class Ruby {
         if (type == getExceptions().getRuntimeError() && (info == null || info.length() == 0)) {
             getErrorStream().print(": unhandled exception\n");
         } else {
-            String path = type.getClassPath().toString();
+            String path = type.getName();
 
             if (info.length() == 0) {
                 getErrorStream().print(": " + path + '\n');
