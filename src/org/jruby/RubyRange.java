@@ -174,7 +174,7 @@ public class RubyRange extends RubyObject implements IndexCallable {
         } else if (args.length == 2) {
             init(args[0], args[1], getRuntime().getFalse());
         } else {
-            throw new ArgumentError(getRuntime(), "Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
+            throw new ArgumentError(getRuntime(), "Wrong arguments. (anObject, anObject, aBoolean = false) expected");
         }
         return getRuntime().getNil();
     }

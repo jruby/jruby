@@ -186,7 +186,7 @@ public class ReflectionCallback implements Callback {
         sb.append(" given, ");
 
         if (argumentTypes.length == 0) {
-            sb.append("no arguments excepted.");
+            sb.append("no arguments expected.");
         } else {
             sb.append("(");
             for (int i = 0; i < argumentTypes.length; i++) {
@@ -199,7 +199,7 @@ public class ReflectionCallback implements Callback {
             if (isRestArgs) {
                 sb.append(", ...");
             }
-            sb.append(") excepted.");
+            sb.append(") expected.");
         }
 
         return sb.toString();
