@@ -26,8 +26,13 @@
  */
 package org.jruby.ast.util;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.ablaf.ast.INode;
 import org.jruby.*;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.ExpandArrayNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.runtime.*;
 
@@ -47,7 +52,9 @@ public final class ArgsUtil {
         return actBlock;
     }
 
-    public final static void endCallArgs(final Ruby ruby, final Block actBlock) {
+    public final static void endCallArgs(
+        final Ruby ruby,
+        final Block actBlock) {
         if (actBlock != null) {
             // XXX
             ruby.getBlock().push(actBlock); // Refresh the next attribute.
@@ -55,13 +62,35 @@ public final class ArgsUtil {
         ruby.getIterStack().pop();
     }
 
-    public final static RubyObject[] setupArgs(final Ruby ruby, final EvaluateVisitor visitor, final INode node) {
+    public final static RubyObject[] setupArgs(
+        final Ruby ruby,
+        final EvaluateVisitor visitor,
+        final INode node) {
         if (node == null) {
             return new RubyObject[0];
         }
 
         final String file = ruby.getSourceFile();
         final int line = ruby.getSourceLine();
+
+        if (node instanceof ArrayNode) {
+            final int size = ((ArrayNode) node).size();
+            final ArrayList list = new ArrayList(size);
+            final Iterator iterator = ((ArrayNode) node).iterator();
+            for (int i = 0; i < size; i++) {
+                final INode next = (INode) iterator.next();
+                if (next instanceof ExpandArrayNode) {
+                    list.addAll(((RubyArray) visitor.eval(next)).getList());
+                } else {
+                    list.add(visitor.eval(next));
+                }
+            }
+
+            ruby.setSourceFile(file);
+            ruby.setSourceLine(line);
+
+            return (RubyObject[]) list.toArray(new RubyObject[list.size()]);
+        }
 
         final RubyObject args = visitor.eval(node);
 
