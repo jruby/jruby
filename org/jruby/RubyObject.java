@@ -253,7 +253,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         objectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyObject.class, "to_s"));
         objectClass.defineMethod("type", CallbackFactory.getMethod(RubyObject.class, "type"));
         objectClass.defineMethod("untaint", CallbackFactory.getMethod(RubyObject.class, "untaint"));
-        objectClass.defineMethod("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
+        objectClass.defineMethod("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", IRubyObject.class));
 
         objectClass.defineAlias("===", "==");
         objectClass.defineAlias("class", "type");
@@ -618,7 +618,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         //Get from instance
         ICallable method = getInternalClass().searchMethod(name);
-        if (method != null) {
+        if (!method.isUndefined()) {
             return ruby.getTrue();
         }
         return ruby.getFalse();
@@ -829,7 +829,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
                     RubyString name = RubyString.newString(getRuntime(), (String) key);
-                    if ((((ICallable) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
+                    if (((ICallable) value).getVisibility().isPublic()) {
                         if (! ((RubyArray) arg).includes(name)) {
                             if (((ICallable) value) == null) {
                                 ((RubyArray) arg).append(getRuntime().getNil());

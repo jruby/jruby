@@ -15,6 +15,7 @@ import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Namespace;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -27,7 +28,8 @@ public final class DefaultMethod extends AbstractMethod {
     private ArgsNode argsNode;
     private Namespace namespace;
 
-    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Namespace namespace) {
+    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Namespace namespace, Visibility visibility) {
+        super(visibility);
         this.body = body;
         this.argsNode = argsNode;
         this.namespace = namespace;

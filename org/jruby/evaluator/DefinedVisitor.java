@@ -67,6 +67,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** This visitor is used to evaluate a defined? statement.
@@ -126,7 +127,7 @@ public class DefinedVisitor extends AbstractVisitor {
     public void visitSuperNode(SuperNode iVisited) {
         String lastMethod = ruby.getCurrentFrame().getLastFunc();
         RubyModule lastClass = ruby.getCurrentFrame().getLastClass();
-        if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, 0)) {
+        if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
             definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
         }
     }
@@ -137,7 +138,7 @@ public class DefinedVisitor extends AbstractVisitor {
     public void visitZSuperNode(ZSuperNode iVisited) {
         String lastMethod = ruby.getCurrentFrame().getLastFunc();
         RubyModule lastClass = ruby.getCurrentFrame().getLastClass();
-        if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, 0)) {
+        if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, false)) {
             definition = "super";
         }
     }
@@ -149,10 +150,10 @@ public class DefinedVisitor extends AbstractVisitor {
             try {
                 IRubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
                 
-                int noex = receiver.getInternalClass().getMethodNoex(iVisited.getName());
+                Visibility noex = receiver.getInternalClass().getMethodNoex(iVisited.getName());
 
-                if ((noex & Constants.NOEX_PRIVATE) == 0 && ((noex & Constants.NOEX_PROTECTED) == 0 || self.isKindOf(receiver.getInternalClass().getRealClass()))) {
-                    if (receiver.getInternalClass().isMethodBound(iVisited.getName(), 0)) {
+                if (!noex.isPrivate() && (!noex.isProtected() || self.isKindOf(receiver.getInternalClass().getRealClass()))) {
+                    if (receiver.getInternalClass().isMethodBound(iVisited.getName(), false)) {
                         definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
                         return;
                     }
@@ -167,7 +168,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
     public void visitFCallNode(FCallNode iVisited) {
-        if (self.getInternalClass().isMethodBound(iVisited.getName(), 0)) {
+        if (self.getInternalClass().isMethodBound(iVisited.getName(), false)) {
             definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
         }
     }
@@ -176,7 +177,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
-        if (self.getInternalClass().isMethodBound(iVisited.getMethodName(), 0)) {
+        if (self.getInternalClass().isMethodBound(iVisited.getMethodName(), false)) {
             definition = "method";
         }
     }
@@ -381,7 +382,7 @@ public class DefinedVisitor extends AbstractVisitor {
                 if (((RubyModule)left).isConstantDefinedAt(iVisited.getName())) {
                     definition = "constant";
                 }
-            } else if (left.getInternalClass().isMethodBound(iVisited.getName(), 1)) {
+            } else if (left.getInternalClass().isMethodBound(iVisited.getName(), true)) {
                 definition = "method";
             }
         } catch (JumpException excptn) {

@@ -36,11 +36,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public interface ICallable {
-    public RubyModule getImplementationClass();
-    public void setImplementationClass(RubyModule implClass);
+    RubyModule getImplementationClass();
+    void setImplementationClass(RubyModule implClass);
     
-    public int getNoex();
-    public void setNoex(int noex);
+    Visibility getVisibility();
+    void setVisibility(Visibility visibility);
 
-    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
+    boolean isUndefined();
+
+    IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 }

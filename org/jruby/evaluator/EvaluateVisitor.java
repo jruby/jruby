@@ -154,10 +154,12 @@ import org.jruby.exceptions.RubySecurityException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
@@ -704,30 +706,30 @@ public final class EvaluateVisitor implements NodeVisitor {
         // }
         //          }
 
-        int noex;
+        Visibility noex = Visibility.PUBLIC;
 
         if (ruby.isScope(Constants.SCOPE_PRIVATE) || iVisited.getName().equals("initialize")) {
-            noex = Constants.NOEX_PRIVATE;
+            noex = Visibility.PRIVATE;
         } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
-            noex = Constants.NOEX_PROTECTED;
+            noex = Visibility.PROTECTED;
         } else if (rubyClass == ruby.getClasses().getObjectClass()) {
             noex = iVisited.getNoex();
-        } else {
-            noex = Constants.NOEX_PUBLIC;
         }
 
-        if (method != null && method.getImplementationClass() == rubyClass && (method.getNoex() & Constants.NOEX_UNDEF) != 0) {
+        /* FIXME Fix the undef stuff
+        if (method != null && method.getImplementationClass() == rubyClass && (method.getVisibility() & Constants.NOEX_UNDEF) != 0) {
             noex |= Constants.NOEX_UNDEF;
         }
+        */
 
         // FIXME Create new method store class.
         // ScopeNode body = copyNodeScope((ScopeNode)iVisited.getBodyNode(), ruby.getNamespace());
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace());
+        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace(), noex);
 
-        rubyClass.addMethod(iVisited.getName(), newMethod, noex);
+        rubyClass.addMethod(iVisited.getName(), newMethod);
 
         if (ruby.getCurrentMethodScope() == Constants.SCOPE_MODFUNC) {
-            rubyClass.getSingletonClass().addMethod(iVisited.getName(), newMethod, Constants.NOEX_PUBLIC);
+            rubyClass.getSingletonClass().addMethod(iVisited.getName(), new WrapperCallable(newMethod, Visibility.PUBLIC));
             rubyClass.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
         }
 
@@ -769,9 +771,10 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         // FIXME see above in visitDefnNode
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace());
+        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), ruby.getNamespace(), Visibility.PUBLIC);
 
-        rubyClass.addMethod(iVisited.getName(), newMethod, Constants.NOEX_PUBLIC | (method != null ? method.getNoex() & Constants.NOEX_UNDEF : 0));
+        // FIXME , Constants.NOEX_PUBLIC | (method != null ? method.getVisibility() & Constants.NOEX_UNDEF : 0)
+        rubyClass.addMethod(iVisited.getName(), newMethod);
         receiver.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
 
         result = ruby.getNil();

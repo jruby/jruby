@@ -2,6 +2,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
 
 /**
  *
@@ -10,8 +11,12 @@ import org.jruby.runtime.ICallable;
  */
 public abstract class AbstractMethod implements ICallable {
     private RubyModule implementationClass;
-    private int noex;
-
+    private Visibility visibility;
+    
+    protected AbstractMethod(Visibility visibility) {
+        this.visibility = visibility;
+    }
+    
     /**
      * @see IMethod#getImplementationClass()
      */
@@ -30,15 +35,18 @@ public abstract class AbstractMethod implements ICallable {
      * Gets the noex.
      * @return Returns a int
      */
-    public int getNoex() {
-        return noex;
+    public Visibility getVisibility() {
+        return visibility;
+    }
+    /**
+     * @see org.jruby.runtime.ICallable#setVisibility(Visibility)
+     */
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
 
-    /**
-     * Sets the noex.
-     * @param noex The noex to set
-     */
-    public void setNoex(int noex) {
-        this.noex = noex;
+    public boolean isUndefined() {
+        return false;
     }
+
 }

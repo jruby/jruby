@@ -30,6 +30,7 @@ import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.runtime.Visibility;
 
 /**
  * method definition node.
@@ -41,9 +42,9 @@ public class DefnNode extends AbstractNode {
     private String name;
     private INode argsNode;
     private ScopeNode bodyNode;
-    private int noex;
+    private Visibility noex;
     
-    public DefnNode(ISourcePosition position, String name, INode argsNode, ScopeNode bodyNode, int noex) {
+    public DefnNode(ISourcePosition position, String name, INode argsNode, ScopeNode bodyNode, Visibility noex) {
         super(position);
         
         this.name = name;
@@ -108,15 +109,7 @@ public class DefnNode extends AbstractNode {
      * Gets the noex.
      * @return Returns a int
      */
-    public int getNoex() {
+    public Visibility getNoex() {
         return noex;
-    }
-
-    /**
-     * Sets the noex.
-     * @param noex The noex to set
-     */
-    public void setNoex(int noex) {
-        this.noex = noex;
     }
 }

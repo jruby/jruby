@@ -44,12 +44,15 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.internal.runtime.methods.CallbackMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -530,7 +533,7 @@ public class RubyModule extends RubyObject {
     /** rb_add_method
      *
      */
-    public void addMethod(String name, ICallable method, int noex) {
+    public void addMethod(String name, ICallable method) {
         if (this == getRuntime().getClasses().getObjectClass()) {
             getRuntime().secure(4);
         }
@@ -546,17 +549,17 @@ public class RubyModule extends RubyObject {
     }
 
     public void defineMethod(String name, Callback method) {
-        int noex = (name.equals("initialize")) ? Constants.NOEX_PRIVATE : Constants.NOEX_PUBLIC;
+        Visibility noex = name.equals("initialize") ? Visibility.PRIVATE : Visibility.PUBLIC;
 
-        addMethod(name, new CallbackMethod(method), noex | Constants.NOEX_CFUNC);
+        addMethod(name, new CallbackMethod(method, noex));
     }
 
     public void defineProtectedMethod(String name, Callback method) {
-        addMethod(name, new CallbackMethod(method), Constants.NOEX_PROTECTED | Constants.NOEX_CFUNC);
+        addMethod(name, new CallbackMethod(method, Visibility.PROTECTED));
     }
 
     public void definePrivateMethod(String name, Callback method) {
-        addMethod(name, new CallbackMethod(method), Constants.NOEX_PRIVATE | Constants.NOEX_CFUNC);
+        addMethod(name, new CallbackMethod(method, Visibility.PRIVATE));
     }
 
     /*public void undefMethod(RubyId id) {
@@ -568,7 +571,7 @@ public class RubyModule extends RubyObject {
     }*/
 
     public void undefMethod(String name) {
-        addMethod(name, null, Constants.NOEX_UNDEF);
+        addMethod(name, UndefinedMethod.getInstance());
     }
 
     /** rb_frozen_class_p
@@ -607,7 +610,7 @@ public class RubyModule extends RubyObject {
                      rb_id2name( id ) );*/
         }
         ICallable method = searchMethod(name);
-        if (method == null) {
+        if (method.isUndefined()) {
             String s0 = " class";
             RubyModule c = this;
 
@@ -624,7 +627,7 @@ public class RubyModule extends RubyObject {
 
             throw new NameError(ruby, "Undefined method " + name + " for" + s0 + " '" + c.toName() + "'");
         }
-        addMethod(name, null, Constants.NOEX_PUBLIC);
+        addMethod(name, UndefinedMethod.getInstance());
     }
 
     /** rb_define_module_function
@@ -695,7 +698,7 @@ public class RubyModule extends RubyObject {
             if (getSuperClass() != null) {
                 return getSuperClass().searchMethod(name);
             } else {
-                return null;
+                return UndefinedMethod.getInstance();
             }
         } else {
             method.setImplementationClass(this);
@@ -703,25 +706,23 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    public int getMethodNoex(String name) {
-        return getMethodBody(name, 0).getNoex();
+    public Visibility getMethodNoex(String name) {
+        return getMethodBody(name).getVisibility();
     }
 
     /** rb_get_method_body
      *
      */
-    protected CacheEntry getMethodBody(String name, int noex) {
+    protected CacheEntry getMethodBody(String name) {
         ICallable method = searchMethod(name);
 
-        if (method == null) {
-            // System.out.println("Cant find method \"" + name + "\" in class " + toName());
-
+        if (method.isUndefined()) {
             getRuntime().getMethodCache().saveUndefinedEntry(this, name);
 
             return null;
         }
 
-        CacheEntry result = new CacheEntry(this, method.getNoex());
+        CacheEntry result = new CacheEntry(this, method.getVisibility());
 
         if (method instanceof AliasMethod) {
             result.setName(name);
@@ -746,7 +747,7 @@ public class RubyModule extends RubyObject {
     /** rb_call
      *
      */
-    public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, final int scope) {
+    public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, int scope) {
         if (args == null) {
             args = new IRubyObject[0];
         }
@@ -754,10 +755,10 @@ public class RubyModule extends RubyObject {
         CacheEntry ent = getRuntime().getMethodCache().getEntry(this, name);
 
         if (ent == null) {
-            ent = getMethodBody(name, 0);
+            ent = getMethodBody(name);
         }
 
-        if (ent == null || ent.getMethod() == null) {
+        if (ent == null || ent.getMethod().isUndefined()) {
             if (scope == 3) {
                 throw new NameError(ruby, "super: no superclass method '" + name + "'");
             }
@@ -771,20 +772,19 @@ public class RubyModule extends RubyObject {
         name = ent.getOriginalName();
         ICallable method = ent.getMethod();
 
-        // if (mid != missing) {
-        //     /* receiver specified form for private method */
-        //     if ((noex & NOEX_PRIVATE) && scope == 0)
-        //         return rb_undefined(recv, mid, argc, argv, CSTAT_PRIV);
-
-        //     /* self must be kind of a specified form for private method */
-        //     if ((noex & NOEX_PROTECTED)) {
-        //         VALUE defined_class = klass;
-        //         while (TYPE(defined_class) == T_ICLASS)
-        //             defined_class = RBASIC(defined_class)->klass;
-        //         if (!rb_obj_is_kind_of(ruby_frame->self, defined_class))
-        //             return rb_undefined(recv, mid, argc, argv, CSTAT_PROT);
-        //     }
-        // }
+        if (!name.equals("method_missing")) {
+            if (method.getVisibility().isPrivate() && scope == 0) {
+                // return undefinedMethod(name, args, Visibility.PRIVATE);
+            } else if (method.getVisibility().isProtected()) {
+                RubyModule defined = klass;
+                while (defined.isIncluded()) {
+                    defined = defined.getInternalClass();
+                }
+                if (!ruby.getCurrentFrame().getSelf().isKindOf(defined)) {
+                    // return undefinedMethod(name, args, Visibility.PROTECTED);
+                }
+            }
+        }
 
         // ...
 
@@ -835,11 +835,11 @@ public class RubyModule extends RubyObject {
 
         RubyModule origin = null;
 
-        if (method == null) {
+        if (method.isUndefined()) {
             if (isModule()) {
                 method = getRuntime().getClasses().getObjectClass().searchMethod(oldName);
             }
-            if (method == null) {
+            if (method.isUndefined()) {
                 throw new NameError(
                     ruby,
                     "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + toName() + "'");
@@ -854,7 +854,7 @@ public class RubyModule extends RubyObject {
         }
 
         getRuntime().getMethodCache().clearByName(name);
-        getMethods().put(name, new AliasMethod(method, oldName, origin, method.getNoex()));
+        getMethods().put(name, new AliasMethod(method, oldName, origin, method.getVisibility()));
     }
 
     /** remove_method
@@ -998,28 +998,26 @@ public class RubyModule extends RubyObject {
      *
      */
     public void addAttribute(String name, boolean read, boolean write, boolean ex) {
-        int noex = Constants.NOEX_PUBLIC;
+        Visibility attributeScope = Visibility.PUBLIC;
 
         if (ex) {
             if (getRuntime().getCurrentMethodScope() == Constants.SCOPE_PRIVATE) {
-                noex = Constants.NOEX_PRIVATE;
+                attributeScope = Visibility.PRIVATE;
             } else if (getRuntime().getCurrentMethodScope() == Constants.SCOPE_PROTECTED) {
-                noex = Constants.NOEX_PROTECTED;
-            } else {
-                noex = Constants.NOEX_PUBLIC;
+                attributeScope = Visibility.PROTECTED;
             }
         }
 
         String attrIV = "@" + name;
 
         if (read) {
-            addMethod(name, new EvaluateMethod(new InstVarNode(getRuntime().getPosition(), attrIV)), noex);
+            addMethod(name, new EvaluateMethod(new InstVarNode(getRuntime().getPosition(), attrIV), attributeScope));
             callMethod("method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
 
         if (write) {
             name = name + "=";
-            addMethod(name, new EvaluateMethod(new AttrSetNode(getRuntime().getPosition(), attrIV)), noex);
+            addMethod(name, new EvaluateMethod(new AttrSetNode(getRuntime().getPosition(), attrIV), attributeScope));
             callMethod("method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
     }
@@ -1051,7 +1049,7 @@ public class RubyModule extends RubyObject {
     /** set_method_visibility
      *
      */
-    public void setMethodVisibility(IRubyObject[] methods, int noex) {
+    public void setMethodVisibility(IRubyObject[] methods, Visibility noex) {
         if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw new RubySecurityException(getRuntime(), "Insecure: can't change method visibility");
         }
@@ -1064,28 +1062,29 @@ public class RubyModule extends RubyObject {
     /** rb_export_method
      *
      */
-    public void exportMethod(String name, int noex) {
+    public void exportMethod(String name, Visibility visibility) {
         if (this == getRuntime().getClasses().getObjectClass()) {
             getRuntime().secure(4);
         }
 
         ICallable method = searchMethod(name);
 
-        if (method == null && isModule()) {
+        if (method.isUndefined() && isModule()) {
             method = getRuntime().getClasses().getObjectClass().searchMethod(name);
         }
 
-        if (method == null) {
+        if (method.isUndefined()) {
             throw new NameError(
                 ruby,
                 "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + toName() + "'");
         }
 
-        if (method.getNoex() != noex) {
+        if (method.getVisibility() != visibility) {
             if (this == method.getImplementationClass()) {
-                method.setNoex(noex);
+                method.setVisibility(visibility);
             } else {
-                addMethod(name, new EvaluateMethod(new ZSuperNode(getRuntime().getPosition())), noex);
+                ICallable superCall = new EvaluateMethod(new ZSuperNode(getRuntime().getPosition()), visibility);
+                addMethod(name, superCall);
             }
         }
     }
@@ -1094,17 +1093,15 @@ public class RubyModule extends RubyObject {
      * MRI: rb_method_boundp
      * 
      */
-    public boolean isMethodBound(String name, int ex) {
+    public boolean isMethodBound(String name, boolean checkVisibility) {
         CacheEntry entry = ruby.getMethodCache().getEntry(this, name);
 
         if (entry == null) {
-            entry = getMethodBody(name, ex);
+            entry = getMethodBody(name);
         }
 
-        if (entry != null) {
-            if (ex != 0 && (entry.getNoex() & Constants.NOEX_PRIVATE) != 0) {
-                return false;
-            } else if (entry.getMethod() == null) {
+        if (entry != null && !entry.getMethod().isUndefined()) {
+            if (checkVisibility && entry.getVisibility().isPrivate()) {
                 return false;
             } else {
                 return true;
@@ -1115,14 +1112,14 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean isMethodDefined(String name) {
-        return isMethodBound(name, 1);
+        return isMethodBound(name, true);
     }
 
     public IRubyObject newMethod(IRubyObject recv, String name, RubyClass methodClass) {
         RubyClass originalClass = (RubyClass) this;
         String originalName = name;
 
-        CacheEntry ent = getMethodBody(name, 0);
+        CacheEntry ent = getMethodBody(name);
         if (ent == null) {
             // printUndef();
             return getRuntime().getNil();
@@ -1130,7 +1127,7 @@ public class RubyModule extends RubyObject {
 
         while (ent.getMethod() instanceof EvaluateMethod
             && ((EvaluateMethod) ent.getMethod()).getNode() instanceof ZSuperNode) {
-            ent = ent.getOrigin().getSuperClass().getMethodBody(ent.getOriginalName(), 0);
+            ent = ent.getOrigin().getSuperClass().getMethodBody(ent.getOriginalName());
             if (ent == null) {
                 // printUndef();
                 return getRuntime().getNil();
@@ -1508,7 +1505,7 @@ public class RubyModule extends RubyObject {
         return RubyBoolean.newBoolean(getRuntime(), isConstantDefined(name));
     }
 
-    private RubyArray instance_methods(IRubyObject[] args, final int noex) {
+    private RubyArray instance_methods(IRubyObject[] args, final Visibility noex) {
         boolean includeSuper = false;
 
         if (args.length > 0) {
@@ -1522,7 +1519,7 @@ public class RubyModule extends RubyObject {
                 ICallable method = (ICallable) value;
                 RubyArray ary = (RubyArray) arg;
 
-                if ((method.getNoex() & noex) == 0) {
+                if (method.getVisibility() == noex) {
                     RubyString name = RubyString.newString(getRuntime(), id);
 
                     if (!ary.includes(name)) {
@@ -1545,21 +1542,21 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods(args, (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED));
+        return instance_methods(args, Visibility.PUBLIC);
     }
 
     /** rb_class_protected_instance_methods
      *
      */
     public RubyArray protected_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Constants.NOEX_PROTECTED);
+        return instance_methods(args, Visibility.PROTECTED);
     }
 
     /** rb_class_private_instance_methods
      *
      */
     public RubyArray private_instance_methods(IRubyObject[] args) {
-        return instance_methods(args, Constants.NOEX_PRIVATE);
+        return instance_methods(args, Visibility.PRIVATE);
     }
 
     /** rb_mod_constants
@@ -1645,7 +1642,7 @@ public class RubyModule extends RubyObject {
         if (args.length == 0) {
             getRuntime().setCurrentMethodScope(Constants.SCOPE_PUBLIC);
         } else {
-            setMethodVisibility(args, Constants.NOEX_PUBLIC);
+            setMethodVisibility(args, Visibility.PUBLIC);
         }
 
         return this;
@@ -1662,7 +1659,7 @@ public class RubyModule extends RubyObject {
         if (args.length == 0) {
             getRuntime().setCurrentMethodScope(Constants.SCOPE_PROTECTED);
         } else {
-            setMethodVisibility(args, Constants.NOEX_PROTECTED);
+            setMethodVisibility(args, Visibility.PROTECTED);
         }
 
         return this;
@@ -1679,7 +1676,7 @@ public class RubyModule extends RubyObject {
         if (args.length == 0) {
             getRuntime().setCurrentMethodScope(Constants.SCOPE_PRIVATE);
         } else {
-            setMethodVisibility(args, Constants.NOEX_PRIVATE);
+            setMethodVisibility(args, Visibility.PRIVATE);
         }
 
         return this;
@@ -1696,15 +1693,15 @@ public class RubyModule extends RubyObject {
         if (args.length == 0) {
             getRuntime().setCurrentMethodScope(Constants.SCOPE_MODFUNC);
         } else {
-            setMethodVisibility(args, Constants.NOEX_PRIVATE);
+            setMethodVisibility(args, Visibility.PRIVATE);
 
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].toId();
                 ICallable method = searchMethod(name);
-                if (method == null) {
+                if (method.isUndefined()) {
                     throw new RubyBugException("undefined method '" + name + "'; can't happen");
                 }
-                getSingletonClass().addMethod(name, method, Constants.NOEX_PUBLIC);
+                getSingletonClass().addMethod(name, new WrapperCallable(method, Visibility.PUBLIC));
                 callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }
         }
@@ -1713,17 +1710,17 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyBoolean method_defined(IRubyObject symbol) {
-        return isMethodBound(symbol.toId(), 1) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return isMethodBound(symbol.toId(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public RubyModule public_class_method(IRubyObject[] args) {
-        getInternalClass().setMethodVisibility(args, Constants.NOEX_PUBLIC);
+        getInternalClass().setMethodVisibility(args, Visibility.PUBLIC);
 
         return this;
     }
 
     public RubyModule private_class_method(IRubyObject[] args) {
-        getInternalClass().setMethodVisibility(args, Constants.NOEX_PRIVATE);
+        getInternalClass().setMethodVisibility(args, Visibility.PRIVATE);
 
         return this;
     }

@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -41,12 +42,11 @@ public class AliasMethod extends AbstractMethod {
     private String oldName;
     private RubyModule origin;
     
-    public AliasMethod(ICallable oldMethod, String oldName, RubyModule origin, int noex) {
+    public AliasMethod(ICallable oldMethod, String oldName, RubyModule origin, Visibility visibility) {
+        super(visibility);
         this.oldMethod = oldMethod;
         this.oldName = oldName;
         this.origin = origin;
-        
-        setNoex(noex);
     }
 
     /**

@@ -29,6 +29,7 @@ package org.jruby.internal.runtime.methods;
 import org.ablaf.ast.INode;
 import org.jruby.*;
 import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -39,8 +40,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class EvaluateMethod extends AbstractMethod {
     private INode node;
     
-    public EvaluateMethod(INode node) {
+    public EvaluateMethod(INode node, Visibility visibility) {
+        super(visibility);
         this.node = node;
+    }
+
+    public EvaluateMethod(INode node) {
+        this(node, null);
     }
 
     /**

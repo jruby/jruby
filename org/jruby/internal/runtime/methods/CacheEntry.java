@@ -28,6 +28,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Visibility;
 
 /**
  *
@@ -41,9 +42,9 @@ public class CacheEntry {
     private RubyModule origin;      /* where method defined  */
 
     private ICallable method;
-    private int noex;
+    private Visibility visibility;
 
-    public CacheEntry(String name, String originalName, RubyModule recvClass, RubyModule origin, ICallable method, int noex) {
+    public CacheEntry(String name, String originalName, RubyModule recvClass, RubyModule origin, ICallable method, Visibility visibility) {
         this.name = name;
         this.originalName = originalName;
         
@@ -51,15 +52,15 @@ public class CacheEntry {
         this.origin = origin;
 
         this.method = method;
-        this.noex = noex;
+        this.visibility = visibility;
     }
     
     public CacheEntry(String name, RubyModule recvClass) {
-        this(name, name, recvClass, recvClass, null, 0);
+        this(name, name, recvClass, recvClass, UndefinedMethod.getInstance(), Visibility.PUBLIC);
     }
     
-    public CacheEntry(RubyModule recvClass, int noex) {
-        this(null, null, recvClass, null, null, noex);
+    public CacheEntry(RubyModule recvClass, Visibility visibility) {
+        this(null, null, recvClass, null, null, visibility);
     }
     
     /** Getter for property recvClass.
@@ -118,18 +119,12 @@ public class CacheEntry {
         this.originalName = originalName;
     }
     
-    /** Getter for property noex.
-     * @return Value of property noex.
-     */
-    public int getNoex() {
-        return noex;
+    public Visibility getVisibility() {
+        return visibility;
     }
     
-    /** Setter for property noex.
-     * @param noex New value of property noex.
-     */
-    public void setNoex(int noex) {
-        this.noex = noex;
+    public void setVisibility(Visibility visibility) {
+        this.visibility = visibility;
     }
     
     /** Getter for property origin.
