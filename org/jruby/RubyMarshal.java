@@ -110,7 +110,7 @@ public class RubyMarshal {
 
             InputStream rawInput;
             if (in instanceof RubyIO) {
-                throw new NotImplementedError();
+                throw new NotImplementedError(recv.getRuntime());
             } else if (in.respondsTo("to_str")) {
                 RubyString inString = (RubyString) in.callMethod("to_str");
                 rawInput = new ByteArrayInputStream(inString.toByteArray());

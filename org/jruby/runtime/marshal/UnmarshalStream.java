@@ -158,8 +158,10 @@ public class UnmarshalStream extends FilterInputStream {
 
         // ... FIXME: handle if class doesn't exist ...
 
-        RubyClass type = (RubyClass) runtime.getRubyClass(className.toId());
-        
+        RubyClass type = (RubyClass) runtime.getClasses().getClassFromPath(className.toId());
+
+        Asserts.assertNotNull(type, "type shouldn't be null.");
+
         IRubyObject result = runtime.getFactory().newObject(type);
 
         for (int i = 0, count = unmarshalInt(); i < count; i++) {

@@ -123,9 +123,11 @@ public final class ReflectionCallbackMethod implements Callback {
                 throw (RaiseException) itExcptn.getTargetException();
             } else if (itExcptn.getTargetException() instanceof JumpException) {
                 throw (JumpException) itExcptn.getTargetException();
-            } else {
+            } else if (itExcptn.getTargetException() instanceof Exception) {
                 recv.getRuntime().getJavaSupport().handleNativeException((Exception) itExcptn.getTargetException());
                 return recv.getRuntime().getNil();
+            } else {
+                throw (Error)itExcptn.getTargetException();
             }
         } catch (IllegalAccessException iaExcptn) {
             StringBuffer message = new StringBuffer();

@@ -31,6 +31,8 @@ package org.jruby;
 
 import java.util.Iterator;
 
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyHashMap;
@@ -813,23 +815,15 @@ public class RubyClasses {
         return null;
     }
 
-    /**
-     * Gets the classFromPath attribute of the RubyClasses object
-     *
-     * @param path Description of the Parameter
-     * @return The classFromPath value
-     */
     public RubyModule getClassFromPath(String path) {
-        RubyModule result = getClass(path);
-        if (result != null) {
-            return result;
+        if (path.charAt(0) == '#') {
+            throw new ArgumentError(ruby, "can't retrieve anonymous class " + path);
         }
-        IRubyObject evaluatedPath = ruby.evalScript(path);
-        RubyClass type = evaluatedPath.getType();
-        if (type != getClassClass() && type != getModuleClass()) {
-            return null;
+        IRubyObject type = ruby.evalScript(path);
+        if (!(type instanceof RubyModule)) {
+            throw new TypeError(ruby, "class path " + path + " does not point class");
         }
-        return (RubyModule) evaluatedPath;
+        return (RubyModule) type;
     }
 
     /**

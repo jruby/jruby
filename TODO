@@ -17,4 +17,6 @@
 * Finish ASTWriterVisitor
 * Implement ASTReader
 
-* FIX build.xml
+* FIX build.xml (use a filtered copying to fill constants)
+
+* Finish Marshal implementation (add support for links, some special stuff)

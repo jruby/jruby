@@ -29,19 +29,21 @@
  */
 package org.jruby.exceptions;
 
+import org.jruby.Ruby;
+
 /**
  * .Exception indicating an unimplemented feature in JRuby.
  * 
  * @author  jvoegele
  * @version $Revision$
  */
-public class NotImplementedError extends RuntimeException {
+public class NotImplementedError extends RaiseException {
 
-    public NotImplementedError() {
-        this("Not yet implemented");
+    public NotImplementedError(Ruby runtime) {
+        this(runtime, "Not yet implemented");
     }
 
-    public NotImplementedError(String message) {
-        super(message);
+    public NotImplementedError(Ruby runtime, String message) {
+        super(runtime, runtime.getExceptions().getNotImplementedError(), message);
     }
 }

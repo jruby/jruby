@@ -416,6 +416,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
+        Asserts.assertNotNull(receiver.getInternalClass(), receiver.getClass().getName());
         
         result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }

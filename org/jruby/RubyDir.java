@@ -161,7 +161,7 @@ public class RubyDir extends RubyObject {
      * on all platforms.
      */
     public static IRubyObject chroot(IRubyObject recv, RubyString path) {
-        throw new NotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
+        throw new NotImplementedError(recv.getRuntime(), "chroot not implemented: chroot is non-portable and is not supported.");
     }
 
     /**
@@ -223,7 +223,7 @@ public class RubyDir extends RubyObject {
      * directory object before terminating.
      */
     public static IRubyObject open(IRubyObject recv, RubyString path) {
-        throw new NotImplementedError();
+        throw new NotImplementedError(recv.getRuntime());
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------

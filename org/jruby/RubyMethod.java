@@ -206,7 +206,7 @@ public class RubyMethod extends RubyObject {
     public IRubyObject to_proc() {
         return runtime.iterate(
             CallbackFactory.getSingletonMethod(RubyMethod.class, "mproc"),
-            null,
+            runtime.getNil(),
             CallbackFactory.getBlockMethod(RubyMethod.class, "bmcall"),
             this);
     }

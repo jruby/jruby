@@ -129,7 +129,7 @@ public class Kernel extends ModuleDefinition {
     public IRubyObject callIndexed(int index, IRubyObject receiver, IRubyObject[] args) {
         switch (index) {
             case AUTOLOAD :
-                throw new NotImplementedError("not implemented");
+                throw new NotImplementedError(receiver.getRuntime(), "not implemented");
             case BACKQUOTE :
                 return KernelModule.backquote(receiver, args[0]);
             case BLOCK_GIVEN :

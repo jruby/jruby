@@ -481,7 +481,7 @@ public class KernelModule {
             RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
             long ceil = integerCeil.getLongValue();
             if (ceil > Integer.MAX_VALUE) {
-                throw new NotImplementedError("Random values larger than Integer.MAX_VALUE not supported");
+                throw new NotImplementedError(recv.getRuntime(), "Random values larger than Integer.MAX_VALUE not supported");
             }
             return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
         } else {
