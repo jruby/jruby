@@ -218,8 +218,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         return isNil();
     }
 
-    public boolean respondsTo(String methodName) {
-        return respond_to(new IRubyObject[] { RubySymbol.newSymbol(getRuntime(), methodName)}).isTrue();
+    public boolean respondsTo(String name) {
+        return getInternalClass().isMethodBound(name, false);
     }
 
     public static void createObjectClass(RubyModule objectClass) {
@@ -251,8 +251,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         objectClass.defineMethod("private_methods", CallbackFactory.getMethod(RubyObject.class, "private_methods"));
         objectClass.defineMethod("protected_methods", CallbackFactory.getMethod(RubyObject.class, "protected_methods"));
         objectClass.defineMethod("public_methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
-        objectClass.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send", IRubyObject.class));
-        objectClass.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send", IRubyObject.class));
+        objectClass.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send"));
+        objectClass.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send"));
         objectClass.defineMethod("taint", CallbackFactory.getMethod(RubyObject.class, "taint"));
         objectClass.defineMethod("tainted?", CallbackFactory.getMethod(RubyObject.class, "tainted"));
         objectClass.defineMethod("to_a", CallbackFactory.getMethod(RubyObject.class, "to_a"));
@@ -614,30 +614,23 @@ public class RubyObject implements Cloneable, IRubyObject {
         return RubyBoolean.newBoolean(getRuntime(), this == obj);
     }
 
-    /** rb_obj_respond_to
-     *
-     * "respond_to?"
-     * @fixme ...Need to change this to support the optional boolean arg
-     * And the associated access control on methods
+    /** 
+     * respond_to?( aSymbol, includePriv=false ) -> true or false
+     * 
+     * Returns true if this object responds to the given method. Private
+     * methods are included in the search only if the optional second
+     * parameter evaluates to true.
+     * 
+     * @mri rb_obj_respond_to
+     * @return true if this responds to the given method
      */
     public RubyBoolean respond_to(IRubyObject[] args) {
         argCount(args, 1, 2);
 
         String name = args[0].toId();
+        boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
-        //Look in cache
-        CacheEntry ent = getRuntime().getMethodCache().getEntry(getInternalClass(), name);
-        if (ent != null) {
-            //Check to see if it's private and we're not including privates(return false)
-            //otherwise return true
-            return runtime.getTrue();
-        }
-        //Get from instance
-        ICallable method = getInternalClass().searchMethod(name);
-        if (!method.isUndefined()) {
-            return runtime.getTrue();
-        }
-        return runtime.getFalse();
+        return RubyBoolean.newBoolean(runtime, getInternalClass().isMethodBound(name, !includePrivate));
     }
 
     /** Return the internal id of an object.
@@ -945,10 +938,39 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
     }
 
-    public IRubyObject send(IRubyObject method, IRubyObject[] args) {
+    /**
+     * send( aSymbol  [, args  ]*   ) -> anObject
+     * 
+     * Invokes the method identified by aSymbol, passing it any arguments
+     * specified. You can use __send__ if the name send clashes with an
+     * existing method in this object.
+     * 
+     * <pre>
+     * class Klass
+     *   def hello(*args)
+     *     "Hello " + args.join(' ')
+     *   end
+     * end
+     * 
+     * k = Klass.new
+     * k.send :hello, "gentle", "readers"
+     * </pre>
+     * 
+     * @mri rb_f_send
+     * @return the result of invoking the method identified by aSymbol.
+     */
+    public IRubyObject send(IRubyObject[] args) {
+        if (args.length < 1) {
+            throw new ArgumentError(runtime, "no method name given");
+        }
+        String name = args[0].toId();
+
+        IRubyObject[] newArgs = new IRubyObject[args.length - 1];
+        System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+
+        runtime.getIterStack().push(runtime.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-            return getInternalClass().call(this, method.toId(), args, 1);
+            return getInternalClass().call(this, name, newArgs, 1);
         } finally {
             getRuntime().getIterStack().pop();
         }

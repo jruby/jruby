@@ -45,7 +45,6 @@ public class RubyInvocationHandler implements InvocationHandler {
      **/
     public Object invoke(Object proxy, Method method, Object[] args) {
         String methodName = method.getName();
-        RubyString rubyMethodName = new RubyString(getRuby(), methodName);
         IRubyObject[] rubyArgs = factory.convertJavaToRuby(args);
 
         IRubyObject out = null;
@@ -58,23 +57,21 @@ public class RubyInvocationHandler implements InvocationHandler {
         } else if (methodName.equals("getRubyProxyFactory")) {
             return getRubyProxyFactory();
         } else if (respondsTo(rubyObject, methodName)) {
-            out = rubyObject.send(rubyMethodName, rubyArgs);
+            out = rubyObject.callMethod(methodName, rubyArgs);
         } else if (methodName.equals("toString")) {
             out = rubyObject.callMethod("to_s");
         } else if (methodName.equals("equals")) {
             out = rubyObject.callMethod("equal", rubyArgs); // ?
         } else if (methodName.indexOf("get") == 0) {
             String fieldName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-            rubyMethodName = new RubyString(getRuby(), fieldName);
 
-            out = rubyObject.send(rubyMethodName, rubyArgs);
+            out = rubyObject.callMethod(fieldName, rubyArgs);
         } else if (methodName.indexOf("set") == 0) {
             String fieldName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4) + "=";
-            rubyMethodName = new RubyString(getRuby(), fieldName);
 
-            out = rubyObject.send(rubyMethodName, rubyArgs);
+            out = rubyObject.callMethod(fieldName, rubyArgs);
         } else {
-            throw new RuntimeException("method " + rubyMethodName + " not found.");
+            throw new RuntimeException("method " + methodName + " not found.");
         }
 
         return factory.convertRubyToJava(out, method.getReturnType());

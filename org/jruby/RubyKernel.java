@@ -47,72 +47,72 @@ public class RubyKernel {
     public static RubyModule createKernelModule(Ruby ruby) {
         RubyModule kernelModule = ruby.defineModule("Kernel");
 
-        kernelModule.defineMethod("open", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "open"));
-        kernelModule.defineMethod("format", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
-        kernelModule.defineMethod("gets", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gets"));
-        kernelModule.defineMethod("p", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "p"));
-        kernelModule.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
-        kernelModule.defineMethod("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
-        kernelModule.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
-        kernelModule.defineMethod("readline", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "readline"));
-        kernelModule.defineMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "readlines"));
-        kernelModule.defineMethod("sprintf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
-        kernelModule.defineMethod("gsub!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gsub_bang"));
-        kernelModule.defineMethod("gsub", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gsub"));
-        kernelModule.defineMethod("sub!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sub_bang"));
-        kernelModule.defineMethod("sub", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sub"));
+        kernelModule.defineModuleFunction("open", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "open"));
+        kernelModule.defineModuleFunction("format", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
+        kernelModule.defineModuleFunction("gets", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gets"));
+        kernelModule.defineModuleFunction("p", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "p"));
+        kernelModule.defineModuleFunction("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
+        kernelModule.defineModuleFunction("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
+        kernelModule.defineModuleFunction("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
+        kernelModule.defineModuleFunction("readline", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "readline"));
+        kernelModule.defineModuleFunction("readlines", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "readlines"));
+        kernelModule.defineModuleFunction("sprintf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sprintf"));
+        kernelModule.defineModuleFunction("gsub!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gsub_bang"));
+        kernelModule.defineModuleFunction("gsub", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "gsub"));
+        kernelModule.defineModuleFunction("sub!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sub_bang"));
+        kernelModule.defineModuleFunction("sub", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "sub"));
 
-        kernelModule.defineMethod("chop!", CallbackFactory.getSingletonMethod(RubyKernel.class, "chop_bang"));
-        kernelModule.defineMethod("chop", CallbackFactory.getSingletonMethod(RubyKernel.class, "chop"));
-        kernelModule.defineMethod("chomp!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "chomp_bang"));
-        kernelModule.defineMethod("chomp", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "chomp"));
-        kernelModule.defineMethod("split", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "split"));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction("chop!", CallbackFactory.getSingletonMethod(RubyKernel.class, "chop_bang"));
+        kernelModule.defineModuleFunction("chop", CallbackFactory.getSingletonMethod(RubyKernel.class, "chop"));
+        kernelModule.defineModuleFunction("chomp!", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "chomp_bang"));
+        kernelModule.defineModuleFunction("chomp", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "chomp"));
+        kernelModule.defineModuleFunction("split", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "split"));
+        kernelModule.defineModuleFunction(
             "scan",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "scan", IRubyObject.class));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction(
             "load",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "load", RubyString.class));
         //kernelModule.defineMethod("autoload", CallbackFactory.getSingletonMethod(RubyKernel.class, "autoload", RubyString.class));
-        kernelModule.defineMethod("raise", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "raise"));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction("raise", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "raise"));
+        kernelModule.defineModuleFunction(
             "require",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "require", RubyString.class));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction(
             "global_variables",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "global_variables"));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction(
             "local_variables",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "local_variables"));
-        kernelModule.defineMethod("block_given?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
-        kernelModule.defineMethod("iterator?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
-        kernelModule.defineMethod("proc", CallbackFactory.getSingletonMethod(RubyKernel.class, "proc"));
-        kernelModule.defineMethod("loop", CallbackFactory.getSingletonMethod(RubyKernel.class, "loop"));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction("block_given?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
+        kernelModule.defineModuleFunction("iterator?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
+        kernelModule.defineModuleFunction("proc", CallbackFactory.getSingletonMethod(RubyKernel.class, "proc"));
+        kernelModule.defineModuleFunction("loop", CallbackFactory.getSingletonMethod(RubyKernel.class, "loop"));
+        kernelModule.defineModuleFunction(
             "eval",
             CallbackFactory.getOptSingletonMethod(RubyKernel.class, "eval", RubyString.class));
-        kernelModule.defineMethod("caller", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "caller"));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction("caller", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "caller"));
+        kernelModule.defineModuleFunction(
             "catch",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "rbCatch", IRubyObject.class));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction(
             "throw",
             CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rbThrow", IRubyObject.class));
-        kernelModule.defineMethod("singleton_method_added", CallbackFactory.getNilMethod(1));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction("singleton_method_added", CallbackFactory.getNilMethod(1));
+        kernelModule.defineModuleFunction(
             "set_trace_func",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "set_trace_func", IRubyObject.class));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction(
             "sleep",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "sleep", IRubyObject.class));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction(
             "`",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "backquote", RubyString.class));
-        kernelModule.defineMethod("exit", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "exit"));
-        kernelModule.defineMethod(
+        kernelModule.defineModuleFunction("exit", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "exit"));
+        kernelModule.defineModuleFunction(
             "srand",
             CallbackFactory.getSingletonMethod(RubyKernel.class, "srand", IRubyObject.class));
-        kernelModule.defineMethod("rand", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rand"));
+        kernelModule.defineModuleFunction("rand", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rand"));
 
         kernelModule.defineAlias("lambda", "proc");
 

@@ -1,9 +1,5 @@
 /*
- * IObject.java - description
- * Created on 12.03.2002, 01:26:26
- * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -38,8 +34,8 @@ import org.jruby.RubyString;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.RubyMap;
 
-/** Represents an object in Ruby. All the methods defined by this interface
- * are avaiable for all Ruby objects.
+/** Object is the parent class of all classes in Ruby. Its methods are
+ * therefore available to all objects unless explicitly overridden.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -229,14 +225,6 @@ public interface IRubyObject {
      */
     void setFrozen(boolean b);
     
-    /**
-     * Method send.
-     * @param method
-     * @param iRubyObjects
-     * @return Object
-     */
-    IRubyObject send(IRubyObject method, IRubyObject[] iRubyObjects);
-
     /**
      * Method inspect.
      * @return String
