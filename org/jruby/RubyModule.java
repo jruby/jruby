@@ -30,6 +30,7 @@ package org.jruby;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
@@ -280,13 +281,31 @@ public class RubyModule extends RubyObject {
 
         RubyMap instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
         if (instanceVariables != null) {
-            instanceVariables.foreach(
-                new FindClassPathMapMethod(),
-                arg);
+            Iterator iter = instanceVariables.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry)iter.next();
+                int ret = findClassPathMap(entry.getKey(), entry.getValue(), arg);
+                switch (ret) {
+                    case RubyMapMethod.CONTINUE:
+                        continue;
+                    case RubyMapMethod.STOP:
+                        break;
+                }
+            }
         }
 
         if (arg.name == null) {
-            getRuntime().getClasses().getClassMap().foreach(new FindClassPathMapMethod(), arg);
+            Iterator iter = getRuntime().getClasses().getClassMap().entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry)iter.next();
+                int ret = findClassPathMap(entry.getKey(), entry.getValue(), arg);
+                switch (ret) {
+                    case RubyMapMethod.CONTINUE:
+                        continue;
+                    case RubyMapMethod.STOP:
+                        break;
+                }
+            }
         }
 
         if (arg.name != null) {
@@ -1767,65 +1786,73 @@ public class RubyModule extends RubyObject {
         public FindClassPathResult prev;
     }
 
-    private class FindClassPathMapMethod implements RubyMapMethod {
-        public int execute(Object _key, Object _value, Object _res) {
-            // Cast the values.
-            String key = (String) _key;
-            if (_value instanceof String || _value == null) {
-                return RubyMapMethod.CONTINUE;
-            }
-            IRubyObject value = (IRubyObject) _value;
-            FindClassPathResult res = (FindClassPathResult) _res;
-
-            String path = null;
-
-            if (!IdUtil.isConstant(key)) {
-                return RubyMapMethod.CONTINUE;
-            }
-
-            if (res.path != null) {
-                path = res.path;
-                path += "::" + key;
-            } else {
-                path = key;
-            }
-
-            if (value == res.klass) {
-                res.name = key;
-                res.path = path;
-                return RubyMapMethod.STOP;
-            }
-
-            if (value.isKindOf(getRuntime().getClasses().getModuleClass())) {
-                if (value.getInstanceVariables() == null) {
-                    return RubyMapMethod.CONTINUE;
-                }
-
-                FindClassPathResult list = res;
-
-                while (list != null) {
-                    if (list.track == value) {
-                        return RubyMapMethod.CONTINUE;
-                    }
-                    list = list.prev;
-                }
-
-                FindClassPathResult arg = new FindClassPathResult();
-                arg.name = null;
-                arg.path = path;
-                arg.klass = res.klass;
-                arg.track = value;
-                arg.prev = res;
-
-                value.getInstanceVariables().foreach(this, arg);
-
-                if (arg.name != null) {
-                    res.name = arg.name;
-                    res.path = arg.path;
-                    return RubyMapMethod.STOP;
-                }
-            }
+    private int findClassPathMap(Object _key, Object _value, Object _res) {
+        // Cast the values.
+        String key = (String) _key;
+        if (_value instanceof String || _value == null) {
             return RubyMapMethod.CONTINUE;
         }
+        IRubyObject value = (IRubyObject) _value;
+        FindClassPathResult res = (FindClassPathResult) _res;
+
+        String path = null;
+
+        if (!IdUtil.isConstant(key)) {
+            return RubyMapMethod.CONTINUE;
+        }
+
+        if (res.path != null) {
+            path = res.path;
+            path += "::" + key;
+        } else {
+            path = key;
+        }
+
+        if (value == res.klass) {
+            res.name = key;
+            res.path = path;
+            return RubyMapMethod.STOP;
+        }
+
+        if (value.isKindOf(getRuntime().getClasses().getModuleClass())) {
+            if (value.getInstanceVariables() == null) {
+                return RubyMapMethod.CONTINUE;
+            }
+
+            FindClassPathResult list = res;
+
+            while (list != null) {
+                if (list.track == value) {
+                    return RubyMapMethod.CONTINUE;
+                }
+                list = list.prev;
+            }
+
+            FindClassPathResult arg = new FindClassPathResult();
+            arg.name = null;
+            arg.path = path;
+            arg.klass = res.klass;
+            arg.track = value;
+            arg.prev = res;
+
+            Iterator iter = value.getInstanceVariables().entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry)iter.next();
+                int ret = findClassPathMap(entry.getKey(), entry.getValue(), arg);
+                switch (ret) {
+                    case RubyMapMethod.CONTINUE:
+                        continue;
+                    case RubyMapMethod.STOP:
+                        break;
+                }
+            }
+
+            if (arg.name != null) {
+                res.name = arg.name;
+                res.path = arg.path;
+                return RubyMapMethod.STOP;
+            }
+        }
+        return RubyMapMethod.CONTINUE;
     }
 }

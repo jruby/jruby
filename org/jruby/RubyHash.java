@@ -148,8 +148,8 @@ public class RubyHash extends RubyObject {
 		hashClass.defineMethod("default", CallbackFactory.getMethod(RubyHash.class, "getDefaultValue"));
 		hashClass.defineMethod("default=", CallbackFactory.getMethod(RubyHash.class, "setDefaultValue", IRubyObject.class));
         //    rb_define_method(rb_cHash,"index", rb_hash_index, 1);
-        hashClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyHash.class, "indexes"));
-        hashClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyHash.class, "indexes"));
+        hashClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyHash.class, "indices"));
+        hashClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyHash.class, "indices"));
         hashClass.defineMethod("size", CallbackFactory.getMethod(RubyHash.class, "size"));
         hashClass.defineMethod("length", CallbackFactory.getMethod(RubyHash.class, "size"));
         hashClass.defineMethod("empty?", CallbackFactory.getMethod(RubyHash.class, "empty_p"));
@@ -396,7 +396,7 @@ public class RubyHash extends RubyObject {
 		return result;
 	}
 
-    public RubyArray indexes(IRubyObject[] indices) {
+    public RubyArray indices(IRubyObject[] indices) {
         ArrayList values = new ArrayList(indices.length);
 
         for (int i = 0; i < indices.length; i++) {

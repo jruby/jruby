@@ -52,6 +52,7 @@ test_marshal("c\023Struct::Froboz",
              Struct.new("Froboz", :x, :y))
 test_marshal("S:\023Struct::Froboz\a:\006xi\n:\006yi\f",
              Struct::Froboz.new(5, 7))
+
 # Can't dump anonymous class
 test_exception(ArgumentError) { Marshal.dump(Struct.new(:x, :y).new(5, 7)) }
 

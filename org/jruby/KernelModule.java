@@ -31,8 +31,9 @@
  */
 package org.jruby;
 
-import java.util.*;
-import java.io.*;
+import java.util.Iterator;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 import org.jruby.internal.runtime.builtin.definitions.KernelDefinition;
 import org.jruby.runtime.builtin.IRubyObject;
