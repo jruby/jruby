@@ -51,7 +51,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
                 javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
 
         javaConstructorClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
-        javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE));
+        javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE, 1));
         javaConstructorClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
 
         return javaConstructorClass;
