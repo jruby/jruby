@@ -1,5 +1,8 @@
 package org.jruby.runtime;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -15,6 +18,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.ReturnException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyStack;
 import org.jruby.util.collections.IStack;
 
 /**
@@ -27,6 +31,7 @@ public class ThreadContext {
     private Evaluator evaluator;
     
     private BlockStack blockStack;
+    private RubyStack dynamicVarsStack;
 
     /**
      * Constructor for Context.
@@ -37,10 +42,25 @@ public class ThreadContext {
         this.evaluator = new Evaluator(ruby);
 
         this.blockStack = new BlockStack(ruby);
+        this.dynamicVarsStack = new RubyStack();
+        
+        pushDynamicVars();
     }
     
     public BlockStack getBlockStack() {
         return blockStack;
+    }
+    
+    public RubyStack getDynamicVarsStack() {
+        return dynamicVarsStack;
+    }
+    
+    public Map getCurrentDynamicVars() {
+        return (Map)dynamicVarsStack.peek();
+    }
+    
+    public void pushDynamicVars() {
+        dynamicVarsStack.push(new HashMap());
     }
     
     public Evaluator getEvaluator() {

@@ -33,8 +33,10 @@ import java.io.File;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.ablaf.ast.INode;
@@ -42,7 +44,8 @@ import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.ZeroArgNode;
-import org.jruby.evaluator.*;
+import org.jruby.evaluator.AssignmentVisitor;
+import org.jruby.evaluator.Evaluator;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LoadError;
@@ -57,7 +60,7 @@ import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.*;
+import org.jruby.parser.Parser;
 import org.jruby.runtime.AliasGlobalVariable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
@@ -73,16 +76,15 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.RubyExceptions;
 import org.jruby.runtime.RubyRuntime;
-import org.jruby.runtime.RubyVarmap;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyStack;
 import org.jruby.util.collections.IStack;
-import org.jruby.runtime.regexp.IRegexpAdapter;
 
 /**
  * The jruby runtime.
@@ -155,9 +157,6 @@ public final class Ruby {
     private RubyModule wrapper;
 
     private RubyStack classStack = new RubyStack();
-
-    public RubyStack varMapStack = new RubyStack();
-    private RubyVarmap dynamicVars = null;
 
     // Java support
     private JavaSupport javaSupport;
@@ -408,7 +407,7 @@ public final class Ruby {
             throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
         }
 
-        pushVarmap();
+        pushDynamicVars();
         Block currentBlock = getBlockStack().getCurrent();
 
         getFrameStack().push(currentBlock.getFrame());
@@ -421,7 +420,7 @@ public final class Ruby {
 
         getBlockStack().pop();
 
-        dynamicVars = currentBlock.getDynamicVars();
+        getCurrentContext().getDynamicVarsStack().push(currentBlock.getDynamicVars());
 
         pushClass((klass != null) ? klass : currentBlock.getKlass());
 
@@ -483,7 +482,7 @@ public final class Ruby {
         } finally {
             getIterStack().pop();
             popClass();
-            popVarmap();
+            popDynamicVars();
 
             getBlockStack().setCurrent(currentBlock);
             getFrameStack().pop();
@@ -491,6 +490,7 @@ public final class Ruby {
             setNamespace(oldNamespace);
 
             getScope().setTop(oldScope);
+            getCurrentContext().getDynamicVarsStack().pop();
         }
     }
 
@@ -647,16 +647,16 @@ public final class Ruby {
     /** Getter for property dynamicVars.
      * @return Value of property dynamicVars.
      */
-    public RubyVarmap getDynamicVars() {
-        return dynamicVars;
+    public Map getDynamicVars() {
+        return getCurrentContext().getCurrentDynamicVars();
     }
 
     public RubyObject getDynamicValue(String name) {
-        RubyObject result = dynamicVars.getRef(name);
+        IRubyObject result = (IRubyObject)getDynamicVars().get(name);
         if (result == null) {
             return getNil();
         }
-        return result;
+        return (RubyObject) result;
     }
 
     /** Getter for property rubyClass.
@@ -933,38 +933,23 @@ public final class Ruby {
         return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
     }
 
-    public void pushVarmap() {
-       varMapStack.push(dynamicVars);
-        dynamicVars = null;
+    public void pushDynamicVars() {
+        getCurrentContext().pushDynamicVars();
     }
 
-    public void popVarmap() {
-        dynamicVars = (RubyVarmap) varMapStack.pop();
-    }
-
-    public void pushVarmap(String rubyId, RubyObject val) {
-        dynamicVars = new RubyVarmap(rubyId, val, dynamicVars);
+    public void popDynamicVars() {
+        getCurrentContext().getDynamicVarsStack().pop();
     }
 
     public void assignVarmap(String id, RubyObject value) {
-        dynamicVars = (dynamicVars != null) ? dynamicVars.assignVarmapInternal(id, value, false) : new RubyVarmap(id, value, null);
+        getDynamicVars().put(id, value);
     }
 
     public void assignCurrentVarmap(String id, RubyObject value) {
-        dynamicVars = (dynamicVars != null) ? dynamicVars.assignVarmapInternal(id, value, true) : new RubyVarmap(id, value, null);
+        getDynamicVars().put(id, value);
     }
 
     public List getDynamicNames() {
-        RubyVarmap vars = dynamicVars;
-        ArrayList result = new ArrayList();
-        while (vars != null) {
-            if (vars.name == null) {
-                break;
-            } else {
-                result.add(vars.name);
-            }
-            vars = vars.next;
-        }
-        return result;
+        return new ArrayList(getDynamicVars().keySet());
     }
 }

@@ -26,17 +26,30 @@
  */
 package org.jruby.evaluator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
-import org.jruby.*;
-import org.jruby.ast.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyObject;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.ConstDeclNode;
+import org.jruby.ast.DAsgnCurrNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.StarNode;
 import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.common.IErrors;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.runtime.RubyVarmap;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**

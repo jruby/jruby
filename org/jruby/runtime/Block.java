@@ -26,6 +26,9 @@
  */
 package org.jruby.runtime;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.ablaf.ast.INode;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -44,7 +47,7 @@ public class Block implements StackElement {
     private Scope scope;
     private RubyModule klass;
     private Iter iter;
-    private RubyVarmap dynamicVars;
+    private Map dynamicVars;
     private RubyObject origThread;
 
     private Block next;
@@ -57,7 +60,7 @@ public class Block implements StackElement {
         Scope scope,
         RubyModule klass,
         Iter iter,
-        RubyVarmap dynamicVars,
+        Map dynamicVars,
         RubyObject origThread) {
 
         this.var = var;
@@ -156,7 +159,7 @@ public class Block implements StackElement {
      * Gets the dynamicVars.
      * @return Returns a RubyVarmap
      */
-    public RubyVarmap getDynamicVars() {
+    public Map getDynamicVars() {
         return dynamicVars;
     }
 
@@ -164,7 +167,7 @@ public class Block implements StackElement {
      * Sets the dynamicVars.
      * @param dynamicVars The dynamicVars to set
      */
-    public void setDynamicVars(RubyVarmap dynamicVars) {
+    public void setDynamicVars(Map dynamicVars) {
         this.dynamicVars = dynamicVars;
     }
 
