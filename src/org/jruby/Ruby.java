@@ -42,7 +42,6 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
-import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
@@ -63,7 +62,6 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.ILoadService;
@@ -114,8 +112,6 @@ public final class Ruby {
     		4 - no global (non-tainted) variable modification/no direct output
     */
     private int safeLevel = 0;
-
-    private IObjectFactory factory = new ObjectFactory(this);
 
     private CallbackFactory callbackFactory = CallbackFactory.createFactory();
 
@@ -602,13 +598,6 @@ public final class Ruby {
 
     public List getDynamicNames() {
         return getDynamicVars().names();
-    }
-    /**
-     * Returns the factory.
-     * @return IObjectFactory
-     */
-    public IObjectFactory getFactory() {
-        return factory;
     }
 
     /**

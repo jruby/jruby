@@ -32,6 +32,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
@@ -179,7 +180,7 @@ public class UnmarshalStream extends FilterInputStream {
 
         Asserts.notNull(type, "type shouldn't be null.");
 
-        IRubyObject result = runtime.getFactory().newObject(type);
+        IRubyObject result = new RubyObject(runtime, type);
         registerLinkTarget(result);
 
         for (int i = 0, count = unmarshalInt(); i < count; i++) {

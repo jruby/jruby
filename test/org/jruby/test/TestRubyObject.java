@@ -28,6 +28,7 @@ package org.jruby.test;
 
 import junit.framework.TestCase;
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
@@ -40,7 +41,7 @@ public class TestRubyObject extends TestCase {
 
     public void setUp() {
         ruby = Ruby.getDefaultInstance();
-        rubyObject = ruby.getFactory().newObject(ruby.getClasses().getObjectClass());
+        rubyObject = new RubyObject(ruby, ruby.getClasses().getObjectClass());
     }
 
     public void testNil() {
