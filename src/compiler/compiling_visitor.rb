@@ -40,6 +40,45 @@ module JRuby
 
     require 'bcel.rb'
 
+    class JvmGenerator
+      attr_reader :method
+      attr_reader :factory
+
+      def initialize(method, factory)
+        @method, @factory = method, factory
+      end
+
+      def append(instruction)
+        if BCEL::BranchInstruction.java_class.assignable_from?(instruction.java_class)
+          # Javasupport problem workaround
+          list = getInstructionList
+          JavaClass.for_name("org.apache.bcel.generic.InstructionList").java_method(:append, "org.apache.bcel.generic.BranchInstruction").invoke(list.java_object, instruction.java_object)
+        else
+          getInstructionList.append(instruction)
+        end
+      end
+
+      def getInstructionList
+        method.getInstructionList
+      end
+
+      def getConstantPool
+        method.getConstantPool
+      end
+
+      def getLocalVariables
+        method.getLocalVariables
+      end
+
+      def addLocalVariable(name, type, start, stop)
+        method.addLocalVariable(name, type, start, stop)
+      end
+
+      def getEnd
+        getInstructionList.getEnd
+      end
+    end
+
     class BytecodeSequence
       include Enumerable
 
@@ -62,9 +101,9 @@ module JRuby
 
       def jvm_compile(methodgen)
         factory = BCEL::InstructionFactory.new(methodgen.getConstantPool)
+        generator = JvmGenerator.new(methodgen, factory)
         @bytecodes.each {|b|
-          b.emit_jvm_bytecode(methodgen,
-                              factory)
+          b.emit_jvm_bytecode(generator)
         }
       end
     end
