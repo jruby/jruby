@@ -151,10 +151,6 @@ public final class Ruby {
 
     private IRubyObject topSelf;
 
-    private Scope topScope = null;
-
-    private Frame topFrame;
-
     private Namespace namespace;
     private Namespace topNamespace;
 
@@ -407,10 +403,7 @@ public final class Ruby {
     private void init() {
         getIterStack().push(Iter.ITER_NOT);
         getFrameStack().push();
-        topFrame = getCurrentFrame();
-
         getScope().push();
-        topScope = currentScope();
 
         setCurrentVisibility(Visibility.PRIVATE);
 
@@ -431,9 +424,6 @@ public final class Ruby {
         getCurrentFrame().setNamespace(namespace);
 
         classes.initBuiltinClasses();
-
-        getScope().pop();
-        getScope().push(topScope);
     }
 
     /** Getter for property rubyScope.
@@ -503,30 +493,12 @@ public final class Ruby {
         return getCurrentContext().getCurrentFrame();
     }
 
-    /** Getter for property topFrame.
-     * @return Value of property topFrame.
-     */
-    public Frame getTopFrame() {
-        return topFrame;
-    }
-
-    /** Setter for property topFrame.
-     * @param topFrame New value of property topFrame.
-     */
-    public void setTopFrame(Frame topFrame) {
-        this.topFrame = topFrame;
-    }
-
     public Namespace getNamespace() {
         return namespace;
     }
 
     public void setNamespace(Namespace newNamespace) {
         namespace = newNamespace;
-    }
-
-    public Namespace getTopNamespace() {
-        return topNamespace;
     }
 
     public JavaSupport getJavaSupport() {
@@ -798,7 +770,7 @@ public final class Ruby {
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
-        setNamespace(getTopNamespace());
+        setNamespace(topNamespace);
 
         if (!wrap) {
             secure(4); /* should alter global state */
@@ -849,7 +821,7 @@ public final class Ruby {
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
-        setNamespace(getTopNamespace());
+        setNamespace(topNamespace);
 
         if (!wrap) {
             secure(4); /* should alter global state */
