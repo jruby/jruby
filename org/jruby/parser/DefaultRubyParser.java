@@ -2866,7 +2866,7 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 	 *
 	 */
 	public Node yycompile(String f, int line) {
-		if (!ph.isCompileForEval() && ruby.getSecurityLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined("SCRIPT_LINES__")) {
+		if (!ph.isCompileForEval() && ruby.getSafeLevel() == 0 && ruby.getClasses().getObjectClass().isConstantDefined("SCRIPT_LINES__")) {
 			RubyHash hash = (RubyHash)ruby.getClasses().getObjectClass().getConstant("SCRIPT_LINES__");
 			RubyString fName = RubyString.newString(ruby, f);
 

@@ -139,7 +139,7 @@ public class RubyHash extends RubyObject {
         if (isFrozen()) {
             throw new RubyFrozenException(getRuby(), "Hash");
         }
-        if (isTaint() && getRuby().getSecurityLevel() >= 4) {
+        if (isTaint() && getRuby().getSafeLevel() >= 4) {
             throw new RubySecurityException(getRuby(), "Insecure: can't modify hash");
         }
     }

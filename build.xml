@@ -12,8 +12,8 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.3.0"/>
-    <property name="version.file" value="0_3_0"/>
+    <property name="version" value="0.3.1"/>
+    <property name="version.file" value="0_3_1"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <property name="build.dest" value="${build.dir}/classes"/>
@@ -35,8 +35,8 @@
         <available property="junit.present"
                    classname="junit.framework.TestCase"
                    classpathref="classpath" />
-		<available property="db4o.present"
-                   classname="com.db4o.Db4o"
+		<available property="oro.present"
+                   classname="org.apache.oro.text.regex.Perl5Pattern"
                    classpathref="classpath" />
     </target>
 
@@ -59,7 +59,7 @@
             <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
             <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
             <exclude unless="junit.present" name="**/test/**"/>
-            <exclude unless="db4o.present" name="org/jruby/javasupport/db4o/**"/>
+            <exclude unless="oro.present" name="org/jruby/regex/ORORegexpAdapter"/>
             <exclude name="**/tars/**"/>
         </javac>
         <copy todir="${build.dest}">

@@ -77,30 +77,13 @@ public class RubyJavaObject extends RubyObject {
         javaObjectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
         javaObjectClass.defineMethod("==", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
         javaObjectClass.defineMethod("hash", CallbackFactory.getMethod(RubyJavaObject.class, "hash"));
-        javaObjectClass.defineSingletonMethod("load_class", CallbackFactory.getOptSingletonMethod(RubyJavaObject.class, "load_class", RubyString.class));
-        javaObjectClass.defineSingletonMethod("import", CallbackFactory.getSingletonMethod(RubyJavaObject.class, "rbImport", RubyString.class));
 
         javaObjectClass.getRubyClass().undefMethod("new");
-        
-        ruby.defineGlobalConstant("Java", javaObjectClass);
 
         return javaObjectClass;
     }
 
 	// JavaObject methods
-
-    public static RubyObject load_class(Ruby ruby, RubyObject recv, RubyString className, RubyObject[] args) {
-        String rubyName = (args.length > 0) ? ((RubyString) args[0]).getValue() : null;
-
-        Class c = ruby.getJavaSupport().loadJavaClass(className);
-        return ruby.getJavaSupport().loadClass(c, rubyName);
-    }
-
-    public static RubyObject rbImport(Ruby ruby, RubyObject recv, RubyString packageName) {
-		ruby.getJavaSupport().addImportPackage(packageName.getValue());
-        return recv;
-    }
-
     public RubyString to_s() {
         return RubyString.newString(getRuby(), getValue() != null ? getValue().toString() : "null");
     }

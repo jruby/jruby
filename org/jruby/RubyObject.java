@@ -2,7 +2,7 @@
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -242,6 +242,8 @@ public class RubyObject {
         kernelModule.defineMethod("protected_methods", protected_methods);
         kernelModule.defineMethod("public_methods", methods);
         kernelModule.defineMethod("nil?", CallbackFactory.getFalseMethod());
+        kernelModule.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyString.class));
+        kernelModule.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyString.class));
         kernelModule.defineMethod("taint", taint);
         kernelModule.defineMethod("tainted?", tainted);
         kernelModule.defineMethod("to_a", to_a);
@@ -251,8 +253,10 @@ public class RubyObject {
 
         kernelModule.defineAlias("===", "==");
         kernelModule.defineAlias("equal?", "==");
-        
-        kernelModule.getRuby().defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
+
+        kernelModule.getRuby().defineGlobalFunction(
+            "method_missing",
+            CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
     }
 
     protected int argCount(RubyObject[] args, int min, int max) {
@@ -393,7 +397,7 @@ public class RubyObject {
      *
      */
     public RubyObject setInstanceVar(String name, RubyObject value) {
-        if (isTaint() && getRuby().getSecurityLevel() >= 4) {
+        if (isTaint() && getRuby().getSafeLevel() >= 4) {
             throw new RubySecurityException(getRuby(), "Insecure: can't modify instance variable");
         }
         if (isFrozen()) {
@@ -403,7 +407,7 @@ public class RubyObject {
             setInstanceVariables(new RubyHashMap());
         }
         getInstanceVariables().put(name, value);
-        
+
         return value;
     }
 
@@ -477,6 +481,20 @@ public class RubyObject {
             throw new RubyTypeException(getRuby(), getRubyClass().toName() + "#" + method + " should return " + className);
         }
         return result;
+    }
+
+    public void checkSafeString() {
+        if (getRuby().getSafeLevel() > 0 && isTaint()) {
+            if (getRuby().getRubyFrame().getLastFunc() != null) {
+                throw new RubySecurityException(getRuby(), "Insecure operation - " + getRuby().getRubyFrame().getLastFunc());
+            } else {
+                throw new RubySecurityException(getRuby(), "Insecure operation: -r");
+            }
+        }
+        getRuby().secure(4);
+        if (!(this instanceof RubyString)) {
+            throw new RubyTypeException(getRuby(), "wrong argument type " + getRubyClass().toName() + " (expected String)");
+        }
     }
 
     /** specific_eval
@@ -687,21 +705,20 @@ public class RubyObject {
     //FIXME...Need to change this to support the optional boolean arg
     //And the associated access control on methods
     public RubyBoolean respond_to(RubySymbol sym) {
-       //Look in cache
-       RubyMethodCacheEntry ent = RubyMethodCacheEntry.getEntry(ruby, getRubyClass(), sym.toId());
-       if(ent != null) {
-          //Check to see if it's private and we're not including privates(return false)
-          //otherwise return true
-          return ruby.getTrue();
-       }
-       //Get from instance
-       MethodNode meth = getRubyClass().searchMethod(sym.toId());
-       if(meth != null && !meth.equals(ruby.getNil())) {
-          return ruby.getTrue();
-       }
-       return ruby.getFalse();
+        //Look in cache
+        CacheEntry ent = getRuby().getMethodCache().getEntry(getRubyClass(), sym.toId());
+        if (ent != null) {
+            //Check to see if it's private and we're not including privates(return false)
+            //otherwise return true
+            return ruby.getTrue();
+        }
+        //Get from instance
+        MethodNode meth = getRubyClass().searchMethod(sym.toId());
+        if (meth != null && !meth.equals(ruby.getNil())) {
+            return ruby.getTrue();
+        }
+        return ruby.getFalse();
     }
-
 
     /** Return the internal id of an object.
      * 
@@ -791,7 +808,7 @@ public class RubyObject {
      * 
      */
     public RubyObject freeze() {
-        if (getRuby().getSecurityLevel() >= 4 && isTaint()) {
+        if (getRuby().getSafeLevel() >= 4 && isTaint()) {
             throw new RubySecurityException(getRuby(), "Insecure: can't freeze object");
         }
         setFrozen(true);
@@ -883,7 +900,7 @@ public class RubyObject {
         while (type != null && type.isSingleton()) {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
-                    RubyString name = RubyString.newString(getRuby(), (String)key);
+                    RubyString name = RubyString.newString(getRuby(), (String) key);
                     if ((((MethodNode) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                         if (((RubyArray) arg).includes(name).isFalse()) {
                             if (((MethodNode) value).getBodyNode() == null) {
@@ -935,13 +952,24 @@ public class RubyObject {
         }
         return this;
     }
-    
-	public RubyObject method_missing(RubyObject symbol, RubyObject[] args) {
-	    // +++
-	    // IMPLEMENT THIS METHOD
-	    // ---
-	    
-	    Ruby ruby = getRuby();
-	    throw new RubyNameException(ruby, ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for " + type().toName());
+
+    public RubyObject method_missing(RubyObject symbol, RubyObject[] args) {
+        // +++
+        // IMPLEMENT THIS METHOD
+        // ---
+
+        Ruby ruby = getRuby();
+        throw new RubyNameException(
+            ruby,
+            ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for " + type().toName());
+    }
+
+    public RubyObject send(RubyString method, RubyObject[] args) {
+        try {
+            getRuby().getIter().push(getRuby().isBlockGiven() ? RubyIter.ITER_PRE : RubyIter.ITER_NOT);
+            return getRubyClass().call(this, method.getValue(), new RubyPointer(args), 1);
+        } finally {
+            getRuby().getIter().pop();
+        }
     }
 }

@@ -112,7 +112,6 @@ public class RubyClasses {
     private RubyClass ioClass;
     private RubyClass javaInterfaceClass;
     private RubyClass javaObjectClass;
-    private RubyClass javaIObjectClass;
     private RubyClass matchDataClass;
     private RubyClass methodClass;
     private RubyClass moduleClass;
@@ -134,6 +133,7 @@ public class RubyClasses {
     private RubyModule comparableModule;
     private RubyModule enumerableModule;
     private RubyModule gcModule;
+    private RubyModule javaModule;
     private RubyModule kernelModule;
     private RubyModule marshalModule;
     private RubyModule mathModule;
@@ -248,8 +248,8 @@ public class RubyClasses {
         hashClass = RubyHash.createHashClass(ruby);
         rangeClass = RubyRange.createRangeClass(ruby);
 
+        javaModule = RubyJava.createJavaModule(ruby);
         javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
-        javaIObjectClass = RubyJavaIObject.createJavaInterfaceObjectClass(ruby);
         javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
         
         ioClass = RubyIO.createIOClass(ruby);
@@ -262,6 +262,8 @@ public class RubyClasses {
         objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
+        
+        RubyVariables.createVariables(ruby);
     }
 
     /** Returns the reference to the Binding class.
@@ -537,11 +539,11 @@ public class RubyClasses {
         return javaObjectClass;
     }
 
-    /** Returns the reference to the JavaInterface class.
-     * @return The JavaInterface class.
+    /** Returns the reference to the Java module.
+     * @return The Java module.
      */
-    public RubyClass getJavaIObjectClass() {
-        return javaIObjectClass;
+    public RubyModule getJavaModule() {
+        return javaModule;
     }
 
     /** Returns the reference to the JavaInterface class.

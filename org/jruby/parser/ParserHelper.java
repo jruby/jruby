@@ -105,11 +105,15 @@ public class ParserHelper {
     }*/
 
     private void yyerror(String message) {
-        ruby.getRuntime().getErrorStream().println(message);
+        // ruby.getRuntime().getErrorStream().println(message);
+
+        rb_errmess(message);
     }
 
     public void rb_compile_error(String message) {
-        ruby.getRuntime().getErrorStream().println(message);
+        // ruby.getRuntime().getErrorStream().println(message);
+
+        rb_errmess(message);
     }
     
     /**
@@ -117,9 +121,8 @@ public class ParserHelper {
      * puts an error message on the error stream with the line and file where it occured.
      * @param message the specific message
      **/
-    public void rb_errmess(String message)
-    {
-	ruby.getRuntime().getErrorStream().println(ruby.getSourceFile() + ":" + getLine() + " " + message);
+    public void rb_errmess(String message) {
+		ruby.getRuntime().getErrorStream().println(ruby.getSourceFile() + ":" + getLine() + " " + message);
     }
 
     public void rb_warn(String message) {
@@ -1016,14 +1019,10 @@ public class ParserHelper {
             case Constants.NODE_DOT3 :
                 node.setBeginNode(range_op(node.getBeginNode(), logop));
                 node.setEndNode(range_op(node.getEndNode(), logop));
-                if (type == Constants.NODE_DOT2) {
-                    new RuntimeException("[BUG] want to replace DOT2 with FLIP2").printStackTrace();
-                    // node.setReplacedNode(new Flip2Node(node.getBeginNode(), node.getEndNode(), local_append(newId(0))));
-                } else if (type == Constants.NODE_DOT3) {
-                    new RuntimeException("[BUG] want to replace DOT3 with FLIP3").printStackTrace();
-                    // node.setReplacedNode(new Flip3Node(node.getBeginNode(), node.getEndNode(), local_append(newId(0))));
-                }
-                //node.setnd_cnt(local_append(newId(0)));
+                
+                ((DotNode)node).setFlip(true);
+                
+                node.setCount(local_append(null));
                 warning_unless_e_option("range literal in condition");
                 break;
             case Constants.NODE_LIT :
@@ -1031,9 +1030,12 @@ public class ParserHelper {
                     warning_unless_e_option("regex literal in condition");
                     // +++
                     // node.nd_set_type(Constants.NODE_MATCH);
+                    
+                    throw new RuntimeException("[BUG] node.nd_set_type(Constants.NODE_MATCH)");
+                    
+                    // local_cnt("_");
+                    // local_cnt("~");
                     // ---
-                    local_cnt("_");
-                    local_cnt("~");
                 }
         }
         return node;

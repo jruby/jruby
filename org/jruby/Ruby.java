@@ -2,7 +2,7 @@
  * Ruby.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -45,14 +45,16 @@ import org.jruby.util.*;
  * The jruby runtime.
  *
  * @author  jpetersen
+ * @version $Revision$
+ * @since   0.1
  */
 public final class Ruby {
     public static final String RUBY_VERSION = "1.6";
-    
+
     public static final int FIXNUM_CACHE_MAX = 0xff;
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
 
-    private HashMap methodCache = new HashMap();
+    private RubyMethodCache methodCache;
 
     /** rb_global_tbl
      *
@@ -61,7 +63,14 @@ public final class Ruby {
 
     public LinkedList objectSpace = new LinkedList();
 
-    private int securityLevel = 0;
+    /** safe-level:
+    		0 - strings from streams/environment/ARGV are tainted (default)
+    		1 - no dangerous operation by tainted value
+    		2 - process/file operations prohibited
+    		3 - all genetated objects are tainted
+    		4 - no global (non-tainted) variable modification/no direct output
+    */
+    private int safeLevel = 0;
 
     // private RubyInterpreter rubyInterpreter = null;
 
@@ -133,6 +142,8 @@ public final class Ruby {
         falseObject = new RubyBoolean(this, false);
 
         javaSupport = new JavaSupport(this);
+
+        methodCache = new RubyMethodCache(this);
     }
 
     /**
@@ -254,17 +265,23 @@ public final class Ruby {
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
      */
-    public int getSecurityLevel() {
-        return this.securityLevel;
+    public int getSafeLevel() {
+        return this.safeLevel;
     }
 
     /** Setter for property securityLevel.
      * @param securityLevel New value of property securityLevel.
      */
-    public void setSecurityLevel(int securityLevel) {
-        this.securityLevel = securityLevel;
+    public void setSafeLevel(int safeLevel) {
+        this.safeLevel = safeLevel;
     }
-    public void secure(int security) {
+
+    public void secure(int level) {
+        if (level <= safeLevel) {
+            throw new RubySecurityException(
+                this,
+                "Insecure operation '" + getRubyFrame().getLastFunc() + "' at level " + safeLevel);
+        }
     }
 
     public RubyFixnum getFixnumInstance(long value) {
@@ -332,14 +349,14 @@ public final class Ruby {
      *
      */
     public RubyObject setGlobalVar(String name, RubyObject value) {
-        return RubyGlobalEntry.getGlobalEntry(this, name).set(value);
+        return getGlobalEntry(name).set(value);
     }
 
     /** rb_gv_get
      *
      */
     public RubyObject getGlobalVar(String name) {
-        return RubyGlobalEntry.getGlobalEntry(this, name).get();
+        return getGlobalEntry(name).get();
     }
 
     public RubyObject yield(RubyObject value) {
@@ -584,7 +601,7 @@ public final class Ruby {
     /** Getter for property methodCache.
      * @return Value of property methodCache.
      */
-    public HashMap getMethodCache() {
+    public RubyMethodCache getMethodCache() {
         return methodCache;
     }
 
@@ -883,20 +900,64 @@ public final class Ruby {
         return exceptions;
     }
 
-    /** defines a readonly global variable
+    /** defines a global variable with getter and setter methods
      * 
      */
-    public void defineReadonlyVariable(String name, RubyObject value) {
-        RubyGlobalEntry.defineReadonlyVariable(this, name, value);
+    public void defineHookedVariable(
+        String name,
+        RubyObject value,
+        RubyGlobalEntry.GetterMethod getter,
+        RubyGlobalEntry.SetterMethod setter) {
+
+        name = name.charAt(0) == '$' ? name : "$" + name;
+
+        RubyGlobalEntry globalEntry = getGlobalEntry(name);
+
+        globalEntry.setData(value);
+        globalEntry.setGetter(getter != null ? getter : RubyGlobalEntry.valueMethods);
+        globalEntry.setSetter(setter != null ? setter : RubyGlobalEntry.valueMethods);
+    }
+
+    /** defines a global variable
+     * 
+     */
+    public void defineVariable(String name, RubyObject value) {
+        defineHookedVariable(name, value, null, null);
     }
 
     /** defines a readonly global variable
      * 
      */
-    public void defineHookedVariable(String name, RubyObject value, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
-        RubyGlobalEntry.defineHookedVariable(this, name, value, getter, setter);
+    public void defineReadonlyVariable(String name, RubyObject value) {
+        defineHookedVariable(name, value, null, RubyGlobalEntry.readonlySetter);
     }
-    
+
+    public void defineVirtualVariable(
+        String name,
+        RubyGlobalEntry.GetterMethod getter,
+        RubyGlobalEntry.SetterMethod setter) {
+        getter = getter != null ? getter : RubyGlobalEntry.valueMethods;
+        setter = setter != null ? setter : RubyGlobalEntry.readonlySetter;
+
+        defineHookedVariable(name, null, getter, setter);
+    }
+
+    /** rb_global_entry
+     *
+     */
+    public RubyGlobalEntry getGlobalEntry(String name) {
+        //Ruby ruby = id.getRuby();
+
+        RubyGlobalEntry entry = (RubyGlobalEntry) getGlobalMap().get(name);
+
+        if (entry == null) {
+            entry = new RubyGlobalEntry(this, name);
+            getGlobalMap().put(name, entry);
+        }
+
+        return entry;
+    }
+
     /**
      * Init the LOAD_PATH variable.
      * MRI: eval.c:void Init_load()
@@ -919,7 +980,7 @@ public final class Ruby {
         //of course we can't do that, let's just use the org.jruby.HOME property
         String lRubyHome = System.getProperty("jruby.home");
         String lRubyLib = System.getProperty("jruby.lib");
-        
+
         for (int i = ioAdditionalDirectory.size() - 1; i >= 0; i--) {
             ioAdditionalDirectory.set(i, new RubyString(this, (String) ioAdditionalDirectory.get(i)));
         }
@@ -927,7 +988,7 @@ public final class Ruby {
         if (lRubyLib != null && lRubyLib.length() != 0) {
             ioAdditionalDirectory.add(new RubyString(this, lRubyLib));
         }
-        
+
         if (lRubyHome != null && lRubyHome.length() != 0) {
             //FIXME: use the version number in some other way than hardcoded here
             String lRuby = lRubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
@@ -942,7 +1003,7 @@ public final class Ruby {
             ioAdditionalDirectory.add(new RubyString(this, lRubyVersion));
             ioAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
         }
-        
+
         //FIXME: safe level pb here
         ioAdditionalDirectory.add(new RubyString(this, "."));
         RubyArray rb_load_path = new RubyArray(this, ioAdditionalDirectory);
