@@ -13,12 +13,14 @@ public class CompiledReflectionCallback implements Callback {
     private String methodName;
     private String className;
     private int arity;
+    private ClassLoader classLoader;
 
-    public CompiledReflectionCallback(Ruby runtime, String className, String methodName, int arity) {
+    public CompiledReflectionCallback(Ruby runtime, String className, String methodName, int arity, ClassLoader classLoader) {
         this.runtime = runtime;
         this.className = className;
         this.methodName = methodName;
         this.arity = arity;
+        this.classLoader = classLoader;
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
@@ -48,7 +50,7 @@ public class CompiledReflectionCallback implements Callback {
 
     private Method getMethod() {
         try {
-            Class javaClass = Class.forName(className);
+            Class javaClass = getJavaClass();
             Class[] args = new Class[2 + arity];
             args[0] = Ruby.class;
             args[1] = IRubyObject.class;
@@ -57,11 +59,17 @@ public class CompiledReflectionCallback implements Callback {
             }
             return javaClass.getMethod(methodName, args);
 
-        } catch (ClassNotFoundException e) {
-            Asserts.notReached("class not found: " + className);
-            return null;
         } catch (NoSuchMethodException e) {
             Asserts.notReached("method not found: " + methodName);
+            return null;
+        }
+    }
+
+    private Class getJavaClass() {
+        try {
+            return classLoader.loadClass(className);
+        } catch (ClassNotFoundException e) {
+            Asserts.notReached("class not found: " + className);
             return null;
         }
     }

@@ -42,106 +42,21 @@ module JRuby
 
         def emit_jvm_bytecode(generator)
 
-          # klass
-          generator.appendPush(generator.java_class_name)
-          klass =
-            generator.addLocalVariable("klass",
-                                       BCEL::Type::STRING,
-                                       nil,
-                                       nil)
-          klass.setStart(generator.getEnd)
-          generator.append(BCEL::ASTORE.new(klass.getIndex))
-
-          # methodName
-          generator.appendPush(@name)
-          methodName =
-            generator.addLocalVariable("methodName",
-                                       BCEL::Type::STRING,
-                                       nil,
-                                       nil)
-          methodName.setStart(generator.getEnd)
-          generator.append(BCEL::ASTORE.new(methodName.getIndex))
-
-          # arity
-          generator.appendPush(@arity)
-          arity = generator.addLocalVariable("arity",
-                                             BCEL::Type::INT,
-                                             nil,
-                                             nil)
-          arity.setStart(generator.getEnd)
-          generator.append(BCEL::ISTORE.new(arity.getIndex))
-
-          # Create a callback
-          factory = generator.factory
-          generator.append(factory.createNew("org.jruby.runtime.CompiledReflectionCallback"))
-          generator.append(BCEL::DUP.new)
-
           push_runtime(generator)
-          generator.append(BCEL::ALOAD.new(klass.getIndex))
-          generator.append(BCEL::ALOAD.new(methodName.getIndex))
-          generator.append(BCEL::ILOAD.new(arity.getIndex))
-
-          # Fixme: destroy local variables
+          generator.appendPush(generator.java_class_name)
+          generator.appendPush(@name)
+          generator.appendPush(@arity)
 
           arg_types = BCEL::Type[].new(4)
           arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
           arg_types[1] = BCEL::Type::STRING
           arg_types[2] = BCEL::Type::STRING
           arg_types[3] = BCEL::Type::INT
-
-          # Call constructor
-          generator.appendInvoke("org.jruby.runtime.CompiledReflectionCallback",
-                                 "<init>",
+          generator.appendInvoke("org.jruby.compiler.ByteCodeRuntime",
+                                 "registerMethod",
                                  BCEL::Type::VOID,
                                  arg_types,
-                                 BCEL::Constants::INVOKESPECIAL)
-
-          # Make a method using the callback
-
-          generator.append(factory.createNew("org.jruby.internal.runtime.methods.CallbackMethod"))
-          generator.append(BCEL::DUP.new)
-          callbackMethod = generator.addLocalVariable("callbackMethod",
-                                                      BCEL::ObjectType.new("org.jruby.internal.runtime.methods.CallbackMethod"),
-                                                      nil,
-                                                      nil)
-          callbackMethod.setStart(generator.getEnd)
-          generator.append(BCEL::ASTORE.new(callbackMethod.getIndex))
-          generator.append(BCEL::SWAP.new)
-
-          generator.append(factory.createGetStatic("org.jruby.runtime.Visibility",
-                                                   "PUBLIC",
-                                                   BCEL::ObjectType.new("org.jruby.runtime.Visibility")))
-          arg_types = BCEL::Type[].new(2)
-          arg_types[0] = BCEL::ObjectType.new("org.jruby.runtime.Callback")
-          arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.Visibility")
-          generator.appendInvoke("org.jruby.internal.runtime.methods.CallbackMethod",
-                                 "<init>",
-                                 BCEL::Type::VOID,
-                                 arg_types,
-                                 BCEL::Constants::INVOKESPECIAL)
-
-          # Register it to the runtime
-
-          # Get the current class
-          push_runtime(generator)
-          generator.appendInvoke("org.jruby.Ruby",
-                                 "getRubyClass",
-                                 BCEL::ObjectType.new("org.jruby.RubyModule"),
-                                 BCEL::Type[].new(0),
-                                 BCEL::Constants::INVOKEVIRTUAL)
-
-          generator.appendPush(@name)
-          generator.append(BCEL::ALOAD.new(callbackMethod.getIndex))
-
-          # addMethod(name, callback)
-          arg_types = BCEL::Type[].new(2)
-          arg_types[0] = BCEL::Type::STRING
-          arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.ICallable")
-          generator.appendInvoke("org.jruby.RubyModule",
-                                 "addMethod",
-                                 BCEL::Type::VOID,
-                                 arg_types,
-                                 BCEL::Constants::INVOKEVIRTUAL)
+                                 BCEL::Constants::INVOKESTATIC)
         end
       end
 
@@ -442,6 +357,22 @@ module JRuby
                                  BCEL::Type::VOID,
                                  arg_types,
                                  BCEL::Constants::INVOKEVIRTUAL)
+
+          # Set up Ruby locals (ignore _ and ~ vars for now)
+          for i in 2...@local_names.size
+            push_scope_stack(generator)
+            generator.appendPush(i)
+            generator.append(BCEL::ALOAD.new(i))
+
+            arg_types = BCEL::Type[].new(2)
+            arg_types[0] = BCEL::Type::INT
+            arg_types[1] = IRUBYOBJECT_TYPE
+            generator.appendInvoke("org.jruby.runtime.ScopeStack",
+                                   "setValue",
+                                   BCEL::Type::VOID,
+                                   arg_types,
+                                   BCEL::Constants::INVOKEVIRTUAL)
+          end
         end
       end
 

@@ -69,20 +69,30 @@ module JRubyUtil
   include_package "org.jruby.util"
 end
 
+module JRubyCompiler
+  include_package 'org.jruby.compiler'
+end
+
+$class_counter = 0
+
 def test_compiled(expected, source)
   interfaces = JavaLang::JString[].new(0)
-  classgen = BCEL::ClassGen.new("jruby.CompiledRuby",
+  classgen = BCEL::ClassGen.new("jruby.CompiledRuby" + $class_counter.to_s,
                                 "java.lang.Object",
                                 "cool generated code",
                                 BCEL::Constants::ACC_PUBLIC,
                                 interfaces)
+  $class_counter += 1
 
   code = compile(source)
   code.jvm_compile(classgen, "doStuff")
 
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
-#  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
+  classgen.getJavaClass.dump("/tmp/" + classgen.getClassName) # REMOVE ME
+
+  JRubyCompiler::ByteCodeRuntime.addClass(classgen.getClassName,
+                                          classgen.getJavaClass.getBytes)
 
   result = JRubyUtil::TestHelper.loadAndCall(self,
                                              classgen.getClassName,
@@ -104,10 +114,8 @@ test_compiled(123, "begin; 123; end")
 test_compiled([1..2, 1...3], "[1..2, 1...3]")
 test_compiled(:hello, ":hello")
 test_compiled(2, "unless true; 1; else; 2; end")
-
 test_compiled(nil, "def hello(x); x * 2; end")
-
-#test_compiled(7, "def abc(); 7; end; abc()")
-#test_compiled(6, "def hello(x); x * 2; end; hello(3)")
+test_compiled(7, "def abc(); 7; end; abc()")
+test_compiled(6, "def hello(x); x * 2; end; hello(3)")
 
 test_print_report

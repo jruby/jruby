@@ -52,14 +52,14 @@ public class JavaSupport {
         exceptionHandlers.put(exceptionClass, handler);
     }
 
-    public void handleNativeException(Exception exception) {
+    public void handleNativeException(Throwable exception) {
         if (exception instanceof RaiseException) {
             throw (RaiseException) exception;
         }
         Class excptnClass = exception.getClass();
         RubyProc handler = (RubyProc)exceptionHandlers.get(excptnClass.getName());
         while (handler == null &&
-               excptnClass != Exception.class) {
+               excptnClass != Throwable.class) {
             excptnClass = excptnClass.getSuperclass();
         }
         if (handler != null) {
@@ -69,7 +69,7 @@ public class JavaSupport {
         }
     }
 
-    private RaiseException createRaiseException(Exception exception) {
+    private RaiseException createRaiseException(Throwable exception) {
         StringWriter stackTrace = new StringWriter();
         exception.printStackTrace(new PrintWriter(stackTrace));
 
