@@ -29,7 +29,8 @@ if defined? Java
     test_equal(Fixnum, result.type)
 
     # Inner classes
-#    test_equal("java.lang.Character$UnicodeBlock",
-#               Character::UnicodeBlock.java_class.name)
+    test_equal("java.lang.Character$UnicodeBlock",
+               Character::UnicodeBlock.class_eval("@java_class.name"))
+    #test_ok(Character::UnicodeBlock.instance_methods.include?("of"))
   end
 end

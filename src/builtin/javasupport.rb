@@ -36,10 +36,10 @@ end
 module JavaUtilities
   class << self
 
-    def load_java_class(constant, java_class)
+    def load_java_class(constant, java_class, mod)
       # Create proxy class
-      self.module_eval("class " + constant.to_s + "; include JavaProxy; end")
-      proxy_class = eval(self.name + '::' + constant.to_s)
+      mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
+      proxy_class = eval(mod.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
 
       # FIXME: take types into consideration, like the old javasupport,
@@ -79,7 +79,10 @@ module JavaUtilities
                 }
               else
                 # overloaded on same length
-                raise "java methods only differing on argument types not supported yet: #{name}"
+                define_method(name) {
+                  # FIXME
+                  raise "java methods only differing on arg types not yet supported"
+                }
               end
             }
           end
@@ -100,6 +103,18 @@ module JavaUtilities
                                "method.invoke(*args);" +
                                "end")
       }
+
+      def proxy_class.const_missing(constant)
+        inner_class = nil
+        begin
+          inner_class =
+            Java::JavaClass.for_name(@java_class.name + '$' + constant.to_s)
+        rescue NameError
+          return super
+        end
+        JavaUtilities.load_java_class(constant, inner_class, self)
+      end
+
       return proxy_class
     end
   end
@@ -131,7 +146,7 @@ class Module
       if java_class.nil?
         return super
       end
-      JavaUtilities.load_java_class(constant, java_class)
+      JavaUtilities.load_java_class(constant, java_class, self)
     end
   end
 
@@ -173,4 +188,10 @@ if __FILE__ == $0
   p r.nextInt
   p r.nextInt(10)
   p r.nextInt
+
+  class JavaLang
+    include_package "java.lang"
+  end
+
+  p JavaLang::Character::UnicodeBlock
 end
