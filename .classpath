@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
     <classpathentry kind="src" path="src"/>
-    <classpathentry kind="src" path="test"/>
     <classpathentry excluding="**/CVS/*" kind="src" path="test"/>
     <classpathentry excluding="**/Constants.java" kind="src" path="build/gen-src"/>
     <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
