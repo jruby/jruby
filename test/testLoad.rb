@@ -13,5 +13,5 @@ test_ok($ruby_init)
 test_exception(LoadError) { require 'NonExistantRequriedFile'}
 test_exception(LoadError) { require 'NonExistantRequriedFile'}
 
-test_ok require('requireTarget')
-test_ok !require('requireTarget')
+test_ok require('test/requireTarget')
+test_ok !require('test/requireTarget')
