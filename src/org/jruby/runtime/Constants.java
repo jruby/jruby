@@ -32,15 +32,33 @@
 
 package org.jruby.runtime;
 
+import java.io.IOException;
+import java.util.Properties;
 
-
-public interface Constants {
-    public static final String RUBY_MAJOR_VERSION = "${version.ruby.major}";
-    public static final String RUBY_VERSION = "${version.ruby}";
-    public static final String COMPILE_DATE = "${build.date}";
-    public static final String VERSION = "${version.jruby}";
+public final class Constants {
+	private static final Properties properties = new Properties();
     public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
     public static final int MARSHAL_MINOR = 10;
+    
+    public static String RUBY_MAJOR_VERSION;
+    public static String RUBY_VERSION;
+    public static String COMPILE_DATE;
+    public static String VERSION;
+
+    static {
+    	try {
+    		properties.load(Constants.class.getResourceAsStream("/jruby.properties"));
+    	} catch (IOException ioe) {
+    		ioe.printStackTrace();
+    	}
+    	
+    	RUBY_MAJOR_VERSION = properties.getProperty("version.ruby.major");
+    	RUBY_VERSION = properties.getProperty("version.ruby");
+    	COMPILE_DATE = properties.getProperty("release.date");
+    	VERSION = properties.getProperty("version.jruby");
+    }
+    
+    private Constants() {}
 }
