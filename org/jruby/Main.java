@@ -274,7 +274,7 @@ public class Main {
         int lNbRequire = sRequireFirst.size();
         try {
 			for (int i = 0; i < lNbRequire; i++)
-				RubyGlobal.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
+				RubyKernel.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
             INode lScript = ruby.compile(iString2Eval, iFileName, 0);
 

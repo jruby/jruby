@@ -306,7 +306,7 @@ public class RubyIO extends RubyObject {
     public static RubyObject foreach(Ruby ruby, RubyObject recv, RubyString filename, RubyObject[] args) {
         filename.checkSafeString();
 
-        RubyIO io = (RubyIO) RubyGlobal.open(ruby, recv, new RubyObject[] { filename });
+        RubyIO io = (RubyIO) RubyKernel.open(ruby, recv, new RubyObject[] { filename });
 
         if (!io.isNil()) {
             try {
@@ -591,7 +591,7 @@ public class RubyIO extends RubyObject {
     }
 
     public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
-        recv.funcall("write", RubyGlobal.sprintf(ruby, recv, args));
+        recv.funcall("write", RubyKernel.sprintf(ruby, recv, args));
 
         return ruby.getNil();
     }

@@ -1207,7 +1207,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitOptNNode(OptNNode iVisited) {
         setPosition(iVisited);
 
-        while (RubyGlobal.gets(ruby, ruby.getRubyTopSelf(), new RubyObject[0]).isTrue()) {
+        while (RubyKernel.gets(ruby, ruby.getRubyTopSelf(), new RubyObject[0]).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
                     eval(iVisited.getBodyNode());

@@ -204,13 +204,13 @@ public class RubyClasses {
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
-        kernelModule = ruby.defineModule("Kernel");
+        kernelModule = RubyKernel.createKernelModule(ruby);
         objectClass.includeModule(kernelModule);
 
         objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod());
         classClass.definePrivateMethod("inherited", CallbackFactory.getNilMethod());
 
-        RubyObject.createObjectClass(kernelModule);
+        RubyObject.createObjectClass(objectClass);
 
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);
