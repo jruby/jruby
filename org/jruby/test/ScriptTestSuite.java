@@ -74,11 +74,12 @@ public class ScriptTestSuite extends TestSuite {
 		suite.addTest(new ScriptTest(ruby, "testString"));
 //  	suite.addTest(new ScriptTest(ruby, "testException"));
 //  	suite.addTest(new ScriptTest(ruby, "testSpecialVar"));
-		suite.addTest(new ScriptTest(ruby, "testFile"));
+        suite.addTest(new ScriptTest(ruby, "testFile"));
         suite.addTest(new ScriptTest(ruby, "testMarshal"));
         suite.addTest(new ScriptTest(ruby, "testHash"));
         suite.addTest(new ScriptTest(ruby, "testSymbol"));
         suite.addTest(new ScriptTest(ruby, "testRandom"));
+        suite.addTest(new ScriptTest(ruby, "testStruct"));
 
         return suite;
     }

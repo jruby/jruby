@@ -180,7 +180,7 @@ public class RubyStruct extends RubyObject {
 
         // define access methods.
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            newStruct.defineMethod(args[i].toId(), CallbackFactory.getMethod(RubyStruct.class, "get", RubyObject.class));
+            newStruct.defineMethod(args[i].toId(), CallbackFactory.getMethod(RubyStruct.class, "get"));
             newStruct.defineMethod(args[i].toId() + "=", CallbackFactory.getMethod(RubyStruct.class, "set", RubyObject.class));
         }
 
@@ -195,7 +195,7 @@ public class RubyStruct extends RubyObject {
     public static RubyStruct newStruct(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyStruct struct = new RubyStruct(ruby, (RubyClass) recv);
 
-        int size = RubyFixnum.fix2int(getInstanceVariable((RubyClass) recv, "__size___"));
+        int size = RubyFixnum.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
 
         struct.values = new RubyObject[size];
 
@@ -207,7 +207,7 @@ public class RubyStruct extends RubyObject {
     public RubyObject initialize(RubyObject[] args) {
         modify();
 
-        int size = RubyFixnum.fix2int(getInstanceVariable(getRubyClass(), "__size___"));
+        int size = RubyFixnum.fix2int(getInstanceVariable(getRubyClass(), "__size__"));
 
         if (args.length > size) {
             throw new ArgumentError(ruby, "struct size differs");
@@ -245,6 +245,9 @@ public class RubyStruct extends RubyObject {
 
     public RubyObject set(RubyObject value) {
         String name = ruby.getActFrame().getLastFunc();
+        if (name.endsWith("=")) {
+            name = name.substring(0, name.length() - 1);
+        }
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
