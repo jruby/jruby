@@ -28,6 +28,7 @@
     <exclude unless="oro.present" name="**/ORORegexpAdapter.java"/>
     <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
     <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
+    <exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
     <exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
   </patternset>
 
@@ -73,7 +74,6 @@
       <fileset dir="${src.dir}">
         <patternset refid="java.src.pattern"/>
         <patternset refid="other.src.pattern"/>
-        <patternset refid="ruby.src.pattern"/>
       </fileset>
       <filterchain>
         <expandproperties/>
