@@ -197,7 +197,7 @@ public class RubyObject {
         Callback clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
         Callback dup = new ReflectionCallbackMethod(RubyObject.class, "dup");
         Callback equal = new ReflectionCallbackMethod(RubyObject.class, "equal", RubyObject.class);
-        Callback extend = new ReflectionCallbackMethod(RubyObject.class, "extend", RubyModule[].class, true);
+        Callback extend = new ReflectionCallbackMethod(RubyObject.class, "extend", RubyObject[].class, true);
         Callback freeze = new ReflectionCallbackMethod(RubyObject.class, "freeze");
         Callback frozen = new ReflectionCallbackMethod(RubyObject.class, "frozen");
         Callback id = new ReflectionCallbackMethod(RubyObject.class, "id");
