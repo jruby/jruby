@@ -54,3 +54,6 @@ release.
 * Security
     * Complete taint and freeze support
     * Safe levels
+
+* Use Antlr or other Java tool to generate parser
+
