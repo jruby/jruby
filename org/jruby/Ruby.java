@@ -987,4 +987,108 @@ public final class Ruby {
     public RubyExceptions getExceptions() {
         return exceptions;
     }
+
+	/**
+	 * Init the LOAD_PATH variable.
+	 * MRI: eval.c:void Init_load()
+	 * 		from programming ruby
+     *			
+	 *   An array of strings, where each string specifies a directory to be searched
+	 *   for Ruby scripts and binary extensions used by the load and require 
+	 *   The initial value is the value of the arguments passed via the -I command-line
+	 *	 option, followed by an installation-defined standard library location, followed
+	 *   by the current directory (``.''). This variable may be set from within a program to alter
+	 *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
+	 *   @param iAdditionalDirectory the directory specified on the command line
+	 **/
+	public void initLoad(Vector iAdditionalDirectory)
+	{
+		RubyArray rb_load_path = new RubyArray(this);
+		RubyGlobalEntry.defineReadonlyVariable(this, "$:", rb_load_path);
+		RubyGlobalEntry.defineReadonlyVariable(this, "$-I", rb_load_path);
+		RubyGlobalEntry.defineReadonlyVariable(this, "$LOAD_PATH", rb_load_path);
+		RubyArray rb_features = new RubyArray(this);
+		RubyGlobalEntry.defineReadonlyVariable(this, "$\"", rb_features);
+//
+//		rb_define_global_function("load", rb_f_load, -1);
+//		rb_define_global_function("require", rb_f_require, 1);
+//		rb_define_global_function("autoload", rb_f_autoload, 2);
+//		rb_global_variable(&ruby_wrapper);
+//
+//		ruby_dln_librefs = rb_ary_new();
+//		rb_global_variable(&ruby_dln_librefs);
+//#if defined LOAD_RELATIVE
+//    char libpath[FILENAME_MAX+1];
+//    char *p;
+//    int rest;
+//#if defined _WIN32 || defined __CYGWIN__
+//# if defined LIBRUBY_SO
+//    HMODULE libruby = GetModuleHandle(LIBRUBY_SO);
+//# else
+//    HMODULE libruby = NULL;
+//# endif
+//    GetModuleFileName(libruby, libpath, sizeof libpath);
+//#elif defined(DJGPP)
+//    extern char *__dos_argv0;
+//    strncpy(libpath, __dos_argv0, FILENAME_MAX);
+//#define CharNext(p) ((p) + mblen(p, MB_CUR_MAX))
+//#elif defined(__EMX__)
+//    _execname(libpath, FILENAME_MAX);
+//#endif
+//
+//#ifndef CharNext		/* defined as CharNext[AW] on Windows. */
+//#define CharNext(p) ((p) + 1)
+//#endif
+//
+//    for (p = libpath; *p; p = CharNext(p))
+//	if (*p == '\\')
+//	    *p = '/';
+//
+//    p = strrchr(libpath, '/');
+//    if (p) {
+//	*p = 0;
+//	if (p-libpath > 3 && !strcasecmp(p-4, "/bin")) {
+//	    p -= 4;
+//	    *p = 0;
+//	}
+//    } else {
+//	strcpy(libpath, ".");
+//	p = libpath + 1;
+//    }
+//
+//    rest = FILENAME_MAX - (p - libpath);
+//
+//#define RUBY_RELATIVE(path) (strncpy(p, (path), rest), libpath)
+//#else
+//#define RUBY_RELATIVE(path) (path)
+//#endif
+//
+//    if (rb_safe_level() == 0) {
+//	ruby_incpush(getenv("RUBYLIB"));
+//    }
+//
+//#ifdef RUBY_SEARCH_PATH
+//    ruby_incpush(RUBY_RELATIVE(RUBY_SEARCH_PATH));
+//#endif
+//
+//    ruby_incpush(RUBY_RELATIVE(RUBY_SITE_LIB2));
+//#ifdef RUBY_SITE_THIN_ARCHLIB
+//    ruby_incpush(RUBY_RELATIVE(RUBY_SITE_THIN_ARCHLIB));
+//#endif
+//    ruby_incpush(RUBY_RELATIVE(RUBY_SITE_ARCHLIB));
+//    ruby_incpush(RUBY_RELATIVE(RUBY_SITE_LIB));
+//
+//    ruby_incpush(RUBY_RELATIVE(RUBY_LIB));
+//#ifdef RUBY_THIN_ARCHLIB
+//    ruby_incpush(RUBY_RELATIVE(RUBY_THIN_ARCHLIB));
+//#endif
+//    ruby_incpush(RUBY_RELATIVE(RUBY_ARCHLIB));
+//
+//    if (rb_safe_level() == 0) {
+//	ruby_incpush(".");
+//    }
+//
+		
+	}
+
 }
