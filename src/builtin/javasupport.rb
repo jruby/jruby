@@ -48,7 +48,8 @@ module JavaUtilities
     def valid_constant_name?(name)
       return false if name.empty?
       first_char = name[0..0]
-      return first_char == first_char.upcase
+      return (first_char == first_char.upcase && 
+              first_char != first_char.downcase)
     end
 
     def create_proxy_class(constant, java_class, mod)
