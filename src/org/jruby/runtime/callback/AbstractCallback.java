@@ -36,42 +36,49 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.AssertError;
 import org.jruby.util.Asserts;
 
+/**
+ * A wrapper for <code>java.lang.reflect.Method</code> objects which implement Ruby methods.
+ * The public methods are {@link #execute execute()} and {@link #getArity getArity()}.
+ * Before really calling the Ruby method (via {@link #invokeMethod invokeMethod()}), the arity
+ * is checked and an {@link org.jruby.exceptions.ArgumentError ArgumentError} is raised if the
+ * number of arguments doesn't match the number of expected arguments.  Furthermore, rest
+ * arguments are collected in a single IRubyObject array.
+ */
 public abstract class AbstractCallback implements Callback {
-    protected final Class klass;
+    protected final Class type;
     protected final String methodName;
     protected final Class[] argumentTypes;
     protected final boolean isRestArgs;
     protected final Arity arity;
-    protected final CallType callType;
+    protected final boolean isStaticMethod;
 
-    public AbstractCallback(Class klass, String methodName, Class[] args, boolean isRestArgs, boolean isStaticMethod, Arity arity) {
-        this.klass = klass;
+    public AbstractCallback(Class type, String methodName, Class[] argumentTypes, boolean isRestArgs, boolean isStaticMethod, Arity arity) {
+        this.type = type;
         this.methodName = methodName;
-        this.argumentTypes = args != null ? args : CallbackFactory.NULL_CLASS_ARRAY;
+        this.argumentTypes = argumentTypes != null ? argumentTypes : CallbackFactory.NULL_CLASS_ARRAY;
         this.isRestArgs = isRestArgs;
         this.arity = arity;
-        this.callType = callType(isStaticMethod);
+        this.isStaticMethod = isStaticMethod;
     }
 
-    protected String getExpectedArgsString(IRubyObject[] methodArgs) {
+    /**
+     * Returns a string enumerating the given and the expected arguments types. 
+     */
+    protected String getExpectedArgsString(IRubyObject[] args) {
         StringBuffer sb = new StringBuffer();
-        sb.append("Wrong arguments:");
+        sb.append("Wrong arguments: ");
 
-        if (methodArgs.length == 0) {
-            sb.append(" No args");
+        if (args.length == 0) {
+            sb.append("No args");
         } else {
-            sb.append(" (");
-            for (int i = 0; i < methodArgs.length; i++) {
+            sb.append("(");
+            for (int i = 0; i < args.length; i++) {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                String className = methodArgs[i].getType().getName();
+                String className = args[i].getType().getName();
                 sb.append("a");
-                if (className.charAt(0) == 'A'
-                    || className.charAt(0) == 'E'
-                    || className.charAt(0) == 'I'
-                    || className.charAt(0) == 'O'
-                    || className.charAt(0) == 'U') {
+                if (isVowel(className.charAt(0))) {
                     sb.append("n");
                 }
                 sb.append(className);
@@ -86,20 +93,34 @@ public abstract class AbstractCallback implements Callback {
             sb.append("(");
             for (int i = 0; i < argumentTypes.length; i++) {
                 if (i > 0) {
-                    sb.append(",");
+                    sb.append(", ");
                 }
                 String className = argumentTypes[i].getName();
-                sb.append("a").append(className.substring(className.lastIndexOf(".Ruby") + 5));
+                className = className.substring(className.lastIndexOf(".Ruby") + 5);
+                sb.append("a");
+                if (isVowel(className.charAt(0))) {
+                	sb.append("n");
+                }
+                sb.append(className);
             }
             if (isRestArgs) {
                 sb.append(", ...");
             }
             sb.append(") expected.");
         }
-
         return sb.toString();
     }
+    
+    private boolean isVowel(char c) {
+    	return c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U';
+    }
 
+    /**
+     * Returns an object array that collects all rest arguments in its own object array which
+     * is then put into the last slot of the first object array.  That is, assuming that this
+     * callback expects one required argument and any number of rest arguments, an input of
+     * <code>[1, 2, 3]</code> is transformed into <code>[1, [2, 3]]</code>.  
+     */
     protected final Object[] packageRestArgumentsForReflection(final Object[] originalArgs) {
         IRubyObject[] restArray = new IRubyObject[originalArgs.length - (argumentTypes.length - 1)];
         Object[] result = new Object[argumentTypes.length];
@@ -110,7 +131,7 @@ public abstract class AbstractCallback implements Callback {
                     "Cannot call \""
                     + methodName
                     + "\" in class \""
-                    + klass.getName()
+                    + type.getName()
                     + "\". "
                     + getExpectedArgsString((IRubyObject[]) originalArgs));
         }
@@ -119,6 +140,9 @@ public abstract class AbstractCallback implements Callback {
         return result;
     }
 
+    /**
+     * Checks whether 
+     */
     protected void testArgsCount(Ruby runtime, IRubyObject[] methodArgs) {
         if (isRestArgs) {
             if (methodArgs.length < argumentTypes.length - 1) {
@@ -131,9 +155,18 @@ public abstract class AbstractCallback implements Callback {
         }
     }
 
+    /**
+     * Invokes the Ruby method. Actually, this methods delegates to an internal version
+     * that may throw the usual Java reflection exceptions.  Ruby exceptions are rethrown, 
+     * other exceptions throw an AssertError and abort the execution of the Ruby program.
+     * They should never happen.
+     */
     protected IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs) {
+    	if (isRestArgs) {
+    		methodArgs = packageRestArgumentsForReflection(methodArgs);
+    	}
         try {
-            return callType.invokeMethod(recv, methodArgs);
+        	return invokeMethod0(recv, methodArgs);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof RaiseException) {
                 throw (RaiseException) e.getTargetException();
@@ -141,7 +174,7 @@ public abstract class AbstractCallback implements Callback {
                 throw (JumpException) e.getTargetException();
             } else if (e.getTargetException() instanceof ThreadKill) {
             	// allow it to bubble up
-            	throw (ThreadKill)e.getTargetException();
+            	throw (ThreadKill) e.getTargetException();
             } else if (e.getTargetException() instanceof Exception) {
                 recv.getRuntime().getJavaSupport().handleNativeException(e.getTargetException());
                 return recv.getRuntime().getNil();
@@ -154,7 +187,7 @@ public abstract class AbstractCallback implements Callback {
             message.append(':');
             message.append(" methodName=").append(methodName);
             message.append(" recv=").append(recv.toString());
-            message.append(" klass=").append(klass.getName());
+            message.append(" type=").append(type.getName());
             message.append(" methodArgs=[");
             for (int i = 0; i < methodArgs.length; i++) {
                 message.append(methodArgs[i]);
@@ -162,29 +195,28 @@ public abstract class AbstractCallback implements Callback {
             }
             message.append(']');
             Asserts.notReached(message.toString());
-        } catch (final IllegalArgumentException iaExcptn) {
-            throw new RaiseException(recv.getRuntime(), "TypeError", iaExcptn.getMessage());
+        } catch (final IllegalArgumentException e) {
+            throw new RaiseException(recv.getRuntime(), "TypeError", e.getMessage());
         }
         throw new AssertError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
     }
 
+	protected abstract IRubyObject invokeMethod0(IRubyObject recv, Object[] methodArgs)
+			throws IllegalAccessException, InvocationTargetException;
+
+	/**
+     * Calls a wrapped Ruby method for the specified receiver with the specified arguments.
+     */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         args = (args != null) ? args : IRubyObject.NULL_ARRAY;
         testArgsCount(recv.getRuntime(), args);
         return invokeMethod(recv, args);
     }
 
+    /**
+     * Returns the arity of the wrapped Ruby method.
+     */
     public Arity getArity() {
         return arity;
-    }
-
-    protected abstract CallType callType(boolean isStaticMethod);
-
-
-    protected abstract static class CallType {
-        public abstract IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs)
-                throws IllegalAccessException, InvocationTargetException;
-
-        public abstract Class[] reflectionArgumentTypes();
     }
 }

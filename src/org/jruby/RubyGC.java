@@ -37,10 +37,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyGC {
     public static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyGC.class);
         
-        result.defineSingletonMethod("start", callbackFactory.getSingletonMethod(RubyGC.class, "start"));
-        result.defineSingletonMethod("garbage_collect", callbackFactory.getSingletonMethod(RubyGC.class, "start"));
+        result.defineSingletonMethod("start", callbackFactory.getSingletonMethod("start"));
+        result.defineSingletonMethod("garbage_collect", callbackFactory.getSingletonMethod("start"));
         
         return result;        
     }

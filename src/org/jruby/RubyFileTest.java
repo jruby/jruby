@@ -35,17 +35,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyFileTest {
     public static RubyModule createFileTestModule(Ruby runtime) {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 
-        fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod(RubyFileTest.class, "directory_p", RubyString.class));
-        fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod(RubyFileTest.class, "exist_p", RubyString.class));
-        fileTestModule.defineMethod("exists?", callbackFactory.getSingletonMethod(RubyFileTest.class, "exist_p", RubyString.class));
-        fileTestModule.defineMethod("readable?", callbackFactory.getSingletonMethod(RubyFileTest.class, "readable_p", RubyString.class));
-        fileTestModule.defineMethod("readable_real?", callbackFactory.getSingletonMethod(RubyFileTest.class, "readable_p", RubyString.class));
-        fileTestModule.defineMethod("size", callbackFactory.getSingletonMethod(RubyFileTest.class, "size", RubyString.class));
-        fileTestModule.defineMethod("writable?", callbackFactory.getSingletonMethod(RubyFileTest.class, "writable_p", RubyString.class));
-        fileTestModule.defineMethod("writable_real?", callbackFactory.getSingletonMethod(RubyFileTest.class, "writable_p", RubyString.class));
-        fileTestModule.defineMethod("zero?", callbackFactory.getSingletonMethod(RubyFileTest.class, "zero_p", RubyString.class));
+        fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod("directory_p", RubyString.class));
+        fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
+        fileTestModule.defineMethod("exists?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
+        fileTestModule.defineMethod("readable?", callbackFactory.getSingletonMethod("readable_p", RubyString.class));
+        fileTestModule.defineMethod("readable_real?", callbackFactory.getSingletonMethod("readable_p", RubyString.class));
+        fileTestModule.defineMethod("size", callbackFactory.getSingletonMethod("size", RubyString.class));
+        fileTestModule.defineMethod("writable?", callbackFactory.getSingletonMethod("writable_p", RubyString.class));
+        fileTestModule.defineMethod("writable_real?", callbackFactory.getSingletonMethod("writable_p", RubyString.class));
+        fileTestModule.defineMethod("zero?", callbackFactory.getSingletonMethod("zero_p", RubyString.class));
         
         return fileTestModule;
     }

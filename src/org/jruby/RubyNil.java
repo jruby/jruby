@@ -53,19 +53,19 @@ public class RubyNil extends RubyObject {
 	
     public static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
-        nilClass.defineMethod("type", callbackFactory.getSingletonMethod(RubyNil.class, "type"));
-        nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod(RubyNil.class, "to_i"));
-        nilClass.defineMethod("to_s", callbackFactory.getSingletonMethod(RubyNil.class, "to_s"));
-        nilClass.defineMethod("to_a", callbackFactory.getSingletonMethod(RubyNil.class, "to_a"));
-        nilClass.defineMethod("to_f", callbackFactory.getSingletonMethod(RubyNil.class, "to_f"));
-        nilClass.defineMethod("inspect", callbackFactory.getSingletonMethod(RubyNil.class, "inspect"));
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyNil.class);
+        nilClass.defineMethod("type", callbackFactory.getSingletonMethod("type"));
+        nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod("to_i"));
+        nilClass.defineMethod("to_s", callbackFactory.getSingletonMethod("to_s"));
+        nilClass.defineMethod("to_a", callbackFactory.getSingletonMethod("to_a"));
+        nilClass.defineMethod("to_f", callbackFactory.getSingletonMethod("to_f"));
+        nilClass.defineMethod("inspect", callbackFactory.getSingletonMethod("inspect"));
         
-        nilClass.defineMethod("&", callbackFactory.getSingletonMethod(RubyNil.class, "op_and", IRubyObject.class));
-        nilClass.defineMethod("|", callbackFactory.getSingletonMethod(RubyNil.class, "op_or", IRubyObject.class));
-        nilClass.defineMethod("^", callbackFactory.getSingletonMethod(RubyNil.class, "op_xor", IRubyObject.class));
+        nilClass.defineMethod("&", callbackFactory.getSingletonMethod("op_and", IRubyObject.class));
+        nilClass.defineMethod("|", callbackFactory.getSingletonMethod("op_or", IRubyObject.class));
+        nilClass.defineMethod("^", callbackFactory.getSingletonMethod("op_xor", IRubyObject.class));
         nilClass.defineMethod("nil?", callbackFactory.getTrueMethod(0));
-        nilClass.defineMethod("id", callbackFactory.getSingletonMethod(RubyNil.class, "id"));
+        nilClass.defineMethod("id", callbackFactory.getSingletonMethod("id"));
         nilClass.defineMethod("taint", callbackFactory.getSelfMethod(0));
         nilClass.defineMethod("freeze", callbackFactory.getSelfMethod(0));
 

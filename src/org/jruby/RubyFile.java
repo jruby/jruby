@@ -105,29 +105,29 @@ public class RubyFile extends RubyIO {
         fileClass.setConstant("NONBLOCK", 
         		runtime.newFixnum(IOModes.NONBLOCK));
 
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFile.class);
 
         fileClass.extendObject(runtime.getClasses().getFileTestModule());
         
-        fileClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
-        fileClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
-        fileClass.defineSingletonMethod("chmod", callbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
-        fileClass.defineSingletonMethod("lstat", callbackFactory.getSingletonMethod(RubyFile.class, "lstat", RubyString.class));
-        fileClass.defineSingletonMethod("expand_path", callbackFactory.getOptSingletonMethod(RubyFile.class, "expand_path"));
-        fileClass.defineSingletonMethod("unlink", callbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
-        fileClass.defineSingletonMethod("rename", callbackFactory.getSingletonMethod(RubyFile.class, "rename", IRubyObject.class, IRubyObject.class));
-        fileClass.defineSingletonMethod("delete", callbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
-		fileClass.defineSingletonMethod("dirname", callbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));
-		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod(RubyFile.class, "join"));
-		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod(RubyFile.class, "basename"));
-		fileClass.defineSingletonMethod("truncate", callbackFactory.getSingletonMethod(RubyFile.class, "truncate", RubyString.class, RubyFixnum.class));
+        fileClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        fileClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod("open"));
+        fileClass.defineSingletonMethod("chmod", callbackFactory.getOptSingletonMethod("chmod", RubyInteger.class));
+        fileClass.defineSingletonMethod("lstat", callbackFactory.getSingletonMethod("lstat", RubyString.class));
+        fileClass.defineSingletonMethod("expand_path", callbackFactory.getOptSingletonMethod("expand_path"));
+        fileClass.defineSingletonMethod("unlink", callbackFactory.getOptSingletonMethod("unlink"));
+        fileClass.defineSingletonMethod("rename", callbackFactory.getSingletonMethod("rename", IRubyObject.class, IRubyObject.class));
+        fileClass.defineSingletonMethod("delete", callbackFactory.getOptSingletonMethod("unlink"));
+		fileClass.defineSingletonMethod("dirname", callbackFactory.getSingletonMethod("dirname", RubyString.class));
+		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod("join"));
+		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod("basename"));
+		fileClass.defineSingletonMethod("truncate", callbackFactory.getSingletonMethod("truncate", RubyString.class, RubyFixnum.class));
 		
-		fileClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyFile.class, "initialize"));
-		fileClass.defineMethod("truncate", callbackFactory.getMethod(RubyFile.class, "truncate", RubyFixnum.class));
+		fileClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+		fileClass.defineMethod("truncate", callbackFactory.getMethod("truncate", RubyFixnum.class));
 		
         // Works around a strange-ish implementation that uses a static method on the superclass.
         // It broke when moved to indexed callbacks, so added this line:
-        fileClass.defineMethod("print", callbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
+        fileClass.defineMethod("print", callbackFactory.getOptSingletonMethod("print"));
 
         return fileClass;
     }

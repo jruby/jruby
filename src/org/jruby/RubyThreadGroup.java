@@ -47,18 +47,18 @@ public class RubyThreadGroup extends RubyObject {
     public static RubyClass createThreadGroupClass(Ruby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", 
                 runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyThreadGroup.class);
         
         threadGroupClass.defineMethod("add",
-        		callbackFactory.getMethod(RubyThreadGroup.class, "add", RubyThread.class));
+        		callbackFactory.getMethod("add", RubyThread.class));
         threadGroupClass.defineMethod("enclose",
-        		callbackFactory.getMethod(RubyThreadGroup.class, "enclose"));
+        		callbackFactory.getMethod("enclose"));
         threadGroupClass.defineMethod("enclosed?",
-        		callbackFactory.getMethod(RubyThreadGroup.class, "isEnclosed"));
+        		callbackFactory.getMethod("isEnclosed"));
         threadGroupClass.defineMethod("list",
-        		callbackFactory.getMethod(RubyThreadGroup.class, "list"));
+        		callbackFactory.getMethod("list"));
         threadGroupClass.defineSingletonMethod("new",
-                callbackFactory.getSingletonMethod(RubyThreadGroup.class, "newInstance"));
+                callbackFactory.getSingletonMethod("newInstance"));
         
         // create the default thread group
         RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);

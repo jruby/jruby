@@ -58,34 +58,34 @@ public class RubyFixnum extends RubyInteger {
 
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnumClass = runtime.defineClass("Fixnum", runtime.getClasses().getIntegerClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFixnum.class);
 
-        fixnumClass.defineMethod("quo", callbackFactory.getMethod(RubyFixnum.class, "quo", RubyNumeric.class));
-        fixnumClass.defineMethod("to_f", callbackFactory.getMethod(RubyFixnum.class, "to_f"));
-        fixnumClass.defineMethod("to_i", callbackFactory.getMethod(RubyFixnum.class, "to_i"));
-        fixnumClass.defineMethod("to_s", callbackFactory.getMethod(RubyFixnum.class, "to_s"));
-        fixnumClass.defineMethod("to_str", callbackFactory.getMethod(RubyFixnum.class, "to_s"));
-        fixnumClass.defineMethod("taint", callbackFactory.getMethod(RubyFixnum.class, "taint"));
-        fixnumClass.defineMethod("freeze", callbackFactory.getMethod(RubyFixnum.class, "freeze"));
-        fixnumClass.defineMethod("<<", callbackFactory.getMethod(RubyFixnum.class, "op_lshift", RubyNumeric.class));
-        fixnumClass.defineMethod(">>", callbackFactory.getMethod(RubyFixnum.class, "op_rshift", RubyNumeric.class));
-        fixnumClass.defineMethod("+", callbackFactory.getMethod(RubyFixnum.class, "op_plus", RubyNumeric.class));
-        fixnumClass.defineMethod("-", callbackFactory.getMethod(RubyFixnum.class, "op_minus", RubyNumeric.class));
-        fixnumClass.defineMethod("*", callbackFactory.getMethod(RubyFixnum.class, "op_mul", RubyNumeric.class));
-        fixnumClass.defineMethod("/", callbackFactory.getMethod(RubyFixnum.class, "op_div", RubyNumeric.class));
-        fixnumClass.defineMethod("%", callbackFactory.getMethod(RubyFixnum.class, "op_mod", RubyNumeric.class));
-        fixnumClass.defineMethod("**", callbackFactory.getMethod(RubyFixnum.class, "op_pow", RubyNumeric.class));
-        fixnumClass.defineMethod("&", callbackFactory.getMethod(RubyFixnum.class, "op_and", RubyNumeric.class));
-        fixnumClass.defineMethod("|", callbackFactory.getMethod(RubyFixnum.class, "op_or", RubyNumeric.class));
-        fixnumClass.defineMethod("^", callbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyNumeric.class));
-        fixnumClass.defineMethod("size", callbackFactory.getMethod(RubyFixnum.class, "size"));
-        fixnumClass.defineMethod("[]", callbackFactory.getMethod(RubyFixnum.class, "aref", RubyNumeric.class));
-        fixnumClass.defineMethod("hash", callbackFactory.getMethod(RubyFixnum.class, "hash"));
-        fixnumClass.defineMethod("id2name", callbackFactory.getMethod(RubyFixnum.class, "id2name"));
-        fixnumClass.defineMethod("~", callbackFactory.getMethod(RubyFixnum.class, "invert"));
-        fixnumClass.defineMethod("id", callbackFactory.getMethod(RubyFixnum.class, "id"));
+        fixnumClass.defineMethod("quo", callbackFactory.getMethod("quo", RubyNumeric.class));
+        fixnumClass.defineMethod("to_f", callbackFactory.getMethod("to_f"));
+        fixnumClass.defineMethod("to_i", callbackFactory.getMethod("to_i"));
+        fixnumClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
+        fixnumClass.defineMethod("to_str", callbackFactory.getMethod("to_s"));
+        fixnumClass.defineMethod("taint", callbackFactory.getMethod("taint"));
+        fixnumClass.defineMethod("freeze", callbackFactory.getMethod("freeze"));
+        fixnumClass.defineMethod("<<", callbackFactory.getMethod("op_lshift", RubyNumeric.class));
+        fixnumClass.defineMethod(">>", callbackFactory.getMethod("op_rshift", RubyNumeric.class));
+        fixnumClass.defineMethod("+", callbackFactory.getMethod("op_plus", RubyNumeric.class));
+        fixnumClass.defineMethod("-", callbackFactory.getMethod("op_minus", RubyNumeric.class));
+        fixnumClass.defineMethod("*", callbackFactory.getMethod("op_mul", RubyNumeric.class));
+        fixnumClass.defineMethod("/", callbackFactory.getMethod("op_div", RubyNumeric.class));
+        fixnumClass.defineMethod("%", callbackFactory.getMethod("op_mod", RubyNumeric.class));
+        fixnumClass.defineMethod("**", callbackFactory.getMethod("op_pow", RubyNumeric.class));
+        fixnumClass.defineMethod("&", callbackFactory.getMethod("op_and", RubyNumeric.class));
+        fixnumClass.defineMethod("|", callbackFactory.getMethod("op_or", RubyNumeric.class));
+        fixnumClass.defineMethod("^", callbackFactory.getMethod("op_xor", RubyNumeric.class));
+        fixnumClass.defineMethod("size", callbackFactory.getMethod("size"));
+        fixnumClass.defineMethod("[]", callbackFactory.getMethod("aref", RubyNumeric.class));
+        fixnumClass.defineMethod("hash", callbackFactory.getMethod("hash"));
+        fixnumClass.defineMethod("id2name", callbackFactory.getMethod("id2name"));
+        fixnumClass.defineMethod("~", callbackFactory.getMethod("invert"));
+        fixnumClass.defineMethod("id", callbackFactory.getMethod("id"));
 
-        fixnumClass.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod(RubyFixnum.class, "induced_from", IRubyObject.class));
+        fixnumClass.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from", IRubyObject.class));
 
         return fixnumClass;
     }

@@ -72,28 +72,28 @@ public class RubyFloat extends RubyNumeric {
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Float", runtime.getClasses().getNumericClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyFloat.class);
         
-        result.defineMethod("+", callbackFactory.getMethod(RubyFloat.class, "op_plus", RubyNumeric.class));
-        result.defineMethod("-", callbackFactory.getMethod(RubyFloat.class, "op_minus", RubyNumeric.class));
-        result.defineMethod("*", callbackFactory.getMethod(RubyFloat.class, "op_mul", IRubyObject.class));
-        result.defineMethod("/", callbackFactory.getMethod(RubyFloat.class, "op_div", RubyNumeric.class));
-        result.defineMethod("%", callbackFactory.getMethod(RubyFloat.class, "op_mod", RubyNumeric.class));
-        result.defineMethod("**", callbackFactory.getMethod(RubyFloat.class, "op_pow", RubyNumeric.class));
-        result.defineMethod("ceil", callbackFactory.getMethod(RubyFloat.class, "ceil"));
-        result.defineMethod("finite?", callbackFactory.getMethod(RubyFloat.class, "finite_p"));
-        result.defineMethod("floor", callbackFactory.getMethod(RubyFloat.class, "floor"));
-        result.defineMethod("hash", callbackFactory.getMethod(RubyFloat.class, "hash"));
-        result.defineMethod("infinite?", callbackFactory.getMethod(RubyFloat.class, "infinite_p"));
-        result.defineMethod("nan?", callbackFactory.getMethod(RubyFloat.class, "nan_p"));
-        result.defineMethod("round", callbackFactory.getMethod(RubyFloat.class, "round"));
-        result.defineMethod("to_i", callbackFactory.getMethod(RubyFloat.class, "to_i"));
-        result.defineMethod("to_f", callbackFactory.getMethod(RubyFloat.class, "to_f"));
-        result.defineMethod("to_s", callbackFactory.getMethod(RubyFloat.class, "to_s"));
-        result.defineMethod("truncate", callbackFactory.getMethod(RubyFloat.class, "truncate"));
+        result.defineMethod("+", callbackFactory.getMethod("op_plus", RubyNumeric.class));
+        result.defineMethod("-", callbackFactory.getMethod("op_minus", RubyNumeric.class));
+        result.defineMethod("*", callbackFactory.getMethod("op_mul", IRubyObject.class));
+        result.defineMethod("/", callbackFactory.getMethod("op_div", RubyNumeric.class));
+        result.defineMethod("%", callbackFactory.getMethod("op_mod", RubyNumeric.class));
+        result.defineMethod("**", callbackFactory.getMethod("op_pow", RubyNumeric.class));
+        result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
+        result.defineMethod("finite?", callbackFactory.getMethod("finite_p"));
+        result.defineMethod("floor", callbackFactory.getMethod("floor"));
+        result.defineMethod("hash", callbackFactory.getMethod("hash"));
+        result.defineMethod("infinite?", callbackFactory.getMethod("infinite_p"));
+        result.defineMethod("nan?", callbackFactory.getMethod("nan_p"));
+        result.defineMethod("round", callbackFactory.getMethod("round"));
+        result.defineMethod("to_i", callbackFactory.getMethod("to_i"));
+        result.defineMethod("to_f", callbackFactory.getMethod("to_f"));
+        result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
+        result.defineMethod("truncate", callbackFactory.getMethod("truncate"));
 
         result.getMetaClass().undefineMethod("new");
-        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod(RubyFloat.class, "induced_from", IRubyObject.class));
+        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from", IRubyObject.class));
         return result;
     }
 

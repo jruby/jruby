@@ -99,30 +99,30 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyRegexp.class);
         
         regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
-        regexpClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyRegexp.class, "initialize"));
-        regexpClass.defineMethod("clone", callbackFactory.getMethod(RubyRegexp.class, "rbClone"));
-        regexpClass.defineMethod("==", callbackFactory.getMethod(RubyRegexp.class, "equal", IRubyObject.class));
-        regexpClass.defineMethod("===", callbackFactory.getMethod(RubyRegexp.class, "match", IRubyObject.class));
-        regexpClass.defineMethod("=~", callbackFactory.getMethod(RubyRegexp.class, "match", IRubyObject.class));
-        regexpClass.defineMethod("~", callbackFactory.getMethod(RubyRegexp.class, "match2"));
-        regexpClass.defineMethod("match", callbackFactory.getMethod(RubyRegexp.class, "match_m", IRubyObject.class));
-        regexpClass.defineMethod("inspect", callbackFactory.getMethod(RubyRegexp.class, "inspect"));
-        regexpClass.defineMethod("source", callbackFactory.getMethod(RubyRegexp.class, "source"));
-        regexpClass.defineMethod("casefold?", callbackFactory.getMethod(RubyRegexp.class, "casefold"));
-        regexpClass.defineMethod("kcode", callbackFactory.getMethod(RubyRegexp.class, "kcode"));
-        regexpClass.defineMethod("to_s", callbackFactory.getMethod(RubyRegexp.class, "to_s"));
+        regexpClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        regexpClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
+        regexpClass.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        regexpClass.defineMethod("===", callbackFactory.getMethod("match", IRubyObject.class));
+        regexpClass.defineMethod("=~", callbackFactory.getMethod("match", IRubyObject.class));
+        regexpClass.defineMethod("~", callbackFactory.getMethod("match2"));
+        regexpClass.defineMethod("match", callbackFactory.getMethod("match_m", IRubyObject.class));
+        regexpClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
+        regexpClass.defineMethod("source", callbackFactory.getMethod("source"));
+        regexpClass.defineMethod("casefold?", callbackFactory.getMethod("casefold"));
+        regexpClass.defineMethod("kcode", callbackFactory.getMethod("kcode"));
+        regexpClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
 
-        regexpClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyRegexp.class, "newInstance"));
-        regexpClass.defineSingletonMethod("compile", callbackFactory.getOptSingletonMethod(RubyRegexp.class, "newInstance"));
-        regexpClass.defineSingletonMethod("quote", callbackFactory.getSingletonMethod(RubyRegexp.class, "quote", RubyString.class));
-        regexpClass.defineSingletonMethod("escape", callbackFactory.getSingletonMethod(RubyRegexp.class, "quote", RubyString.class));
-        regexpClass.defineSingletonMethod("last_match", callbackFactory.getSingletonMethod(RubyRegexp.class, "last_match_s"));
+        regexpClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
+        regexpClass.defineSingletonMethod("compile", callbackFactory.getOptSingletonMethod("newInstance"));
+        regexpClass.defineSingletonMethod("quote", callbackFactory.getSingletonMethod("quote", RubyString.class));
+        regexpClass.defineSingletonMethod("escape", callbackFactory.getSingletonMethod("quote", RubyString.class));
+        regexpClass.defineSingletonMethod("last_match", callbackFactory.getSingletonMethod("last_match_s"));
 
         return regexpClass;
     }

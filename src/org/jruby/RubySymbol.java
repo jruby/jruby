@@ -70,30 +70,30 @@ public class RubySymbol extends RubyObject {
     public static RubyClass createSymbolClass(Ruby runtime) {
 		RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getClasses().getObjectClass());
     	
-		CallbackFactory callbackFactory = runtime.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory(RubySymbol.class);
         
 		symbolClass.defineMethod("to_i",
-			callbackFactory.getMethod(RubySymbol.class, "to_i"));
+			callbackFactory.getMethod("to_i"));
 		symbolClass.defineMethod("to_int", 
-			callbackFactory.getMethod(RubySymbol.class, "to_i"));
+			callbackFactory.getMethod("to_i"));
 		symbolClass.defineMethod("to_s", 
-			callbackFactory.getMethod(RubySymbol.class, "to_s"));
+			callbackFactory.getMethod("to_s"));
 		symbolClass.defineMethod("id2name", 
-			callbackFactory.getMethod(RubySymbol.class, "to_s"));
+			callbackFactory.getMethod("to_s"));
 		symbolClass.defineMethod("==", 
-			callbackFactory.getMethod(RubySymbol.class, "equal", IRubyObject.class));
+			callbackFactory.getMethod("equal", IRubyObject.class));
 		symbolClass.defineMethod("hash", 
-			callbackFactory.getMethod(RubySymbol.class, "hash"));
+			callbackFactory.getMethod("hash"));
 		symbolClass.defineMethod("inspect", 
-			callbackFactory.getMethod(RubySymbol.class, "inspect"));
+			callbackFactory.getMethod("inspect"));
 		symbolClass.defineMethod("clone", 
-			callbackFactory.getMethod(RubySymbol.class, "rbClone"));
+			callbackFactory.getMethod("rbClone"));
 		symbolClass.defineMethod("dup", 
-			callbackFactory.getMethod(RubySymbol.class, "rbClone"));
+			callbackFactory.getMethod("rbClone"));
 		symbolClass.defineMethod("freeze", 
-			callbackFactory.getMethod(RubySymbol.class, "freeze"));
+			callbackFactory.getMethod("freeze"));
 		symbolClass.defineMethod("taint", 
-			callbackFactory.getMethod(RubySymbol.class, "taint"));
+			callbackFactory.getMethod("taint"));
 		
 		symbolClass.getMetaClass().undefineMethod("new");
 		

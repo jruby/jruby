@@ -63,28 +63,28 @@ public class RubyException extends RubyObject {
     public static RubyClass createExceptionClass(Ruby runtime) {
 		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getClasses().getObjectClass());
     	
-		CallbackFactory callbackFactory = runtime.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory(RubyException.class);
         
 		exceptionClass.defineSingletonMethod("new", 
-				callbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));		
+				callbackFactory.getOptSingletonMethod("newInstance"));		
 		exceptionClass.defineSingletonMethod("exception", 
-				callbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));		
+				callbackFactory.getOptSingletonMethod("newInstance"));		
 		exceptionClass.defineMethod("initialize",
-			callbackFactory.getOptMethod(RubyException.class, "initialize"));
+			callbackFactory.getOptMethod("initialize"));
 		exceptionClass.defineMethod("exception", 
-			callbackFactory.getOptMethod(RubyException.class, "exception"));
+			callbackFactory.getOptMethod("exception"));
 		exceptionClass.defineMethod("to_s", 
-			callbackFactory.getMethod(RubyException.class, "to_s"));
+			callbackFactory.getMethod("to_s"));
 		exceptionClass.defineMethod("to_str", 
-			callbackFactory.getMethod(RubyException.class, "to_s"));
+			callbackFactory.getMethod("to_s"));
 		exceptionClass.defineMethod("message", 
-			callbackFactory.getMethod(RubyException.class, "to_s"));
+			callbackFactory.getMethod("to_s"));
 		exceptionClass.defineMethod("inspect", 
-			callbackFactory.getMethod(RubyException.class, "inspect"));
+			callbackFactory.getMethod("inspect"));
 		exceptionClass.defineMethod("backtrace", 
-			callbackFactory.getMethod(RubyException.class, "backtrace"));		
+			callbackFactory.getMethod("backtrace"));		
 		exceptionClass.defineMethod("set_backtrace", 
-			callbackFactory.getMethod(RubyException.class, "set_backtrace", IRubyObject.class));		
+			callbackFactory.getMethod("set_backtrace", IRubyObject.class));		
 
 		return exceptionClass;
     }

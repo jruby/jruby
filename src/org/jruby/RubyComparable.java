@@ -42,26 +42,25 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyComparable.class);
         comparableModule.defineMethod(
             "==",
-            callbackFactory.getSingletonMethod(RubyComparable.class, "equal", IRubyObject.class));
+            callbackFactory.getSingletonMethod("equal", IRubyObject.class));
         comparableModule.defineMethod(
             ">",
-            callbackFactory.getSingletonMethod(RubyComparable.class, "op_gt", IRubyObject.class));
+            callbackFactory.getSingletonMethod("op_gt", IRubyObject.class));
         comparableModule.defineMethod(
             ">=",
-            callbackFactory.getSingletonMethod(RubyComparable.class, "op_ge", IRubyObject.class));
+            callbackFactory.getSingletonMethod("op_ge", IRubyObject.class));
         comparableModule.defineMethod(
             "<",
-            callbackFactory.getSingletonMethod(RubyComparable.class, "op_lt", IRubyObject.class));
+            callbackFactory.getSingletonMethod("op_lt", IRubyObject.class));
         comparableModule.defineMethod(
             "<=",
-            callbackFactory.getSingletonMethod(RubyComparable.class, "op_le", IRubyObject.class));
+            callbackFactory.getSingletonMethod("op_le", IRubyObject.class));
         comparableModule.defineMethod(
             "between?",
             callbackFactory.getSingletonMethod(
-                RubyComparable.class,
                 "between_p",
                 IRubyObject.class,
                 IRubyObject.class));

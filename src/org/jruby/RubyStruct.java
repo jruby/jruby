@@ -60,28 +60,28 @@ public class RubyStruct extends RubyObject {
 
     public static RubyClass createStructClass(Ruby runtime) {
         RubyClass structClass = runtime.defineClass("Struct", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyStruct.class);
         structClass.includeModule(runtime.getModule("Enumerable"));
 
-        structClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyStruct.class, "newInstance"));
+        structClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
 
-        structClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyStruct.class, "initialize"));
-        structClass.defineMethod("clone", callbackFactory.getMethod(RubyStruct.class, "rbClone"));
+        structClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        structClass.defineMethod("clone", callbackFactory.getMethod("rbClone"));
 
-        structClass.defineMethod("==", callbackFactory.getMethod(RubyStruct.class, "equal", IRubyObject.class));
+        structClass.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
 
-        structClass.defineMethod("to_s", callbackFactory.getMethod(RubyStruct.class, "to_s"));
-        structClass.defineMethod("inspect", callbackFactory.getMethod(RubyStruct.class, "inspect"));
-        structClass.defineMethod("to_a", callbackFactory.getMethod(RubyStruct.class, "to_a"));
-        structClass.defineMethod("values", callbackFactory.getMethod(RubyStruct.class, "to_a"));
-        structClass.defineMethod("size", callbackFactory.getMethod(RubyStruct.class, "size"));
-        structClass.defineMethod("length", callbackFactory.getMethod(RubyStruct.class, "size"));
+        structClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
+        structClass.defineMethod("inspect", callbackFactory.getMethod("inspect"));
+        structClass.defineMethod("to_a", callbackFactory.getMethod("to_a"));
+        structClass.defineMethod("values", callbackFactory.getMethod("to_a"));
+        structClass.defineMethod("size", callbackFactory.getMethod("size"));
+        structClass.defineMethod("length", callbackFactory.getMethod("size"));
 
-        structClass.defineMethod("each", callbackFactory.getMethod(RubyStruct.class, "each"));
-        structClass.defineMethod("[]", callbackFactory.getMethod(RubyStruct.class, "aref", IRubyObject.class));
-        structClass.defineMethod("[]=", callbackFactory.getMethod(RubyStruct.class, "aset", IRubyObject.class, IRubyObject.class));
+        structClass.defineMethod("each", callbackFactory.getMethod("each"));
+        structClass.defineMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
+        structClass.defineMethod("[]=", callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
 
-        structClass.defineMethod("members", callbackFactory.getMethod(RubyStruct.class, "members"));
+        structClass.defineMethod("members", callbackFactory.getMethod("members"));
 
         return structClass;
     }
@@ -176,15 +176,16 @@ public class RubyStruct extends RubyObject {
         newStruct.setInstanceVariable("__size__", member.length());
         newStruct.setInstanceVariable("__member__", member);
 
-        newStruct.defineSingletonMethod("new", recv.getRuntime().callbackFactory().getOptSingletonMethod(RubyStruct.class, "newStruct"));
-        newStruct.defineSingletonMethod("[]", recv.getRuntime().callbackFactory().getOptSingletonMethod(RubyStruct.class, "newStruct"));
-        newStruct.defineSingletonMethod("members", recv.getRuntime().callbackFactory().getSingletonMethod(RubyStruct.class, "members"));
+        CallbackFactory callbackFactory = recv.getRuntime().callbackFactory(RubyStruct.class);
+		newStruct.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newStruct"));
+        newStruct.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod("newStruct"));
+        newStruct.defineSingletonMethod("members", callbackFactory.getSingletonMethod("members"));
 
         // define access methods.
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
             String memberName = args[i].asSymbol();
-            newStruct.defineMethod(memberName, recv.getRuntime().callbackFactory().getMethod(RubyStruct.class, "get"));
-            newStruct.defineMethod(memberName + "=", recv.getRuntime().callbackFactory().getMethod(RubyStruct.class, "set", IRubyObject.class));
+            newStruct.defineMethod(memberName, callbackFactory.getMethod("get"));
+            newStruct.defineMethod(memberName + "=", callbackFactory.getMethod("set", IRubyObject.class));
         }
 
         return newStruct;

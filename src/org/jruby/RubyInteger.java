@@ -46,21 +46,21 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Integer", runtime.getClasses().getNumericClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyInteger.class);
         
         result.includeModule(runtime.getClasses().getEnumerableModule());
         
-        result.defineMethod("chr", callbackFactory.getMethod(RubyInteger.class, "chr"));
-        result.defineMethod("downto", callbackFactory.getMethod(RubyInteger.class, "downto", RubyNumeric.class));
-        result.defineMethod("integer?", callbackFactory.getMethod(RubyInteger.class, "int_p"));
-        result.defineMethod("next", callbackFactory.getMethod(RubyInteger.class, "next"));
-        result.defineMethod("step", callbackFactory.getMethod(RubyInteger.class, "step", RubyNumeric.class, RubyNumeric.class));
-        result.defineMethod("succ", callbackFactory.getMethod(RubyInteger.class, "next"));
-        result.defineMethod("times", callbackFactory.getMethod(RubyInteger.class, "times"));
-        result.defineMethod("upto", callbackFactory.getMethod(RubyInteger.class, "upto", RubyNumeric.class));
+        result.defineMethod("chr", callbackFactory.getMethod("chr"));
+        result.defineMethod("downto", callbackFactory.getMethod("downto", RubyNumeric.class));
+        result.defineMethod("integer?", callbackFactory.getMethod("int_p"));
+        result.defineMethod("next", callbackFactory.getMethod("next"));
+        result.defineMethod("step", callbackFactory.getMethod("step", RubyNumeric.class, RubyNumeric.class));
+        result.defineMethod("succ", callbackFactory.getMethod("next"));
+        result.defineMethod("times", callbackFactory.getMethod("times"));
+        result.defineMethod("upto", callbackFactory.getMethod("upto", RubyNumeric.class));
         
         result.getMetaClass().undefineMethod("new");
-        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod(RubyInteger.class, "induced_from", IRubyObject.class));
+        result.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod("induced_from", IRubyObject.class));
         
         return result;
     }

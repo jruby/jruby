@@ -90,30 +90,30 @@ public class JavaObject extends RubyObject {
     }
 
 	protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
-		CallbackFactory callbackFactory = runtime.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory(JavaObject.class);
 
         result.defineMethod("to_s", 
-            callbackFactory.getMethod(JavaObject.class, "to_s"));
+            callbackFactory.getMethod("to_s"));
         result.defineMethod("==", 
-            callbackFactory.getMethod(JavaObject.class, "equal", IRubyObject.class));
+            callbackFactory.getMethod("equal", IRubyObject.class));
         result.defineMethod("eql?", 
-            callbackFactory.getMethod(JavaObject.class, "equal", IRubyObject.class));
+            callbackFactory.getMethod("equal", IRubyObject.class));
         result.defineMethod("equal?", 
-            callbackFactory.getMethod(JavaObject.class, "same", IRubyObject.class));
+            callbackFactory.getMethod("same", IRubyObject.class));
         result.defineMethod("hash", 
-            callbackFactory.getMethod(JavaObject.class, "hash"));
+            callbackFactory.getMethod("hash"));
         result.defineMethod("java_type", 
-            callbackFactory.getMethod(JavaObject.class, "java_type"));
+            callbackFactory.getMethod("java_type"));
         result.defineMethod("java_class", 
-            callbackFactory.getMethod(JavaObject.class, "java_class"));
+            callbackFactory.getMethod("java_class"));
         result.defineMethod("java_proxy?", 
-                callbackFactory.getMethod(JavaObject.class, "is_java_proxy"));
+            callbackFactory.getMethod("is_java_proxy"));
         result.defineMethod("length", 
-            callbackFactory.getMethod(JavaObject.class, "length"));
+            callbackFactory.getMethod("length"));
         result.defineMethod("[]", 
-            callbackFactory.getMethod(JavaObject.class, "aref", IRubyObject.class));
+            callbackFactory.getMethod("aref", IRubyObject.class));
         result.defineMethod("[]=", 
-            callbackFactory.getMethod(JavaObject.class, "aset", IRubyObject.class, IRubyObject.class));
+            callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
 	}
 
 	public RubyFixnum hash() {

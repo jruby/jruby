@@ -66,25 +66,25 @@ public class RubyRange extends RubyObject {
     public static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", 
                 runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyRange.class);
         
         result.includeModule(runtime.getClasses().getEnumerableModule());
 
-        result.defineMethod("==", callbackFactory.getMethod(RubyRange.class, "equal", IRubyObject.class));
-        result.defineMethod("===", callbackFactory.getMethod(RubyRange.class, "op_eqq", IRubyObject.class));
-        result.defineMethod("begin", callbackFactory.getMethod(RubyRange.class, "first"));
-        result.defineMethod("each", callbackFactory.getMethod(RubyRange.class, "each"));
-        result.defineMethod("end", callbackFactory.getMethod(RubyRange.class, "last"));
-        result.defineMethod("exclude_end?", callbackFactory.getMethod(RubyRange.class, "exclude_end_p"));
-        result.defineMethod("first", callbackFactory.getMethod(RubyRange.class, "first"));
-        result.defineMethod("initialize", callbackFactory.getOptMethod(RubyRange.class, "initialize"));
-        result.defineMethod("inspect", callbackFactory.getMethod(RubyRange.class, "inspect"));
-        result.defineMethod("last", callbackFactory.getMethod(RubyRange.class, "last"));
-        result.defineMethod("length", callbackFactory.getMethod(RubyRange.class, "length"));
-        result.defineMethod("size", callbackFactory.getMethod(RubyRange.class, "length"));
-        result.defineMethod("to_s", callbackFactory.getMethod(RubyRange.class, "inspect"));
+        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineMethod("===", callbackFactory.getMethod("op_eqq", IRubyObject.class));
+        result.defineMethod("begin", callbackFactory.getMethod("first"));
+        result.defineMethod("each", callbackFactory.getMethod("each"));
+        result.defineMethod("end", callbackFactory.getMethod("last"));
+        result.defineMethod("exclude_end?", callbackFactory.getMethod("exclude_end_p"));
+        result.defineMethod("first", callbackFactory.getMethod("first"));
+        result.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
+        result.defineMethod("inspect", callbackFactory.getMethod("inspect"));
+        result.defineMethod("last", callbackFactory.getMethod("last"));
+        result.defineMethod("length", callbackFactory.getMethod("length"));
+        result.defineMethod("size", callbackFactory.getMethod("length"));
+        result.defineMethod("to_s", callbackFactory.getMethod("inspect"));
 
-        result.defineMethod("to_a", callbackFactory.getMethod(RubyRange.class, "to_a"));
+        result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
 
         return result;
     }

@@ -43,30 +43,30 @@ public class JavaMethod extends JavaCallable {
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = 
             javaModule.defineClassUnder("JavaMethod", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(JavaMethod.class);
 
         JavaCallable.registerRubyMethods(runtime, result);
         
         result.defineMethod("name", 
-                callbackFactory.getMethod(JavaMethod.class, "name"));
+                callbackFactory.getMethod("name"));
         result.defineMethod("arity", 
-                callbackFactory.getMethod(JavaMethod.class, "arity"));
+                callbackFactory.getMethod("arity"));
         result.defineMethod("public?", 
-                callbackFactory.getMethod(JavaMethod.class, "public_p"));
+                callbackFactory.getMethod("public_p"));
         result.defineMethod("final?", 
-                callbackFactory.getMethod(JavaMethod.class, "final_p"));
+                callbackFactory.getMethod("final_p"));
         result.defineMethod("static?", 
-                callbackFactory.getMethod(JavaMethod.class, "static_p"));
+                callbackFactory.getMethod("static_p"));
         result.defineMethod("invoke", 
-                callbackFactory.getOptMethod(JavaMethod.class, "invoke"));
+                callbackFactory.getOptMethod("invoke"));
         result.defineMethod("invoke_static", 
-                callbackFactory.getOptMethod(JavaMethod.class, "invoke_static"));
+                callbackFactory.getOptMethod("invoke_static"));
         result.defineMethod("argument_types", 
-                callbackFactory.getMethod(JavaMethod.class, "argument_types"));
+                callbackFactory.getMethod("argument_types"));
         result.defineMethod("inspect", 
-                callbackFactory.getMethod(JavaMethod.class, "inspect"));
+                callbackFactory.getMethod("inspect"));
         result.defineMethod("return_type", 
-                callbackFactory.getMethod(JavaMethod.class, "return_type"));
+                callbackFactory.getMethod("return_type"));
 
         return result;
     }

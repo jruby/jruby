@@ -58,30 +58,30 @@ public abstract class RubyNumeric extends RubyObject {
 
     public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Numeric", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyNumeric.class);
 
         result.includeModule(runtime.getClasses().getComparableModule());
 
-        result.defineMethod("+@", callbackFactory.getMethod(RubyNumeric.class, "op_uplus"));
-        result.defineMethod("-@", callbackFactory.getMethod(RubyNumeric.class, "op_uminus"));
-        result.defineMethod("<=>", callbackFactory.getMethod(RubyNumeric.class, "cmp", IRubyObject.class));
-        result.defineMethod("==", callbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
-        result.defineMethod("equal?", callbackFactory.getMethod(RubyNumeric.class, "veryEqual", IRubyObject.class));
-        result.defineMethod("===", callbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
-        result.defineMethod("abs", callbackFactory.getMethod(RubyNumeric.class, "abs"));
-        result.defineMethod("ceil", callbackFactory.getMethod(RubyNumeric.class, "ceil"));
-        result.defineMethod("coerce", callbackFactory.getMethod(RubyNumeric.class, "coerce", RubyNumeric.class));
-        result.defineMethod("clone", callbackFactory.getMethod(RubyNumeric.class, "rbClone"));
-        result.defineMethod("divmod", callbackFactory.getMethod(RubyNumeric.class, "divmod", RubyNumeric.class));
-        result.defineMethod("eql?", callbackFactory.getMethod(RubyNumeric.class, "eql", IRubyObject.class));
-        result.defineMethod("floor", callbackFactory.getMethod(RubyNumeric.class, "floor"));
-        result.defineMethod("integer?", callbackFactory.getMethod(RubyNumeric.class, "int_p"));
-        result.defineMethod("modulo", callbackFactory.getMethod(RubyNumeric.class, "modulo", RubyNumeric.class));
-        result.defineMethod("nonzero?", callbackFactory.getMethod(RubyNumeric.class, "nonzero_p"));
-        result.defineMethod("remainder", callbackFactory.getMethod(RubyNumeric.class, "remainder", RubyNumeric.class));
-        result.defineMethod("round", callbackFactory.getMethod(RubyNumeric.class, "round"));
-        result.defineMethod("truncate", callbackFactory.getMethod(RubyNumeric.class, "truncate"));
-        result.defineMethod("zero?", callbackFactory.getMethod(RubyNumeric.class, "zero_p"));
+        result.defineMethod("+@", callbackFactory.getMethod("op_uplus"));
+        result.defineMethod("-@", callbackFactory.getMethod("op_uminus"));
+        result.defineMethod("<=>", callbackFactory.getMethod("cmp", IRubyObject.class));
+        result.defineMethod("==", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineMethod("equal?", callbackFactory.getMethod("veryEqual", IRubyObject.class));
+        result.defineMethod("===", callbackFactory.getMethod("equal", IRubyObject.class));
+        result.defineMethod("abs", callbackFactory.getMethod("abs"));
+        result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
+        result.defineMethod("coerce", callbackFactory.getMethod("coerce", RubyNumeric.class));
+        result.defineMethod("clone", callbackFactory.getMethod("rbClone"));
+        result.defineMethod("divmod", callbackFactory.getMethod("divmod", RubyNumeric.class));
+        result.defineMethod("eql?", callbackFactory.getMethod("eql", IRubyObject.class));
+        result.defineMethod("floor", callbackFactory.getMethod("floor"));
+        result.defineMethod("integer?", callbackFactory.getMethod("int_p"));
+        result.defineMethod("modulo", callbackFactory.getMethod("modulo", RubyNumeric.class));
+        result.defineMethod("nonzero?", callbackFactory.getMethod("nonzero_p"));
+        result.defineMethod("remainder", callbackFactory.getMethod("remainder", RubyNumeric.class));
+        result.defineMethod("round", callbackFactory.getMethod("round"));
+        result.defineMethod("truncate", callbackFactory.getMethod("truncate"));
+        result.defineMethod("zero?", callbackFactory.getMethod("zero_p"));
         
         return result;
     }

@@ -42,25 +42,25 @@ public class JavaField extends JavaAccessibleObject {
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaField", 
             runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(JavaField.class);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
         result.defineMethod("value_type", 
-            callbackFactory.getMethod(JavaField.class, "value_type"));
+            callbackFactory.getMethod("value_type"));
         result.defineMethod("public?", 
-            callbackFactory.getMethod(JavaField.class, "public_p"));
+            callbackFactory.getMethod("public_p"));
         result.defineMethod("static?", 
-            callbackFactory.getMethod(JavaField.class, "static_p"));
+            callbackFactory.getMethod("static_p"));
         result.defineMethod("value", 
-            callbackFactory.getMethod(JavaField.class, "value", IRubyObject.class));
+            callbackFactory.getMethod("value", IRubyObject.class));
         result.defineMethod("set_value", 
-            callbackFactory.getMethod(JavaField.class, "set_value", IRubyObject.class, IRubyObject.class));
+            callbackFactory.getMethod("set_value", IRubyObject.class, IRubyObject.class));
         result.defineMethod("final?", 
-            callbackFactory.getMethod(JavaField.class, "final_p"));
+            callbackFactory.getMethod("final_p"));
         result.defineMethod("static_value", 
-            callbackFactory.getMethod(JavaField.class, "static_value"));
+            callbackFactory.getMethod("static_value"));
         result.defineMethod("name", 
-            callbackFactory.getMethod(JavaField.class, "name"));
+            callbackFactory.getMethod("name"));
 
         return result;
     }

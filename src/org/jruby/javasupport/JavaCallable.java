@@ -83,8 +83,8 @@ public abstract class JavaCallable extends JavaAccessibleObject {
     public static void registerRubyMethods(Ruby runtime, RubyClass result, Class klass) {
         registerRubyMethods(runtime, result);
         
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(klass);
 
-        result.defineMethod("public?",  callbackFactory.getMethod(klass, "public_p"));
+        result.defineMethod("public?",  callbackFactory.getMethod("public_p"));
     }
 }

@@ -54,11 +54,11 @@ public class RubyMarshal {
 
     public static RubyModule createMarshalModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Marshal");
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyMarshal.class);
 
-        module.defineSingletonMethod("dump", callbackFactory.getOptSingletonMethod(RubyMarshal.class, "dump"));
-        module.defineSingletonMethod("load", callbackFactory.getOptSingletonMethod(RubyMarshal.class, "load"));
-        module.defineSingletonMethod("restore", callbackFactory.getOptSingletonMethod(RubyMarshal.class, "load"));
+        module.defineSingletonMethod("dump", callbackFactory.getOptSingletonMethod("dump"));
+        module.defineSingletonMethod("load", callbackFactory.getOptSingletonMethod("load"));
+        module.defineSingletonMethod("restore", callbackFactory.getOptSingletonMethod("load"));
 
         return module;
     }

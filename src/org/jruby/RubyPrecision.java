@@ -38,11 +38,11 @@ public class RubyPrecision {
     
     public static RubyModule createPrecisionModule(Ruby runtime) {
         RubyModule precisionModule = runtime.defineModule("Precision");
-        CallbackFactory callbackFactory = runtime.callbackFactory();
-        precisionModule.defineSingletonMethod("append_features", callbackFactory.getSingletonMethod(RubyPrecision.class, "append_features", IRubyObject.class));
-        precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec", IRubyObject.class));
-        precisionModule.defineMethod("prec_i", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec_i"));
-        precisionModule.defineMethod("prec_f", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec_f"));
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyPrecision.class);
+        precisionModule.defineSingletonMethod("append_features", callbackFactory.getSingletonMethod("append_features", IRubyObject.class));
+        precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod("prec", IRubyObject.class));
+        precisionModule.defineMethod("prec_i", callbackFactory.getSingletonMethod("prec_i"));
+        precisionModule.defineMethod("prec_f", callbackFactory.getSingletonMethod("prec_f"));
         return precisionModule;
     }
 
@@ -53,7 +53,8 @@ public class RubyPrecision {
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {
         if (include instanceof RubyModule) {
             ((RubyModule) include).includeModule(receiver);
-            include.defineSingletonMethod("induced_from", receiver.getRuntime().callbackFactory().getSingletonMethod(RubyPrecision.class, "induced_from", IRubyObject.class));
+            CallbackFactory f = receiver.getRuntime().callbackFactory(RubyPrecision.class);
+            include.defineSingletonMethod("induced_from", f.getSingletonMethod("induced_from", IRubyObject.class));
         }
         return receiver;
     }

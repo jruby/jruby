@@ -54,17 +54,17 @@ public class RubyProc extends RubyObject {
     public static RubyClass createProcClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Proc", 
                 runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
         
         result.defineMethod("arity", 
-                callbackFactory.getMethod(RubyProc.class, "arity"));
+                callbackFactory.getMethod("arity"));
         result.defineMethod("call", 
-                callbackFactory.getOptMethod(RubyProc.class, "call"));
+                callbackFactory.getOptMethod("call"));
         result.defineMethod("[]", 
-                callbackFactory.getOptMethod(RubyProc.class, "call"));
+                callbackFactory.getOptMethod("call"));
 
         result.defineSingletonMethod("new", 
-                callbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
+                callbackFactory.getOptSingletonMethod("newInstance"));
         
         return result;
     }

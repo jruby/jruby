@@ -82,31 +82,31 @@ public class RubyBignum extends RubyInteger {
 
     public static RubyClass createBignumClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Bignum", runtime.getClasses().getIntegerClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyBignum.class);
         
-        result.defineMethod("~", callbackFactory.getMethod(RubyBignum.class, "op_invert"));
-        result.defineMethod("&", callbackFactory.getMethod(RubyBignum.class, "op_and", RubyNumeric.class));
-        result.defineMethod("<<", callbackFactory.getMethod(RubyBignum.class, "op_lshift", RubyNumeric.class));
-        result.defineMethod("%", callbackFactory.getMethod(RubyBignum.class, "op_mod", RubyNumeric.class));
-        result.defineMethod("+", callbackFactory.getMethod(RubyBignum.class, "op_plus", RubyNumeric.class));
-        result.defineMethod("*", callbackFactory.getMethod(RubyBignum.class, "op_mul", RubyNumeric.class));
-        result.defineMethod("**", callbackFactory.getMethod(RubyBignum.class, "op_pow", RubyNumeric.class));
-        result.defineMethod("-", callbackFactory.getMethod(RubyBignum.class, "op_minus", RubyNumeric.class));
-        result.defineMethod("modulo", callbackFactory.getMethod(RubyBignum.class, "op_mod", RubyNumeric.class));
-        result.defineMethod("/", callbackFactory.getMethod(RubyBignum.class, "op_div", RubyNumeric.class));
-        result.defineMethod(">>", callbackFactory.getMethod(RubyBignum.class, "op_rshift", RubyNumeric.class));
-        result.defineMethod("|", callbackFactory.getMethod(RubyBignum.class, "op_or", RubyNumeric.class));
-        result.defineMethod("^", callbackFactory.getMethod(RubyBignum.class, "op_xor", RubyNumeric.class));
-        result.defineMethod("-@", callbackFactory.getMethod(RubyBignum.class, "op_uminus"));
-        result.defineMethod("[]", callbackFactory.getMethod(RubyBignum.class, "aref", RubyNumeric.class));
-        result.defineMethod("coerce", callbackFactory.getMethod(RubyBignum.class, "coerce", RubyNumeric.class));
-        result.defineMethod("remainder", callbackFactory.getMethod(RubyBignum.class, "remainder", RubyNumeric.class));
-        result.defineMethod("hash", callbackFactory.getMethod(RubyBignum.class, "hash"));
-        result.defineMethod("size", callbackFactory.getMethod(RubyBignum.class, "size"));
-        result.defineMethod("quo", callbackFactory.getMethod(RubyBignum.class, "quo", RubyNumeric.class));
-        result.defineMethod("to_f", callbackFactory.getMethod(RubyBignum.class, "to_f"));
-        result.defineMethod("to_i", callbackFactory.getMethod(RubyBignum.class, "to_i"));
-        result.defineMethod("to_s", callbackFactory.getMethod(RubyBignum.class, "to_s"));
+        result.defineMethod("~", callbackFactory.getMethod("op_invert"));
+        result.defineMethod("&", callbackFactory.getMethod("op_and", RubyNumeric.class));
+        result.defineMethod("<<", callbackFactory.getMethod("op_lshift", RubyNumeric.class));
+        result.defineMethod("%", callbackFactory.getMethod("op_mod", RubyNumeric.class));
+        result.defineMethod("+", callbackFactory.getMethod("op_plus", RubyNumeric.class));
+        result.defineMethod("*", callbackFactory.getMethod("op_mul", RubyNumeric.class));
+        result.defineMethod("**", callbackFactory.getMethod("op_pow", RubyNumeric.class));
+        result.defineMethod("-", callbackFactory.getMethod("op_minus", RubyNumeric.class));
+        result.defineMethod("modulo", callbackFactory.getMethod("op_mod", RubyNumeric.class));
+        result.defineMethod("/", callbackFactory.getMethod("op_div", RubyNumeric.class));
+        result.defineMethod(">>", callbackFactory.getMethod("op_rshift", RubyNumeric.class));
+        result.defineMethod("|", callbackFactory.getMethod("op_or", RubyNumeric.class));
+        result.defineMethod("^", callbackFactory.getMethod("op_xor", RubyNumeric.class));
+        result.defineMethod("-@", callbackFactory.getMethod("op_uminus"));
+        result.defineMethod("[]", callbackFactory.getMethod("aref", RubyNumeric.class));
+        result.defineMethod("coerce", callbackFactory.getMethod("coerce", RubyNumeric.class));
+        result.defineMethod("remainder", callbackFactory.getMethod("remainder", RubyNumeric.class));
+        result.defineMethod("hash", callbackFactory.getMethod("hash"));
+        result.defineMethod("size", callbackFactory.getMethod("size"));
+        result.defineMethod("quo", callbackFactory.getMethod("quo", RubyNumeric.class));
+        result.defineMethod("to_f", callbackFactory.getMethod("to_f"));
+        result.defineMethod("to_i", callbackFactory.getMethod("to_i"));
+        result.defineMethod("to_s", callbackFactory.getMethod("to_s"));
         
         return result;
     }

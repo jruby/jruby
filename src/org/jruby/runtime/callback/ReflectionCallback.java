@@ -33,87 +33,54 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
- * @author  jpetersen, Anders
- * @version $Revision$
+ * A wrapper for <code>java.lang.reflect.Method</code> objects which implement Ruby methods.
  */
 public class ReflectionCallback extends AbstractCallback {
-    private Method method = null;
+    private final Method method;
 
     public ReflectionCallback(
-        Class klass,
+        Class type,
         String methodName,
-        Class[] args,
+        Class[] argumentTypes,
         boolean isRestArgs,
         boolean isStaticMethod,
         Arity arity)
     {
-        super(klass, methodName, args, isRestArgs, isStaticMethod, arity);
-    }
-
-    protected CallType callType(boolean isStaticMethod) {
-        if (isStaticMethod) {
-            return new StaticCallType();
-        }
-		return new InstanceCallType();
-    }
-
-    private Method getMethod() {
-        if (method == null) {
-            try {
-                method = klass.getMethod(methodName, callType.reflectionArgumentTypes());
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(
-                    "NoSuchMethodException: Cannot get method \""
-                        + methodName
-                        + "\" in class \""
-                        + klass.getName()
-                        + "\" by Reflection.");
-            } catch (SecurityException e) {
-                throw new RuntimeException(
-                    "SecurityException: Cannot get method \""
-                        + methodName
-                        + "\" in class \""
-                        + klass.getName()
-                        + "\" by Reflection.");
-            }
-        }
-        return method;
-    }
-
-    private class StaticCallType extends CallType {
-        public IRubyObject invokeMethod(IRubyObject recv, Object[] arguments)
-                throws IllegalAccessException, InvocationTargetException
-        {
-            if (isRestArgs) {
-                arguments = packageRestArgumentsForReflection(arguments);
-            }
-            Object[] result = new Object[arguments.length + 1];
-            System.arraycopy(arguments, 0, result, 1, arguments.length);
-            result[0] = recv;
-            return (IRubyObject) getMethod().invoke(null, result);
-        }
-
-        public Class[] reflectionArgumentTypes() {
-            Class[] result = new Class[argumentTypes.length + 1];
-            System.arraycopy(argumentTypes, 0, result, 1, argumentTypes.length);
-            result[0] = IRubyObject.class;
-            return result;
+        super(type, methodName, argumentTypes, isRestArgs, isStaticMethod, arity);
+    	if (isStaticMethod) {
+    		Class[] types = new Class[argumentTypes.length + 1];
+    		System.arraycopy(argumentTypes, 0, types, 1, argumentTypes.length);
+    		types[0] = IRubyObject.class;
+    		argumentTypes = types;
+    	}
+    	try {
+            this.method = type.getMethod(methodName, argumentTypes);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(
+                "NoSuchMethodException: Cannot get method \""
+                    + methodName
+                    + "\" in class \""
+                    + type.getName()
+                    + "\" by Reflection.");
+        } catch (SecurityException e) {
+            throw new RuntimeException(
+                "SecurityException: Cannot get method \""
+                    + methodName
+                    + "\" in class \""
+                    + type.getName()
+                    + "\" by Reflection.");
         }
     }
-
-    private class InstanceCallType extends CallType {
-        public IRubyObject invokeMethod(IRubyObject recv, Object[] arguments)
-                throws IllegalAccessException, InvocationTargetException
-        {
-            if (isRestArgs) {
-                arguments = packageRestArgumentsForReflection(arguments);
-            }
-            return (IRubyObject) getMethod().invoke(recv, arguments);
-        }
-
-        public Class[] reflectionArgumentTypes() {
-            return argumentTypes;
-        }
-    }
+    
+	protected IRubyObject invokeMethod0(IRubyObject recv, Object[] methodArgs)
+			throws IllegalAccessException, InvocationTargetException {
+		if (isStaticMethod) {
+			Object[] args = new Object[methodArgs.length + 1];
+			System.arraycopy(methodArgs, 0, args, 1, methodArgs.length);
+			args[0] = recv;
+			recv = null;
+			methodArgs = args;
+		}
+		return (IRubyObject) method.invoke(recv, methodArgs);
+	}
 }

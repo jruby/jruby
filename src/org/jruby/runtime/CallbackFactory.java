@@ -15,101 +15,81 @@ public abstract class CallbackFactory {
     
     /**
      * gets an instance method with no arguments.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getMethod(Class type, String method);
+    public abstract Callback getMethod(String method);
 
     /**
      * gets an instance method with 1 argument.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @param arg1 the class of the only argument for this method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getMethod(Class type, String method, Class arg1);
+    public abstract Callback getMethod(String method, Class arg1);
 
     /**
      * gets an instance method with two arguments.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @param arg1 the java class of the first argument for this method
      * @param arg2 the java class of the second argument for this method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getMethod(Class type, String method, Class arg1, Class arg2);
+    public abstract Callback getMethod(String method, Class arg1, Class arg2);
 
     /**
      * gets a singleton (class) method without arguments.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getSingletonMethod(Class type, String method);
+    public abstract Callback getSingletonMethod(String method);
 
     /**
      * gets a singleton (class) method with 1 argument.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @param arg1 the class of the only argument for this method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getSingletonMethod(Class type, String method, Class arg1);
+    public abstract Callback getSingletonMethod(String method, Class arg1);
 
     /**
      * gets a singleton (class) method with 2 arguments.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getSingletonMethod(Class type, String method, Class arg1, Class arg2);
+    public abstract Callback getSingletonMethod(String method, Class arg1, Class arg2);
 
-    public abstract Callback getBlockMethod(Class type, String method);
+    public abstract Callback getBlockMethod(String method);
 
     /**
      * gets a singleton (class) method with 1 mandatory argument and some optional arguments.
-     * @param type java class where the method is implemented
      * @param method name of the method
      * @param arg1 the class of the only mandatory argument for this method
      * @return a CallBack object corresponding to the appropriate method
      **/
-    public abstract Callback getOptSingletonMethod(Class type, String method, Class arg1);
-
-    /**
-     * gets a singleton (class) method with several mandatory argument and some optional arguments.
-     * @param type java class where the method is implemented
-     * @param method name of the method
-     * @param args an array of java class of the mandatory arguments (NOTE: this must include 
-     * the appropriate rest argument class (usually a RubyObject[].class))
-     * @return a CallBack object corresponding to the appropriate method
-     **/
-    public abstract Callback getOptSingletonMethod(Class type, String method, Class[] args);
+    public abstract Callback getOptSingletonMethod(String method, Class arg1);
 
     /**
     * gets a singleton (class) method with no mandatory argument and some optional arguments.
-    * @param type java class where the method is implemented
-    * @param method name of the method
+     * @param method name of the method
     * @return a CallBack object corresponding to the appropriate method
     **/
-    public abstract Callback getOptSingletonMethod(Class type, String method);
+    public abstract Callback getOptSingletonMethod(String method);
 
     /**
     * gets an instance method with no mandatory argument and some optional arguments.
-    * @param type java class where the method is implemented
-    * @param method name of the method
+     * @param method name of the method
     * @return a CallBack object corresponding to the appropriate method
     **/
-    public abstract Callback getOptMethod(Class type, String method);
+    public abstract Callback getOptMethod(String method);
 
     /**
     * gets an instance method with 1 mandatory argument and some optional arguments.
-    * @param type java class where the method is implemented
-    * @param method name of the method
-    * @param arg1 the class of the only mandatory argument for this method
+     * @param method name of the method
+     * @param arg1 the class of the only mandatory argument for this method
     * @return a CallBack object corresponding to the appropriate method
     **/
-    public abstract Callback getOptMethod(Class type, String method, Class arg1);
+    public abstract Callback getOptMethod(String method, Class arg1);
 
     public Callback getFalseMethod(final int arity) {
         return new Callback() {
@@ -159,7 +139,7 @@ public abstract class CallbackFactory {
         };
     }
 
-    public static CallbackFactory createFactory() {
+    public static CallbackFactory createFactory(Class type) {
         /* Removed cglib for now
         try {
             // Check if we have CGLIB support compiled in.
@@ -178,6 +158,6 @@ public abstract class CallbackFactory {
         }
         */
         
-        return new ReflectionCallbackFactory();
+        return new ReflectionCallbackFactory(type);
     }
 }

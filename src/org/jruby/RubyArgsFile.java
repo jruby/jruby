@@ -31,6 +31,7 @@
  */
 package org.jruby;
 
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyArgsFile extends RubyObject {
@@ -52,16 +53,17 @@ public class RubyArgsFile extends RubyObject {
         getRuntime().defineReadonlyVariable("$<", this);
         getRuntime().defineGlobalConstant("ARGF", this);
         
-        defineSingletonMethod("each", callbackFactory().getOptMethod(RubyArgsFile.class, "each_line"));
-        defineSingletonMethod("each_line", callbackFactory().getOptMethod(RubyArgsFile.class, "each_line"));
+        CallbackFactory callbackFactory = getRuntime().callbackFactory(RubyArgsFile.class);
+        defineSingletonMethod("each", callbackFactory.getOptMethod("each_line"));
+        defineSingletonMethod("each_line", callbackFactory.getOptMethod("each_line"));
 
-		defineSingletonMethod("filename", callbackFactory().getMethod(RubyArgsFile.class, "filename"));
-//		defineSingletonMethod("gets", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "gets"));
-//		defineSingletonMethod("readline", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readline"));
-		//defineSingletonMethod("readlines", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
+		defineSingletonMethod("filename", callbackFactory.getMethod("filename"));
+//		defineSingletonMethod("gets", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "gets"));
+//		defineSingletonMethod("readline", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readline"));
+//		defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
 		
-//		defineSingletonMethod("to_a", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
-		defineSingletonMethod("to_s", callbackFactory().getMethod(RubyArgsFile.class, "filename"));
+//		defineSingletonMethod("to_a", callbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
+		defineSingletonMethod("to_s", callbackFactory.getMethod("filename"));
 
         getRuntime().defineReadonlyVariable("$FILENAME", getRuntime().newString("-"));
 

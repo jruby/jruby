@@ -18,11 +18,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
         RubyModule javaModule = runtime.defineModule("Java");
-        CallbackFactory callbackFactory = runtime.callbackFactory();
-        javaModule.defineModuleFunction("define_exception_handler", callbackFactory.getOptSingletonMethod(Java.class, "define_exception_handler"));
-        javaModule.defineModuleFunction("primitive_to_java", callbackFactory.getSingletonMethod(Java.class, "primitive_to_java", IRubyObject.class));
-        javaModule.defineModuleFunction("java_to_primitive", callbackFactory.getSingletonMethod(Java.class, "java_to_primitive", IRubyObject.class));
-        javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod(Java.class, "new_proxy_instance"));
+        CallbackFactory callbackFactory = runtime.callbackFactory(Java.class);
+        javaModule.defineModuleFunction("define_exception_handler", callbackFactory.getOptSingletonMethod("define_exception_handler"));
+        javaModule.defineModuleFunction("primitive_to_java", callbackFactory.getSingletonMethod("primitive_to_java", IRubyObject.class));
+        javaModule.defineModuleFunction("java_to_primitive", callbackFactory.getSingletonMethod("java_to_primitive", IRubyObject.class));
+        javaModule.defineModuleFunction("new_proxy_instance", callbackFactory.getOptSingletonMethod("new_proxy_instance"));
 
         JavaClass.createJavaClassClass(runtime, javaModule);
         JavaMethod.createJavaMethodClass(runtime, javaModule);

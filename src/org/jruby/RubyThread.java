@@ -80,65 +80,65 @@ public class RubyThread extends RubyObject {
     public static RubyClass createThreadClass(Ruby runtime) {
         RubyClass threadClass = runtime.defineClass("Thread", 
                 runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(RubyThread.class);
 
         threadClass.defineMethod("[]", 
-                callbackFactory.getMethod(RubyThread.class, "aref", IRubyObject.class));
+                callbackFactory.getMethod("aref", IRubyObject.class));
         threadClass.defineMethod("[]=", 
-                callbackFactory.getMethod(RubyThread.class, "aset", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getMethod("aset", IRubyObject.class, IRubyObject.class));
         threadClass.defineMethod("abort_on_exception", 
-                callbackFactory.getMethod(RubyThread.class, "abort_on_exception", IRubyObject.class));
+                callbackFactory.getMethod("abort_on_exception", IRubyObject.class));
         threadClass.defineMethod("abort_on_exception=", 
-                callbackFactory.getMethod(RubyThread.class, "abort_on_exception_set", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getMethod("abort_on_exception_set", IRubyObject.class, IRubyObject.class));
         threadClass.defineMethod("alive?", 
-                callbackFactory.getMethod(RubyThread.class, "is_alive"));
+                callbackFactory.getMethod("is_alive"));
         threadClass.defineMethod("group", 
-                callbackFactory.getMethod(RubyThread.class, "group"));
+                callbackFactory.getMethod("group"));
         threadClass.defineMethod("join", 
-                callbackFactory.getMethod(RubyThread.class, "join"));
+                callbackFactory.getMethod("join"));
         threadClass.defineMethod("key?", 
-                callbackFactory.getMethod(RubyThread.class, "has_key", IRubyObject.class));
+                callbackFactory.getMethod("has_key", IRubyObject.class));
         threadClass.defineMethod("priority", 
-                callbackFactory.getMethod(RubyThread.class, "priority"));
+                callbackFactory.getMethod("priority"));
         threadClass.defineMethod("priority=", 
-                callbackFactory.getMethod(RubyThread.class, "priority_set", IRubyObject.class));
+                callbackFactory.getMethod("priority_set", IRubyObject.class));
         threadClass.defineMethod("raise", 
-                callbackFactory.getMethod(RubyThread.class, "raise", IRubyObject.class));
+                callbackFactory.getMethod("raise", IRubyObject.class));
         threadClass.defineMethod("run",
-        		callbackFactory.getMethod(RubyThread.class, "run"));
+        		callbackFactory.getMethod("run"));
         threadClass.defineMethod("status", 
-                callbackFactory.getMethod(RubyThread.class, "status"));
+                callbackFactory.getMethod("status"));
         threadClass.defineMethod("stop?", 
-                callbackFactory.getMethod(RubyThread.class, "isStopped"));
+                callbackFactory.getMethod("isStopped"));
         threadClass.defineMethod("wakeup", 
-                callbackFactory.getMethod(RubyThread.class, "wakeup"));
+                callbackFactory.getMethod("wakeup"));
         threadClass.defineMethod("kill", 
-                callbackFactory.getMethod(RubyThread.class, "kill"));
+                callbackFactory.getMethod("kill"));
         threadClass.defineMethod("exit",
-        		callbackFactory.getMethod(RubyThread.class, "exit"));
+        		callbackFactory.getMethod("exit"));
         
         threadClass.defineSingletonMethod("current",
-                callbackFactory.getSingletonMethod(RubyThread.class, "current"));
+                callbackFactory.getSingletonMethod("current"));
         threadClass.defineSingletonMethod("fork",
-                callbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
+                callbackFactory.getOptSingletonMethod("newInstance"));
         threadClass.defineSingletonMethod("new",
-                callbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
+                callbackFactory.getOptSingletonMethod("newInstance"));
         threadClass.defineSingletonMethod("list",
-                callbackFactory.getSingletonMethod(RubyThread.class, "list"));
+                callbackFactory.getSingletonMethod("list"));
         threadClass.defineSingletonMethod("pass",
-                callbackFactory.getSingletonMethod(RubyThread.class, "pass"));
+                callbackFactory.getSingletonMethod("pass"));
         threadClass.defineSingletonMethod("start",
-                callbackFactory.getOptSingletonMethod(RubyThread.class, "start"));
+                callbackFactory.getOptSingletonMethod("start"));
         threadClass.defineSingletonMethod("critical=", 
-                callbackFactory.getSingletonMethod(RubyThread.class, "critical_set", RubyBoolean.class));
+                callbackFactory.getSingletonMethod("critical_set", RubyBoolean.class));
         threadClass.defineSingletonMethod("critical", 
-                callbackFactory.getSingletonMethod(RubyThread.class, "critical"));
+                callbackFactory.getSingletonMethod("critical"));
         threadClass.defineSingletonMethod("stop", 
-                callbackFactory.getSingletonMethod(RubyThread.class, "stop"));
+                callbackFactory.getSingletonMethod("stop"));
         threadClass.defineSingletonMethod("kill", 
-                callbackFactory.getSingletonMethod(RubyThread.class, "s_kill", RubyThread.class));
+                callbackFactory.getSingletonMethod("s_kill", RubyThread.class));
         threadClass.defineSingletonMethod("exit", 
-                callbackFactory.getSingletonMethod(RubyThread.class, "s_exit"));
+                callbackFactory.getSingletonMethod("s_exit"));
 
         RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
@@ -148,7 +148,7 @@ public class RubyThread extends RubyObject {
         runtime.getThreadService().setMainThread(rubyThread);
         
         threadClass.defineSingletonMethod("main",
-        		callbackFactory.getSingletonMethod(RubyThread.class, "main"));
+        		callbackFactory.getSingletonMethod("main"));
         
         return threadClass;
     }

@@ -55,71 +55,71 @@ public class JavaClass extends JavaObject {
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass()); 
 
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+    	CallbackFactory callbackFactory = runtime.callbackFactory(JavaClass.class);
         
         result.includeModule(runtime.getClasses().getComparableModule());
         
         JavaObject.registerRubyMethods(runtime, result);
         
         result.defineSingletonMethod("for_name", 
-                callbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));
+                callbackFactory.getSingletonMethod("for_name", IRubyObject.class));
         result.defineMethod("public?", 
-                callbackFactory.getMethod(JavaClass.class, "public_p"));
+                callbackFactory.getMethod("public_p"));
         result.defineMethod("final?", 
-                callbackFactory.getMethod(JavaClass.class, "final_p"));
+                callbackFactory.getMethod("final_p"));
         result.defineMethod("interface?", 
-                callbackFactory.getMethod(JavaClass.class, "interface_p"));
+                callbackFactory.getMethod("interface_p"));
         result.defineMethod("array?", 
-                callbackFactory.getMethod(JavaClass.class, "array_p"));
+                callbackFactory.getMethod("array_p"));
         result.defineMethod("name", 
-                callbackFactory.getMethod(JavaClass.class, "name"));
+                callbackFactory.getMethod("name"));
         result.defineMethod("to_s", 
-                callbackFactory.getMethod(JavaClass.class, "name"));
+                callbackFactory.getMethod("name"));
         result.defineMethod("superclass", 
-                callbackFactory.getMethod(JavaClass.class, "superclass"));
+                callbackFactory.getMethod("superclass"));
         result.defineMethod("<=>", 
-                callbackFactory.getMethod(JavaClass.class, "op_cmp", IRubyObject.class));
+                callbackFactory.getMethod("op_cmp", IRubyObject.class));
         result.defineMethod("java_instance_methods", 
-                callbackFactory.getMethod(JavaClass.class, "java_instance_methods"));
+                callbackFactory.getMethod("java_instance_methods"));
         result.defineMethod("java_class_methods", 
-                callbackFactory.getMethod(JavaClass.class, "java_class_methods"));
+                callbackFactory.getMethod("java_class_methods"));
         result.defineMethod("java_method", 
-                callbackFactory.getOptMethod(JavaClass.class, "java_method"));
+                callbackFactory.getOptMethod("java_method"));
         result.defineMethod("constructors", 
-                callbackFactory.getMethod(JavaClass.class, "constructors"));
+                callbackFactory.getMethod("constructors"));
         result.defineMethod("constructor", 
-                callbackFactory.getOptMethod(JavaClass.class, "constructor"));
+                callbackFactory.getOptMethod("constructor"));
         result.defineMethod("array_class", 
-                callbackFactory.getMethod(JavaClass.class, "array_class"));
+                callbackFactory.getMethod("array_class"));
         result.defineMethod("new_array", 
-                callbackFactory.getMethod(JavaClass.class, "new_array", IRubyObject.class));
+                callbackFactory.getMethod("new_array", IRubyObject.class));
         result.defineMethod("fields", 
-                callbackFactory.getMethod(JavaClass.class, "fields"));
+                callbackFactory.getMethod("fields"));
         result.defineMethod("field", 
-                callbackFactory.getMethod(JavaClass.class, "field", IRubyObject.class));
+                callbackFactory.getMethod("field", IRubyObject.class));
         result.defineMethod("interfaces", 
-                callbackFactory.getMethod(JavaClass.class, "interfaces"));
+                callbackFactory.getMethod("interfaces"));
         result.defineMethod("primitive?", 
-                callbackFactory.getMethod(JavaClass.class, "primitive_p"));
+                callbackFactory.getMethod("primitive_p"));
         result.defineMethod("assignable_from?", 
-                callbackFactory.getMethod(JavaClass.class, "assignable_from_p", IRubyObject.class));
+                callbackFactory.getMethod("assignable_from_p", IRubyObject.class));
         result.defineMethod("component_type", 
-                callbackFactory.getMethod(JavaClass.class, "component_type"));
-        result.defineMethod("declared_instance_methods", 
-                callbackFactory.getMethod(JavaClass.class, "declared_instance_methods"));
+                callbackFactory.getMethod("component_type"));
+		result.defineMethod("declared_instance_methods", 
+                callbackFactory.getMethod("declared_instance_methods"));
         result.defineMethod("declared_class_methods", 
-                callbackFactory.getMethod(JavaClass.class, "declared_class_methods"));
+                callbackFactory.getMethod("declared_class_methods"));
         result.defineMethod("declared_fields", 
-                callbackFactory.getMethod(JavaClass.class, "declared_fields"));
+                callbackFactory.getMethod("declared_fields"));
         result.defineMethod("declared_field", 
-                callbackFactory.getMethod(JavaClass.class, "declared_field", IRubyObject.class));
+                callbackFactory.getMethod("declared_field", IRubyObject.class));
         result.defineMethod("declared_constructors", 
-                callbackFactory.getMethod(JavaClass.class, "declared_constructors"));
+                callbackFactory.getMethod("declared_constructors"));
         result.defineMethod("declared_constructor", 
-                callbackFactory.getOptMethod(JavaClass.class, "declared_constructor"));
+                callbackFactory.getOptMethod("declared_constructor"));
         result.defineMethod("declared_method", 
-                callbackFactory.getOptMethod(JavaClass.class, "declared_method"));
-    
+                callbackFactory.getOptMethod("declared_method"));
+
         result.getMetaClass().undefineMethod("new");
 
         return result;

@@ -116,8 +116,6 @@ public final class Ruby {
     */
     private int safeLevel = 0;
 
-    private CallbackFactory callbackFactory = CallbackFactory.createFactory();
-
     // Default objects
     private IRubyObject nilObject;
     private RubyBoolean trueObject;
@@ -865,8 +863,8 @@ public final class Ruby {
         return globalVariables;
     }
 
-    public CallbackFactory callbackFactory() {
-        return callbackFactory;
+    public CallbackFactory callbackFactory(Class type) {
+        return CallbackFactory.createFactory(type);
     }
 
     /**

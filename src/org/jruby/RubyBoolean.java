@@ -76,12 +76,9 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyClass createFalseClass(Ruby runtime) {
-		RubyClass falseClass =
-			runtime.defineClass("FalseClass", runtime.getClasses().getObjectClass());
+		RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getClasses().getObjectClass());
 
-		falseClass.defineMethod(
-			"type",
-			runtime.callbackFactory().getMethod(RubyBoolean.class, "type"));
+		falseClass.defineMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
 
 		runtime.defineGlobalConstant("FALSE", runtime.getFalse());
 
@@ -89,12 +86,9 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyClass createTrueClass(Ruby runtime) {
-		RubyClass trueClass =
-			runtime.defineClass("TrueClass", runtime.getClasses().getObjectClass());
+		RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getClasses().getObjectClass());
 
-		trueClass.defineMethod(
-			"type",
-			runtime.callbackFactory().getMethod(RubyBoolean.class, "type"));
+		trueClass.defineMethod("type", runtime.callbackFactory(RubyBoolean.class).getMethod("type"));
 
 		runtime.defineGlobalConstant("TRUE", runtime.getTrue());
 

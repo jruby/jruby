@@ -35,10 +35,9 @@ public class FileStatClass extends RubyObject {
     public static RubyClass createFileStatClass(Ruby runtime) {
         RubyClass fileStatClass = runtime.defineClass("FileStat", runtime.getClasses().getObjectClass());
     	
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory(FileStatClass.class);
         
-        fileStatClass.defineMethod("directory?", 
-        		callbackFactory.getMethod(FileStatClass.class, "directory_p"));
+        fileStatClass.defineMethod("directory?", callbackFactory.getMethod("directory_p"));
     	
         return fileStatClass;
     }

@@ -59,91 +59,91 @@ public class RubyTime extends RubyObject {
     public static RubyClass createTimeClass(Ruby runtime) {
 		RubyClass rubyTimeClass = runtime.defineClass("Time", runtime.getClasses().getObjectClass());
     	
-		CallbackFactory callbackFactory = runtime.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory(RubyTime.class);
 		
 		rubyTimeClass.includeModule(runtime.getClasses().getComparableModule());
         
 		rubyTimeClass.defineSingletonMethod("new", 
-			callbackFactory.getSingletonMethod(RubyTime.class, "s_new"));
+			callbackFactory.getSingletonMethod("s_new"));
 		rubyTimeClass.defineSingletonMethod("now", 
-			callbackFactory.getSingletonMethod(RubyTime.class, "s_new"));
+			callbackFactory.getSingletonMethod("s_new"));
 		rubyTimeClass.defineSingletonMethod("at", 
-			callbackFactory.getOptSingletonMethod(RubyTime.class, "new_at"));
+			callbackFactory.getOptSingletonMethod("new_at"));
 		rubyTimeClass.defineSingletonMethod("local", 
-			callbackFactory.getOptSingletonMethod(RubyTime.class, "new_local"));
+			callbackFactory.getOptSingletonMethod("new_local"));
 		rubyTimeClass.defineSingletonMethod("mktime", 
-			callbackFactory.getOptSingletonMethod(RubyTime.class, "new_local"));
+			callbackFactory.getOptSingletonMethod("new_local"));
 		rubyTimeClass.defineSingletonMethod("utc", 
-			callbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
+			callbackFactory.getOptSingletonMethod("new_utc"));
 		rubyTimeClass.defineSingletonMethod("gm", 
-			callbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
+			callbackFactory.getOptSingletonMethod("new_utc"));
 				
 		rubyTimeClass.defineMethod("<=>", 
-			callbackFactory.getMethod(RubyTime.class, "op_cmp", IRubyObject.class));
+			callbackFactory.getMethod("op_cmp", IRubyObject.class));
 		rubyTimeClass.defineMethod("-", 
-			callbackFactory.getMethod(RubyTime.class, "op_minus", IRubyObject.class));
+			callbackFactory.getMethod("op_minus", IRubyObject.class));
 		rubyTimeClass.defineMethod("+", 
-			callbackFactory.getMethod(RubyTime.class, "op_plus", IRubyObject.class));
+			callbackFactory.getMethod("op_plus", IRubyObject.class));
 		rubyTimeClass.defineMethod("sec", 
-			callbackFactory.getMethod(RubyTime.class, "sec"));
+			callbackFactory.getMethod("sec"));
 		rubyTimeClass.defineMethod("min", 
-			callbackFactory.getMethod(RubyTime.class, "min"));
+			callbackFactory.getMethod("min"));
 		rubyTimeClass.defineMethod("hour", 
-			callbackFactory.getMethod(RubyTime.class, "hour"));
+			callbackFactory.getMethod("hour"));
 		rubyTimeClass.defineMethod("mday", 
-			callbackFactory.getMethod(RubyTime.class, "mday"));
+			callbackFactory.getMethod("mday"));
 		rubyTimeClass.defineMethod("day", 
-			callbackFactory.getMethod(RubyTime.class, "mday"));
+			callbackFactory.getMethod("mday"));
 		rubyTimeClass.defineMethod("month", 
-			callbackFactory.getMethod(RubyTime.class, "month"));
+			callbackFactory.getMethod("month"));
 		rubyTimeClass.defineMethod("mon", 
-			callbackFactory.getMethod(RubyTime.class, "month"));
+			callbackFactory.getMethod("month"));
 		rubyTimeClass.defineMethod("year", 
-			callbackFactory.getMethod(RubyTime.class, "year"));
+			callbackFactory.getMethod("year"));
 		rubyTimeClass.defineMethod("wday", 
-			callbackFactory.getMethod(RubyTime.class, "wday"));
+			callbackFactory.getMethod("wday"));
 		rubyTimeClass.defineMethod("yday", 
-			callbackFactory.getMethod(RubyTime.class, "yday"));
+			callbackFactory.getMethod("yday"));
 		rubyTimeClass.defineMethod("isdst", 
-			callbackFactory.getMethod(RubyTime.class, "isdst"));
+			callbackFactory.getMethod("isdst"));
 		rubyTimeClass.defineMethod("zone", 
-			callbackFactory.getMethod(RubyTime.class, "zone"));
+			callbackFactory.getMethod("zone"));
 		rubyTimeClass.defineMethod("to_a", 
-			callbackFactory.getMethod(RubyTime.class, "to_a"));
+			callbackFactory.getMethod("to_a"));
 		rubyTimeClass.defineMethod("to_f", 
-			callbackFactory.getMethod(RubyTime.class, "to_f"));
+			callbackFactory.getMethod("to_f"));
 		rubyTimeClass.defineMethod("asctime", 
-			callbackFactory.getMethod(RubyTime.class, "asctime"));
+			callbackFactory.getMethod("asctime"));
 		rubyTimeClass.defineMethod("ctime", 
-			callbackFactory.getMethod(RubyTime.class, "asctime"));
+			callbackFactory.getMethod("asctime"));
 		rubyTimeClass.defineMethod("to_s", 
-			callbackFactory.getMethod(RubyTime.class, "to_s"));
+			callbackFactory.getMethod("to_s"));
 		rubyTimeClass.defineMethod("inspect", 
-			callbackFactory.getMethod(RubyTime.class, "inspect"));
+			callbackFactory.getMethod("inspect"));
 		rubyTimeClass.defineMethod("strftime", 
-			callbackFactory.getMethod(RubyTime.class, "strftime", IRubyObject.class));
+			callbackFactory.getMethod("strftime", IRubyObject.class));
 		rubyTimeClass.defineMethod("usec", 
-			callbackFactory.getMethod(RubyTime.class, "usec"));
+			callbackFactory.getMethod("usec"));
 		rubyTimeClass.defineMethod("tv_usec", 
-			callbackFactory.getMethod(RubyTime.class, "usec"));
+			callbackFactory.getMethod("usec"));
 		rubyTimeClass.defineMethod("to_i", 
-			callbackFactory.getMethod(RubyTime.class, "to_i"));
+			callbackFactory.getMethod("to_i"));
 		rubyTimeClass.defineMethod("tv_sec", 
-			callbackFactory.getMethod(RubyTime.class, "to_i"));
+			callbackFactory.getMethod("to_i"));
 		rubyTimeClass.defineMethod("gmtime", 
-			callbackFactory.getMethod(RubyTime.class, "gmtime"));
+			callbackFactory.getMethod("gmtime"));
 		rubyTimeClass.defineMethod("utc", 
-			callbackFactory.getMethod(RubyTime.class, "gmtime"));
+			callbackFactory.getMethod("gmtime"));
 		rubyTimeClass.defineMethod("gmt?", 
-			callbackFactory.getMethod(RubyTime.class, "gmt"));
+			callbackFactory.getMethod("gmt"));
 		rubyTimeClass.defineMethod("gmtime?", 
-			callbackFactory.getMethod(RubyTime.class, "gmt"));
+			callbackFactory.getMethod("gmt"));
 		rubyTimeClass.defineMethod("utc?", 
-			callbackFactory.getMethod(RubyTime.class, "gmt"));
+			callbackFactory.getMethod("gmt"));
 		rubyTimeClass.defineMethod("localtime", 
-			callbackFactory.getMethod(RubyTime.class, "localtime"));
+			callbackFactory.getMethod("localtime"));
 		rubyTimeClass.defineMethod("hash", 
-			callbackFactory.getMethod(RubyTime.class, "hash"));
+			callbackFactory.getMethod("hash"));
 
 		return rubyTimeClass;
     }

@@ -64,18 +64,18 @@ public class RubyMethod extends RubyObject {
     public static RubyClass createMethodClass(Ruby runtime) {
 		RubyClass methodClass = runtime.defineClass("RubyMethod", runtime.getClasses().getObjectClass());
     	
-		CallbackFactory callbackFactory = runtime.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory(RubyMethod.class);
         
 		methodClass.defineMethod("arity", 
-				callbackFactory.getMethod(RubyMethod.class, "arity"));
+				callbackFactory.getMethod("arity"));
 		methodClass.defineMethod("to_proc", 
-				callbackFactory.getMethod(RubyMethod.class, "to_proc"));
+				callbackFactory.getMethod("to_proc"));
 		methodClass.defineMethod("unbind", 
-				callbackFactory.getMethod(RubyMethod.class, "unbind"));
+				callbackFactory.getMethod("unbind"));
 		methodClass.defineMethod("call", 
-				callbackFactory.getOptMethod(RubyMethod.class, "call"));
+				callbackFactory.getOptMethod("call"));
 		methodClass.defineMethod("[]", 
-				callbackFactory.getOptMethod(RubyMethod.class, "call"));
+				callbackFactory.getOptMethod("call"));
 
 		return methodClass;
     }
@@ -132,10 +132,11 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public IRubyObject to_proc() {
+    	CallbackFactory f = getRuntime().callbackFactory(RubyMethod.class);
         return getRuntime().iterate(
-            callbackFactory().getSingletonMethod(RubyMethod.class, "mproc"),
+            f.getSingletonMethod("mproc"),
             getRuntime().getNil(),
-            callbackFactory().getBlockMethod(RubyMethod.class, "bmcall"),
+            f.getBlockMethod("bmcall"),
             this);
     }
 

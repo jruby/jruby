@@ -90,10 +90,10 @@ public class RubyClass extends RubyModule {
     }
 
     public static void createClassClass(RubyClass classClass) {
-        CallbackFactory callbackFactory = classClass.callbackFactory();
-        classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyClass.class, "newClass"));
-        classClass.defineMethod("new", callbackFactory.getOptMethod(RubyClass.class, "newInstance"));
-        classClass.defineMethod("superclass", callbackFactory.getMethod(RubyClass.class, "superclass"));
+        CallbackFactory callbackFactory = classClass.getRuntime().callbackFactory(RubyClass.class);
+        classClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newClass"));
+        classClass.defineMethod("new", callbackFactory.getOptMethod("newInstance"));
+        classClass.defineMethod("superclass", callbackFactory.getMethod("superclass"));
         classClass.defineSingletonMethod("inherited", callbackFactory.getNilMethod(1));
         classClass.undefineMethod("module_function");
     }
