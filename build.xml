@@ -138,6 +138,7 @@
         		<include name="**/*.class"/>
 	    		<include name="**/*.properties"/>
 	    		<include name="**/*.rb.ast.ser"/>
+			<exclude name="org/jruby/util/ant/**/*.class"/>
       		</fileset>
       		<manifest>
         		<attribute name="Built-By" value="${user.name}"/>
