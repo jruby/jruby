@@ -21,8 +21,21 @@ test_equal(MARSHAL_HEADER + "{\006i\006i\a", Marshal.dump({1=>2}))
 test_equal(MARSHAL_HEADER + "c\013Object", Marshal.dump(Object))
 test_equal(MARSHAL_HEADER + "m\017Enumerable", Marshal.dump(Enumerable))
 test_equal(MARSHAL_HEADER + "/\013regexp\000", Marshal.dump(/regexp/))
+#  test_equal(MARSHAL_HEADER + "l+\n\000\000\000\000\000\000\000\000@\000", Marshal.dump(2 ** 70))
+#  test_equal(MARSHAL_HEADER + "l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
+#             Marshal.dump(14323534664547457526224437612747))
+#  test_equal(MARSHAL_HEADER + "l+\n\001\000\001@\000\000\000\000@\000",
+#             Marshal.dump(1 + (2 ** 16) + (2 ** 30) + (2 ** 70)))
+#  test_equal(MARSHAL_HEADER + "l+\n6\361\3100_/\205\177Iq",
+#             Marshal.dump(534983213684351312654646))
+#  test_equal(MARSHAL_HEADER + "l-\n6\361\3100_/\205\177Iq",
+#             Marshal.dump(-534983213684351312654646))
+#  test_equal(MARSHAL_HEADER + "l+\n\331\347\365%\200\342a\220\336\220",
+#             Marshal.dump(684126354563246654351321))
+#  test_equal(MARSHAL_HEADER + "l+\vIZ\210*,u\006\025\304\016\207\001",
+#             Marshal.dump(472759725676945786624563785))
 
-# FIXME: bignum, usermarshal, ...
+# FIXME: IVAR, struct, MODULE_OLD, 'U', ...
 
 test_equal(MARSHAL_HEADER + "o:\013Object\000", Marshal.dump(Object.new))
 class MarshalTestClass
@@ -42,6 +55,28 @@ class MarshalTestClass
 end
 test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo@\000",
 	   Marshal.dump(MarshalTestClass.new))
+
+class UserMarshaled
+  attr :foo
+  def initialize(foo)
+    @foo = foo
+  end
+  class << self
+    def _load(str)
+      return self.new(str.reverse.to_i)
+    end
+  end
+  def _dump(depth)
+    @foo.to_s.reverse
+  end
+  def ==(other)
+    self.class == other.class && self.foo == other.foo
+  end
+end
+um = UserMarshaled.new(123)
+test_equal(MARSHAL_HEADER + "u:\022UserMarshaled\010321", Marshal.dump(um))
+test_equal(um, Marshal.load(Marshal.dump(um)))
+
 
 # Unmarshaling
 

@@ -215,6 +215,10 @@ public class RubyObject implements Cloneable {
         return isNil();
     }
 
+    public boolean respondsTo(String methodName) {
+        return respond_to(RubySymbol.newSymbol(getRuby(), methodName)).isTrue();
+    }
+
     /**
      * @todo convert to CallbackFactory invokes.
      **/

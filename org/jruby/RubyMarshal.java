@@ -44,6 +44,7 @@ import org.jruby.marshal.*;
  */
 public class RubyMarshal {
 	public static final String sEncoding = "iso8859-1";
+
     public static RubyModule createMarshalModule(Ruby ruby) {
         RubyModule marshalModule = ruby.defineModule("Marshal");
 
@@ -104,7 +105,7 @@ public class RubyMarshal {
             InputStream rawInput;
             if (in instanceof RubyIO) {
                 throw new NotImplementedError();
-            } else if (respondsTo(in, "to_str")) {
+            } else if (in.respondsTo("to_str")) {
                 String inString = ((RubyString) in.funcall("to_str")).getValue();
                 rawInput = new ByteArrayInputStream(inString.getBytes(sEncoding));
             } else {
@@ -128,9 +129,5 @@ public class RubyMarshal {
     {
         MarshalStream output = new MarshalStream(object.getRuby(), rawOutput, depthLimit);
         output.dumpObject(object);
-    }
-
-    private static boolean respondsTo(RubyObject object, String method) {
-        return object.respond_to(RubySymbol.newSymbol(object.getRuby(), method)).isTrue();
     }
 }

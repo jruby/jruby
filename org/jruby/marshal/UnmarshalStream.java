@@ -78,20 +78,9 @@ public class UnmarshalStream extends FilterInputStream {
         } else if (type == 'm') {
             return RubyModule.unmarshalFrom(this);
         } else if (type == 'o') {
-            RubySymbol className = (RubySymbol) unmarshalObject();
-            int variableCount = unmarshalInt();
-
-            RubyMap variables = new RubyHashMap(variableCount);
-            for (int i = 0; i < variableCount; i++) {
-                RubySymbol name = (RubySymbol) unmarshalObject();
-                RubyObject value = unmarshalObject();
-                variables.put(name.toId(), value);
-            }
-
-            RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
-            RubyObject result = new RubyObject(ruby, rubyClass);
-            result.setInstanceVariables(variables);
-            return result;
+            return defaultObjectUnmarshal();
+        } else if (type == 'u') {
+            return userUnmarshal();
         }
 
         throw new NotImplementedError(); // FIXME
@@ -125,7 +114,7 @@ public class UnmarshalStream extends FilterInputStream {
         if (bytesRead != length) {
             throw new IOException("Unexpected end of stream");
         }
-        return new String(buffer);
+        return new String(buffer, RubyMarshal.sEncoding);
     }
 
     public int unmarshalInt() throws IOException {
@@ -152,5 +141,29 @@ public class UnmarshalStream extends FilterInputStream {
             }
         }
         return (int) result;
+    }
+
+    private RubyObject defaultObjectUnmarshal() throws IOException {
+        RubySymbol className = (RubySymbol) unmarshalObject();
+        int variableCount = unmarshalInt();
+
+        RubyMap variables = new RubyHashMap(variableCount);
+        for (int i = 0; i < variableCount; i++) {
+            RubySymbol name = (RubySymbol) unmarshalObject();
+            RubyObject value = unmarshalObject();
+            variables.put(name.toId(), value);
+        }
+
+        RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
+        RubyObject result = new RubyObject(ruby, rubyClass);
+        result.setInstanceVariables(variables);
+        return result;
+    }
+
+    private RubyObject userUnmarshal() throws IOException {
+        String className = ((RubySymbol) unmarshalObject()).toId();
+        String marshaled = unmarshalString();
+        RubyModule classInstance = ruby.getRubyModule(className);
+        return classInstance.funcall("_load", RubyString.newString(ruby, marshaled));
     }
 }

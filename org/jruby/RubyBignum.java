@@ -28,8 +28,10 @@
 package org.jruby;
 
 import java.math.*;
+import java.io.IOException;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.marshal.*;
 
 /**
  *
@@ -322,4 +324,36 @@ public class RubyBignum extends RubyInteger {
             throw new RangeError(ruby, "bignum too big to convert into `int'");
         return new RubyBignum(ruby, value.shiftRight((int) shift));
     }
+
+//      public void marshalTo(MarshalStream output) throws IOException {
+//          output.write('l');
+//          output.write(value.signum() >= 0 ? '+' : '-');
+
+//          BigInteger absValue = value.abs();
+
+//          int shortSize = absValue.bitLength() / 16;
+//          boolean isOddSize = absValue.bitLength() % 16 != 0;
+
+//          if (isOddSize) {
+//              shortSize += 1;
+//          }
+//          output.dumpInt(shortSize);
+
+//          byte[] data = absValue.toByteArray();
+//          boolean isOddLength = data.length % 2 != 0;
+
+//          int i = data.length / 2 - 1;
+
+//          if (isOddLength) {
+//              output.write(data[data.length - 1]);
+//          }
+//          while (i >= 0) {
+//              output.write(data[i * 2 + 1]);
+//              output.write(data[i * 2]);
+//              i--;
+//          }
+//          if (isOddLength) {
+//              output.write(0);
+//          }
+//      }
 }

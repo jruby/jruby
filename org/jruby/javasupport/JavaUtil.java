@@ -106,42 +106,42 @@ public class JavaUtil {
                 return new Boolean(rubyObject.isTrue());
             }
             if (cName == "float") {
-                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_f")).isTrue()) {
+                if (rubyObject.respondsTo("to_f")) {
                     return new Float(((RubyNumeric) rubyObject.funcall("to_f")).getDoubleValue());
                 } else {
                     return new Float(0.0);
                 }
             }
             if (cName == "double") {
-                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_f")).isTrue()) {
+                if (rubyObject.respondsTo("to_f")) {
                     return new Double(((RubyNumeric) rubyObject.funcall("to_f")).getDoubleValue());
                 } else {
                     return new Double(0.0);
                 }
             }
             if (cName == "long") {
-                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                if (rubyObject.respondsTo("to_i")) {
                     return new Long(((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
                 } else {
                     return new Long(0);
                 }
             }
             if (cName == "int") {
-                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                if (rubyObject.respondsTo("to_i")) {
                     return new Integer((int)((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
                 } else {
                     return new Integer(0);
                 }
             }
             if (cName == "short") {
-                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                if (rubyObject.respondsTo("to_i")) {
                     return new Short((short)((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
                 } else {
                     return new Short((short)0);
                 }
             }
             if (cName == "byte") {
-                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                if (rubyObject.respondsTo("to_i")) {
                     return new Byte((byte)((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
                 } else {
                     return new Byte((byte)0);

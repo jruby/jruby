@@ -67,8 +67,10 @@ public class MarshalStream extends FilterOutputStream {
         if (depth > depthLimit) {
             throw new ArgumentError(ruby, "exceed depth limit");
         }
-		if (value.isNil()) {
-			out.write('0');
+        if (value.isNil()) {
+            out.write('0');
+        } else if (hasUserDefinedMarshaling(value)) {
+            userMarshal(value);
         } else {
             writeAndRegister(value);
         }
@@ -78,7 +80,6 @@ public class MarshalStream extends FilterOutputStream {
     private void writeAndRegister(RubyObject value) throws IOException {
         writeAndRegister(dumpedObjects, '@', value);
     }
-
     private void writeAndRegister(RubySymbol value) throws IOException {
         writeAndRegister(dumpedSymbols, ';', value);
     }
@@ -93,9 +94,22 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
+    private boolean hasUserDefinedMarshaling(RubyObject value) {
+        return value.respondsTo("_dump");
+    }
+
+    private void userMarshal(RubyObject value) throws IOException {
+        out.write('u');
+        dumpObject(value.getRubyClass().getClassname().intern());
+
+        RubyInteger depth = RubyFixnum.newFixnum(ruby, depthLimit);
+        RubyString marshaled = (RubyString) value.funcall("_dump", depth);
+        dumpString(marshaled.getValue());
+    }
+
     public void dumpString(String value) throws IOException {
-		dumpInt(value.length());
-		out.write(value.getBytes());
+        dumpInt(value.length());
+        out.write(value.getBytes(RubyMarshal.sEncoding));
     }
 
     public void dumpInt(int value) throws IOException {
