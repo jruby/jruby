@@ -31,3 +31,4 @@ test_equal([65524, 65, 543, 22410], [-12, 65, 543, 295524234].pack('v*').unpack(
 test_equal("\xc2\xa9B\xe2\x89\xa0", [0xa9, 0x42, 0x2260].pack("U*"))
 test_equal([0xa9, 0x42, 0x2260], [0xa9, 0x42, 0x2260].pack("U*").unpack('U*'))
 test_equal([127, 128], [127, 128].pack("xCxC").unpack("xCxC"))
+test_equal([987.654321098/100.0], [987.654321098/100.0].pack("d").unpack("d"))
