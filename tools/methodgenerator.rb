@@ -9,6 +9,7 @@ org.jruby.RubyModule
 org.jruby.runtime.builtin.IRubyObject
 org.jruby.runtime.builtin.definitions.MethodContext
 org.jruby.runtime.builtin.definitions.StaticMethodContext
+org.jruby.runtime.builtin.definitions.SingletonMethodContext
 org.jruby.runtime.builtin.definitions.ModuleDefinition
 org.jruby.runtime.builtin.definitions.ClassDefinition
 org.jruby.runtime.builtin.definitions.ModuleFunctionsContext
@@ -151,6 +152,11 @@ class MethodGenerator
     @class_methods.each {|m|
       m.generate_constant(output)
     }
+    output.write("\n")
+
+    output.write("public #{@name}Definition(Ruby runtime) {\n")
+    output.write("super(runtime);\n")
+    output.write("}\n")
     output.write("\n")
 
     output.write("protected RubyClass createType(Ruby runtime) {\n")

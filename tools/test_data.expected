@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.definitions.MethodContext;
 import org.jruby.runtime.builtin.definitions.StaticMethodContext;
+import org.jruby.runtime.builtin.definitions.SingletonMethodContext;
 import org.jruby.runtime.builtin.definitions.ModuleDefinition;
 import org.jruby.runtime.builtin.definitions.ClassDefinition;
 import org.jruby.runtime.builtin.definitions.ModuleFunctionsContext;
@@ -19,6 +20,10 @@ public static final int SOMEOTHERMETHOD = FOO | 2;
 public static final int OPTIONAL_METHOD = FOO | 3;
 public static final int ALPHA = STATIC | 1;
 public static final int BETA = STATIC | 2;
+
+public FooDefinition(Ruby runtime) {
+super(runtime);
+}
 
 protected RubyClass createType(Ruby runtime) {
 return runtime.defineClass("Foo", (RubyClass) runtime.getClasses().getClass("FooTemplate"));
