@@ -590,6 +590,9 @@ public class Pack {
 
             // Otherwise the unpack should be here...
             switch (type) {
+            	case '@' :
+            	    encode.setPosition(occurrences);
+            	    break;
                 case '%' :
                     throw new ArgumentError(ruby, "% is not supported");
                 case 'A' :
@@ -828,6 +831,12 @@ public class Pack {
 			index += length;
 			
 			return substring;
+		}
+		
+		public void setPosition(int position) {
+		    if (position < buffer.length) {
+		        index = position;
+		    }
 		}
 
 		/**

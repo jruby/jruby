@@ -84,11 +84,17 @@ public class Split {
 			hits++;
 			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();
 			int end = matchData.matchEndPosition();
-			addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
-			// Add to list any /(.)/ matched.
-			long extraPatterns = matchData.getSize();
-			for (int i = 1; i < extraPatterns; i++) {
-			    addResult(((RubyString) matchData.group(i)).getValue());
+			// We do not want to add any elements if the split pattern is
+			// at the front of the string;  Unless we match against an empty
+			// re.  (This is icky as it is the side-effect of the ternary 
+			// conditional in the addResult below).
+			if (beg != 0 || beg == 0 && beg == end) {
+			    addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
+			    // Add to list any /(.)/ matched.
+			    long extraPatterns = matchData.getSize();
+			    for (int i = 1; i < extraPatterns; i++) {
+			        addResult(((RubyString) matchData.group(i)).getValue());
+			    }
 			}
 
 			pos = (end == beg) ? beg + 1 : end;
@@ -123,13 +129,38 @@ public class Split {
         if (args[0] instanceof RubyRegexp) {
             return RubyRegexp.regexpValue(args[0]);
         } else {
-            RubyString stringPattern = RubyString.stringValue(args[0]);
-            if (stringPattern.getValue().equals(" ")) {
+            String stringPattern = RubyString.stringValue(args[0]).getValue();
+            
+            if (stringPattern.equals(" ")) {
                 return RubyRegexp.newRegexp(runtime, "\\s+", 0);
             } else {
-                return RubyRegexp.newRegexp(stringPattern, 0);
+                return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0);
             }
         }
+    }
+
+    // Perhaps somewhere else in jruby this can be done easier.
+    // I did not rely on jdk1.4 (or I could use 1.4 regexp to do this).
+    private String unescapeString(String unescapedString) {
+        int length = unescapedString.length();
+        char[] charsToEscape = {'|', '(', ')', '.', '*', 
+                '[', ']', '^', '$', '\\'};
+        StringBuffer buf = new StringBuffer();
+        
+        for (int i = 0; i < length; i++) {
+            char c = unescapedString.charAt(i);
+            
+            for (int j = 0; j < charsToEscape.length; j++) {
+                if (c == charsToEscape[j]) {
+                    buf.append('\\');
+                    break;
+                }
+            }
+            
+            buf.append(c);
+        }
+        
+        return buf.toString();
     }
 
     private void addResult(String string) {
