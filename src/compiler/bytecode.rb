@@ -34,6 +34,13 @@ module JRuby
       RUBY_TYPE =
         BCEL::ObjectType.new("org.jruby.Ruby")
 
+
+      class CreateMethod
+        def initialize(name)
+          @name = name
+        end
+      end
+
       class AssignLocal
         attr_reader :index
 
@@ -82,7 +89,7 @@ module JRuby
 
         def emit_jvm_bytecode(generator)
           factory = generator.factory
-          pushScopeStack(generator)
+          push_scope_stack(generator) # ... why do we do this?
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                      @index))
           arg_types = BCEL::Type[].new(1)

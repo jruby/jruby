@@ -89,6 +89,7 @@ module JRuby
       def initialize
         @bytecodes = []
         @labels = []
+        @methods = {}
       end
 
       def <<(bytecode)
@@ -99,16 +100,54 @@ module JRuby
         @bytecodes.each {|b| yield(b) }
       end
 
+      def new_method(name, &block)
+        old_bytecodes = @bytecodes
+        begin
+          @bytecodes = []
+          @methods[name] = @bytecodes
+          block.call
+        ensure
+          @bytecodes = old_bytecodes
+        end
+      end
+
       def [](index)
         @bytecodes[index]
       end
 
-      def jvm_compile(methodgen)
+      def jvm_compile(classgen, name)
+
+        arg_types = BCEL::Type[].new(2)
+        arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+        arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
+
+        arg_names = JavaLang::JString[].new(2)
+        arg_names[0] = "runtime"
+        arg_names[1] = "self"
+
+        instructions = BCEL::InstructionList.new
+
+        methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::ACC_STATIC,
+                                        BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
+                                        arg_types,
+                                        arg_names,
+                                        name,
+                                        classgen.getClassName,
+                                        instructions,
+                                        classgen.getConstantPool)
+
         factory = BCEL::InstructionFactory.new(methodgen.getConstantPool)
         generator = JvmGenerator.new(methodgen, factory)
         @bytecodes.each {|b|
           b.emit_jvm_bytecode(generator)
         }
+
+        # Add a return manually
+        instructions.append(BCEL::ARETURN.new)
+
+        methodgen.setMaxStack
+        classgen.addMethod(methodgen.getMethod)
+
       end
     end
 
@@ -222,14 +261,10 @@ module JRuby
       end
 
       def visitDefnNode(node)
-        # ... node.getArgsNode ..?
-
-        # ... change bytecode output to a new method
-
-        emit_bytecodes(node.getBodyNode)
-
-        # add the method to the system
-
+        @bytecodes.new_method(node.getName) {
+          emit_bytecodes(node.getBodyNode)
+        }
+        @bytecodes << CreateMethod.new(node.getName)
       end
 
       def visitScopeNode(node)

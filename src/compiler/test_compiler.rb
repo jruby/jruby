@@ -60,6 +60,10 @@ test_equal([PushConstant], code.collect {|c| c.class})
 code = compile("nil")
 test_equal([PushNil], code.collect {|c| c.class})
 
+code = compile("def hello(x); x * 2; end; hello(3)")
+test_equal([CreateMethod, PushSelf, PushFixnum, Call],
+           code.collect {|c| c.class})
+
 
 module JRubyUtil
   include_package "org.jruby.util"
@@ -73,33 +77,9 @@ def test_compiled(expected, source)
                                 BCEL::Constants::ACC_PUBLIC,
                                 interfaces)
 
-  arg_types = BCEL::Type[].new(2)
-  arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
-  arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
-
-  arg_names = JavaLang::JString[].new(2)
-  arg_names[0] = "runtime"
-  arg_names[1] = "self"
-
-  instructions = BCEL::InstructionList.new
-
-  methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::ACC_STATIC,
-                                  BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
-                                  arg_types,
-                                  arg_names,
-                                  "doStuff",
-                                  classgen.getClassName,
-                                  instructions,
-                                  classgen.getConstantPool)
-
   code = compile(source)
-  code.jvm_compile(methodgen)
+  code.jvm_compile(classgen, "doStuff")
 
-  # Add a return manually
-  instructions.append(BCEL::ARETURN.new)
-
-  methodgen.setMaxStack
-  classgen.addMethod(methodgen.getMethod)
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
 #  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
