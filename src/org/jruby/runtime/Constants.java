@@ -3,10 +3,12 @@
  * Created on 02. November 2001, 01:25
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Charles O Nutter
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Charles O Nutter <headius@headius.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -40,5 +42,5 @@ public interface Constants {
     public static final String PLATFORM = "java";
 
     public static final int MARSHAL_MAJOR = 4;
-    public static final int MARSHAL_MINOR = 5;
+    public static final int MARSHAL_MINOR = 10;
 }
