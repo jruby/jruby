@@ -78,7 +78,7 @@ if [ "$1" = "JAVA_DEBUG" ]; then
   shift
 else
   if [ "$1" = "JPROFILER" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JPROFILER_PATH/linux/i86
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$JPROFILER_PATH/bin/linux-x86
     DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/$JPROFILER_PATH/bin/agent.jar"
     shift
   else if [ "$1" = "HPROF" ]; then

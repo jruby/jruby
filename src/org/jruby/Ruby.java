@@ -98,15 +98,31 @@ import org.jruby.util.collections.IStack;
  */
 public final class Ruby {
     private ThreadContext mainContext = new ThreadContext(Ruby.this);
-    private ThreadLocal threadContext = new ThreadLocal() {
+    private ThreadContextLocal threadContext = new ThreadContextLocal(mainContext);
+        
+    private static class ThreadContextLocal extends ThreadLocal {
+        private ThreadContext mainContext;
+
+        public ThreadContextLocal(ThreadContext mainContext) {
+            this.mainContext = mainContext;
+        }
 
         /**
          * @see java.lang.ThreadLocal#initialValue()
          */
         protected Object initialValue() {
-            return mainContext;
+            return this.mainContext;
         }
-    };
+
+        public void dereferenceMainContext() {
+            this.mainContext = null;
+            set(null);
+        }
+    }
+    
+    public void dispose() {
+        threadContext.dereferenceMainContext();
+    }
 
     private RubyMethodCache methodCache;
 
