@@ -61,6 +61,7 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.Iter;
+import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ReadonlyGlobalVariable;
@@ -158,6 +159,8 @@ public final class Ruby {
     private Class regexpAdapterClass;
 
     private Parser parser = new Parser(this);
+
+    private LastCallStatus lastCallStatus = new LastCallStatus();
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -845,6 +848,14 @@ public final class Ruby {
      */
     public IObjectFactory getFactory() {
         return factory;
+    }
+
+    /**
+     * Returns the lastCallStatus.
+     * @return LastCallStatus
+     */
+    public LastCallStatus getLastCallStatus() {
+        return lastCallStatus;
     }
 
 }

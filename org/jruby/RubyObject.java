@@ -53,6 +53,8 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.IdUtil;
+import org.jruby.util.PrintfFormat;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyMapMethod;
@@ -253,7 +255,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         objectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyObject.class, "to_s"));
         objectClass.defineMethod("type", CallbackFactory.getMethod(RubyObject.class, "type"));
         objectClass.defineMethod("untaint", CallbackFactory.getMethod(RubyObject.class, "untaint"));
-        objectClass.defineMethod("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", IRubyObject.class));
+        objectClass.defineMethod("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing"));
 
         objectClass.defineAlias("===", "==");
         objectClass.defineAlias("class", "type");
@@ -884,10 +886,48 @@ public class RubyObject implements Cloneable, IRubyObject {
         return this;
     }
 
-    public IRubyObject method_missing(IRubyObject symbol, IRubyObject[] args) {
-        throw new NameError(getRuntime(),
-                            "Undefined local variable or method '" + symbol.toId()
-                            + "' for " + inspect().getValue());
+    public IRubyObject method_missing(IRubyObject[] args) {
+        if (args.length == 0) {
+            throw new ArgumentError(getRuntime(), "no id given");
+        }
+
+        String name = args[0].toId();
+
+        String description = callMethod("inspect").toString();
+        boolean noClass = description.charAt(0) == '#';
+        if (isNil()) {
+            noClass = true;
+            description = "nil";
+        } else if (this == ruby.getTrue()) {
+            noClass = true;
+            description = "true";
+        } else if (this == ruby.getFalse()) {
+            noClass = true;
+            description = "false";
+        }
+
+        String format = "Undefined method '%s' for %s%s%s";
+        if (ruby.getLastCallStatus().isPrivate()) {
+            format = "private method '%s' called for %s%s%s";
+        } else if (ruby.getLastCallStatus().isProtected()) {
+            format = "protected method '%s' called for %s%s%s";
+        } else if (ruby.getLastCallStatus().isVariable()) {
+            if (IdUtil.isLocal(name)) {
+                format = "Undefined local variable or method '%s' for %s%s%s";
+            }
+        }
+
+        String msg =
+            new PrintfFormat(format).sprintf(
+                new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().toName()});
+
+        ruby.getFrameStack().push(ruby.getFrameStack().getPrevious());
+
+        try {
+            throw new NameError(getRuntime(), msg);
+        } finally {
+            ruby.getFrameStack().pop();
+        }
     }
 
     public IRubyObject send(IRubyObject method, IRubyObject[] args) {

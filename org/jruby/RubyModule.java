@@ -761,11 +761,12 @@ public class RubyModule extends RubyObject {
         if (ent == null || ent.getMethod().isUndefined()) {
             if (scope == 3) {
                 throw new NameError(ruby, "super: no superclass method '" + name + "'");
+            } else if (scope == 2) {
+                ruby.getLastCallStatus().setVariable();
+            } else {
+                ruby.getLastCallStatus().setNormal();
             }
-            IRubyObject[] newArgs = new IRubyObject[args.length + 1];
-            newArgs[0] = RubySymbol.newSymbol(getRuntime(), name);
-            System.arraycopy(args, 0, newArgs, 1, args.length);
-            return recv.callMethod("method_missing", newArgs);
+            return callMethodMissing(recv, name, args);
         }
 
         RubyModule klass = ent.getOrigin();
@@ -774,14 +775,16 @@ public class RubyModule extends RubyObject {
 
         if (!name.equals("method_missing")) {
             if (method.getVisibility().isPrivate() && scope == 0) {
-                // return undefinedMethod(name, args, Visibility.PRIVATE);
+                ruby.getLastCallStatus().setPrivate();
+                return callMethodMissing(recv, name, args);
             } else if (method.getVisibility().isProtected()) {
                 RubyModule defined = klass;
                 while (defined.isIncluded()) {
                     defined = defined.getInternalClass();
                 }
                 if (!ruby.getCurrentFrame().getSelf().isKindOf(defined)) {
-                    // return undefinedMethod(name, args, Visibility.PROTECTED);
+                    ruby.getLastCallStatus().setProtected();
+                    return callMethodMissing(recv, name, args);
                 }
             }
         }
@@ -789,6 +792,23 @@ public class RubyModule extends RubyObject {
         // ...
 
         return klass.call0(recv, name, args, method, false);
+    }
+    
+    private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
+        if (name == "method_missing") {
+            ruby.getFrameStack().push();
+            try {
+                return receiver.method_missing(args);
+            } finally {
+                ruby.getFrameStack().pop();
+            }
+        }
+        
+        IRubyObject[] newArgs = new IRubyObject[args.length + 1];
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        newArgs[0] = RubySymbol.newSymbol(ruby, name);
+        
+        return receiver.callMethod("method_missing", newArgs);
     }
 
     /** rb_call0

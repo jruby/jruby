@@ -273,4 +273,10 @@ public interface IRubyObject {
     
     public void callInit(IRubyObject[] args);
     
+    /**
+     * Method method_missing.
+     * @param args
+     * @return IRubyObject
+     */
+    IRubyObject method_missing(IRubyObject[] args);
 }
