@@ -258,7 +258,7 @@ public class ThreadContext {
 
         if (blockVariableNode == null) {
             if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-                value = ((RubyArray) value).entry(0);
+                value = ((RubyArray) value).first();
             }
         }
 
@@ -287,7 +287,7 @@ public class ThreadContext {
             }
             if (!(blockVariableNode instanceof MultipleAsgnNode)) {
                 if (arrayValue.getLength() == 1) {
-                    value = arrayValue.entry(0);
+                    value = arrayValue.first();
                 }
             }
         }

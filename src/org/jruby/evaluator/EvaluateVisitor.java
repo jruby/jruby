@@ -1418,7 +1418,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitYieldNode(YieldNode iVisited) {
         eval(iVisited.getArgsNode());
         if (iVisited.getArgsNode() instanceof ExpandArrayNode && ((RubyArray) result).getLength() == 1) {
-            result = ((RubyArray) result).entry(0);
+            result = ((RubyArray) result).first();
         }
         result = threadContext.yield(result, null, null, false);
     }

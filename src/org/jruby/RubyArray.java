@@ -266,16 +266,16 @@ public class RubyArray extends RubyObject implements IndexCallable {
     /** rb_ary_store
      *
      */
-    public void store(long idx, IRubyObject value) {
+    private void store(long index, IRubyObject value) {
         modify();
-        if (idx < 0) {
-            idx += getLength();
-            if (idx < 0) {
-                throw new IndexError(getRuntime(), "index " + (idx - getLength()) + " out of array");
+        if (index < 0) {
+            index += getLength();
+            if (index < 0) {
+                throw new IndexError(getRuntime(), "index " + (index - getLength()) + " out of array");
             }
         }
-        autoExpand(idx + 1);
-        list.set((int) idx, value);
+        autoExpand(index + 1);
+        list.set((int) index, value);
     }
 
     /** rb_ary_entry
@@ -659,21 +659,19 @@ public class RubyArray extends RubyObject implements IndexCallable {
         // Performance
         int length = getLength();
 
-        // HACK +++
         if (length == 0) {
             return RubyString.newString(getRuntime(), "[]");
         }
         RubyString result = RubyString.newString(getRuntime(), "[");
-        RubyString sep = RubyString.newString(getRuntime(), ", ");
+        RubyString separator = RubyString.newString(getRuntime(), ", ");
         for (int i = 0; i < length; i++) {
             if (i > 0) {
-                result.append(sep);
+                result.append(separator);
             }
             result.append(entry(i).callMethod("inspect"));
         }
         result.cat("]");
         return result;
-        // HACK ---
     }
 
     /** rb_ary_first
@@ -772,8 +770,14 @@ public class RubyArray extends RubyObject implements IndexCallable {
      *
      */
     public RubyString to_s() {
-        IRubyObject sep = getRuntime().getGlobalVariables().get("$,");
-        return join(sep.isNil() ? RubyString.newString(getRuntime(), "") : RubyString.stringValue(sep));
+        IRubyObject separatorObject = getRuntime().getGlobalVariables().get("$,");
+        RubyString separator;
+        if (separatorObject.isNil()) {
+            separator = RubyString.newString(getRuntime(), "");
+        } else {
+            separator = RubyString.stringValue(separatorObject);
+        }
+        return join(separator);
     }
 
     /** rb_ary_to_a
@@ -836,15 +840,14 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public IRubyObject compact_bang() {
         modify();
-        boolean changed = false;
-
+        boolean isChanged = false;
         for (int i = getLength() - 1; i >= 0; i--) {
             if (entry(i).isNil()) {
                 list.remove(i);
-                changed = true;
+                isChanged = true;
             }
         }
-        return changed ? (IRubyObject) this : (IRubyObject) getRuntime().getNil();
+        return isChanged ? (IRubyObject) this : (IRubyObject) getRuntime().getNil();
     }
 
     /** rb_ary_compact
@@ -852,7 +855,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public IRubyObject compact() {
         RubyArray ary = (RubyArray) dup();
-        ary.compact_bang(); //Benoit: do not return directly the value of compact_bang, it may be nil
+        ary.compact_bang();
         return ary;
     }
 
@@ -949,9 +952,9 @@ public class RubyArray extends RubyObject implements IndexCallable {
      *
      */
     public IRubyObject rbClone() {
-        RubyArray ary = newArray(getRuntime(), new ArrayList(list));
-        ary.setupClone(this);
-        return ary;
+        RubyArray result = newArray(getRuntime(), new ArrayList(list));
+        result.setupClone(this);
+        return result;
     }
 
     /** rb_ary_reverse_bang
@@ -970,9 +973,9 @@ public class RubyArray extends RubyObject implements IndexCallable {
      *
      */
     public IRubyObject reverse() {
-        RubyArray ary = (RubyArray) dup();
-        ary.reverse_bang();
-        return ary;
+        RubyArray result = (RubyArray) dup();
+        result.reverse_bang();
+        return result;
     }
 
     /** rb_ary_collect
@@ -1005,16 +1008,16 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public IRubyObject delete(IRubyObject obj) {
         modify();
-        IRubyObject retVal = getRuntime().getNil();
+        IRubyObject result = getRuntime().getNil();
         for (int i = getLength() - 1; i >= 0; i--) {
             if (obj.callMethod("==", entry(i)).isTrue()) {
-                retVal = (IRubyObject) list.remove(i);
+                result = (IRubyObject) list.remove(i);
             }
         }
-        if (retVal.isNil() && getRuntime().isBlockGiven()) {
-            retVal = getRuntime().yield(entry(0));
+        if (result.isNil() && getRuntime().isBlockGiven()) {
+            result = getRuntime().yield(entry(0));
         }
-        return retVal;
+        return result;
     }
 
     /** rb_ary_delete_at
