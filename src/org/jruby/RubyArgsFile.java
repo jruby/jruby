@@ -45,13 +45,9 @@ public class RubyArgsFile extends RubyObject {
         super(ruby, ruby.getClasses().getObjectClass());
     }
 
-    private boolean first_p = true;
     private int next_p = 0;
-    private boolean init_p = false;
 
-    //
-    private RubyIO currentFile;
-    //private RubyString currentFilename;
+    private RubyIO currentFile = null;
     private int currentLineNumber;
     
     public void setCurrentLineNumber(int newLineNumber) {
@@ -82,130 +78,34 @@ public class RubyArgsFile extends RubyObject {
     protected boolean nextArgsFile() {
         RubyArray args = (RubyArray)runtime.getGlobalVar("$*");
 
-        if (!init_p) {
-            if (args.getLength() > 0) {
-                next_p = 1;
-            } else {
-                next_p = -1;
-                currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
-                ((RubyString) runtime.getGlobalVar("$FILENAME")).setValue("-");
+        if (args.getLength() == 0) {
+            if (currentFile == runtime.getGlobalVar("$stdin")) {
+                return true;
             }
-            init_p = true;
-            first_p = false;
+            currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
+            ((RubyString) runtime.getGlobalVar("$FILENAME")).setValue("-");
             currentLineNumber = 0;
+            return false;
         }
 
-        // retry : while (true) {
-        if (next_p == 1) {
-            next_p = 0;
-            if (args.getLength() > 0) {
-                String filename = ((RubyString) args.shift()).getValue();
-                ((RubyString) runtime.getGlobalVar("$FILENAME")).setValue(filename);
+        String filename = ((RubyString) args.shift()).getValue();
+        ((RubyString) runtime.getGlobalVar("$FILENAME")).setValue(filename);
 
-                if (filename.equals("-")) {
-                    currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
-                    /*if (ruby_inplace_mode)
-                    {
-                        rb_warn("Can't do inplace edit for stdio");
-                        rb_defout = rb_stdout;
-                    }*/
-                } else {
-                    File file = new File(filename);
-                    try {
-                        RubyInputStream inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
-                        // FILE *fr = rb_fopen(fn, "r");
+        if (filename.equals("-")) {
+            currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
+        } else {
+            File file = new File(filename);
+            try {
+                RubyInputStream inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
 
-                        /*if (ruby_inplace_mode) {
-                            struct stat st, st2;
-                            VALUE str;
-                            FILE *fw;
-                        
-                            if (TYPE(rb_defout) == T_FILE && rb_defout != rb_stdout)
-                            {
-                                rb_io_close(rb_defout);
-                            }
-                            fstat(fileno(fr), &st);
-                            if (*ruby_inplace_mode)
-                            {
-                                str = rb_str_new2(fn);
-                        #ifdef NO_LONG_FNAME
-                        
-                                ruby_add_suffix(str, ruby_inplace_mode);
-                        #else
-                        
-                                rb_str_cat2(str, ruby_inplace_mode);
-                        #endif
-                        #ifdef NO_SAFE_RENAME
-                        
-                                (void)fclose(fr);
-                                (void)unlink(RSTRING(str)->ptr);
-                                (void)rename(fn, RSTRING(str)->ptr);
-                                fr = rb_fopen(RSTRING(str)->ptr, "r");
-                        #else
-                        
-                                if (rename(fn, RSTRING(str)->ptr) < 0)
-                                {
-                                    rb_warn("Can't rename %s to %s: %s, skipping file",
-                                            fn, RSTRING(str)->ptr, strerror(errno));
-                                    fclose(fr);
-                                    goto retry;
-                                }
-                        #endif
-                            }
-                            else
-                            {
-                        #ifdef NO_SAFE_RENAME
-                                rb_fatal("Can't do inplace edit without backup");
-                        #else
-                        
-                                if (unlink(fn) < 0)
-                                {
-                                    rb_warn("Can't remove %s: %s, skipping file",
-                                            fn, strerror(errno));
-                                    fclose(fr);
-                                    goto retry;
-                                }
-                        #endif
-                            }
-                            fw = rb_fopen(fn, "w");
-                        #ifndef NO_SAFE_RENAME
-                        
-                            fstat(fileno(fw), &st2);
-                        #ifdef HAVE_FCHMOD
-                        
-                            fchmod(fileno(fw), st.st_mode);
-                        #else
-                        
-                            chmod(fn, st.st_mode);
-                        #endif
-                        
-                            if (st.st_uid!=st2.st_uid || st.st_gid!=st2.st_gid)
-                            {
-                                fchown(fileno(fw), st.st_uid, st.st_gid);
-                            }
-                        #endif
-                            rb_defout = prep_stdio(fw, FMODE_WRITABLE, rb_cFile);
-                            prep_path(rb_defout, fn);
-                        }*/
+                currentFile = new RubyFile(runtime, runtime.getClasses().getFileClass());
+                currentFile.initIO(inStream, null, filename);
 
-                        currentFile = new RubyFile(runtime, runtime.getClasses().getFileClass());
-                        currentFile.initIO(inStream, null, filename);
-
-                        // prep_stdio(fr, FMODE_READABLE, rb_cFile);
-                        // prep_path(current_file, fn);
-                    } catch (FileNotFoundException fnfExcptn) {
-                        throw new IOError(runtime, fnfExcptn.getMessage());
-                    }
-                }
-                /*if (binmode)
-                    rb_io_binmode(current_file);*/
-            } else {
-                init_p = false;
-                return false;
+            } catch (FileNotFoundException fnfExcptn) {
+                throw new IOError(runtime, fnfExcptn.getMessage());
             }
         }
-        //break;
-        //}
+
         return true;
     }
     
