@@ -62,6 +62,9 @@ public class RbKernel {
         kernelModule.defineMethod("inspect", getObjectMethod("m_inspect"));
         kernelModule.defineModuleFunction("singleton_method_added", getDummyMethod());
         kernelModule.defineMethod("raise", getKernelMethod("m_raise"));
+        kernelModule.defineMethod("==", getKernelMethod("m_equal"));
+        kernelModule.defineMethod("equal?", getKernelMethod("m_equal"));
+        kernelModule.defineMethod("eql?", getKernelMethod("m_equal"));
 
         kernelModule.defineMethod(
             "method",
@@ -106,6 +109,16 @@ public class RbKernel {
         String methodName,
         Class arg1) {
         return new ReflectionCallbackMethod(RubyObject.class, methodName, arg1);
+    }
+
+    public static RubyObject m_equal(
+        Ruby ruby,
+        RubyObject recv,
+        RubyObject args[]) {
+        if(recv == args[0]) {
+                return ruby.getTrue();
+        }
+	return ruby.getFalse();
     }
 
     public static RubyObject m_extend(
