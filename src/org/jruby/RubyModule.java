@@ -977,6 +977,10 @@ public class RubyModule extends RubyObject {
         }
         return clone;
     }
+    
+    protected IRubyObject doClone() {
+    	return RubyModule.newModule(getRuntime(), classId, parentModule);
+    }
 
     /** rb_mod_dup
      *
@@ -984,7 +988,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject dup() {
         RubyModule dup = (RubyModule) rbClone();
         dup.setMetaClass(getMetaClass());
-
+        dup.setFrozen(false);
         // +++ jpetersen
         // dup.setSingleton(isSingleton());
         // --- jpetersen

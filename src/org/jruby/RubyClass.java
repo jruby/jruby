@@ -292,4 +292,8 @@ public class RubyClass extends RubyModule {
 
         return newClass;
     }
+    
+    protected IRubyObject doClone() {
+    	return RubyClass.newClass(getRuntime(), getSuperClass(), null/*FIXME*/, getBaseName());
+    }
 }

@@ -43,6 +43,7 @@ testCase.rb
 testLine.rb
 testJavaProxy.rb
 testRedefine.rb
+testDupCloneTaintFreeze.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

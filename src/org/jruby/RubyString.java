@@ -192,9 +192,8 @@ public class RubyString extends RubyObject {
 	 */
 	public IRubyObject rbClone() {
 		IRubyObject newObject = dup();
-
 		newObject.initCopy(this);
-
+		newObject.setFrozen(isFrozen());
 		return newObject;
 	}
 

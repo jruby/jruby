@@ -451,7 +451,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     	RubyRegexp newObj = new RubyRegexp(getRuntime());
     	newObj.pattern = pattern;
     	newObj.code = code;
-    	initCopy(newObj);
+    	newObj.setTaint(isTaint());
+    	newObj.initCopy(this);
+    	newObj.setFrozen(isFrozen());
         return newObj;
     }
 

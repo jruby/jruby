@@ -702,14 +702,18 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject rbClone() {
-        IRubyObject clone = getMetaClass().getRealClass().allocate();
+        IRubyObject clone = doClone();
         clone.setMetaClass(getMetaClass().getSingletonClassClone());
-        clone.setFrozen(false);
+        clone.setTaint(this.isTaint());
         clone.initCopy(this);
-        if (isFrozen()) {
-            clone.setFrozen(true);
-        }
+        clone.setFrozen(isFrozen());
         return clone;
+    }
+    
+    // Hack: allow RubyModule and RubyClass to override the allocation and return the the correct Java instance
+    // Cloning a class object doesn't work otherwise and I don't really understand why --sma
+    protected IRubyObject doClone() {
+    	return getMetaClass().getRealClass().allocate();
     }
     
     public IRubyObject display(IRubyObject[] args) {
