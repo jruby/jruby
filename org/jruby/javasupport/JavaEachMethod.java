@@ -1,7 +1,7 @@
 package org.jruby.javasupport;
 
 import org.jruby.*;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Callback;
 import org.jruby.util.*;
 
 public class JavaEachMethod implements Callback {
@@ -17,11 +17,11 @@ public class JavaEachMethod implements Callback {
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)
      */
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        while (recv.funcall(hasNextMethod, new RubyPointer()).isTrue()) {
+        while (recv.funcall(hasNextMethod).isTrue()) {
             if (nextMethod == null) {
                 ruby.yield(recv);
             } else {
-                ruby.yield(recv.funcall(nextMethod, new RubyPointer()));
+                ruby.yield(recv.funcall(nextMethod));
             }
         }
 

@@ -339,10 +339,6 @@ public class RubyObject implements Cloneable {
         return getRubyClass().call(this, name, args, 1);
     }
 
-    public RubyObject funcall(String name, RubyPointer args) {
-        return funcall(name, args.toRubyArray());
-    }
-
     public RubyObject funcall(String name) {
         return funcall(name, new RubyObject[0]);
     }
@@ -352,10 +348,6 @@ public class RubyObject implements Cloneable {
      */
     public RubyObject funcall3(String name, RubyObject[] args) {
         return getRubyClass().call(this, name, args, 0);
-    }
-
-    public RubyObject funcall3(String name, RubyPointer args) {
-        return funcall3(name, args.toRubyArray());
     }
 
     /** rb_funcall
