@@ -56,7 +56,7 @@ public class RubyMethodCache {
      * @param name The method name.
      */
 	public void saveUndefinedEntry(RubyModule recvClass, String name) {
-        methodCache.put(getKey(recvClass, name), new CacheEntry(name, recvClass));
+        methodCache.put(getKey(recvClass, name), CacheEntry.createUndefined(name, recvClass));
     }
 
     /**

@@ -708,7 +708,11 @@ public class RubyModule extends RubyObject {
     }
 
     public Visibility getMethodNoex(String name) {
-        return getMethodBody(name).getVisibility();
+        CacheEntry entry = getMethodBody(name);
+        if (entry == null) {
+            return Visibility.PUBLIC;
+        }
+        return entry.getVisibility();
     }
 
     /** rb_get_method_body
@@ -719,7 +723,6 @@ public class RubyModule extends RubyObject {
 
         if (method.isUndefined()) {
             getRuntime().getMethodCache().saveUndefinedEntry(this, name);
-
             return null;
         }
 
@@ -1113,14 +1116,13 @@ public class RubyModule extends RubyObject {
             entry = getMethodBody(name);
         }
 
-        if (entry != null && !entry.getMethod().isUndefined()) {
+        if (entry != null && entry.isDefined()) {
             if (checkVisibility && entry.getVisibility().isPrivate()) {
                 return false;
             } else {
                 return true;
             }
         }
-
         return false;
     }
 

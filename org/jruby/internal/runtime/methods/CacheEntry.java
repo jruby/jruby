@@ -55,14 +55,18 @@ public class CacheEntry {
         this.visibility = visibility;
     }
     
-    public CacheEntry(String name, RubyModule recvClass) {
+    private CacheEntry(String name, RubyModule recvClass) {
         this(name, name, recvClass, recvClass, UndefinedMethod.getInstance(), Visibility.PUBLIC);
     }
     
     public CacheEntry(RubyModule recvClass, Visibility visibility) {
         this(null, null, recvClass, null, null, visibility);
     }
-    
+
+    public static CacheEntry createUndefined(String name, RubyModule recvClass) {
+        return new CacheEntry(name, recvClass);
+    }
+
     /** Getter for property recvClass.
      * @return Value of property recvClass.
      */
@@ -91,30 +95,18 @@ public class CacheEntry {
         this.method = method;
     }
     
-    /** Getter for property mid.
-     * @return Value of property mid.
-     */
     public String getName() {
         return name;
     }
     
-    /** Setter for property mid.
-     * @param mid New value of property mid.
-     */
     public void setName(String name) {
         this.name = name;
     }
     
-    /** Getter for property mid0.
-     * @return Value of property mid0.
-     */
     public String getOriginalName() {
         return originalName;
     }
     
-    /** Setter for property mid0.
-     * @param mid0 New value of property mid0.
-     */
     public void setOriginalName(String originalName) {
         this.originalName = originalName;
     }
@@ -139,6 +131,10 @@ public class CacheEntry {
      */
     public void setOrigin(RubyModule origin) {
         this.origin = origin;
+    }
+
+    public boolean isDefined() {
+        return ! getMethod().isUndefined();
     }
 }
 
