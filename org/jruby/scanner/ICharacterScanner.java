@@ -2,6 +2,7 @@ package org.jruby.scanner;
 
 public interface ICharacterScanner {
     public boolean isEof();
+    public void skipEol();
     public boolean isEol();
     
     public char readChar();

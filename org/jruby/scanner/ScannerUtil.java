@@ -20,4 +20,45 @@ public final class ScannerUtil {
         }
         return sb.toString();
     }
+    
+    public static final boolean startsWith(ICharacterScanner cs, char[] chars) {
+    	int len = chars.length;
+    	int i = 0;
+    	
+    	for (;i < len && cs.readChar() != chars[i]; i++);
+    	
+    	for (int j = 0; j <= i; j++) {
+    		cs.unreadChar();
+    	}
+    	
+    	return i == len;
+    }
+
+    public static final boolean startsWithWord(ICharacterScanner cs, char[] chars) {
+    	int len = chars.length;
+    	int i = 0;
+    	
+    	for (;i < len && cs.readChar() != chars[i]; i++);
+    	
+    	boolean result = i == len;
+    	
+    	if (!cs.isEol()) {
+    		if (!Character.isWhitespace(cs.readChar())) {
+    			result = false;
+    		}
+    		cs.unreadChar();
+    	}
+    	    	
+    	for (int j = 0; j <= i; j++) {
+    		cs.unreadChar();
+    	}
+    	
+    	return result;
+    }
+    
+    public static void skip(ICharacterScanner cs, int chars) {
+    	for (int i = 0; i < chars && !cs.isEof(); i++) {
+    		cs.readChar();
+    	}
+    }
 }
