@@ -35,12 +35,10 @@ goto cleanup
 
 if not "%JRUBY_HOME%" == "" goto gotHome
 set JRUBY_HOME=.
-if exist "%JRUBY_HOME%\jruby.jar" goto okHome
+if exist "%JRUBY_HOME%\lib\jruby.jar" goto okHome
 set JRUBY_HOME=..
 :gotHome
-if exist "%JRUBY_HOME%\jruby.jar" goto okHome
-set JRUBY_HOME=.\build
-if exist "%JRUBY_HOME%\jruby.jar" goto okHome
+if exist "%JRUBY_HOME%\lib\jruby.jar" goto okHome
 echo Cannot find jruby.bat in %JRUBY_HOME% 
 echo Please check your JRUBY_HOME setting
 goto cleanup
