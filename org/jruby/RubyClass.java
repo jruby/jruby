@@ -46,8 +46,8 @@ import org.jruby.runtime.ICallable;
  * @author  jpetersen
  */
 public class RubyClass extends RubyModule {
-    // Flags
-    private boolean singleton = false;
+
+    private boolean isSingleton = false;
 
     private RubyClass(Ruby ruby) {
         this(ruby, null, null);
@@ -88,7 +88,7 @@ public class RubyClass extends RubyModule {
     }
 
     public void setSingleton(boolean singleton) {
-        this.singleton = singleton;
+        this.isSingleton = singleton;
     }
 
     public static void createClassClass(RubyClass classClass) {
@@ -148,7 +148,7 @@ public class RubyClass extends RubyModule {
     }
 
     public boolean isSingleton() {
-        return this.singleton;
+        return this.isSingleton;
     }
 
     public RubyClass getInternalClass() {
@@ -171,7 +171,7 @@ public class RubyClass extends RubyModule {
         // Asserts.assertTrue(isSingleton(), "attachSingletonClass called on a non singleton class.");
 
         if (isSingleton()) {
-            setInstanceVariable("__atached__", object);
+            setInstanceVariable("__attached__", object);
         }
     }
 
