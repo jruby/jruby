@@ -1,12 +1,7 @@
 /*
- * NameError.java - No description
- * Created on 04. Juli 2001, 22:53
+ * NoMethodError.java - No description
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,26 +22,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.exceptions;
 
-import org.jruby.*;
+import org.jruby.Ruby;
 
 /**
- *
- * @author  jpetersen
+ * @author enebo
  */
-public class NameError extends RaiseException {
-
-    /**
-     * Constructs an <code>RubyTypeException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public NameError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getNameError(), msg);
-    }
-    
-    public NameError(Ruby ruby, RubyClass exceptionClass, String msg) {
-        super(ruby, exceptionClass, msg);
+public class NoMethodError extends NameError {
+    public NoMethodError(Ruby ruby, String msg) {
+        super(ruby, ruby.getExceptions().getNoMethodError(), msg);
     }
 }

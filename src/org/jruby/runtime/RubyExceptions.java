@@ -24,6 +24,7 @@ public class RubyExceptions implements IErrno {
     private RubyClass nameError = null;
     private RubyClass loadError = null;
     private RubyClass notImplementedError = null;
+    private RubyClass noMethodError = null;
     
     private RubyClass runtimeError = null;
     private RubyClass securityError = null;
@@ -92,7 +93,7 @@ public class RubyExceptions implements IErrno {
     }
         
     public void initDefaultExceptionClasses() {
-        RubyClass exceptionClass = ruby.getClass("Exception");
+        RubyClass exceptionClass = ruby.getClasses().getExceptionClass();
         
         systemExit = ruby.defineClass("SystemExit", exceptionClass);
         fatal = ruby.defineClass("Fatal", exceptionClass);
@@ -110,6 +111,7 @@ public class RubyExceptions implements IErrno {
         nameError = ruby.defineClass("NameError", scriptError);
         loadError = ruby.defineClass("LoadError", scriptError);
         notImplementedError = ruby.defineClass("NotImplementedError", scriptError);
+        noMethodError = ruby.defineClass("NoMethodError", nameError);
         
         runtimeError = ruby.defineClass("RuntimeError", standardError);
         securityError = ruby.defineClass("SecurityError", standardError);
@@ -255,6 +257,15 @@ public class RubyExceptions implements IErrno {
     public RubyClass getNotImplementedError() {
         return notImplementedError;
     }
+    
+    /**
+     * Gets the noMethodError
+     * @return Returns a RubyClass
+     */
+    public RubyClass getNoMethodError() {
+        return noMethodError;
+    }
+    
     /**
      * Gets the rangeError
      * @return Returns a RubyClass
