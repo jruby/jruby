@@ -36,7 +36,7 @@ import org.jruby.*;
 
 /**
  *
- * @author  jpetersen
+ * @author Jan Arne Petersen, Alan Moore
  * @version 
  */
 public class JavaUtil {
@@ -141,12 +141,14 @@ public class JavaUtil {
             String cName = javaClass.getName();
             if (cName == "boolean") {
                 return RubyBoolean.m_newBoolean(ruby, ((Boolean)object).booleanValue());
-            }
-            if (cName == "float" || cName == "double") {
+            } else if (cName == "float" || cName == "double") {
                 return RubyFloat.m_newFloat(ruby, ((Number)object).doubleValue());
+            } else if (cName == "char") {
+            	return RubyFixnum.m_newFixnum(ruby, ((Character)object).charValue());
+            } else {
+	            // else it's one of the integral types
+				return RubyFixnum.m_newFixnum(ruby, ((Number)object).longValue());
             }
-            // else it's one of the integral types
-            return RubyFixnum.m_newFixnum(ruby, ((Number)object).longValue());
         }
         if (javaClass == String.class) {
             return RubyString.m_newString(ruby, object.toString());
