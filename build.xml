@@ -54,8 +54,8 @@
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <classpath refid="classpath" />
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf"/>
-            <exclude unless="junit" name="**/test/**"/>
+            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf.present"/>
+            <exclude name="**/test/**" unless="junit.present"/>
             <exclude name="**/tars/**"/>
         </javac>
         <copy todir="${build.dest}">
