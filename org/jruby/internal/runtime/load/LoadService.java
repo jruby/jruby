@@ -88,6 +88,7 @@ public class LoadService implements ILoadService {
         if (!loadedFeatures.contains(name)) {
             if (file.endsWith(".jar")) {
                 loadJAR(file);
+                loadedFeatures.add(name);
                 return true;
             }
             if (load(file)) {
