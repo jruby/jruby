@@ -1278,13 +1278,13 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitScopeNode(ScopeNode)
      */
     public void visitScopeNode(ScopeNode iVisited) {
-        threadContext.getCurrentFrame().tmpPush();
+        threadContext.getFrameStack().pushCopy();
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         try {
             eval(iVisited.getBodyNode());
         } finally {
             threadContext.getScopeStack().pop();
-            threadContext.getCurrentFrame().tmpPop();
+            threadContext.getFrameStack().pop();
         }
     }
 
@@ -1495,7 +1495,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      *
      */
     private void evalClassDefinitionBody(ScopeNode iVisited, RubyModule type) {
-        threadContext.getCurrentFrame().tmpPush();
+        threadContext.getFrameStack().pushCopy();
         runtime.pushClass(type);
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         threadContext.pushDynamicVars();
@@ -1519,7 +1519,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             threadContext.popDynamicVars();
             threadContext.getScopeStack().pop();
             runtime.popClass();
-            threadContext.getCurrentFrame().tmpPop();
+            threadContext.getFrameStack().pop();
 
             if (isTrace()) {
                 callTraceFunction("end", null);

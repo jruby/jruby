@@ -74,7 +74,7 @@ public class ThreadContext {
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new RubyStack();
         this.scopeStack = new ScopeStack(ruby);
-        this.frameStack = new FrameStack(ruby);
+        this.frameStack = new FrameStack(this);
         this.iterStack = CollectionFactory.getInstance().newStack();
 
         pushDynamicVars();

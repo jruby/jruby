@@ -47,7 +47,4 @@ To use Rubicon for testing you must first install it. Get it from CVS with
 
 Then follow Rubicon's README on how to install and run it.
 
-You must first install RubyUnit in your original Ruby interpreter (1.6 required). Then copy the lib directory from that to your JRUBY_HOME directory. (If you built jruby from CVS it is the build directory). You should then run
-        <jruby> mkconfig.rb
-(Replace <jruby> with the platform-dependent start script).
-Now your JRuby is ready to (partially) run Rubicon.
+You must first install RubyUnit in your original Ruby interpreter (1.6 required). Then copy the lib directory from that to your JRUBY_HOME directory. (If you built jruby from CVS it is the build directory). Now your JRuby should now be ready to run Rubicon.
