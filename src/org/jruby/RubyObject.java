@@ -494,9 +494,12 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     private IRubyObject yieldUnder(RubyModule under) {
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
+                // Fixme: What good is this copying, when it is referenced frame and scope objects
+                // that are modified here? Some other modifications?
                 Block savedBlock = runtime.getBlockStack().getCurrent().cloneBlock();
                 Namespace ns = runtime.getCurrentFrame().getNamespace();
                 runtime.getBlockStack().getCurrent().getFrame().setNamespace(ns);
+                runtime.getBlockStack().getCurrent().getScope().setVisibility(Visibility.PUBLIC);
                 try {
                     return runtime.yield(args[0], args[0], runtime.getRubyClass(), false);
                 } finally {

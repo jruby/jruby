@@ -12,6 +12,17 @@ end
 
 test_equal("TestModule_Foo", TestModule_Foo.new.foo.type.name)
 
+TestModule_Foo.module_eval {||
+  def abc(x)
+    2 * x
+  end
+  XYZ = 10
+  ABC = self
+}
+test_equal(4, TestModule_Foo.new.abc(2))
+test_equal(10, TestModule_Foo::XYZ)
+test_equal(TestModule_Foo, TestModule_Foo::ABC)
+
 module A
   module B
     module C
