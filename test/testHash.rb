@@ -26,6 +26,9 @@ test_equal(nil, h[k1])
 h.rehash
 test_equal(1, h[k1])
 
+h = {1=>2,3=>4,5=>6}
+test_equal([2, 6], h.values_at(1, 5))
+
 h = {1=>2,3=>4}
 test_equal(1, h.index(2))
 test_equal(nil, h.index(10))

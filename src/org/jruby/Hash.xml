@@ -90,6 +90,9 @@
       <java>has_value</java>
     </method>
     <method-alias name="value?" original="has_value?"/>
+    <method name="values_at">
+        <arity optional="true">0</arity>
+    </method>
   </instance-methods>
 
   <class-methods>

@@ -206,6 +206,8 @@ public class RubyHash extends RubyObject {
                 return has_key(args[0]);
             case HashDefinition.HAS_VALUE :
                 return has_value(args[0]);
+            case HashDefinition.VALUES_AT :
+                return values_at(args);
             default :
                 return super.callIndexed(index, args);
         }
@@ -561,6 +563,15 @@ public class RubyHash extends RubyObject {
         valueMap.clear();
         valueMap.putAll(replacementHash.valueMap);
         return this;
+    }
+
+    public RubyArray values_at(IRubyObject[] argv) {
+        RubyArray result = RubyArray.newArray(runtime);
+        for (int i = 0; i < argv.length; i++) {
+            IRubyObject key = argv[i];
+            result.append(aref(key));
+        }
+        return result;
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {

@@ -110,22 +110,14 @@ public class RubyNil {
      *
      */
     public static RubyBoolean op_or(IRubyObject recv, IRubyObject obj) {
-        if (!obj.isTrue()) {
-            return recv.getRuntime().getFalse();
-        } else {
-            return recv.getRuntime().getTrue();
-        }
+        return RubyBoolean.newBoolean(recv.getRuntime(), obj.isTrue());
     }
 
     /** nil_xor
      *
      */
     public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
-        if (obj.isTrue()) {
-            return recv.getRuntime().getTrue();
-        } else {
-            return recv.getRuntime().getFalse();
-        }
+        return RubyBoolean.newBoolean(recv.getRuntime(), obj.isTrue());
     }
 
     public static RubyFixnum id(IRubyObject recv) {
