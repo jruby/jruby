@@ -121,6 +121,7 @@ public class RubyFile extends RubyIO {
 		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod("join"));
 		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod("basename"));
 		fileClass.defineSingletonMethod("truncate", callbackFactory.getSingletonMethod("truncate", RubyString.class, RubyFixnum.class));
+		fileClass.defineSingletonMethod("stat", callbackFactory.getSingletonMethod("lstat", RubyString.class));
 		
 		fileClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
 		fileClass.defineMethod("truncate", callbackFactory.getMethod("truncate", RubyFixnum.class));
@@ -232,7 +233,7 @@ public class RubyFile extends RubyIO {
     }
 
     public static IRubyObject lstat(IRubyObject recv, RubyString name) {
-        return new FileStatClass(recv.getRuntime(), new File(name.getValue()));
+        return new RubyFileStat(recv.getRuntime(), new File(name.getValue()));
     }
 
     public static IRubyObject unlink(IRubyObject recv, IRubyObject[] args) {
