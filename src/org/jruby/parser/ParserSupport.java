@@ -500,19 +500,26 @@ public class ParserSupport {
     }
 
     public INode new_call(INode receiverNode, String name, INode args) {
+    	/*
+        INode node = ((BlockPassNode) args).getArgsNode();
+        IListNode argsNode = null;
+        
+        if (node instanceof IListNode) {
+            argsNode = (IListNode) node;
+        } else if (node != null){
+            argsNode = new ArrayNode(node.getPosition()).add(node);
+        }
+        
+        ((BlockPassNode) args).setIterNode(new CallNode(receiverNode.getPosition(), receiverNode, name, argsNode));
+        return args;
+        */
         if (args != null && args instanceof BlockPassNode) {
-            INode node = ((BlockPassNode) args).getArgsNode();
-            IListNode argsNode = null;
-            
-            if (node instanceof ArrayNode) {
-                argsNode = (IListNode) node;
-            } else if (node != null){
-                argsNode = new ArrayNode(node.getPosition()).add(node);
-            }
+            INode argsNode = ((BlockPassNode) args).getArgsNode();
             
             ((BlockPassNode) args).setIterNode(new CallNode(receiverNode.getPosition(), receiverNode, name, argsNode));
             return args;
         }
+
         return new CallNode(receiverNode.getPosition(), receiverNode, name, args);
     }
 
