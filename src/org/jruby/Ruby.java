@@ -133,9 +133,6 @@ public final class Ruby {
     // Java support
     private JavaSupport javaSupport;
 
-    // pluggable Regexp engine
-    private Class regexpAdapterClass;
-
     private Parser parser = new Parser(this);
 
     private LastCallStatus lastCallStatus = new LastCallStatus(this);
@@ -184,10 +181,6 @@ public final class Ruby {
 
     public IRubyObject eval(Node node) {
         return getCurrentContext().eval(node);
-    }
-
-    public Class getRegexpAdapterClass() {
-        return regexpAdapterClass;
     }
 
     public RubyClasses getClasses() {
