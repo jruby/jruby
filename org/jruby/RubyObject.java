@@ -835,7 +835,12 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public IRubyObject instance_eval(IRubyObject[] args) {
-        return specificEval(getSingletonClass(), args);
+        if (runtime.isBlockGiven()) {
+            RubyProc proc = RubyProc.newProc(getRuntime());
+            return proc.call(args, this);
+        } else {
+            return specificEval(getSingletonClass(), args);
+        }
     }
 
     /**

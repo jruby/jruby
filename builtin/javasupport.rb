@@ -77,8 +77,8 @@ class Module
         methods = java_class.java_instance_methods
         methods = methods.select {|m| m.public? }
         methods.each {|m|
-          define_method(m.name.intern) {|*args|
-            m.invoke(runtime_self, *args)
+          define_method(m.name) {|*args|
+            m.invoke(self, *args)
           }
         }
       end
@@ -108,14 +108,6 @@ if __FILE__ == $0
   
   p r.to_s
   p r.type.instance_methods
-
-#  module Froboz
-#    class Random
-#      def nextInt
-#        java_class.java_method(:nextInt).invoke(self)
-#      end
-#    end
-#  end
 
   p r.nextInt
   p r.nextInt
