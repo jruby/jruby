@@ -101,7 +101,6 @@ public class Glob {
      */
     private File[] getFiles() {
         String[] dirs = splitPattern();
-        for (int i = 0; i < dirs.length; i++) System.out.println("dir" + dirs[i]);	
         File root = new File(dirs[0]);
         int idx = 1;
         if (dirs[0].indexOf('*') > -1 || dirs[0].indexOf('?') > -1) {
