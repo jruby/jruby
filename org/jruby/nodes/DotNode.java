@@ -40,39 +40,42 @@ import org.jruby.runtime.*;
  * @version $Revision$
  */
 public class DotNode extends Node {
-    private boolean exclusive;
+	private boolean exclusive;
 
-    private boolean cannotCached = false;
-    private RubyObject cachedValue = null;
+	private boolean cannotCached = false;
+	private RubyObject cachedValue = null;
 
-    public DotNode(Node beginNode, Node endNode, boolean exclusive) {
-        super(exclusive ? Constants.NODE_DOT3 : Constants.NODE_DOT2, beginNode, endNode, null);
-        this.exclusive = exclusive;
-    }
+	public DotNode(Node beginNode, Node endNode, boolean exclusive) {
+		super(exclusive ? Constants.NODE_DOT3 : Constants.NODE_DOT2, beginNode, endNode, null);
+		this.exclusive = exclusive;
+	}
 
-    public RubyObject eval(Ruby ruby, RubyObject self) {
-        if (cachedValue != null) {
-            return cachedValue;
-        }
+	public RubyObject eval(Ruby ruby, RubyObject self) {
+		if (cachedValue != null) {
+			return cachedValue;
+		}
+		Node lBegin = getBeginNode();
+		Node lEnd = getEndNode();
+		RubyObject result = RubyRange.newRange(ruby, self.eval(lBegin), self.eval(lEnd), exclusive);
 
-        RubyObject result = RubyRange.newRange(ruby, self.eval(getBeginNode()), self.eval(getEndNode()), exclusive);
+		if (cannotCached) {
+			return result;
+		} else //can cache the result if both begin and ends are Fixnum literals
+			if (lBegin instanceof LitNode && lBegin.getLiteral() instanceof RubyFixnum 
+				&& lEnd instanceof LitNode && lEnd.getLiteral() instanceof RubyFixnum) {
+			cachedValue = result;
+		} else {
+			cannotCached = true;
+		}
 
-        if (cannotCached) {
-            return result;
-        } else if (getBeginNode().getLiteral() instanceof RubyFixnum && getEndNode().getLiteral() instanceof RubyFixnum) {
-            cachedValue = result;
-        } else {
-            cannotCached = true;
-        }
+		return result;
+	}
 
-        return result;
-    }
-
-    /**
-     * Accept for the visitor pattern.
-     * @param iVisitor the visitor
-     **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDotNode(this);
-    }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor) {
+		iVisitor.visitDotNode(this);
+	}
 }

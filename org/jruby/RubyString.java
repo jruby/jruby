@@ -178,6 +178,7 @@ public class RubyString extends RubyObject {
 
         stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
         stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
+        stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
         //    rb_define_method(rb_cString, "each_byte", rb_str_each_byte, 0);
 
         //    rb_define_method(rb_cString, "sum", rb_str_sum, -1);
@@ -1651,7 +1652,22 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
+	
 
+	
+	/**
+	 * rb_str_each_byte
+	 * 
+	 **/
+	public RubyString each_byte()
+	{
+		byte[]	lByteValue = value.getBytes();
+		int lLength = lByteValue.length;
+		for (int i = 0; i < lLength; i++)
+			ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+		return this;
+	}
+	
     /** rb_str_intern
      *
      */
