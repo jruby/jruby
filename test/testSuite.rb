@@ -32,10 +32,10 @@
 require 'minirunit'
 # make sure conditional operators work
 test_check "Test regexp substitutions:"
-load('test\testRegexp')
+load('test/testRegexp')
 
 test_check "Test string evaluation:"
-load('test\testStringEval')
+load('test/testStringEval')
 
 
 
