@@ -30,8 +30,13 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
 import org.jruby.ast.AttrSetNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstVarNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.ZeroArgNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ICallable;
@@ -45,14 +50,20 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class EvaluateMethod extends AbstractMethod {
     private final Node node;
+    private final Arity arity;
 
     public EvaluateMethod(Node node, Visibility visibility) {
+    	this(node, visibility, arityOf(node)); // for compatibility
+    }
+    
+    public EvaluateMethod(Node node, Visibility visibility, Arity arity) {
         super(visibility);
         this.node = node;
+        this.arity = arity;
     }
 
-    public EvaluateMethod(Node node) {
-        this(node, null);
+    public EvaluateMethod(Node node, Node vars) {
+    	this(node, null, procArityOf(vars));
     }
 
     public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
@@ -64,13 +75,35 @@ public class EvaluateMethod extends AbstractMethod {
     }
 
     public Arity getArity() {
-        if (getNode() instanceof AttrSetNode) {
+    	return arity;
+    }
+    
+    private static Arity arityOf(Node node) {
+        if (node instanceof AttrSetNode) {
             return Arity.singleArgument();
-        } else if (getNode() instanceof InstVarNode) {
+        } else if (node instanceof InstVarNode) {
             return Arity.noArguments();
         } else {
             return Arity.optional();
         }
+    }
+    
+    private static Arity procArityOf(Node node) { //FIXME make all args a commmon type, then refactor 
+    	if (node == null) {
+    		return Arity.optional();
+    	} else if (node instanceof ZeroArgNode) {
+    		return Arity.noArguments();
+    	} else if (node instanceof DAsgnNode || node instanceof LocalAsgnNode || node instanceof GlobalAsgnNode) {
+    		return Arity.singleArgument();
+    	} else if (node instanceof MultipleAsgnNode) {
+    		MultipleAsgnNode n = (MultipleAsgnNode) node;
+    		if (n.getArgsNode() != null) {
+    			return Arity.required(n.getHeadNode() == null ? 0 : n.getHeadNode().size());
+    		}
+    		return Arity.fixed(n.getHeadNode().size());
+    	} else {
+    		throw new Error("unexpected type " + node.getClass());
+    	}
     }
     
     public ICallable dup() {
