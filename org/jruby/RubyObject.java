@@ -360,6 +360,41 @@ public class RubyObject implements VALUE {
         intprtr.getRubyIter().pop();
     }
     
+    public void extendObject(RubyModule module) {
+        getSingletonClass().includeModule(module);
+    }
+    
+    /** rb_to_id
+     *
+     */
+    public RubyId toId() {
+        throw new RubyTypeException(m_inspect().getString() + " is not a symbol");
+    }
+    
+    /** rb_convert_type
+     *
+     */
+    public RubyObject covertType(Class type, String className, String method) {
+        if (type.isAssignableFrom(getClass())) {
+            return this;
+        }
+        
+        RubyObject result = null;
+        
+        try {
+            result = funcall(getRuby().intern(method));
+        } catch (RubyNameException rnExcptn) {
+            throw new RubyTypeException("failed to convert " + getRubyClass().toName() + " into " + className);
+        //} catch (RubyS rnExcptn) {
+        }
+        
+        if (!type.isAssignableFrom(result.getClass())) {
+            throw new RubyTypeException(getRubyClass().toName() + "#" + method + " should return " + className);
+        }
+        
+        return result;
+    }
+    
     // Methods of the Object class (rb_obj_*):
     
     /** rb_obj_equal

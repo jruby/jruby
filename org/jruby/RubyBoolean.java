@@ -8,19 +8,21 @@
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -82,14 +84,14 @@ public class RubyBoolean extends RubyObject {
      *
      */
     public RubyModule m_type() {
-        return (RubyClass)getRubyClass();
+        return getRubyClass();
     }
     
     /** false_and
      *  true_and
      *
      */
-    public RubyBoolean op_and(RubyBoolean obj) {
+    public RubyBoolean op_and(RubyObject obj) {
         if (isTrue() && obj.isTrue()) {
             return getRuby().getTrue();
         } else {
@@ -101,7 +103,7 @@ public class RubyBoolean extends RubyObject {
      *  true_or
      *
      */
-    public RubyBoolean op_or(RubyBoolean obj) {
+    public RubyBoolean op_or(RubyObject obj) {
         if (isFalse() && obj.isFalse()) {
             return getRuby().getFalse();
         } else {
@@ -113,12 +115,11 @@ public class RubyBoolean extends RubyObject {
      *  true_xor
      *
      */
-    public RubyBoolean op_xor(RubyBoolean obj) {
+    public RubyBoolean op_xor(RubyObject obj) {
         if ((isTrue() && obj.isFalse()) || (isFalse() && obj.isTrue())) {
             return getRuby().getTrue();
         } else {
             return getRuby().getFalse();
         }
     }
-
 }

@@ -38,7 +38,11 @@ public class RubyString extends RubyObject {
     }
     
     public RubyString(Ruby ruby, String string) {
-        super(ruby, ruby.getStringClass());
+        this(ruby, ruby.getStringClass(), string);
+    }
+    
+    public RubyString(Ruby ruby, RubyModule rubyClass, String string) {
+        super(ruby, rubyClass);
         this.string = string;
     }
 
@@ -63,6 +67,31 @@ public class RubyString extends RubyObject {
         return m_newString(getRuby(), getString().substring(beg, beg + len));
     }
     
+    /** rb_str_cmp
+     *
+     */
+    public int cmp(RubyObject other) {
+        /* use Java implementatiom */
+        return getString().compareTo(((RubyString)other).getString());
+    }
+        
+    /** rb_to_id
+     *
+     */
+    public RubyId toId() {
+        return getRuby().intern(getString());
+    }
+        
+    /** Create a new String which uses the same Ruby runtime and the same
+     *  class like this String.
+     *
+     *  This method should be used to satisfy RCR #38.
+     *
+     */
+    public RubyString newString(String s) {
+        return new RubyString(getRuby(), getRubyClass(), s);
+    }
+
     // Methods of the String class (rb_str_*):
     
     /** rb_str_new2
@@ -127,7 +156,7 @@ public class RubyString extends RubyObject {
             sb.append(getString().charAt(i));
         }
         
-        return m_newString(getRuby(), sb.toString());
+        return newString(sb.toString());
     }
     
     /**
@@ -156,5 +185,29 @@ public class RubyString extends RubyObject {
         newString.callInit(args);
         
         return newString;
+    }
+    
+    /** rb_str_cmp_m
+     *
+     */
+    public RubyFixnum op_cmp(RubyObject other) {
+        if (!(other instanceof RubyString)) {
+            other = other.covertType(RubyString.class, "String", "to_str");
+        }
+        
+        return RubyFixnum.m_newFixnum(getRuby(), cmp(other));
+    }
+
+    /** rb_str_equal
+     *
+     */
+    public RubyBoolean m_equal(RubyObject other) {
+        if (other == this) {
+            return getRuby().getTrue();
+        } else if (!(other instanceof RubyString)) {
+            return getRuby().getFalse();
+        }
+        /* use Java implementation */
+        return getString().equals(((RubyString)other).getString()) ? getRuby().getTrue() : getRuby().getFalse();
     }
 }

@@ -415,19 +415,16 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             return;
         }
         
-        RubyModule actClass = this;
-        while (rubyModule != null) {
+        
+        /* Fixed to Ruby 1.6.5 */
+        for (RubyModule actClass = this; rubyModule != null; rubyModule = rubyModule.getSuperClass()) {
             for (RubyModule rbClass = actClass.getSuperClass(); rbClass != null; rbClass = rbClass.getSuperClass()) {
                 if (rbClass.isIncluded() && rbClass.getMethods() == rubyModule.getMethods()) {
-                    if (rubyModule.getSuperClass() != null) {
-                        rbClass.includeModule(rubyModule.getSuperClass());
-                    }
-                    return;
+                    continue;
                 }
             }
             actClass.setSuperClass(rubyModule.newIncludeClass(actClass.getSuperClass()));
             actClass = actClass.getSuperClass();
-            rubyModule = rubyModule.getSuperClass();
 	}
     }
     
@@ -1033,9 +1030,9 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         int noex = NOEX_PUBLIC;
         
         if (ex) {
-            if (intrprtr.getScope_vmode() == SCOPE_PRIVATE) {
+            if (intrprtr.getActMethodScope() == SCOPE_PRIVATE) {
                 noex = NOEX_PRIVATE;
-            } else if (intrprtr.getScope_vmode() == SCOPE_PROTECTED) {
+            } else if (intrprtr.getActMethodScope() == SCOPE_PROTECTED) {
                 noex = NOEX_PROTECTED;
             } else {
                 noex = NOEX_PUBLIC;
@@ -1131,6 +1128,47 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             }*/
         }
         return ary;
+    }
+    
+    /** set_method_visibility
+     *
+     */
+    public void setMethodVisibility(RubyObject[] methods, int noex) {
+        if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+            throw new RubySecurityException("Insecure: can't change method visibility");
+        }
+
+        for (int i = 0; i < methods.length; i++) {
+            exportMethod(methods[i].toId(), noex);
+        }
+    }
+    
+    /** rb_export_method
+     *
+     */
+    public void exportMethod(RubyId name, int noex) {
+        if (this == getRuby().getObjectClass()) {
+            getRuby().secure(4);
+        }
+
+        NODE body = searchMethod(name);
+        RubyModule origin = getMethodOrigin(name);
+        
+        if (body == null && isModule()) {
+            body = getRuby().getObjectClass().searchMethod(name);
+            origin = getRuby().getObjectClass().getMethodOrigin(name);
+        }
+        
+        if (body == null) {
+        }
+        
+        if (body.nd_noex() != noex) {
+            if (this == origin) {
+                body.nd_noex(noex);
+            } else {
+               addMethod(name, NODE.newZSuper(), noex);
+            }
+        }
     }
     
     // Methods of the Module Class (rb_mod_*):
@@ -1595,5 +1633,111 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             throw new RubyNameException("cannot remove " + id.toName() + " for " + toName());
         }
         throw new RubyNameException("class variable " + id.toName() + " not defined for " + toName());
+    }
+    
+    /** rb_mod_append_features
+     *
+     */
+    public RubyObject m_append_features(RubyModule module) {
+        module.includeModule(this);
+        return this;
+    }
+    
+    /** rb_mod_extend_object
+     *
+     */
+    public RubyObject m_extend_object(RubyObject obj) {
+        obj.extendObject(this);
+        return obj;
+    }
+
+    /** rb_mod_include
+     *
+     */
+    public RubyObject m_include(RubyObject[] modules) {
+        for (int i = 0; i < modules.length; i++) {
+            funcall(getRuby().intern("append_features"), modules[i]);
+        }
+        
+        return this;
+    }
+    
+    /** rb_mod_public
+     *
+     */
+    public RubyObject m_public(RubyObject[] args) {
+        if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+            throw new RubySecurityException("Insecure: can't change method visibility");
+        }
+        
+        if (args.length == 0) {
+            getRuby().getInterpreter().setActMethodScope(SCOPE_PUBLIC);
+        } else {
+            setMethodVisibility(args, NOEX_PUBLIC);
+        }
+
+        return this;
+    }
+    
+    /** rb_mod_protected
+     *
+     */
+    public RubyObject m_protected(RubyObject[] args) {
+        if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+            throw new RubySecurityException("Insecure: can't change method visibility");
+        }
+        
+        if (args.length == 0) {
+            getRuby().getInterpreter().setActMethodScope(SCOPE_PROTECTED);
+        } else {
+            setMethodVisibility(args, NOEX_PROTECTED);
+        }
+
+        return this;
+    }
+    
+    /** rb_mod_private
+     *
+     */
+    public RubyObject m_private(RubyObject[] args) {
+        if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+            throw new RubySecurityException("Insecure: can't change method visibility");
+        }
+        
+        if (args.length == 0) {
+            getRuby().getInterpreter().setActMethodScope(SCOPE_PRIVATE);
+        } else {
+            setMethodVisibility(args, NOEX_PRIVATE);
+        }
+
+        return this;
+    }
+    
+    /** rb_mod_modfunc
+     *
+     */
+    public RubyObject m_module_function(RubyObject[] args) {
+        if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+            throw new RubySecurityException("Insecure: can't change method visibility");
+        }
+        
+        if (args.length == 0) {
+            getRuby().getInterpreter().setActMethodScope(SCOPE_MODFUNC);
+        } else {
+            setMethodVisibility(args, NOEX_PRIVATE);
+            
+            for (int i = 0; i < args.length; i++) {
+                RubyId id = args[i].toId();
+                NODE body = searchMethod(id);
+                if (body == null || body.nd_body() == null) {
+                    throw new RubyBugException("undefined method '" + id.toName() + "'; can't happen");
+                }
+                getSingletonClass().addMethod(id, body.nd_body(), NOEX_PUBLIC);
+                // rb_clear_cache_by_id(id);
+                funcall(getRuby().intern("singleton_added"), id.toSymbol());
+            }
+        }
+        
+        return this;
     }
 }

@@ -211,6 +211,13 @@ public class NODE implements node_type, VALUE, Scope {
         return new NODE(NODE_IFUNC, method, arg, null);
     }
     
+    /** NEW_IFUNC
+     *
+     */
+    public static NODE newZSuper() {
+        return new NODE(NODE_ZSUPER, null, null, null);
+    }
+    
     /** NEW_ATTRSET
      *
      */

@@ -69,22 +69,19 @@ public class RbModule {
         moduleClass.definePrivateMethod("method_added", getDummyMethod());
         moduleClass.defineMethod("class_variables", getMethod("m_class_variables", false));
         moduleClass.definePrivateMethod("remove_class_variable", getMethod("m_remove_class_variable", RubyObject.class, false));
-    
         
-    /*rb_define_private_method(rb_cModule, "append_features", rb_mod_append_features, 1);
-    rb_define_private_method(rb_cModule, "extend_object", rb_mod_extend_object, 1);
-    rb_define_private_method(rb_cModule, "include", rb_mod_include, -1);
-    rb_define_private_method(rb_cModule, "public", rb_mod_public, -1);
-    rb_define_private_method(rb_cModule, "protected", rb_mod_protected, -1);
-    rb_define_private_method(rb_cModule, "private", rb_mod_private, -1);
-    rb_define_private_method(rb_cModule, "module_function", rb_mod_modfunc, -1);
-    rb_define_method(rb_cModule, "method_defined?", rb_mod_method_defined, 1);
+        moduleClass.definePrivateMethod("append_features", getMethod("m_remove_append_features", RubyModule.class, false));
+        moduleClass.definePrivateMethod("extend_object", getMethod("m_extend_object", RubyObject.class, false));
+        moduleClass.definePrivateMethod("include", getMethod("m_include", true));
+        moduleClass.definePrivateMethod("public", getMethod("m_public", true));
+        moduleClass.definePrivateMethod("protected", getMethod("m_protected", true));
+        moduleClass.definePrivateMethod("private", getMethod("m_private", true));
+        moduleClass.definePrivateMethod("module_function", getMethod("m_module_function", true));
+    /*rb_define_method(rb_cModule, "method_defined?", rb_mod_method_defined, 1);
     rb_define_method(rb_cModule, "public_class_method", rb_mod_public_method, -1);
     rb_define_method(rb_cModule, "private_class_method", rb_mod_private_method, -1);
     rb_define_method(rb_cModule, "module_eval", rb_mod_module_eval, -1);
     rb_define_method(rb_cModule, "class_eval", rb_mod_module_eval, -1);
-
-    rb_undef_method(rb_cClass, "module_function");
 
     rb_define_private_method(rb_cModule, "remove_method", rb_mod_remove_method, 1);
     rb_define_private_method(rb_cModule, "undef_method", rb_mod_undef_method, 1);

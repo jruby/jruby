@@ -40,6 +40,8 @@ public class RbClass {
         classClass.defineMethod("superclass", getMethod("m_superclass", false));
         
         classClass.defineSingletonMethod("inherited", getSingletonMethod("m_superclass", RubyClass.class));
+        
+        classClass.undefMethod("module_function");
     }
     
     public static RubyCallbackMethod getMethod(String methodName, boolean restArgs) {

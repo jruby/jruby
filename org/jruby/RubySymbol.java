@@ -40,6 +40,9 @@ public class RubySymbol extends RubyObject {
         this.id = id;
     }
     
+    /** rb_to_id
+     *
+     */
     public RubyId toId() {
         return getId();
     }

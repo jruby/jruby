@@ -34,21 +34,15 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  */
 public class RbTrueClass {
-    private static RubyCallbackMethod methodType = null;
-    private static RubyCallbackMethod methodToS = null;
-    private static RubyCallbackMethod methodAnd = null;
-    private static RubyCallbackMethod methodOr = null;
-    private static RubyCallbackMethod methodXor = null;
-    
     public static RubyClass createTrueClass(Ruby ruby) {
         RubyClass trueClass = ruby.defineClass("TrueClass", ruby.getObjectClass());
         
-        trueClass.defineMethod("to_s", getMethodToS());
-        trueClass.defineMethod("type", getMethodType());
+        trueClass.defineMethod("to_s", getMethod("m_to_s"));
+        trueClass.defineMethod("type", getMethod("m_type"));
         
-        trueClass.defineMethod("&", getMethodAnd());
-        trueClass.defineMethod("|", getMethodOr());
-        trueClass.defineMethod("^", getMethodXor());
+        trueClass.defineMethod("&", getMethod("op_and", RubyObject.class));
+        trueClass.defineMethod("|", getMethod("op_or", RubyObject.class));
+        trueClass.defineMethod("^", getMethod("op_xor", RubyObject.class));
         
         trueClass.getRubyClass().undefMethod("new");
         
@@ -56,76 +50,12 @@ public class RbTrueClass {
         
         return trueClass;
     }
-
-    public static RubyCallbackMethod getMethodToS() {
-        if (methodToS == null) {
-            methodToS = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    return ((RubyBoolean)recv).m_to_s();
-                }
-            };
-        }
-        
-        return methodToS;
+    
+    public static RubyCallbackMethod getMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyBoolean.class, methodName);
     }
-
-    public static RubyCallbackMethod getMethodType() {
-        if (methodType == null) {
-            methodType = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    return ((RubyBoolean)recv).m_type();
-                }
-            };
-        }
-        
-        return methodType;
-    }
-
-    public static RubyCallbackMethod getMethodAnd() {
-        if (methodAnd == null) {
-            methodAnd = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aBoolean) required");
-                    }
-                    
-                    return ((RubyBoolean)recv).op_and((RubyBoolean)args[0]);
-                }
-            };
-        }
-        
-        return methodAnd;
-    }
-
-    public static RubyCallbackMethod getMethodOr() {
-        if (methodOr == null) {
-            methodOr = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aBoolean) required");
-                    }
-                    
-                    return ((RubyBoolean)recv).op_or((RubyBoolean)args[0]);
-                }
-            };
-        }
-        
-        return methodOr;
-    }
-
-    public static RubyCallbackMethod getMethodXor() {
-        if (methodXor == null) {
-            methodXor = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aBoolean) required");
-                    }
-                    
-                    return ((RubyBoolean)recv).op_xor((RubyBoolean)args[0]);
-                }
-            };
-        }
-        
-        return methodXor;
+    
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyBoolean.class, methodName, arg1);
     }
 }

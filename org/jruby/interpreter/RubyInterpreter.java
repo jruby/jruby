@@ -56,7 +56,7 @@ public class RubyInterpreter implements node_type, Scope {
     private RubyModule ruby_cbase;
     private RubyModule ruby_wrapper;
     
-    private int scope_vmode;
+    private int actMethodScope;
     
     private RubyBlock rubyBlock;
         
@@ -1029,7 +1029,7 @@ public class RubyInterpreter implements node_type, Scope {
                         NODE defn = node.nd_defn().copyNodeScope(ruby_cref);
                         ruby_class.addMethod((RubyId)node.nd_mid(), defn, noex);
                         // rb_clear_cache_by_id(node.nd_mid());
-                        if (scope_vmode == SCOPE_MODFUNC) {
+                        if (actMethodScope == SCOPE_MODFUNC) {
                             ruby_class.getSingletonClass().addMethod((RubyId)node.nd_mid(), defn, NOEX_PUBLIC);
                             ruby_class.funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
                         }
@@ -1467,7 +1467,7 @@ public class RubyInterpreter implements node_type, Scope {
      *
      */
     private boolean isScope(int scope) {
-        return (scope_vmode & scope) != 0;
+        return (actMethodScope & scope) != 0;
     }
     
     /** SETUP_ARGS
@@ -1714,20 +1714,6 @@ public class RubyInterpreter implements node_type, Scope {
         this.rubyIter = rubyIter;
     }
     
-    /** Getter for property scope_vmode.
-     * @return Value of property scope_vmode.
-     */
-    public int getScope_vmode() {
-        return scope_vmode;
-    }
-    
-    /** Setter for property scope_vmode.
-     * @param scope_vmode New value of property scope_vmode.
-     */
-    public void setScope_vmode(int scope_vmode) {
-        this.scope_vmode = scope_vmode;
-    }
-    
     /** Getter for property rubyBlock.
      * @return Value of property rubyBlock.
      */
@@ -1755,4 +1741,19 @@ public class RubyInterpreter implements node_type, Scope {
     public void setRuby_class(org.jruby.RubyModule ruby_class) {
         this.ruby_class = ruby_class;
     }
+    
+    /** Getter for property actMethodScope.
+     * @return Value of property actMethodScope.
+     */
+    public int getActMethodScope() {
+        return actMethodScope;
+    }
+    
+    /** Setter for property actMethodScope.
+     * @param actMethodScope New value of property actMethodScope.
+     */
+    public void setActMethodScope(int actMethodScope) {
+        this.actMethodScope = actMethodScope;
+    }
+    
 }
