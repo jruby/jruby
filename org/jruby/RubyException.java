@@ -40,6 +40,9 @@ import org.jruby.runtime.*;
  */
 public class RubyException extends RubyObject {
 
+    private RubyArray backtrace;
+    public RubyObject message;
+
     public RubyException(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
@@ -85,7 +88,7 @@ public class RubyException extends RubyObject {
 
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
         RubyException newException = new RubyException(ruby, excptnClass);
-        newException.setInstanceVar("mesg", RubyString.newString(ruby, msg));
+        newException.message = RubyString.newString(ruby, msg);
         return newException;
     }
 
@@ -101,21 +104,21 @@ public class RubyException extends RubyObject {
 
     public RubyObject initialize(RubyObject[] args) {
         if (args.length > 0) {
-            setInstanceVar("mesg", args[0]);
+            message = args[0];
         }
-
         return this;
     }
 
     public RubyArray backtrace() {
-        if (!isInstanceVarDefined("bt")) {
+        if (backtrace == null) {
             return RubyArray.nilArray(ruby);
         }
-        return (RubyArray) getInstanceVar("bt");
+        return backtrace;
     }
 
     public RubyArray set_backtrace(RubyObject newBacktrace) {
-        return (RubyArray) setInstanceVar("bt", createBacktrace(newBacktrace));
+        backtrace = createBacktrace(newBacktrace);
+        return backtrace;
     }
 
     public RubyException exception(RubyObject[] args) {
@@ -135,14 +138,11 @@ public class RubyException extends RubyObject {
     }
 
     public RubyString to_s() {
-        RubyObject message = getInstanceVar("mesg");
-
-        if (message.isNil()) {
+        if (message == null || message.isNil()) {
             return getRubyClass().getClassPath();
         } else {
             message.setTaint(isTaint());
-
-            return (RubyString)message.funcall("to_s");
+            return (RubyString) message.funcall("to_s");
         }
     }
 
