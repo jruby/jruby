@@ -45,7 +45,7 @@ public class IfNode extends Node {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         ruby.setSourceLine(getLine());
-        
+       Node x = getConditionNode();
         if (getConditionNode().eval(ruby, self).isTrue()) {
             return self.eval(getBodyNode());
         } else {
