@@ -88,6 +88,7 @@ public class RubyIO extends RubyObject {
         ioClass.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
 
         ioClass.defineMethod("close", CallbackFactory.getMethod(RubyIO.class, "close"));
+        ioClass.defineMethod("eof?", CallbackFactory.getMethod(RubyIO.class, "eof"));
         ioClass.defineMethod("flush", CallbackFactory.getMethod(RubyIO.class, "flush"));
 
         ioClass.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
@@ -293,7 +294,7 @@ public class RubyIO extends RubyObject {
     public static RubyObject foreach(Ruby ruby, RubyObject recv, RubyString filename, RubyObject[] args) {
         filename.checkSafeString();
 
-        RubyIO io = (RubyIO) RubyGlobal.open(ruby, recv, filename);
+        RubyIO io = (RubyIO) RubyGlobal.open(ruby, recv, new RubyObject[] { filename });
 
         if (!io.isNil()) {
             try {
@@ -394,6 +395,23 @@ public class RubyIO extends RubyObject {
         sync = newSync.isTrue();
 
         return this;
+    }
+
+    public RubyBoolean eof() {
+        checkReadable();
+
+        try {
+            int c = inStream.read();
+
+            if (c == -1) {
+                return ruby.getTrue();
+            } else {
+                inStream.unread(c);
+                return ruby.getFalse();
+            }
+        } catch (IOException ioExcptn) {
+            throw new IOError(ruby, ioExcptn.getMessage());
+        }
     }
 
     /** Closes the IO.
