@@ -151,7 +151,6 @@ public class Main {
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
         runtime.getLoadService().init(runtime, commandline.loadPaths());
-
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
             String scriptName = (String) iter.next();
@@ -166,7 +165,9 @@ public class Main {
     private static Reader getScriptSource() {
         if (commandline.hasInlineScript()) {
             return new StringReader(commandline.inlineScript());
-        } else if (commandline.scriptFileName != null) {
+        } else if (sourceFromStdin()) {
+            return new InputStreamReader(System.in);
+        } else {
             File file = new File(commandline.scriptFileName);
             try {
                 return new BufferedReader(new FileReader(file));
@@ -174,16 +175,20 @@ public class Main {
                 System.err.println("Error opening script file: " + e.getMessage());
                 System.exit(1);
             }
-        } else {
-            return new InputStreamReader(System.in);
         }
         Asserts.notReached();
         return null;
     }
 
+    private static boolean sourceFromStdin() {
+        return commandline.scriptFileName == null;
+    }
+
     private static String displayedFileName() {
         if (commandline.hasInlineScript()) {
             return "-e";
+        } else if (sourceFromStdin()) {
+            return "-";
         } else {
             return commandline.scriptFileName;
         }
