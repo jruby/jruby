@@ -91,8 +91,8 @@ public class RubyYaccLexer {
     private final int str_xquote = STR_FUNC_EXPAND;
     private final int str_regexp = 
         STR_FUNC_REGEXP|STR_FUNC_ESCAPE|STR_FUNC_EXPAND;
-    private final int str_sword  = STR_FUNC_QWORDS;
-    private final int str_dword  = STR_FUNC_QWORDS|STR_FUNC_EXPAND;
+    //private final int str_sword  = STR_FUNC_QWORDS;
+    //private final int str_dword  = STR_FUNC_QWORDS|STR_FUNC_EXPAND;
     private final int str_ssym   = STR_FUNC_SYMBOL;
     private final int str_dsym   = STR_FUNC_SYMBOL|STR_FUNC_EXPAND;
     
@@ -338,7 +338,6 @@ public class RubyYaccLexer {
         char c = src.read(); 
         int term;
         int func = 0;
-        int len;
 
         if (c == '-') {
             c = src.read();
