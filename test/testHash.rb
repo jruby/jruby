@@ -35,3 +35,12 @@ test_equal(nil, h.index(10))
 h.default = :hello
 test_equal(1, h.index(2))
 test_equal(nil, h.index(10))
+
+h = Hash.new {|h,k| h[k] = 10000 }
+
+test_equal(10000, h[10])
+
+h.default = 5
+
+test_equal(5, h[12])
+

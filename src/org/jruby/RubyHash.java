@@ -90,6 +90,10 @@ public class RubyHash extends RubyObject {
 
     public IRubyObject setDefaultValue(IRubyObject defaultValue) {
         this.defaultValue = defaultValue;
+        
+        // Setting a default value will wipe out any proc
+        defaultProc = getRuntime().getNil();
+        
         return defaultValue;
     }
 
