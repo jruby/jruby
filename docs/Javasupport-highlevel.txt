@@ -28,3 +28,45 @@ Module:
               # Call another Java method
               random.nextInt(10)              # -> some Fixnum (0..9)
             end
+
+
+The Java classes made available through include_package have the
+following properties:
+
+    class methods:
+
+    cls.new( [ anObject ]* ) -> anObject
+
+        If the Java class is a real class then a new instance of that
+        class is returned.
+        If it is an interface, then a "reflection proxy" for that
+        interface is returned (see java.lang.reflect.Proxy).
+
+    cls.java_class() -> a Java::JavaClass instance
+        Returns the low-level representation of the Java class. Useful
+        only if you need to access the inner workings of the Java
+        support.
+
+
+    instance methods:
+
+    All public methods on the Java object are made available as Ruby
+    methods. If a method is overloaded (two or more methods with the
+    same name) then then the first one found matching the argument
+    types is called.
+
+    If the Java object is an array then the following methods are
+    available instead:
+
+    javaarray.length -> aFixnum
+
+        Returns the length of the Java array
+
+    javaarray[ anInteger ] -> anObject
+
+        Returns the object stored in the array at the given position.
+
+    javaarray[ anInteger ] = anObject -> anObject
+
+        Sets the value in the given position of the array to the given
+        value. The value is also returned.
