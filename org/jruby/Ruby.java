@@ -387,32 +387,28 @@ public final class Ruby {
         return rubyInterpreter;
     }*/
 
-    /** Getter for property globalMap.
-     * @return Value of property globalMap.
-     */
-    public RubyMap getGlobalMap() {
-        return globalMap;
+    public Iterator globalVariableNames() {
+        return globalMap.keySet().iterator();
     }
 
-    /** Setter for property globalMap.
-     * @param globalMap New value of property globalMap.
-     */
-    public void setGlobalMap(RubyMap globalMap) {
-        this.globalMap = globalMap;
+    public boolean isGlobalVarDefined(String name) {
+        return getGlobalEntry(name).isDefined();
     }
 
-    /** rb_gv_set
-     *
-     */
+    public void undefineGlobalVar(String name) {
+        getGlobalEntry(name).undefine();
+    }
+
     public RubyObject setGlobalVar(String name, RubyObject value) {
         return getGlobalEntry(name).set(value);
     }
 
-    /** rb_gv_get
-     *
-     */
     public RubyObject getGlobalVar(String name) {
         return getGlobalEntry(name).get();
+    }
+
+    public void aliasGlobalVar(String oldName, String newName) {
+        getGlobalEntry(oldName).alias(newName);
     }
 
     public RubyObject yield(RubyObject value) {
@@ -881,11 +877,11 @@ public final class Ruby {
 
         //Ruby ruby = id.getRuby();
 
-        RubyGlobalEntry entry = (RubyGlobalEntry) getGlobalMap().get(name);
+        RubyGlobalEntry entry = (RubyGlobalEntry) globalMap.get(name);
 
         if (entry == null) {
             entry = new RubyGlobalEntry(this, name);
-            getGlobalMap().put(name, entry);
+            globalMap.put(name, entry);
         }
 
         return entry;

@@ -324,7 +324,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        if (ruby.getGlobalEntry(iVisited.getName()).isDefined()) {
+        if (ruby.isGlobalVarDefined(iVisited.getName())) {
             definition = "global-variable";
         }
     }

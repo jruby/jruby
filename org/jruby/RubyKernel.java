@@ -290,7 +290,7 @@ public class RubyKernel {
     public static RubyArray global_variables(Ruby ruby, RubyObject recv) {
         RubyArray globalVariables = RubyArray.newArray(ruby);
 
-        Iterator iter = ruby.getGlobalMap().keySet().iterator();
+        Iterator iter = ruby.globalVariableNames();
         while (iter.hasNext()) {
             String globalVariableName = (String) iter.next();
 

@@ -243,7 +243,7 @@ public class RubyIO extends RubyObject {
     public RubyString internalGets(RubyObject[] args) {
         checkReadable();
 
-        RubyObject sepVal = getRuby().getGlobalEntry("$/").get();
+        RubyObject sepVal = getRuby().getGlobalVar("$/");
 
         if (args.length > 0) {
             sepVal = args[0];

@@ -1488,7 +1488,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitVAliasNode(VAliasNode iVisited) {
         setPosition(iVisited);
 
-        ruby.getGlobalEntry(iVisited.getOldName()).alias(iVisited.getNewName());
+        ruby.aliasGlobalVar(iVisited.getOldName(), iVisited.getNewName());
     }
 
     /**

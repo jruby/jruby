@@ -162,7 +162,7 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
-        ruby.getGlobalEntry(bean.name).undefine();
+        ruby.undefineGlobalEntry(bean.name);
     }
 
     public void handleException(BSFException bsfExcptn) {
