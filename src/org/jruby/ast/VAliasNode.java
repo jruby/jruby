@@ -39,7 +39,7 @@ public class VAliasNode extends AbstractNode {
     private String oldName;
     private String newName;
 
-    public VAliasNode(ISourcePosition position, String oldName, String newName) {
+    public VAliasNode(ISourcePosition position, String newName, String oldName) {
         super(position);
 
         this.oldName = oldName;

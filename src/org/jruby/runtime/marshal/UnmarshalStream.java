@@ -177,7 +177,7 @@ public class UnmarshalStream extends FilterInputStream {
 
         RubyClass type = (RubyClass) runtime.getClasses().getClassFromPath(className.asSymbol());
 
-        Asserts.assertNotNull(type, "type shouldn't be null.");
+        Asserts.notNull(type, "type shouldn't be null.");
 
         IRubyObject result = runtime.getFactory().newObject(type);
         registerLinkTarget(result);

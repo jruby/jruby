@@ -421,7 +421,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
-        Asserts.assertNotNull(receiver.getInternalClass(), receiver.getClass().getName());
+        Asserts.notNull(receiver.getInternalClass(), receiver.getClass().getName());
 
         result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
@@ -1373,7 +1373,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitVAliasNode(VAliasNode)
      */
     public void visitVAliasNode(VAliasNode iVisited) {
-        runtime.aliasGlobalVar(iVisited.getOldName(), iVisited.getNewName());
+        runtime.getGlobalVariables().alias(iVisited.getNewName(), iVisited.getOldName());
     }
 
     /**

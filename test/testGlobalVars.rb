@@ -1,5 +1,6 @@
 require 'test/minirunit'
-test_check "Test Global Vars:"
+
+test_check "Test Global Vars"
 
 $output = "a global variable."
 def testGlobalVariable
@@ -7,3 +8,12 @@ def testGlobalVariable
 end
 testGlobalVariable
 
+$bar = 5
+alias $foo $bar
+test_ok($foo == 5)
+
+$bar = 10
+test_ok($foo == 10)
+
+$foo = 5
+test_ok($bar == 5)

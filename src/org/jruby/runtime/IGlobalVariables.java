@@ -10,13 +10,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public interface IGlobalVariables {
-    void defineGlobalVariable(String name, IGlobalVariable variable);
+    void define(String name, IAccessor variable);
+    void defineReadonly(String name, IAccessor variable);
+    boolean isDefined(String name);
+    void alias(String name, String oldName);
 
-    IRubyObject getGlobalVariable(String name);
-    IRubyObject setGlobalVariable(String name, IRubyObject value);
-    
-    boolean isGlobalVariableDefined(String name);
-    void undefineGlobalVariable(String name);
+    IRubyObject get(String name);
+    IRubyObject set(String name, IRubyObject value);
 
-    Iterator getGlobalVariables();
+    Iterator getNames();
 }

@@ -57,7 +57,7 @@ public final class IndexedCallback implements Callback {
      * Create a callback with a minimal # of arguments
      */
     public static IndexedCallback createOptional(int index, int minimum) {
-        Asserts.assertExpression(minimum >= 0);
+        Asserts.isTrue(minimum >= 0);
         return new IndexedCallback(index, Arity.required(minimum));
     }
 

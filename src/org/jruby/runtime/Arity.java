@@ -42,7 +42,7 @@ public class Arity {
     }
 
     public static Arity fixed(int arity) {
-        Asserts.assertExpression(arity >= 0);
+        Asserts.isTrue(arity >= 0);
         return createArity(arity);
     }
 
@@ -51,7 +51,7 @@ public class Arity {
     }
 
     public static Arity required(int minimum) {
-        Asserts.assertExpression(minimum >= 0);
+        Asserts.isTrue(minimum >= 0);
         return createArity(-(1 + minimum));
     }
 

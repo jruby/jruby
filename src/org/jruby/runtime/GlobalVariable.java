@@ -47,7 +47,7 @@ public class GlobalVariable {
     }
 
     public GlobalVariable(Ruby ruby, String name, IRubyObject value) {
-        Asserts.assertExpression(name.startsWith("$"));
+        Asserts.isTrue(name.startsWith("$"));
         this.ruby = ruby;
         this.name = name;
         this.value = value;

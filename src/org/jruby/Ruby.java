@@ -39,10 +39,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.ablaf.ast.INode;
@@ -55,25 +53,26 @@ import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
+import org.jruby.internal.runtime.GlobalVariables;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.Parser;
-import org.jruby.runtime.AliasGlobalVariable;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.IGlobalVariables;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ObjectSpace;
-import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.RubyExceptions;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
@@ -126,8 +125,6 @@ public final class Ruby {
     private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
-
-    private Map globalMap;
 
     public ObjectSpace objectSpace = new ObjectSpace();
 
@@ -186,7 +183,7 @@ public final class Ruby {
     private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
-    private IGlobalVariables globalVariables = null;
+    private IGlobalVariables globalVariables = new GlobalVariables(this);
     private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
     /**
@@ -194,8 +191,6 @@ public final class Ruby {
      */
     private Ruby(Class regexpAdapterClass) {
         this.regexpAdapterClass = regexpAdapterClass;
-
-        globalMap = new HashMap();
 
         nilObject = RubyObject.nilObject(this);
         trueObject = new RubyBoolean(this, true);
@@ -379,47 +374,12 @@ public final class Ruby {
         return classes.getClass(name) != null;
     }
 
-    public Iterator globalVariableNames() {
-        return globalMap.keySet().iterator();
-    }
-
-    public boolean isGlobalVarDefined(String name) {
-        return globalMap.containsKey(name);
-    }
-
-    public void undefineGlobalVar(String name) {
-        globalMap.remove(name);
-    }
-
     public IRubyObject setGlobalVar(String name, IRubyObject value) {
-        GlobalVariable global = (GlobalVariable) globalMap.get(name);
-        if (global == null) {
-            globalMap.put(name, new GlobalVariable(this, name, value));
-            return value;
-        }
-        global.set(value);
-        return value;
+        return globalVariables.set(name, value);
     }
 
     public IRubyObject getGlobalVar(String name) {
-        GlobalVariable global = (GlobalVariable) globalMap.get(name);
-        if (global == null) {
-            globalMap.put(name, new GlobalVariable(this, name, getNil()));
-            return getNil();
-        }
-        return global.get();
-    }
-
-    public void aliasGlobalVar(String oldName, String newName) {
-        if (getSafeLevel() >= 4) {
-            throw new SecurityError(this, "Insecure: can't alias global variable");
-        }
-
-        if (! globalMap.containsKey(oldName)) {
-            globalMap.put(oldName, new GlobalVariable(this, oldName, getNil()));
-        }
-        GlobalVariable oldEntry = (GlobalVariable) globalMap.get(oldName);
-        globalMap.put(newName, new AliasGlobalVariable(this, newName, oldEntry));
+        return globalVariables.get(name);
     }
 
     public IRubyObject yield(IRubyObject value) {
@@ -678,15 +638,23 @@ public final class Ruby {
 
     /** Defines a global variable
      */
-    public void defineVariable(GlobalVariable variable) {
-        globalMap.put(variable.name(), variable);
+    public void defineVariable(final GlobalVariable variable) {
+        globalVariables.define(variable.name(), new IAccessor() {
+            public IRubyObject getValue() {
+                return variable.get();
+            }
+
+            public IRubyObject setValue(IRubyObject newValue) {
+                return variable.set(newValue);
+            }
+        });
     }
 
     /** defines a readonly global variable
      *
      */
     public void defineReadonlyVariable(String name, IRubyObject value) {
-        globalMap.put(name, new ReadonlyGlobalVariable(this, name, value));
+        globalVariables.defineReadonly(name, new ValueAccessor(value));
     }
 
     public INode parse(Reader content, String file) {
@@ -1025,7 +993,7 @@ public final class Ruby {
      *  @mri rb_load
      */
     public void loadFile(File file, boolean wrap) {
-        Asserts.assertNotNull(file, "No such file to load");
+        Asserts.notNull(file, "No such file to load");
         try {
             BufferedReader source = new BufferedReader(new FileReader(file));
             loadScript(file.getPath(), source, wrap);
@@ -1085,4 +1053,8 @@ public final class Ruby {
     public void setTraceFunction(RubyProc traceFunction) {
         this.traceFunction = traceFunction;
     }
+    public IGlobalVariables getGlobalVariables() {
+        return globalVariables;
+    }
+
 }

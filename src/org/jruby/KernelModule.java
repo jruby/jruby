@@ -272,7 +272,7 @@ public class KernelModule {
     public static RubyArray global_variables(IRubyObject recv) {
         RubyArray globalVariables = RubyArray.newArray(recv.getRuntime());
 
-        Iterator iter = recv.getRuntime().globalVariableNames();
+        Iterator iter = recv.getRuntime().getGlobalVariables().getNames();
         while (iter.hasNext()) {
             String globalVariableName = (String) iter.next();
 

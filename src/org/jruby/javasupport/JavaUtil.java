@@ -434,7 +434,7 @@ public class JavaUtil {
             return widestClass;
         }
 
-        Asserts.assertExpression(widestClass.isAssignableFrom(narrowestClass));
+        Asserts.isTrue(widestClass.isAssignableFrom(narrowestClass));
 
         if (Modifier.isPublic(narrowestClass.getModifiers())) {
             return narrowestClass;
@@ -457,7 +457,7 @@ public class JavaUtil {
 
         while (true) {
             narrowestClass = narrowestClass.getSuperclass();
-            Asserts.assertExpression(narrowestClass != null);
+            Asserts.isTrue(narrowestClass != null);
             if (Modifier.isPublic(narrowestClass.getModifiers())) {
                 return narrowestClass;
             }

@@ -26,7 +26,7 @@ public final class StaticCallback implements Callback {
      * Create a callback with a minimal # of arguments
      */
     public static StaticCallback createOptional(IStaticCallable callable, int index, int minimum) {
-        Asserts.assertExpression(minimum >= 0);
+        Asserts.isTrue(minimum >= 0);
         return new StaticCallback(callable, index, Arity.required(minimum));
     }
 

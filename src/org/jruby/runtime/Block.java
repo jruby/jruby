@@ -119,7 +119,7 @@ public class Block implements StackElement {
      * @see StackElement#setNext(StackElement)
      */
     public void setNext(StackElement newNext) {
-        Asserts.assertExpression(this != newNext);
+        Asserts.isTrue(this != newNext);
         this.next = (Block) newNext;
     }
 

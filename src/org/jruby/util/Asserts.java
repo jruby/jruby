@@ -36,7 +36,7 @@ public final class Asserts {
     /** If the assertion fails (i.e. the expression is not true), an error 
      * message is logged and the application is terminated.
      */
-    public static void assertExpression(boolean condition) {
+    public static void isTrue(boolean condition) {
         if (ENABLE_ASSERTS && !condition) {
             throw new AssertError("assertTrue failed.");
         }
@@ -69,9 +69,18 @@ public final class Asserts {
     /** If the assertion fails (i.e. the object is null), an error 
      * message is logged and the application is terminated.
      */
-    public static void assertNotNull(Object object, String message) {
+    public static void notNull(Object object, String message) {
         if (ENABLE_ASSERTS && object == null) {
             throw new AssertError(message);
+        }
+    }
+
+    /** If the assertion fails (i.e. the object is null), an error 
+     * message is logged and the application is terminated.
+     */
+    public static void notNull(Object object) {
+        if (ENABLE_ASSERTS && object == null) {
+            throw new AssertError("object mustn't be null.");
         }
     }
 }

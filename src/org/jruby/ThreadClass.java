@@ -140,7 +140,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     private void notifyStarted() {
-        Asserts.assertExpression(isCurrent());
+        Asserts.isTrue(isCurrent());
         synchronized (hasStartedLock) {
             hasStarted = true;
             hasStartedLock.notifyAll();
@@ -148,7 +148,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     public void pollThreadEvents() {
-        Asserts.assertExpression(isCurrent());
+        Asserts.isTrue(isCurrent());
         pollReceivedExceptions();
     }
 
@@ -312,7 +312,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     private void exceptionRaised(RaiseException exception) {
-        Asserts.assertExpression(Thread.currentThread() == jvmThread);
+        Asserts.isTrue(Thread.currentThread() == jvmThread);
 
         if (abortOnException()) {
             // FIXME: printError explodes on some nullpointer
