@@ -38,6 +38,8 @@ if defined? Java
   end
 
   test_exception(NameError) { Java::JavaClass.new }
+  inner_class = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeImplementation")
+  test_equal("org.jruby.test.TestHelper$SomeImplementation", inner_class.name)
   string_class = Java::JavaClass.for_name("java.lang.String")
   test_equal("java.lang.String", string_class.to_s)
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
@@ -57,7 +59,7 @@ if defined? Java
   test_ok(object_class > string_class)
   test_ok(! (object_class < string_class))
 
-  string_methods = string_class.instance_methods
+  string_methods = string_class.java_instance_methods
   test_ok(string_methods.include?("charAt"))
   test_ok(string_methods.include?("substring"))
 
@@ -73,6 +75,11 @@ if defined? Java
   test_equal("equals", method.name)
   test_equal(1, method.arity)
   test_ok(! method.final?)
+
+  interface = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeInterface")
+  method = interface.java_method(:doStuff)
+  result = method.invoke(TestHelper.getInterfacedInstance())
+  test_equal("stuff done", result)
 end
 
 test_print_report

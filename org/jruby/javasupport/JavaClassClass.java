@@ -55,7 +55,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int SUPERCLASS = 7;
     private static final int OP_GT = 8;
     private static final int OP_LT = 9;
-    private static final int INSTANCE_METHODS = 10;
+    private static final int JAVA_INSTANCE_METHODS = 10;
     private static final int CONSTANTS = 11;
     private static final int JAVA_METHOD = 12;
 
@@ -72,7 +72,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("superclass", IndexedCallback.create(SUPERCLASS, 0));
         javaClassClass.defineMethod(">", IndexedCallback.create(OP_GT, 1));
         javaClassClass.defineMethod("<", IndexedCallback.create(OP_LT, 1));
-        javaClassClass.defineMethod("instance_methods", IndexedCallback.create(INSTANCE_METHODS, 0));
+        javaClassClass.defineMethod("java_instance_methods", IndexedCallback.create(JAVA_INSTANCE_METHODS, 0));
         javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
 
@@ -125,7 +125,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return RubyBoolean.newBoolean(runtime, result);
     }
 
-    public RubyArray instance_methods() {
+    public RubyArray java_instance_methods() {
         Method[] methods = javaClass.getMethods();
         RubyArray result = RubyArray.newArray(runtime, methods.length);
         for (int i = 0; i < methods.length; i++) {
@@ -180,8 +180,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return op_gt(args[0]);
             case OP_LT :
                 return op_lt(args[0]);
-            case INSTANCE_METHODS :
-                return instance_methods();
+            case JAVA_INSTANCE_METHODS :
+                return java_instance_methods();
             case CONSTANTS :
                 return constants();
             case JAVA_METHOD :
