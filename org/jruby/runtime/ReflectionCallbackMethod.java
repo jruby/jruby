@@ -158,28 +158,7 @@ public final class ReflectionCallbackMethod implements Callback {
                 }
             });
         } catch (final IllegalArgumentException iaExcptn) {
-            // If you find a case where it *isn't* an internal error that causes this
-            // exception then you may change this code back to use TypeError...
-            //throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
-
-            Asserts.assertNotReached(new ErrorMessage() {
-                /**
-                 * @see org.jruby.util.ErrorMessage#generate(StringBuffer)
-                 */
-                public void generate(StringBuffer buffer) {
-                    buffer.append(iaExcptn.getMessage());
-                    buffer.append(':');
-                    buffer.append(" methodName=").append(methodName);
-                    buffer.append(" recv=").append(recv.toString());
-                    buffer.append(" klass=").append(klass.getName());
-                    buffer.append(" methodArgs=[");
-                    for (int i = 0; i < methodArgs.length; i++) {
-                        buffer.append(methodArgs[i]);
-                        buffer.append(' ');
-                    }
-                    buffer.append(']');
-                }
-            });
+            throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
         }
         throw new AssertError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
     }

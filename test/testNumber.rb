@@ -70,3 +70,5 @@ test_equal(10 ** 70, (10 ** 70) | (10 ** 70))
 
 test_equal(20, (256**20 - 1).size)
 test_equal(40, (256**40 - 1).size)
+
+test_exception(TypeError) { 20['x'] }
