@@ -63,6 +63,8 @@ public final class Ruby implements token {
     private RubyClass moduleClass;
     private RubyClass objectClass;
     
+    private RubyClass numericClass;
+    private RubyClass integerClass;
     private RubyClass fixnumClass;
     private RubyClass bignumClass;
     private RubyClass floatClass;
@@ -216,7 +218,8 @@ public final class Ruby implements token {
         
         RbComparable.createComparable(this);
         
-        RbNumeric.createNumericClass(this);
+        numericClass = RbNumeric.createNumericClass(this);
+        integerClass = RbInteger.createIntegerClass(this);
         fixnumClass = RbFixnum.createFixnum(this);
         floatClass = RbFloat.createFloat(this);
         
@@ -309,6 +312,14 @@ public final class Ruby implements token {
     
     public RubyClass getModuleClass() {
         return moduleClass;
+    }
+    
+    public RubyClass getNumericClass() {
+        return numericClass;
+    }
+    
+    public RubyClass getIntegerClass() {
+        return integerClass;
     }
     
     public RubyClass getFixnumClass() {
@@ -481,5 +492,9 @@ public final class Ruby implements token {
      */
     public RubyObject getGlobalVar(String name) {
         return RubyGlobalEntry.getGlobalEntry(intern(name)).get();
+    }
+    
+    public RubyObject yield(RubyObject value) {
+        return getInterpreter().yield0(value, null, null, false);
     }
 }

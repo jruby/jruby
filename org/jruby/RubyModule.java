@@ -533,7 +533,10 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         RubyInterpreter interpreter = getRuby().getInterpreter();
         
         interpreter.getRubyFrame().push();
-        interpreter.PUSH_ITER(0);
+        
+        // HACK +++
+        interpreter.getRubyIter().push(Iter.ITER_NOT);
+        // HACK ---
         
         interpreter.getRubyFrame().setLastFunc(id);
         interpreter.getRubyFrame().setLastClass(noSuper ? null : this);
@@ -675,7 +678,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         interpreter.getRubyFrame().pop();
-        interpreter.POP_ITER();
+        interpreter.getRubyIter().pop();
         
         return result ;
     }

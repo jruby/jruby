@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
    <fileobject name="BreakException.java">
-      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd356e478"/>
       <attr name="class_dependency_org.jruby.interpreter.LoopException" stringvalue="LoopRedoException"/>
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd356e478"/>
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_java.lang.RuntimeException" stringvalue="BreakException"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
@@ -14,28 +14,33 @@
    </fileobject>
    <fileobject name="RubyInterpreter.java">
       <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e7e0d1042778"/>
-      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_org.jruby.original.node_type" stringvalue="RubyInterpreter"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
       <attr name="class_dependency_org.jruby.original.Scope" stringvalue="RubyInterpreter"/>
+   </fileobject>
+   <fileobject name="Iter.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9004877cf78"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
    </fileobject>
    <fileobject name="NextException.java">
-      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd358ee78"/>
       <attr name="class_dependency_org.jruby.interpreter.LoopException" stringvalue="LoopRedoException"/>
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd358ee78"/>
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_java.lang.RuntimeException" stringvalue="NextException"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
    </fileobject>
    <fileobject name="RedoException.java">
-      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd359fc78"/>
       <attr name="class_dependency_org.jruby.interpreter.LoopException" stringvalue="LoopRedoException"/>
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd359fc78"/>
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RedoException"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
    </fileobject>
    <fileobject name="RetryException.java">
-      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd35ae978"/>
       <attr name="class_dependency_org.jruby.interpreter.LoopException" stringvalue="LoopRedoException"/>
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd35ae978"/>
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RedoException;RetryException"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
@@ -46,8 +51,8 @@
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
    </fileobject>
    <fileobject name="ReturnException.java">
-      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd35ae978"/>
       <attr name="class_dependency_org.jruby.interpreter.LoopException" stringvalue="LoopRedoException"/>
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd35ae978"/>
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_java.lang.RuntimeException" stringvalue="ReturnException;RetryException;RedoException"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>

@@ -290,8 +290,8 @@ public class RubyObject implements VALUE {
         return false;
     }
     
-    public void setIvar(RubyId id, RubyObject value) {
-        //return null;
+    public RubyObject setIvar(RubyId id, RubyObject value) {
+        return null;
     }
     
     public RubyModule getCvarSingleton() {

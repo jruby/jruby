@@ -40,4 +40,16 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyBoolean m_int_p() {
         return getRuby().getTrue();
     }
+    
+    public RubyObject m_times() {
+        RubyNumeric i = RubyFixnum.m_newFixnum(getRuby(), 0);
+        while (true) {
+            if (((RubyBoolean)i.funcall(getRuby().intern("<"), this)).isFalse()) {
+                break;
+            }
+            getRuby().yield(i);
+            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.m_newFixnum(getRuby(), 1));
+        }
+        return this;
+    }
 }

@@ -35,6 +35,7 @@ public class NODE implements node_type, VALUE, Scope {
     private NODE() {}
 
     public static NODE MINUS_ONE = new NODE();
+    public static NODE ONE = new NODE();
     public static NODE undefined = new NODE(); //XXX
 
     private Object u1;
@@ -75,9 +76,9 @@ public class NODE implements node_type, VALUE, Scope {
     public ID[] nd_tbl() { return (ID[])u1; }
     public void nd_tbl(ID[] idTable) { u1 = idTable; }
 
-    //NODE nd_var() { return (NODE)u1; }
+    public NODE nd_var() { return (NODE)u1; }
     //NODE nd_ibdy() { return (NODE)u2; }
-    //NODE nd_iter() { return (NODE)u3; }
+    public NODE nd_iter() { return (NODE)u3; }
     public void nd_iter(NODE n) { u3 = n; }
 
     public NODE nd_value() { return (NODE)u2; }
@@ -127,7 +128,7 @@ public class NODE implements node_type, VALUE, Scope {
     public void nd_nth(int i) { u2 = new Integer(i); }
 
     //ID nd_tag() { return (ID)u1; }
-    //VALUE nd_tval() { return (VALUE)u2; }
+    public VALUE nd_tval() { return (VALUE)u2; }
 
     private short type;
     public int nd_type() { return type; }

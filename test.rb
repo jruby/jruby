@@ -114,3 +114,9 @@ puts 3.0 * 3.3
 puts 2.5 / 2.1
 puts 2.5 ** 4
 puts 2.56
+
+# Block test
+
+5.times do |i|
+  puts i
+end

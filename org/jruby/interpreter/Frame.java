@@ -52,13 +52,16 @@ public class Frame {
     private int line                = 0;
     private int iter                = 0;
     private int flags               = 0;
+    
+    private Ruby ruby = null;
 
-    public Frame() {
+    public Frame(Ruby ruby) {
+        this.ruby = ruby;
     }
     
-    public Frame(RubyObject self, List args, RubyId lastFunc, RubyModule lastClass,
+    public Frame(Ruby ruby, RubyObject self, List args, RubyId lastFunc, RubyModule lastClass,
                  VALUE cbase, Frame prev, Frame tmp, String file, int line, int iter, int flags) {
-        this();
+        this(ruby);
         
         this.self = self;
         this.args = args;
@@ -231,17 +234,16 @@ public class Frame {
      *
      */
     public void push() {
-        Frame oldFrame = new Frame(self, args, lastFunc, lastClass, cbase, prev,
+        Frame oldFrame = new Frame(ruby, self, args, lastFunc, lastClass, cbase, prev,
                                    tmp, file, line, iter, flags);
         
         prev    = oldFrame;
         tmp     = null;
         // file    = null
         // line    =
-        // iter    =
-        // cbase = cbase;
-        args = null;
-        flags = FRAME_ALLOCA;
+        iter    = ruby.getInterpreter().getRubyIter().getIter();
+        args    = null;
+        flags   = FRAME_ALLOCA;
     }
     
     /** Pop the frame.

@@ -13,8 +13,8 @@
         <!-- You can set up any variables you want used throughout the script here. -->
         <!-- To use e.g. Jikes, uncomment this line. -->
         <!-- (Or make the same change in Tools | Options | Ant Settings | Properties.) -->
-        <property name="version" value="0.1.2"/>
-        <property name="version.file" value="0_1_2"/>
+        <property name="version" value="0.1.3"/>
+        <property name="version.file" value="0_1_3"/>
         <!-- <property name="build.compiler" value="jikes"/> -->
         <!-- You might like to set up some overridable paths, etc.: -->
         <!-- <property name="mylib" value="../lib/mylib.jar"/> -->

@@ -51,10 +51,7 @@ public class RbFixnum {
     private static RubyCallbackMethod methodLe = null;
     
     public static RubyClass createFixnum(Ruby ruby) {
-        // HACK +++
-        // todo: change Numeric to Integer
-        RubyClass fixnumClass = ruby.defineClass("Fixnum", (RubyClass)ruby.getRubyClass("Numeric"));
-        // HACK ---
+        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getIntegerClass());
         
         fixnumClass.defineMethod("to_i", getMethodToI());
         fixnumClass.defineMethod("to_s", getMethodToS());
