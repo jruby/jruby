@@ -198,8 +198,10 @@ public final class EvaluateVisitor implements NodeVisitor {
         return runtime.getRuntime().getTraceFunction() != null;
     }
 
-    private void callTraceFunction(String event, ISourcePosition position, IRubyObject self, String name, IRubyObject type) {
-        runtime.getRuntime().callTraceFunction(event, position, self, name, type);
+    private void callTraceFunction(String event, IRubyObject self) {
+        String name = threadContext.getCurrentFrame().getLastFunc();
+        RubyModule type = threadContext.getCurrentFrame().getLastClass();
+        runtime.getRuntime().callTraceFunction(event, threadContext.getPosition(), self, name, type);
     }
 
     public IRubyObject eval(INode node) {
@@ -417,14 +419,12 @@ public final class EvaluateVisitor implements NodeVisitor {
             for (int i = 0, size = iVisited.getWhenNodes().size(); i < size; i++) {
                 WhenNode whenNode = (WhenNode) iter.next();
 
-                runtime.setPosition(whenNode.getPosition());
+                threadContext.setPosition(whenNode.getPosition());
                 if (isTrace()) {
                     callTraceFunction(
                         "line",
-                        runtime.getPosition(),
-                        self,
-                        runtime.getCurrentFrame().getLastFunc(),
-                        runtime.getCurrentFrame().getLastClass());
+                            self
+                    );
                 }
 
                 RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
@@ -441,14 +441,12 @@ public final class EvaluateVisitor implements NodeVisitor {
             while (iter.hasNext()) {
                 WhenNode whenNode = (WhenNode) iter.next();
 
-                runtime.setPosition(whenNode.getPosition());
+                threadContext.setPosition(whenNode.getPosition());
                 if (isTrace()) {
                     callTraceFunction(
                         "line",
-                        runtime.getPosition(),
-                        self,
-                        runtime.getCurrentFrame().getLastFunc(),
-                        runtime.getCurrentFrame().getLastClass());
+                            self
+                    );
                 }
 
                 RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
@@ -834,13 +832,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         try {
             while (true) {
                 try {
-                    ISourcePosition position = runtime.getPosition();
+                    ISourcePosition position = threadContext.getPosition();
 
                     Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
                     IRubyObject recv = eval(iVisited.getIterNode());
                     ArgsUtil.endCallArgs(runtime, tmpBlock);
 
-                    runtime.setPosition(position);
+                    threadContext.setPosition(position);
                     result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
 
                     return;
@@ -1028,15 +1026,13 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitNewlineNode(NewlineNode iVisited) {
         if (iVisited.getPosition() != null) {
-            runtime.setPosition(iVisited.getPosition());
+            threadContext.setPosition(iVisited.getPosition());
 
             if (isTrace()) {
                 callTraceFunction(
                     "line",
-                    runtime.getPosition(),
-                    self,
-                    runtime.getCurrentFrame().getLastFunc(),
-                    runtime.getCurrentFrame().getLastClass());
+                        self
+                );
             }
         }
 
@@ -1543,10 +1539,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (isTrace()) {
                 callTraceFunction(
                     "class",
-                    runtime.getPosition(),
-                    type,
-                    runtime.getCurrentFrame().getLastFunc(),
-                    runtime.getCurrentFrame().getLastClass());
+                        type
+                );
             }
 
             self = type;
@@ -1563,10 +1557,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (isTrace()) {
                 callTraceFunction(
                     "end",
-                    runtime.getPosition(),
-                    null,
-                    runtime.getCurrentFrame().getLastFunc(),
-                    runtime.getCurrentFrame().getLastClass());
+                        null
+                );
             }
         }
     }
