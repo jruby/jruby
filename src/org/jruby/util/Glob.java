@@ -1,3 +1,26 @@
+/*
+ * Copyright (C) 2004 Charles O Nutter
+ * Charles O Nutter <headius@headius.com>
+ *
+ * JRuby - http://jruby.sourceforge.net
+ *
+ * This file is part of JRuby
+ *
+ * JRuby is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License along with JRuby; if not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307 USA
+ */
 package org.jruby.util;
 
 import java.io.File;
@@ -9,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.apache.oro.io.GlobFilenameFilter;
+import org.jruby.runtime.SelectorUtils;
 
 /**
  * 
@@ -17,34 +41,48 @@ import org.apache.oro.io.GlobFilenameFilter;
  */
 public class Glob {
     private File pattern;
+    private String newPattern;
     private boolean patternEndsWithPathDelimeter = false;
+    private boolean patternIsRelative = false;
 
     /**
      * Constructor for Glob.
      */
     public Glob(String pattern) {
+    	// FIXME: don't use user.dir for cwd
+    	String cwd = System.getProperty("user.dir");
+    	
         // Java File will strip trailing path delimeter.
         // Make a boolean for this special case (how about multiple slashes?)
         if (pattern.endsWith("/")) {
             patternEndsWithPathDelimeter = true;
         }
         
-        this.pattern = new File(pattern); //.getAbsoluteFile();
+       	this.pattern = new File(pattern); //.getAbsoluteFile();
+       	
+       	if (!this.pattern.getPath().equals(this.pattern.getAbsolutePath())) {
+       		// pattern is relative, but we need to consider cwd; add cwd but remember it's relative so we chop it off later
+       		patternIsRelative = true;
+       		this.pattern = new File(cwd, pattern);
+       	}
+       	
+        this.newPattern = pattern;
     }
     
     private String[] splitPattern() {
         ArrayList dirs = new ArrayList();
         String path = pattern.getPath();
         StringBuffer sb = new StringBuffer();
+        
         for(int i = 0, size = path.length(); i < size; i++) {
-            if (path.charAt(i) == File.separatorChar) {
+            if (path.charAt(i) == '/' || path.charAt(i) == '\\') {
                 if (sb.length() > 0) {
                     dirs.add(sb.toString());
                     sb = new StringBuffer();
                 }
                 // to handle /unix/ and \\windows-server\ files
                 if (dirs.size() == 0) {
-                    sb.append(File.separator);
+                    sb.append(path.charAt(i));
                 }
             } else {
                 sb.append(path.charAt(i));
@@ -56,8 +94,14 @@ public class Glob {
         return (String[])dirs.toArray(new String[dirs.size()]);
     }
 
-    public File[] getFiles() {
+    /**
+     * Get file objects for glob; made private to prevent it being used directly in the future
+     * 
+     * @return
+     */
+    private File[] getFiles() {
         String[] dirs = splitPattern();
+        for (int i = 0; i < dirs.length; i++) System.out.println("dir" + dirs[i]);	
         File root = new File(dirs[0]);
         int idx = 1;
         if (dirs[0].indexOf('*') > -1 || dirs[0].indexOf('?') > -1) {
@@ -90,26 +134,45 @@ public class Glob {
     }
     
     private static Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
-        if (pattern.equals("**")) {
-            // TODO: This kind of recursive globbing pattern needs to be implemented!
-            return Collections.EMPTY_LIST;
-        }
-        return Arrays.asList(parent.listFiles(new FileFilter() {
+    	FileFilter filter = new FileFilter() {
             FilenameFilter filter = new GlobFilenameFilter(pattern);
             /**
              * @see java.io.FileFilter#accept(File)
              */
             public boolean accept(File pathname) {
-                return (pathname.isDirectory() || !isDirectory) && filter.accept(parent, pathname.getName());
+                return (pathname.isDirectory() || !isDirectory) && SelectorUtils.matchPath(pattern, pathname.getName());
             }
-        }));
+    	};
+    	
+    	File[] matchArray = parent.listFiles(filter);
+        Collection matchingFiles = new ArrayList();
+        
+    	for (int i = 0; i < matchArray.length; i++) {
+    		matchingFiles.add(matchArray[i]);
+    		
+            if (pattern.equals("**")) {
+            	// recurse into dirs
+	    		if (matchArray[i].isDirectory()) {
+	    			matchingFiles.addAll(getMatchingFiles(matchArray[i], pattern, isDirectory));
+	    		}
+            }
+    	}
+        
+        return matchingFiles;
     }
     
     public String[] getNames() {
         File[] files = getFiles();
+        // FIXME: don't use user.dir for cwd
+        String cwd = System.getProperty("user.dir");
         String[] names = new String[files.length];
         for (int i = 0, size = files.length; i < size; i++) {
-            names[i] = files[i].getPath() + (patternEndsWithPathDelimeter ? "/" : "");
+        	if (patternIsRelative && files[i].getPath().startsWith(cwd)) {
+        		// chop off cwd when returning results
+        		names[i] = files[i].getPath().substring(cwd.length()) + (patternEndsWithPathDelimeter ? "/" : "");
+        	} else {
+        		names[i] = files[i].getPath() + (patternEndsWithPathDelimeter ? "/" : "");
+        	}
         }
         return names;
     }
