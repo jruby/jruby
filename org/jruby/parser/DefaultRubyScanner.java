@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     private Ruby ruby;

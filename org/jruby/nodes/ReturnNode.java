@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class ReturnNode extends Node {
     public ReturnNode(Node sttsNode) {

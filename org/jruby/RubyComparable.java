@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyComparable {
     public static RubyModule createComparable(Ruby ruby) {

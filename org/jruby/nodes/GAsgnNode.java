@@ -50,7 +50,7 @@ import org.jruby.runtime.*;
  * </li>
  * </ul>
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class GAsgnNode extends Node implements AssignableNode {
     public GAsgnNode(Node valueNode, RubyGlobalEntry entry) {

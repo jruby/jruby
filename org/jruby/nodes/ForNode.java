@@ -38,7 +38,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class ForNode extends Node {
     public ForNode(Node varNode, Node bodyNode, Node iterNode) {

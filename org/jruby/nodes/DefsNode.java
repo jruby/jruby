@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class DefsNode extends Node {
     public DefsNode(Node recvNode, String mId, Node defnNode) {

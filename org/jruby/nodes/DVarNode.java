@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class DVarNode extends Node {
     public DVarNode(String vId) {

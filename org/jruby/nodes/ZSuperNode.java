@@ -41,7 +41,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class ZSuperNode extends Node implements CallableNode {
     public ZSuperNode() {

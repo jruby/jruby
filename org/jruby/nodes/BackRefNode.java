@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class BackRefNode extends Node {
     public BackRefNode(int nth) {

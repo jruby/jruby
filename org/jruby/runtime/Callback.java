@@ -35,7 +35,7 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface Callback {
     public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby);

@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class Colon2Node extends Node {
     public Colon2Node(Node headNode, String mId) {

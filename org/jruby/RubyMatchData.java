@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  amoore
- * @version 
+ * @version $Revision$
  */
 public class RubyMatchData extends RubyObject {
     private String str;

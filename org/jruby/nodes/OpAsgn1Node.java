@@ -38,7 +38,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class OpAsgn1Node extends Node {
     public OpAsgn1Node(Node recvNode, String mId, Node argsNode) {

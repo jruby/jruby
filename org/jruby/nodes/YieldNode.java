@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class YieldNode extends Node {
     public YieldNode(Node sttsNode) {

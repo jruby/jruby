@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RescueBodyNode extends Node {
     public RescueBodyNode(Node headNode, Node bodyNode, Node argsNode) {

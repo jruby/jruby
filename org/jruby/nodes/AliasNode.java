@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class AliasNode extends Node {
     public AliasNode(String oldId, String newId) {

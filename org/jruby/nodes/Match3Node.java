@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class Match3Node extends Node {
     public Match3Node(Node recvNode, Node valueNode) {

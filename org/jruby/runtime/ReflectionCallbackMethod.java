@@ -38,7 +38,7 @@ import org.jruby.exceptions.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class ReflectionCallbackMethod implements Callback {
     private Class klass = null;

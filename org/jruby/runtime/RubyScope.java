@@ -45,7 +45,7 @@ import org.jruby.util.collections.*;
  * can be popped of the top of the stack using the pop method.
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyScope {
     public static final int SCOPE_ALLOCA = 0;

@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
  * like AWK
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class Flip2Node extends Node {
     public Flip2Node(Node beginNode, Node endNode, int count) {

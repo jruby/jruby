@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyJavaObject extends RubyObject {
     private Object value;

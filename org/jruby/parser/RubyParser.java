@@ -36,7 +36,7 @@ import org.jruby.nodes.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface RubyParser {
     Node compileString(String f, RubyObject s, int line);

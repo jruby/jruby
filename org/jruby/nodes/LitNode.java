@@ -49,7 +49,7 @@ import org.jruby.runtime.*;
  * </ul>
 
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class LitNode extends Node {
     public LitNode(RubyObject literal) {

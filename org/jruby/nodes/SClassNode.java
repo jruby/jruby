@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class SClassNode extends Node {
     public SClassNode(Node recvNode, Node bodyNode) {

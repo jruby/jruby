@@ -33,7 +33,7 @@ import java.util.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyStack extends AbstractList {
     private List delegate;

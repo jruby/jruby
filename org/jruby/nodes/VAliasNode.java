@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class VAliasNode extends Node {
     public VAliasNode(String oldId, String newId) {

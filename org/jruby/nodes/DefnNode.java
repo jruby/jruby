@@ -51,7 +51,7 @@ import org.jruby.util.*;
  * </li>
  * </ul>
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class DefnNode extends Node {
     public DefnNode(int noex, String mId, Node defnNode) {

@@ -38,7 +38,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class IVarNode extends Node implements CallableNode {
     public IVarNode(String vId) {

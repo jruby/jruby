@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class FBodyNode extends Node {
     public FBodyNode(Node bodyNode, String mId, RubyModule origin) {

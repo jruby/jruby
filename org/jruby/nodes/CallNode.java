@@ -39,7 +39,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class CallNode extends Node implements AssignableNode {
 	public CallNode(Node recvNode, String mId, Node argsNode) {

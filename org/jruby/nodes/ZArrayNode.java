@@ -38,7 +38,7 @@ import org.jruby.runtime.*;
  * zero length list
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class ZArrayNode extends Node {
 

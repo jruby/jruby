@@ -38,7 +38,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class EvStrNode extends Node implements StringExpandableNode {
     

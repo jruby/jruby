@@ -38,7 +38,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class DRegxNode extends Node implements StringEvaluableNode {
     public DRegxNode(RubyObject literal, int cflag) {

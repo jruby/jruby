@@ -37,7 +37,7 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyPointer extends DefaultPointer {
 

@@ -38,7 +38,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class DXStrNode extends Node implements StringEvaluableNode {
     

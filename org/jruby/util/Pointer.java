@@ -33,7 +33,7 @@ import java.util.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface Pointer extends Iterator, List {
     public void inc();

@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class JavaMethod implements Callback {
     private Method[] methods = null;

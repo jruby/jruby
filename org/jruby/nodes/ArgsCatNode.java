@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class ArgsCatNode extends Node {
     public ArgsCatNode(Node headNode, Node bodyNode) {

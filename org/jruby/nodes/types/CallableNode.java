@@ -36,7 +36,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface CallableNode {
     public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper);

@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class IAsgnNode extends Node implements AssignableNode {
     public IAsgnNode(String vId, Node valueNode) {

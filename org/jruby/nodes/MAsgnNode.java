@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class MAsgnNode extends Node implements AssignableNode {
     public MAsgnNode(Node headNode, Node argsNode) {

@@ -40,7 +40,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class JavaConstructor implements Callback {
     private Constructor[] constructors = null;

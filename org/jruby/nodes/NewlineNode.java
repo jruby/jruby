@@ -58,7 +58,7 @@ import org.jruby.runtime.*;
  * </li>
  * </ul>
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class NewlineNode extends Node{
     public NewlineNode(Node nextNode) {

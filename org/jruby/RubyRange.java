@@ -34,7 +34,7 @@ import org.jruby.runtime.*;
 
 /**
  * @author jpetersen
- * @version
+ * @version $Revision$
  */
 public class RubyRange extends RubyObject {
 

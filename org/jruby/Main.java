@@ -51,7 +51,7 @@ import org.jruby.nodes.DumpVisitor;
  *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
  *           -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
  * @author  jpetersen
- * @version 0.1
+ * @version $Revision$
  */
 public class Main
 {

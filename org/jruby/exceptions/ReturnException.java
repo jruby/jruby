@@ -35,7 +35,7 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class ReturnException extends RuntimeException {
     private RubyObject returnValue;

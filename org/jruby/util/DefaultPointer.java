@@ -35,7 +35,7 @@ import java.util.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class DefaultPointer extends AbstractList implements Pointer {
     private ArrayList delegate;

@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class LAsgnNode extends Node implements AssignableNode {
     public LAsgnNode(Node valueNode, int count) {

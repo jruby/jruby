@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class BlockPassNode extends Node {
     public BlockPassNode(Node bodyNode) {

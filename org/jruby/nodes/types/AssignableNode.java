@@ -35,7 +35,7 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface AssignableNode {
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check);

@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
  * regex expand once
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class DRegxOnceNode extends Node implements StringEvaluableNode {
     private boolean expanded = false;

@@ -36,7 +36,7 @@ import org.jruby.exceptions.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class RubyGlobalEntry {
     private Ruby ruby = null;

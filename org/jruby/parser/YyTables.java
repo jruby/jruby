@@ -33,7 +33,7 @@ package org.jruby.parser;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class YyTables {
     private static final int YYTABLE1_LENGTH = 7811;

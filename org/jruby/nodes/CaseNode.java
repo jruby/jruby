@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class CaseNode extends Node {
     public CaseNode(Node headNode, Node bodyNode) {

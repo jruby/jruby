@@ -37,7 +37,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class OpAsgn2Node extends Node {
     private String vid;

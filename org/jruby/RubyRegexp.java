@@ -39,7 +39,7 @@ import org.jruby.util.PrintfFormat;
 /**
  *
  * @author  amoore
- * @version 
+ * @version $Revision$
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
     private IRegexpAdapter matcher;

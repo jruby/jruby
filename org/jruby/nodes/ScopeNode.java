@@ -60,7 +60,7 @@ import org.jruby.util.collections.*;
  * </ul>
 
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class ScopeNode extends Node implements CallableNode
 {

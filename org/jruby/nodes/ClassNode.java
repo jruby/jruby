@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class ClassNode extends Node {
     public ClassNode(String classNameId, Node bodyNode, Node superNode) {

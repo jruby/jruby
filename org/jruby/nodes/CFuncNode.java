@@ -39,7 +39,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class CFuncNode extends Node implements CallableNode {
     public CFuncNode(Callback callbackMethod) {

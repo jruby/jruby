@@ -38,7 +38,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyBignum extends RubyInteger {
     private final static BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);

@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class OpAsgnAndNode extends Node {
     public OpAsgnAndNode(Node headNode, Node valueNode) {

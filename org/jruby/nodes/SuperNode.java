@@ -39,7 +39,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class SuperNode extends Node {
     public SuperNode(Node argsNode) {

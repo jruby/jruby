@@ -39,7 +39,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class AttrSetNode extends Node implements CallableNode {
     public AttrSetNode(String vId) {

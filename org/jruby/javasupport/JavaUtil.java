@@ -38,7 +38,7 @@ import org.jruby.*;
 /**
  *
  * @author Jan Arne Petersen, Alan Moore
- * @version 
+ * @version $Revision$
  */
 public class JavaUtil {
     public static boolean isCompatible(RubyObject arg, Class javaClass) {

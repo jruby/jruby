@@ -35,7 +35,7 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface ExecutableNode {
     public RubyObject execute(RubyObject receiver, RubyObject[] args, Ruby ruby);

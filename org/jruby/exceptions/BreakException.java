@@ -33,7 +33,7 @@ package org.jruby.exceptions;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class BreakException extends RuntimeException {
 

@@ -36,7 +36,7 @@ import org.jruby.nodes.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyMethodCacheEntry {
     private String mid;             /* method's id */

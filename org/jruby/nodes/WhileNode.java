@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class WhileNode extends Node {
     public WhileNode(Node conditionNode, Node bodyNode) {

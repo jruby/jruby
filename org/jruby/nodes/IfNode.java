@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class IfNode extends Node {
     public IfNode(Node conditionNode, Node bodyNode, Node elseNode) {

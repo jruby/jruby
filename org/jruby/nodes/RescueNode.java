@@ -39,7 +39,7 @@ import org.jruby.util.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class RescueNode extends Node {
     public RescueNode(Node headNode, Node rescueNode, Node elseNode) {

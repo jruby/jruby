@@ -33,7 +33,7 @@ package org.jruby.runtime;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyIter {
     public static final int ITER_NOT = 0;

@@ -33,7 +33,7 @@ package org.jruby.exceptions;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RetryException extends RuntimeException {
 

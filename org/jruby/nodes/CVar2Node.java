@@ -38,7 +38,7 @@ import org.jruby.runtime.*;
  * singleton method
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class CVar2Node extends Node {
     public CVar2Node(String vId) {

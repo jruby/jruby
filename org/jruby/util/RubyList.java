@@ -13,7 +13,7 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyList extends AbstractList {
     private List delegate;

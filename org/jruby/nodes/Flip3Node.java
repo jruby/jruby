@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
  * like SED
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class Flip3Node extends Node {
     public Flip3Node(Node beginNode, Node endNode, int count) {

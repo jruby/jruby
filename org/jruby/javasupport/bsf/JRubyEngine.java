@@ -39,7 +39,7 @@ import com.ibm.bsf.util.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class JRubyEngine extends BSFEngineImpl {
     private Ruby ruby;

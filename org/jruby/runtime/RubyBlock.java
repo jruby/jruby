@@ -36,7 +36,7 @@ import org.jruby.nodes.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class RubyBlock {
     public static final int BLOCK_D_SCOPE = 1;

@@ -36,7 +36,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class OpAsgnOrNode extends Node {
     public OpAsgnOrNode(Node headNode, Node valueNode, String aId) {

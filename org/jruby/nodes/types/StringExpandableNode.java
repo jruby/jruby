@@ -36,7 +36,7 @@ import org.jruby.nodes.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public interface StringExpandableNode {
     public RubyString expandString(Ruby ruby, RubyObject self, Node parent);

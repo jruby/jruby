@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
  * normal method
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class CVarNode extends Node {
     public CVarNode(String vId) {

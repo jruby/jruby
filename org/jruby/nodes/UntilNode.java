@@ -37,7 +37,7 @@ import org.jruby.runtime.*;
 /**
  *
  * @author  jpetersen
- * @version
+ * @version $Revision$
  */
 public class UntilNode extends Node {
     public UntilNode(Node conditionNode, Node bodyNode) {

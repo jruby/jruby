@@ -53,7 +53,7 @@ import org.jruby.runtime.*;
  * method.  This method is in turned invoked by the parser directly but also
  * by the {@link org.jruby.parser.ParserHelper#block_append block_append} method
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class BlockNode extends Node {
 

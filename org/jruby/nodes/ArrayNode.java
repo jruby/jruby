@@ -39,7 +39,7 @@ import org.jruby.runtime.*;
  * normal array
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class ArrayNode extends Node {
     public ArrayNode(Node headNode, int aLength, Node nextNode) {
