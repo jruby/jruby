@@ -1,0 +1,152 @@
+package org.jruby.internal.runtime.methods;
+
+import java.util.*;
+
+import org.ablaf.ast.*;
+import org.jruby.*;
+import org.jruby.ast.*;
+import org.jruby.ast.types.*;
+import org.jruby.evaluator.*;
+import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
+
+/**
+ *
+ * @author  jpetersen
+ * @version $Revision$
+ */
+public class DefaultMethod extends AbstractMethod {
+    private ScopeNode body;
+    private ArgsNode argsNode;
+    private Namespace namespace;
+
+    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Namespace namespace) {
+        this.body = body;
+        this.argsNode = argsNode;
+        this.namespace = namespace;
+    }
+
+    /**
+     * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
+     */
+    public RubyObject execute(Ruby ruby, RubyObject receiver, String name, RubyObject[] args, boolean noSuper) {
+        if (args == null) {
+            args = new RubyObject[0];
+        }
+
+        RubyProc optionalBlockArg = null;
+
+        if (argsNode.getBlockArgNode() != null) {
+            optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+        }
+
+        ruby.getScope().push();
+
+        Namespace savedNamespace = null;
+        
+        if (namespace != null) {
+            savedNamespace = ruby.getNamespace();
+            ruby.setNamespace(namespace);
+            ruby.getActFrame().setNamespace(namespace);
+        }
+
+        if (body.getLocalNames() != null) {
+            ruby.getScope().setLocalValues(new ArrayList(Collections.nCopies(body.getLocalNames().size(), ruby.getNil())));
+            ruby.getScope().setLocalNames(body.getLocalNames());
+        }
+
+        RubyVarmap.push(ruby);
+
+        try {
+            if (argsNode != null) {
+                int i = argsNode.getArgsCount();
+                if (i > args.length) {
+                    throw new ArgumentError(ruby, "Wrong # of arguments(" + args.length + " for " + i + ")");
+                }
+                if (argsNode.getRestArg() == -1 && argsNode.getOptArgs() != null) {
+                    int opt = i;
+
+                    IListNode optNode = argsNode.getOptArgs();
+                    
+                    Iterator iter = optNode.iterator();
+                    while (iter.hasNext()) {
+                        iter.next();
+                        opt++;
+                    }
+
+                    if (opt < args.length) {
+                        throw new ArgumentError(ruby, "wrong # of arguments(" + args.length + " for " + opt + ")");
+                    }
+
+                    // XXX
+                    ruby.getActFrame().setArgs(Arrays.asList(args));
+                }
+
+                if (ruby.getScope().getLocalValues() != null) {
+                    if (i > 0) {
+                        for (int j = 0; j < i; j++) {
+                            ruby.getScope().setValue(j + 2, args[j]);
+                        }
+                    }
+
+                    if (argsNode.getOptArgs() != null) {
+                        IListNode optArgs = argsNode.getOptArgs();
+                        
+                        Iterator iter = optArgs.iterator();
+                        for (int j = i; j < args.length && iter.hasNext(); j++) {
+                            new AssignmentVisitor(ruby, receiver).assign((INode)iter.next(), args[j], true);
+                            i++;
+                        }
+                        
+                        // assign the default values.
+                        while (iter.hasNext()) {
+                            new EvaluateVisitor(ruby, receiver).eval((INode)iter.next());
+                        }
+                    }
+
+                    if (argsNode.getRestArg() >= 0) {
+                        RubyArray array = null;
+                        if (args.length > i) {
+                            array = RubyArray.newArray(ruby, Arrays.asList(args).subList(i, args.length));
+                        } else {
+                            array = RubyArray.newArray(ruby, 0);
+                        }
+                        ruby.getScope().setValue(argsNode.getRestArg(), array);
+                    }
+                }
+            }
+            
+            if (optionalBlockArg != null) {
+                ruby.getScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
+            }
+            
+            if (ruby.getRuntime().getTraceFunction() != null) {
+                ruby.getRuntime().callTraceFunction("call", body.getBodyNode().getPosition().getFile(), body.getBodyNode().getPosition().getLine(), receiver, name, null); // XXX
+            }
+
+            return receiver.eval(body.getBodyNode()); // skip scope assignment
+        } catch (ReturnException rExcptn) {
+            return rExcptn.getReturnValue();
+        } finally {
+            RubyVarmap.pop(ruby);
+
+            ruby.getScope().pop();
+
+            if (savedNamespace != null) {
+                ruby.setNamespace(savedNamespace);
+            }
+
+            if (ruby.getRuntime().getTraceFunction() != null) {
+                String file = ruby.getFrameStack().getPrevious().getFile();
+                int line = ruby.getFrameStack().getPrevious().getLine();
+                
+                if (file == null) {
+                    file = ruby.getSourceFile();
+                    line = ruby.getSourceLine();
+                }
+                
+                ruby.getRuntime().callTraceFunction("return", file, line, receiver, name, null); // XXX
+            }
+        }
+    }
+}
