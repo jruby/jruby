@@ -882,7 +882,7 @@ public class RubyModule extends RubyObject {
             throw new RubySecurityException(getRuby(), "Insecure: can't remove method");
         }
         if (isFrozen()) {
-            // rb_error_frozen("class/module");
+            throw new RubyFrozenException(getRuby(), "class/module");
         }
         if (getMethods().remove(name) == null) {
             throw new NameError(getRuby(), "method '" + name + "' not defined in " + toName());
@@ -1824,7 +1824,7 @@ public class RubyModule extends RubyObject {
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
         Ruby ruby = input.getRuby();
-        RubyModule result = (RubyModule) ruby.getClasses().getClass(name);
+        RubyModule result = ruby.getClasses().getClass(name);
         if (result == null) {
             throw new NameError(ruby, "uninitialized constant " + name);
         }

@@ -188,7 +188,7 @@ public class RubyRange extends RubyObject {
         return RubyBoolean.newBoolean(getRuby(), isExclusive);
     }
 
-    public RubyObject length() {
+    public RubyFixnum length() {
         long size = 0;
 
         if (begin.funcall(">", end).isTrue()) {

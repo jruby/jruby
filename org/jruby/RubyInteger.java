@@ -49,12 +49,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integerClass.defineMethod("chr", CallbackFactory.getMethod(RubyInteger.class, "chr"));
         integerClass.defineMethod("integer?", CallbackFactory.getMethod(RubyInteger.class, "int_p"));
-        integerClass.defineMethod("to_i", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
-        integerClass.defineMethod("to_int", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
-        integerClass.defineMethod("ceil", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
-        integerClass.defineMethod("floor", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
-        integerClass.defineMethod("round", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
-        integerClass.defineMethod("truncate", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
+        integerClass.defineMethod("to_i", CallbackFactory.getSelfMethod());
+        integerClass.defineMethod("to_int", CallbackFactory.getSelfMethod());
+        integerClass.defineMethod("ceil", CallbackFactory.getSelfMethod());
+        integerClass.defineMethod("floor", CallbackFactory.getSelfMethod());
+        integerClass.defineMethod("round", CallbackFactory.getSelfMethod());
+        integerClass.defineMethod("truncate", CallbackFactory.getSelfMethod());
 
         integerClass.defineMethod("next", CallbackFactory.getMethod(RubyInteger.class, "succ"));
         integerClass.defineMethod("succ", CallbackFactory.getMethod(RubyInteger.class, "succ"));

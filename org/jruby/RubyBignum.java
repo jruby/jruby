@@ -325,35 +325,34 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(ruby, value.shiftRight((int) shift));
     }
 
-//      public void marshalTo(MarshalStream output) throws IOException {
-//          output.write('l');
-//          output.write(value.signum() >= 0 ? '+' : '-');
+    public void marshalTo(MarshalStream output) throws IOException {
+        output.write('l');
+        output.write(value.signum() >= 0 ? '+' : '-');
 
-//          BigInteger absValue = value.abs();
+        BigInteger absValue = value.abs();
 
-//          int shortSize = absValue.bitLength() / 16;
-//          boolean isOddSize = absValue.bitLength() % 16 != 0;
+        int bitLength = absValue.bitLength();
 
-//          if (isOddSize) {
-//              shortSize += 1;
-//          }
-//          output.dumpInt(shortSize);
+        int shortLength = bitLength / 16;
+        if (bitLength % 16 != 0) {
+            shortLength++;
+        }
 
-//          byte[] data = absValue.toByteArray();
-//          boolean isOddLength = data.length % 2 != 0;
+        output.dumpInt(shortLength);
 
-//          int i = data.length / 2 - 1;
+        byte[] digits = absValue.toByteArray();
 
-//          if (isOddLength) {
-//              output.write(data[data.length - 1]);
-//          }
-//          while (i >= 0) {
-//              output.write(data[i * 2 + 1]);
-//              output.write(data[i * 2]);
-//              i--;
-//          }
-//          if (isOddLength) {
-//              output.write(0);
-//          }
-//      }
+        for (int i = digits.length - 1; i >= 0; i--) {
+            if (i == 0 && digits[i] == 0 && (digits.length % 2 != 0)) {
+                // Don't write last byte if the full length
+                // would be odd and the digits end with a zero byte.
+                break;
+            }
+            output.write(digits[i]);
+        }
+        if (digits[0] != 0 && (digits.length % 2 != 0)) {
+            // Pad with a 0 if we've written all bytes and have an odd length.
+            output.write(0);
+        }
+    }
 }

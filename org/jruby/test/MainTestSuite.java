@@ -49,7 +49,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestJavaUtil.class));
         suite.addTest(new TestSuite(TestKernel.class));
         suite.addTest(new TestSuite(TestRubyCollect.class));
-//  	suite.addTest(ScriptTestSuite.suite());
+  	suite.addTest(ScriptTestSuite.suite());
         return suite;
     }
 }

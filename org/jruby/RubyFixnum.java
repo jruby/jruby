@@ -333,8 +333,12 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-        output.write('i');
-        output.dumpInt((int) value);
+        if (value <= Integer.MAX_VALUE) {
+            output.write('i');
+            output.dumpInt((int) value);
+        } else {
+            output.dumpObject(RubyBignum.newBignum(ruby, value));
+        }
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

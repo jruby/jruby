@@ -154,7 +154,9 @@ public class UnmarshalStream extends FilterInputStream {
             variables.put(name.toId(), value);
         }
 
-        RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
+        // ... FIXME: handle if class doesn't exist ...
+
+        RubyClass rubyClass = (RubyClass) ruby.getRubyClass(className.toId());
         RubyObject result = new RubyObject(ruby, rubyClass);
         result.setInstanceVariables(variables);
         return result;

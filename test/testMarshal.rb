@@ -21,19 +21,21 @@ test_equal(MARSHAL_HEADER + "{\006i\006i\a", Marshal.dump({1=>2}))
 test_equal(MARSHAL_HEADER + "c\013Object", Marshal.dump(Object))
 test_equal(MARSHAL_HEADER + "m\017Enumerable", Marshal.dump(Enumerable))
 test_equal(MARSHAL_HEADER + "/\013regexp\000", Marshal.dump(/regexp/))
-#  test_equal(MARSHAL_HEADER + "l+\n\000\000\000\000\000\000\000\000@\000", Marshal.dump(2 ** 70))
-#  test_equal(MARSHAL_HEADER + "l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
-#             Marshal.dump(14323534664547457526224437612747))
-#  test_equal(MARSHAL_HEADER + "l+\n\001\000\001@\000\000\000\000@\000",
-#             Marshal.dump(1 + (2 ** 16) + (2 ** 30) + (2 ** 70)))
-#  test_equal(MARSHAL_HEADER + "l+\n6\361\3100_/\205\177Iq",
-#             Marshal.dump(534983213684351312654646))
-#  test_equal(MARSHAL_HEADER + "l-\n6\361\3100_/\205\177Iq",
-#             Marshal.dump(-534983213684351312654646))
-#  test_equal(MARSHAL_HEADER + "l+\n\331\347\365%\200\342a\220\336\220",
-#             Marshal.dump(684126354563246654351321))
-#  test_equal(MARSHAL_HEADER + "l+\vIZ\210*,u\006\025\304\016\207\001",
-#             Marshal.dump(472759725676945786624563785))
+test_equal(MARSHAL_HEADER + "l+\n\000\000\000\000\000\000\000\000@\000", Marshal.dump(2 ** 70))
+#test_equal(MARSHAL_HEADER + "l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
+#           Marshal.dump(14323534664547457526224437612747))
+test_equal(MARSHAL_HEADER + "l+\n\001\000\001@\000\000\000\000@\000",
+           Marshal.dump(1 + (2 ** 16) + (2 ** 30) + (2 ** 70)))
+test_equal(MARSHAL_HEADER + "l+\n6\361\3100_/\205\177Iq",
+           Marshal.dump(534983213684351312654646))
+test_equal(MARSHAL_HEADER + "l-\n6\361\3100_/\205\177Iq",
+           Marshal.dump(-534983213684351312654646))
+test_equal(MARSHAL_HEADER + "l+\n\331\347\365%\200\342a\220\336\220",
+           Marshal.dump(684126354563246654351321))
+#test_equal(MARSHAL_HEADER + "l+\vIZ\210*,u\006\025\304\016\207\001",
+#           Marshal.dump(472759725676945786624563785))
+
+# FIXME: Bignum marshaling is broken.
 
 # FIXME: IVAR, struct, MODULE_OLD, 'U', ...
 

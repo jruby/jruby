@@ -601,7 +601,6 @@ public class RubyGlobal {
                 throw new NotImplementedError("Random values larger than Integer.MAX_VALUE not supported");
             }
             return RubyFixnum.newFixnum(ruby, ruby.random.nextInt((int) ceil));
-            
         } else {
             throw new ArgumentError(ruby, "wrong # of arguments(" + args.length + " for 1)");
         }

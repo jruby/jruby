@@ -44,4 +44,8 @@ public class ArgumentError extends RaiseException {
     public ArgumentError(Ruby ruby, String msg) {
         super(ruby, ruby.getExceptions().getArgumentError(), msg);
     }
+
+    public ArgumentError(Ruby ruby, int got, int expected) {
+        this(ruby, "wrong # of arguments(" + got + " for " + expected);
+    }
 }
