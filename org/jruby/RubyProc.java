@@ -32,12 +32,13 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 /**
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyProc extends RubyObject {
+public class RubyProc extends RubyObject implements IndexCallable {
     private Block block = null;
     private RubyModule wrapper = null;
 
@@ -45,17 +46,29 @@ public class RubyProc extends RubyObject {
         super(ruby, rubyClass);
     }
 
+    private static final int M_CALL = 1;
+    private static final int M_AREF = 2;
+
     public static RubyClass createProcClass(Ruby ruby) {
         RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
 
         procClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
-        
-        procClass.defineMethod("call", CallbackFactory.getOptMethod(RubyProc.class, "call"));
-        procClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyProc.class, "call"));
-
+        procClass.defineMethod("call", IndexedCallback.createOptional(M_CALL));
+        procClass.defineMethod("[]", IndexedCallback.createOptional(M_AREF));
         return procClass;
     }
-    
+
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+        case M_CALL:
+            return call(args);
+        case M_AREF:
+            return call(args);
+        }
+        Asserts.assertNotReached();
+        return null;
+    }
+
     public Block getBlock() {
         return block;
     }
