@@ -285,7 +285,7 @@ public class RubyHash extends RubyObject {
         valueMap.foreach(new RubyMapMethod() {
             public int execute(Object key, Object value, Object arg) {
                 RubyArray ary = RubyArray.arrayValue((RubyObject) arg);
-                ary.push(RubyArray.newArray(getRuby(), (RubyObject) key, (RubyObject) value));
+                ary.append(RubyArray.newArray(getRuby(), (RubyObject) key, (RubyObject) value));
                 return RubyMapMethod.CONTINUE;
             }
         }, result);

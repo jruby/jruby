@@ -97,12 +97,17 @@ public class RubyArray extends RubyObject implements IndexCallable {
     private static final int M_TO_S = 3;
     private static final int M_FROZEN = 4;
     private static final int M_EQUAL = 5;
+    private static final int M_AREF = 101;
+    private static final int M_ASET = 102;
     private static final int M_EQL = 6;
     private static final int M_FIRST = 10;
     private static final int M_LAST = 11;
     private static final int M_CONCAT = 12;
+    private static final int M_APPEND = 201;
+    private static final int M_PUSH = 202;
     private static final int M_POP = 14;
     private static final int M_SHIFT = 15;
+    private static final int M_UNSHIFT = 16;
     private static final int M_EACH = 20;
     private static final int M_EACH_INDEX = 21;
     private static final int M_REVERSE_EACH = 22;
@@ -110,6 +115,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     private static final int M_EMPTY_P = 24;
     private static final int M_INDEX = 25;
     private static final int M_RINDEX = 26;
+    private static final int M_INDICES = 27;
     private static final int M_REVERSE = 30;
     private static final int M_REVERSE_BANG = 31;
     private static final int M_SORT = 32;
@@ -139,25 +145,20 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("to_a", CallbackFactory.getSelfMethod(0));
 		arrayClass.defineMethod("to_ary", CallbackFactory.getSelfMethod(0));
 		arrayClass.defineMethod("frozen?", IndexedCallback.create(M_FROZEN, 0));
-
 		arrayClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
 		arrayClass.defineMethod("eql?", IndexedCallback.create(M_EQL, 1));
 		arrayClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
-
-		arrayClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
-		arrayClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyArray.class, "aset"));
+		arrayClass.defineMethod("[]", IndexedCallback.createOptional(M_AREF));
+		arrayClass.defineMethod("[]=", IndexedCallback.createOptional(M_ASET));
 		arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
-
 		arrayClass.defineMethod("first", IndexedCallback.create(M_FIRST, 0));
 		arrayClass.defineMethod("last", IndexedCallback.create(M_LAST, 0));
 		arrayClass.defineMethod("concat", IndexedCallback.create(M_CONCAT, 1));
-
-		arrayClass.defineMethod("<<", CallbackFactory.getMethod(RubyArray.class, "push", RubyObject.class));
-		arrayClass.defineMethod("push", CallbackFactory.getOptMethod(RubyArray.class, "push"));
+		arrayClass.defineMethod("<<", IndexedCallback.create(M_APPEND, 1));
+		arrayClass.defineMethod("push", IndexedCallback.createOptional(M_PUSH, 1));
 		arrayClass.defineMethod("pop", IndexedCallback.create(M_POP, 0));
-
 		arrayClass.defineMethod("shift", IndexedCallback.create(M_SHIFT, 0));
-		arrayClass.defineMethod("unshift", CallbackFactory.getOptMethod(RubyArray.class, "unshift"));
+		arrayClass.defineMethod("unshift", IndexedCallback.createOptional(M_UNSHIFT));
 		arrayClass.defineMethod("each", IndexedCallback.create(M_EACH, 0));
 		arrayClass.defineMethod("each_index", IndexedCallback.create(M_EACH_INDEX, 0));
 		arrayClass.defineMethod("reverse_each", IndexedCallback.create(M_REVERSE_EACH, 0));
@@ -166,8 +167,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY_P, 0));
 		arrayClass.defineMethod("index", IndexedCallback.create(M_INDEX, 1));
 		arrayClass.defineMethod("rindex", IndexedCallback.create(M_RINDEX, 1));
-		arrayClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
-		arrayClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
+		arrayClass.defineMethod("indexes", IndexedCallback.createOptional(M_INDICES));
+		arrayClass.defineMethod("indices", IndexedCallback.createOptional(M_INDICES));
 		arrayClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
 		arrayClass.defineMethod("join", CallbackFactory.getOptMethod(RubyArray.class, "join"));
 		arrayClass.defineMethod("reverse", IndexedCallback.create(M_REVERSE, 0));
@@ -225,16 +226,26 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return equal(args[0]);
         case M_EQL:
             return eql(args[0]);
+        case M_AREF:
+            return aref(args);
+        case M_ASET:
+            return aset(args);
         case M_FIRST:
             return first();
         case M_LAST:
             return last();
         case M_CONCAT:
             return concat(args[0]);
+        case M_APPEND:
+            return append(args[0]);
+        case M_PUSH:
+            return push(args);
         case M_POP:
             return pop();
         case M_SHIFT:
             return shift();
+        case M_UNSHIFT:
+            return unshift(args);
         case M_EACH:
             return each();
         case M_EACH_INDEX:
@@ -249,6 +260,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return index(args[0]);
         case M_RINDEX:
             return rindex(args[0]);
+        case M_INDICES:
+            return indices(args);
         case M_REVERSE:
             return reverse();
         case M_REVERSE_BANG:
@@ -522,24 +535,18 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	/** rb_ary_push_m
 	 *
 	 */
-	public RubyArray push(RubyObject[] items) {
-		// Performance
-		int length = items.length;
-
-		if (length == 0) {
-			throw new ArgumentError(getRuby(), "wrong # of arguments(at least 1)");
-		}
+    public RubyArray push(RubyObject[] items) {
 		modify();
-		boolean taint = false;
-		for (int i = 0; i < length; i++) {
-			taint |= items[i].isTaint();
+		boolean tainted = false;
+		for (int i = 0; i < items.length; i++) {
+			tainted |= items[i].isTaint();
 			list.add(items[i]);
 		}
-		setTaint(isTaint() || taint);
+		setTaint(isTaint() || tainted);
 		return this;
 	}
 
-	public RubyArray push(RubyObject value) {
+    public RubyArray append(RubyObject value) {
 		modify();
 		list.add(value);
 		infectObject(value);
@@ -982,10 +989,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		return getRuby().getNil();
 	}
 
-	/** rb_ary_indexes
-	 *
-	 */
-	public RubyArray indexes(RubyObject[] args) {
+	public RubyArray indices(RubyObject[] args) {
 		RubyObject[] result = new RubyObject[args.length];
 		boolean taint = false;
 		for (int i = 0; i < args.length; i++) {
@@ -1387,7 +1391,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		RubyArray result = newArray(input.getRuby());
 		int size = input.unmarshalInt();
 		for (int i = 0; i < size; i++) {
-			result.push(input.unmarshalObject());
+			result.append(input.unmarshalObject());
 		}
 		return result;
 	}

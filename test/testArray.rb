@@ -39,3 +39,7 @@ test_equal(nil, [].flatten!)
 #test_exception(ArgumentError) {
 #  arr.flatten!
 #}
+
+arr = []
+test_equal([1,2], arr.push(1, 2))
+test_exception(ArgumentError) { arr.push() }

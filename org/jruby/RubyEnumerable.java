@@ -78,7 +78,7 @@ public class RubyEnumerable {
     // Block methods
 
     public static RubyObject collect_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        ((RubyArray) arg1).push(ruby.yield(blockArg));
+        ((RubyArray) arg1).append(ruby.yield(blockArg));
 
         return ruby.getNil();
     }
@@ -88,20 +88,20 @@ public class RubyEnumerable {
         
         ruby.yield(RubyArray.newArray(ruby, blockArg, index));
 
-        ((RubyArray) arg1).push(((RubyFixnum) index).op_plus(RubyFixnum.one(ruby)));
+        ((RubyArray) arg1).append(((RubyFixnum) index).op_plus(RubyFixnum.one(ruby)));
 
         return ruby.getNil();
     }
 
     public static RubyObject enum_all_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        ((RubyArray) arg1).push(blockArg);
+        ((RubyArray) arg1).append(blockArg);
 
         return ruby.getNil();
     }
 
     public static RubyObject find_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         if (ruby.yield(blockArg).isTrue()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
             throw new BreakJump();
         }
 
@@ -110,7 +110,7 @@ public class RubyEnumerable {
 
     public static RubyObject find_all_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         if (ruby.yield(blockArg).isTrue()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         }
 
         return ruby.getNil();
@@ -121,7 +121,7 @@ public class RubyEnumerable {
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
         if (matcher.funcall("===", blockArg).isTrue()) {
-            resultArray.push(blockArg);
+            resultArray.append(blockArg);
         }
 
         return ruby.getNil();
@@ -132,7 +132,7 @@ public class RubyEnumerable {
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
         if (matcher.funcall("===", blockArg).isTrue()) {
-            resultArray.push(ruby.yield(blockArg));
+            resultArray.append(ruby.yield(blockArg));
         }
 
         return ruby.getNil();
@@ -142,11 +142,11 @@ public class RubyEnumerable {
         RubyObject maxItem = ((RubyArray) arg1).pop();
 
         if (maxItem.isNil()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else if (RubyFixnum.fix2int(blockArg.funcall("<=>", maxItem)) > 0) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else {
-            ((RubyArray) arg1).push(maxItem);
+            ((RubyArray) arg1).append(maxItem);
         }
 
         return ruby.getNil();
@@ -156,11 +156,11 @@ public class RubyEnumerable {
         RubyObject maxItem = ((RubyArray) arg1).pop();
 
         if (maxItem.isNil()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem))) > 0) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else {
-            ((RubyArray) arg1).push(maxItem);
+            ((RubyArray) arg1).append(maxItem);
         }
 
         return ruby.getNil();
@@ -168,7 +168,7 @@ public class RubyEnumerable {
 
     public static RubyObject member_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         if (blockArg.funcall("==", ((RubyArray) arg1).entry(0)).isTrue()) {
-            ((RubyArray) arg1).push(ruby.getTrue());
+            ((RubyArray) arg1).append(ruby.getTrue());
             throw new BreakJump();
         }
 
@@ -178,11 +178,11 @@ public class RubyEnumerable {
     public static RubyObject min_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         RubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else if (RubyFixnum.fix2int(blockArg.funcall("<=>", maxItem)) < 0) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else {
-            ((RubyArray) arg1).push(maxItem);
+            ((RubyArray) arg1).append(maxItem);
         }
 
         return ruby.getNil();
@@ -191,11 +191,11 @@ public class RubyEnumerable {
     public static RubyObject min_iter_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         RubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else if (RubyFixnum.fix2int(ruby.yield(RubyArray.newArray(ruby, blockArg, maxItem))) < 0) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         } else {
-            ((RubyArray) arg1).push(maxItem);
+            ((RubyArray) arg1).append(maxItem);
         }
 
         return ruby.getNil();
@@ -203,7 +203,7 @@ public class RubyEnumerable {
 
     public static RubyObject reject_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         if (ruby.yield(blockArg).isFalse()) {
-            ((RubyArray) arg1).push(blockArg);
+            ((RubyArray) arg1).append(blockArg);
         }
 
         return ruby.getNil();
@@ -240,8 +240,8 @@ public class RubyEnumerable {
 
     public static RubyObject grep(Ruby ruby, RubyObject recv, RubyObject matcher) {
         RubyArray ary = RubyArray.newArray(ruby);
-        ary.push(matcher);
-        ary.push(RubyArray.newArray(ruby));
+        ary.append(matcher);
+        ary.append(RubyArray.newArray(ruby));
         if (ruby.isBlockGiven()) {
             iterateEach(ruby, recv, "grep_iter_i", ary);
         } else {
@@ -253,7 +253,7 @@ public class RubyEnumerable {
 
     public static RubyObject max(Ruby ruby, RubyObject recv) {
         RubyArray ary = RubyArray.newArray(ruby);
-        ary.push(ruby.getNil());
+        ary.append(ruby.getNil());
         if (ruby.isBlockGiven()) {
             iterateEach(ruby, recv, "max_iter_i", ary);
         } else {
@@ -265,14 +265,14 @@ public class RubyEnumerable {
 
     public static RubyBoolean member(Ruby ruby, RubyObject recv, RubyObject item) {
         RubyArray ary = RubyArray.newArray(ruby);
-        ary.push(item);
+        ary.append(item);
         iterateEach(ruby, recv, "member_i", ary);
         return ary.getLength() > 1 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyObject min(Ruby ruby, RubyObject recv) {
         RubyArray ary = RubyArray.newArray(ruby);
-        ary.push(ruby.getNil());
+        ary.append(ruby.getNil());
         if (ruby.isBlockGiven()) {
             iterateEach(ruby, recv, "min_iter_i", ary);
         } else {

@@ -26,6 +26,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.util.Asserts;
+import org.jruby.exceptions.ArgumentError;
 
 /**
  * Implements callback on built-in Ruby methods using an integer index.
@@ -41,12 +42,29 @@ public class IndexedCallback implements Callback {
         this.arity = arity;
     }
 
+    /**
+     * Create a callback with a fixed # of arguments
+     */
     public static IndexedCallback create(int index, int arity) {
         return new IndexedCallback(index, arity);
     }
 
+    /**
+     * Create a callback with an optional # of arguments
+     */
+    public static IndexedCallback createOptional(int index) {
+        return new IndexedCallback(index, -1);
+    }
+
+    /**
+     * Create a callback with a minimal # of arguments
+     */
+    public static IndexedCallback createOptional(int index, int required) {
+        return new IndexedCallback(index, -(1 + required));
+    }
+
     public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-        checkArity(args);
+        checkArity(ruby, args);
         return ((IndexCallable) recv).callIndexed(index, args);
     }
 
@@ -54,10 +72,17 @@ public class IndexedCallback implements Callback {
         return arity;
     }
 
-    private void checkArity(RubyObject[] args) {
+    private void checkArity(Ruby ruby, RubyObject[] args) {
         if (arity >= 0) {
-            Asserts.assertTrue(args.length == arity,
-                               "Expected " + arity + ", got " + args.length);
+            if (arity != args.length) {
+                throw new ArgumentError(ruby,
+                                        "wrong # of arguments(" + args.length + " for " + arity + ")");
+            }
+        } else {
+            int required = -(1 + arity);
+            if (args.length < required) {
+                throw new ArgumentError(ruby, "wrong # of arguments(at least " + required + ")");
+            }
         }
     }
 }

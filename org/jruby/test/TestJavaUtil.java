@@ -69,9 +69,9 @@ public class TestJavaUtil extends TestCase {
         assertTrue(JavaUtil.isCompatible(RubyArray.newArray(ruby),
                                          String[].class));
         RubyArray array = RubyArray.newArray(ruby);
-        array.push(RubyString.newString(ruby, "hello"));
+        array.append(RubyString.newString(ruby, "hello"));
         assertTrue(JavaUtil.isCompatible(array, String[].class));
-        array.push(RubyHash.newHash(ruby));
+        array.append(RubyHash.newHash(ruby));
         assertTrue(! JavaUtil.isCompatible(array, String[].class));
     }
 }

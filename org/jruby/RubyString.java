@@ -103,6 +103,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return stringToBytes(value);
 	}
 
+    private static final int M_CLONE = 101;
+
     private static final int M_DUP = 1;
     private static final int M_OP_CMP = 2;
     private static final int M_EQUAL = 3;
@@ -134,7 +136,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 
 		stringClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
 		stringClass.defineMethod("initialize", IndexedCallback.create(M_REPLACE, 1));
-		stringClass.defineMethod("clone", CallbackFactory.getMethod(RubyString.class, "rbClone"));
+		stringClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
 		stringClass.defineMethod("dup", IndexedCallback.create(M_DUP, 0));
 
 		stringClass.defineMethod("<=>", IndexedCallback.create(M_OP_CMP, 1));
@@ -241,6 +243,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 
     public RubyObject callIndexed(int index, RubyObject[] args) {
         switch (index) {
+        case M_CLONE:
+            return rbClone();
         case M_DUP:
             return dup();
         case M_OP_CMP:
@@ -1229,7 +1233,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 			while ((beg = pat.search(this, pos)) > -1) {
 				hits++;
 				int end = ((RubyMatchData) getRuby().getBackref()).matchEndPosition();
-				result.push(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
+				result.append(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
 				pos = (end == beg) ? beg + 1 : end;
 				if (hits + 1 == limit) {
 					break;
@@ -1238,7 +1242,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		} else {
 			while ((beg = getValue().indexOf(str.getValue(), pos)) > -1) {
 				hits++;
-				result.push(substr(pos, beg - pos));
+				result.append(substr(pos, beg - pos));
 				if (hits + 1 == limit) {
 					break;
 				}
@@ -1246,9 +1250,9 @@ public class RubyString extends RubyObject implements IndexCallable {
 			}
 		}
 		if (hits == 0) {
-			result.push(dup());
+			result.append(dup());
 		} else if (pos <= len) {
-			result.push(substr(pos, len - pos));
+			result.append(substr(pos, len - pos));
 		}
 		if (limit == 0) {
 			while (((RubyString) result.entry(result.getLength() - 1)).empty().isTrue()) {
@@ -1269,9 +1273,9 @@ public class RubyString extends RubyObject implements IndexCallable {
 			while (pat.search(this, start) != -1) {
 				RubyMatchData md = (RubyMatchData) getRuby().getBackref();
 				if (md.getSize() == 1) {
-					ary.push(md.group(0));
+					ary.append(md.group(0));
 				} else {
-					ary.push(md.subseq(1, md.getSize()));
+					ary.append(md.subseq(1, md.getSize()));
 				}
 				if (md.matchEndPosition() == md.matchStartPosition()) {
 					start++;

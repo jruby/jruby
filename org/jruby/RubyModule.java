@@ -1203,7 +1203,7 @@ public class RubyModule extends RubyObject {
                     if (IdUtil.isClassVariable(id)) {
                         RubyString kval = RubyString.newString(getRuby(), id);
                         if (! ary.includes(kval)) {
-                            ary.push(kval);
+                            ary.append(kval);
                         }
                     }
                 }
@@ -1259,7 +1259,7 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isIncluded()) {
-                ary.push(((RubyIncludedClass)p).getDelegate());
+                ary.append(((RubyIncludedClass)p).getDelegate());
             }
         }
 
@@ -1278,9 +1278,9 @@ public class RubyModule extends RubyObject {
             }
 
             if (p.isIncluded()) {
-                ary.push(((RubyIncludedClass) p).getDelegate());
+                ary.append(((RubyIncludedClass) p).getDelegate());
             } else {
-                ary.push(p);
+                ary.append(p);
             }
         }
 
@@ -1401,7 +1401,7 @@ public class RubyModule extends RubyObject {
 
         while (ns != null && ns.getParent() != null) {
             if (!ns.getNamespaceModule().isNil()) {
-                ary.push(ns.getNamespaceModule());
+                ary.append(ns.getNamespaceModule());
             }
             
             ns = ns.getParent();
@@ -1520,13 +1520,13 @@ public class RubyModule extends RubyObject {
 
                     if (! ary.includes(name)) {
                         if (method == null) {
-                            ary.push(getRuby().getNil());
+                            ary.append(getRuby().getNil());
                         }
-                        ary.push(name);
+                        ary.append(name);
                     }
                 } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
-                    ary.push(getRuby().getNil());
-                    ary.push(RubyString.newString(getRuby(), id));
+                    ary.append(getRuby().getNil());
+                    ary.append(RubyString.newString(getRuby(), id));
                 }
                 return RubyMapMethod.CONTINUE;
             }
@@ -1551,17 +1551,17 @@ public class RubyModule extends RubyObject {
                 RubyArray ary = (RubyArray) arg;
 
                 if (method == null) {
-                    ary.push(getRuby().getNil());
-                    ary.push(RubyString.newString(getRuby(), id));
+                    ary.append(getRuby().getNil());
+                    ary.append(RubyString.newString(getRuby(), id));
                 } else if ((method.getNoex() & Constants.NOEX_PROTECTED) != 0) {
                     RubyString name = RubyString.newString(getRuby(), id);
 
                     if (! ary.includes(name)) {
-                        ary.push(name);
+                        ary.append(name);
                     }
                 } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
-                    ary.push(getRuby().getNil());
-                    ary.push(RubyString.newString(getRuby(), id));
+                    ary.append(getRuby().getNil());
+                    ary.append(RubyString.newString(getRuby(), id));
                 }
                 return RubyMapMethod.CONTINUE;
             }
@@ -1586,17 +1586,17 @@ public class RubyModule extends RubyObject {
                 RubyArray ary = (RubyArray) arg;
 
                 if (method == null) {
-                    ary.push(getRuby().getNil());
-                    ary.push(RubyString.newString(getRuby(), id));
+                    ary.append(getRuby().getNil());
+                    ary.append(RubyString.newString(getRuby(), id));
                 } else if ((method.getNoex() & Constants.NOEX_PRIVATE) != 0) {
                     RubyString name = RubyString.newString(getRuby(), id);
 
                     if (! ary.includes(name)) {
-                        ary.push(name);
+                        ary.append(name);
                     }
                 } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
-                    ary.push(getRuby().getNil());
-                    ary.push(RubyString.newString(getRuby(), id));
+                    ary.append(getRuby().getNil());
+                    ary.append(RubyString.newString(getRuby(), id));
                 }
                 return RubyMapMethod.CONTINUE;
             }

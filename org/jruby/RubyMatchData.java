@@ -92,7 +92,7 @@ public class RubyMatchData extends RubyObject {
 
         RubyArray arr = RubyArray.newArray(getRuby(), 0);
         for (long i = beg; i < beg + len; i++) {
-            arr.push(group(i));
+            arr.append(group(i));
         }
         return arr;
     }

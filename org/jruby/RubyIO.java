@@ -613,7 +613,7 @@ public class RubyIO extends RubyObject {
         RubyArray result = RubyArray.newArray(ruby);
         RubyObject line;
         while (! (line = internalGets(separatorArgument)).isNil()) {
-            result.push(line);
+            result.append(line);
         }
         return result;
     }

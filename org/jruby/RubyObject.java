@@ -926,13 +926,13 @@ public class RubyObject implements Cloneable {
                     if ((((IMethod) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                         if (! ((RubyArray) arg).includes(name)) {
                             if (((IMethod) value) == null) {
-                                ((RubyArray) arg).push(getRuby().getNil());
+                                ((RubyArray) arg).append(getRuby().getNil());
                             }
-                            ((RubyArray) arg).push(name);
+                            ((RubyArray) arg).append(name);
                         }
                     } else if (value instanceof EvaluateMethod && ((EvaluateMethod)value).getNode() instanceof ZSuperNode) {
-                        ((RubyArray) arg).push(getRuby().getNil());
-                        ((RubyArray) arg).push(name);
+                        ((RubyArray) arg).append(getRuby().getNil());
+                        ((RubyArray) arg).append(name);
                     }
                     return CONTINUE;
                 }

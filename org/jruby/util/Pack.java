@@ -1,3 +1,27 @@
+/*
+ * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ *
+ * JRuby - http://jruby.sourceforge.net
+ * 
+ * This file is part of JRuby
+ * 
+ * JRuby is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with JRuby; if not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307 USA
+ */
+
 package org.jruby.util;
 
 import java.util.ArrayList;
@@ -6,9 +30,6 @@ import org.jruby.*;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RubyBugException;
 
-/**
- * @author Benoit Cerrina, Anders
- */
 
 public class Pack {
     private static final String sSp10 = "          ";
@@ -421,7 +442,7 @@ public class Pack {
                         int end = lLength;
                         for (int t = lCurValueIdx + lLength - 1; lLength > 0; lLength--, t--)
                             if (value.charAt(t) != ' ' && value.charAt(t) != '\0') break;
-                        lResult.push(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+                        lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
                         lCurValueIdx += end;
                     }
 
@@ -433,14 +454,14 @@ public class Pack {
                         int end = lLength;
                         for (int t = lCurValueIdx + lLength - 1; lLength > 0; lLength--, t--)
                             if (value.charAt(t) != '\0') break;
-                        lResult.push(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+                        lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
                         lCurValueIdx += end;
                     }
                     break;
 
                 case 'a':
                     if (lLength > (lValueLength - lCurValueIdx)) lLength = (lValueLength - lCurValueIdx);
-                    lResult.push(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+                    lResult.append(RubyString.newString(ruby, value.substring(lCurValueIdx, lCurValueIdx + lLength)));
                     lCurValueIdx += lLength;
                     break;
 
@@ -456,7 +477,7 @@ public class Pack {
                                 bits = value.charAt(lCurValueIdx++);
                             lElem.append((bits & 1) != 0 ? '1' : '0');
                         }
-                        lResult.push(RubyString.newString(ruby, lElem.toString()));
+                        lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
 
@@ -472,7 +493,7 @@ public class Pack {
                                 bits = value.charAt(lCurValueIdx++);
                             lElem.append((bits & 128) != 0 ? '1' : '0');
                         }
-                        lResult.push(RubyString.newString(ruby, lElem.toString()));
+                        lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
                 case 'h':
@@ -487,7 +508,7 @@ public class Pack {
                                 bits = value.charAt(lCurValueIdx++);
                             lElem.append(sHexDigits[bits & 15]);
                         }
-                        lResult.push(RubyString.newString(ruby, lElem.toString()));
+                        lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
                 case 'H':
@@ -502,7 +523,7 @@ public class Pack {
                                 bits = value.charAt(lCurValueIdx++);
                             lElem.append(sHexDigits[(bits >>> 4) & 15]);
                         }
-                        lResult.push(RubyString.newString(ruby, lElem.toString()));
+                        lResult.append(RubyString.newString(ruby, lElem.toString()));
                     }
                     break;
                 case 'c':
@@ -516,10 +537,10 @@ public class Pack {
                         for (; lLength-- > 0;) {
                             int c = value.charAt(lCurValueIdx++);
                             if (c > (char) 127) c -= 256;
-                            lResult.push(RubyFixnum.newFixnum(ruby, c));
+                            lResult.append(RubyFixnum.newFixnum(ruby, c));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
 
                     break;
@@ -533,10 +554,10 @@ public class Pack {
                         }
                         for (; lLength-- > 0;) {
                             int c = value.charAt(lCurValueIdx++);
-                            lResult.push(RubyFixnum.newFixnum(ruby, c));
+                            lResult.append(RubyFixnum.newFixnum(ruby, c));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
                     break;
                 case 's':
@@ -552,10 +573,10 @@ public class Pack {
                             short s = (short) (value.charAt(lCurValueIdx++) & 0xff);
                             s <<= 8;
                             s |= tmp;
-                            lResult.push(RubyFixnum.newFixnum(ruby, s));
+                            lResult.append(RubyFixnum.newFixnum(ruby, s));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
 
                     break;
@@ -574,10 +595,10 @@ public class Pack {
                             int s = (short) (value.charAt(lCurValueIdx++) & 0xff);
                             s <<= 8;
                             s |= tmp;
-                            lResult.push(RubyFixnum.newFixnum(ruby, s));
+                            lResult.append(RubyFixnum.newFixnum(ruby, s));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
                     break;
 
@@ -599,10 +620,10 @@ public class Pack {
                             i4 |= (i3 << 16);
                             i4 |= (i2 << 8);
                             i4 |= i1;
-                            lResult.push(RubyFixnum.newFixnum(ruby, i4));
+                            lResult.append(RubyFixnum.newFixnum(ruby, i4));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
 
                     break;
@@ -626,10 +647,10 @@ public class Pack {
                             i4 |= (i3 << 16);
                             i4 |= (i2 << 8);
                             i4 |= i1;
-                            lResult.push(RubyFixnum.newFixnum(ruby, i4));
+                            lResult.append(RubyFixnum.newFixnum(ruby, i4));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
                     break;
                 case 'N':
@@ -648,10 +669,10 @@ public class Pack {
                             i1 |= (value.charAt(lCurValueIdx++) & 0xff);
                             i1 <<= 8;
                             i1 |= (value.charAt(lCurValueIdx++) & 0xff);
-                            lResult.push(RubyFixnum.newFixnum(ruby, i1));
+                            lResult.append(RubyFixnum.newFixnum(ruby, i1));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
                     break;
                 case 'n':
@@ -666,10 +687,10 @@ public class Pack {
                             int i1 = (value.charAt(lCurValueIdx++) & 0xff);
                             i1 <<= 8;
                             i1 |= (value.charAt(lCurValueIdx++) & 0xff);
-                            lResult.push(RubyFixnum.newFixnum(ruby, i1));
+                            lResult.append(RubyFixnum.newFixnum(ruby, i1));
                         }
                         for (; lPadLength-- > 0;)
-                            lResult.push(ruby.getNil());
+                            lResult.append(ruby.getNil());
                     }
                     break;
                 case 'U':
@@ -686,7 +707,7 @@ public class Pack {
                         char[] c = lUtf8.toCharArray();
                         int lNbChar = c.length;
                         for (int lCurCharIdx = 0; lLength-- > 0 && lCurCharIdx < lNbChar; lCurCharIdx++)
-                            lResult.push(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
+                            lResult.append(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
                     }
                     break;
             }

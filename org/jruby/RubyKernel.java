@@ -179,7 +179,7 @@ public class RubyKernel {
 
         RubyString line = argsFile.internalGets(args);
         while (!line.isNil()) {
-            lines.push(line);
+            lines.append(line);
 
             line = argsFile.internalGets(args);
         }
@@ -302,7 +302,7 @@ public class RubyKernel {
         while (iter.hasNext()) {
             String globalVariableName = (String) iter.next();
 
-            globalVariables.push(RubyString.newString(ruby, globalVariableName));
+            globalVariables.append(RubyString.newString(ruby, globalVariableName));
         }
 
         return globalVariables;
@@ -317,7 +317,7 @@ public class RubyKernel {
         if (ruby.getScope().getLocalNames() != null) {
             for (int i = 2; i < ruby.getScope().getLocalNames().size(); i++) {
                 if (ruby.getScope().getLocalNames().get(i) != null) {
-                    localVariables.push(RubyString.newString(ruby, (String) ruby.getScope().getLocalNames().get(i)));
+                    localVariables.append(RubyString.newString(ruby, (String) ruby.getScope().getLocalNames().get(i)));
                 }
             }
         }
@@ -325,7 +325,7 @@ public class RubyKernel {
         RubyVarmap dynamicVars = ruby.getDynamicVars();
         while (dynamicVars != null) {
             if (dynamicVars.getName() != null) {
-                localVariables.push(RubyString.newString(ruby, dynamicVars.getName()));
+                localVariables.append(RubyString.newString(ruby, dynamicVars.getName()));
             }
             dynamicVars = dynamicVars.getNext();
         }
@@ -376,7 +376,7 @@ public class RubyKernel {
         RubyArray lFeatures = (RubyArray) ruby.getGlobalVar("$\"");
         if (lFeatures.index(i2Load).isNil()) {
             load(ruby, recv, i2Load);
-            lFeatures.push(i2Load);
+            lFeatures.append(i2Load);
             return ruby.getTrue();
         }
         return ruby.getFalse();

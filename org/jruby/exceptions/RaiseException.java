@@ -79,7 +79,7 @@ public class RaiseException extends JumpException {
             } else {
                 sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
             }
-            backtrace.push(RubyString.newString(ruby, sb.toString()));
+            backtrace.append(RubyString.newString(ruby, sb.toString()));
         } else {*/
 
         Iterator iter = ruby.getFrameStack().iterator();
@@ -107,7 +107,7 @@ public class RaiseException extends JumpException {
             } else {
                 sb.append(frame.getFile()).append(':').append(frame.getLine());
             }
-            backtrace.push(RubyString.newString(ruby, sb.toString()));
+            backtrace.append(RubyString.newString(ruby, sb.toString()));
 
             frame = previous;
         }

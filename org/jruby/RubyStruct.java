@@ -158,7 +158,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = RubyArray.newArray(ruby);
 
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            member.push(RubySymbol.newSymbol(ruby, args[i].toId()));
+            member.append(RubySymbol.newSymbol(ruby, args[i].toId()));
         }
 
         RubyClass newStruct;
@@ -235,7 +235,7 @@ public class RubyStruct extends RubyObject {
 
         RubyArray result = RubyArray.newArray(ruby, member.getLength());
         for (int i = 0; i < member.getLength(); i++) {
-            result.push(RubyString.newString(ruby, member.entry(i).toId()));
+            result.append(RubyString.newString(ruby, member.entry(i).toId()));
         }
 
         return result;
