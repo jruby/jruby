@@ -36,7 +36,7 @@ if defined? Java
                Character::UnicodeBlock.class_eval("@java_class.name"))
     test_ok(Character::UnicodeBlock.methods.include?("of"))
 
-    # Subclasses, return types and casting
+    # Subclasses and their return types
     l = ArrayList.new
     r = Random.new
     l.add(10)
@@ -47,7 +47,7 @@ if defined? Java
     test_equal("java.util.Random", r_returned.java_class.name)
     test_ok(r_returned.nextInt.kind_of?(Fixnum))
 
-    # Private classes, return types and casting
+    # Private classes, interfaces and return types
     h = HashMap.new
     test_equal(HashMap, h.type)
     h.put("a", 1)

@@ -223,51 +223,56 @@ public class JavaUtil {
         }
     }
 
-    protected static Class getCanonicalJavaClass(Class type) {
-        // Replace wrapper classes with the primitive class that each
-        // represents.
-        if (type == Double.class)
-            return Double.TYPE;
-        if (type == Float.class)
-            return Float.TYPE;
-        if (type == Integer.class)
-            return Integer.TYPE;
-        if (type == Long.class)
-            return Long.TYPE;
-        if (type == Short.class)
-            return Short.TYPE;
-        if (type == Byte.class)
-            return Byte.TYPE;
-        if (type == Character.class)
-            return Character.TYPE;
-        if (type == Void.class)
-            return Void.TYPE;
-        if (type == Boolean.class)
-            return Boolean.TYPE;
-
-        return type;
+    private static Class primitiveToWrapper(Class type) {
+        if (type == Double.TYPE) {
+            return Double.class;
+        } else if (type == Float.TYPE) {
+            return Float.class;
+        } else if (type == Integer.TYPE) {
+            return Integer.class;
+        } else if (type == Long.TYPE) {
+            return Long.class;
+        } else if (type == Short.TYPE) {
+            return Short.class;
+        } else if (type == Byte.TYPE) {
+            return Byte.class;
+        } else if (type == Character.TYPE) {
+            return Character.class;
+        } else if (type == Void.TYPE) {
+            return Void.class;
+        } else if (type == Boolean.TYPE) {
+            return Boolean.class;
+        } else {
+            return type;
+        }
     }
 
     public static Object convertArgument(Object argument, Class parameterType) {
-        // convert void return type to null
-        if (parameterType.equals(Void.TYPE)) {
+        if (argument instanceof JavaObject) {
+            argument = ((JavaObject) argument).getValue();
+        }
+        Class type = primitiveToWrapper(parameterType);
+        if (type == Void.class) {
             return null;
         }
-
-        Object result = argument;
-        if (result instanceof JavaObject) {
-            result = ((JavaObject) result).getValue();
-        }
-        // FIXME: do convertions for all numeric types
-        if (parameterType.equals(Integer.class) || parameterType.equals(Integer.TYPE)) {
-            if (result instanceof Long) {
-                result = new Integer(((Long) result).intValue());
+        if (argument instanceof Number) {
+            final Number number = (Number) argument;
+            if (type == Long.class) {
+                return new Long(number.longValue());
+            } else if (type == Integer.class) {
+                return new Integer(number.intValue());
+            } else if (type == Short.class) {
+                return new Short(number.shortValue());
+            } else if (type == Byte.class) {
+                return new Byte(number.byteValue());
+            } else if (type == Character.class) {
+                return new Character((char) number.intValue());
+            } else if (type == Double.class) {
+                return new Double(number.doubleValue());
+            } else if (type == Float.class) {
+                return new Float(number.floatValue());
             }
-        } else if (parameterType.equals(Long.class) || parameterType.equals(Long.TYPE)) {
-            if (result instanceof Integer) {
-                result = new Long(((Integer) result).longValue());
-            }
         }
-        return result;
+        return argument;
     }
 }

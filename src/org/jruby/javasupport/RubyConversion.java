@@ -39,7 +39,7 @@ public class RubyConversion {
         if (obj instanceof Set)
             obj = new ArrayList((Set) obj);
 
-        Class type = JavaUtil.getCanonicalJavaClass(obj.getClass());
+        Class type = getCanonicalJavaClass(obj.getClass());
 
         return JavaUtil.convertJavaToRuby(getRuby(), obj, type);
     }
@@ -59,7 +59,7 @@ public class RubyConversion {
     }
 
     public Object convertRubyToJava(IRubyObject obj, Class type) {
-        type = JavaUtil.getCanonicalJavaClass(type);
+        type = getCanonicalJavaClass(type);
 
         if (type != null)
             type.getName(); // HACK TO FIX HANG
@@ -113,5 +113,29 @@ public class RubyConversion {
 
         throw new UnsupportedOperationException(
             type.getName() + " not supported");
+    }
+
+    private static Class getCanonicalJavaClass(Class type) {
+        // Replace wrapper classes with the primitive class that each
+        // represents.
+        if (type == Double.class)
+            return Double.TYPE;
+        if (type == Float.class)
+            return Float.TYPE;
+        if (type == Integer.class)
+            return Integer.TYPE;
+        if (type == Long.class)
+            return Long.TYPE;
+        if (type == Short.class)
+            return Short.TYPE;
+        if (type == Byte.class)
+            return Byte.TYPE;
+        if (type == Character.class)
+            return Character.TYPE;
+        if (type == Void.class)
+            return Void.TYPE;
+        if (type == Boolean.class)
+            return Boolean.TYPE;
+        return type;
     }
 }
