@@ -1,5 +1,4 @@
 require 'minirunit'
-
 test_check "bignum"
 def fact(n)
   return 1 if n == 0
@@ -26,7 +25,6 @@ test_ok(2**32 - 5 == (2**32-3)-2)
 
 $good = true;
 for i in 1000..1014
-	raise Exception, 'test'
   $good = false if ((1<<i) != (2**i))
 end
 test_ok($good)
@@ -68,8 +66,7 @@ test_ok(7 == a.remainder(b))
 test_ok(7 == a.remainder(-b))
 test_ok(-7 == (-a).remainder(b))
 test_ok(-7 == (-a).remainder(-b))
-
+puts "ok up to here"
 test_ok(10**40+10**20 == 10000000000000000000100000000000000000000)
 test_ok(10**40/10**20 == 100000000000000000000)
-
 

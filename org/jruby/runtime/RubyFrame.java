@@ -299,6 +299,13 @@ public class RubyFrame {
      *
      */
     public void pop() {
+		//Benoit: according to the POP_FRAME macro 
+		//(and to logic, poping should restore the
+		//previous state) the ruby sourcefile and 
+		//sourceline should be the one saved on the pushed 
+		//frame
+        ruby.setSourceFile(file);
+        ruby.setSourceLine(line);
         self = prev.self;
         args = prev.args;
         lastFunc = prev.lastFunc;
@@ -312,7 +319,5 @@ public class RubyFrame {
 
         prev = prev.prev;
 
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
     }
 }

@@ -78,7 +78,7 @@ public class RaiseException extends JumpException {
                     return RubyArray.nilArray(ruby);
                 }
             }
-//        }
+        //}
 
         while (frame != null && frame.getFile() != null) {
             StringBuffer sb = new StringBuffer(100);
