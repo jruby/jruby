@@ -131,7 +131,7 @@ if defined? Java
   test_ok( privateMethod.accessible?)
 
   helper = cons[0].new_instance(Java::primitive_to_java("X"))
-  test_equal('X', Java::java_to_primitive(privateMethod.invoke(helper)), "call private method")
+  test_equal('X', Java::java_to_primitive(privateMethod.invoke(helper)))
 
   #private static methods
   test_ok(TestHelper.java_class.declared_class_methods.find {|method| method.name == 'staticPrivateMethod'})

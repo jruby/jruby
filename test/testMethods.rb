@@ -22,6 +22,7 @@ rescue ArgumentError => boom
 	test_ok(true)
 end
 
+test_exception(ArgumentError) { testMethod(1, 2, 3) }
 
 class MethodTestingOne
   def method_missing(name, *args)
