@@ -1215,7 +1215,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyArray split(IRubyObject[] args) {
-        return new Split(runtime, this, args).results();
+        return new Split(runtime, this.getValue(), args).results();
 	}
 
 	/** rb_str_scan

@@ -41,19 +41,19 @@ import java.util.ArrayList;
  */
 public class Split {
     private Ruby runtime;
-    private IRubyObject[] args;
     private int limit = 0;
     private RubyRegexp pattern;
     private String splitee;
     private List result = new ArrayList();
 
-    public Split(Ruby runtime, RubyString splitee, IRubyObject[] args) {
+    public Split(Ruby runtime, String splitee, IRubyObject[] args) {
         if (args.length > 2) {
             throw new ArgumentError(runtime, args.length, 2);
         }
-        this.splitee = splitee.getValue();
-        this.args = args;
+        this.splitee = splitee;
         this.runtime = runtime;
+        this.pattern = getPattern(args);
+        this.limit = getLimit(args);
     }
 
     public RubyArray results() {
@@ -67,33 +67,16 @@ public class Split {
     }
 
     private void process() {
-		int argc = args.length;
-		if (argc == 2) {
-			limit = RubyNumeric.fix2int(args[1]);
-		}
-		int pos = 0;
-		int beg = 0;
-		int hits = 0;
-		int len = splitee.length();
-		if (argc > 0) {
-			if (args[0] instanceof RubyRegexp) {
-				pattern = RubyRegexp.regexpValue(args[0]);
-			} else {
-				RubyString stringPattern = RubyString.stringValue(args[0]);
-				if (stringPattern.getValue().equals(" ")) {
-					pattern = RubyRegexp.newRegexp(runtime, "\\s+", 0);
-				} else {
-					pattern = RubyRegexp.newRegexp(stringPattern, 0);
-				}
-			}
-		} else {
-			pattern = RubyRegexp.newRegexp(runtime, "\\s+", 0);
-		}
         if (limit == 1) {
             result.add(splitee);
             return;
         }
-		while ((beg = pattern.search(RubyString.newString(runtime, splitee), pos)) > -1) {
+        int pos = 0;
+		int beg = 0;
+		int hits = 0;
+		int len = splitee.length();
+        RubyString rubySplitee = RubyString.newString(runtime, splitee);
+		while ((beg = pattern.search(rubySplitee, pos)) > -1) {
 			hits++;
 			int end = ((RubyMatchData) runtime.getBackref()).matchEndPosition();
 			addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
@@ -114,6 +97,30 @@ public class Split {
 		}
     }
 
+    private int getLimit(IRubyObject[] args) {
+        if (args.length == 2) {
+            return RubyNumeric.fix2int(args[1]);
+        } else {
+            return 0;
+        }
+    }
+
+    private RubyRegexp getPattern(IRubyObject[] args) {
+        if (args.length == 0) {
+            return RubyRegexp.newRegexp(runtime, "\\s+", 0);
+        }
+        if (args[0] instanceof RubyRegexp) {
+            return RubyRegexp.regexpValue(args[0]);
+        } else {
+            RubyString stringPattern = RubyString.stringValue(args[0]);
+            if (stringPattern.getValue().equals(" ")) {
+                return RubyRegexp.newRegexp(runtime, "\\s+", 0);
+            } else {
+                return RubyRegexp.newRegexp(stringPattern, 0);
+            }
+        }
+    }
+
     private void addResult(String string) {
         if (string == null) {
             return;
@@ -121,18 +128,18 @@ public class Split {
         result.add(string);
     }
 
-	private String substring(String str, int beg, int len) {
-		int length = str.length();
-		if (len < 0 || beg > length) {
+	private String substring(String string, int start, int length) {
+		int stringLength = string.length();
+		if (length < 0 || start > stringLength) {
 			return null;
 		}
-		if (beg < 0) {
-			beg += length;
-			if (beg < 0) {
+		if (start < 0) {
+			start += stringLength;
+			if (start < 0) {
 				return null;
 			}
 		}
-		int end = Math.min(length, beg + len);
-		return str.substring(beg, end);
+		int end = Math.min(stringLength, start + length);
+		return string.substring(start, end);
 	}
 }
