@@ -43,8 +43,6 @@ module JRuby
         def emit_jvm_bytecode(generator)
           factory = generator.factory
 
-          # Create a callback
-          generator.append(factory.createNew("org.jruby.runtime.ReflectionCallbackMethod"))
           # klass
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           generator.java_class_name))
@@ -55,9 +53,26 @@ module JRuby
                                  BCEL::ObjectType.new("java.lang.Class"),
                                  arg_types,
                                  BCEL::Constants::INVOKESTATIC)
+
+          klass =
+            generator.addLocalVariable("args_array",
+                                       BCEL::ObjectType.new("java.lang.Class"),
+                                       nil,
+                                       nil)
+          klass.setStart(generator.getEnd)
+          generator.append(BCEL::ASTORE.new(klass.getIndex))
+
           # methodName
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           @name))
+          methodName =
+            generator.addLocalVariable("methodName",
+                                       BCEL::Type::STRING,
+                                       nil,
+                                       nil)
+          methodName.setStart(generator.getEnd)
+          generator.append(BCEL::ASTORE.new(methodName.getIndex))
+
           # args
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           @arity))
@@ -76,13 +91,33 @@ module JRuby
                                    BCEL::Constants::INVOKESTATIC)
             generator.append(BCEL::AASTORE.new)
           end
+          args = generator.addLocalVariable("args",
+                                            BCEL::ArrayType.new("java.lang.Class", 1),
+                                            nil,
+                                            nil)
+          args.setStart(generator.getEnd)
+          generator.append(BCEL::ASTORE.new(args.getIndex))
 
           # isRestArgs
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           false))
+          isRestArgs = generator.addLocalVariable("isRestArgs",
+                                                  BCEL::Type::BOOLEAN,
+                                                  nil,
+                                                  nil)
+          isRestArgs.setStart(generator.getEnd)
+          generator.append(BCEL::ISTORE.new(isRestArgs.getIndex))
+
           # isStaticMethod
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           true))
+          isStaticMethod = generator.addLocalVariable("isStaticMethod",
+                                                      BCEL::Type::BOOLEAN,
+                                                      nil,
+                                                      nil)
+          isStaticMethod.setStart(generator.getEnd)
+          generator.append(BCEL::ISTORE.new(isStaticMethod.getIndex))
+
           # arity
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           @arity))
@@ -93,8 +128,25 @@ module JRuby
                                  BCEL::ObjectType.new("org.jruby.runtime.Arity"),
                                  arg_types,
                                  BCEL::Constants::INVOKESTATIC)
+          arity = generator.addLocalVariable("arity",
+                                             BCEL::ObjectType.new("org.jruby.runtime.Arity"),
+                                             nil,
+                                             nil)
+          arity.setStart(generator.getEnd)
+          generator.append(BCEL::ASTORE.new(arity.getIndex))
 
+          # Create a callback
+          generator.append(factory.createNew("org.jruby.runtime.ReflectionCallbackMethod"))
           generator.append(BCEL::DUP.new)
+
+          generator.append(BCEL::ALOAD.new(klass.getIndex))
+          generator.append(BCEL::ALOAD.new(methodName.getIndex))
+          generator.append(BCEL::ALOAD.new(args.getIndex))
+          generator.append(BCEL::ILOAD.new(isRestArgs.getIndex))
+          generator.append(BCEL::ILOAD.new(isStaticMethod.getIndex))
+          generator.append(BCEL::ALOAD.new(arity.getIndex))
+
+          # Fixme: destroy local variables
 
           arg_types = BCEL::Type[].new(6)
           arg_types[0] = BCEL::ObjectType.new("java.lang.Class")
