@@ -16,7 +16,7 @@
     <method-alias name="to_str" original="to_s"/>
     <method name="taint"/>
     <method name="freeze"/>
-    <method name="<<">
+    <method name="&lt;&lt;">
       <arity>1</arity>
       <java>op_lshift</java>
     </method>
@@ -54,7 +54,7 @@
     </method>
     <method-alias name="eql?" original="=="/>
     <method-alias name="equal?" original="=="/>
-    <method name="<=>">
+    <method name="&lt;=>">
       <arity>1</arity>
       <java>op_cmp</java>
     </method>
@@ -66,15 +66,15 @@
       <arity>1</arity>
       <java>op_ge</java>
     </method>
-    <method name="<">
+    <method name="&lt;">
       <arity>1</arity>
       <java>op_lt</java>
     </method>
-    <method name="<=">
+    <method name="&lt;=">
       <arity>1</arity>
       <java>op_le</java>
     </method>
-    <method name="&">
+    <method name="&amp;">
       <arity>1</arity>
       <java>op_and</java>
     </method>

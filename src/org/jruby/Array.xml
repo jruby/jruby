@@ -50,7 +50,7 @@
     <method name="concat">
       <arity>1</arity>
     </method>
-    <method name="<<">
+    <method name="&lt;&lt;">
       <arity>1</arity>
       <java>append</java>
     </method>
@@ -121,7 +121,7 @@
       <arity>1</arity>
       <java>include_p</java>
     </method>
-    <method name="<=>">
+    <method name="&lt;=>">
       <arity>1</arity>
       <java>op_cmp</java>
     </method>
@@ -137,7 +137,7 @@
     <method name="*", CallbackFactory.getMethod(RubyArray.class, "op_times", IRubyObject.class));
 
     <method name="-", CallbackFactory.getMethod(RubyArray.class, "op_diff", IRubyObject.class));
-    <method name="&", CallbackFactory.getMethod(RubyArray.class, "op_and", IRubyObject.class));
+    <method name="&amp;", CallbackFactory.getMethod(RubyArray.class, "op_and", IRubyObject.class));
     <method name="|", CallbackFactory.getMethod(RubyArray.class, "op_or", IRubyObject.class));
 
     <method name="uniq", CallbackFactory.getMethod(RubyArray.class, "uniq"));

@@ -17,7 +17,7 @@
       <java>rbClone</java>
     </method>
     <method name="dup"/>
-    <method name="<=>">
+    <method name="&lt;=>">
       <arity>1</arity>
       <java>op_cmp</java>
     </method>
@@ -88,7 +88,7 @@
     <method name="concat">
       <arity>1</arity>
     </method>
-    <method-alias name="<<" original="concat"/>
+    <method-alias name="&lt;&lt;" original="concat"/>
     <!-- crypt -->
     <method name="intern"/>
     <method name="sum">
