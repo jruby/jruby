@@ -117,9 +117,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 	public static RubyClass createStringClass(Ruby ruby) {
         RubyClass stringClass = new StringDefinition(ruby).getType();
 
-		stringClass.includeModule(ruby.getClasses().getComparableModule());
-		stringClass.includeModule(ruby.getClasses().getEnumerableModule());
-
 		stringClass.defineMethod("swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
 		stringClass.defineMethod("upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
 		stringClass.defineMethod("downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));

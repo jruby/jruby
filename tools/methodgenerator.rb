@@ -149,6 +149,7 @@ class ClassDescription
   attr :implementation, true
   attr_writer :superclass
   attr_writer :package
+  attr :ancestors, false
 
   def initialize
     @is_module = false
@@ -158,6 +159,11 @@ class ClassDescription
     @implementation = nil
     @superclass = "Object"
     @package = nil
+    @ancestors = []
+  end
+
+  def add_ancestor(ancestor)
+    @ancestors << ancestor
   end
 
   def generate_java(output)
@@ -196,13 +202,15 @@ class ClassDescription
 
     if @is_module
       output.write("protected RubyModule createModule(Ruby runtime) {\n")
-      output.write('return runtime.defineModule("')
+      output.write('RubyModule result = runtime.defineModule("')
       output.write(@name)
       output.write('");' + "\n")
+      write_ancestors(output)
+      output.write("return result;\n")
       output.write("}\n")
     else
       output.write("protected RubyClass createType(Ruby runtime) {\n")
-      output.write('return runtime.defineClass("')
+      output.write('RubyClass result = runtime.defineClass("')
       output.write(@name)
       output.write('", ')
       if @superclass == :none
@@ -213,6 +221,8 @@ class ClassDescription
         output.write('")')
       end
       output.write(');' + "\n")
+      write_ancestors(output)
+      output.write("return result;\n")
       output.write("}\n")
     end
     output.write("\n")
@@ -246,6 +256,14 @@ class ClassDescription
     output.write("}\n")
 
     output.write("}\n")
+  end
+
+  def write_ancestors(output)
+    @ancestors.each {|ancestor|
+      output.write("result.includeModule(runtime.getClasses().getClass(\"")
+      output.write(ancestor)
+      output.write("\"));\n")
+    }
   end
 
   def write_includes(output)
@@ -314,6 +332,9 @@ class Parser
         class_description.superclass = text
       end
     }
+    parser.on_tag_content("ancestor") {|text|
+      class_description.add_ancestor(text)
+    }
     parser.on_tag_content("implementation") {|text|
       class_description.implementation = text
     }
@@ -347,6 +368,7 @@ class Parser
     parser.on_tag_start("method-alias") {|name, attributes|
       original_name = attributes['original']
       original = methods.detect {|m| m.name == original_name }
+      raise "missing definition: #{original_name}" if original.nil?
       name = attributes['name']
       methods << Alias.new(name, original)
     }

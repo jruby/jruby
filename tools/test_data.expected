@@ -27,7 +27,8 @@ super(runtime);
 }
 
 protected RubyClass createType(Ruby runtime) {
-return runtime.defineClass("Foo", (RubyClass) runtime.getClasses().getClass("FooTemplate"));
+RubyClass result = runtime.defineClass("Foo", (RubyClass) runtime.getClasses().getClass("FooTemplate"));
+return result;
 }
 
 protected void defineMethods(MethodContext context) {

@@ -3,14 +3,10 @@
 <module type="class">
   <name>String</name>
   <superclass>Object</superclass>
+  <ancestor>Comparable</ancestor>
+  <ancestor>Enumerable</ancestor>
+
   <implementation>org.jruby.RubyString</implementation>
-
-  <!--
-
-  stringClass.includeModule(ruby.getClasses().getComparableModule());
-  stringClass.includeModule(ruby.getClasses().getEnumerableModule());
-
-  -->
 
   <instance-methods>
     <method name="replace">

@@ -42,6 +42,22 @@ class TestGenerator < Test::Unit::TestCase
     c = ClassDescription.new
     c.name = "Foo"
     assert_equal("FOO", c.constant_name)
+
+    c.add_ancestor("Froboz")
+    output = stream_string
+    c.write_ancestors(output)
+    assert_equal("result.includeModule(runtime.getClasses().getClass(\"Froboz\"));\n",
+                 output)
+  end
+
+  def test_parser
+    xml = '<?xml version="1.0"?>' +
+      '<module type="class"><ancestor>Foo</ancestor>' +
+      '</module>' + "\n"
+
+    p = Parser.new(xml)
+    description = p.read_input
+    assert_equal(["Foo"], description.ancestors)
   end
 
   def test_method_constant
