@@ -27,10 +27,14 @@ import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Map;
+import java.util.HashMap;
+
 /**
  * The arity of a method is the number of arguments it takes.
  */
-public class Arity {
+public final class Arity {
+    private static Map arities = new HashMap();
     private final int value;
 
     private Arity(int value) {
@@ -38,7 +42,16 @@ public class Arity {
     }
 
     public static Arity createArity(int value) {
-        return new Arity(value);
+        Integer integerValue = new Integer(value);
+        Arity result;
+        synchronized (arities) {
+            result = (Arity) arities.get(integerValue);
+            if (result == null) {
+                result = new Arity(value);
+                arities.put(integerValue, result);
+            }
+        }
+        return result;
     }
 
     public static Arity fixed(int arity) {
@@ -92,4 +105,11 @@ public class Arity {
         }
     }
 
+    public boolean equals(Object other) {
+        return this == other;
+    }
+
+    public int hashCode() {
+        return value;
+    }
 }

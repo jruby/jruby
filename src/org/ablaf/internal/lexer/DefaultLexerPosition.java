@@ -83,26 +83,23 @@ public class DefaultLexerPosition implements ISourcePosition, Serializable {
         return new DefaultLexerPosition(file, line, column);
     }
     
-    /* private Object readResolve() {
-        return positions.get(this);
-    }*/
 
     /**
-     * @see ILexerPosition#getFile()
+     * @see ISourcePosition#getFile()
      */
     public String getFile() {
         return file;
     }
 
     /**
-     * @see ILexerPosition#getLine()
+     * @see ISourcePosition#getLine()
      */
     public int getLine() {
         return line;
     }
 
     /**
-     * @see ILexerPosition#getColumn()
+     * @see ISourcePosition#getColumn()
      */
     public int getColumn() {
         return column;
