@@ -143,7 +143,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyArray glob(IRubyObject recv, RubyString pat) {
         String pattern = pat.toString();
-        String[] files = new Glob(pattern).getNames();
+        String[] files = new Glob(System.getProperty("user.dir"), pattern).getNames();
         return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 

@@ -25,68 +25,70 @@ package org.jruby.util;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-
-import org.apache.oro.io.GlobFilenameFilter;
-import org.jruby.runtime.SelectorUtils;
+import java.util.regex.Pattern;
 
 /**
  * 
- * @author jpetersen
+ * @author jpetersen, sma
  * @version $Revision$
  */
 public class Glob {
-    private File pattern;
-    private boolean patternEndsWithPathDelimeter = false;
-    private boolean patternIsRelative = false;
+	private final String cwd;
+    private final String pattern;
+    private final boolean patternEndsWithPathDelimeter;
+    private final boolean patternIsRelative;
 
     /**
      * Constructor for Glob.
      */
-    public Glob(String pattern) {
-    	// FIXME: don't use user.dir for cwd
-    	String cwd = System.getProperty("user.dir");
+    public Glob(String cwd, String pattern) {
+    	this.cwd = canonicalize(cwd);
     	
         // Java File will strip trailing path delimeter.
         // Make a boolean for this special case (how about multiple slashes?)
-        if (pattern.endsWith("/")) {
-            patternEndsWithPathDelimeter = true;
-        }
+    	this.patternEndsWithPathDelimeter = pattern.endsWith("/") || pattern.endsWith("\\");
         
-       	this.pattern = new File(pattern); //.getAbsoluteFile();
-       	
-       	if (!this.pattern.getPath().equals(this.pattern.getAbsolutePath())) {
+    	if (new File(pattern).isAbsolute()) {
+    		this.patternIsRelative = false;
+    		this.pattern = canonicalize(pattern);
+       	} else {
        		// pattern is relative, but we need to consider cwd; add cwd but remember it's relative so we chop it off later
-       		patternIsRelative = true;
-       		this.pattern = new File(cwd, pattern);
+       		this.patternIsRelative = true;
+       		this.pattern = canonicalize(new File(cwd, pattern).getAbsolutePath());
        	}
     }
     
+    private static String canonicalize(String path) {
+    	try {
+    		return new File(path).getCanonicalPath();
+    	} catch (IOException e) {
+    		return path;
+    	}
+    }
+    
+    /**
+     * Splits path into components, leaves out empty components.
+     */
     private String[] splitPattern() {
         ArrayList dirs = new ArrayList();
-        String path = pattern.getPath();
-        StringBuffer sb = new StringBuffer();
-        
-        for(int i = 0, size = path.length(); i < size; i++) {
-            if (path.charAt(i) == '/' || path.charAt(i) == '\\') {
-                if (sb.length() > 0) {
-                    dirs.add(sb.toString());
-                    sb = new StringBuffer();
-                }
-                // to handle /unix/ and \\windows-server\ files
-                if (dirs.size() == 0) {
-                    sb.append(path.charAt(i));
-                }
-            } else {
-                sb.append(path.charAt(i));
-            }
+        int i = 0;
+        while (true) {
+        	int j = pattern.indexOf(File.separatorChar, i);
+        	if (j == -1) {
+        		if (i < pattern.length()) {
+        			dirs.add(pattern.substring(i));
+        		}
+        		break;
+        	}
+        	if (i < j) {
+        		dirs.add(pattern.substring(i, j));
+        		i = j + 1;
+        	}
         }
-        if (sb.length() > 0) {
-            dirs.add(sb.toString());
-        }
-        return (String[])dirs.toArray(new String[dirs.size()]);
+        return (String[]) dirs.toArray(new String[dirs.size()]);
     }
 
     /**
@@ -96,12 +98,12 @@ public class Glob {
         String[] dirs = splitPattern();
         File root = new File(dirs[0]);
         int idx = 1;
-        if (dirs[0].indexOf('*') > -1 || dirs[0].indexOf('?') > -1) {
+        if (glob2Regexp(dirs[0]) != null) {
             root = new File(".");
             idx = 0;
         }
         for (int size = dirs.length; idx < size; idx++) {
-            if (dirs[idx].indexOf('*') == -1 && dirs[idx].indexOf('?') == -1) {
+            if (glob2Regexp(dirs[idx]) == null) {
                 root = new File(root, dirs[idx]);
             } else {
                 break;
@@ -127,12 +129,10 @@ public class Glob {
     
     private static Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
     	FileFilter filter = new FileFilter() {
-            FilenameFilter filter = new GlobFilenameFilter(pattern);
-            /**
-             * @see java.io.FileFilter#accept(File)
-             */
+            Pattern p = Pattern.compile(glob2Regexp(pattern));
+
             public boolean accept(File pathname) {
-                return (pathname.isDirectory() || !isDirectory) && SelectorUtils.matchPath(pattern, pathname.getName());
+                return (pathname.isDirectory() || !isDirectory) && p.matcher(pathname.getName()).matches();
             }
     	};
     	
@@ -155,17 +155,114 @@ public class Glob {
     
     public String[] getNames() {
         File[] files = getFiles();
-        // FIXME: don't use user.dir for cwd
-        String cwd = System.getProperty("user.dir");
         String[] names = new String[files.length];
+        int offset = cwd.endsWith(File.separator) ? 0 : 1;
         for (int i = 0, size = files.length; i < size; i++) {
-        	if (patternIsRelative && files[i].getPath().startsWith(cwd)) {
+        	String path = files[i].getPath();
+        	if (patternIsRelative && path.startsWith(cwd)) {
         		// chop off cwd when returning results
-        		names[i] = files[i].getPath().substring(cwd.length()) + (patternEndsWithPathDelimeter ? "/" : "");
+        		names[i] = path.substring(cwd.length() + offset);
         	} else {
-        		names[i] = files[i].getPath() + (patternEndsWithPathDelimeter ? "/" : "");
+        		names[i] = path;
         	}
+        	if (patternEndsWithPathDelimeter) {
+        		names[i] += "/";
+        	}
+        	names[i] = names[i].replace('\\', '/');
         }
         return names;
+    }
+    
+    /**
+     * Converts a glob pattern into a normal regexp pattern.
+     * <pre>*         =&gt; .*
+     * ?         =&gt; .
+     * [...]     =&gt; [...]
+     * {...,...} =&gt; (...|...) (no subexpression)
+     * . + ( )   =&gt; \. \+ \( \)</pre>
+     */
+    private static String glob2Regexp(String s) {
+    	StringBuffer t = new StringBuffer(s.length());
+    	boolean pattern = false;
+    	int mode = 0;
+    	boolean escape = false;
+    	for (int i = 0; i < s.length(); i++) {
+    		char c = s.charAt(i);
+    		if (c == '\\') {
+    			escape = true;
+    			continue;
+    		}
+    		if (escape) {
+    			t.append(c);
+    			escape = false;
+    			continue;
+    		}
+    		switch (mode) {
+    		case 0: //normal
+	    		switch (c) {
+	    		case '*':
+	    			pattern = true;
+	    			t.append(".*");
+	    			break;
+	    		case '?':
+	    			pattern = true;
+	    			t.append('.');
+	    			break;
+	    		case '[':
+	    			pattern = true;
+	    			t.append(c);
+	    			mode = 1;
+	    			break;
+	    		case '{':
+	    			pattern = true;
+	    			t.append('(');
+	    			mode = 2;
+	    			break;
+	    		case '.':
+	    		case '(':
+	    		case ')':
+	    		case '+':
+	    		case '|':
+	    		case '^':
+	    		case '$':
+	    			t.append('\\');
+	    			// fall through
+	    		default:
+	    			t.append(c);
+	    		}
+	    		break;
+    		case 1: //inside []
+    			t.append(c);
+    			if (c == ']') {
+    				mode = 0;
+    			}
+    			break;
+    		case 2: //inside {}
+    			switch (c) {
+    			case ',':
+    				t.append('|');
+    				break;
+    			case '}':
+    				t.append(')');
+    				mode = 0;
+    				break;
+    			case '.':
+	    		case '(':
+	    		case ')':
+	    		case '+':
+	    		case '|':
+	    		case '^':
+	    		case '$':
+	    			t.append('\\');
+	    			// fall through
+	    		default:
+	    			t.append(c);
+    			}
+    			break;
+    		default:
+    			throw new Error();//illegal state
+    		}
+    	}
+    	return pattern ? t.toString() : null;
     }
 }
