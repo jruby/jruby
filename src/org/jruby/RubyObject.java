@@ -960,7 +960,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      */
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-            case ObjectDefinition.CLONE :
+            case ObjectDefinition.RBCLONE :
                 return rbClone();
             case ObjectDefinition.DUP :
                 return dup();
@@ -970,7 +970,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
                 return extend(args);
             case ObjectDefinition.FREEZE :
                 return freeze();
-            case ObjectDefinition.FROZEN :
+            case ObjectDefinition.FROZEN_P :
                 return frozen();
             case ObjectDefinition.HASH :
                 return hash();

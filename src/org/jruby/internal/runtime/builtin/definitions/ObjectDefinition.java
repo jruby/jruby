@@ -9,19 +9,19 @@ import org.jruby.runtime.builtin.definitions.ModuleFunctionsContext;
 import org.jruby.util.Asserts;
 
 /**
- * 
+ *
  * @author jpetersen
  * @version $Revision$
  */
 public class ObjectDefinition extends ModuleDefinition {
     private static final int OBJECT = 0x1400;
-    
-    public static final int CLONE = OBJECT | 0x01;
+
+    public static final int RBCLONE = OBJECT | 0x01;
     public static final int DUP = OBJECT | 0x02;
     public static final int EQUAL = OBJECT | 0x03;
     public static final int EXTEND = OBJECT | 0x04;
     public static final int FREEZE = OBJECT | 0x05;
-    public static final int FROZEN = OBJECT | 0x06;
+    public static final int FROZEN_P = OBJECT | 0x06;
     public static final int INSPECT = OBJECT | 0x07;
     public static final int INSTANCE_EVAL = OBJECT | 0x08;
     public static final int INSTANCE_OF = OBJECT | 0x09;
@@ -76,13 +76,13 @@ public class ObjectDefinition extends ModuleDefinition {
         context.createAlias("===", "==");
         context.create("=~", MATCH, 1);
         context.create("class", TYPE, 0);
-        context.create("clone", CLONE, 0);
+        context.create("clone", RBCLONE, 0);
         context.create("dup", DUP, 0);
         context.create("eql?", EQUAL, 1);
         context.createAlias("equal?", "==");
         context.createOptional("extend", EXTEND, 1);
         context.create("freeze", FREEZE, 0);
-        context.create("frozen?", FROZEN, 0);
+        context.create("frozen?", FROZEN_P, 0);
         context.create("hash", HASH, 0);
         context.create("id", ID, 0);
         context.create("__id__", ID, 0);

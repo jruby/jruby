@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<module type="class">
+<module type="module"> <!-- Fixme: why is it created as module? -->
   <name>Object</name>
   <superclass>none</superclass>
   <implementation>org.jruby.RubyObject</implementation>
@@ -77,7 +77,7 @@
       <arity optional="true">1</arity>
     </method>
     <method-alias name="__send__" original="send"/>
-    <method name="singleton_method"/>
+    <method name="singleton_methods"/>
     <method name="taint"/>
     <method name="tainted?">
       <java>tainted</java>
