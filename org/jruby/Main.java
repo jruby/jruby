@@ -136,7 +136,7 @@ public class Main {
 		String[] argv =	processArgs(args);
 		if (sBenchmarkMode)
 			now = System.currentTimeMillis();
-		if (sScript != null) {
+		if (sScript.length() > 0) {
 			runInterpreter(sScript, "-e", argv);
 		} else if (sFileName != null) {
 			runInterpreterOnFile(sFileName, argv);
