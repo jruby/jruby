@@ -23,11 +23,8 @@
  */
 package org.jruby.internal.runtime.load;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -35,10 +32,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
@@ -51,6 +45,7 @@ import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.Library;
 import org.jruby.runtime.load.ExternalScript;
+import org.jruby.runtime.load.JarredScript;
 
 /**
  *
@@ -108,21 +103,27 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#load(String)
      */
     public boolean load(String file) {
-        if (!file.endsWith(".rb")) {
+        findLibrary(file).load(runtime);
+        return true;
+    }
+
+    private Library findLibrary(String file) {
+        if (file.endsWith(".jar")) {
+            URL jarFile = findFile(file);
+            return new JarredScript(jarFile);
+        }
+        if (! file.endsWith(".rb")) {
             file += ".rb";
         }
         if (builtinLibraries.containsKey(file)) {
-            ((Library) builtinLibraries.get(file)).load(runtime);
-            return true;
+            return (Library) builtinLibraries.get(file);
         }
-
         URL url = findFile(file);
         String name = url.toString();
         if (name.startsWith("file:")) {
-            name = name.substring(5);
+            name = name.substring("file:".length());
         }
-        new ExternalScript(url, name).load(runtime);
-        return true;
+        return new ExternalScript(url, name);
     }
 
     /**
@@ -130,49 +131,14 @@ public class LoadService implements ILoadService {
      */
     public boolean require(String file) {
         RubyString name = RubyString.newString(runtime, file);
-        if (!loadedFeatures.contains(name)) {
-            if (file.endsWith(".jar")) {
-                loadJar(file);
-                loadedFeatures.add(name);
-                return true;
-            }
-            if (load(file)) {
-                loadedFeatures.add(name);
-                return true;
-            }
+        if (loadedFeatures.contains(name)) {
+            return false;
+        }
+        if (load(file)) {
+            loadedFeatures.add(name);
+            return true;
         }
         return false;
-    }
-
-    private void loadJar(String file) {
-        URL jarFile = findFile(file);
-
-        runtime.getJavaSupport().addToClasspath(jarFile);
-
-        try {
-            JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream()));
-
-            Manifest mf = in.getManifest();
-            String rubyInit = mf.getMainAttributes().getValue("Ruby-Init");
-            if (rubyInit != null) {
-                JarEntry entry = in.getNextJarEntry();
-                while (entry != null && !entry.getName().equals(rubyInit)) {
-                    entry = in.getNextJarEntry();
-                }
-                if (entry != null) {
-                    IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
-                    try {
-                        runtime.getGlobalVariables().set("$JAR_URL", RubyString.newString(runtime, "jar:" + jarFile + "!/"));
-                        runtime.loadScript("init", new InputStreamReader(in), false);
-                    } finally {
-                        runtime.getGlobalVariables().set("$JAR_URL", old);
-                    }
-                }
-            }
-            in.close();
-        } catch (FileNotFoundException e) {
-        } catch (IOException e) {
-        }
     }
 
     /**
