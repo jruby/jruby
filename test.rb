@@ -91,3 +91,13 @@ hello.sayHelloWorld
 puts 25.eql? 25
 puts 20.between? 15, 25
 puts 20.between? 10, 15
+
+# Float test
+
+puts "Float test\n"
+
+puts 3.5 + 5.7
+puts 3.0 * 3.3
+puts 2.5 / 2.1
+puts 2.5 ** 4.0
+puts 2.56

@@ -31,9 +31,10 @@ package org.jruby;
  * @author  jpetersen
  * @version 
  */
-public class RubyInteger extends RubyNumeric {
+public abstract class RubyInteger extends RubyNumeric {
 
     public RubyInteger(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
+    
 }

@@ -30,7 +30,7 @@ package org.jruby;
  *
  * @author  jpetersen
  */
-public class RubyFloat extends RubyObject {
+public class RubyFloat extends RubyNumeric {
     private double value;
 
     public RubyFloat(Ruby ruby) {
@@ -38,7 +38,7 @@ public class RubyFloat extends RubyObject {
     }
     
     public RubyFloat(Ruby ruby, double value) {
-        super(ruby);
+        super(ruby, ruby.getFloatClass());
         this.value = value;
     }
 
@@ -56,4 +56,52 @@ public class RubyFloat extends RubyObject {
         this.value = value;
     }
     
+    public double getDoubleValue() {
+        return value;
+    }
+    
+    // Float methods (flo_*)
+    
+    /**
+     *
+     */
+    public static RubyFloat m_newFloat(Ruby ruby, double value) {
+        return new RubyFloat(ruby, value);
+    }
+    
+    public RubyArray m_coerce(RubyNumeric other) {
+        return RubyArray.m_newArray(getRuby(), this, m_newFloat(getRuby(), other.getDoubleValue()));
+    }
+    
+    public RubyNumeric op_uminus() {
+        return RubyFloat.m_newFloat(getRuby(), -value);
+    }
+    
+    public RubyNumeric op_plus(RubyNumeric other) {
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() + getDoubleValue());
+    }
+    
+    public RubyNumeric op_minus(RubyNumeric other) {
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() - getDoubleValue());
+    }
+    
+    public RubyNumeric op_mul(RubyNumeric other) {
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() * getDoubleValue());
+    }
+    
+    public RubyNumeric op_div(RubyNumeric other) {
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() / getDoubleValue());
+    }
+    
+    public RubyNumeric op_mod(RubyNumeric other) {
+        return RubyFloat.m_newFloat(getRuby(), getDoubleValue() % getDoubleValue());
+    }
+    
+    public RubyNumeric op_pow(RubyNumeric other) {
+        return RubyFloat.m_newFloat(getRuby(), Math.pow(getDoubleValue(), getDoubleValue()));
+    }
+    
+    public RubyString m_to_s() {
+        return RubyString.m_newString(getRuby(), Double.toString(getValue()));
+    }
 }

@@ -48,6 +48,8 @@ public abstract class RubyNumeric extends RubyObject {
         }
     }
     
+    public abstract double getDoubleValue();
+    
     /* Numeric methods. (num_*)
      *
      */

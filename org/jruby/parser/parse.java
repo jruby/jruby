@@ -6349,7 +6349,7 @@ case 432:
     // Number stuff
     // ------------
     /** Creates a new float object */
-    VALUE rb_float_new(double d) {throw missing();}
+    VALUE rb_float_new(double d) { return RubyFloat.m_newFloat(ruby, d); }
     VALUE INT2FIX(int i) { return new RubyFixnum(ruby, i); }
     VALUE INT2FIX(long i) { return new RubyFixnum(ruby, i); }
     boolean FIXNUM_P(VALUE v) {return v instanceof RubyFixnum;}

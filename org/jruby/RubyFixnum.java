@@ -56,6 +56,10 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
     
+    public double getDoubleValue() {
+        return value;
+    }
+    
     // Methods of the Fixnum Class (fix_*):
     
     public static RubyFixnum m_newFixnum(Ruby ruby, long value) {
