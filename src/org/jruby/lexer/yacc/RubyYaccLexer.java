@@ -267,7 +267,6 @@ public class RubyYaccLexer {
 	 * 
 	 * @param s to be matched against
      * @return true if string matches
-     * @see #isNext(String) 
      */ 
     private boolean isNextNoCase(String s) {
     	StringBuffer buf = new StringBuffer();
