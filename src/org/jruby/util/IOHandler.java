@@ -123,8 +123,8 @@ public abstract class IOHandler {
         subsetModes.checkSubsetOf(modes);
     }
     
-    public String getModeString() {
-        return modes.getModeString();
+    public IOModes getModes() {
+    	return modes;
     }
     
     /**

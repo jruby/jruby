@@ -85,6 +85,26 @@ public class RubyFile extends RubyIO {
         RubyString pathSeparator = RubyString.newString(ruby, File.pathSeparator);
         pathSeparator.freeze();
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
+        
+        // Create constants for open flags
+        fileClass.setConstant("RDONLY", 
+        		RubyFixnum.newFixnum(ruby, IOModes.RDONLY));
+        fileClass.setConstant("WRONLY", 
+        		RubyFixnum.newFixnum(ruby, IOModes.WRONLY));
+        fileClass.setConstant("RDWR", 
+        		RubyFixnum.newFixnum(ruby, IOModes.RDWR));
+        fileClass.setConstant("CREAT", 
+        		RubyFixnum.newFixnum(ruby, IOModes.CREAT));
+        fileClass.setConstant("EXCL", 
+        		RubyFixnum.newFixnum(ruby, IOModes.EXCL));
+        fileClass.setConstant("NOCTTY", 
+        		RubyFixnum.newFixnum(ruby, IOModes.NOCTTY));
+        fileClass.setConstant("TRUNC", 
+        		RubyFixnum.newFixnum(ruby, IOModes.TRUNC));
+        fileClass.setConstant("APPEND", 
+        		RubyFixnum.newFixnum(ruby, IOModes.APPEND));
+        fileClass.setConstant("NONBLOCK", 
+        		RubyFixnum.newFixnum(ruby, IOModes.NONBLOCK));
 
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
@@ -117,8 +137,8 @@ public class RubyFile extends RubyIO {
         this.path = path;
 
         try {
-            handler = new IOHandlerSeekable(getRuntime(), path, mode);
             modes = new IOModes(getRuntime(), mode);
+            handler = new IOHandlerSeekable(getRuntime(), path, modes);
             
             registerIOHandler(handler);
         } catch (IOException e) {
@@ -144,13 +164,18 @@ public class RubyFile extends RubyIO {
 	    if (args.length == 0) {
 	        throw new ArgumentError(getRuntime(), 0, 1);
 	    }
-	    
+
 	    args[0].checkSafeString();
 	    path = args[0].toString();
 	    
 	    String mode = "r";
-	    if (args.length > 1 && args[1] instanceof RubyString) {
-	        mode = ((RubyString)args[1]).getValue();
+	    if (args.length > 1) {
+	    	if (args[1] instanceof RubyString) {
+		        mode = ((RubyString)args[1]).getValue();
+	    	} else { //if (args[1] instanceof RubyFixnum) {
+	    			// TODO: Fix this
+	    		mode = "r+";
+	    	}
 	    }
 	    
 	    // One of the few places where handler may be null.
@@ -179,8 +204,14 @@ public class RubyFile extends RubyIO {
 	    args[0].checkSafeString();
 	    String path = args[0].toString();
 	    String mode = "r";
-	    if (args.length > 1 && args[1] instanceof RubyString) {
-	        mode = ((RubyString)args[1]).getValue();
+	    if (args.length > 1) {
+	    	if (args[1] instanceof RubyString) {
+		        mode = ((RubyString)args[1]).getValue();
+		    } else {
+		    	// TODO: initialize has same crud in it...merge
+	    		mode = "r+";
+		    }
+
 	    }
 	    
 	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
@@ -338,7 +369,6 @@ public class RubyFile extends RubyIO {
     }
     
     public String toString() {
-        return "RubyFile(" + path + ", " + modes.getModeString() + ", " +
-           fileno + ")";
+        return "RubyFile(" + path + ", " + modes + ", " + fileno + ")";
     }
 }

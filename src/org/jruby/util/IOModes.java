@@ -34,64 +34,46 @@ import org.jruby.exceptions.ErrnoError;
  *
  */
 public class IOModes {
+    public static final int RDONLY = 0;
+    public static final int WRONLY = 1;
+    public static final int RDWR = 2;
+    public static final int CREAT = 64;
+    public static final int EXCL = 128;
+    public static final int NOCTTY = 256;
+    public static final int TRUNC = 512;
+    public static final int APPEND = 1024;
+    public static final int NONBLOCK = 2048;
+    
     private Ruby runtime;
-    private String modes;
-    private boolean isReadable = false;
-    private boolean isWriteable = false;
-    private boolean isAppendable = false;
+    private int modes;
     
     public IOModes(Ruby runtime) {
-        modes = "";
+    	modes = 0;
         this.runtime = runtime;
     }
     
-    public IOModes(Ruby runtime, String modes) {
+    public IOModes(Ruby runtime, String modesString) {
+    	this(runtime, convertModesStringToModesInt(runtime, modesString));
+    }
+    
+    public IOModes(Ruby runtime, int modes) {
         this.modes = modes;
         this.runtime = runtime;
-        
-        if (modes.length() == 0) {
-            throw new ArgumentError(runtime, "illegal access mode");
-        }
-
-        switch (modes.charAt(0)) {
-        case 'r' :
-            isReadable = true;
-            break;
-        case 'a' :
-            isAppendable = true;
-        case 'w' :
-            isWriteable = true;
-            break;
-        default :
-            throw new ArgumentError(runtime, "illegal access mode " + modes);
-        }
-
-        if (modes.length() > 1) {
-            int i = modes.charAt(1) == 'b' ? 2 : 1;
-
-            if (modes.length() > i) {
-                if (modes.charAt(i) == '+') {
-                    isReadable = true;
-                    isWriteable = true;
-                } else {
-                    throw new ArgumentError(runtime, "illegal access mode " + modes);
-                }
-            }
-        }
     }
-
+    
     public boolean isReadable() {
-        return isReadable;
+        return (modes & RDWR) != 0 || modes == RDONLY;
     }
     
     public boolean isWriteable() {
-        return isWriteable;
+    	return (modes & RDWR) != 0 || (modes & WRONLY) != 0;
     }
     
     public boolean isAppendable() {
-        return isAppendable;
+    	return (modes & APPEND) != 0;
     }
-    
+
+    // TODO: Make sure all open flags are added to this check.
     public void checkSubsetOf(IOModes superset) {
         if ((superset.isReadable() == false && isReadable()) ||
             (superset.isWriteable() == false && isWriteable()) ||
@@ -100,7 +82,47 @@ public class IOModes {
         }
     }
     
-    public String getModeString() {
-        return modes;
+    // TODO: Make this more intelligible value
+    public String toString() {
+        return ""+modes;
+    }
+    
+    public static int convertModesStringToModesInt(Ruby runtime, 
+    		String modesString) {
+    	int modes = 0;
+    	
+        if (modesString.length() == 0) {
+            throw new ArgumentError(runtime, "illegal access mode");
+        }
+
+        switch (modesString.charAt(0)) {
+        case 'r' :
+            modes |= RDONLY;
+            break;
+        case 'a' :
+            modes |= APPEND;
+        case 'w' :
+            modes |= WRONLY;
+            break;
+        default :
+            throw new ArgumentError(runtime, "illegal access mode " + modes);
+        }
+
+        if (modesString.length() > 1) {
+            int i = modesString.charAt(1) == 'b' ? 2 : 1;
+
+            if (modesString.length() > i) {
+                if (modesString.charAt(i) == '+') {
+                	if ((modes & APPEND) != 0) {
+                		modes = RDWR | APPEND;
+                	} else {
+                		modes = RDWR;
+                	}
+                } else {
+                    throw new ArgumentError(runtime, "illegal access mode " + modes);
+                }
+            }
+        }
+    	return modes;
     }
 }

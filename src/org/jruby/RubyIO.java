@@ -170,7 +170,7 @@ public class RubyIO extends RubyObject {
         }
         
         handler = new IOHandlerUnseekable(ruby, null, outputStream);
-        modes = new IOModes(ruby, handler.getModeString());
+        modes = handler.getModes();
         
         registerIOHandler(handler);
     }
@@ -179,7 +179,7 @@ public class RubyIO extends RubyObject {
         super(ruby, ruby.getClasses().getIoClass());
 
         handler = new IOHandlerUnseekable(ruby, descriptor);
-        modes = new IOModes(ruby, handler.getModeString());
+        modes = handler.getModes();
         
         registerIOHandler(handler);
     }
@@ -326,8 +326,10 @@ public class RubyIO extends RubyObject {
                 if (handler != null) {
                     close();
                 }
-                handler = new IOHandlerSeekable(getRuntime(), path, mode);
                 modes = new IOModes(getRuntime(), mode);
+                handler = new IOHandlerSeekable(getRuntime(), path, modes);
+                
+                registerIOHandler(handler);
             } catch (IOException e) {
                 throw new IOError(getRuntime(), e.toString());
             }
@@ -435,11 +437,9 @@ public class RubyIO extends RubyObject {
             // IOHandler (and fileno).  
             handler = existingIOHandler;
             
-            // If no mode specified..then inherit mode
-            if (mode == null) {
-                mode = handler.getModeString(); 
-            }
-            modes = new IOModes(getRuntime(), mode);
+            // Inherit if no mode specified otherwise create new one
+            modes = (mode == null) ? handler.getModes() :
+            	new IOModes(getRuntime(), mode);
 
             // Reset file based on modes.
             handler.reset(modes);
@@ -885,7 +885,7 @@ public class RubyIO extends RubyObject {
     }
     
     public String toString() {
-        return "RubyIO(" + modes.getModeString() + ", " + fileno + ")";
+        return "RubyIO(" + modes + ", " + fileno + ")";
     }
     
     // IO Object should always be closed by jruby internally or

@@ -48,13 +48,13 @@ public class IOHandlerSeekable extends IOHandler {
     protected RandomAccessFile file;
     protected String path;
     
-    public IOHandlerSeekable(Ruby ruby, String path, String mode) 
+    public IOHandlerSeekable(Ruby ruby, String path, IOModes modes) 
     	throws IOException {
         super(ruby);
         
         this.path = path;
+        this.modes = modes;
         File theFile = new File(path);
-        modes = new IOModes(ruby, mode);
         
         if (theFile.exists()) {
             if (modes.isReadable() == false && modes.isWriteable()== true) {
@@ -86,8 +86,7 @@ public class IOHandlerSeekable extends IOHandler {
     public IOHandler cloneIOHandler() {
         try {
             IOHandler newHandler =
-                new IOHandlerSeekable(getRuntime(), path, 
-                        modes.getModeString());
+                new IOHandlerSeekable(getRuntime(), path, modes); 
             
             newHandler.seek(pos(), SEEK_CUR);
             
