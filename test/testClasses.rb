@@ -20,3 +20,22 @@ test_equal(String, c.superclass)
 test_exception(TypeError) {
   Class.new(Kernel)
 }
+
+module TestClasses
+  testClass = Class.new
+
+  TestClass = testClass
+  test_equal('TestClass', testClass.name)
+
+  DifferentNameForTestClass = testClass
+  test_equal('TestClass', testClass.name)
+
+  testModule = Module.new
+
+  TestModule = testModule
+  test_equal('TestModule', testModule.name)
+
+  DifferentNameForTestModule = testModule
+  test_equal('TestModule', testModule.name)
+end
+

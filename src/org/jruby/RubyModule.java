@@ -3,12 +3,13 @@
  * Created on 09. Juli 2001, 21:38
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
- * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter, Kiel Hodges
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Thomas E Enebo <enebo@acm.org>
  * Charles O Nutter <headius@headius.com>
+ * Kiel Hodges <jruby-devel@selfsosoft.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -282,8 +283,15 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject setConstant(String name, IRubyObject value) {
-        return setInstanceVariable(name, value, "Insecure: can't set constant", 
+        IRubyObject result = setInstanceVariable(name, value, "Insecure: can't set constant", 
                 "class/module");
+        if (value instanceof RubyModule) {
+            RubyModule module = (RubyModule)value;
+            if (module.getBaseName() == null) {
+                module.setBaseName(name);
+            }
+        }
+        return result;
     }
 
     public IRubyObject getConstant(String name) {
