@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
-<project basedir="." default="all" name="JRuby">
+<!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. --><project basedir="." default="all" name="JRuby">
 
-    <property name="build.dir" value="jruby-build"/>
-    <property name="bsf.jar" value="bsf/lib/bsf.jar"/>
+    <property name="build.dir" value="/home/jpetersen/development/jruby-build"/>
+    <property name="bsf.jar" value="/home/jpetersen/development/bsf/lib/bsf.jar"/>
     
     <!--<property name="build.compiler" value="jikes"/-->
     <property name="build.compiler" value="modern"/>
@@ -12,14 +11,14 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.2.3"/>
-    <property name="version.file" value="0_2_3"/>
+    <property name="version" value="0.2.4"/>
+    <property name="version.file" value="0_2_4"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <property name="build.dest" value="${build.dir}/classes"/>
     <property name="build.docs" value="${build.dir}/docs"/>
     <property name="build.tars.base" value="${build.dir}/tars"/>
-    <property name="build.tars" value="${build.tars.base}/jruby_${version.file}"/>
+    <property name="build.tars" value="${build.tars.base}/jruby-${version.file}"/>
     <property name="src.dir" value="."/>
     <property name="base.dir" value="."/>
 
@@ -80,6 +79,12 @@
 
         <copy todir="${build.tars}">
             <fileset dir="${base.dir}">
+            	<include name="build.xml"/>
+            	<include name="COPYING"/>
+            	<include name="jruby.mf"/>
+            	<include name="README"/>
+                <include name="**/*.rb"/>
+                <include name="samples/**/*"/>
                 <include name="gnu/**/*.java"/>
                 <include name="org/**/*.java"/>
                 <include name="gnu/**/*.html"/>
