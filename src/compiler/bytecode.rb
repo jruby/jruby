@@ -356,21 +356,14 @@ module JRuby
         def emit_jvm_bytecode(generator)
           push_runtime(generator)
           generator.appendInvoke("org.jruby.Ruby",
-                                 "getCurrentFrame",
-                                 BCEL::ObjectType.new("org.jruby.runtime.Frame"),
+                                 "getCurrentContext",
+                                 BCEL::ObjectType.new("org.jruby.runtime.ThreadContext"),
                                  BCEL::Type[].new(0),
                                  BCEL::Constants::INVOKEVIRTUAL)
-          generator.appendInvoke("org.jruby.runtime.Frame",
-                                 "getNamespace",
-                                 BCEL::ObjectType.new("org.jruby.runtime.Namespace"),
-                                 BCEL::Type[].new(0),
-                                 BCEL::Constants::INVOKEVIRTUAL)
-          generator.append(BCEL::ALOAD.new(SELF_INDEX))
           generator.appendPush(@name)
-          arg_types = BCEL::Type[].new(2)
-          arg_types[0] = IRUBYOBJECT_TYPE
-          arg_types[1] = BCEL::Type::STRING
-          generator.appendInvoke("org.jruby.runtime.Namespace",
+          arg_types = BCEL::Type[].new(1)
+          arg_types[0] = BCEL::Type::STRING
+          generator.appendInvoke("org.jruby.runtime.ThreadContext",
                                  "getConstant",
                                  IRUBYOBJECT_TYPE,
                                  arg_types,

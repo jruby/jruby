@@ -455,37 +455,37 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
     public void visitClassNode(ClassNode iVisited) {
-        RubyClass superClass =
-                getSuperClassFromNode(iVisited.getSuperNode());
-        RubyClass rubyClass =
-                getOrCreateClass(iVisited.getClassName(), superClass);
-        evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
-    }
-
-    private RubyClass getOrCreateClass(String className, RubyClass superClass) {
+        RubyClass superClass = getSuperClassFromNode(iVisited.getSuperNode());
+        String name = iVisited.getClassName();
         RubyClass rubyClass;
-        if (isConstantDefined(className)) {
-            IRubyObject type = getConstant(className);
-            if (!(type instanceof RubyClass)) {
-                throw new TypeError(runtime, className + " is not a class");
-            }
-            rubyClass = (RubyClass) type;
-            if (rubyClass.getSuperClass().getRealClass() != superClass) {
-                // Class already exists, but with another superclass.
-                // We re-define it with the right superclass.
-                rubyClass = createClass(className, superClass);
-            }
-            if (runtime.getSafeLevel() >= 4) {
-                throw new SecurityError(runtime, "extending class prohibited");
-            }
+        if (matchingClassExists(name, superClass)) {
+            rubyClass = (RubyClass) getConstant(name);
         } else {
-            rubyClass = createClass(className, superClass);
+            rubyClass = createClass(name, superClass);
         }
         if (threadContext.getWrapper() != null) {
             rubyClass.extendObject(threadContext.getWrapper());
             rubyClass.includeModule(threadContext.getWrapper());
         }
-        return rubyClass;
+        evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
+    }
+
+    private boolean matchingClassExists(String className, RubyClass superClass) {
+        if (! isConstantDefined(className)) {
+            return false;
+        }
+        IRubyObject type = getConstant(className);
+        if (! (type instanceof RubyClass)) {
+            throw new TypeError(runtime, className + " is not a class");
+        }
+        RubyClass rubyClass = (RubyClass) type;
+        if (rubyClass.getSuperClass().getRealClass() != superClass) {
+            return false;
+        }
+        if (runtime.getSafeLevel() >= 4) {
+            throw new SecurityError(runtime, "extending class prohibited");
+        }
+        return true;
     }
 
     private RubyClass createClass(String className, RubyClass superClass) {
