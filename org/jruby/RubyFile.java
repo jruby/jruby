@@ -26,6 +26,7 @@ public class RubyFile extends RubyIO {
         fileClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
         
         fileClass.defineSingletonMethod("exist?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
+        fileClass.defineSingletonMethod("exists?", CallbackFactory.getSingletonMethod(RubyFile.class, "exist", RubyString.class));
         fileClass.defineSingletonMethod("unlink", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
         fileClass.defineSingletonMethod("delete", CallbackFactory.getOptSingletonMethod(RubyFile.class, "unlink"));
 		fileClass.defineSingletonMethod("dirname", CallbackFactory.getSingletonMethod(RubyFile.class, "dirname", RubyString.class));

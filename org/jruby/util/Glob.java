@@ -50,11 +50,12 @@ public class Glob {
 
     public File[] getFiles() {
         String[] dirs = splitPattern();
-        if (dirs[0].indexOf('*') > -1 || dirs[0].indexOf('?') > -1) {
-            Asserts.assertNotReached("Not supported yet");
-        }
         File root = new File(dirs[0]);
         int idx = 1;
+        if (dirs[0].indexOf('*') > -1 || dirs[0].indexOf('?') > -1) {
+            root = new File(".");
+            idx = 0;
+        }
         for (int size = dirs.length; idx < size; idx++) {
             if (dirs[idx].indexOf('*') == -1 && dirs[idx].indexOf('?') == -1) {
                 root = new File(root, dirs[idx]);
