@@ -110,7 +110,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("assignable_from?", IndexedCallback.create(ASSIGNABLE_FROM_P, 1));
         javaClassClass.defineMethod("component_type", IndexedCallback.create(COMPONENT_TYPE, 0));
 
-        javaClassClass.getMetaClass().undefMethod("new");
+        javaClassClass.getMetaClass().undefineMethod("new");
 
         return javaClassClass;
     }

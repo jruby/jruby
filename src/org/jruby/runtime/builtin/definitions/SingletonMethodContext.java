@@ -34,6 +34,6 @@ public class SingletonMethodContext {
     }
 
     public void undefineMethod(String name) {
-        singleton.getSingletonClass().undefMethod(name);
+        singleton.getSingletonClass().undefineMethod(name);
     }
 }

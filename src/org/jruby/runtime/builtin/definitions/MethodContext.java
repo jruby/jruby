@@ -36,6 +36,6 @@ public class MethodContext {
     }
 
     public void undefineMethod(String name) {
-        module.undefMethod(name);
+        module.undefineMethod(name);
     }
 }

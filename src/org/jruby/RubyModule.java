@@ -528,7 +528,7 @@ public class RubyModule extends RubyObject {
         addMethod(name, new CallbackMethod(method, Visibility.PRIVATE));
     }
 
-    public void undefMethod(String name) {
+    public void undefineMethod(String name) {
         addMethod(name, UndefinedMethod.getInstance());
     }
 

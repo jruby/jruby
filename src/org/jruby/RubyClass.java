@@ -97,7 +97,7 @@ public class RubyClass extends RubyModule implements IndexCallable {
 
         classClass.defineSingletonMethod("inherited", CallbackFactory.getNilMethod(1));
 
-        classClass.undefMethod("module_function");
+        classClass.undefineMethod("module_function");
     }
 
     /** Invokes if  a class is inherited from an other  class.

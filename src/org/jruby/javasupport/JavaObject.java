@@ -101,7 +101,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
         javaObjectClass.defineMethod("[]", IndexedCallback.create(AREF, 1));
         javaObjectClass.defineMethod("[]=", IndexedCallback.create(ASET, 2));
 
-        javaObjectClass.getMetaClass().undefMethod("new");
+        javaObjectClass.getMetaClass().undefineMethod("new");
 
         return javaObjectClass;
     }

@@ -68,7 +68,7 @@ public class RubyMatchData extends RubyObject {
         matchDataClass.defineMethod("to_s", CallbackFactory.getMethod(RubyMatchData.class, "to_s"));
         matchDataClass.defineMethod("string", CallbackFactory.getMethod(RubyMatchData.class, "string"));
 
-        matchDataClass.getMetaClass().undefMethod("new");
+        matchDataClass.getMetaClass().undefineMethod("new");
 
         return matchDataClass;
     }
