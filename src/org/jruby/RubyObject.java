@@ -114,18 +114,6 @@ public class RubyObject implements Cloneable, IRubyObject {
     	return false;
     }
 
-    public static IRubyObject nilObject(Ruby runtime) {
-        if (runtime.getNil() != null) {
-            return runtime.getNil();
-        } else {
-            return new RubyObject(runtime) {
-                public boolean isNil() {
-                    return true;
-                }
-            };
-        }
-    }
-
     /**
      * Create a new meta class.
      *
