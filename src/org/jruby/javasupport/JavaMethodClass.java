@@ -135,7 +135,8 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return JavaUtil.convertJavaToRuby(getRuntime(), result, method);
+//            return JavaUtil.convertJavaToRuby(getRuntime(), result, method);
+            return new RubyJavaObject(runtime, runtime.getClasses().getJavaObjectClass(), result);
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {

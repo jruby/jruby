@@ -48,6 +48,8 @@ if defined? Java
 #  end
 
   string_class = Java::JavaClass.for_name("java.lang.String")
+  test_equal(string_class, Java::JavaClass.for_name("java.lang.String"))
+
   test_equal("java.lang.String", string_class.to_s)
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
   test_ok(string_class.public?)
@@ -105,6 +107,8 @@ if defined? Java
   test_equal(1, constructor.arity)
   random = constructor.new_instance(Object, Java.primitive_to_java(2002))
   result = method.invoke(random)
+  test_ok("java.lang.Integer", result.java_type)
+  result = Java.java_to_primitive(result)
   test_ok(result.kind_of?(Fixnum))
 
   test_equal("java.lang.Long", Java.primitive_to_java(10).java_type)
@@ -117,5 +121,7 @@ if defined? Java
   method = string_class.java_method("valueOf", "int")
   test_ok(method.static?)
   result = method.invoke(Java.primitive_to_java(101))
-  # ... result type?
+  test_equal(string_class.to_s, result.java_type)
 end
+
+test_print_report

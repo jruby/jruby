@@ -67,7 +67,7 @@ module JavaUtilities
             m = methods.first
             define_method(m.name) {|*args|
               args = convert_arguments(args)
-              m.invoke(self, *args)
+              Java.java_to_primitive(m.invoke(self, *args))
             }
           else
             methods_by_arity = methods.group_by {|m| m.arity }
@@ -77,7 +77,7 @@ module JavaUtilities
                 define_method(name) {|*args|
                   m = methods_by_arity[args.length].first
                   args = convert_arguments(args)
-                  m.invoke(self, *args)
+                  Java.java_to_primitive(m.invoke(self, *args))
                 }
               else
                 # overloaded on same length
@@ -102,7 +102,7 @@ module JavaUtilities
                                "args = JavaProxy.convert_arguments(args);" +
                                "methods = @class_methods['" + name + "'];" +
                                "method = methods.first;" +
-                               "method.invoke(*args);" +
+                               "Java.java_to_primitive(method.invoke(*args));" +
                                "end")
       }
 
