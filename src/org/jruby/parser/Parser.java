@@ -77,12 +77,12 @@ public class Parser {
         }
 
         if (hasNewLocalVariables(result)) {
-            addLocalVariables(result.getLocalVariables());
+            expandLocalVariables(result.getLocalVariables());
         }
         return result.getAST();
     }
 
-    private void addLocalVariables(List localVariables) {
+    private void expandLocalVariables(List localVariables) {
         int oldSize = 0;
         if (runtime.getScope().getLocalNames() != null) {
             oldSize = runtime.getScope().getLocalNames().size();

@@ -25,3 +25,10 @@ k1[0] = 100
 test_equal(nil, h[k1])
 h.rehash
 test_equal(1, h[k1])
+
+h = {1=>2,3=>4}
+test_equal(1, h.index(2))
+test_equal(nil, h.index(10))
+h.default = :hello
+test_equal(1, h.index(2))
+test_equal(:hello, h.index(10))

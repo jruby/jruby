@@ -29,13 +29,19 @@
 
 package org.jruby;
 
-import java.util.*;
-
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.exceptions.SecurityError;
+import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IndexError;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /** Implementation of the Hash class.
  *
@@ -147,7 +153,7 @@ public class RubyHash extends RubyObject {
         hashClass.defineMethod("store", CallbackFactory.getMethod(RubyHash.class, "aset", IRubyObject.class, IRubyObject.class));
 		hashClass.defineMethod("default", CallbackFactory.getMethod(RubyHash.class, "getDefaultValue"));
 		hashClass.defineMethod("default=", CallbackFactory.getMethod(RubyHash.class, "setDefaultValue", IRubyObject.class));
-        //    rb_define_method(rb_cHash,"index", rb_hash_index, 1);
+        hashClass.defineMethod("index", CallbackFactory.getMethod(RubyHash.class, "index", IRubyObject.class));
         hashClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyHash.class, "indices"));
         hashClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyHash.class, "indices"));
         hashClass.defineMethod("size", CallbackFactory.getMethod(RubyHash.class, "size"));
@@ -394,6 +400,17 @@ public class RubyHash extends RubyObject {
 		result.sort_bang();
 		return result;
 	}
+
+    public IRubyObject index(IRubyObject value) {
+        Iterator iter = valueMap.keySet().iterator();
+        while (iter.hasNext()) {
+            Object key = iter.next();
+            if (value.equals(valueMap.get(key))) {
+                return (IRubyObject) key;
+            }
+        }
+        return getDefaultValue();
+    }
 
     public RubyArray indices(IRubyObject[] indices) {
         ArrayList values = new ArrayList(indices.length);
