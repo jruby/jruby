@@ -17,7 +17,7 @@ def test_ok(cond, msg="")
 	#    printf "ok %d\n", $testnum
 	print "."
   else
-    where = caller[0]
+    where = caller.reject {|where| where =~ /minirunit/}[0]
 	#printf "not ok %s %d -- %s\n", $what, $testnum, where
 	#$failed+=1 
     $failed.push(sprintf("not ok %s %d %s-- %s\n", $what, $testnum, msg, where))
