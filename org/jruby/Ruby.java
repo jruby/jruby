@@ -741,12 +741,12 @@ public final class Ruby {
         this.inEval = inEval;
     }
 
-    public FrameStack getFrameStack() {
+    public final FrameStack getFrameStack() {
         return frameStack;
     }
 
     public Frame getActFrame() {
-        return (Frame) getFrameStack().peek();
+        return (Frame) frameStack.peek();
     }
 
     /** Getter for property topFrame.

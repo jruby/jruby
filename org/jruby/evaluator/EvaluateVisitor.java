@@ -101,14 +101,14 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     public RubyObject eval(INode node) {
         result = ruby.getNil();
-        try {
+        /*try {
             if (node != null) {
                 ISourcePosition position = node.getPosition();
                 if (position != null) {
                     _curPos = position;
                 }
-                node.accept(this);
-            }
+        */        node.accept(this);
+        /*    }
 
         } catch (JumpException lJump) {
             throw lJump;
@@ -122,6 +122,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             //lBug.initCause(e);
             throw lBug;
         }
+        */
         return result;
     }
 
