@@ -155,6 +155,9 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitMultipleAsgnNode(MultipleAsgnNode)
      */
     public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
+	if (!(value instanceof RubyArray)) {
+	    value = RubyArray.newArray(runtime, value);
+	}
         result = threadContext.mAssign(self, iVisited, (RubyArray)value, check);
     }
 }

@@ -27,3 +27,5 @@ $h = h
 NIL_CONSTANT=nil
 test_ok(NIL_CONSTANT == nil)
 test_exception(NameError) { NO_SUCH_CONSTANT }
+
+x, (y, z) = 1, 2, 3; test_ok([1,2,nil] == [x,y,z])
