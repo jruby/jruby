@@ -1,9 +1,22 @@
 
-* Move Ruby class creation and method init into classes separate from method implementation.
-* Convert all callbacks to IndexedCallback.
+JRuby TODO
+----------
+$Revision$
 
-* Improved interface for accessing Java classes.
-* Loading external libraries written in Java.
+* Documentation
+    * Write a short overview
+    * Short users guide
+    * Embedding HOWTO
+    * Embedding API docs (first determine what that API *is*)
+
+* Internal class restructuring
+    * Move Ruby class creation and method init into classes separate from
+      method implementation.
+    * Convert all callbacks to IndexedCallback.
+
+* Java support
+    * Improved interface for importing Java classes.
+    * Loading external libraries written in Java.
 
 * Thread support
     * Able to start from a different JVM thread (see also samples/swing2.rb)
@@ -14,8 +27,9 @@
     * Simplify installation (replace mkconfig.rb?)
     - Simplify command line interface (regexp engine)
 
-* Finish ASTWriterVisitor
-* Implement ASTReader
+* Storing/caching parsed code
+    * Finish ASTWriterVisitor
+    * Implement ASTReader
 
 * FIX build.xml (use a filtered copying to fill constants)
 
