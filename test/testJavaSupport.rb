@@ -25,6 +25,8 @@ if defined? Java
     # FIXME: I have no idea why this class isn't available when
     # the test suite is run from ant/junit!? --Anders
 
+    test_equal(nil, TestHelper.getNull())
+
     # Test casting:
     # The instance o's actual class is private, but it's returned as a public
     # interface, which should work.

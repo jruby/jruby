@@ -111,8 +111,11 @@ public class JavaMethod implements Callback {
     }
 
     private Class returnedObjectType(Object javaResult, Method returningMethod) {
-        Class narrowestClass = javaResult.getClass();
         Class widestClass = returningMethod.getReturnType();
+        if (javaResult == null) {
+            return widestClass;
+        }
+        Class narrowestClass = javaResult.getClass();
 
         if (narrowestClass.isPrimitive()) {
             return narrowestClass;
