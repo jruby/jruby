@@ -30,6 +30,8 @@
 
 package org.jruby;
 
+import java.util.*;
+import java.lang.ref.*;
 import org.jruby.runtime.*;
 import org.jruby.marshal.*;
 import org.jruby.exceptions.TypeError;
@@ -43,7 +45,7 @@ public class RubySymbol extends RubyObject {
 
     public RubySymbol(Ruby ruby, String symbol) {
         super(ruby, ruby.getClasses().getSymbolClass());
-        this.symbol = symbol.intern();
+        this.symbol = symbol;
     }
     
     /** rb_to_id
@@ -54,11 +56,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public static RubySymbol nilSymbol(Ruby ruby) {
-        return new RubySymbol(ruby, null) {
-            public boolean isNil() {
-                return true;
-            }
-        };
+        return newSymbol(ruby, null);
     }
     
     public static RubyClass createSymbolClass(Ruby ruby) {
@@ -89,13 +87,22 @@ public class RubySymbol extends RubyObject {
     /* Symbol class methods.
      * 
      */
-    
+
     public static RubySymbol newSymbol(Ruby ruby, String name) {
-        if (name != null) {
-            return new RubySymbol(ruby, name);
-        } else {
-            return nilSymbol(ruby);
+        RubySymbol result = ruby.symbolTable.lookup(name);
+        if (result == null) {
+            if (name == null) {
+                result = new RubySymbol(ruby, null) {
+                        public boolean isNil() {
+                            return true;
+                        }
+                    };
+            } else {
+                result = new RubySymbol(ruby, name);
+            }
+            ruby.symbolTable.store(result);
         }
+        return result;
     }
 
     public RubyFixnum id() {
@@ -115,12 +122,9 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyBoolean equal(RubyObject other) {
-        if (! (other instanceof RubySymbol)) {
-            return getRuby().getFalse();
-        }
-        // Strings are interned, so we can use object identity to compare them
-        return RubyBoolean.newBoolean(getRuby(),
-                                      symbol == ((RubySymbol) other).symbol);
+        // Symbol table ensures only one instance for every name,
+        // so object identity is enough to compare symbols.
+        return RubyBoolean.newBoolean(ruby, this == other);
     }
 
     public RubyObject rbClone() {
@@ -135,5 +139,47 @@ public class RubySymbol extends RubyObject {
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return RubySymbol.newSymbol(input.getRuby(),
                                     input.unmarshalString());
+    }
+
+
+    public static class SymbolTable {
+        /* Using Java's GC to keep the table free from unused symbols. */
+
+        private ReferenceQueue unusedSymbols = new ReferenceQueue();
+        private Map table = new HashMap();
+
+        public RubySymbol lookup(String name) {
+            clean();
+            WeakSymbolEntry ref = (WeakSymbolEntry) table.get(name);
+            if (ref == null) {
+                return null;
+            }
+            return (RubySymbol) ref.get();
+        }
+
+        public void store(RubySymbol symbol) {
+            clean();
+            table.put(symbol.toId(), new WeakSymbolEntry(symbol));
+        }
+
+        private void clean() {
+            WeakSymbolEntry ref;
+            while ((ref = (WeakSymbolEntry) unusedSymbols.poll()) != null) {
+                table.remove(ref.name());
+            }
+        }
+
+        private class WeakSymbolEntry extends WeakReference {
+            private final String name;
+
+            public WeakSymbolEntry(RubySymbol symbol) {
+                super(symbol, unusedSymbols);
+                this.name = symbol.toId();
+            }
+
+            private String name() {
+                return name;
+            }
+        }
     }
 }

@@ -56,8 +56,6 @@ import org.jruby.util.collections.*;
  * @author  jpetersen
  * @version $Revision$
  * @since   0.1
- * @fixme  a mechanism should be there to avoid creating several instances of the same
- * 		   value objects with the same value (this would apply to Symbol and number specifically)
  */
 public final class Ruby {
 
@@ -78,6 +76,7 @@ public final class Ruby {
     public ObjectSpace objectSpace = new ObjectSpace();
 
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
+    public final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
 
     public long randomSeed = 0;
     public Random random = new Random();

@@ -51,6 +51,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestRubyCollect.class));
         suite.addTest(new TestSuite(TestObjectSpace.class));
   	suite.addTest(ScriptTestSuite.suite());
+        suite.addTest(new TestSuite(TestRubySymbol.class));
         return suite;
     }
 }
