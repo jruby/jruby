@@ -94,7 +94,12 @@ public class Glob {
         	if (i < j) {
         		dirs.add(pattern.substring(i, j));
         		i = j + 1;
-        	}
+        	} else if (i == j) {
+                if (i == 0) {
+                    dirs.add("");
+                }
+                i = j + 1;
+            }
         }
         return (String[]) dirs.toArray(new String[dirs.size()]);
     }
@@ -146,17 +151,19 @@ public class Glob {
     	
     	File[] matchArray = parent.listFiles(filter);
         Collection matchingFiles = new ArrayList();
-        
-    	for (int i = 0; i < matchArray.length; i++) {
-    		matchingFiles.add(matchArray[i]);
+
+        if (matchArray != null) {
+            for (int i = 0; i < matchArray.length; i++) {
+    	        matchingFiles.add(matchArray[i]);
     		
-            if (pattern.equals("**")) {
-            	// recurse into dirs
-	    		if (matchArray[i].isDirectory()) {
-	    			matchingFiles.addAll(getMatchingFiles(matchArray[i], pattern, isDirectory));
-	    		}
+                if (pattern.equals("**")) {
+            	    // recurse into dirs
+	    	    if (matchArray[i].isDirectory()) {
+                        matchingFiles.addAll(getMatchingFiles(matchArray[i], pattern, isDirectory));
+                    }
+                }
             }
-    	}
+        }
         
         return matchingFiles;
     }
