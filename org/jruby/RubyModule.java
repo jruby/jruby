@@ -730,12 +730,8 @@ public class RubyModule extends RubyObject {
             body = ent.getMethod();
         } else {
             GetMethodBodyResult gmbr = getMethodBody(name, 0);
-            klass = gmbr.getRecvClass();
-            name = gmbr.getId();
-            noex = gmbr.getNoex();
-            body = gmbr.getBody();
 
-            if (body == null) {
+            if (gmbr == null || gmbr.getBody() == null) {
                 if (scope == 3) {
                     throw new RubyNameException(getRuby(), "super: no superclass method '" + name + "'");
                 }
@@ -746,6 +742,11 @@ public class RubyModule extends RubyObject {
                 }
                 return recv.funcall("method_missing", newArgs);
             }
+
+            klass = gmbr.getRecvClass();
+            name = gmbr.getId();
+            noex = gmbr.getNoex();
+            body = gmbr.getBody();
         }
 
         // if (mid != missing) {
