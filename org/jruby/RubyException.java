@@ -124,7 +124,7 @@ public class RubyException extends RubyObject {
                 if (args[0] == this) {
                     return this;
                 } else {
-                    return (RubyException) newInstance(getInternalClass(), args);
+                    return newInstance(getInternalClass(), args);
                 }
             default :
                 throw new ArgumentError(getRuntime(), "Wrong argument count");

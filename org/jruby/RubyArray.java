@@ -827,7 +827,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
         if (tmp instanceof RubyString) {
             str = (RubyString) tmp.dup();
         } else if (tmp instanceof RubyArray) {
-            str = (RubyString) ((RubyArray) tmp).join(sep);
+            str = ((RubyArray) tmp).join(sep);
         } else {
             str = RubyString.objAsString(tmp);
         }

@@ -346,7 +346,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         int pos = 0;
         int end = repl.length();
         char c;
-        IRubyObject ins = getRuntime().getNil();
+        IRubyObject ins;
         while (pos < end) {
             c = repl.charAt(pos++);
             if (c == '\\' && pos < end) {
@@ -385,7 +385,6 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 }
                 if (!ins.isNil()) {
                     sb.append(((RubyString) ins).getValue());
-                    ins = getRuntime().getNil();
                 }
             } else {
                 sb.append(c);

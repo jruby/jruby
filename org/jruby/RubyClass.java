@@ -38,7 +38,6 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 
@@ -122,7 +121,7 @@ public class RubyClass extends RubyModule {
      */
     public RubyClass getSingletonClassClone() {
         if (!isSingleton()) {
-            return (RubyClass) this;
+            return this;
         }
 
         RubyClass clone = newClass(getRuntime(), getInternalClass(), getSuperClass());

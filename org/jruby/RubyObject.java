@@ -877,13 +877,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             new PrintfFormat(format).sprintf(
                 new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().toName()});
 
-        Frame current = runtime.getCurrentFrame();
-        // runtime.getFrameStack().pop();
-        try {
-            throw new NameError(getRuntime(), msg);
-        } finally {
-            // runtime.getFrameStack().push(current);
-        }
+        throw new NameError(getRuntime(), msg);
     }
 
     /**

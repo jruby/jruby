@@ -254,10 +254,6 @@ public class RubyModule extends RubyObject {
             module = module.getSuperClass();
         }
 
-        if (module == null) {
-            module = getRuntime().getClasses().getObjectClass();
-        }
-
         if (classPath == null && classId != null) {
             classPath = classId;
             classId = null;
@@ -390,7 +386,7 @@ public class RubyModule extends RubyObject {
         RubyModule tmp = this;
         while (tmp != null) {
             if (tmp.hasInstanceVariable(name)) {
-                return (IRubyObject) tmp.getInstanceVariable(name);
+                return tmp.getInstanceVariable(name);
             }
             tmp = tmp.getSuperClass();
         }

@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -165,9 +166,7 @@ public class Main {
                 System.exit(1);
             }
         } else {
-            System.err.println("nothing to interpret");
-            printUsage();
-            System.exit(0);
+            return new InputStreamReader(System.in);
         }
         Asserts.notReached();
         return null;

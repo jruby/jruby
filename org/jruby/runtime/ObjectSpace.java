@@ -97,7 +97,7 @@ public class ObjectSpace {
                 next = (IRubyObject) ref.get();
                 if (next == null) {
                     references.remove(ref);
-                } else if (next != null && next.isKindOf(rubyClass)) {
+                } else if (next.isKindOf(rubyClass)) {
                     return;
                 }
             }

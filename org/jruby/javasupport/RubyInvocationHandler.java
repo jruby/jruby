@@ -2,9 +2,8 @@ package org.jruby.javasupport;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.*;
+import org.jruby.Ruby;
 
 /**
  * A RubyInvocationHandler intercepts method calls to Proxy objects
@@ -47,7 +46,7 @@ public class RubyInvocationHandler implements InvocationHandler {
         String methodName = method.getName();
         IRubyObject[] rubyArgs = factory.convertJavaToRuby(args);
 
-        IRubyObject out = null;
+        IRubyObject out;
 
         // 'get' and 'set' methods (as well as 'is' and 'has') are already
         // handled by JavaSupport.toRubyName.  Should we be using this?

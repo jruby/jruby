@@ -64,7 +64,7 @@ public class RubyJavaIObject extends RubyJavaObject implements InvocationHandler
      * @see InvocationHandler#invoke(Object, Method, Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        IRubyObject result = getRuntime().getNil();
+        IRubyObject result;
 
         RubyHash interfaceProcs = (RubyHash) getInstanceVariable("interfaceProcs");
 
