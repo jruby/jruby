@@ -44,16 +44,24 @@
  */
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
+</text>
+<if test="//module[not(@type='module')]">
+<text>import org.jruby.RubyClass;
 import org.jruby.RubyClasses;
-import org.jruby.RubyModule;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.definitions.MethodContext;
 import org.jruby.runtime.builtin.definitions.SingletonMethodContext;
-import org.jruby.runtime.builtin.definitions.ModuleDefinition;
 import org.jruby.runtime.builtin.definitions.ClassDefinition;
+</text>
+</if>
+<text>import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.definitions.MethodContext;
+</text>
+<if test="//module[@type='module']">
+<text>import org.jruby.RubyModule;
+import org.jruby.runtime.builtin.definitions.ModuleDefinition;
 import org.jruby.runtime.builtin.definitions.ModuleFunctionsContext;
-import org.jruby.util.Asserts;
+</text>
+</if>
+<text>import org.jruby.util.Asserts;
 
 public class </text>
   <value-of select="//module/name"/>
