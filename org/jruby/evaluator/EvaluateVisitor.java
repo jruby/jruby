@@ -227,7 +227,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(ruby, "wrong argument type " + block.getInternalClass().toName() + " (expected Proc)");
         }
 
-        Block oldBlock = ruby.getBlock().getAct();
+        Block oldBlock = ruby.getBlock().getCurrent();
         ruby.getBlock().push(((RubyProc) block).getBlock());
 
         ruby.getIterStack().push(Iter.ITER_PRE);
@@ -237,7 +237,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             eval(iVisited.getIterNode());
         } finally {
             ruby.getIterStack().pop();
-            ruby.getBlock().setAct(oldBlock);
+            ruby.getBlock().setCurrent(oldBlock);
         }
     }
 

@@ -455,64 +455,64 @@ public final class Ruby {
         return yield0(value, null, null, false);
     }
 
-    public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
+    public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean checkArguments) {
         if (!isBlockGiven()) {
             throw new RaiseException(this, getExceptions().getLocalJumpError(), "yield called out of block");
         }
 
         RubyVarmap.push(this);
-        Block actBlock = block.getAct();
+        Block currentBlock = block.getCurrent();
 
-        getFrameStack().push(actBlock.getFrame());
+        getFrameStack().push(currentBlock.getFrame());
 
         Namespace oldNamespace = getNamespace();
         setNamespace(getCurrentFrame().getNamespace());
 
         Scope oldScope = currentScope();
-        getScope().setTop(actBlock.getScope());
+        getScope().setTop(currentBlock.getScope());
 
         block.pop();
 
-        setDynamicVars(actBlock.getDynamicVars());
+        setDynamicVars(currentBlock.getDynamicVars());
 
-        pushClass((klass != null) ? klass : actBlock.getKlass());
+        pushClass((klass != null) ? klass : currentBlock.getKlass());
 
         if (klass == null) {
-            self = actBlock.getSelf();
+            self = currentBlock.getSelf();
         }
 
         if (value == null) {
             value = RubyArray.newArray(this, 0);
         }
 
-        ICallable method = actBlock.getMethod();
+        ICallable method = currentBlock.getMethod();
 
         if (method == null) {
             return getNil();
         }
 
-        INode blockVar = actBlock.getVar();
+        INode blockVar = currentBlock.getVar();
 
         if (blockVar != null) {
             if (blockVar instanceof ZeroArgNode) {
-                if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
+                if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
                     throw new ArgumentError(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
                 }
             } else {
                 if (!(blockVar instanceof MultipleAsgnNode)) {
-                    if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
+                    if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
                         value = ((RubyArray) value).entry(0);
                     }
                 }
-                new AssignmentVisitor(this, self).assign(blockVar, value, acheck);
+                new AssignmentVisitor(this, self).assign(blockVar, value, checkArguments);
             }
         } else {
-            if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
+            if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
                 value = ((RubyArray) value).entry(0);
             }
         }
 
-        getIterStack().push(actBlock.getIter());
+        getIterStack().push(currentBlock.getIter());
 
         RubyObject[] args;
         if (value instanceof RubyArray) {
@@ -537,7 +537,7 @@ public final class Ruby {
             popClass();
             RubyVarmap.pop(this);
 
-            block.setAct(actBlock);
+            block.setCurrent(currentBlock);
             getFrameStack().pop();
 
             setNamespace(oldNamespace);
@@ -856,13 +856,6 @@ public final class Ruby {
      */
     public org.jruby.runtime.RubyRuntime getRuntime() {
         return this.runtime;
-    }
-
-    /** Setter for property runtime.
-     * @param runtime New value of property runtime.
-     */
-    public void setRuntime(org.jruby.runtime.RubyRuntime runtime) {
-        this.runtime = runtime;
     }
 
     /**

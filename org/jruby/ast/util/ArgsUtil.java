@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class ArgsUtil {
     public final static Block beginCallArgs(final Ruby ruby) {
-        final Block actBlock = ruby.getBlock().getAct();
+        final Block actBlock = ruby.getBlock().getCurrent();
 
         if (ruby.getCurrentIter().isPre()) {
             ruby.getBlock().pop();
