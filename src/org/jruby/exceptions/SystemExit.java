@@ -1,7 +1,6 @@
 package org.jruby.exceptions;
 
 import org.jruby.Ruby;
-import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 
 /**
