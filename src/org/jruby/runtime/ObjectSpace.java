@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -31,20 +32,22 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  *
  * @author Anders
  */
 public class ObjectSpace {
-    private HashMap references = new HashMap();
+    private Set references = new HashSet();
     private ReferenceQueue deadReferences = new ReferenceQueue();
 
     public void add(IRubyObject object) {
         cleanup();
-        references.put(new WeakReference(object, deadReferences), null);
+        references.add(new WeakReference(object, deadReferences));
     }
 
     public Iterator iterator(RubyModule rubyClass) {
@@ -66,7 +69,7 @@ public class ObjectSpace {
 
         public ObjectSpaceIterator(RubyModule rubyClass) {
             this.rubyClass = rubyClass;
-            this.iterator = new ArrayList(references.keySet()).iterator();
+            this.iterator = new ArrayList(references).iterator();
             prefetch();
         }
 
