@@ -3,10 +3,12 @@
  * Created on 18.01.2002, 01:04:33
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2002 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -32,6 +34,7 @@ package org.jruby;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.builtin.definitions.ProcDefinition;
 
 /**
  * @author  jpetersen
@@ -45,27 +48,15 @@ public class RubyProc extends RubyObject implements IndexCallable {
         super(ruby, rubyClass);
     }
 
-    private static final int M_CALL = 1;
-    private static final int M_AREF = 2;
-    private static final int M_ARITY = 3;
-
     public static RubyClass createProcClass(Ruby ruby) {
-        RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
-
-        procClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
-        procClass.defineMethod("call", IndexedCallback.createOptional(M_CALL));
-        procClass.defineMethod("[]", IndexedCallback.createOptional(M_AREF));
-        procClass.defineMethod("arity", IndexedCallback.create(M_ARITY, 0));
-        return procClass;
+        return new ProcDefinition(ruby).getType();
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-            case M_CALL :
+            case ProcDefinition.CALL :
                 return call(args);
-            case M_AREF :
-                return call(args);
-            case M_ARITY :
+            case ProcDefinition.ARITY :
                 return arity();
         }
         return super.callIndexed(index, args);
