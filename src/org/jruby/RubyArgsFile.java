@@ -56,11 +56,11 @@ public class RubyArgsFile extends RubyObject {
         defineSingletonMethod("each_line", callbackFactory().getOptMethod(RubyArgsFile.class, "each_line"));
 
 		defineSingletonMethod("filename", callbackFactory().getMethod(RubyArgsFile.class, "filename"));
-		defineSingletonMethod("gets", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "gets"));
-		defineSingletonMethod("readline", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readline"));
-		defineSingletonMethod("readlines", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
+//		defineSingletonMethod("gets", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "gets"));
+//		defineSingletonMethod("readline", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readline"));
+		//defineSingletonMethod("readlines", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
 		
-		defineSingletonMethod("to_a", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
+//		defineSingletonMethod("to_a", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
 		defineSingletonMethod("to_s", callbackFactory().getMethod(RubyArgsFile.class, "filename"));
 
         runtime.defineReadonlyVariable("$FILENAME", RubyString.newString(runtime, "-"));

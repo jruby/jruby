@@ -1,4 +1,4 @@
-package org.jruby.runtime.callback;
+    package org.jruby.runtime.callback;
 
 import net.sf.cglib.reflect.FastClass;
 import net.sf.cglib.reflect.FastMethod;
@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * @see org.jruby.runtime.callback.ReflectionCallback
  */
-public class CglibCallback extends ReflectionCallback {
+public class CglibCallback extends AbstractCallback {
     private static final Map fastClassCache = new HashMap();
 
     public CglibCallback(
@@ -31,23 +31,62 @@ public class CglibCallback extends ReflectionCallback {
     }
 
     protected CallType callType(boolean isStaticMethod) {
+        FastClass fastClass = fastClass(klass);
         if (isStaticMethod) {
-            return new ReflectionCallback.StaticCallType();
+            return new CglibStaticCallType(fastClass);
         } else {
-            return new CglibInstanceCallType();
+            return new CglibInstanceCallType(fastClass);
+        }
+    }
+
+    private class CglibStaticCallType extends CallType {
+        private final FastMethod fastMethod;
+
+        public CglibStaticCallType(FastClass fastClass) {
+            try {
+                fastMethod = fastClass.getMethod(methodName, reflectionArgumentTypes());
+            } catch (SecurityException e) {
+                throw new RuntimeException(
+                    "SecurityException: Cannot get method \""
+                        + methodName
+                        + "\" in class \""
+                        + klass.getName()
+                        + "\" by Reflection.");
+            }
+        }
+
+        public IRubyObject invokeMethod(IRubyObject recv, Object[] arguments)
+                throws IllegalAccessException, InvocationTargetException
+        {
+            if (isRestArgs) {
+                arguments = packageRestArgumentsForReflection(arguments);
+            }
+            Object[] result = new Object[arguments.length + 1];
+            System.arraycopy(arguments, 0, result, 1, arguments.length);
+            result[0] = recv;
+            try {
+                return (IRubyObject) fastMethod.invoke(null, result);
+            } catch (InvocationTargetException e) {
+                if (e.getCause() instanceof ClassCastException) {
+                    throw new RaiseException(recv.getRuntime(), "TypeError", e.getCause().getMessage());
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        public Class[] reflectionArgumentTypes() {
+            Class[] result = new Class[argumentTypes.length + 1];
+            System.arraycopy(argumentTypes, 0, result, 1, argumentTypes.length);
+            result[0] = IRubyObject.class;
+            return result;
         }
     }
 
     private class CglibInstanceCallType extends CallType {
-        private FastClass fastClass;
         private final FastMethod fastMethod;
 
-        public CglibInstanceCallType() {
-            this.fastClass = (FastClass) fastClassCache.get(klass.getName());
-            if (fastClass == null) {
-                this.fastClass = FastClass.create(klass);
-                fastClassCache.put(klass.getName(), fastClass);
-            }
+        public CglibInstanceCallType(FastClass fastClass) {
             try {
                 fastMethod = fastClass.getMethod(methodName, reflectionArgumentTypes());
             } catch (SecurityException e) {
@@ -80,5 +119,14 @@ public class CglibCallback extends ReflectionCallback {
         public Class[] reflectionArgumentTypes() {
             return argumentTypes;
         }
+    }
+
+    private FastClass fastClass(Class klass) {
+        FastClass result = (FastClass) fastClassCache.get(klass.getName());
+        if (result == null) {
+            result = FastClass.create(klass);
+            fastClassCache.put(klass.getName(), result);
+        }
+        return result;
     }
 }
