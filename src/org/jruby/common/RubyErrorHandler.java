@@ -29,6 +29,7 @@ package org.jruby.common;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.parser.SyntaxErrorState;
 
 /** 
@@ -48,7 +49,7 @@ public class RubyErrorHandler implements IRubyErrorHandler {
     }
 
     /**
-     * @see IErrorHandler#isHandled(int)
+     * @see org.ablaf.common.IErrorHandler#isHandled(int)
      */
     public boolean isHandled(int type) {
         if (type == IErrors.WARNING || type == IErrors.VERBOSE) {
@@ -58,7 +59,7 @@ public class RubyErrorHandler implements IRubyErrorHandler {
     }
 
     /**
-     * @see IErrorHandler#handleError(int, ISourcePosition, String, Object)
+     * @see org.ablaf.common.IErrorHandler#handleError(int, ISourcePosition, String, Object)
      */
     public void handleError(int type, ISourcePosition position, String message, Object args) {
         if (isHandled(type)) {
@@ -70,39 +71,41 @@ public class RubyErrorHandler implements IRubyErrorHandler {
                 message = position.getFile() + ": [" + position.getLine() + ", " + position.getColumn() + "] " + message;
             }
 
-            runtime.getGlobalVariables().get("$stderr").callMethod("write", RubyString.newString(runtime, message + "\n"));
+            writeError(message + "\n");
 
             if (type == IErrors.SYNTAX_ERROR) {
-                runtime.getGlobalVariables().get("$stderr").callMethod("write", RubyString.newString(runtime, "\tExpecting:"));
-				String[] lExpected = {};
+                writeError("\tExpecting:");
+                String[] lExpected = {};
 				String lFound = "";
                 if (args instanceof String[]) {
 					lExpected = (String[])args;
-                }
-				else if (args instanceof SyntaxErrorState)
-					
-				{
+                } else if (args instanceof SyntaxErrorState) {
 					lExpected = ((SyntaxErrorState)args).expected();
 					lFound = ((SyntaxErrorState)args).found();
 				}
 				for (int i = 0; i < lExpected.length; i++) {
 					String msg = lExpected[i];
-					runtime.getGlobalVariables().get("$stderr").callMethod("write", RubyString.newString(runtime, " " + msg));
+					writeError(" " + msg);
 				}
-				runtime.getGlobalVariables().get("$stderr").callMethod("write", RubyString.newString(runtime, " but found " + lFound + " instead\n"));
+				writeError(" but found " + lFound + " instead\n");
             }
         }
     }
 
+    private void writeError(String s) {
+        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
+        errorStream.callMethod("write", RubyString.newString(runtime, s));
+    }
+
     /**
-     * @see IErrorHandler#handleError(int, ISourcePosition, String)
+     * @see org.ablaf.common.IErrorHandler#handleError(int, ISourcePosition, String)
      */
     public void handleError(int type, ISourcePosition position, String message) {
         handleError(type, position, message, null);
     }
 
     /**
-     * @see IErrorHandler#handleError(int, String)
+     * @see org.ablaf.common.IErrorHandler#handleError(int, String)
      */
     public void handleError(int type, String message) {
         handleError(type, null, message, null);
