@@ -3,10 +3,12 @@
  *  Created on 05. Oktober 2001, 01:43
  *
  *  Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ *  Copyright (C) 2004 Thomas E Enebo
  *  Jan Arne Petersen <jpetersen@uni-bonn.de>
  *  Stefan Matthias Aust <sma@3plus4.de>
  *  Alan Moore <alan_moore@gmx.net>
  *  Benoit Cerrina <b.cerrina@wanadoo.fr>
+ *  Thomas E Enebo <enebo@acm.org>
  *
  *  JRuby - http://jruby.sourceforge.net
  *
@@ -340,15 +342,6 @@ public class RubyClasses {
     }
 
     /**
-     * Returns the reference to the Process module.
-     *
-     * @return The Process module.
-     */
-    public RubyModule getProcessModule() {
-        return processModule;
-    }
-
-    /**
      * Returns the reference to the IO class.
      *
      * @return The IO class.
@@ -674,6 +667,18 @@ public class RubyClasses {
             precisionModule = RubyPrecision.createPrecisionModule(runtime);
         }
         return precisionModule;
+    }
+
+    /**
+     * Gets the processModule attribute of the RubyClasses object
+     *
+     * @return The processModule value
+     */
+    public RubyModule getProcessModule() {
+        if (processModule == null) {
+            processModule = RubyProcess.createProcessModule(runtime);
+        }
+        return processModule;
     }
 
     /**
