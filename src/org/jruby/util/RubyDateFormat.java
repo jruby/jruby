@@ -44,8 +44,6 @@ import java.util.TimeZone;
  * @version $Revision$
  */
 public class RubyDateFormat extends DateFormat {
-    private String pattern;
-
     private List compiledPattern;
 
     private DateFormatSymbols formatSymbols;
@@ -120,8 +118,6 @@ public class RubyDateFormat extends DateFormat {
     }
     
     public void applyPattern(String pattern) {
-        this.pattern = pattern;
-        
         compilePattern(pattern);
     }
 
