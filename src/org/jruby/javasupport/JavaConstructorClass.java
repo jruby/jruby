@@ -24,7 +24,6 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.JavaObject;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;

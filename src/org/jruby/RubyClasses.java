@@ -43,6 +43,8 @@ import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.javasupport.JavaArray;
+import org.jruby.javasupport.JavaObject;
 
 /**
  * In this class there are references to the core (or built-in) classes

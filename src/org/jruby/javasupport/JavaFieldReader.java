@@ -29,7 +29,6 @@ package org.jruby.javasupport;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Callback;
-import org.jruby.JavaObject;
 import org.jruby.exceptions.SecurityError;
 
 import java.lang.reflect.Field;

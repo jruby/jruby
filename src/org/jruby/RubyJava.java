@@ -6,6 +6,7 @@ import org.jruby.javasupport.JavaClassClass;
 import org.jruby.javasupport.JavaMethodClass;
 import org.jruby.javasupport.JavaConstructorClass;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.JavaObject;
 
 public class RubyJava {
     public static RubyModule createJavaModule(Ruby runtime) {

@@ -27,7 +27,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
-import org.jruby.JavaObject;
 import org.jruby.util.Asserts;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;

@@ -1,9 +1,13 @@
 package org.jruby.javasupport;
 
-import java.util.*;
-import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class RubyConversion {
     RubyProxyFactory factory = null;

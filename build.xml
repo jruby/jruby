@@ -194,4 +194,10 @@
        <fileset dir="${tmp.dir}" includes="**/*.ast.ser"/>
      </delete>
   </target>
+
+  <target name="clean" description="clean almost everything" depends="clean-tmp,clean-ast.ser">
+      <delete file="${test.dir}/test.jar" quiet="true"/>
+      <delete file="${lib.dir}/jruby.jar" quiet="true"/>
+  </target>
+
 </project>
