@@ -231,7 +231,6 @@ public class RubyHash extends RubyObject {
 
         // A block to represent 'default' value for unknown values
         if (recv.getRuntime().isBlockGiven()) {
-        	System.out.println("BLOCK IS GIVEN");
         	hash.defaultProc = RubyProc.newProc(recv.getRuntime());
         }
         
