@@ -75,11 +75,13 @@ public class Main {
             now = System.currentTimeMillis();
         }
 
-        runInterpreter(commandline.getScriptSource(), commandline.displayedFileName());
+        int status = runInterpreter(commandline.getScriptSource(), commandline.displayedFileName());
 
         if (commandline.isBenchmarking) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
+        
+        System.exit(status);
     }
 
     private static void showVersion() {
@@ -102,8 +104,9 @@ public class Main {
         }
     }
 
-    private static void runInterpreter(Reader reader, String filename) {
+    private static int runInterpreter(Reader reader, String filename) {
         Ruby runtime = Ruby.getDefaultInstance();
+        int status = 0;
         try {
             initializeRuntime(runtime, filename);
             Node parsedScript = getParsedScript(runtime, reader, filename);
@@ -111,10 +114,13 @@ public class Main {
 
         } catch (RaiseException rExcptn) {
             runtime.printError(rExcptn.getException());
+            status = 1;
         } catch (ThrowJump throwJump) {
             runtime.printError(throwJump.getNameError());
+            status = 1;
         }
         runtime.tearDown();
+        return status;
     }
 
     private static Node getParsedScript(Ruby runtime, Reader reader, String filename) {
