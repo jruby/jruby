@@ -25,6 +25,7 @@ package org.jruby.internal.runtime.load;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.jar.JarFile;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.LoadError;
+import org.jruby.exceptions.IOError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
@@ -210,7 +212,9 @@ public class LoadService implements ILoadService {
                         if (current.getJarEntry(name) != null) {
                             return new URL(entry + name);
                         }
+                    } catch (FileNotFoundException ignored) {
                     } catch (IOException e) {
+                        throw IOError.fromException(runtime, e);
                     }
                 } else {
                     File current = new File(entry, name);
@@ -224,6 +228,7 @@ public class LoadService implements ILoadService {
                 return current.toURL();
             }
         } catch (MalformedURLException e) {
+            throw new IOError(runtime, e.getMessage());
         }
         return null;
     }
