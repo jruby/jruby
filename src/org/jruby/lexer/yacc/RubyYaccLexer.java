@@ -545,8 +545,7 @@ public class RubyYaccLexer implements IYaccLexer {
     void heredoc_restore() {
         HereDocNode here = (HereDocNode) lex_strterm;
 
-        // Maybe we need to unread more than this?
-        support.unreadMany(here.getLastLineLength());
+        support.setBuffer(here.getLastLine(), here.getPosition());
     }
 
     int hereDocument() {
@@ -574,6 +573,9 @@ public class RubyYaccLexer implements IYaccLexer {
             if (c == '\n') {
                 support.unread();
             }
+            
+            // Something missing here...
+            /*
             int lastLineLength = here.getLastLineLength();
 
             if (lastLineLength > 0) {
@@ -582,6 +584,7 @@ public class RubyYaccLexer implements IYaccLexer {
             	str.append(support.readLine());
             	str.append("\n");
             }
+            */
             
             do {
                 str.append(support.readLine());
@@ -634,7 +637,7 @@ public class RubyYaccLexer implements IYaccLexer {
             } while (!whole_match_p(eos, indent));
             str = new StringBuffer(tok());
         }
-        //heredoc_restore();
+        heredoc_restore();
         lex_strterm = new StrTermNode(support.getPosition(), -1, 0, 0);
         yaccValue = str.toString();
         return Token.tSTRING_CONTENT;
@@ -749,14 +752,12 @@ public class RubyYaccLexer implements IYaccLexer {
             support.unread();
         }
 
-        // TODO: Very confusing....ruby stores pointer to last line read and
-        // some offsets to back up.  multiple <<A,<<B feature makes use of this
-        // and we do not do it the same (as we are not using pointers).  Hence,
-        // multiple heredoc support is broken.
-
+        // TODO: Adding a newline onto line make assertions in unit/test pass,
+        // but then our <<A,<<B test case fails.  For now, make our internal test
+        // pass..
         String line = support.readLine();
         String tok = tok();
-        lex_strterm = new HereDocNode(support.getPosition(), tok, func, line.length());
+        lex_strterm = new HereDocNode(support.getPosition(), tok, func, line);
 
         return term == '`' ? Token.tXSTRING_BEG : Token.tSTRING_BEG;
     }
@@ -882,6 +883,17 @@ public class RubyYaccLexer implements IYaccLexer {
         	default: System.err.print("'" + (char)token + "',"); break;
         }
     }
+    
+    /*
+     * DEBUGGING HELP
+    private int yylex() {
+        int token = yylex2();
+        
+        printToken(token);
+        
+        return token;
+    }
+    */
     
     /**
      *  Returns the next token. Also sets yyVal is needed.

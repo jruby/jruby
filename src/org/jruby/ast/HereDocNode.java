@@ -31,13 +31,14 @@ import org.ablaf.common.ISourcePosition;
 public class HereDocNode extends AbstractNode {
     String value;
     int func;
-    int lastLineLength;
+    String lastLine;
     
     public HereDocNode(ISourcePosition position, String value, int func, 
-            int lastLineLength) {
+            String lastLine) {
+        super(position);
         this.value = value;
         this.func = func;
-        this.lastLineLength = lastLineLength;
+        this.lastLine = lastLine;
     }
     
     public String getValue() {
@@ -48,8 +49,8 @@ public class HereDocNode extends AbstractNode {
         return func;
     }
     
-    public int getLastLineLength() {
-        return lastLineLength;
+    public String getLastLine() {
+        return lastLine;
     }
 
     public void accept(INodeVisitor visitor) {
