@@ -51,13 +51,13 @@ public class Flip3Node extends Node {
          *    rb_bug("unexpected local variable");
          */
         
-        if (ruby.getRubyScope().getValue(getCount()).isFalse()) {
+        if (ruby.getScope().getValue(getCount()).isFalse()) {
             RubyObject result = getBeginNode().eval(ruby, self).isTrue() ? ruby.getFalse() : ruby.getTrue();
-            ruby.getRubyScope().setValue(getCount(), result);
+            ruby.getScope().setValue(getCount(), result);
             return result;
         } else {
             if (getEndNode().eval(ruby, self).isTrue()) {
-                ruby.getRubyScope().setValue(getCount(), ruby.getFalse());
+                ruby.getScope().setValue(getCount(), ruby.getFalse());
             }
             return ruby.getTrue();
         }

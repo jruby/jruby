@@ -127,7 +127,7 @@ public class RubyRuntime {
         ruby.getRubyFrame().setLastClass(null);
         ruby.getRubyFrame().setSelf(self);
         ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
-        ruby.getRubyScope().push();
+        ruby.getScope().push();
 
         /* default visibility is private at loading toplevel */
         ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
@@ -154,7 +154,7 @@ public class RubyRuntime {
                     free(ruby_scope->local_tbl);
             	}*/
             ruby.setCRef(savedCRef);
-            ruby.getRubyScope().pop();
+            ruby.getScope().pop();
             ruby.getRubyFrame().pop();
             ruby.popClass();
             RubyVarmap.pop(ruby);

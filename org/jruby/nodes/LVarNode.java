@@ -44,7 +44,7 @@ public class LVarNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return ruby.getRubyScope().getValue(getCount());
+        return ruby.getScope().getValue(getCount());
     }
 	/**
 	 * Accept for the visitor pattern.

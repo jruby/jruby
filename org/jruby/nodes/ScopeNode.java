@@ -79,7 +79,7 @@ public class ScopeNode extends Node implements CallableNode {
 		CRefNode savedCRef = null;
 
 		ruby.getRubyFrame().tmpPush();
-		ruby.getRubyScope().push();
+		ruby.getScope().push();
 		CRefNode lRefValue = getRefValue();
 		if (lRefValue != null) {
 			savedCRef = ruby.getCRef();
@@ -88,8 +88,8 @@ public class ScopeNode extends Node implements CallableNode {
 		}
 
 		if (getTable() != null) {
-            ruby.getRubyScope().setLocalValues(new ArrayList(Collections.nCopies(getTable().size(), ruby.getNil())));
-			ruby.getRubyScope().setLocalNames(getTable());
+            ruby.getScope().setLocalValues(new ArrayList(Collections.nCopies(getTable().size(), ruby.getNil())));
+			ruby.getScope().setLocalNames(getTable());
         } /* else
 			{
 			ruby.getRubyScope().setLocalValues(null);
@@ -98,7 +98,7 @@ public class ScopeNode extends Node implements CallableNode {
 
 		RubyObject result = getNextNode().eval(ruby, self);
 
-		ruby.getRubyScope().pop();
+		ruby.getScope().pop();
 		ruby.getRubyFrame().tmpPop();
 
 		if (savedCRef != null) {
@@ -120,15 +120,15 @@ public class ScopeNode extends Node implements CallableNode {
 		ruby.pushClass();
 		ruby.setRubyClass(module);
 		ruby.setCBase(module); //CHAD
-		ruby.getRubyScope().push();
+		ruby.getScope().push();
 		RubyVarmap.push(ruby);
 
 		if (getTable() != null) {
-            ruby.getRubyScope().setLocalValues(new ArrayList(Collections.nCopies(getTable().size(), ruby.getNil())));
-			ruby.getRubyScope().setLocalNames(getTable());
+            ruby.getScope().setLocalValues(new ArrayList(Collections.nCopies(getTable().size(), ruby.getNil())));
+			ruby.getScope().setLocalNames(getTable());
 		} else {
-			ruby.getRubyScope().setLocalValues(null);
-			ruby.getRubyScope().setLocalNames(null);
+			ruby.getScope().setLocalValues(null);
+			ruby.getScope().setLocalNames(null);
 		}
 
 		// +++
@@ -155,7 +155,7 @@ public class ScopeNode extends Node implements CallableNode {
 		// POP_TAG();
 		ruby.getCRef().pop();
 		RubyVarmap.pop(ruby);
-		ruby.getRubyScope().pop();
+		ruby.getScope().pop();
 		ruby.popClass();
 		ruby.getRubyFrame().tmpPop();
 		//        if (trace_func){
@@ -176,7 +176,7 @@ public class ScopeNode extends Node implements CallableNode {
 
         List valueList = null;
 
-		ruby.getRubyScope().push();
+		ruby.getScope().push();
 		CRefNode lRefValue = getRefValue();
 		if (lRefValue != null) {
 			savedCref = ruby.getCRef(); // s.a.
@@ -187,13 +187,13 @@ public class ScopeNode extends Node implements CallableNode {
 		if (getTable() != null) {
             valueList = new ArrayList(Collections.nCopies(getTable().size(), ruby.getNil()));
 
-			ruby.getRubyScope().setLocalValues(valueList);
-			ruby.getRubyScope().setLocalNames(getTable());
+			ruby.getScope().setLocalValues(valueList);
+			ruby.getScope().setLocalNames(getTable());
 		} else {
-			valueList = ruby.getRubyScope().getLocalValues();
+			valueList = ruby.getScope().getLocalValues();
 
-			ruby.getRubyScope().setLocalValues(null);
-			ruby.getRubyScope().setLocalNames(null);
+			ruby.getScope().setLocalValues(null);
+			ruby.getScope().setLocalNames(null);
 		}
 
 		Node callBody = getNextNode();
@@ -281,7 +281,7 @@ public class ScopeNode extends Node implements CallableNode {
 
 		RubyVarmap.pop(ruby);
 
-		ruby.getRubyScope().pop();
+		ruby.getScope().pop();
 
 		if (savedCref != null) {
 			ruby.setCRef(savedCref);

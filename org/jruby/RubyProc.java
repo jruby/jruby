@@ -1,12 +1,12 @@
 /*
  * RubyProc.java - No description
- * Created on 25. November 2001, 00:00
+ * Created on 18.01.2002, 01:04:33
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -32,6 +32,10 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
+/**
+ * @author  jpetersen
+ * @version $Revision$
+ */
 public class RubyProc extends RubyObject {
     // private originalThread = null
 
@@ -41,33 +45,23 @@ public class RubyProc extends RubyObject {
     public RubyProc(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
     }
-    
+
     public static RubyClass createProcClass(Ruby ruby) {
-    	RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
-    	
-    	Callback call = new ReflectionCallbackMethod(RubyProc.class, "call", true);
-    	Callback proc = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
-			RubyObject[].class, true, true);
-    	Callback s_new = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
-                                                                RubyObject[].class, true, true);
-    	
-    	procClass.defineMethod("call", call);
-    	
-    	procClass.defineSingletonMethod("new", s_new);
-	ruby.defineGlobalFunction("proc", proc);
-    	
-    	return procClass;
+        RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
+
+        procClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
+        
+        procClass.defineMethod("call", CallbackFactory.getOptMethod(RubyProc.class, "call"));
+
+        return procClass;
     }
 
-    public static RubyProc s_new(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
+    public static RubyProc newInstance(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
         RubyProc proc = newProc(ruby, ruby.getClasses().getProcClass());
-        
+
         proc.callInit(args);
-        
+
         return proc;
-    }
-    public static RubyProc proc(Ruby ruby, RubyClass rubyClass, RubyObject[] args) {
-	return newProc(ruby, ruby.getClasses().getProcClass());
     }
 
     public static RubyProc newProc(Ruby ruby, RubyClass rubyClass) {
@@ -83,7 +77,7 @@ public class RubyProc extends RubyObject {
         newProc.block.iter = newProc.block.prev != null ? 1 : 0;
 
         newProc.block.frame = ruby.getRubyFrame();
-        newProc.block.scope = ruby.getRubyScope();
+        newProc.block.scope = ruby.getScope();
         // +++
 
         return newProc;
@@ -102,9 +96,7 @@ public class RubyProc extends RubyObject {
         RubyObject result = getRuby().getNil();
 
         try {
-            result = getRuby().yield0(
-                args != null ? RubyArray.create(getRuby(), null, args) : null,
-                null, null, true);
+            result = getRuby().yield0(args != null ? RubyArray.create(getRuby(), null, args) : null, null, null, true);
         } finally {
             getRuby().getIter().pop();
             getRuby().setBlock(oldBlock);

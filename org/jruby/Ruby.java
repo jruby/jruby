@@ -381,8 +381,8 @@ public final class Ruby {
         CRefNode oldCRef = getCRef();
         setCRef(getRubyFrame().getCbase());
 
-        RubyScope oldScope = getRubyScope();
-        setRubyScope(tmpBlock.scope);
+        RubyScope oldScope = getScope();
+        setScope(tmpBlock.scope);
         block.pop();
 
         if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
@@ -463,7 +463,7 @@ public final class Ruby {
 
         // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
         //    scope_dup(old_scope);
-        setRubyScope(oldScope);
+        setScope(oldScope);
 
         /*
          * if (state) {
@@ -582,14 +582,14 @@ public final class Ruby {
     /** Getter for property rubyScope.
      * @return Value of property rubyScope.
      */
-    public RubyScope getRubyScope() {
+    public RubyScope getScope() {
         return rubyScope;
     }
 
     /** Setter for property rubyScope.
      * @param rubyScope New value of property rubyScope.
      */
-    public void setRubyScope(RubyScope rubyScope) {
+    public void setScope(RubyScope rubyScope) {
         this.rubyScope = rubyScope;
     }
 

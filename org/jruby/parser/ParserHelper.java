@@ -219,8 +219,8 @@ public class ParserHelper {
      *@return Contents of $~, or Nil if $~ hasn't been set in this scope.
      */
     public RubyObject getBackref() {
-        if (ruby.getRubyScope().getLocalValues() != null) {
-            return ruby.getRubyScope().getValue(1);
+        if (ruby.getScope().getLocalValues() != null) {
+            return ruby.getScope().getValue(1);
         }
         return ruby.getNil();
     }
@@ -231,8 +231,8 @@ public class ParserHelper {
      *@param val The new value of $~
      */
     public void setBackref(RubyObject val) {
-        if (ruby.getRubyScope().getLocalValues() != null) {
-            ruby.getRubyScope().setValue(1, val);
+        if (ruby.getScope().getLocalValues() != null) {
+            ruby.getScope().setValue(1, val);
         } else {
             special_local_set("~", val);
         }
@@ -244,8 +244,8 @@ public class ParserHelper {
      *@return Contents of $_, or Nil if $_ hasn't been set in this scope.
      */
     public RubyObject getLastline() {
-        if (ruby.getRubyScope().getLocalValues() != null) {
-            return ruby.getRubyScope().getValue(0);
+        if (ruby.getScope().getLocalValues() != null) {
+            return ruby.getScope().getValue(0);
         }
         return ruby.getNil();
     }
@@ -256,8 +256,8 @@ public class ParserHelper {
      *@param val The new value of $_
      */
     public void setLastline(RubyObject val) {
-        if (ruby.getRubyScope().getLocalValues() != null) {
-            ruby.getRubyScope().setValue(0, val);
+        if (ruby.getScope().getLocalValues() != null) {
+            ruby.getScope().setValue(0, val);
         } else {
             special_local_set("_", val);
         }
@@ -1045,7 +1045,7 @@ public class ParserHelper {
      */
     public void top_local_init() {
         local_push();
-        List lLocalNames = ruby.getRubyScope().getLocalNames();
+        List lLocalNames = ruby.getScope().getLocalNames();
         int lcnt = lLocalNames != null ? lLocalNames.size() : 0;
         if (lcnt > 0) {
             lvtbl.tbl = new ArrayList();
@@ -1071,23 +1071,23 @@ public class ParserHelper {
         int i;
 
         if (len > 0) {
-            i = ruby.getRubyScope().getLocalNames() != null ? ruby.getRubyScope().getLocalNames().size() : 0;
+            i = ruby.getScope().getLocalNames() != null ? ruby.getScope().getLocalNames().size() : 0;
 
             if (i < len) {
-                if (i == 0 || (ruby.getRubyScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {
+                if (i == 0 || (ruby.getScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {
                     //int vi = 0;
                     List values = new ArrayList(len); // len + 1
-                    if (ruby.getRubyScope().getLocalValues() != null) {
-                        values.addAll(ruby.getRubyScope().getLocalValues().subList(0, i));
+                    if (ruby.getScope().getLocalValues() != null) {
+                        values.addAll(ruby.getScope().getLocalValues().subList(0, i));
                     }
                     values.addAll(Collections.nCopies(len - values.size(), ruby.getNil()));
-                    ruby.getRubyScope().setLocalValues(values);
-                    ruby.getRubyScope().setFlags(ruby.getRubyScope().getFlags() | RubyScope.SCOPE_MALLOC);
+                    ruby.getScope().setLocalValues(values);
+                    ruby.getScope().setFlags(ruby.getScope().getFlags() | RubyScope.SCOPE_MALLOC);
                 } else {
                     List values = new ArrayList(len); // Collections.nCopies(len /* + 1*/, ruby.getNil()));
-                    values.addAll(ruby.getRubyScope().getLocalValues()); // copy(ruby.getRubyScope().getLocalValues(), values.size());
+                    values.addAll(ruby.getScope().getLocalValues()); // copy(ruby.getRubyScope().getLocalValues(), values.size());
                     values.addAll(Collections.nCopies(len - values.size(), ruby.getNil()));
-                    ruby.getRubyScope().setLocalValues(values);
+                    ruby.getScope().setLocalValues(values);
                 }
 
                 // if (ruby.getRubyScope().getLocalNames() != null && ruby.getRubyScope().getLocalVars(-1) == null) {
@@ -1095,7 +1095,7 @@ public class ParserHelper {
                 // }
 
                 // ruby.getRubyScope().setLocalVars(-1, null);
-                ruby.getRubyScope().setLocalNames(local_tbl());
+                ruby.getScope().setLocalNames(local_tbl());
             }
         }
         local_pop();
@@ -1123,7 +1123,7 @@ public class ParserHelper {
         top_local_init();
         int cnt = getLocalIndex(c);
         top_local_setup();
-        ruby.getRubyScope().setValue(cnt, val);
+        ruby.getScope().setValue(cnt, val);
     }
 
     /** Getter for property evalTree.

@@ -29,8 +29,9 @@
  */
 package org.jruby;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
+
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
@@ -77,7 +78,7 @@ public class RubyGlobal {
 
         // Global functions
 
-        // IO 
+        // IO, $_ String
         ruby.defineGlobalFunction("open", CallbackFactory.getSingletonMethod(RubyGlobal.class, "open", RubyString.class));
 
         ruby.defineGlobalFunction("format", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "sprintf"));
@@ -90,6 +91,19 @@ public class RubyGlobal {
         ruby.defineGlobalFunction("readlines", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "readlines"));
         ruby.defineGlobalFunction("sprintf", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "sprintf"));
 
+        ruby.defineGlobalFunction("gsub!", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "gsub_bang"));
+        ruby.defineGlobalFunction("gsub", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "gsub"));
+        ruby.defineGlobalFunction("sub!", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "sub_bang"));
+        ruby.defineGlobalFunction("sub", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "sub"));
+
+        ruby.defineGlobalFunction("chop!", CallbackFactory.getSingletonMethod(RubyGlobal.class, "chop_bang"));
+        ruby.defineGlobalFunction("chop", CallbackFactory.getSingletonMethod(RubyGlobal.class, "chop"));
+        ruby.defineGlobalFunction("chomp!", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "chomp_bang"));
+        ruby.defineGlobalFunction("chomp", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "chomp"));
+
+        ruby.defineGlobalFunction("split", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "split"));
+        ruby.defineGlobalFunction("scan", CallbackFactory.getSingletonMethod(RubyGlobal.class, "scan", RubyObject.class));
+
         ruby.defineGlobalFunction("load", CallbackFactory.getSingletonMethod(RubyGlobal.class, "load", RubyString.class));
         //FIXME autoload method needs to be implemented
         //ruby.defineGlobalFunction("autoload", CallbackFactory.getSingletonMethod(RubyGlobal.class, "autoload", RubyString.class));
@@ -97,6 +111,15 @@ public class RubyGlobal {
         ruby.defineGlobalFunction("require", CallbackFactory.getSingletonMethod(RubyGlobal.class, "require", RubyString.class));
 
         ruby.defineGlobalFunction("global_variables", CallbackFactory.getSingletonMethod(RubyGlobal.class, "global_variables"));
+        ruby.defineGlobalFunction("local_variables", CallbackFactory.getSingletonMethod(RubyGlobal.class, "local_variables"));
+        ruby.defineGlobalFunction("block_given?", CallbackFactory.getSingletonMethod(RubyGlobal.class, "block_given"));
+
+        ruby.defineGlobalFunction("lambda", CallbackFactory.getSingletonMethod(RubyGlobal.class, "lambda"));
+        ruby.defineGlobalFunction("proc", CallbackFactory.getSingletonMethod(RubyGlobal.class, "proc"));
+
+        ruby.defineGlobalFunction("loop", CallbackFactory.getSingletonMethod(RubyGlobal.class, "loop"));
+
+        ruby.defineGlobalFunction("eval", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "eval", RubyString.class));
 
         ruby.defineGlobalFunction("singleton_method_added", CallbackFactory.getNilMethod());
     }
@@ -152,17 +175,17 @@ public class RubyGlobal {
 
     public static RubyObject printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length != 0) {
-			RubyObject defout = ruby.getGlobalVar("$>");
-			
-			if (!(args[0] instanceof RubyString)) {
-			    defout = args[0];
+            RubyObject defout = ruby.getGlobalVar("$>");
 
-			    RubyObject[] newArgs = new RubyObject[args.length - 1];
-			    System.arraycopy(args, 1, newArgs, 0, args.length - 1);
-			    args = newArgs;
-			}
+            if (!(args[0] instanceof RubyString)) {
+                defout = args[0];
 
-        	RubyIO.printf(ruby, defout, args);
+                RubyObject[] newArgs = new RubyObject[args.length - 1];
+                System.arraycopy(args, 1, newArgs, 0, args.length - 1);
+                args = newArgs;
+            }
+
+            RubyIO.printf(ruby, defout, args);
         }
 
         return ruby.getNil();
@@ -193,6 +216,9 @@ public class RubyGlobal {
         return lines;
     }
 
+    /** Returns an Array with the names of all global variables.
+     * 
+     */
     public static RubyArray global_variables(Ruby ruby, RubyObject recv) {
         RubyArray globalVariables = RubyArray.newArray(ruby);
 
@@ -204,6 +230,35 @@ public class RubyGlobal {
         }
 
         return globalVariables;
+    }
+
+    /** Returns an Array with the names of all local variables.
+     * 
+     */
+    public static RubyArray local_variables(Ruby ruby, RubyObject recv) {
+        RubyArray localVariables = RubyArray.newArray(ruby);
+
+        if (ruby.getScope().getLocalNames() != null) {
+            for (int i = 2; i < ruby.getScope().getLocalNames().size(); i++) {
+                if (ruby.getScope().getLocalNames().get(i) != null) {
+                    localVariables.push(RubyString.newString(ruby, (String) ruby.getScope().getLocalNames().get(i)));
+                }
+            }
+        }
+
+        RubyVarmap dynamicVars = ruby.getDynamicVars();
+        while (dynamicVars != null) {
+            if (dynamicVars.getId() != null) {
+                localVariables.push(RubyString.newString(ruby, dynamicVars.getId()));
+            }
+            dynamicVars = dynamicVars.getNext();
+        }
+
+        return localVariables;
+    }
+
+    public static RubyBoolean block_given(Ruby ruby, RubyObject recv) {
+        return RubyBoolean.newBoolean(ruby, ruby.isFBlockGiven());
     }
 
     public static RubyObject sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
@@ -271,6 +326,141 @@ public class RubyGlobal {
             ruby.getRuntime().loadFile(rbFile, false);
         }
         return ruby.getTrue();
+    }
+
+    /** Returns value of $_.
+     * 
+     * @throws TypeError if $_ is not a String or nil.
+     * @return value of $_ as String.
+     */
+    private static RubyString getLastlineString(Ruby ruby) {
+        RubyObject line = ruby.getParserHelper().getLastline();
+
+        if (!line.isNil()) {
+            throw new TypeError(ruby, "$_ value need to be String (nil given).");
+        } else if (!(line instanceof RubyString)) {
+            throw new TypeError(ruby, "$_ value need to be String (" + line.getRubyClass().toName() + " given).");
+        } else {
+            return (RubyString) line;
+        }
+    }
+
+    public static RubyObject sub_bang(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        return getLastlineString(ruby).sub_bang(args);
+    }
+
+    public static RubyObject sub(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        RubyString str = (RubyString) getLastlineString(ruby).dup();
+
+        if (!str.sub_bang(args).isNil()) {
+            ruby.getParserHelper().setLastline(str);
+        }
+
+        return str;
+    }
+
+    public static RubyObject gsub_bang(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        return getLastlineString(ruby).gsub_bang(args);
+    }
+
+    public static RubyObject gsub(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        RubyString str = (RubyString) getLastlineString(ruby).dup();
+
+        if (!str.gsub_bang(args).isNil()) {
+            ruby.getParserHelper().setLastline(str);
+        }
+
+        return str;
+    }
+
+    public static RubyObject chop_bang(Ruby ruby, RubyObject recv) {
+        return getLastlineString(ruby).chop_bang();
+    }
+
+    public static RubyObject chop(Ruby ruby, RubyObject recv) {
+        RubyString str = getLastlineString(ruby);
+
+        if (str.getValue().length() > 0) {
+            str = (RubyString) str.dup();
+            str.chop_bang();
+            ruby.getParserHelper().setLastline(str);
+        }
+
+        return str;
+    }
+
+    public static RubyObject chomp_bang(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        return getLastlineString(ruby).chomp_bang(args);
+    }
+
+    public static RubyObject chomp(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        RubyString str = getLastlineString(ruby);
+        RubyString dup = (RubyString) str.dup();
+
+        if (dup.chomp_bang(args).isNil()) {
+            return str;
+        } else {
+            ruby.getParserHelper().setLastline(dup);
+            return str;
+        }
+    }
+
+    public static RubyObject split(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        return getLastlineString(ruby).split(args);
+    }
+
+    public static RubyObject scan(Ruby ruby, RubyObject recv, RubyObject pattern) {
+        return getLastlineString(ruby).scan(pattern);
+    }
+
+    public static RubyObject eval(Ruby ruby, RubyObject recv, RubyString src, RubyObject[] args) {
+        RubyObject scope = args.length > 0 ? args[0] : ruby.getNil();
+        String file = "(eval)";
+        int line = 1;
+
+        if (args.length > 1) {
+            // +++
+            file = args[1].toString();
+            // ---
+        }
+
+        if (args.length > 2) {
+            line = RubyFixnum.fix2int(args[2]);
+        }
+
+        // +++
+        src.checkSafeString();
+        // ---
+
+        if (scope.isNil() && ruby.getRubyFrame().getPrev() != null) {
+            try {
+                // +++
+                RubyFrame prev = new RubyFrame(ruby.getRubyFrame());
+                ruby.getRubyFrame().push();
+
+                ruby.setRubyFrame(prev.getPrev());
+                ruby.getRubyFrame().setPrev(prev);
+                // ---
+
+                return recv.eval(src, scope, file, line);
+            } finally {
+                ruby.getRubyFrame().pop();
+            }
+        }
+
+        return recv.eval(src, scope, file, line);
+    }
+
+    public static RubyObject lambda(Ruby ruby, RubyObject recv) {
+        return RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+    }
+
+    public static RubyObject loop(Ruby ruby, RubyObject recv) {
+        while (true) {
+            ruby.yield(ruby.getNil());
+
+            Thread.yield();
+        }
     }
 
     // Accessor methods.

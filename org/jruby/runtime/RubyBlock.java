@@ -104,7 +104,7 @@ public class RubyBlock {
         klass = ruby.getRubyClass();
         frame.setFile(ruby.getSourceFile());
         frame.setLine(ruby.getSourceLine());
-        scope = ruby.getRubyScope();
+        scope = ruby.getScope();
         prev = oldBlock;
         iter = ruby.getIter().getIter();
         vmode = ruby.getActMethodScope();

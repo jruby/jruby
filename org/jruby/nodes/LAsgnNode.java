@@ -45,21 +45,21 @@ public class LAsgnNode extends Node implements AssignableNode {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        if (ruby.getRubyScope().getLocalValues() == null) {
+        if (ruby.getScope().getLocalValues() == null) {
         	ruby.getRuntime().printBug("unexpected local variable assignment");
         }
 
         RubyObject result = getValueNode().eval(ruby, self);
-        ruby.getRubyScope().setValue(getCount(), result);
+        ruby.getScope().setValue(getCount(), result);
         return result;
     }
 
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
-        if (ruby.getRubyScope().getLocalValues() == null) {
+        if (ruby.getScope().getLocalValues() == null) {
         	ruby.getRuntime().printBug("unexpected local variable assignment");
         }
 
-        ruby.getRubyScope().setValue(getCount(), value);
+        ruby.getScope().setValue(getCount(), value);
     }
 	/**
 	 * Accept for the visitor pattern.
