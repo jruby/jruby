@@ -147,7 +147,6 @@ class ClassDescription
   attr :methods, true
   attr :class_methods, true
   attr :implementation, true
-  attr_writer :superclass
   attr_writer :package
   attr :included_modules, false
 
@@ -160,6 +159,11 @@ class ClassDescription
     @superclass = "Object"
     @package = nil
     @included_modules = []
+  end
+
+  def superclass=(superclass)
+    raise "Module can't have superclass" if @is_module
+    @superclass = superclass
   end
 
   def include_module(ancestor)
@@ -213,13 +217,9 @@ class ClassDescription
       output.write('RubyClass result = runtime.defineClass("')
       output.write(@name)
       output.write('", ')
-      if @superclass == :none
-        output.write('(RubyClass) null')
-      else
-        output.write('(RubyClass) runtime.getClasses().getClass("')
-        output.write(@superclass)
-        output.write('")')
-      end
+      output.write('(RubyClass) runtime.getClasses().getClass("')
+      output.write(@superclass)
+      output.write('")')
       output.write(');' + "\n")
       write_included_modules(output)
       output.write("return result;\n")
@@ -315,11 +315,7 @@ class Parser
       class_description.name = text
     }
     parser.on_tag_content("superclass") {|text|
-      if text == 'none'
-        class_description.superclass = :none
-      else
-        class_description.superclass = text
-      end
+      class_description.superclass = text
     }
     parser.on_tag_content("includes") {|text|
       class_description.include_module(text)

@@ -2,7 +2,6 @@
 
 <module type="module">
   <name>GC</name>
-  <superclass>none</superclass>
   <implementation>org.jruby.RubyGC</implementation>
 
   <class-methods>
