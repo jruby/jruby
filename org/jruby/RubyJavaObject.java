@@ -86,6 +86,8 @@ public class RubyJavaObject extends RubyObject {
         javaObjectClass.defineSingletonMethod("import", CallbackFactory.getSingletonMethod(RubyJavaObject.class, "rbImport", RubyString.class));
 
         javaObjectClass.getRubyClass().undefMethod("new");
+        
+        ruby.defineClass("Java", javaObjectClass);
 
         return javaObjectClass;
     }

@@ -50,51 +50,54 @@ public class TestRubyBase extends TestCase {
     private BufferedReader in;
     protected Ruby ruby;
     private PrintStream out;
-    public TestRubyBase(String name)
-    {
-	super(name);
+
+    public TestRubyBase(String name) {
+        super(name);
     }
+
     protected String eval(String script) {
-	pipeIn = new PipedInputStream();
-	in = new BufferedReader(new InputStreamReader(pipeIn));
+        pipeIn = new PipedInputStream();
+        in = new BufferedReader(new InputStreamReader(pipeIn));
 
-	String output = null;
-	StringBuffer result = new StringBuffer();
-	try {
-	    out = new PrintStream(new PipedOutputStream(pipeIn), true);
-	    ruby.getRuntime().setOutputStream(out);
-	    ruby.getRuntime().setErrorStream(out);
-	    new EvalThread("test", script).start();
-	    while ((output = in.readLine()) != null) {
-		result.append(output);
-	    }
-	} catch (Exception ex) {
-	    throw new RuntimeException(ex.getMessage());
-	}
-	return result.toString();
+        String output = null;
+        StringBuffer result = new StringBuffer();
+        try {
+            out = new PrintStream(new PipedOutputStream(pipeIn), true);
+            ruby.getRuntime().setOutputStream(out);
+            ruby.getRuntime().setErrorStream(out);
+            new EvalThread("test", script).start();
+            while ((output = in.readLine()) != null) {
+                result.append(output);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex.getMessage());
+        }
+        return result.toString();
     }
+
     class EvalThread extends Thread {
-	private RubyString name;
-	private RubyString script;
+        private RubyString name;
+        private RubyString script;
 
-	EvalThread(String name, String script) {
-	    this.name = RubyString.newString(ruby, name);
-	    this.script = RubyString.newString(ruby, script);
-	}
+        EvalThread(String name, String script) {
+            this.name = RubyString.newString(ruby, name);
+            this.script = RubyString.newString(ruby, script);
+        }
 
-	public void run() {
-	    ruby.getRuntime().loadScript(name, script, false);
-	    out.close();
-	}
+        public void run() {
+            ruby.getRuntime().loadScript(name, script, false);
+            out.close();
+        }
     }
+
     public void tearDown() {
-	try {
-		if (in !=null)
-	    in.close();
-		if (out != null)
-	    out.close();
-	} catch (IOException ex) {
-	}
+        try {
+            if (in != null)
+                in.close();
+            if (out != null)
+                out.close();
+        } catch (IOException ex) {
+        }
     }
 
 }
