@@ -118,6 +118,10 @@ else
     export LD_LIBRARY_PATH=/home/jpetersen/jprofiler/bin/linux-x86
     DEBUG="-Xrunjprofiler:port=8000,noexit -Xbootclasspath/a:/home/jpetersen/jprofiler/bin/agent.jar"
     shift
+  else if [ "$1" = "HPROF" ]; then
+      DEBUG="-Xrunhprof:cpu=samples"
+      shift
+  fi
   fi
 fi
 
