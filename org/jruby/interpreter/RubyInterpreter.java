@@ -26,11 +26,13 @@
 
 package org.jruby.interpreter;
 
+import java.io.*;
 import java.util.*;
 
 import org.jruby.*;
 import org.jruby.core.*;
 import org.jruby.exceptions.*;
+import org.jruby.interpreter.nodes.*;
 import org.jruby.original.*;
 import org.jruby.util.*;
 
@@ -1604,6 +1606,110 @@ public class RubyInterpreter implements node_type, Scope {
     private void endCallArgs(RubyBlock tmpBlock) {
         rubyBlock.setTmp(tmpBlock);
         rubyIter.pop();
+    }
+    
+    /** This methods loads a Ruby file, compile and interprets it.
+     *  It is used by Kernel#require.
+     *
+     *  (matz Ruby: rb_load)
+     */
+    public void load(RubyString fname, boolean wrap) {
+        RubyObject self = ruby.getRubyTopSelf();
+        NODE savedCRef = ruby.getRubyCRef();
+    
+        // TMP_PROTECT;
+        
+        if (wrap && ruby.getSecurityLevel() >= 4) {
+            // Check_Type(fname, T_STRING);
+        } else {
+            // Check_SafeStr(fname);
+        }
+        
+        // fname = findFile(fname);
+        if (fname == null) {
+            throw new RubyException("No such file to load -- " + fname.getValue());
+        }
+        
+        // volatile ID last_func;
+        // volatile VALUE wrapper = 0;
+	
+        // ruby_errinfo = Qnil;	/* ensure */
+    
+        RubyVarmap.push(ruby);
+        pushClass();
+        
+        RubyModule wrapper = ruby_wrapper;
+        ruby.setRubyCRef(ruby.getTopCRef());
+        
+        if (!wrap) {
+            ruby.secure(4);		/* should alter global state */
+            ruby.setRubyClass(ruby.getClasses().getObjectClass());
+            ruby_wrapper = null;
+        } else {
+            /* load in anonymous module as toplevel */
+            ruby_wrapper = RubyModule.m_newModule(ruby);
+            ruby.setRubyClass(ruby_wrapper);
+            self = ruby.getRubyTopSelf().m_clone();
+            self.extendObject(ruby.getRubyClass());
+            PUSH_CREF(ruby_wrapper);
+        }
+        ruby.getRubyFrame().push();
+        ruby.getRubyFrame().setLastFunc(null);
+        ruby.getRubyFrame().setLastClass(null);
+        ruby.getRubyFrame().setSelf(self);
+        ruby.getRubyFrame().setCbase(new NodeFactory(ruby).newDefaultNode(NODE.NODE_CREF, ruby.getRubyClass(), null, null));
+        ruby.getRubyScope().push();
+        
+        /* default visibility is private at loading toplevel */
+        setActMethodScope(SCOPE_PRIVATE);
+        
+        RubyId last_func = ruby.getRubyFrame().getLastFunc();
+        try {
+            // RubyId last_func = ruby.getRubyFrame().getLastFunc();
+         
+            // DEFER_INTS;
+            ruby.setInEval(ruby.getInEval() + 1);
+            
+            // +++
+                try {
+                    File rubyFile = new File(fname.getValue());
+                    StringBuffer sb = new StringBuffer((int)rubyFile.length());
+                    BufferedReader br = new BufferedReader(new FileReader(rubyFile));
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line).append('\n');
+                    }
+                    br.close();
+                    
+                    ruby.getRubyParser().compileString(sb.toString(), fname, 0);
+                
+                } catch (IOException ioExcptn) {
+                    System.out.println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");
+                    System.out.println("IOEception: " + ioExcptn.getMessage());
+                }
+            // ---
+            
+            ruby.setInEval(ruby.getInEval() - 1);
+            eval(self, ruby.getParserHelper().getEvalTree()); // evalNode
+        } catch (RubyException excptn) {
+        }
+        ruby.getRubyFrame().setLastFunc(last_func);
+        
+        /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+            if (ruby_scope->local_tbl) 
+                free(ruby_scope->local_tbl);
+        }*/
+        
+        ruby.setRubyCRef(savedCRef);
+        ruby.getRubyScope().pop();
+        ruby.getRubyFrame().pop();
+        popClass();
+        RubyVarmap.pop(ruby);
+        ruby_wrapper = wrapper;
+    /*if (ruby_nerrs > 0) {
+	ruby_nerrs = 0;
+	rb_exc_raise(ruby_errinfo);
+    }*/
     }
     
     /** Getter for property rubyIter.

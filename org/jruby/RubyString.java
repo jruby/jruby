@@ -482,7 +482,7 @@ public class RubyString extends RubyObject {
     public RubyString m_concat(RubyObject other) {
         if ((other instanceof RubyFixnum) && ((RubyFixnum)other).getLongValue() < 256) {
             char c = (char)((RubyFixnum)other).getLongValue();
-            return m_cat(Character.toString(c));
+            return m_cat("" + c /* Character.toString(c) Java 1.4 */);
         }
         return m_append(other);
     }

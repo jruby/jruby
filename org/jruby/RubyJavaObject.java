@@ -151,7 +151,7 @@ public class RubyJavaObject extends RubyObject {
         String rubyName = (args.length > 0) ? ((RubyString)args[0]).getValue() : null;
         
         try {
-            Class c = Class.forName(javaName);
+            Class c = ruby.getJavaClassLoader().loadClass(javaName);
             return loadClass(ruby, c, rubyName);
         } catch (ClassNotFoundException cnfExcptn) {
             throw new RubyNameException("cannot find Java class: " + javaName);

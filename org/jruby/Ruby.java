@@ -104,6 +104,9 @@ public final class Ruby {
     // init
     private boolean initialized = false;
     
+    // Java support
+    private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
+    
     /** Create and initialize a new jruby Runtime.
      */    
     public Ruby() {
@@ -672,5 +675,19 @@ public final class Ruby {
      */
     public void setLastId(int lastId) {
         this.lastId = lastId;
+    }
+    
+    /** Getter for property javaClassLoader.
+     * @return Value of property javaClassLoader.
+     */
+    public ClassLoader getJavaClassLoader() {
+        return javaClassLoader;
+    }
+    
+    /** Setter for property javaClassLoader.
+     * @param javaClassLoader New value of property javaClassLoader.
+     */
+    public void setJavaClassLoader(ClassLoader javaClassLoader) {
+        this.javaClassLoader = javaClassLoader;
     }
 }

@@ -27,6 +27,7 @@
 package org.jruby.core;
 
 import java.io.*;
+import java.net.*;
 
 import org.jruby.*;
 
@@ -41,6 +42,7 @@ public class RBKernel {
         
         kernelModule.defineMethod("puts", getKernelMethod("m_puts"));
         kernelModule.defineMethod("print", getKernelMethod("m_print"));
+        kernelModule.defineMethod("require", getKernelMethod("m_require", RubyString.class));
         kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
         kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
         kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
@@ -60,6 +62,10 @@ public class RBKernel {
     
     public static RubyCallbackMethod getKernelMethod(String methodName) {
         return new ReflectionCallbackMethod(RBKernel.class, methodName, RubyObject[].class, true, true);
+    }
+    
+    public static RubyCallbackMethod getKernelMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RBKernel.class, methodName, arg1, false, true);
     }
     
     public static RubyCallbackMethod getObjectMethod(String methodName) {
@@ -83,6 +89,30 @@ public class RBKernel {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
                 System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
+            }
+        }
+        return ruby.getNil();
+    }
+    
+    public static RubyObject m_require(Ruby ruby, RubyObject recv, RubyString arg1) {
+        if (arg1.getValue().endsWith(".rb")) {
+            // Not supported yet
+            // ruby.getInterpreter().load((RubyString)arg1, false);
+            System.err.println("[BUG] Not supported yet.");
+        } else if (arg1.getValue().endsWith(".jar")) {
+            File jarFile = new File(arg1.getValue());
+            if (!jarFile.exists()) {
+                jarFile = new File(new File(ruby.getSourceFile()).getParentFile(), arg1.getValue());
+                if (!jarFile.exists()) {
+                    System.err.println("[BUG] Jarfile not found.");
+                }
+            }
+            if (jarFile.exists()) {
+                try {
+                    ClassLoader javaClassLoader = new URLClassLoader(new URL[] { jarFile.toURL() }, ruby.getJavaClassLoader());
+                    ruby.setJavaClassLoader(javaClassLoader);
+                } catch (MalformedURLException murlExcptn) {
+                }
             }
         }
         return ruby.getNil();

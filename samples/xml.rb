@@ -5,6 +5,9 @@
 
 # Load the Java classes.
 
+# Edit the path to point to your saxon dir:
+require "/home/jpetersen/development/saxon/saxon.jar"
+
 JavaObject.load_class "java.io.File"
 JavaObject.load_class "javax.xml.transform.stream.StreamResult"
 JavaObject.load_class "javax.xml.transform.stream.StreamSource"
