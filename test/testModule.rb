@@ -66,3 +66,13 @@ module TestModule_A
 end
 test_equal(123, TestModule_A::TestModule_B.new.a)
 test_equal(4711, TestModule_A::TestModule_B.new.b)
+
+class TestModule_C_1 < Array
+  def a_defined_method
+    :ok
+  end
+end
+class TestModule_C_1
+end
+test_equal(:ok, TestModule_C_1.new.a_defined_method)
+

@@ -479,8 +479,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(runtime, className + " is not a class");
         }
         RubyClass rubyClass = (RubyClass) type;
-        if (rubyClass.getSuperClass().getRealClass() != superClass) {
-            return false;
+        if (superClass != null) {
+            if (rubyClass.getSuperClass().getRealClass() != superClass) {
+                return false;
+            }
         }
         if (runtime.getSafeLevel() >= 4) {
             throw new SecurityError(runtime, "extending class prohibited");
@@ -489,6 +491,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     private RubyClass createClass(String className, RubyClass superClass) {
+        if (superClass == null) {
+            superClass = runtime.getClasses().getObjectClass();
+        }
         RubyClass result = runtime.defineClass(className, superClass);
         result.setClassPath(threadContext.getRubyClass(), className);
         setConstant(className, result);
@@ -497,7 +502,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     private RubyClass getSuperClassFromNode(INode superNode) {
         if (superNode == null) {
-            return runtime.getClasses().getObjectClass();
+            return null;
         }
         RubyClass result;
         try {
