@@ -223,6 +223,8 @@ public final class Ruby {
     /**
      * Evaluates a script and returns an instance of class returnClass.
      *
+     * @deprecated If anyone actually uses this method then speak up now!
+     *
      * @param script The script to evaluate
      * @param returnClass The class which should be returned
      * @return the result Object

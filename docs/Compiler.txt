@@ -91,7 +91,22 @@ users.
 
 [Add example here]
 
-3.3 The compilation
+3.3 The environment
+-------------------
+
+The compiled code doesn't run in a vacuum. It needs access to the Ruby
+runtime as much as interpreted code does. To make the code generation
+as easy as possible this environment must be very simple.
+
+Required variables:
+
+* runtime
+* self
+
+[...]
+
+
+3.4 The compilation
 -------------------
 
 [To be written]

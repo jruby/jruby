@@ -20,12 +20,17 @@
 # the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307 USA
 
+require 'bcel.rb'
+
 module JRuby
   module Compiler
     module Bytecode
 
       SELF_INDEX = 1
       RUNTIME_INDEX = 0
+
+      IRUBYOBJECT_TYPE =
+        BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
 
       class AssignLocal
         attr_reader :index
@@ -78,16 +83,18 @@ module JRuby
           # ..., receiver, arg1, arg2
 
           list.append(BCEL::ICONST.new(@arity))
-          list.append(factory.createNewArray(BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"), @arity)) # is this argument really arity?
+          list.append(factory.createNewArray(IRUBYOBJECT_TYPE, 1))
 
           # ..., receiver, arg1, arg2, args_array
 
           # WARNING: the following line destroys the 'self' variable!!!!...
 
-          list.append(BCEL::InstructionFactory.createStore(BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1), SELF_INDEX))
+          list.append(BCEL::InstructionFactory.createStore(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
+                                                           SELF_INDEX))
 
           for i in 0...arity
-            list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1), SELF_INDEX))
+            list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
+                                                            SELF_INDEX))
             # ..., receiver, arg1, ..., argN, args_array
             list.append(BCEL::SWAP.new)
             # ..., receiver, arg1, ..., args_array, argN
@@ -100,7 +107,8 @@ module JRuby
           end
 
           # ..., receiver
-          list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1), SELF_INDEX))
+          list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
+                                                          SELF_INDEX))
           # ..., receiver, args_array
 
           list.append(BCEL::PUSH.new(factory.getConstantPool, @name))
@@ -113,10 +121,10 @@ module JRuby
 
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = BCEL::Type::STRING
-          arg_types[1] = BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1)
+          arg_types[1] = BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1)
           list.append(factory.createInvoke("org.jruby.runtime.builtin.IRubyObject",
                                            "callMethod",
-                                           BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
+                                           IRUBYOBJECT_TYPE,
                                            arg_types,
                                            BCEL::Constants::INVOKEINTERFACE))
         end
@@ -142,6 +150,35 @@ module JRuby
                                            arg_types,
                                            BCEL::Constants::INVOKESTATIC))
         end
+      end
+
+      class Negate
+
+      end
+
+      class PushBoolean
+        def initialize(value)
+          @value = value
+        end
+      end
+
+      class IfFalse
+        attr_writer :target
+
+        def initialize(target)
+          @target = target
+        end
+      end
+
+      class Goto
+        attr_writer :target
+
+        def initialize(target)
+          @target = target
+        end
+      end
+
+      class Label
       end
     end
   end

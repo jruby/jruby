@@ -45,6 +45,7 @@ module JRuby
 
       def initialize
         @bytecodes = []
+        @labels = []
       end
 
       def <<(bytecode)
@@ -71,7 +72,7 @@ module JRuby
       include JRuby::Compiler::Bytecode
 
       def method_missing(name)
-        puts "Missing implementation for #{name}"
+        raise "Missing implementation for #{name}"
       end
 
       def compile(tree)
@@ -125,6 +126,31 @@ module JRuby
 
       def visitSelfNode(node)
         @bytecodes << PushSelf.new
+      end
+
+      def visitNotNode(node)
+        emit_bytecodes(node.getConditionNode)
+        @bytecodes << Negate.new
+      end
+
+      def visitIfNode(node)
+        emit_bytecodes(node.getCondition)
+        iffalse = IfFalse.new(nil)
+        @bytecodes << iffalse
+        emit_bytecodes(node.getThenBody)
+        goto_end = Goto.new(nil)
+        @bytecodes << goto_end
+        label_else = Label.new
+        @bytecodes << label_else
+        iffalse.target = label_else
+        emit_bytecodes(node.getElseBody)
+        label_end = Label.new
+        @bytecodes << label_end
+        goto_end.target = label_end
+      end
+
+      def visitFalseNode(node)
+        @bytecodes << PushBoolean.new(false)
       end
     end
 

@@ -42,6 +42,15 @@ test_equal([PushFixnum, PushFixnum, Call],
            code.collect {|c| c.class })
 
 
+code = compile("1 != 2")
+test_equal([PushFixnum, PushFixnum, Call, Negate],
+           code.collect {|c| c.class })
+
+code = compile("if false; 1; else; 'hello'; end")
+test_equal([PushBoolean, IfFalse, PushFixnum,
+             Goto, Label, PushString, Label],
+           code.collect {|c| c.class})
+
 test_print_report
 
 
