@@ -289,7 +289,7 @@ public class RubyArray extends RubyObject {
     public IRubyObject insert(RubyNumeric index, IRubyObject[] args) {
     	// ruby does not bother to bounds check index, if no elements are
     	// to be added.
-    	if (args != null && args.length == 0) {
+    	if (args == null || args.length == 0) {
     		return this;
     	}
     	
