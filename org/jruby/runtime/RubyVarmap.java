@@ -95,13 +95,13 @@ public class RubyVarmap {
     /** rb_dvar_ref
      *
      */
-    public RubyObject getRef(Ruby ruby, String name) {
+    public RubyObject getRef(String name) {
         if (name.equals(this.name)) {
             return getVal();
         } else if (next != null) {
-            return next.getRef(ruby, name);
+            return next.getRef(name);
         }
-        return ruby.getNil();
+        return null;
     }
 
     public RubyVarmap assignVarmapInternal(String id, RubyObject value, boolean current) {

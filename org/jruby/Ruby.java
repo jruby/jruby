@@ -651,6 +651,14 @@ public final class Ruby {
         return dynamicVars;
     }
 
+    public RubyObject getDynamicValue(String name) {
+        RubyObject result = dynamicVars.getRef(name);
+        if (result == null) {
+            return getNil();
+        }
+        return result;
+    }
+
     /** Getter for property rubyClass.
      * @return Value of property rubyClass.
      */
@@ -926,7 +934,7 @@ public final class Ruby {
     }
 
     public void pushVarmap() {
-       varMapStack.push(getDynamicVars());
+       varMapStack.push(dynamicVars);
         dynamicVars = null;
     }
 
@@ -935,30 +943,28 @@ public final class Ruby {
     }
 
     public void pushVarmap(String rubyId, RubyObject val) {
-        dynamicVars = new RubyVarmap(rubyId, val, getDynamicVars());
+        dynamicVars = new RubyVarmap(rubyId, val, dynamicVars);
     }
 
     public void assignVarmap(String id, RubyObject value) {
-        RubyVarmap varMap = getDynamicVars();
-        dynamicVars = (varMap != null) ? varMap.assignVarmapInternal(id, value, false) : new RubyVarmap(id, value, null);
+        dynamicVars = (dynamicVars != null) ? dynamicVars.assignVarmapInternal(id, value, false) : new RubyVarmap(id, value, null);
     }
 
     public void assignCurrentVarmap(String id, RubyObject value) {
-        RubyVarmap varMap = getDynamicVars();
-        dynamicVars = (varMap != null) ? varMap.assignVarmapInternal(id, value, true) : new RubyVarmap(id, value, null);
+        dynamicVars = (dynamicVars != null) ? dynamicVars.assignVarmapInternal(id, value, true) : new RubyVarmap(id, value, null);
     }
 
-    public List getVarmapNames() {
-        RubyVarmap vars = getDynamicVars();
-        ArrayList names = new ArrayList();
+    public List getDynamicNames() {
+        RubyVarmap vars = dynamicVars;
+        ArrayList result = new ArrayList();
         while (vars != null) {
             if (vars.name == null) {
                 break;
             } else {
-                names.add(vars.name);
+                result.add(vars.name);
             }
             vars = vars.next;
         }
-        return names;
+        return result;
     }
 }

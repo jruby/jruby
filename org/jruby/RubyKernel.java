@@ -323,12 +323,10 @@ public class RubyKernel {
             }
         }
 
-        RubyVarmap dynamicVars = ruby.getDynamicVars();
-        while (dynamicVars != null) {
-            if (dynamicVars.getName() != null) {
-                localVariables.append(RubyString.newString(ruby, dynamicVars.getName()));
-            }
-            dynamicVars = dynamicVars.getNext();
+        Iterator dynamicNames = ruby.getDynamicNames().iterator();
+        while (dynamicNames.hasNext()) {
+            String name = (String) dynamicNames.next();
+            localVariables.append(RubyString.newString(ruby, name));
         }
 
         return localVariables;
