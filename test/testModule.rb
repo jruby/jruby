@@ -83,3 +83,13 @@ test_equal(:ok, TestModule_C_1.new.a_defined_method)
 test_exception(TypeError) {
   class Kernel; end
 }
+
+module M1
+  CONST = 7
+end
+class C1
+  include M1
+  x = CONST
+end
+
+test_equal(7, C1::CONST)
