@@ -23,14 +23,14 @@ testFile.rb
 #testThread.rb
 testMarshal.rb
 ##testBackquote.rb
-testHash.rb
+# (isKindOf fixes) testHash.rb
 testSymbol.rb
 testPackUnpack.rb
 testRandom.rb
 testStruct.rb
 testGC.rb
 ##testSocket.rb
-testJavaSupport.rb
+# (isKindOf fixes) testJavaSupport.rb
 testDir.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):

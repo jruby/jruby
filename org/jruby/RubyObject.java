@@ -161,7 +161,6 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (isNil()) {
             return getRuby().getClasses().getNilClass();
         }
-
         return rubyClass;
     }
 
@@ -272,14 +271,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public boolean isKindOf(RubyModule type) {
-        RubyClass currType = getInternalClass();
-        while (currType != null) {
-            if (currType == type || currType.getMethods().keySet().containsAll(type.getMethods().keySet())) {
-                return true;
-            }
-            currType = currType.getSuperClass();
-        }
-        return false;
+        return getInternalClass().ancestors().includes(type);
     }
 
     /** SPECIAL_SINGLETON(x,c)

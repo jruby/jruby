@@ -11,7 +11,7 @@ end
 Dir.mkdir("./testDir_1")
 
 d = Dir.new("./testDir_1")
-###test_ok(d.kind_of? Enumerable)
+test_ok(d.kind_of? Enumerable)
 test_equal(['.', '..'], d.entries)
 
 (1..2).each {|i|

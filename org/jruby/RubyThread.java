@@ -390,7 +390,7 @@ public class RubyThread extends RubyObject {
         while (iter.hasNext()) {
             list.add(iter.next());
         }
-        return new RubyArray(ruby, list);
+        return RubyArray.newArray(ruby, list);
     }
 
     /**

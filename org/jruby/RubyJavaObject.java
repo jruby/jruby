@@ -46,7 +46,6 @@ public class RubyJavaObject extends RubyObject {
 
     public RubyJavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
         super(ruby, rubyClass);
-
         this.value = value;
     }
 

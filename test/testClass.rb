@@ -24,3 +24,12 @@ end
 attrTest = AttrTest.new
 attrTest.attribute1 = 1
 test_equal(1 , attrTest.attribute1)
+
+
+class Froboz
+  include Enumerable
+end
+f = Froboz.new
+test_equal([Froboz, Enumerable, Object, Kernel], f.type.ancestors)
+test_ok(f.kind_of?(Froboz))
+test_ok(f.kind_of?(Enumerable))

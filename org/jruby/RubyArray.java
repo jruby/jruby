@@ -47,7 +47,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	private ArrayList list;
 	private boolean tmpLock;
 
-	public RubyArray(final Ruby ruby, final ArrayList list) {
+	private RubyArray(final Ruby ruby, final ArrayList list) {
 		super(ruby, ruby.getClasses().getArrayClass());
 
 		this.list = list;

@@ -28,16 +28,16 @@ rescue type
 end
 test_equal(ArgumentError, e.type)
 
-###class SomeOtherException < StandardError
-###end
-###e = Exception.new
-###test_ok(!e.kind_of?(SomeOtherException))
-###test_ok(!e.kind_of?(StandardError))
-###test_ok(e.kind_of?(Exception))
-###begin
-###  raise "whoah!"
-###rescue SomeOtherException
-###  test_fail()
-###rescue Exception
-###  test_ok(true)
-###end
+class SomeOtherException < StandardError
+end
+e = Exception.new
+test_ok(!e.kind_of?(SomeOtherException))
+test_ok(!e.kind_of?(StandardError))
+test_ok(e.kind_of?(Exception))
+begin
+  raise "whoah!"
+rescue SomeOtherException
+  test_fail()
+rescue Exception
+  test_ok(true)
+end
