@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 
 <changelog>
+        <release version="0.5.3"/>
+        <change type="update" description="Dropped our (partial) support for $= (gone in 1.7 anyway)" author="ndrs"/>
+        </release>
 	<release version="0.5.1">
         <change type="update" description="Reflection-free calls for built-in methods." author="ndrs"/>
         <change type="update" description="Improved ObjectSpace memory management." author="ndrs"/>
