@@ -92,7 +92,7 @@ public class RubyMatchData extends RubyObject {
         if (len == 0) {
             return RubyArray.newArray(getRuntime());
         }
-
+        
         RubyArray arr = RubyArray.newArray(getRuntime(), 0);
         for (long i = beg; i < beg + len; i++) {
             arr.append(group(i));
@@ -149,7 +149,7 @@ public class RubyMatchData extends RubyObject {
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getSize(), true, false);
-            if (begLen != null) {
+            if (begLen == null) {
                 return getRuntime().getNil();
             }
             return subseq(begLen[0], begLen[1]);
@@ -212,7 +212,9 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyString string() {
-        return RubyString.newString(getRuntime(), str);
+        RubyString frozenString = RubyString.newString(getRuntime(), str);
+        frozenString.freeze();
+        return frozenString;
     }
 
     /** match_to_a
