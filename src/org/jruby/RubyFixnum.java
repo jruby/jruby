@@ -17,6 +17,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -76,6 +77,7 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("-", callbackFactory.getMethod("op_minus", RubyNumeric.class));
         fixnumClass.defineMethod("*", callbackFactory.getMethod("op_mul", RubyNumeric.class));
         fixnumClass.defineMethod("/", callbackFactory.getMethod("op_div", RubyNumeric.class));
+        fixnumClass.defineAlias("div", "/");
         fixnumClass.defineMethod("%", callbackFactory.getMethod("op_mod", RubyNumeric.class));
         fixnumClass.defineMethod("**", callbackFactory.getMethod("op_pow", RubyNumeric.class));
         fixnumClass.defineMethod("&", callbackFactory.getMethod("op_and", RubyNumeric.class));

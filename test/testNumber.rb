@@ -80,12 +80,14 @@ test_equal(40, (256**40 - 1).size)
 
 test_exception(TypeError) { 20['x'] }
 
-test_equal(1, 0.id)
-test_equal(3, 1.id)
-test_equal(5, 2.id)
-test_equal(9, 4.id)
+test_equal(1, 0.object_id)
+test_equal(3, 1.object_id)
+test_equal(5, 2.object_id)
+test_equal(9, 4.object_id)
+test_equal(2, 5 / 2)
+test_equal(2, 5.div(2))
 
-test_equal(1.id, 1.__id__) # Testing lexer's handling of numbers here
+test_equal(1.object_id, 1.__id__) # Testing lexer's handling of numbers here
 
 test_exception(NameError) { Integer.new }
 test_exception(NameError) { Fixnum.new }
