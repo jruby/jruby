@@ -8,7 +8,6 @@ org.jruby.RubyClass
 org.jruby.RubyModule
 org.jruby.runtime.builtin.IRubyObject
 org.jruby.runtime.builtin.definitions.MethodContext
-org.jruby.runtime.builtin.definitions.StaticMethodContext
 org.jruby.runtime.builtin.definitions.SingletonMethodContext
 org.jruby.runtime.builtin.definitions.ModuleDefinition
 org.jruby.runtime.builtin.definitions.ClassDefinition
@@ -127,9 +126,14 @@ class MethodGenerator
     @class_methods = []
     @implementation = nil
     @superclass = "Object"
+    @package = nil
   end
 
   attr :implementation
+
+  def package=(package)
+    @package = package
+  end
 
   def constant_name
     @name.upcase
@@ -140,10 +144,22 @@ class MethodGenerator
 
     output.write("/* Generated - do not edit! */\n")
     output.write("\n")
+
+    if @package
+      output.write("package #{@package};\n")
+      output.write("\n")
+    end
+
     write_includes(output)
     output.write("\n")
     output.write("public class #{@name}Definition")
-    output.write(" extends ClassDefinition {\n")
+    output.write(" extends ")
+    if @is_module
+      output.write("Module")
+    else
+      output.write("Class")
+    end
+    output.write("Definition {\n")
     output.write("private static final int #{constant_name} = 0xf000;\n")
     output.write("private static final int STATIC = #{constant_name} | 0x100;\n")
     @methods.each {|m|
@@ -159,13 +175,21 @@ class MethodGenerator
     output.write("}\n")
     output.write("\n")
 
-    output.write("protected RubyClass createType(Ruby runtime) {\n")
-    output.write('return runtime.defineClass("')
-    output.write(@name)
-    output.write('", (RubyClass) runtime.getClasses().getClass("')
-    output.write(@superclass)
-    output.write('"));' + "\n")
-    output.write("}\n")
+    if @is_module
+      output.write("protected RubyModule createModule(Ruby runtime) {\n")
+      output.write('return runtime.defineModule("')
+      output.write(@name)
+      output.write('");' + "\n")
+      output.write("}\n")
+    else
+      output.write("protected RubyClass createType(Ruby runtime) {\n")
+      output.write('return runtime.defineClass("')
+      output.write(@name)
+      output.write('", (RubyClass) runtime.getClasses().getClass("')
+      output.write(@superclass)
+      output.write('"));' + "\n")
+      output.write("}\n")
+    end
     output.write("\n")
 
     output.write("protected void defineMethods(MethodContext context) {\n")
@@ -174,7 +198,12 @@ class MethodGenerator
     }
     output.write("}\n")
     output.write("\n")
-    output.write("protected void defineSingletonMethods(SingletonMethodContext context) {\n")
+
+    if @is_module
+      output.write("protected void defineModuleFunctions(ModuleFunctionsContext context) {\n")
+    else
+      output.write("protected void defineSingletonMethods(SingletonMethodContext context) {\n")
+    end
     @class_methods.each {|m|
       m.generate_creation(output)
     }
@@ -257,5 +286,8 @@ end
 
 if $0 == __FILE__
   generator = MethodGenerator.new(STDIN)
+  unless ARGV.empty?
+    generator.package = ARGV[0]
+  end
   generator.generate(STDOUT)
 end

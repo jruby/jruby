@@ -21,6 +21,7 @@ class TestGenerator < Test::Unit::TestCase
     generator = nil
     open("test_data.xml") do |file|
       generator = MethodGenerator.new(file)
+      generator.package = 'some.place.to.put.definitions'
       generator.generate(output)
     end
 
