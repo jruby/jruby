@@ -173,9 +173,7 @@ public class RbKernel {
     }
     
     public static RubyObject m_require(Ruby ruby, RubyObject recv, RubyString arg1) {
-        if (arg1.getValue().endsWith(".rb")) {
-            ruby.getRuntime().loadFile((RubyString)arg1, false);
-        } else if (arg1.getValue().endsWith(".jar")) {
+        if (arg1.getValue().endsWith(".jar")) {
             File jarFile = new File(arg1.getValue());
             if (!jarFile.exists()) {
                 jarFile = new File(new File(ruby.getSourceFile()).getParentFile(), arg1.getValue());
@@ -190,6 +188,11 @@ public class RbKernel {
                 } catch (MalformedURLException murlExcptn) {
                 }
             }
+        } else {
+        	if (!arg1.getValue().endsWith(".rb")) {
+        		arg1 = RubyString.m_newString(ruby, arg1.getValue() + ".rb");
+        	}
+            ruby.getRuntime().loadFile(arg1, false);
         }
         return ruby.getNil();
     }
