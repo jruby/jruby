@@ -23,6 +23,11 @@
 require 'java'
 require 'bytecode.rb'
 
+module JavaLang
+  include_package 'java.lang'
+  java_alias :JString, :String
+end
+
 module JRuby
   module AST
     include_package 'org.jruby.ast.visitor'
@@ -54,19 +59,11 @@ module JRuby
         @bytecodes[index]
       end
 
-      def jvm_bytecode
-        list = BCEL::InstructionList.new
-        @bytecodes.each {|b| b.emit_jvm_bytecode(list) }
-        code = list.getByteCode
-        result = []
-        for i in 0...code.length
-          if code[i] >= 0
-            result << code[i]
-          else
-            result << code[i] + 256
-          end
-        end
-        result
+      def jvm_compile(instructionlist, constantpoolgen)
+        @instructionlist = instructionlist
+        @constants = constantpoolgen
+        factory = BCEL::InstructionFactory.new(@constants)
+        @bytecodes.each {|b| b.emit_jvm_bytecode(@instructionlist, factory) }
       end
     end
 
@@ -78,7 +75,7 @@ module JRuby
       end
 
       def compile(tree)
-        @bytecodes = BytecodeSequence.new
+        @bytecodes = BytecodeSequence.new(@constantpoolgen)
         emit_bytecodes(tree)
         @bytecodes
       end
@@ -98,6 +95,17 @@ module JRuby
 
       def visitFixnumNode(node)
         @bytecodes << PushFixnum.new(node.getValue)
+      end
+
+      def visitCallNode(node)
+        emit_bytecodes(node.getReceiverNode)
+        iter = node.getArgsNode.iterator
+        while iter.hasNext
+          emit_bytecodes(iter.next)
+        end
+        @bytecodes << Call.new(node.getName,
+                               node.getArgsNode.size,
+                               :normal)
       end
 
       def visitFCallNode(node)
@@ -123,7 +131,7 @@ module JRuby
     # Since we can't subclass Java interfaces properly we have
     # to do this magic to get CompilingVisitor to behave like
     # a class.
-    def CompilingVisitor.new
+    def CompilingVisitor.new()
       nodeVisitor = JRuby::AST::NodeVisitor.new
       class << nodeVisitor
         include CompilingVisitor

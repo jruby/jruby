@@ -24,7 +24,8 @@ module JRuby
   module Compiler
     module Bytecode
 
-      SELF_INDEX = 0x1234
+      SELF_INDEX = 1
+      RUNTIME_INDEX = 0
 
       class AssignLocal
         attr_reader :index
@@ -40,12 +41,28 @@ module JRuby
         def initialize(value)
           @value = value
         end
+
+        def emit_jvm_bytecode(list, factory)
+          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+
+          list.append(BCEL::ICONST.new(@value))
+          list.append(BCEL::I2L.new())
+
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+          arg_types[1] = BCEL::Type::LONG
+          list.append(factory.createInvoke("org.jruby.RubyFixnum",
+                                           "newFixnum",
+                                           BCEL::ObjectType.new("org.jruby.RubyFixnum"),
+                                           arg_types,
+                                           BCEL::Constants::INVOKESTATIC))
+        end
       end
 
       class PushSelf
 
-        def emit_jvm_bytecode(list)
-          list.append(BCEL::GETSTATIC.new(SELF_INDEX))
+        def emit_jvm_bytecode(list, factory)
+          list.append(BCEL::ALOAD.new(SELF_INDEX))
         end
       end
 
@@ -56,6 +73,52 @@ module JRuby
         def initialize(name, arity, type)
           @name, @arity, @type = name, arity, type
         end
+
+        def emit_jvm_bytecode(list, factory)
+          # ..., receiver, arg1, arg2
+
+          list.append(factory.createNewArray(BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"), arity))
+
+          # ..., receiver, arg1, arg2, args_array
+
+          # WARNING: the following line destroys the 'self' variable!!!!...
+
+          list.append(BCEL::InstructionFactory.createStore(BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1), SELF_INDEX))
+
+          for i in 0...arity
+            list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1), SELF_INDEX))
+            # ..., receiver, arg1, ..., argN, args_array
+            list.append(BCEL::SWAP.new)
+            # ..., receiver, arg1, ..., args_array, argN
+            list.append(BCEL::ICONST.new(i))
+            # ..., receiver, arg1, ..., args_array, argN, index
+            list.append(BCEL::SWAP.new)
+            # ..., receiver, arg1, ..., args_array, index, argN
+            list.append(BCEL::AASTORE.new())
+            # ..., receiver, arg1, ... argN-1
+          end
+
+          # ..., receiver
+          list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1), SELF_INDEX))
+          # ..., receiver, args_array
+
+          list.append(BCEL::PUSH.new(factory.getConstantPool, @name))
+
+          # ..., receiver, args_array, name
+
+          list.append(BCEL::SWAP.new)
+
+          # ..., receiver, name, args_array
+
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = BCEL::Type::STRING
+          arg_types[1] = BCEL::ArrayType.new("org.jruby.runtime.builtin.IRubyObject", 1)
+          list.append(factory.createInvoke("org.jruby.runtime.builtin.IRubyObject",
+                                           "callMethod",
+                                           BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
+                                           arg_types,
+                                           BCEL::Constants::INVOKEINTERFACE))
+        end
       end
 
       class PushString
@@ -64,8 +127,21 @@ module JRuby
         def initialize(value)
           @value = value
         end
-      end
 
+        def emit_jvm_bytecode(list, factory)
+          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          list.append(BCEL::PUSH.new(factory.getConstantPool, @value))
+
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+          arg_types[1] = BCEL::Type::STRING
+          list.append(factory.createInvoke("org.jruby.RubyString",
+                                           "newString",
+                                           BCEL::ObjectType.new("org.jruby.RubyString"),
+                                           arg_types,
+                                           BCEL::Constants::INVOKESTATIC))
+        end
+      end
     end
   end
 end

@@ -35,8 +35,54 @@ test_equal(1, code[2].arity)
 
 code = compile("self")
 test_equal([PushSelf], code.collect {|c| c.class })
-test_equal([178, 0x12, 0x34], code.jvm_bytecode)
 
+
+code = compile("1 + 2")
+test_equal([PushFixnum, PushFixnum, Call],
+           code.collect {|c| c.class })
 
 
 test_print_report
+
+
+# ------------------------------------------------------
+
+
+interfaces = JavaLang::JString[].new(0)
+classgen = BCEL::ClassGen.new("CompiledRuby",
+                              "java.lang.Object",
+                              "/tmp/CompiledRuby.class",
+                              BCEL::Constants::ACC_PUBLIC,
+                              interfaces)
+
+arg_types = BCEL::Type[].new(2)
+arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
+arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
+
+arg_names = JavaLang::JString[].new(2)
+arg_names[0] = "runtime"
+arg_names[1] = "self"
+
+instructions = BCEL::InstructionList.new
+
+methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::ACC_STATIC,
+                                BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
+                                arg_types,
+                                arg_names,
+                                "doStuff",
+                                "CompiledRuby",
+                                instructions,
+                                classgen.getConstantPool)
+
+
+code = compile("1")
+code.jvm_compile(instructions, classgen.getConstantPool)
+
+# Add a return manually
+instructions.append(BCEL::ARETURN.new)
+
+methodgen.setMaxStack
+classgen.addMethod(methodgen.getMethod)
+classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
+
+classgen.getJavaClass.dump("/tmp/CompiledRuby.class")
