@@ -328,13 +328,13 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        if (threadContext.getCBase() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+        if (threadContext.getRubyClass() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
-        } else if (!threadContext.getCBase().isSingleton() && threadContext.getCBase().isClassVarDefined(iVisited.getName())) {
-            definition = "class_variable";
-        } else if (((RubyModule)threadContext.getCBase().getInstanceVariable("__attached__")).isClassVarDefined(iVisited.getName())) {
-            definition = "class_variable";
-        }
+        } else if (!threadContext.getRubyClass().isSingleton() && threadContext.getRubyClass().isClassVarDefined(iVisited.getName())) {
+                definition = "class_variable";
+            } else if (((RubyModule)threadContext.getRubyClass().getInstanceVariable("__attached__")).isClassVarDefined(iVisited.getName())) {
+                definition = "class_variable";
+            }
     }
 
     /**

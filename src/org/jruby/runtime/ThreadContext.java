@@ -159,10 +159,6 @@ public class ThreadContext {
         return runtime.getNil();
     }
 
-    public RubyModule getCBase() {
-        return getCurrentFrame().getNamespace().getModule();
-    }
-
     public Visibility getCurrentVisibility() {
         return getScopeStack().current().getVisibility();
     }
