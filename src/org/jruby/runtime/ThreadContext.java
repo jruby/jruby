@@ -42,7 +42,6 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;

@@ -37,7 +37,6 @@ import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  *
