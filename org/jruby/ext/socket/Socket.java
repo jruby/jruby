@@ -1,4 +1,3 @@
-
 package org.jruby.ext.socket;
 
 /**
