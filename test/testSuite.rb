@@ -27,34 +27,35 @@
 # 
 require 'minirunit'
 
-load('test/testRegexp.rb')
-load('test/testStringEval.rb')
-load('test/testHereDocument.rb')
-load('test/testClass.rb')
-load('test/testArray.rb')
-load('test/testVariableAndMethod.rb')
-load('test/testIf.rb')
-load('test/testLoops.rb')
-load('test/testMethods.rb')
-load('test/testGlobalVars.rb')
-load('test/testClasses.rb')
-load('test/testNumber.rb')
+test_load('test/testRegexp.rb')
+test_load('test/testStringEval.rb')
+test_load('test/testHereDocument.rb')
+test_load('test/testClass.rb')
+test_load('test/testArray.rb')
+test_load('test/testVariableAndMethod.rb')
+test_load('test/testIf.rb')
+test_load('test/testLoops.rb')
+test_load('test/testMethods.rb')
+test_load('test/testGlobalVars.rb')
+test_load('test/testClasses.rb')
+test_load('test/testNumber.rb')
 
 #MRI Ruby tests:
-load('test/mri/testAssignment.rb')
-load('test/mri/testCondition.rb')
-load('test/mri/testCase.rb')
-load('test/mri/testIfUnless.rb')
-load('test/mri/testWhileUntil')
-load('test/mri/testException')
-load('test/mri/testArray')
-load('test/mri/testHash')
-load('test/mri/testIterator')
+test_load('test/mri/testAssignment.rb')
+test_load('test/mri/testCondition.rb')
+test_load('test/mri/testCase.rb')
+test_load('test/mri/testIfUnless.rb')
+test_load('test/mri/testWhileUntil.rb')
+test_load('test/mri/testException.rb')
+test_load('test/mri/testArray.rb')
+test_load('test/mri/testHash.rb')
+test_load('test/mri/testIterator.rb')
 
 #Output result
 puts
-if $failed > 0
-   printf "test: %d failed %d\n", $ntest, $failed
-else
-   printf "end of test(test: %d)\n", $ntest
-end
+#if $failed > 0
+#   printf "test: %d failed %d\n", $ntest, $failed
+#else
+#   printf "end of test(test: %d)\n", $ntest
+#end
+test_print_report
