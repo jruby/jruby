@@ -28,26 +28,21 @@
  */
 package org.jruby.parser;
 
-import org.ablaf.ast.INode;
-import org.ablaf.common.IConfiguration;
-import org.ablaf.common.IErrorHandler;
-import org.ablaf.common.ISourcePosition;
-import org.ablaf.lexer.ILexerSource;
-import org.ablaf.lexer.IYaccLexer;
-import org.ablaf.parser.IParser;
-import org.ablaf.parser.IParserResult;
-import org.jruby.ast.*;
-import org.jruby.ast.types.IAssignableNode;
-import org.jruby.ast.types.IListNode;
-import org.jruby.ast.types.ILiteralNode;
-import org.jruby.ast.util.ListNodeUtil;
-import org.jruby.common.IErrors;
-import org.jruby.lexer.yacc.LexState;
-import org.jruby.lexer.yacc.RubyYaccLexer;
-import org.jruby.runtime.Visibility;
-import org.jruby.util.IdUtil;
+import java.math.*;
 
-import java.math.BigInteger;
+import org.ablaf.ast.*;
+import org.ablaf.common.*;
+import org.ablaf.lexer.*;
+import org.ablaf.parser.*;
+
+import org.jruby.common.*;
+import org.jruby.lexer.yacc.*;
+import org.jruby.ast.*;
+import org.jruby.ast.types.*;
+
+import org.jruby.ast.util.*;
+import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 public class DefaultRubyParser implements IParser {
     private ParserSupport support;
@@ -467,9 +462,9 @@ case 16:
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     if (((INode)yyVals[-2+yyTop]) != null && ((INode)yyVals[-2+yyTop]) instanceof BeginNode) {
-                        yyVal = new WhileNode(getPosition(), support.getConditionNode(((INode)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode());
+                        yyVal = new WhileNode(getPosition(), support.getConditionNode(((INode)yyVals[0+yyTop])), ((BeginNode)yyVals[-2+yyTop]).getBodyNode(), false);
                     } else {
-                        yyVal = new WhileNode(getPosition(), support.getConditionNode(((INode)yyVals[0+yyTop])), ((INode)yyVals[-2+yyTop]));
+                        yyVal = new WhileNode(getPosition(), support.getConditionNode(((INode)yyVals[0+yyTop])), ((INode)yyVals[-2+yyTop]), false);
                     }
                 }
   break;

@@ -284,9 +284,9 @@ stmt          : kALIAS fitem {
               | stmt kWHILE_MOD expr {
                     support.checkExpression($3);
                     if ($1 != null && $1 instanceof BeginNode) {
-                        $$ = new WhileNode(getPosition(), support.getConditionNode($3), $<BeginNode>1.getBodyNode());
+                        $$ = new WhileNode(getPosition(), support.getConditionNode($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new WhileNode(getPosition(), support.getConditionNode($3), $1);
+                        $$ = new WhileNode(getPosition(), support.getConditionNode($3), $1, false);
                     }
                 }
               | stmt kUNTIL_MOD expr {

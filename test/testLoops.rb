@@ -15,3 +15,15 @@ while (i < 10)
    i = i + 1
 end
 test_ok([0,0,1,1,2,2,3,3,4,4,5,5] == a)
+
+# Make sure do while works
+t = 0
+loop_count = 0
+ 
+begin
+t = t > 0 ? 0 : 1
+loop_count = loop_count + 1
+end while t > 0
+
+test_ok(2, t) 
+

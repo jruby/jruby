@@ -176,6 +176,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 list.add(eval(node));
             }
         }
+        
         result = RubyArray.newArray(runtime, list);
     }
 
@@ -1233,7 +1234,13 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitWhileNode(WhileNode)
      */
     public void visitWhileNode(WhileNode iVisited) {
-        while (eval(iVisited.getConditionNode()).isTrue()) {
+        // while do...Initial condition not met do not enter block
+        if (iVisited.evaluateAtStart() && 
+            eval(iVisited.getConditionNode()).isTrue() == false) {
+            return;
+        }
+        
+        do {
             while (true) { // Used for the 'redo' command
                 try {
                     eval(iVisited.getBodyNode());
@@ -1248,7 +1255,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                     return;
                 }
             }
-        }
+        } while (eval(iVisited.getConditionNode()).isTrue());
     }
 
     /**

@@ -3,9 +3,11 @@
  * Created on 05. November 2001, 21:46
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -51,13 +53,23 @@ public class WhileNode extends AbstractNode {
 
     private final INode conditionNode;
     private final INode bodyNode;
+    private final boolean evaluateAtStart;
 
     public WhileNode(ISourcePosition position, INode conditionNode, INode bodyNode) {
         super(position);
         this.conditionNode = conditionNode;
         this.bodyNode = bodyNode;
+        this.evaluateAtStart = true;
     }
 
+    public WhileNode(ISourcePosition position, INode conditionNode, INode bodyNode,
+            boolean evalAtStart) {
+        super(position);
+        this.conditionNode = conditionNode;
+        this.bodyNode = bodyNode;
+        this.evaluateAtStart = evalAtStart;
+    }
+    
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -79,5 +91,13 @@ public class WhileNode extends AbstractNode {
      */
     public INode getConditionNode() {
         return conditionNode;
+    }
+    
+    /**
+     * Determine whether this is while or do while
+     * @return true if you are a while, false if do while
+     */
+    public boolean evaluateAtStart() {
+        return evaluateAtStart;
     }
 }
