@@ -58,15 +58,5 @@ public class TestRubySymbol extends TestCase {
         RubySymbol symbol = RubySymbol.newSymbol(runtime, "somename");
         st.store(symbol);
         assertSame(symbol, st.lookup("somename"));
-
-        RubySymbol nilSymbol = RubySymbol.nilSymbol(runtime);
-        st.store(nilSymbol);
-        assertSame(nilSymbol, st.lookup(null));
-    }
-
-    public void testNilSymbol() throws Exception {
-        assertTrue(RubySymbol.nilSymbol(runtime).isNil());
-        assertSame(RubySymbol.nilSymbol(runtime),
-                   RubySymbol.nilSymbol(runtime));
     }
 }

@@ -98,7 +98,6 @@ public class Main {
             System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-            System.out.println("    -R 'name'       The regexp engine to use, for now can be JDK, GNU or ORO");
             hasPrintedUsage = true;
         }
     }

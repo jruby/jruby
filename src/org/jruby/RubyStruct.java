@@ -200,7 +200,7 @@ public class RubyStruct extends RubyObject {
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args) {
         RubyStruct struct = new RubyStruct(recv.getRuntime(), (RubyClass) recv);
 
-        int size = RubyFixnum.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
+        int size = RubyNumeric.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
 
         struct.values = new IRubyObject[size];
 
@@ -212,7 +212,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(IRubyObject[] args) {
         modify();
 
-        int size = RubyFixnum.fix2int(getInstanceVariable(getMetaClass(), "__size__"));
+        int size = RubyNumeric.fix2int(getInstanceVariable(getMetaClass(), "__size__"));
 
         if (args.length > size) {
             throw new ArgumentError(runtime, "struct size differs (" + args.length +" for " + size + ")");
@@ -360,7 +360,7 @@ public class RubyStruct extends RubyObject {
             return getByName(key.asSymbol());
         }
 
-        int idx = RubyFixnum.fix2int(key);
+        int idx = RubyNumeric.fix2int(key);
 
         idx = idx < 0 ? values.length + idx : idx;
 
@@ -378,7 +378,7 @@ public class RubyStruct extends RubyObject {
             return setByName(key.asSymbol(), value);
         }
 
-        int idx = RubyFixnum.fix2int(key);
+        int idx = RubyNumeric.fix2int(key);
 
         idx = idx < 0 ? values.length + idx : idx;
 

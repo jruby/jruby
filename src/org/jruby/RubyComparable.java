@@ -30,6 +30,7 @@
 package org.jruby;
 
 import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,6 +76,8 @@ public class RubyComparable {
             }
             return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
         } catch (NameError rnExcptn) {
+            return recv.getRuntime().getFalse();
+        } catch (NoMethodError rnExcptn) {
             return recv.getRuntime().getFalse();
         }
     }

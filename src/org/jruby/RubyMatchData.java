@@ -135,15 +135,15 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject aref(IRubyObject[] args) {
         int argc = checkArgumentCount(args, 1, 2);
         if (argc == 2) {
-            long beg = RubyNumeric.fix2long(args[0]);
-            long len = RubyNumeric.fix2long(args[1]);
+            int beg = RubyNumeric.fix2int(args[0]);
+            int len = RubyNumeric.fix2int(args[1]);
             if (beg < 0) {
                 beg += getSize();
             }
             return subseq(beg, len);
         }
         if (args[0] instanceof RubyFixnum) {
-            return group(RubyNumeric.fix2long(args[0]));
+            return group(RubyNumeric.fix2int(args[0]));
         }
         if (args[0] instanceof RubyBignum) {
             throw new IndexError(getRuntime(), "index too big");
@@ -165,7 +165,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuntime().getNil();
         }
-        return RubyFixnum.newFixnum(getRuntime(), begin[(int) index.getLongValue()]);
+        return RubyFixnum.newFixnum(getRuntime(), begin[RubyNumeric.fix2int(index)]);
     }
 
     /** match_end
@@ -175,7 +175,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuntime().getNil();
         }
-        return RubyFixnum.newFixnum(getRuntime(), end[(int) index.getLongValue()]);
+        return RubyFixnum.newFixnum(getRuntime(), end[RubyNumeric.fix2int(index)]);
     }
 
     /** match_size

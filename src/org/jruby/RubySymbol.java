@@ -61,14 +61,11 @@ public class RubySymbol extends RubyObject {
     }
 
     /** rb_to_id
-     *
+     * 
+     * @return a String representation of the symbol 
      */
     public String asSymbol() {
         return symbol;
-    }
-
-    public static RubySymbol nilSymbol(Ruby runtime) {
-        return newSymbol(runtime, null);
     }
 
     public static RubyClass createSymbolClass(Ruby runtime) {
@@ -112,10 +109,10 @@ public class RubySymbol extends RubyObject {
         return false;
     }
 
-    public static RubySymbol getSymbol(Ruby runtime, long id) {
+    public static IRubyObject getSymbol(Ruby runtime, long id) {
         RubySymbol result = runtime.symbolTable.lookup(id);
         if (result == null) {
-            return nilSymbol(runtime);
+            return runtime.getNil();
         }
         return result;
     }
@@ -132,15 +129,7 @@ public class RubySymbol extends RubyObject {
 
             result = runtime.symbolTable.lookup(name);
             if (result == null) {
-                if (name == null) {
-                    result = new RubySymbol(runtime, null) {
-                        public boolean isNil() {
-                            return true;
-                        }
-                    };
-                } else {
-                    result = new RubySymbol(runtime, name);
-                }
+                result = new RubySymbol(runtime, name);
                 runtime.symbolTable.store(result);
             }
         }
@@ -194,7 +183,6 @@ public class RubySymbol extends RubyObject {
 
     public static class SymbolTable {
         /* Using Java's GC to keep the table free from unused symbols. */
-
         private ReferenceQueue unusedSymbols = new ReferenceQueue();
         private Map table = new HashMap();
 
@@ -223,7 +211,7 @@ public class RubySymbol extends RubyObject {
 
         public void store(RubySymbol symbol) {
             clean();
-            table.put(symbol.asSymbol(), new WeakSymbolEntry(symbol));
+            table.put(symbol.asSymbol(), new WeakSymbolEntry(symbol, unusedSymbols));
         }
 
         private void clean() {
@@ -236,12 +224,12 @@ public class RubySymbol extends RubyObject {
         private class WeakSymbolEntry extends WeakReference {
             private final String name;
 
-            public WeakSymbolEntry(RubySymbol symbol) {
-                super(symbol, unusedSymbols);
+            public WeakSymbolEntry(RubySymbol symbol, ReferenceQueue queue) {
+                super(symbol, queue);
                 this.name = symbol.asSymbol();
             }
 
-            private String name() {
+            public String name() {
                 return name;
             }
         }

@@ -360,8 +360,8 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum((value & 1L << position) == 0 ? 0 : 1);
     }
 
-    public RubyString id2name() {
-        return RubySymbol.getSymbol(runtime, value).to_s();
+    public IRubyObject id2name() {
+        return RubySymbol.getSymbol(runtime, value).convertToString();
     }
 
     public RubyFixnum invert() {
