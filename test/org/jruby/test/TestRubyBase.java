@@ -56,13 +56,11 @@ public class TestRubyBase extends TestCase {
     protected String eval(String script) throws Exception {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         out = new PrintStream(result);
-        RubyIO lStream = new RubyIO(ruby);
-        lStream.initIO(null, out, null);
+        RubyIO lStream = new RubyIO(ruby, out); 
         ruby.getGlobalVariables().set("$stdout", lStream);
         ruby.getGlobalVariables().set("$>", lStream);
         lStream = (RubyIO) ruby.getGlobalVariables().get("$stderr");
-        lStream.initIO(null, out, null);
-        ruby.getGlobalVariables().set("$stderr", lStream);
+        lStream.reopen(new RubyIO(ruby, out), null);
         
         ruby.loadScript("test", new StringReader(script), false);
         

@@ -1,17 +1,45 @@
+/*
+ * RubyFile.java - No description
+ * Created on 12.01.2002, 19:14:58
+ * 
+ * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
+ * 
+ * JRuby - http://jruby.sourceforge.net
+ * 
+ * This file is part of JRuby
+ * 
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * 
+ */
 package org.jruby;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.RubyInputStream;
+import org.jruby.util.IOHandlerSeekable;
+import org.jruby.util.IOHandlerUnseekable;
+import org.jruby.util.IOModes;
 
 /**
  * Ruby File class equivalent in java.
@@ -20,13 +48,31 @@ import org.jruby.util.RubyInputStream;
  * @version $Revision$
  **/
 public class RubyFile extends RubyIO {
+    protected String path;
+    
+    public RubyFile(Ruby ruby, String path) {
+        super(ruby, ruby.getClasses().getFileClass());
 
+        this.path = path;
+        
+        try {
+            FileInputStream inputStream = new FileInputStream(new File(path));
+            handler = new IOHandlerUnseekable(getRuntime(), inputStream, null);
+            modes = new IOModes(ruby, "r");
+        } catch (FileNotFoundException e) {
+            throw new IOError(runtime, e.getMessage());
+        }
+        
+        registerIOHandler(handler);
+    }
+    
 	public RubyFile(Ruby ruby, RubyClass type) {
 	    super(ruby, type);
 	}
 
     public static RubyClass createFileClass(Ruby ruby) {
-        RubyClass fileClass = ruby.defineClass("File", ruby.getClass("IO"));
+        RubyClass fileClass = ruby.defineClass("File", 
+                ruby.getClasses().getIoClass());
 
         RubyString separator = RubyString.newString(ruby, separator());
         separator.freeze();
@@ -67,17 +113,12 @@ public class RubyFile extends RubyIO {
     
     protected void openInternal(String path, String mode) {
         this.path = path;
-        setMode(mode);
-        File file = new File(path);
+
         try {
-            if (isReadable()) {
-                this.inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
-            }
-            if (isWriteable()) {
-                FileOutputStream fileOutput = new FileOutputStream(file.getAbsolutePath(), append);
-                this.outStream = new BufferedOutputStream(fileOutput);
-                this.outFileDescriptor = fileOutput.getFD();
-            }
+            handler = new IOHandlerSeekable(getRuntime(), path, mode);
+            modes = new IOModes(getRuntime(), mode);
+            
+            registerIOHandler(handler);
         } catch (IOException e) {
             throw IOError.fromException(runtime, e);
         }
@@ -109,7 +150,13 @@ public class RubyFile extends RubyIO {
 	    if (args.length > 1 && args[1] instanceof RubyString) {
 	        mode = ((RubyString)args[1]).getValue();
 	    }
-	    closeStreams();
+	    
+	    // One of the few places where handler may be null.
+	    // If handler is not null, it indicates that this object
+	    // is being reused.
+	    if (handler != null) {
+	        close();
+	    }
 	    openInternal(path, mode);
 	    
 	    if (getRuntime().isBlockGiven()) {
@@ -119,30 +166,42 @@ public class RubyFile extends RubyIO {
 	}
 	
 	public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
-	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
+	    return open(recv, args, true);
+	}
+	
+	public static IRubyObject open(IRubyObject recv, IRubyObject[] args,
+	        boolean tryToYield) {
 	    if (args.length == 0) {
 	        throw new ArgumentError(recv.getRuntime(), 0, 1);
 	    }
 	    args[0].checkSafeString();
-	    file.path = args[0].toString();
+	    String path = args[0].toString();
 	    String mode = "r";
 	    if (args.length > 1 && args[1] instanceof RubyString) {
 	        mode = ((RubyString)args[1]).getValue();
 	    }
-	    file.closeStreams();
-	    file.openInternal(file.path, mode);
-	    if (recv.getRuntime().isBlockGiven()) {
+	    
+	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
+	    file.openInternal(path, mode);
+
+	    if (tryToYield && recv.getRuntime().isBlockGiven()) {
 	        try {
 	            recv.getRuntime().yield(file);
 	        } finally {
-	            file.closeStreams();
+	            file.close();
 	        }
+	        
+	        return recv.getRuntime().getNil();
 	    }
+	    
 	    return file;
 	}
 
     public static IRubyObject chmod(IRubyObject recv, RubyInteger mode, IRubyObject[] names) {
-        // no-op for now
+        // Java has no ability to chmod directly.  Once popen support
+        // is added, we can create a ruby script to perform chmod and then
+        // put it in our base distribution.  It could also be some embedded
+        // eval? 
         return RubyFixnum.newFixnum(recv.getRuntime(), 0);
     }
 
@@ -231,4 +290,9 @@ public class RubyFile extends RubyIO {
     public static RubyBoolean directory(IRubyObject recv, RubyString filename) {
 		return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).isDirectory());
 	}
+    
+    public String toString() {
+        return "RubyFile(" + path + ", " + modes.getModeString() + ", " +
+           fileno + ")";
+    }
 }

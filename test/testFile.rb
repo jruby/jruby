@@ -23,6 +23,7 @@ test_equal(".", File.dirname("wahoo"))
 
 # IO#readlines, IO::readlines, open, close, delete, ...
 
+test_exception(Errno::ENOENT) { File.open("NO_SUCH_FILE_EVER") }
 f = open("testFile_tmp", "w")
 f.write("one\ntwo\nthree\n")
 f.close

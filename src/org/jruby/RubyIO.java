@@ -3,10 +3,12 @@
  * Created on 12.01.2002, 19:14:58
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -31,17 +33,22 @@ package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.util.RubyInputStream;
+import org.jruby.util.IOHandler;
+import org.jruby.util.IOHandlerSeekable;
+import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.Asserts;
+import org.jruby.util.IOModes;
+import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.SystemCallError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.builtin.definitions.IODefinition;
+
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.FileDescriptor;
+import java.util.Hashtable;
 
 /**
  * 
@@ -49,180 +56,294 @@ import java.io.FileDescriptor;
  * @version $Revision$
  */
 public class RubyIO extends RubyObject {
-    protected RubyInputStream inStream = null;
-    protected OutputStream outStream = null;
-    protected FileDescriptor outFileDescriptor = null;
-
-    protected boolean sync = false;
-
-    protected boolean readable = false;
-    protected boolean writeable = false;
-    protected boolean append = false;
-
+    public final static int STDIN = 0;
+    public final static int STDOUT = 1;
+    public final static int STDERR = 2;
+    
+    protected IOHandler handler = null;
+    protected IOModes modes = null;
     protected int lineNumber = 0;
+    
+    // Does THIS IO object think it is still open
+    // as opposed to the IO Handler which knows the
+    // actual truth.  If two IO objects share the
+    // same IO Handler, then it is possible for
+    // one object to think that the handler is open
+    // when it really isn't.  Keeping track of this yields
+    // the right errors.
+    protected boolean isOpen = true;
 
-    protected String path;
-
-    public RubyIO(Ruby ruby) {
-        super(ruby, ruby.getClass("IO"));
+    /*
+     * Random notes:
+     *  
+     * 1. When a second IO object is created with the same fileno odd
+     * concurrency issues happen when the underlying implementation
+     * commits data.   So:
+     * 
+     * f = File.new("some file", "w")
+     * f.puts("heh")
+     * g = IO.new(f.fileno)
+     * g.puts("hoh")
+     * ... more operations of g and f ...
+     * 
+     * Will generate a mess in "some file".  The problem is that most
+     * operations are buffered.  When those buffers flush and get
+     * written to the physical file depends on the implementation
+     * (semantically I would think that it should be last op wins -- but 
+     * it isn't).  I doubt java could mimic ruby in this way.  I also 
+     * doubt many people are taking advantage of this.  How about 
+     * syswrite/sysread though?  I think the fact that sysread/syswrite 
+     * are defined to be a low-level system calls, allows implementations 
+     * to be somewhat different?
+     * 
+     * 2. In the case of:
+     * f = File.new("some file", "w")
+     * f.puts("heh")
+     * print f.pos
+     * g = IO.new(f.fileno)
+     * print g.pos
+     * Both printed positions will be the same.  But:
+     * f = File.new("some file", "w")
+     * f.puts("heh")
+     * g = IO.new(f.fileno)
+     * print f.pos, g.pos
+     * won't be the same position.  Seem peculiar enough not to touch
+     * (this involves pos() actually causing a seek?)
+     * 
+     * 3. All IO objects reference a IOHandler.  If multiple IO objects
+     * have the same fileno, then they also share the same IOHandler.
+     * It is possible that some IO objects may share the same IOHandler
+     * but not have the same permissions.  However, all subsequent IO
+     * objects created after the first must be a subset of the original
+     * IO Object (see below for an example). 
+     *
+     * The idea that two or more IO objects can have different access
+     * modes means that IO objects must keep track of their own
+     * permissions.  In addition the IOHandler itself must know what
+     * access modes it has.
+     * 
+     * The above sharing situation only occurs in a situation like:
+     * f = File.new("some file", "r+")
+     * g = IO.new(f.fileno, "r")
+     * Where g has reduced (subset) permissions.
+     * 
+     * On reopen, the fileno's IOHandler gets replaced by a new handler. 
+     */
+    
+    protected static Hashtable ioHandlers = new Hashtable();
+    
+    /*
+     * I considered making all callers of this be moved into IOHandlers
+     * constructors (since it would be less error prone to forget there).
+     * However, reopen() makes doing this a little funky. 
+     */
+    public static void registerIOHandler(IOHandler handler) {
+        ioHandlers.put(new Integer(handler.getFileno()), handler);
+    }
+    
+    public static void unregisterIOHandler(int fileno) {
+        ioHandlers.remove(new Integer(fileno));
+    }
+    
+    public static IOHandler getIOHandlerByFileno(int fileno) {
+        return (IOHandler) ioHandlers.get(new Integer(fileno));
+    }
+    
+    protected static int fileno = 2;
+    
+    public static int getNewFileno() {
+        fileno++;
+        
+        return fileno;
     }
 
-    public RubyIO(Ruby ruby, RubyClass type) {
+    // This should only be called by this and RubyFile.
+    // It allows this object to be created without a IOHandler.
+    protected RubyIO(Ruby ruby, RubyClass type) {
         super(ruby, type);
     }
 
+    public RubyIO(Ruby ruby, OutputStream outputStream) {
+        super(ruby, ruby.getClasses().getIoClass());
+        
+        // We only want IO objects with valid streams (better to error now). 
+        if (outputStream == null) {
+            throw new IOError(ruby, "Opening invalid stream");
+        }
+        
+        handler = new IOHandlerUnseekable(ruby, null, outputStream);
+        modes = new IOModes(ruby, handler.getModeString());
+        
+        registerIOHandler(handler);
+    }
+    
+    public RubyIO(Ruby ruby, int descriptor) {
+        super(ruby, ruby.getClasses().getIoClass());
+
+        handler = new IOHandlerUnseekable(ruby, descriptor);
+        modes = new IOModes(ruby, handler.getModeString());
+        
+        registerIOHandler(handler);
+    }
+    
     public static RubyClass createIOClass(Ruby ruby) {
-        RubyClass result = new IODefinition(ruby).getType();
+        RubyClass result = 
+            ruby.defineClass("IO", ruby.getClasses().getObjectClass());
+        
+        result.includeModule(ruby.getClasses().getClass("Enumerable"));
+        
+        // TODO: Implement tty? and isatty.  We have no real capability to 
+        // determine this from java, but if we could set tty status, then
+        // we could invoke jruby differently to allow stdin to return true
+        // on this.  This would allow things like cgi.rb to work properly.
+        
         CallbackFactory callbackFactory = ruby.callbackFactory();
+        result.defineMethod("<<", callbackFactory.getMethod(RubyIO.class, "addString", IRubyObject.class));
+        result.defineMethod("clone", callbackFactory.getMethod(RubyIO.class, "clone_IO"));
+        result.defineMethod("close", callbackFactory.getMethod(RubyIO.class, "close"));
+        result.defineMethod("closed?", callbackFactory.getMethod(RubyIO.class, "closed"));
+        result.defineMethod("each", callbackFactory.getOptMethod(RubyIO.class, "each_line"));
+        result.defineMethod("each_byte", callbackFactory.getMethod(RubyIO.class, "each_byte"));
+        result.defineMethod("each_line", callbackFactory.getOptMethod(RubyIO.class, "each_line"));
+        result.defineMethod("eof", callbackFactory.getMethod(RubyIO.class, "eof"));
+        result.defineMethod("eof?", callbackFactory.getMethod(RubyIO.class, "eof"));
+        result.defineMethod("fileno", callbackFactory.getMethod(RubyIO.class, "fileno"));
+        result.defineMethod("flush", callbackFactory.getMethod(RubyIO.class, "flush"));
+        result.defineMethod("fsync", callbackFactory.getMethod(RubyIO.class, "fsync"));
+        result.defineMethod("getc", callbackFactory.getMethod(RubyIO.class, "getc"));
+        result.defineMethod("gets", callbackFactory.getOptMethod(RubyIO.class, "gets"));
+        result.defineMethod("initialize", callbackFactory.getOptMethod(RubyIO.class, "initialize", RubyFixnum.class));
+        result.defineMethod("lineno", callbackFactory.getMethod(RubyIO.class, "lineno"));
+        result.defineMethod("lineno=", callbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
+        result.defineMethod("pid", callbackFactory.getMethod(RubyIO.class, "pid"));
+        result.defineMethod("pos", callbackFactory.getMethod(RubyIO.class, "pos"));
+        result.defineMethod("pos=", callbackFactory.getMethod(RubyIO.class, "pos_set", RubyFixnum.class));
         result.defineMethod("print", callbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
         result.defineMethod("printf", callbackFactory.getOptSingletonMethod(RubyIO.class, "printf"));
+        result.defineMethod("putc", callbackFactory.getMethod(RubyIO.class, "putc", IRubyObject.class));
         result.defineMethod("puts", callbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
-        result.defineMethod("lineno=", callbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
+        result.defineMethod("read", callbackFactory.getOptMethod(RubyIO.class, "read"));
+        result.defineMethod("readchar", callbackFactory.getMethod(RubyIO.class, "readchar"));
+        result.defineMethod("readline", callbackFactory.getOptMethod(RubyIO.class, "readline"));
+        result.defineMethod("readlines", callbackFactory.getOptMethod(RubyIO.class, "readlines"));
+        result.defineMethod("reopen", callbackFactory.getOptMethod(RubyIO.class, "reopen", IRubyObject.class));
+        result.defineMethod("rewind", callbackFactory.getMethod(RubyIO.class, "rewind"));        
+        result.defineMethod("seek", callbackFactory.getOptMethod(RubyIO.class, "seek"));
+        result.defineMethod("sync", callbackFactory.getMethod(RubyIO.class, "sync"));
         result.defineMethod("sync=", callbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
-        result.defineMethod("fsync", callbackFactory.getMethod(RubyIO.class, "fsync"));
+        result.defineMethod("sysread", callbackFactory.getMethod(RubyIO.class, "sysread", RubyFixnum.class));
+        result.defineMethod("syswrite", callbackFactory.getMethod(RubyIO.class, "syswrite", IRubyObject.class));
+        result.defineMethod("tell", callbackFactory.getMethod(RubyIO.class, "pos"));
+        result.defineMethod("to_i", callbackFactory.getMethod(RubyIO.class, "fileno"));
+        result.defineMethod("ungetc", callbackFactory.getMethod(RubyIO.class, "ungetc", RubyFixnum.class));
+        result.defineMethod("write", callbackFactory.getMethod(RubyIO.class, "write", IRubyObject.class));
+
+        result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyIO.class, "newInstance"));
         result.defineSingletonMethod("foreach", callbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", IRubyObject.class));
         result.defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
+        
+        // Constants for seek
+        result.setConstant("SEEK_SET", RubyFixnum.newFixnum(ruby, IOHandler.SEEK_SET));
+        result.setConstant("SEEK_CUR", RubyFixnum.newFixnum(ruby, IOHandler.SEEK_CUR));
+        result.setConstant("SEEK_END", RubyFixnum.newFixnum(ruby, IOHandler.SEEK_END));
+        
         return result;
     }
-
-    public static IRubyObject stdin(Ruby ruby, RubyClass rubyClass, InputStream inStream) {
-        RubyIO io = new RubyIO(ruby, rubyClass);
-
-        io.inStream = new RubyInputStream(inStream);
-        io.readable = true;
-
-        return io;
+    
+    /**
+     * <p>Open a file descriptor, unless it is already open, then return
+     * it.</p> 
+     */
+    public static IRubyObject fdOpen(Ruby ruby, int descriptor) {
+        return new RubyIO(ruby, descriptor);
     }
 
-    public static IRubyObject stdout(Ruby ruby, RubyClass rubyClass, OutputStream outStream) {
-        RubyIO io = new RubyIO(ruby, rubyClass);
-
-        io.outStream = outStream;
-        io.writeable = true;
-
-        return io;
-    }
-
-    public static IRubyObject stderr(Ruby ruby, RubyClass rubyClass, OutputStream errStream) {
-        RubyIO io = new RubyIO(ruby, rubyClass);
-
-        io.outStream = errStream;
-        io.writeable = true;
-
-        return io;
-    }
-
+    /*
+     * See checkReadable for commentary.
+     */
     protected void checkWriteable() {
-        if (!writeable || outStream == null) {
+        if (isOpen() == false || modes.isWriteable() == false) {
             throw new IOError(getRuntime(), "not opened for writing");
         }
     }
 
+    /*
+     * What the IO object "thinks" it can do.  If two IO objects share
+     * the same fileno (IOHandler), then it is possible for one to pull
+     * the rug out from the other.  This will make the second object still
+     * "think" that the file is open.  Secondly, if two IO objects share
+     * the same fileno, but the second one only has a subset of the access
+     * permissions, then it will "think" that it cannot do certain 
+     * operations.
+     */
     protected void checkReadable() {
-        if (!readable || inStream == null) {
-            throw new IOError(getRuntime(), "not opened for reading");
+        if (isOpen() == false || modes.isReadable() == false) {
+            throw new IOError(getRuntime(), "not opened for reading");            
         }
     }
-
-    protected boolean isReadable() {
-        return readable;
-    }
-
-    protected boolean isWriteable() {
-        return writeable;
-    }
     
+    protected boolean isOpen() {
+        return isOpen;
+    }
+
     public OutputStream getOutStream() {
-        return outStream;
+        return handler.getOutputStream();
     }
 
     public InputStream getInStream() {
-        return inStream;
+        return handler.getInputStream();
     }
+    
+    public IRubyObject reopen(IRubyObject arg1, IRubyObject args[]) {
+        if (arg1.isKindOf(getRuntime().getClasses().getIoClass())) {
+            RubyIO ios = (RubyIO) arg1;
 
-    protected void closeStreams() {
-        if (inStream != null) {
-            try {
-                inStream.close();
-            } catch (IOException e) {
-                throw IOError.fromException(runtime, e);
-            }
-        }
-
-        if (outStream != null) {
-            try {
-                outStream.close();
-            } catch (IOException e) {
-                throw IOError.fromException(runtime, e);
-            }
-        }
-
-        inStream = null;
-        outStream = null;
-    }
-
-    /** rb_io_mode_flags
-     * 
-     */
-    protected void setMode(String mode) {
-        readable = false;
-        writeable = false;
-        append = false;
-
-        if (mode.length() == 0) {
-            throw new ArgumentError(getRuntime(), "illegal access mode");
-        }
-
-        switch (mode.charAt(0)) {
-            case 'r' :
-                readable = true;
-                break;
-            case 'a' :
-                append = true;
-                // fall through
-            case 'w' :
-                writeable = true;
-                break;
-            default :
-                throw new ArgumentError(getRuntime(), "illegal access mode " + mode);
-        }
-
-        if (mode.length() > 1) {
-            int i = mode.charAt(1) == 'b' ? 2 : 1;
-
-            if (mode.length() > i) {
-                if (mode.charAt(i) == '+') {
-                    readable = true;
-                    writeable = true;
-                } else {
-                    throw new ArgumentError(getRuntime(), "illegal access mode " + mode);
+            int keepFileno = handler.getFileno();
+            // When we reopen, we want our fileno to be preserved even
+            // though we have a new IOHandler.
+            // Note: When we clone we get a new fileno...then we replace it.
+            // This ends up incrementing our fileno index up, which makes the
+            // fileno we choose different from ruby.  Since this seems a bit
+            // too implementation specific, I did not bother trying to get
+            // these to agree (what scary code would depend on fileno generating
+            // a particular way?)
+            handler = ios.handler.cloneIOHandler();
+            handler.setFileno(keepFileno);
+            
+            // Update fileno list with our new handler
+            registerIOHandler(handler);
+        } else if (arg1.isKindOf(getRuntime().getClasses().getStringClass())) {
+            String path = ((RubyString) arg1).getValue();
+            String mode = "r";
+            if (args != null && args.length > 0) {
+                if (!args[0].isKindOf(getRuntime().getClasses().getStringClass())) {
+                    throw new TypeError(runtime, args[0], 
+                            runtime.getClasses().getStringClass());
                 }
+                    
+                mode = ((RubyString) args[0]).getValue();
+            }
+
+            try {
+                if (handler != null) {
+                    close();
+                }
+                handler = new IOHandlerSeekable(getRuntime(), path, mode);
+                modes = new IOModes(getRuntime(), mode);
+            } catch (IOException e) {
+                throw new IOError(getRuntime(), e.toString());
             }
         }
+        
+        // A potentially previously close IO is being 'reopened'.
+        isOpen = true;
+        return this;
     }
-
-    /** rb_fdopen
-     * 
-     */
-    protected void fdOpen(int fd) {
-        switch (fd) {
-            case 0 :
-                inStream = new RubyInputStream(getRuntime().getInputStream());
-                break;
-            case 1 :
-                outStream = getRuntime().getOutputStream();
-                break;
-            case 2 :
-                outStream = getRuntime().getErrorStream();
-                break;
-            default :
-                throw new IOError(getRuntime(), "Bad file descriptor");
-        }
-    }
-
     /** Read a line.
      * 
      */
+    // TODO: Most things loop over this and always pass it the same arguments
+    // meaning they are an invariant of the loop.  Think about fixing this.
     public RubyString internalGets(IRubyObject[] args) {
         checkReadable();
 
@@ -239,7 +360,7 @@ public class RubyIO extends RubyObject {
         }
 
         try {
-            String newLine = inStream.gets(separator);
+            String newLine = handler.gets(separator);
 
             if (newLine != null) {
                 lineNumber++;
@@ -252,16 +373,6 @@ public class RubyIO extends RubyObject {
             throw IOError.fromException(runtime, e);
         }
         return RubyString.nilString(getRuntime());
-    }
-
-    public void initIO(RubyInputStream inStream, OutputStream outStream, String path) {
-        readable = inStream != null;
-        writeable = outStream != null;
-
-        this.inStream = inStream;
-        this.outStream = outStream;
-
-        this.path = path;
     }
 
     // IO class methods.
@@ -278,68 +389,105 @@ public class RubyIO extends RubyObject {
     /** rb_io_s_foreach
      * 
      */
-    public static IRubyObject foreach(IRubyObject recv, RubyObject filename, IRubyObject[] args) {
+    public static IRubyObject foreach(IRubyObject recv, IRubyObject filename, IRubyObject[] args) {
         filename.checkSafeString();
-        RubyIO io = (RubyIO) KernelModule.open(recv, new IRubyObject[] { filename });
-        if (!io.isNil()) {
-            try {
-                io.callMethod("each", args);
-            } finally {
-                io.callMethod("close");
+        RubyIO io = (RubyIO) RubyFile.open(recv.getRuntime().getClass("File"),
+                new IRubyObject[] { filename }, false);
+        
+        if (!io.isNil() && io.isOpen()) {
+            RubyString nextLine = io.internalGets(args);
+
+            while (!nextLine.isNil()) {
+                recv.getRuntime().yield(nextLine);
+                nextLine = io.internalGets(args);
             }
+
+            io.close();
         }
+        
         return recv.getRuntime().getNil();
     }
 
     /** rb_io_initialize
      * 
      */
-    public IRubyObject initialize(IRubyObject[] args) {
-        closeStreams();
-        String mode = "r";
-        if (args.length > 1) {
-            mode = ((RubyString) args[1]).getValue();
+    public IRubyObject initialize(RubyFixnum descriptor, IRubyObject[] args) {
+        int fileno = RubyFixnum.fix2int(descriptor);
+        String mode = null;
+        
+        if (args.length > 0) {
+            mode = ((RubyString) args[0]).getValue();
         }
-        setMode(mode);
-        fdOpen(RubyFixnum.fix2int(args[0]));
+        
+        // See if we already have this descriptor open.
+        // If so then we can mostly share the handler (keep open
+        // file, but possibly change the mode).
+        IOHandler existingIOHandler = getIOHandlerByFileno(fileno);
+        
+        if (existingIOHandler == null) {
+            if (mode == null) {
+                mode = "r";
+            }
+            handler = new IOHandlerUnseekable(getRuntime(), fileno, mode);
+            modes = new IOModes(getRuntime(), mode);
+            
+            registerIOHandler(handler);
+        } else {
+            // We are creating a new IO object that shares the same
+            // IOHandler (and fileno).  
+            handler = existingIOHandler;
+            
+            // If no mode specified..then inherit mode
+            if (mode == null) {
+                mode = handler.getModeString(); 
+            }
+            modes = new IOModes(getRuntime(), mode);
+
+            // Reset file based on modes.
+            handler.reset(modes);
+        }
+        
         return this;
     }
 
+    public IRubyObject syswrite(IRubyObject obj) {
+        return RubyFixnum.newFixnum(runtime, 
+                handler.syswrite(obj.toString()));
+    }
+    
     /** io_write
      * 
      */
     public IRubyObject write(IRubyObject obj) {
-        getRuntime().secure(4);
-
-        String str = obj.toString();
-
-        if (str.length() == 0) {
-            return RubyFixnum.zero(getRuntime());
-        }
-
         checkWriteable();
 
         try {
-            outStream.write(str.getBytes());
+            int totalWritten = handler.write(obj.toString());
 
-            if (sync) {
-                outStream.flush();
-            }
-        } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
+            return RubyFixnum.newFixnum(runtime, totalWritten);
+        } catch (IOError e) {
+            return RubyFixnum.zero(runtime);
+        } catch (ErrnoError e) {
+            return RubyFixnum.zero(runtime);
         }
-
-        return RubyFixnum.newFixnum(runtime, str.length());
     }
 
     /** rb_io_addstr
      * 
      */
     public IRubyObject addString(IRubyObject anObject) {
-        callMethod("write", anObject);
-        return this;
+        // Claims conversion is done via 'to_s' in docs.
+        IRubyObject strObject = anObject.callMethod("to_s");
+
+        write(strObject);
+        
+        return this; 
     }
 
+    public RubyFixnum fileno() {
+        return RubyFixnum.newFixnum(getRuntime(), handler.getFileno());
+    }
+    
     /** Returns the current line number.
      * 
      * @return the current line number.
@@ -352,10 +500,10 @@ public class RubyIO extends RubyObject {
      * 
      * @param newLineNumber The new line number.
      */
-    public IRubyObject lineno_set(RubyFixnum newLineNumber) {
+    public RubyFixnum lineno_set(RubyFixnum newLineNumber) {
         lineNumber = RubyFixnum.fix2int(newLineNumber);
 
-        return this;
+        return newLineNumber;
     }
 
     /** Returns the current sync mode.
@@ -363,19 +511,108 @@ public class RubyIO extends RubyObject {
      * @return the current sync mode.
      */
     public RubyBoolean sync() {
-        return RubyBoolean.newBoolean(getRuntime(), sync);
+        return RubyBoolean.newBoolean(getRuntime(), handler.isSync());
+    }
+    
+    /**
+     * <p>Return the process id (pid) of the process this IO object
+     * spawned.  If no process exists (popen was not called), then
+     * nil is returned.  This is not how it appears to be defined
+     * but ruby 1.8 works this way.</p>
+     * 
+     * @return the pid or nil
+     */
+    public IRubyObject pid() {
+        int pid = handler.pid();
+        
+        if (pid == -1) {
+            return getRuntime().getNil();
+        }
+        
+        return RubyFixnum.newFixnum(getRuntime(), pid);
+    }
+    
+    public RubyFixnum pos() {
+        return RubyFixnum.newFixnum(getRuntime(), handler.pos());
+    }
+    
+    public RubyFixnum pos_set(RubyFixnum newPosition) {
+        long offset = RubyNumeric.fix2long(newPosition);
+
+        if (offset < 0) {
+            throw new SystemCallError(getRuntime(), "Negative seek offset");
+        }
+        
+        handler.seek(offset, IOHandler.SEEK_SET);
+        
+        return newPosition;
+    }
+    
+    public IRubyObject putc(IRubyObject object) {
+        int c;
+        
+        if (object.isKindOf(getRuntime().getClasses().getStringClass())) {
+            String value = ((RubyString) object).toString();
+            
+            if (value.length() > 0) {
+                c = value.charAt(0);
+            } else {
+                throw new TypeError(getRuntime(), 
+                        "Cannot convert String to Integer");
+            }
+        } else if (object.isKindOf(getRuntime().getClasses().getFixnumClass())){
+            c = RubyFixnum.fix2int(object);
+        } else { // What case will this work for?
+            c = RubyFixnum.fix2int(object.callMethod("to_i"));
+        }
+
+        try {
+            handler.putc(c);
+        } catch (ErrnoError e) {
+            return RubyFixnum.zero(runtime);
+        }
+        
+        return RubyFixnum.newFixnum(getRuntime(), c);
+    }
+    
+    // This was a getOpt with one mandatory arg, but it did not work
+    // so I am parsing it for now.
+    public RubyFixnum seek(IRubyObject[] args) {
+        if (args == null || args.length == 0) {
+            throw new ArgumentError(getRuntime(), "wrong number of arguments");
+        }
+        
+        RubyFixnum offsetValue = (RubyFixnum) args[0];
+        long offset = RubyNumeric.fix2long(offsetValue);
+        int type = IOHandler.SEEK_SET;
+        
+        if (args.length > 1) {
+            type = RubyNumeric.fix2int(RubyNumeric.numericValue(args[1]));
+        }
+        
+        handler.seek(offset, type);
+        
+        return RubyFixnum.zero(getRuntime());
     }
 
+    public RubyFixnum rewind() {
+        handler.rewind();
+
+        // Must be back on first line on rewind.
+        lineNumber = 0;
+        
+        return RubyFixnum.zero(runtime);
+    }
+    
     public RubyFixnum fsync() {
         checkWriteable();
+
         try {
-            outStream.flush();
-            if (outFileDescriptor != null) {
-                outFileDescriptor.sync();
-            }
+            handler.sync();
         } catch (IOException e) {
             throw IOError.fromException(runtime, e);
         }
+
         return RubyFixnum.zero(runtime);
     }
 
@@ -384,32 +621,57 @@ public class RubyIO extends RubyObject {
      * @param newSync The new sync mode.
      */
     public IRubyObject sync_set(RubyBoolean newSync) {
-        sync = newSync.isTrue();
+        handler.setIsSync(newSync.isTrue());
+
         return this;
     }
 
     public RubyBoolean eof() {
-        checkReadable();
-
-        try {
-            int c = inStream.read();
-            if (c == -1) {
-                return runtime.getTrue();
-            }
-            inStream.unread(c);
-            return runtime.getFalse();
-
-        } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
-        }
+        boolean isEOF = handler.isEOF(); 
+        return isEOF ? getRuntime().getTrue() : getRuntime().getFalse();
     }
+    
+    public RubyIO clone_IO() {
+        RubyIO io = new RubyIO(getRuntime(), getMetaClass());
 
+        // Two pos pointers?  
+        // http://blade.nagaokaut.ac.jp/ruby/ruby-talk/81513
+        // So if I understand this correctly, the descriptor level stuff
+        // shares things like position, but the higher level stuff uses
+        // a different set of libc functions (FILE*), which does not share
+        // position.  Our current implementation implements our higher 
+        // level operations on top of our 'sys' versions.  So we could in
+        // fact share everything.  Unfortunately, we want to clone ruby's
+        // behavior (i.e. show how this interface bleeds their 
+        // implementation). So our best bet, is to just create a yet another
+        // copy of the handler.  In fact, ruby 1.8 must do this as the cloned
+        // resource is in fact a different fileno.  What is clone for again?
+        io.handler = handler;
+        
+        return io;
+    }
+    
     /** Closes the IO.
      * 
      * @return The IO.
      */
+    public RubyBoolean closed() {
+        return isOpen() == true ? getRuntime().getFalse() : 
+            getRuntime().getTrue();
+    }
+
+    /** 
+     * <p>Closes all open resources for the IO.  It also removes
+     * it from our magical all open file descriptor pool.</p>
+     * 
+     * @return The IO.
+     */
     public IRubyObject close() {
-        closeStreams();
+        isOpen = false;
+        handler.close();
+        
+        unregisterIOHandler(handler.getFileno());
+        
         return this;
     }
 
@@ -418,13 +680,7 @@ public class RubyIO extends RubyObject {
      * @return The IO.
      */
     public RubyIO flush() {
-        checkWriteable();
-
-        try {
-            outStream.flush();
-        } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
-        }
+        handler.flush();
 
         return this;
     }
@@ -450,9 +706,9 @@ public class RubyIO extends RubyObject {
 
         if (line.isNil()) {
             throw new EOFError(runtime);
-        } else {
-            return line;
         }
+        
+        return line;
     }
 
     /** Read a byte. On EOF returns nil.
@@ -460,57 +716,77 @@ public class RubyIO extends RubyObject {
      */
     public IRubyObject getc() {
         checkReadable();
+        
+        int c = handler.getc();
+        
+        return c == -1 ? 
+            getRuntime().getNil() : // EOF
+        	RubyFixnum.newFixnum(getRuntime(), c);
+    }
+    
+    /** 
+     * <p>Pushes char represented by int back onto IOS.</p>
+     * 
+     * @param number to push back
+     */
+    public IRubyObject ungetc(RubyFixnum number) {
+        handler.ungetc(RubyNumeric.fix2int(number));
 
-        try {
-            int c = inStream.read();
-            return c != -1 ? RubyFixnum.newFixnum(runtime, c) : runtime.getNil();
-        } catch (IOException ioExcptn) {
-            throw new IOError(runtime, ioExcptn.getMessage());
-        }
+        return getRuntime().getNil();
+    }
+    
+    public IRubyObject sysread(RubyFixnum number) {
+        String buf = handler.sysread(RubyFixnum.fix2int(number));
+        
+        return RubyString.newString(getRuntime(), buf);
+    }
+    
+    public IRubyObject read(IRubyObject[] args) {
+        String buf = (args.length > 0 ? 
+            handler.read(RubyFixnum.fix2int(args[0])) : 
+            handler.getsEntireStream());
+
+        return (buf == null ? 
+            getRuntime().getNil() : // EOF 
+            RubyString.newString(getRuntime(), new String(buf)));
     }
 
     /** Read a byte. On EOF throw EOFError.
      * 
      */
     public IRubyObject readchar() {
-        IRubyObject obj = getc();
-
-        if (obj.isNil()) {
+        checkReadable();
+        
+        int c = handler.getc();
+        
+        if (c == -1) {
             throw new EOFError(runtime);
-        } else {
-            return obj;
         }
+        
+        return RubyFixnum.newFixnum(getRuntime(), c);
     }
 
-    /** Invoke a block for each byte.
-     * 
+    /** 
+     * <p>Invoke a block for each byte.</p>
      */
     public IRubyObject each_byte() {
-        checkReadable();
-
-        int c;
-
-        try {
-            while ((c = inStream.read()) != -1) {
-                Asserts.isTrue(c < 256);
-                runtime.yield(RubyFixnum.newFixnum(runtime, c));
-            }
-        } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
+        for (int c = handler.getc(); c != -1; c = handler.getc()) {
+            Asserts.isTrue(c < 256);
+            runtime.yield(RubyFixnum.newFixnum(runtime, c));
         }
 
         return runtime.getNil();
     }
 
-    /** Invoke a block for each line.
-     * 
+    /** 
+     * <p>Invoke a block for each line.</p>
      */
     public RubyIO each_line(IRubyObject[] args) {
-        RubyString nextLine = internalGets(args);
-        while (!nextLine.isNil()) {
-            getRuntime().yield(nextLine);
-            nextLine = internalGets(args);
+        for (RubyString line = internalGets(args); !line.isNil(); 
+        	line = internalGets(args)) {
+            getRuntime().yield(line);
         }
+        
         return this;
     }
 
@@ -574,9 +850,11 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (! args[0].isKindOf(runtime.getClass("String"))) {
-                throw new TypeError(runtime, args[0], runtime.getClass("String"));
-            }
+            if (!args[0].isKindOf(runtime.getClasses().getNilClass()) &&
+                !args[0].isKindOf(runtime.getClasses().getStringClass())) {
+                throw new TypeError(runtime, args[0], 
+                        runtime.getClasses().getStringClass());
+            } 
             separatorArgument = new IRubyObject[] { args[0] };
         } else {
             separatorArgument = IRubyObject.NULL_ARRAY;
@@ -594,58 +872,22 @@ public class RubyIO extends RubyObject {
         if (args.length < 1) {
             throw new ArgumentError(recv.getRuntime(), args.length, 1);
         }
-        if (! args[0].isKindOf(recv.getRuntime().getClass("String"))) {
-            throw new TypeError(recv.getRuntime(), args[0], recv.getRuntime().getClass("String"));
+        
+        if (! args[0].isKindOf(recv.getRuntime().getClasses().getStringClass())) {
+            throw new TypeError(recv.getRuntime(), args[0], 
+                recv.getRuntime().getClasses().getStringClass());
         }
-        RubyString fileName = (RubyString) args[0];
-
-        IRubyObject[] separatorArguments;
-        if (args.length >= 2) {
-            separatorArguments = new IRubyObject[] { args[1] };
-        } else {
-            separatorArguments = IRubyObject.NULL_ARRAY;
-        }
-
-        RubyIO file = (RubyIO) KernelModule.open(recv, new IRubyObject[] { fileName });
+        
+        IRubyObject[] fileArguments = new IRubyObject[] {(RubyString) args[0]};
+        IRubyObject[] separatorArguments = (args.length >= 2 ? 
+             new IRubyObject[] { args[1] } : IRubyObject.NULL_ARRAY);
+        RubyIO file = (RubyIO) KernelModule.open(recv, fileArguments);
 
         return file.readlines(separatorArguments);
     }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-
-        case IODefinition.INITIALIZE :
-            return initialize(args);
-        case IODefinition.WRITE :
-            return write(args[0]);
-        case IODefinition.ADDSTRING :
-            return addString(args[0]);
-        case IODefinition.EACH_LINE :
-            return each_line(args);
-        case IODefinition.EACH_BYTE :
-            return each_byte();
-        case IODefinition.GETC :
-            return getc();
-        case IODefinition.READCHAR :
-            return readchar();
-        case IODefinition.GETS :
-            return gets(args);
-        case IODefinition.READLINE :
-            return readline(args);
-        case IODefinition.LINENO :
-            return lineno();
-        case IODefinition.SYNC :
-            return sync();
-        case IODefinition.CLOSE :
-            return close();
-        case IODefinition.EOF :
-            return eof();
-        case IODefinition.FLUSH :
-            return flush();
-        case IODefinition.READLINES :
-            return readlines(args);
-        default :
-            return super.callIndexed(index, args);
-        }
+    
+    public String toString() {
+        return "RubyIO(" + modes.getModeString() + ", " + fileno + ")";
     }
+    
 }

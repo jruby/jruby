@@ -20,6 +20,7 @@ testString.rb
 testException.rb
 testException2.rb
 testFile.rb
+testIO.rb
 testThread.rb
 testMarshal.rb
 testBackquote.rb

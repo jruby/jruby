@@ -3,10 +3,12 @@
  * Created on 12.01.2002, 17:33:23
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -70,9 +72,9 @@ public class RubyGlobal {
 
         ruby.defineVariable(new BacktraceGlobalVariable(ruby, "$@"));
 
-        IRubyObject stdin = RubyIO.stdin(ruby, ruby.getClass("IO"), System.in);
-        IRubyObject stdout = RubyIO.stdout(ruby, ruby.getClass("IO"), System.out);
-        IRubyObject stderr = RubyIO.stderr(ruby, ruby.getClass("IO"), System.err);
+        IRubyObject stdin = RubyIO.fdOpen(ruby, RubyIO.STDIN);
+        IRubyObject stdout = RubyIO.fdOpen(ruby, RubyIO.STDOUT);
+        IRubyObject stderr = RubyIO.fdOpen(ruby, RubyIO.STDERR);
 
         ruby.defineVariable(new InputGlobalVariable(ruby, "$stdin", stdin));
 

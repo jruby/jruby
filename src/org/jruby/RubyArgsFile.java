@@ -3,10 +3,12 @@
  * Created on 13.01.2002, 17:08:47
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -29,15 +31,7 @@
  */
 package org.jruby;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
-import org.jruby.exceptions.IOError;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.RubyInputStream;
 
 public class RubyArgsFile extends RubyObject {
 
@@ -70,19 +64,27 @@ public class RubyArgsFile extends RubyObject {
 		defineSingletonMethod("to_s", callbackFactory().getMethod(RubyArgsFile.class, "filename"));
 
         runtime.defineReadonlyVariable("$FILENAME", RubyString.newString(runtime, "-"));
-        currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
+
+        // This is ugly.  nextArgsFile both checks existence of another
+        // file and the setup of any files.  On top of that it handles
+        // the logic for figuring out stdin versus a list of files.
+        // I hacked this to make a null currentFile indicate that things
+        // have not been set up yet.  This seems fragile, but it at least
+        // it passes tests now.
+        //currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
     }
 
     protected boolean nextArgsFile() {
         RubyArray args = (RubyArray)runtime.getGlobalVariables().get("$*");
 
         if (args.getLength() == 0) {
-            if (currentFile == runtime.getGlobalVariables().get("$stdin")) {
+            if (currentFile == null) { 
+                currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
+                ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue("-");
+                currentLineNumber = 0;
                 return true;
             }
-            currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
-            ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue("-");
-            currentLineNumber = 0;
+
             return false;
         }
 
@@ -92,32 +94,24 @@ public class RubyArgsFile extends RubyObject {
         if (filename.equals("-")) {
             currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
         } else {
-            File file = new File(filename);
-            try {
-                RubyInputStream inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
-
-                currentFile = new RubyFile(runtime, runtime.getClass("File"));
-                currentFile.initIO(inStream, null, filename);
-
-            } catch (FileNotFoundException fnfExcptn) {
-                throw new IOError(runtime, fnfExcptn.getMessage());
-            }
+            currentFile = new RubyFile(runtime, filename); 
         }
 
         return true;
     }
     
     public RubyString internalGets(IRubyObject[] args) {
-        if (!nextArgsFile()) {
+        if (currentFile == null && !nextArgsFile()) {
             return RubyString.nilString(runtime);
         }
-
+        
         RubyString line = (RubyString)currentFile.callMethod("gets", args);
         
         while (line.isNil()) {
             currentFile.callMethod("close");
             if (! nextArgsFile()) {
-            	return line;
+                currentFile = null;
+                return line;
         	}
             line = (RubyString) currentFile.callMethod("gets", args);
         }
