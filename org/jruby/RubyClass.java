@@ -30,12 +30,15 @@
 
 package org.jruby;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
-import org.jruby.runtime.methods.*;
-import org.jruby.marshal.*;
+import org.jruby.exceptions.RubyFrozenException;
+import org.jruby.exceptions.TypeError;
+import org.jruby.marshal.MarshalStream;
+import org.jruby.marshal.UnmarshalStream;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ICallable;
 
 /**
  *

@@ -29,10 +29,15 @@
  */
 package org.jruby;
 
-import org.jruby.ast.*;
-import org.jruby.internal.runtime.methods.*;
-import org.jruby.runtime.*;
-import org.jruby.runtime.methods.*;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.AttrSetNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.internal.runtime.methods.CallbackMethod;
+import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
 
 /** 
  * The RubyMethod class represents a Method object.

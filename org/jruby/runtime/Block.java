@@ -26,11 +26,10 @@
  */
 package org.jruby.runtime;
 
-import org.ablaf.ast.*;
-
-import org.jruby.*;
-import org.jruby.runtime.methods.*;
-import org.jruby.util.collections.*;
+import org.ablaf.ast.INode;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.util.collections.StackElement;
 
 /**
  *

@@ -28,16 +28,35 @@
  */
 package org.jruby;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-import org.jruby.exceptions.*;
+import org.jruby.ast.AttrSetNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.ZSuperNode;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.internal.runtime.methods.*;
-import org.jruby.ast.*;
-import org.jruby.runtime.*;
-import org.jruby.runtime.methods.*;
-import org.jruby.util.*;
-import org.jruby.marshal.*;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RubyBugException;
+import org.jruby.exceptions.RubyFrozenException;
+import org.jruby.exceptions.RubySecurityException;
+import org.jruby.exceptions.TypeError;
+import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.CacheEntry;
+import org.jruby.internal.runtime.methods.CallbackMethod;
+import org.jruby.internal.runtime.methods.EvaluateMethod;
+import org.jruby.marshal.MarshalStream;
+import org.jruby.marshal.UnmarshalStream;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Constants;
+import org.jruby.runtime.Frame;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
+import org.jruby.runtime.Namespace;
+import org.jruby.util.IdUtil;
+import org.jruby.util.RubyHashMap;
+import org.jruby.util.RubyMap;
+import org.jruby.util.RubyMapMethod;
 
 /**
  *
