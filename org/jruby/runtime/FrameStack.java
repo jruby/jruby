@@ -19,7 +19,7 @@ public class FrameStack extends Stack {
         if (isEmpty()) {
         	return null;	
         }
-        return (Frame) top.next.data;
+        return (Frame) previous();
     }
 
     public void push() {

@@ -30,6 +30,7 @@ import org.jruby.util.collections.IStack;
 import org.jruby.util.collections.StackEmptyException;
 import org.jruby.internal.util.Utils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -38,40 +39,54 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class Stack implements IStack {
-	private static final LinkedObject EMPTY = new LinkedObject(null);
-    protected LinkedObject top = EMPTY;
+    private ArrayList list = new ArrayList();
 
     /**
      * Constructor for Stack.
      */
     public Stack() {
-		super();
+        super();
     }
 
     /**
      * @see IStack#isEmpty()
      */
     public boolean isEmpty() {
-        return top == EMPTY;
+        return list.size() == 0;
     }
 
     /**
      * @see IStack#peek()
      */
     public Object peek() {
-        return top.data;
+        synchronized (list) {
+            if (isEmpty()) {
+                return null;
+            }
+            return list.get(list.size() - 1);
+        }
+    }
+
+    protected Object previous() {
+        synchronized (list) {
+            if (list.size() < 2) {
+                return null;
+            }
+            return list.get(list.size() - 2);
+        }
     }
 
     /**
      * @see IStack#pop()
      */
     public Object pop() {
-        if (isEmpty()) {
-            throw new StackEmptyException("Stack is empty.");
-        } else {
-            Object data = top.data;
-            top = top.next;
-            return data;
+        synchronized (list) {
+
+            if (isEmpty()) {
+                throw new StackEmptyException("Stack is empty.");
+            } else {
+                return list.remove(list.size() - 1);
+            }
         }
     }
 
@@ -79,7 +94,9 @@ public class Stack implements IStack {
      * @see IStack#push(Object)
      */
     public IStack push(Object anObject) {
-        top = new LinkedObject(anObject, top);
+        synchronized (list) {
+            list.add(anObject);
+        }
         return this;
     }
 
@@ -87,31 +104,29 @@ public class Stack implements IStack {
      * @see Object#equals(Object)
      */
     public boolean equals(Object obj) {
-        return (obj instanceof Stack) &&
-               Utils.isEquals(top, ((Stack)obj).top);
+        return (obj instanceof Stack) && Utils.isEquals(list, ((Stack) obj).list);
     }
 
     /**
      * @see Object#hashCode()
      */
     public int hashCode() {
-        return Utils.getHashcode(top);
+        return Utils.getHashcode(list);
     }
 
     /**
      * @see Object#toString()
      */
     public String toString() {
-        LinkedObject next = top;
-
         StringBuffer sb = new StringBuffer(100);
         sb.append('[');
-        while (next != null) {
-            sb.append(next);
-            if (next.next != null) {
-                sb.append(", ");
+        synchronized (list) {
+            for (int i = list.size(); i > 0; i--) {
+                sb.append(list.get(i - 1));
+                if (i > 1) {
+                    sb.append(", ");
+                }
             }
-            next = next.next;
         }
         sb.append(']');
         return super.toString();
@@ -121,6 +136,12 @@ public class Stack implements IStack {
      * @see IStack#iterator()
      */
     public Iterator iterator() {
-        return new LinkedObjectIterator(top);
+        synchronized (list) {
+            ArrayList copy = new ArrayList(list.size());
+            for (int i = list.size(); i > 0; i--) {
+                copy.add(list.get(i - 1));
+            }
+            return copy.iterator();
+        }
     }
 }
