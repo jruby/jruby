@@ -1027,26 +1027,37 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** rb_attr
      *
      */
-    public void addAttribute(RubyId id, boolean read, boolean write, int noex) {
+    public void addAttribute(RubyId id, boolean read, boolean write, boolean ex) {
+        RubyInterpreter intrprtr = getRuby().getInterpreter();        
+    
+        int noex = NOEX_PUBLIC;
+        
+        if (ex) {
+            if (intrprtr.getScope_vmode() == SCOPE_PRIVATE) {
+                noex = NOEX_PRIVATE;
+            } else if (intrprtr.getScope_vmode() == SCOPE_PROTECTED) {
+                noex = NOEX_PROTECTED;
+            } else {
+                noex = NOEX_PUBLIC;
+            }
+        }
+        
         String name = id.toName();
         
-        RubyId attr_iv = getRuby().intern("@" + name);
+        RubyId attrIV = getRuby().intern("@" + name);
         
         if (read) {
-/*            RubyMethod rubyMethod = new AttrReadMethod(attr_iv);
-            rubyMethod.setVisibility(visibility);
-            addMethod(id, rubyMethod);
-            id.clearCache();
-            invokeMethod("method_added", new RubyBasic[] { id.toSym() }, null);
-*/        }
+            addMethod(id, NODE.newIVar(attrIV), noex);
+            // id.clearCache();
+            funcall(getRuby().intern("method_added"), id.toSymbol());
+        }
         
         if (write) {
-/*            RubyMethod rubyMethod = new AttrWriteMethod(attr_iv);
-            rubyMethod.setVisibility(visibility);
-            addMethod(id, rubyMethod);
-            id.clearCache();
-            invokeMethod("method_added", new RubyBasic[] { id.toSym() }, null);
-*/        }
+            id = getRuby().intern(name + "=");
+            addMethod(id, NODE.newAttrSet(attrIV), noex);
+            // id.clearCache();
+            funcall(getRuby().intern("method_added"), id.toSymbol());
+        }
     }
     
     // Methods of the Module Class (rb_mod_*):
@@ -1177,8 +1188,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public RubyBoolean op_eqq(RubyObject obj) {
-        //return obj.isKindOf(this);
-        return getRuby().getFalse();
+        return obj.m_kind_of(this);
     }
     
     /** rb_mod_le
@@ -1260,11 +1270,11 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** rb_module_s_new
      *
      */
-    public static RubyModule m_newModule(Ruby ruby, RubyClass rubyClass) {
+    public static RubyModule m_new(Ruby ruby) {
         RubyModule mod = RubyModule.m_newModule(ruby);
         
-        mod.setRubyClass(rubyClass);
-        //rubyClass.callInit();
+        // mod.setRubyClass(rubyClass);
+        ruby.getModuleClass().callInit(null);
         
         return mod;
     }
@@ -1272,8 +1282,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** rb_mod_attr
      *
      */
-    public RubyObject m_attr(RubySymbol symbol, RubyBoolean writeable) {
-        addAttribute(symbol.toId(), true, writeable.isTrue(), 0 /*act_scope*/);
+    public RubyObject m_attr(RubySymbol symbol, RubyObject[] args) {
+        boolean writeable = false;
+        if (args.length > 0) {
+            writeable = args[0].isTrue();
+        }
+        
+        addAttribute(symbol.toId(), true, writeable, true);
         
         return getRuby().getNil();
     }
@@ -1283,7 +1298,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      */
     public RubyObject m_attr_reader(RubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol)args[i]).toId(), true, false, 0 /*act_scope*/);
+            addAttribute(((RubySymbol)args[i]).toId(), true, false, true);
         }
         
         return getRuby().getNil();
@@ -1294,7 +1309,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      */
     public RubyObject m_attr_writer(RubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol)args[i]).toId(), false, true, 0 /*act_scope*/);
+            addAttribute(((RubySymbol)args[i]).toId(), false, true, true);
         }
         
         return getRuby().getNil();
@@ -1305,7 +1320,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      */
     public RubyObject m_attr_accessor(RubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol)args[i]).toId(), true, true, 0 /*act_scope*/);
+            addAttribute(((RubySymbol)args[i]).toId(), true, true, true);
         }
         
         return getRuby().getNil();

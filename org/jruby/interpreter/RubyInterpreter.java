@@ -58,11 +58,14 @@ public class RubyInterpreter implements node_type, Scope {
     
     private int scope_vmode;
     
+    private RubyBlock rubyBlock;
+        
     public RubyInterpreter(Ruby ruby) {
         this.ruby = ruby;
         
         ruby_class = ruby.getObjectClass();
         ruby_cbase = null;
+        rubyBlock = new RubyBlock(ruby);
     }
     
     public Frame getRubyFrame() {
@@ -375,43 +378,38 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 case NODE_ITER:
                 case NODE_FOR:
+                    rubyBlock.push(node.nd_var(), node.nd_body(), self);
+                    rubyIter.push(Iter.ITER_PRE);
                     while (true) {
-                        BLOCK _block = PUSH_BLOCK(node.nd_var(), node.nd_body(), self);
-                        
                         try {
-                            rubyIter.push(Iter.ITER_PRE);
                             if (node.nd_type() == NODE_ITER) {
                                 result = eval(self, node.nd_iter());
                             } else {
                                 // String file = 
                                 // int line = 
                                 
-                                _block.flags &= ~BLOCK_D_SCOPE;
+                                rubyBlock.flags &= ~RubyBlock.BLOCK_D_SCOPE;
                                 
-                                BLOCK tmp_block = BEGIN_CALLARGS();
+                                RubyBlock tmpBlock = beginCallargs();
                                 RubyObject recv = eval(self, node.nd_iter());
-                                END_CALLARGS(tmp_block);
+                                endCallArgs(tmpBlock);
                                 
                                 // = file;
                                 // = line;
                                 result = recv.getRubyClass().call(recv, ruby.intern("each"), null, 0);
                             }
-                            rubyIter.pop();
-                            
                             break;
                         } catch (RetryException rExcptn) {
-                            POP_BLOCK(_block);
                         } catch (ReturnException rExcptn) {
-                            POP_BLOCK(_block);
                             result = rExcptn.getReturnValue();
-                            
                             break;
                         } catch (BreakException bExcptn) {
-                            POP_BLOCK(_block);
                             result = ruby.getNil();
                             break;
                         }
                     }
+                    rubyIter.pop();
+                    rubyBlock.pop();
                     return result;
                     
                 case NODE_BREAK:
@@ -599,23 +597,23 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_CALL:
                     //                TMP_PROTECT;
                     
-                    BLOCK tmpBlock = BEGIN_CALLARGS();
-                    
+                    RubyBlock tmpBlock = beginCallargs();
+                                
                     RubyObject recv = eval(self, node.nd_recv());
                     args = setupArgs(self, node.nd_args());
                     
-                    END_CALLARGS(tmpBlock);
+                    endCallArgs(tmpBlock);
                     
                     return recv.getRubyClass().call(recv, (RubyId)node.nd_mid(), args, 0);
                     
                 case NODE_FCALL:
                     //                TMP_PROTECT;
                     
-                    tmpBlock = BEGIN_CALLARGS();
+                    tmpBlock = beginCallargs();
                     
                     args = setupArgs(self, node.nd_args());
                     
-                    END_CALLARGS(tmpBlock);
+                    endCallArgs(tmpBlock);
                     
                     return self.getRubyClass().call(self, (RubyId)node.nd_mid(), args, 1);
                     
@@ -633,9 +631,9 @@ public class RubyInterpreter implements node_type, Scope {
                         List argsList = rubyFrame.getArgs();
                         args = (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]);
                     } else {
-                        tmpBlock = BEGIN_CALLARGS();
+                        tmpBlock = beginCallargs();
                         args = setupArgs(self, node.nd_args());
-                        END_CALLARGS(tmpBlock);
+                        endCallArgs(tmpBlock);
                     }
  
                     rubyIter.push(rubyIter.getIter() != Iter.ITER_NOT ? Iter.ITER_PRE : Iter.ITER_NOT);
@@ -1519,13 +1517,13 @@ public class RubyInterpreter implements node_type, Scope {
     public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
         RubyObject result = ruby.getNil();
         
-        if (!(isBlockGiven() || isFBlockGiven()) || (ruby_block == null)) {
+        if (!(isBlockGiven() || isFBlockGiven()) || (rubyBlock == null)) {
             throw new RuntimeException("yield called out of block");
         }
         
         RubyVarmap.push(ruby);
         pushClass();
-        BLOCK block = ruby_block;
+        RubyBlock block = rubyBlock.getTmp();
         
         Frame frame = block.frame;
         frame.setPrev(rubyFrame);
@@ -1536,12 +1534,12 @@ public class RubyInterpreter implements node_type, Scope {
         
         RubyScope oldScope = ruby.rubyScope;
         ruby.rubyScope = block.scope;
-        ruby_block = block.prev;
+        rubyBlock.pop();
         
-        if ((block.flags & BLOCK_D_SCOPE) != 0) {
-            dynamicVars = new RubyVarmap(null, null, block.dyna_vars);
+        if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
+            dynamicVars = new RubyVarmap(null, null, block.dynamicVars);
         } else {
-            dynamicVars = block.dyna_vars;
+            dynamicVars = block.dynamicVars;
         }
         
         ruby_class = (klass != null) ? klass : block.klass;
@@ -1614,7 +1612,7 @@ public class RubyInterpreter implements node_type, Scope {
         popClass();
         RubyVarmap.pop(ruby);
         
-        ruby_block = block;
+        rubyBlock.setTmp(block);
         rubyFrame = rubyFrame.getPrev();
         
         ruby_cref = (NODE)old_cref;
@@ -1671,78 +1669,18 @@ public class RubyInterpreter implements node_type, Scope {
         return (RubyClass)obj;
     }
 
-    private BLOCK BEGIN_CALLARGS() {
-        BLOCK tmp_block = ruby_block;
+    private RubyBlock beginCallargs() {
+        RubyBlock tmpBlock = rubyBlock.getTmp();
         if (rubyIter.getIter() == Iter.ITER_PRE) {
-            ruby_block = ruby_block.prev;
+            rubyBlock.pop();
         }
         rubyIter.push(Iter.ITER_NOT);
-        return tmp_block;
+        return tmpBlock;
     }
     
-    private void END_CALLARGS(BLOCK tmp_block) {
-        ruby_block = tmp_block;
+    private void endCallArgs(RubyBlock tmpBlock) {
+        rubyBlock.setTmp(tmpBlock);
         rubyIter.pop();
-    }
-    
-    // static final int CACHE_SIZE = 0x800;
-    // static final int CACHE_MASK = 0x7ff;
-
-    // static long expr1(long c, long m) {
-    //    return ((c>>3) ^ m) & CACHE_MASK;
-    // }
-    
-    // cache_entry[CACHE_SIZE] cache;
-
-    // int ruby_in_compile;
-
-    // VALUE ruby_errinfo = ruby.getNil();
-    // NODE ruby_eval_tree_begin;
-    // NODE ruby_eval_tree;
-    // int ruby_nerrs;
-
-    // VALUE rb_eLocalJumpError;
-    // VALUE rb_eSysStackError;
-
-    // VALUE ruby_top_self;
-
-    private static final int BLOCK_D_SCOPE  = 1;
-    private static final int BLOCK_DYNAMIC  = 2;
-    private static final int BLOCK_ORPHAN   = 4;
-    
-    BLOCK ruby_block = new BLOCK();
-
-    private BLOCK PUSH_BLOCK(NODE v, NODE b, VALUE self) {
-        BLOCK _block = new BLOCK();
-        // _block.tag = new_blktag();
-        _block.var = v;
-        _block.body = b;
-        _block.self = self;
-        _block.frame = rubyFrame;
-        _block.klass = ruby_class;
-    //    _block.frame.file = ruby_sourcefile;
-    //    _block.frame.line = ruby_sourceline;
-        _block.scope = getRuby().rubyScope;
-        _block.prev = ruby_block;
-        _block.iter = rubyIter.getIter();
-        _block.vmode = scope_vmode;
-        _block.flags = BLOCK_D_SCOPE;
-        _block.dyna_vars = getDynamicVars();
-        ruby_block = _block;
-        return _block;
-    }
-
-    private void POP_BLOCK_TAG(BLOCKTAG tag) { 
-         if ((tag.flags & BLOCK_DYNAMIC) != 0) {
-            tag.flags |= BLOCK_ORPHAN;
-         } else {
-            // rb_gc_force_recycle((VALUE)tag);
-         }
-    }
-
-    private void POP_BLOCK(BLOCK _block) {
-        POP_BLOCK_TAG(_block.tag);
-        ruby_block = _block.prev;
     }
     
     /** Getter for property dynamicVars.
@@ -1773,37 +1711,46 @@ public class RubyInterpreter implements node_type, Scope {
         this.rubyIter = rubyIter;
     }
     
-}
-
-// C structs
-
-// class cache_entry {  /* method hash table. */
-//     ID mid;   /* method's id */
-//     ID mid0;   /* method's original id */
-//     VALUE klass;  /* receiver's class */
-//     VALUE origin;  /* where method defined  */
-//     NODE method;
-//     int noex;
-// }
-
-class BLOCKTAG {
-    RubyObject _super;
-    long dst;
-    long flags;
-}
-
-class BLOCK {
-    NODE var;
-    NODE body;
-    VALUE self;
-    Frame frame;
-    RubyScope scope;
-    BLOCKTAG tag;
-    RubyModule klass;
-    int iter;
-    int vmode;
-    int flags;
-    RubyVarmap dyna_vars;
-    VALUE orig_thread;
-    BLOCK prev;
+    /** Getter for property scope_vmode.
+     * @return Value of property scope_vmode.
+     */
+    public int getScope_vmode() {
+        return scope_vmode;
+    }
+    
+    /** Setter for property scope_vmode.
+     * @param scope_vmode New value of property scope_vmode.
+     */
+    public void setScope_vmode(int scope_vmode) {
+        this.scope_vmode = scope_vmode;
+    }
+    
+    /** Getter for property rubyBlock.
+     * @return Value of property rubyBlock.
+     */
+    public org.jruby.interpreter.RubyBlock getRubyBlock() {
+        return rubyBlock;
+    }
+    
+    /** Setter for property rubyBlock.
+     * @param rubyBlock New value of property rubyBlock.
+     */
+    public void setRubyBlock(org.jruby.interpreter.RubyBlock rubyBlock) {
+        this.rubyBlock = rubyBlock;
+    }
+    
+    /** Getter for property ruby_class.
+     * @return Value of property ruby_class.
+     */
+    public org.jruby.RubyModule getRuby_class() {
+        return ruby_class;
+    }
+    
+    /** Setter for property ruby_class.
+     * @param ruby_class New value of property ruby_class.
+     */
+    public void setRuby_class(org.jruby.RubyModule ruby_class) {
+        this.ruby_class = ruby_class;
+    }
+    
 }

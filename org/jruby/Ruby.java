@@ -8,19 +8,21 @@
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -77,7 +79,9 @@ public final class Ruby implements token {
     private RubyClass stringClass;
     private RubyModule kernelModule;
     
-    private RubyOriginalMethods originalMethods;
+    private RubyObject rubyTopSelf;
+    
+    // private RubyOriginalMethods originalMethods;
     
     /**
      *
@@ -92,7 +96,7 @@ public final class Ruby implements token {
     public Ruby() {
         initOperatorTable();
         
-        originalMethods = new RubyOriginalMethods(this);
+        // originalMethods = new RubyOriginalMethods(this);
         
         globalMap = new RubyHashMap();
         classMap = new RubyHashMap();
@@ -210,6 +214,16 @@ public final class Ruby implements token {
         
         RbObject.initObjectClass(objectClass);
         RbClass.initClassClass(classClass);
+        RbModule.initModuleClass(moduleClass);
+        
+        rubyTopSelf = objectClass.m_new((RubyObject[])null);
+        rubyTopSelf.defineSingletonMethod("to_s", new RubyCallbackMethod() {
+            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                return RubyString.m_newString(ruby, "main");
+            }
+        });
+        
+        symbolClass = RbSymbol.createSymbolClass(this);
         
         nilClass = RbNilClass.createNilClass(this);
         
@@ -382,10 +396,10 @@ public final class Ruby implements token {
     public boolean isAutoloadDefined(ID id) {
         return false;
     }
-    
+    /*
     public RubyOriginalMethods getOriginalMethods() {
         return this.originalMethods;
-    }
+    }*/
     
     public RubyId intern(String name) {
         return (RubyId)ID.rb_intern(name, this);
@@ -515,4 +529,10 @@ public final class Ruby implements token {
         this.classMap = classMap;
     }
     
+    /** Getter for property rubyTopSelf.
+     * @return Value of property rubyTopSelf.
+     */
+    public RubyObject getRubyTopSelf() {
+        return rubyTopSelf;
+    }
 }

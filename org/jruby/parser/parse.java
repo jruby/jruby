@@ -6374,15 +6374,15 @@ case 432:
 
     // Symbol stuff
     // ------------
-    static final int SYMBOL_FLAG = 14;
+    /*static final int SYMBOL_FLAG = 14;
     boolean SYMBOL_P(ID id) {
         return (id.intValue() & 255) == SYMBOL_FLAG;
+    }*/
+    VALUE ID2SYM(ID id) {
+        return RubySymbol.m_newSymbol(ruby, (RubyId)id);
     }
-    ID ID2SYM(ID id) {
-        return new RubyId(ruby, id.intValue() << 8 | SYMBOL_FLAG);
-    }
-    ID SYM2ID(ID id) {
-        return new RubyId(ruby, id.intValue() >> 8);
+    ID SYM2ID(VALUE symbol) {
+        return ((RubySymbol)symbol).getId();
     }
 
     int TYPE(VALUE v) {

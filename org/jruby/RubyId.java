@@ -47,7 +47,7 @@ public class RubyId extends ID {
     }
     
     public RubySymbol toSymbol() {
-        return null;
+        return RubySymbol.m_newSymbol(ruby, this);
     }
     
     public String toName() {

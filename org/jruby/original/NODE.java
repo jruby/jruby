@@ -2,25 +2,27 @@
  * NODE.java - No description
  * Created on 23. Juli 2001, 19:25
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
- * Jan Arne Petersen <japetersen@web.de>
+ * Copyright (C) 2001 Stefan Matthias Aust, Jan Arne Petersen
  * Stefan Matthias Aust <sma@3plus4.de>
+ * Jan Arne Petersen <japetersen@web.de>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 package org.jruby.original;
@@ -194,7 +196,28 @@ public class NODE implements node_type, VALUE, Scope {
     public static NODE newFBody(NODE n, RubyId i, RubyModule o) {
         return new NODE(NODE_FBODY, n, i, o);
     }
-        
+    
+    /** NEW_IVAR
+     *
+     */
+    public static NODE newIVar(RubyId v) {
+        return new NODE(NODE_IVAR, v, null, null);
+    }
+    
+    /** NEW_IFUNC
+     *
+     */
+    public static NODE newIFunc(RubyCallbackMethod method, RubyObject arg) {
+        return new NODE(NODE_IFUNC, method, arg, null);
+    }
+    
+    /** NEW_ATTRSET
+     *
+     */
+    public static NODE newAttrSet(RubyId v) {
+        return new NODE(NODE_ATTRSET, v, null, null);
+    }
+            
     public String toString() {
         return super.toString() + "("+type_name(type)+")";
     }

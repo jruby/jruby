@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="all" name="JRuby">
     <target name="init">
-        <property name="version" value="0.1.5"/>
-        <property name="version.file" value="0_1_5"/>
+        <property name="version" value="0.1.6"/>
+        <property name="version.file" value="0_1_6"/>
     </target>
 
     <target depends="init" name="compile">
