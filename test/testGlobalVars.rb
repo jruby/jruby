@@ -17,3 +17,6 @@ test_ok($foo == 10)
 
 $foo = 5
 test_ok($bar == 5)
+
+# Make last test so we don't have safety mucking with other tests
+test_exception(SecurityError) { $SAFE = 3; $SAFE = 2 }

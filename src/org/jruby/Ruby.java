@@ -950,6 +950,10 @@ public final class Ruby {
     public IndexError newIndexError(String message) {
     	return new IndexError(this, message);
     }
+    
+    public SecurityError newSecurityError(String message) {
+    	return new SecurityError(this, message);
+    }
 
     public TypeError newTypeError(String message) {
     	return new TypeError(this, message);

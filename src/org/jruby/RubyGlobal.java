@@ -150,7 +150,8 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             int level = RubyNumeric.fix2int(value);
             if (level < runtime.getSafeLevel()) {
-                throw new SecurityException("tried to downgrade level from " + runtime.getSafeLevel() + " to " + level);
+            	throw runtime.newSecurityError("tried to downgrade safe level from " + 
+            			runtime.getSafeLevel() + " to " + level);
             }
             runtime.setSafeLevel(level);
             // thread.setSafeLevel(level);
