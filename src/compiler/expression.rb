@@ -10,10 +10,38 @@ class << $expression
   end
 
   def acceptNode(node)
-    node.accept(self) unless node.nil?
+    if node.nil?
+      $> << "runtime.getNil()"
+    else
+      node.accept(self)
+    end
   end
 
   def visitStrNode(node)
-    print ("RubyString.newString(runtime, \"#{node.getValue()}\")")
+    $> << "RubyString.newString(runtime, \"#{node.getValue()}\")"
+  end
+
+  def visitTrueNode(node)
+    $> << "runtime.getTrue()"
+  end
+
+  def visitFalseNode(node)
+    $> << "runtime.getFalse()"
+  end
+
+  def visitSelfNode(node)
+    $> << "self"
+  end
+
+  def visitIfNode(node)
+    if simple_exp?(node)
+      acceptNode(node.getCondition())
+      $> << " ? "
+      acceptNode(node.getThenBody())
+      $> << " : "
+      acceptNode(node.getElseBody())
+    else
+      # FIXME
+    end
   end
 end

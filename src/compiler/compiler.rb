@@ -10,7 +10,13 @@ require 'helper.rb'
 #
 # Parse file
 #
-node = JRuby::Parser::parse "puts 'Hello World'"
+node = JRuby::Parser::parse <<EOF
+if true
+  puts(false ? 'Error' : 'Hello World')
+else
+  puts 'Error'
+end
+EOF
 
 #
 # Create class and methods
@@ -32,6 +38,10 @@ load_method.parameter << "Ruby runtime, IRubyObject self"
 script_class << load_method
 
 $> = load_method
+$method = load_method
+$class = script_class
+$methods = []
+$classes = []
 
 #
 # generate code

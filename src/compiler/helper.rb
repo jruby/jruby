@@ -17,13 +17,13 @@ class CallArgs
 
   def simple?
     return true if @node.nil?
-    # if (@node.java_class < JRuby::ArrayNode)
-    iter = @node.iterator()
-    0.upto(@node.size() - 1) do
-      item = iter.next()
-      # return false if (item.java_class < JRuby::ExpandArrayNode)
+    if (@node.instance_of? JRuby::ArrayNode)
+      iter = @node.iterator()
+      0.upto(@node.size() - 1) do
+        item = iter.next()
+        return false if (item.instance_of? JRuby::ExpandArrayNode)
+      end
     end
-    #end
     return true
     # FIXME
   end

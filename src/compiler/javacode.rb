@@ -63,7 +63,7 @@ module JavaCode
 
   class JMethod
     attr_accessor :visible, :return_type, :parameter
-    attr_reader :flags
+    attr_reader :flags, :local
     
     def initialize(name)
       @name = name
@@ -71,6 +71,7 @@ module JavaCode
       @return_type = "void"
       @parameter = ""
       @flags = []
+      @local = []
     end
 
     def <<(code)
@@ -84,11 +85,13 @@ module JavaCode
     end
 
     def to_s
-      <<-END
-#@visible #{@flags.join(" ")} #@return_type #@name(#@parameter) {
-  #@body
-}
-      END
+      code = "#@visible #{@flags.join(\" \")} #@return_type #@name(#@parameter) {\n"
+      @local.uniq.each { |item|
+	code << "item" << ";\n"
+      }
+      code << @body
+      code << "}\n"
+      code
     end
 
     def to_str
