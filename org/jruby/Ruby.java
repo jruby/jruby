@@ -263,7 +263,7 @@ public final class Ruby {
      * @return The class or module.
      */
     public RubyModule getRubyModule(String name) {
-        return (RubyModule) classes.getClassMap().get(name);
+        return classes.getClass(name);
     }
 
     /** Returns a class from the instance pool.
@@ -272,7 +272,7 @@ public final class Ruby {
      * @return The class.
      */
     public RubyClass getRubyClass(String name) {
-        return (RubyClass) classes.getClassMap().get(name);
+        return (RubyClass) classes.getClass(name);
     }
 
     /** Define a new class with name 'name' and super class 'superClass'.
@@ -292,7 +292,7 @@ public final class Ruby {
 
         newClass.inheritedBy(superClass);
 
-        classes.getClassMap().put(name, newClass);
+        classes.putClass(name, newClass);
 
         return newClass;
     }
@@ -304,7 +304,7 @@ public final class Ruby {
         RubyModule newModule = RubyModule.newModule(this);
         newModule.setName(name);
 
-        getClasses().getClassMap().put(name, newModule);
+        getClasses().putClass(name, newModule);
 
         return newModule;
     }
@@ -351,8 +351,8 @@ public final class Ruby {
      *
      */
     public RubyObject getTopConstant(String id) {
-        if (getClasses().getClassMap().get(id) != null) {
-            return (RubyObject) getClasses().getClassMap().get(id);
+        if (getClasses().getClass(id) != null) {
+            return (RubyObject) getClasses().getClass(id);
         }
 
         /* autoload */
@@ -373,7 +373,7 @@ public final class Ruby {
     }
 
     public boolean isClassDefined(String name) {
-        return classes.getClassMap().get(name) != null;
+        return classes.getClass(name) != null;
     }
 
     /* public RubyInterpreter getInterpreter() {

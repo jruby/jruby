@@ -1062,42 +1062,6 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
-    public RubyArray getConstOf(RubyArray ary) {
-        RubyModule klass = this;
-        while (klass != null) {
-            // +++ jpetersen
-            klass.getConstAt(ary);
-            // ---
-            klass = klass.getSuperClass();
-        }
-        return ary;
-    }
-
-    public RubyArray getConstAt(RubyArray ary) {
-        constantNamesToArray(ary, getInstanceVariables());
-
-        if (this == getRuby().getClasses().getObjectClass()) {
-            constantNamesToArray(ary, getRuby().getClasses().getClassMap());
-            /*if (autoload_tbl) {
-                st_foreach(autoload_tbl, autoload_i, ary);
-            }*/
-        }
-        return ary;
-    }
-
-    private void constantNamesToArray(RubyArray ary, Map map) {
-        Iterator iter = map.keySet().iterator();
-        while (iter.hasNext()) {
-            String key = (String) iter.next();
-            if (IdUtil.isConstant(key)) {
-                RubyString name = RubyString.newString(getRuby(), (String) key);
-                if (ary.includes(name).isFalse()) {
-                    ary.push(name);
-                }
-            }
-        }
-    }
-
     /** set_method_visibility
      *
      */
@@ -1667,9 +1631,15 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray constants() {
-        RubyArray ary = RubyArray.newArray(getRuby());
-
-        return getConstOf(ary);
+        List constantNames = new ArrayList();
+        Iterator iter = getRuby().getClasses().nameIterator();
+        while (iter.hasNext()) {
+            String name = (String) iter.next();
+            if (IdUtil.isConstant(name)) {
+                constantNames.add(RubyString.newString(getRuby(), name));
+            }
+        }
+        return RubyArray.newArray(getRuby(), constantNames);
     }
 
     /** rb_mod_remove_cvar
@@ -1854,7 +1824,7 @@ public class RubyModule extends RubyObject {
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
         Ruby ruby = input.getRuby();
-        RubyModule result = (RubyModule) ruby.getClasses().getClassMap().get(name);
+        RubyModule result = (RubyModule) ruby.getClasses().getClass(name);
         if (result == null) {
             throw new NameError(ruby, "uninitialized constant " + name);
         }

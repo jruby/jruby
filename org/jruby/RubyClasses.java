@@ -30,6 +30,8 @@
 
 package org.jruby;
 
+import java.util.Iterator;
+
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
@@ -573,5 +575,17 @@ public class RubyClasses {
      */
     public RubyMap getClassMap() {
         return classMap;
+    }
+
+    public RubyModule getClass(String name) {
+        return (RubyModule) classMap.get(name);
+    }
+
+    public void putClass(String name, RubyModule rbClass) {
+        classMap.put(name, rbClass);
+    }
+
+    public Iterator nameIterator() {
+        return classMap.keySet().iterator();
     }
 }
