@@ -32,6 +32,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NameError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
@@ -60,6 +61,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int CONSTANTS = 12;
     private static final int JAVA_METHOD = 13;
     private static final int CONSTRUCTORS = 14;
+    private static final int CONSTRUCTOR = 15;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -78,6 +80,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
         javaClassClass.defineMethod("constructors", IndexedCallback.create(CONSTRUCTORS, 0));
+        javaClassClass.defineMethod("constructor", IndexedCallback.createOptional(CONSTRUCTOR));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -85,7 +88,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     }
 
     public static JavaClassClass for_name(IRubyObject recv, IRubyObject name) {
-        return new JavaClassClass(recv.getRuntime(), name.convertToString().toString());
+        return new JavaClassClass(recv.getRuntime(), name.toId());
     }
 
     public RubyBoolean public_p() {
@@ -155,7 +158,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         if (args.length < 1) {
             throw new ArgumentError(getRuntime(), args.length, 1);
         }
-        String methodName = ((RubyString) args[0].convertToString()).getValue();
+        String methodName = args[0].toId();
         Class[] argumentTypes = new Class[args.length - 1];
         for (int i = 1; i < args.length; i++) {
             JavaClassClass type = for_name(this, args[i]);
@@ -171,6 +174,21 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
             result.append(new JavaConstructorClass(getRuntime(), constructors[i]));
         }
         return result;
+    }
+
+    public JavaConstructorClass constructor(IRubyObject[] args) {
+        Class[] parameterTypes = new Class[args.length];
+        for (int i = 0; i < args.length; i++) {
+            String name = args[i].toId();
+            parameterTypes[i] = getRuntime().getJavaSupport().loadJavaClass(name);
+        }
+        Constructor constructor;
+        try {
+            constructor = javaClass.getConstructor(parameterTypes);
+        } catch (NoSuchMethodException nsme) {
+            throw new NameError(getRuntime(), "no matching java constructor");
+        }
+        return new JavaConstructorClass(getRuntime(), constructor);
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
@@ -195,6 +213,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return java_method(args);
             case CONSTRUCTORS :
                 return constructors();
+            case CONSTRUCTOR :
+                return constructor(args);
             default :
                 return super.callIndexed(index, args);
         }

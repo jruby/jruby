@@ -93,6 +93,9 @@ if defined? Java
   constructors = random_class.constructors
   test_equal(2, constructors.length)
   test_equal([0, 1], constructors.collect {|c| c.arity }.sort)
+  constructor = random_class.constructor(:long)
+  test_equal(1, constructor.arity)
+  random = constructor.new_instance(2002)
 end
 
 test_print_report

@@ -27,22 +27,27 @@ import org.jruby.RubyClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
+import org.jruby.util.Asserts;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 public class JavaConstructorClass extends RubyObject implements IndexCallable {
     private final Constructor constructor;
 
     private static final int ARITY = 1;
+    private static final int NEW_INSTANCE = 2;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaConstructorClass =
                 javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
 
         javaConstructorClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
+        javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE));
 
         return javaConstructorClass;
     }
@@ -56,10 +61,34 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         return RubyFixnum.newFixnum(getRuntime(), constructor.getParameterTypes().length);
     }
 
+    public IRubyObject new_instance(IRubyObject[] args) {
+        Object[] arguments = new Object[args.length];
+        Class[] types = constructor.getParameterTypes();
+        for (int i = 0; i < args.length; i++) {
+            arguments[i] = JavaUtil.convertRubyToJava(getRuntime(), args[i], types[i]);
+        }
+        try {
+            Object result = constructor.newInstance(arguments);
+            return JavaUtil.convertJavaToRuby(getRuntime(), result, constructor.getDeclaringClass());
+
+        } catch (IllegalAccessException iae) {
+            // FIXME: what's the best exception to throw here?
+            throw new TypeError(getRuntime(), "illegal access");
+        } catch (InvocationTargetException ite) {
+            getRuntime().getJavaSupport().handleNativeException((Exception) ite.getTargetException());
+            Asserts.notReached();
+            return null;
+        } catch (InstantiationException ie) {
+            throw new TypeError(getRuntime(), "can't make instance of " + constructor.getDeclaringClass().getName());
+        }
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case ARITY :
                 return arity();
+            case NEW_INSTANCE :
+                return new_instance(args);
             default :
                 return super.callIndexed(index, args);
         }
