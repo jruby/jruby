@@ -279,9 +279,6 @@ public class RubyThread extends RubyObject {
         boolean callInit) {
         if (!ruby.isBlockGiven()) {
             System.out.println("No block given to thread!");
-        } else {
-            System.out.println(
-                "The block was passed to the thread constructor");
         }
         RubyThread result = new RubyThread(ruby, (RubyClass) recv);
         if (callInit) {
@@ -289,21 +286,19 @@ public class RubyThread extends RubyObject {
         }
         
         final RubyProc proc = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+        
+        final Frame currentFrame = ruby.getCurrentFrame();
+        //final Iter currentIter = ruby.getCurrentIter();
+        final Block currentBlock = ruby.getBlockStack().getCurrent();
 
         //result.jvmThread = new Thread(result.new RubyThreadRunner(ruby, args));
         result.jvmThread = new Thread(new Runnable() {
             public void run() {
-                if (ruby.isBlockGiven()) {
-                    System.out.println("THE BLOCK HAS PROPOGATED!");
+                ruby.getFrameStack().push(currentFrame);
+                //ruby.getIterStack().push(currentIter);
+                ruby.getBlockStack().setCurrent(currentBlock);
 
-                    /* ruby.yield(
-                        RubyArray.newArray(
-                            ruby,
-                            new ArrayList(Arrays.asList(args)))); */
-                    proc.call(args);
-                } else {
-                    System.out.println("The block did not propogate");
-                }
+                proc.call(args);
             }
         });
         result.threads.put(result.jvmThread, result);

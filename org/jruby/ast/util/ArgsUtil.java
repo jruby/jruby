@@ -44,10 +44,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public final class ArgsUtil {
     public final static Block beginCallArgs(final Ruby ruby) {
-        final Block actBlock = ruby.getBlock().getCurrent();
+        final Block actBlock = ruby.getBlockStack().getCurrent();
 
         if (ruby.getCurrentIter().isPre()) {
-            ruby.getBlock().pop();
+            ruby.getBlockStack().pop();
         }
         ruby.getIterStack().push(Iter.ITER_NOT);
         return actBlock;
@@ -58,7 +58,7 @@ public final class ArgsUtil {
         final Block actBlock) {
         if (actBlock != null) {
             // XXX
-            ruby.getBlock().push(actBlock); // Refresh the next attribute.
+            ruby.getBlockStack().push(actBlock); // Refresh the next attribute.
         }
         ruby.getIterStack().pop();
     }

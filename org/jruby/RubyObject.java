@@ -543,14 +543,14 @@ public class RubyObject implements Cloneable, IRubyObject {
         return under.executeUnder(new Callback() {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
                 // if () {             
-                Block oldBlock = ruby.getBlock().getCurrent().cloneBlock();
+                Block oldBlock = ruby.getBlockStack().getCurrent().cloneBlock();
 
                 /* copy the block to avoid modifying global data. */
-                ruby.getBlock().getCurrent().getFrame().setNamespace(ruby.getCurrentFrame().getNamespace());
+                ruby.getBlockStack().getCurrent().getFrame().setNamespace(ruby.getCurrentFrame().getNamespace());
                 try {
                     return ruby.yield(args[0], args[0], ruby.getRubyClass(), false).toRubyObject();
                 } finally {
-                    ruby.getBlock().setCurrent(oldBlock);
+                    ruby.getBlockStack().setCurrent(oldBlock);
                 }
                 // }
                 /* static block, no need to restore */

@@ -214,8 +214,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(ruby, "wrong argument type " + block.getInternalClass().toName() + " (expected Proc)");
         }
 
-        Block oldBlock = ruby.getBlock().getCurrent();
-        ruby.getBlock().push(((RubyProc) block).getBlock());
+        Block oldBlock = ruby.getBlockStack().getCurrent();
+        ruby.getBlockStack().push(((RubyProc) block).getBlock());
 
         ruby.getIterStack().push(Iter.ITER_PRE);
         ruby.getCurrentFrame().setIter(Iter.ITER_PRE);
@@ -224,7 +224,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             eval(iVisited.getIterNode());
         } finally {
             ruby.getIterStack().pop();
-            ruby.getBlock().setCurrent(oldBlock);
+            ruby.getBlockStack().setCurrent(oldBlock);
         }
     }
 
@@ -760,7 +760,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitForNode(ForNode)
      */
     public void visitForNode(ForNode iVisited) {
-        ruby.getBlock().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self.toRubyObject());
+        ruby.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self.toRubyObject());
         ruby.getIterStack().push(Iter.ITER_PRE);
 
         try {
@@ -789,7 +789,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             result = ruby.getNil();
         } finally {
             ruby.getIterStack().pop();
-            ruby.getBlock().pop();
+            ruby.getBlockStack().pop();
         }
     }
 
@@ -860,7 +860,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIterNode(IterNode)
      */
     public void visitIterNode(IterNode iVisited) {
-        ruby.getBlock().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self.toRubyObject());
+        ruby.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self.toRubyObject());
         ruby.getIterStack().push(Iter.ITER_PRE);
         try {
             while (true) {
@@ -876,7 +876,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             result = ruby.getNil();
         } finally {
             ruby.getIterStack().pop();
-            ruby.getBlock().pop();
+            ruby.getBlockStack().pop();
         }
     }
 

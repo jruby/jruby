@@ -164,7 +164,7 @@ public final class Ruby {
 
     private boolean isVerbose;
 
-    private BlockStack block = new BlockStack(this);
+
 
     private int currentMethodScope;
 
@@ -425,7 +425,7 @@ public final class Ruby {
         }
 
         RubyVarmap.push(this);
-        Block currentBlock = getBlock().getCurrent();
+        Block currentBlock = getBlockStack().getCurrent();
 
         getFrameStack().push(currentBlock.getFrame());
 
@@ -435,7 +435,7 @@ public final class Ruby {
         Scope oldScope = (Scope)getScope().getTop();
         getScope().setTop(currentBlock.getScope());
 
-        getBlock().pop();
+        getBlockStack().pop();
 
         setDynamicVars(currentBlock.getDynamicVars());
 
@@ -501,7 +501,7 @@ public final class Ruby {
             popClass();
             RubyVarmap.pop(this);
 
-            getBlock().setCurrent(currentBlock);
+            getBlockStack().setCurrent(currentBlock);
             getFrameStack().pop();
 
             setNamespace(oldNamespace);
@@ -527,7 +527,7 @@ public final class Ruby {
     public RubyObject iterate(Callback iterateMethod, RubyObject data1, Callback blockMethod, RubyObject data2) {
         // VALUE self = ruby_top_self;
         getIterStack().push(Iter.ITER_PRE);
-        getBlock().push(null, new IterateMethod(blockMethod, data2), getRubyTopSelf());
+        getBlockStack().push(null, new IterateMethod(blockMethod, data2), getRubyTopSelf());
 
         try {
             while (true) {
@@ -542,7 +542,7 @@ public final class Ruby {
             }
         } finally {
             getIterStack().pop();
-            getBlock().pop();
+            getBlockStack().pop();
         }
     }
 
@@ -731,11 +731,8 @@ public final class Ruby {
         return getCurrentEvaluator().getCurrentIter();
     }
 
-    /** Getter for property block.
-     * @return Value of property block.
-     */
-    public BlockStack getBlock() {
-        return block;
+    public BlockStack getBlockStack() {
+        return getCurrentContext().getBlockStack();
     }
 
     /** Getter for property cBase.
