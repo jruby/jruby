@@ -1,31 +1,31 @@
 /*
  * RubyArray.java - The Array class.
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 
 package org.jruby;
@@ -371,7 +371,7 @@ public class RubyArray extends RubyObject {
 		return new RubyArray(ruby, new ArrayList(16));
 	}
 
-	/** 
+	/**
 	 *
 	 */
 	public static RubyArray newArray(Ruby ruby, RubyObject obj) {
@@ -1316,62 +1316,187 @@ public class RubyArray extends RubyObject {
 		return ((RubyString)l2Conv).getValue();
 	}
 	public static final String sSp10 = "          ";
-		public static final String sNil10 = "\000\000\000\000\000\000\000\000\000\000";
-		/** Native pack type. 
-		 **/	
-		public static final String sNatStr = "sSiIlL";
+	public static final String sNil10 = "\000\000\000\000\000\000\000\000\000\000";
+	/** Native pack type.
+	 **/
+	public static final String sNatStr = "sSiIlL";
+	private static final String sTooFew = "too few arguments";
+	static char[] uu_table ="`!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_".toCharArray();
+	static char[] b64_table="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+
+	/**
+	 * encodes a String in base64 or its uuencode variant.
+	 * appends the result of the encoding in a StringBuffer
+	 * @param io2Append The StringBuffer which should receive the result
+	 * @param i2Encode The String to encode
+	 * @param iLength The max number of characters to encode
+	 * @param iType the type of encoding required (this is the same type as used by the pack method)
+	 * @return the io2Append buffer
+	 **/
+	private StringBuffer encodes( StringBuffer io2Append, String i2Encode, int iLength, char iType)
+	{
+		iLength = iLength < i2Encode.length() ?  iLength : i2Encode.length();
+		io2Append.ensureCapacity( iLength * 4 / 3 + 6);
+		int i = 0;
+		char[] lTranslationTable = iType == 'u' ? uu_table : b64_table;
+		char lPadding;
+		char[] l2Encode = i2Encode.toCharArray();
+		if (iType == 'u') {
+			if (iLength >= lTranslationTable.length)
+				throw new ArgumentError(ruby, "" + iLength + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to " + lTranslationTable.length);
+			io2Append.append(lTranslationTable[iLength]);
+			lPadding = '`';
+		}
+		else {
+			lPadding = '=';
+		}
+		while (iLength >= 3) {
+			char lCurChar = l2Encode[i++];
+			char lNextChar = l2Encode[i++];
+			char lNextNextChar = l2Encode[i++];
+			io2Append.append(lTranslationTable[077 & (lCurChar >>> 2)]);
+			io2Append.append(lTranslationTable[077 & (((lCurChar << 4) & 060) | ((lNextChar >>> 4) & 017))]);
+			io2Append.append(lTranslationTable[077 & (((lNextChar << 2) & 074) | ((lNextNextChar >>> 6) & 03))]);
+			io2Append.append(lTranslationTable[077 & lNextNextChar]);
+			iLength -= 3;
+		}
+		if (iLength == 2) {
+			char lCurChar = l2Encode[i++];
+			char lNextChar = l2Encode[i++];
+			io2Append.append(lTranslationTable[077 & (lCurChar >>> 2)]);
+			io2Append.append(lTranslationTable[077 & (((lCurChar << 4) & 060) | ((lNextChar >> 4) & 017))]);
+			io2Append.append(lTranslationTable[077 & (((lNextChar << 2) & 074) | (('\0' >> 6) & 03))]);
+			io2Append.append(lPadding);
+		}
+		else if (iLength == 1) {
+			char lCurChar = l2Encode[i++];
+			io2Append.append(lTranslationTable[077 & (lCurChar >>> 2)]);
+			io2Append.append(lTranslationTable[077 & (((lCurChar << 4) & 060) | (('\0' >>> 4) & 017))]);
+			io2Append.append(lPadding);
+			io2Append.append(lPadding);
+		}
+		io2Append.append('\n');
+		return io2Append;
+	}
+
+	static char hex_table[] = "0123456789ABCDEF".toCharArray();
+	/**
+	 * encodes a String with the Quoted printable, MIME encoding (see RFC2045).
+	 * appends the result of the encoding in a StringBuffer
+	 * @param io2Append The StringBuffer which should receive the result
+	 * @param i2Encode The String to encode
+	 * @param iLength The max number of characters to encode
+	 * @return the io2Append buffer
+	 **/
+	private StringBuffer qpencode( StringBuffer io2Append, String i2Encode, int iLength)
+	{
+		io2Append.ensureCapacity( 1024);
+	    int lCurLineLength = 0;
+		int	lPrevChar = -1;
+		char [] l2Encode = i2Encode.toCharArray();
+		try
+		{
+			for(int i = 0;;i++)
+			{
+				char lCurChar = l2Encode[i];
+				if ((lCurChar > 126) ||
+						(lCurChar < 32 && lCurChar != '\n' && lCurChar != '\t') ||
+						(lCurChar == '=')) {
+					io2Append.append('=');
+					io2Append.append(hex_table[lCurChar >> 4]);
+					io2Append.append(hex_table[lCurChar & 0x0f]);
+					lCurLineLength += 3;
+					lPrevChar = -1;
+				}
+				else if (lCurChar == '\n') {
+					if (lPrevChar == ' ' || lPrevChar == '\t') {
+						io2Append.append('=');
+						io2Append.append(lCurChar);
+					}
+					io2Append.append(lCurChar);
+					lCurLineLength = 0;
+					lPrevChar = lCurChar;
+				}
+				else {
+					io2Append.append(lCurChar);
+					lCurLineLength++;
+					lPrevChar = lCurChar;
+				}
+				if (lCurLineLength > iLength) {
+					io2Append.append('=');
+					io2Append.append('\n');
+					lCurLineLength = 0;
+					lPrevChar = '\n';
+				}
+			}
+		} catch (ArrayIndexOutOfBoundsException e)
+		{
+			//normal exit, this should be faster than a test at each iterations for string with more than
+			//about 40 char
+		}
+		
+
+		if (lCurLineLength > 0) {
+			io2Append.append('=');
+			io2Append.append('\n');
+		}
+		return io2Append;
+	}
+	
+
+
 	/**
 	 * pack_pack
 	 *
-	 * Template characters for Array#pack Directive  Meaning  
-	 * 
-	 * @ Moves to absolute position 
-	 * A ASCII string (space padded, count is width) 
-	 * a ASCII string (null padded, count is width) 
-	 * B Bit string (descending bit order) 
-	 * b Bit string (ascending bit order) 
-	 * C Unsigned char 
-	 * c Char 
-	 * d Double-precision float, native format 
-	 * E Double-precision float, little-endian byte order 
-	 * e Single-precision float, little-endian byte order 
-	 * f Single-precision float, native format 
-	 * G Double-precision float, network (big-endian) byte order 
-	 * g Single-precision float, network (big-endian) byte order 
-	 * H Hex string (high nibble first) 
-	 * h Hex string (low nibble first) 
-	 * I Unsigned integer 
-	 * i Integer 
-	 * L Unsigned long 
-	 * l Long 
-	 * M Quoted printable, MIME encoding (see RFC2045) 
-	 * m Base64 encoded string 
-	 * N Long, network (big-endian) byte order 
-	 * n Short, network (big-endian) byte-order 
-	 * P Pointer to a structure (fixed-length string) 
-	 * p Pointer to a null-terminated string 
-	 * S Unsigned short 
-	 * s Short 
-	 * U UTF-8 
-	 * u UU-encoded string 
-	 * V Long, little-endian byte order 
-	 * v Short, little-endian byte order 
-	 * X Back up a byte 
-	 * x Null byte 
-	 * Z Same as ``A'' 
-	 * 
-	 * Packs the contents of arr into a binary sequence according to the directives in 
-	 * aTemplateString (see preceding table). 
-	 * Directives ``A,'' ``a,'' and ``Z'' may be followed by a count, which gives the 
-	 * width of the resulting field. 
-	 * The remaining directives also may take a count, indicating the number of array 
-	 * elements to convert. 
-	 * If the count is an asterisk (``*''), all remaining array elements will be 
-	 * converted. 
+	 * Template characters for Array#pack Directive  Meaning
+	 *
+	 * @ Moves to absolute position
+	 * A ASCII string (space padded, count is width)
+	 * a ASCII string (null padded, count is width)
+	 * B Bit string (descending bit order)
+	 * b Bit string (ascending bit order)
+	 * C Unsigned char
+	 * c Char
+	 * d Double-precision float, native format
+	 * E Double-precision float, little-endian byte order
+	 * e Single-precision float, little-endian byte order
+	 * f Single-precision float, native format
+	 * G Double-precision float, network (big-endian) byte order
+	 * g Single-precision float, network (big-endian) byte order
+	 * H Hex string (high nibble first)
+	 * h Hex string (low nibble first)
+	 * I Unsigned integer
+	 * i Integer
+	 * L Unsigned long
+	 * l Long
+	 * M Quoted printable, MIME encoding (see RFC2045)
+	 * m Base64 encoded string
+	 * N Long, network (big-endian) byte order
+	 * n Short, network (big-endian) byte-order
+	 * P Pointer to a structure (fixed-length string)
+	 * p Pointer to a null-terminated string
+	 * S Unsigned short
+	 * s Short
+	 * U UTF-8
+	 * u UU-encoded string
+	 * V Long, little-endian byte order
+	 * v Short, little-endian byte order
+	 * X Back up a byte
+	 * x Null byte
+	 * Z Same as ``A''
+	 *
+	 * Packs the contents of arr into a binary sequence according to the directives in
+	 * aTemplateString (see preceding table).
+	 * Directives ``A,'' ``a,'' and ``Z'' may be followed by a count, which gives the
+	 * width of the resulting field.
+	 * The remaining directives also may take a count, indicating the number of array
+	 * elements to convert.
+	 * If the count is an asterisk (``*''), all remaining array elements will be
+	 * converted.
 	 * Any of the directives ``sSiIlL'' may be followed by an underscore (``_'') to use
-	 * the underlying platform's native size for the specified type; otherwise, they 
-	 * use a platform-independent size. Spaces are ignored in the template string. 
-	 * @see RubyString#unpack 
+	 * the underlying platform's native size for the specified type; otherwise, they
+	 * use a platform-independent size. Spaces are ignored in the template string.
+	 * @see RubyString#unpack
 	 **/
 	public RubyString pack(RubyString iFmt)
 	{
@@ -1405,11 +1530,11 @@ public class RubyArray extends RubyObject {
 				}
 				if (lNext == '*')
 				{
-					lLength = "@Xxu".indexOf(lType) == -1 ? 0 : lLeftInArray;
+					lLength = "@Xxu".indexOf(lType) == -1 ?  lLeftInArray : 0;
 					lNext = ++i < lFmtLength ? lFmt[i]:0;
 				} else if (Character.isDigit(lNext))
 				{
-					int lEndIndex = i;	
+					int lEndIndex = i;
 					for (; lEndIndex < lFmtLength ; lEndIndex++)
 						if (!Character.isDigit(lFmt[lEndIndex]))
 							break;
@@ -1425,7 +1550,7 @@ public class RubyArray extends RubyObject {
 					if (lLeftInArray-- > 0)
 						lFrom = (RubyObject)list.get(idx++);
 					else
-						throw new ArgumentError(ruby, "too few arguments");
+						throw new ArgumentError(ruby, sTooFew);
 					if(lFrom == ruby.getNil())
 						lCurElemString = "";
 					else
@@ -1440,13 +1565,11 @@ public class RubyArray extends RubyObject {
 							if ( lCurElemString.length() >= lLength)
 								lResult.append(lCurElemString.toCharArray(), 0, lLength);
 							else 		//need padding
-							{			//I'm fairly sure there is a library call to create a 
+							{			//I'm fairly sure there is a library call to create a
 								//string filled with a given char with a given length but I couldn't find it
 								lResult.append(lCurElemString);
 								lLength -= lCurElemString.length();
-								while(lLength >= 10)
-									lResult.append((lType == 'a')?sNil10:sSp10);
-								lResult.append(((lType == 'a')?sNil10:sSp10).substring(0, lLength));
+								grow(lResult, (lType == 'a')?sNil10:sSp10 , lLength);
 							}
 							break;
 
@@ -1462,23 +1585,23 @@ public class RubyArray extends RubyObject {
 									lPadLength = (lLength - lCurElemString.length()+1)/2;
 									lLength = lCurElemString.length();
 								}
-								lCurChar = lCurElemString.charAt(lIndex);
-								for(lIndex = 0; lIndex++ < lLength; lCurChar = lCurElemString.charAt(lIndex))
+								for(lIndex = 0; lIndex < lLength; )
 								{
+									lCurChar = lCurElemString.charAt(lIndex++);
 									if ((lCurChar & 1) != 0)	//if the low bit of the current char is set
 										lByte |= 128;	//set the high bit of the result
 									if ((lIndex & 7) != 0)		//if the index is not a multiple of 8, we are not on a byte boundary
 										lByte >>= 1;	//shift the byte
 									else
 									{		//we are done with one byte, append it to the result and go for the next
-										lResult.append(lByte & 0xff);
+										lResult.append((char)(lByte & 0xff));
 										lByte = 0;
 									}
 								}
 								if ((lLength & 7) != 0)	//if the length is not a multiple of 8
 								{									//we need to pad the last byte
 									lByte >>=7 - (lLength & 7);
-									lResult.append(lByte & 0xff);
+									lResult.append((char)(lByte & 0xff));
 								}
 								//do some padding, I don't understand the padding strategy
 								lLength = lResult.length();
@@ -1497,22 +1620,22 @@ public class RubyArray extends RubyObject {
 									lPadLength = (lLength - lCurElemString.length()+1)/2;
 									lLength = lCurElemString.length();
 								}
-								lCurChar = lCurElemString.charAt(lIndex);
-								for(lIndex = 0; lIndex++ < lLength; lCurChar = lCurElemString.charAt(lIndex))
+								for(lIndex = 0; lIndex < lLength; )
 								{
+									lCurChar = lCurElemString.charAt(lIndex++);
 									lByte |= lCurChar & 1;
 									if ((lIndex & 7) != 0)		//if the index is not a multiple of 8, we are not on a byte boundary
 										lByte <<= 1;	//shift the byte
 									else
 									{		//we are done with one byte, append it to the result and go for the next
-										lResult.append(lByte & 0xff);
+										lResult.append((char)(lByte & 0xff));
 										lByte = 0;
 									}
 								}
 								if ((lLength & 7) != 0)	//if the length is not a multiple of 8
 								{									//we need to pad the last byte
 									lByte <<=7 - (lLength & 7);
-									lResult.append(lByte & 0xff);
+									lResult.append((char)(lByte & 0xff));
 								}
 								//do some padding, I don't understand the padding strategy
 								lLength = lResult.length();
@@ -1521,7 +1644,7 @@ public class RubyArray extends RubyObject {
 							break;
 
 						case 'h':
-							{ 
+							{
 								int lByte = 0;
 								int lIndex = 0;
 								char lCurChar;
@@ -1531,10 +1654,10 @@ public class RubyArray extends RubyObject {
 									lPadLength = (lLength - lCurElemString.length()+1)/2;
 									lLength = lCurElemString.length();
 								}
-								lCurChar = lCurElemString.charAt(lIndex);
-								for(lIndex = 0; lIndex++ < lLength; lCurChar = lCurElemString.charAt(lIndex))
-								{	
-									if (Character.isLetterOrDigit(lCurChar))	//this test may be too lax but it is the same as in MRI
+								for(lIndex = 0; lIndex < lLength; )
+								{
+									lCurChar = lCurElemString.charAt(lIndex++);
+									if (Character.isJavaIdentifierStart(lCurChar))	//this test may be too lax but it is the same as in MRI
 										lByte |= (((lCurChar & 15) + 9) & 15) << 4;
 									else
 										lByte  |= (lCurChar & 15) << 4;
@@ -1542,27 +1665,200 @@ public class RubyArray extends RubyObject {
 										lByte >>= 4;
 									else
 									{
-										lResult.append(lByte & 0xff);
+										lResult.append((char)(lByte & 0xff));
+										lByte = 0;
 									}
 								}
 								if ((lLength & 1) != 0)
 								{
-									lResult.append(lByte & 0xff);
+									lResult.append((char)(lByte & 0xff));
 								}
 
 								//do some padding, I don't understand the padding strategy
 								lLength = lResult.length();
 								lResult.setLength(lLength+lPadLength);
 							}
+							break;
+
+						case 'H':
+							{
+								int lByte = 0;
+								int lIndex = 0;
+								char lCurChar;
+								int lPadLength = 0;
+								if (lLength > lCurElemString.length())
+								{	//I don't undestand this why divide by 2
+									lPadLength = (lLength - lCurElemString.length()+1)/2;
+									lLength = lCurElemString.length();
+								}
+								for(lIndex = 0; lIndex < lLength;)
+								{
+									lCurChar = lCurElemString.charAt(lIndex++);
+									if (Character.isJavaIdentifierStart(lCurChar))	//this test may be too lax but it is the same as in MRI
+										lByte |= ((lCurChar & 15) + 9) & 15;
+									else
+										lByte  |= (lCurChar & 15);
+									if ((lIndex & 1) != 0)
+										lByte <<= 4;
+									else
+									{
+										lResult.append((char)(lByte & 0xff));
+										lByte = 0;
+									}
+								}
+								if ((lLength & 1) != 0)
+								{
+									lResult.append((char)(lByte & 0xff));
+								}
+
+								//do some padding, I don't understand the padding strategy
+								lLength = lResult.length();
+								lResult.setLength(lLength+lPadLength);
+							}
+							break;
 					}
+					break;
+
+
+
+				case 'x':
+					grow(lResult, sNil10, lLength);
+					break;
+
+				case 'X':
+					shrink(lResult, lLength);
+					break;
+
+				case '@':
+					lLength -= lResult.length();
+					if (lLength > 0) grow(lResult, sNil10, lLength);
+					lLength = -lLength;
+					if (lLength > 0) shrink(lResult, lLength);
+					break;
+
+				case 'c':
+				case 'C':
+					while (lLength-- > 0) {
+						char c;
+						if (lLeftInArray-- > 0)
+							lFrom = (RubyObject)list.get(idx++);
+						else
+							throw new ArgumentError(ruby, sTooFew);
+						if (lFrom == ruby.getNil()) c = 0;
+						else {
+							c = (char)(RubyNumeric.num2long(lFrom) & 0xff);
+						}
+						lResult.append(c);
+					}
+					break;
+
+				case 'u':
+				case 'm':
+					if (lLeftInArray-- > 0)
+						lFrom = (RubyObject)list.get(idx++);
+					else
+						throw new ArgumentError(ruby, sTooFew);
+					if(lFrom == ruby.getNil())
+						lCurElemString = "";
+					else
+						lCurElemString = convert2String(lFrom);
+
+					if (lLength <= 2)
+						lLength = 45;
+					else
+						lLength = lLength / 3 * 3;
+					for (;;) 
+					{
+						int lTodo;
+						encodes(lResult, lCurElemString, lLength, lType);
+						if (lLength < lCurElemString.length())
+							lCurElemString = lCurElemString.substring(lLength);
+						else 
+							break;
+					}
+					break;
+
+				case 'M':
+					if (lLeftInArray-- > 0)
+						lFrom = (RubyObject)list.get(idx++);
+					else
+						throw new ArgumentError(ruby, sTooFew);
+					if(lFrom == ruby.getNil())
+						lCurElemString = "";
+					else
+						lCurElemString = convert2String(lFrom);
+					
+					if (lLength <= 1)
+						lLength = 72;
+					qpencode(lResult, lCurElemString, lLength);
+					break;
+					
+				case 'U':
+					char[] c = new char[lLength];
+					for(int lCurCharIdx = 0;lLength-- > 0; lCurCharIdx++) {
+						long l;
+						if (lLeftInArray-- > 0)
+							lFrom = (RubyObject)list.get(idx++);
+						else
+							throw new ArgumentError(ruby, sTooFew);
+
+						if (lFrom == ruby.getNil()) l = 0;
+						else {
+							l = RubyNumeric.num2long(lFrom);
+						}
+						c[lCurCharIdx] = (char)l;
+					}
+					String s = new String(c);
+					try
+					{
+						lResult.append(s.getBytes("UTF-8"));
+					} catch (java.io.UnsupportedEncodingException e)
+					{
+						throw new RubyBugException( "can't convert to UTF8");
+					}
+					break;
 			}
 		}
 		return RubyString.newString(ruby, lResult.toString());
 	}
 
+	/**
+	 * shrinks a stringbuffer.
+	 * shrinks a stringbuffer by a number of characters.
+	 * @param i2Shrink the stringbuffer
+	 * @param iLength how much to shrink
+	 * @return the stringbuffer
+	 **/
+	private final StringBuffer shrink(StringBuffer i2Shrink, int iLength)
+	{
+		iLength = i2Shrink.length() - iLength;
+		if (iLength < 0)
+			throw new ArgumentError(ruby, "X outside of string" );
+		i2Shrink.setLength(iLength);
+		return i2Shrink;
+	}
+	/**
+	 * grows a stringbuffer.
+	 * uses the Strings to pad the buffer for a certain length
+	 * @param i2Grow the buffer to grow
+	 * @param iPads the string used as padding
+	 * @param iLength how much padding is needed
+	 * @return the padded buffer
+	 **/
+	private final StringBuffer grow(StringBuffer i2Grow, String iPads, int iLength)
+	{
+		int lPadLength = iPads.length();
+		while(iLength >= lPadLength)
+		{
+			i2Grow.append(iPads);
+			iLength -= lPadLength;
+		}
+		i2Grow.append(iPads.substring(0, iLength));
+		return i2Grow;
+	}
 
 	class BlockComparator implements Comparator {
-public int compare(Object o1, Object o2) {
+		public int compare(Object o1, Object o2) {
 			RubyObject result = getRuby().yield(RubyArray.newArray(getRuby(), (RubyObject) o1, (RubyObject) o2));
 			return (int) ((RubyNumeric) result).getLongValue();
 		}
