@@ -12,8 +12,9 @@ if defined? Java
     r = Random.new
     test_equal(Random, r.type)
     r = Random.new(1001)
-#    include_package "javax.swing"
-#    frame = JFrame.new("hello")
+    include_package "javax.swing"
+    frame = JFrame.new("hello")  # FIXME: find overloading-example within
+                                 # java.util or java.lang
 
     # Instance methods
     test_equal(Random, r.type)

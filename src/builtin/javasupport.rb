@@ -151,12 +151,13 @@ module JavaUtilities
     def create_class_constructor(java_class, proxy_class)
       class << proxy_class
         def new(*args)
-          arity = args.length
-          constructor = @java_class.constructors.detect {|c| c.arity == arity }
-          if constructor.nil?
+          constructors =
+            @java_class.constructors.select {|c| c.arity == args.length }
+          if constructors.empty?
             raise NameError.new("wrong # of arguments for constructor")
           end
           args = JavaProxy.convert_arguments(args)
+          constructor = JavaUtilities.matching_method(constructors, args)
           java_object = constructor.new_instance(*args)
           result = new_proxy
           result.java_class = @java_class
