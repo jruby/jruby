@@ -1,33 +1,32 @@
 /*
- * RubyClasses.java - No description
- * Created on 05. Oktober 2001, 01:43
- * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
- * JRuby - http://jruby.sourceforge.net
- * 
- * This file is part of JRuby
- * 
- * JRuby is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * 
- * JRuby is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with JRuby; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *  RubyClasses.java - No description
+ *  Created on 05. Oktober 2001, 01:43
+ *
+ *  Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ *  Jan Arne Petersen <jpetersen@uni-bonn.de>
+ *  Stefan Matthias Aust <sma@3plus4.de>
+ *  Alan Moore <alan_moore@gmx.net>
+ *  Benoit Cerrina <b.cerrina@wanadoo.fr>
+ *
+ *  JRuby - http://jruby.sourceforge.net
+ *
+ *  This file is part of JRuby
+ *
+ *  JRuby is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  JRuby is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with JRuby; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  */
-
 package org.jruby;
 
 import java.util.Iterator;
@@ -36,7 +35,8 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
 
-/** In this class there are references to the core (or built-in) classes
+/**
+ * In this class there are references to the core (or built-in) classes
  * and modules of Ruby and JRuby. There is also a Map of referenced to the
  * named classes in a Ruby runtime.
  *
@@ -92,10 +92,12 @@ import org.jruby.util.*;
  *
  * You can access the references by the get&lt;classname&gt;Class or
  * get&lt;modulename&gt;Module methods.
+ *
  * @author jpetersen
  * @since 0.1.8
  */
-public class RubyClasses {
+public class RubyClasses
+{
     private Ruby ruby;
 
     private RubyClass arrayClass;
@@ -146,20 +148,28 @@ public class RubyClasses {
 
     private RubyMap classMap;
 
-    /** Creates a new RubyClasses instance and defines all the
+    /**
+     * Creates a new RubyClasses instance and defines all the
      * core classes and modules in the Ruby runtime.
+     *
      * @param ruby The Ruby runtime.
      */
-    public RubyClasses(Ruby ruby) {
+    public RubyClasses(Ruby ruby)
+    {
         this.ruby = ruby;
 
         classMap = new RubyHashMap();
     }
 
-    /** rb_define_boot?
+    /**
+     * rb_define_boot?
      *
+     * @param name Description of the Parameter
+     * @param superClass Description of the Parameter
+     * @return Description of the Return Value
      */
-    private RubyClass defineBootClass(String name, RubyClass superClass) {
+    private RubyClass defineBootClass(String name, RubyClass superClass)
+    {
         RubyClass bootClass = RubyClass.newClass(ruby, superClass);
         bootClass.setName(name);
         classMap.put(name, bootClass);
@@ -167,7 +177,8 @@ public class RubyClasses {
         return bootClass;
     }
 
-    /** This method defines the core classes and modules in
+    /**
+     * This method defines the core classes and modules in
      * the Ruby runtime.
      *
      * Ruby's Class Hierarchy Chart
@@ -196,7 +207,8 @@ public class RubyClasses {
      *
      *   + All metaclasses are instances of the class `Class'.
      */
-    public void initCoreClasses() {
+    public void initCoreClasses()
+    {
         objectClass = defineBootClass("Object", null);
         moduleClass = defineBootClass("Module", objectClass);
         classClass = defineBootClass("Class", moduleClass);
@@ -225,7 +237,7 @@ public class RubyClasses {
 
         comparableModule = RubyComparable.createComparable(ruby);
         enumerableModule = RubyEnumerable.createEnumerableModule(ruby);
-        
+
         precisionModule = RubyPrecision.createPrecisionModule(ruby);
 
         numericClass = RubyNumeric.createNumericClass(ruby);
@@ -245,7 +257,7 @@ public class RubyClasses {
         javaModule = RubyJava.createJavaModule(ruby);
         javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
         javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
-        
+
         ioClass = RubyIO.createIOClass(ruby);
         fileClass = RubyFile.createFileClass(ruby);
         dirClass = RubyDir.createDirClass(ruby);
@@ -256,334 +268,488 @@ public class RubyClasses {
         procClass = RubyProc.createProcClass(ruby);
 
         objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
-	marshalModule = RubyMarshal.createMarshalModule(ruby);
+        marshalModule = RubyMarshal.createMarshalModule(ruby);
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
 
         structClass = RubyStruct.createStructClass(ruby);
 
         gcModule = RubyGC.createGCModule(ruby);
+
+        threadClass = RubyThread.createThreadClass(ruby);
     }
 
-    /** Returns the reference to the Binding class.
+    /**
+     * Returns the reference to the Binding class.
+     *
      * @return the Binding class.
      */
-    public RubyClass getBindingClass() {
+    public RubyClass getBindingClass()
+    {
         return bindingClass;
     }
 
-    /** Returns the reference to the Class class.
+    /**
+     * Returns the reference to the Class class.
+     *
      * @return The Class class.
      */
-    public RubyClass getClassClass() {
+    public RubyClass getClassClass()
+    {
         return classClass;
     }
 
-    /** Returns the reference to the Module class.
+    /**
+     * Returns the reference to the Module class.
+     *
      * @return The Module class.
      */
-    public RubyClass getModuleClass() {
+    public RubyClass getModuleClass()
+    {
         return moduleClass;
     }
 
-    /** Returns the reference to the Struct class.
+    /**
+     * Returns the reference to the Struct class.
+     *
      * @return The Struct class.
      */
-    public RubyClass getStructClass() {
+    public RubyClass getStructClass()
+    {
         return structClass;
     }
 
-    /** Returns the reference to the Comparable module.
+    /**
+     * Returns the reference to the Comparable module.
+     *
      * @return The Comparable module.
      */
-    public RubyModule getComparableModule() {
+    public RubyModule getComparableModule()
+    {
         return comparableModule;
     }
 
-    /** Returns the reference to the Hash class.
+    /**
+     * Returns the reference to the Hash class.
+     *
      * @return The Hash class.
      */
-    public RubyClass getHashClass() {
+    public RubyClass getHashClass()
+    {
         return hashClass;
     }
 
-    /** Returns the reference to the Math module.
+    /**
+     * Returns the reference to the Math module.
+     *
      * @return The Math module.
      */
-    public RubyModule getMathModule() {
+    public RubyModule getMathModule()
+    {
         return mathModule;
     }
 
-    /** Returns the reference to the RegExp class.
+    /**
+     * Returns the reference to the RegExp class.
+     *
      * @return The RegExp class.
      */
-    public RubyClass getRegExpClass() {
+    public RubyClass getRegExpClass()
+    {
         return regExpClass;
     }
 
-    /** Returns the reference to the Process module.
+    /**
+     * Returns the reference to the Process module.
+     *
      * @return The Process module.
      */
-    public RubyModule getProcessModule() {
+    public RubyModule getProcessModule()
+    {
         return processModule;
     }
 
-    /** Returns the reference to the IO class.
+    /**
+     * Returns the reference to the IO class.
+     *
      * @return The IO class.
      */
-    public RubyClass getIoClass() {
+    public RubyClass getIoClass()
+    {
         return ioClass;
     }
 
-    /** Returns the reference to the ThreadGroup class.
+    /**
+     * Returns the reference to the ThreadGroup class.
+     *
      * @return The ThreadGroup class.
      */
-    public RubyClass getThreadGroupClass() {
+    public RubyClass getThreadGroupClass()
+    {
         return threadGroupClass;
     }
 
-    /** Returns the reference to the Bignum class.
+    /**
+     * Returns the reference to the Bignum class.
+     *
      * @return The Bignum class.
      */
-    public RubyClass getBignumClass() {
+    public RubyClass getBignumClass()
+    {
         return bignumClass;
     }
 
-    /** Returns the reference to the Struct::Tms class.
+    /**
+     * Returns the reference to the Struct::Tms class.
+     *
      * @return The Struct::Tms class.
      */
-    public RubyClass getStructTmsClass() {
+    public RubyClass getStructTmsClass()
+    {
         return structTmsClass;
     }
 
-    /** Returns the reference to the Range class.
+    /**
+     * Returns the reference to the Range class.
+     *
      * @return The Range class.
      */
-    public RubyClass getRangeClass() {
+    public RubyClass getRangeClass()
+    {
         return rangeClass;
     }
 
-    /** Returns the reference to the GC module.
+    /**
+     * Returns the reference to the GC module.
+     *
      * @return The GC module.
      */
-    public RubyModule getGcModule() {
+    public RubyModule getGcModule()
+    {
         return gcModule;
     }
 
-    /** Returns the reference to the Symbol class.
+    /**
+     * Returns the reference to the Symbol class.
+     *
      * @return The Symbol class.
      */
-    public RubyClass getSymbolClass() {
+    public RubyClass getSymbolClass()
+    {
         return symbolClass;
     }
 
-    /** Returns the reference to the Proc class.
+    /**
+     * Returns the reference to the Proc class.
+     *
      * @return The Proc class.
      */
-    public RubyClass getProcClass() {
+    public RubyClass getProcClass()
+    {
         return procClass;
     }
 
-    /** Returns the reference to the Continuation class.
+    /**
+     * Returns the reference to the Continuation class.
+     *
      * @return The Continuation class.
      */
-    public RubyClass getContinuationClass() {
+    public RubyClass getContinuationClass()
+    {
         return continuationClass;
     }
 
-    /** Returns the reference to the FalseClass class.
+    /**
+     * Returns the reference to the FalseClass class.
+     *
      * @return The FalseClass class.
      */
-    public RubyClass getFalseClass() {
+    public RubyClass getFalseClass()
+    {
         return falseClass;
     }
 
-    /** Returns the reference to the Float class.
+    /**
+     * Returns the reference to the Float class.
+     *
      * @return The Float class.
      */
-    public RubyClass getFloatClass() {
+    public RubyClass getFloatClass()
+    {
         return floatClass;
     }
 
-    /** Returns the reference to the Method class.
+    /**
+     * Returns the reference to the Method class.
+     *
      * @return The Method class.
      */
-    public RubyClass getMethodClass() {
+    public RubyClass getMethodClass()
+    {
         return methodClass;
     }
 
-    /** Returns the reference to the MatchData class.
+    /**
+     * Returns the reference to the MatchData class.
+     *
      * @return The MatchData class.
      */
-    public RubyClass getMatchDataClass() {
+    public RubyClass getMatchDataClass()
+    {
         return matchDataClass;
     }
 
-    /** Returns the reference to the Marshal module.
+    /**
+     * Returns the reference to the Marshal module.
+     *
      * @return The Marshal module.
      */
-    public RubyModule getMarshalModule() {
+    public RubyModule getMarshalModule()
+    {
         return marshalModule;
     }
 
-    /** Returns the reference to the Fixnum class.
+    /**
+     * Returns the reference to the Fixnum class.
+     *
      * @return The Fixnum class.
      */
-    public RubyClass getFixnumClass() {
+    public RubyClass getFixnumClass()
+    {
         return fixnumClass;
     }
 
-    /** Returns the reference to the Object class.
+    /**
+     * Returns the reference to the Object class.
+     *
      * @return The Object class.
      */
-    public RubyClass getObjectClass() {
+    public RubyClass getObjectClass()
+    {
         return objectClass;
     }
 
-    /** Returns the reference to the ObjectSpace module.
+    /**
+     * Returns the reference to the ObjectSpace module.
+     *
      * @return The ObjectSpace module.
      */
-    public RubyModule getObjectSpaceModule() {
+    public RubyModule getObjectSpaceModule()
+    {
         return objectSpaceModule;
     }
 
-    /** Returns the reference to the Dir class.
+    /**
+     * Returns the reference to the Dir class.
+     *
      * @return The Dir class.
      */
-    public RubyClass getDirClass() {
+    public RubyClass getDirClass()
+    {
         return dirClass;
     }
 
-    /** Returns the reference to the Exception class.
+    /**
+     * Returns the reference to the Exception class.
+     *
      * @return The Exception class.
      */
-    public RubyClass getExceptionClass() {
+    public RubyClass getExceptionClass()
+    {
         return exceptionClass;
     }
 
-    /** Returns the reference to the String class.
+    /**
+     * Returns the reference to the String class.
+     *
      * @return The String class.
      */
-    public RubyClass getStringClass() {
+    public RubyClass getStringClass()
+    {
         return stringClass;
     }
 
-    /** Returns the reference to the TrueClass class.
+    /**
+     * Returns the reference to the TrueClass class.
+     *
      * @return The TrueClass class.
      */
-    public RubyClass getTrueClass() {
+    public RubyClass getTrueClass()
+    {
         return trueClass;
     }
 
-    /** Returns the reference to the Integer class.
+    /**
+     * Returns the reference to the Integer class.
+     *
      * @return The Integer class.
      */
-    public RubyClass getIntegerClass() {
+    public RubyClass getIntegerClass()
+    {
         return integerClass;
     }
 
-    /** Returns the reference to the Kernel module.
+    /**
+     * Returns the reference to the Kernel module.
+     *
      * @return The Kernel module.
      */
-    public RubyModule getKernelModule() {
+    public RubyModule getKernelModule()
+    {
         return kernelModule;
     }
 
-    /** Returns the reference to the Thread class.
+    /**
+     * Returns the reference to the Thread class.
+     *
      * @return The Thread class.
      */
-    public RubyClass getThreadClass() {
+    public RubyClass getThreadClass()
+    {
         return threadClass;
     }
 
-    /** Returns the reference to the File class.
+    /**
+     * Returns the reference to the File class.
+     *
      * @return The File class.
      */
-    public RubyClass getFileClass() {
+    public RubyClass getFileClass()
+    {
         return fileClass;
     }
 
-    /** Returns the reference to the NilClass class.
+    /**
+     * Returns the reference to the NilClass class.
+     *
      * @return The NilClass class.
      */
-    public RubyClass getNilClass() {
+    public RubyClass getNilClass()
+    {
         return nilClass;
     }
 
-    /** Returns the reference to the Array class.
+    /**
+     * Returns the reference to the Array class.
+     *
      * @return The Array class.
      */
-    public RubyClass getArrayClass() {
+    public RubyClass getArrayClass()
+    {
         return arrayClass;
     }
 
-    /** Returns the reference to the File::Stat class.
+    /**
+     * Returns the reference to the File::Stat class.
+     *
      * @return The File::Stat class.
      */
-    public RubyClass getFileStatClass() {
+    public RubyClass getFileStatClass()
+    {
         return fileStatClass;
     }
 
-    /** Returns the reference to the Enumerable module.
+    /**
+     * Returns the reference to the Enumerable module.
+     *
      * @return The Enumerable module.
      */
-    public RubyModule getEnumerableModule() {
+    public RubyModule getEnumerableModule()
+    {
         return enumerableModule;
     }
 
-    public RubyModule getPrecisionModule() {
+    /**
+     * Gets the precisionModule attribute of the RubyClasses object
+     *
+     * @return The precisionModule value
+     */
+    public RubyModule getPrecisionModule()
+    {
         return precisionModule;
     }
 
 
-    /** Returns the reference to the JavaObject class.
+    /**
+     * Returns the reference to the JavaObject class.
+     *
      * @return The JavaObject class.
      */
-    public RubyClass getJavaObjectClass() {
+    public RubyClass getJavaObjectClass()
+    {
         return javaObjectClass;
     }
 
-    /** Returns the reference to the Java module.
+    /**
+     * Returns the reference to the Java module.
+     *
      * @return The Java module.
      */
-    public RubyModule getJavaModule() {
+    public RubyModule getJavaModule()
+    {
         return javaModule;
     }
 
-    /** Returns the reference to the JavaInterface class.
+    /**
+     * Returns the reference to the JavaInterface class.
+     *
      * @return The JavaInterface class.
      */
-    public RubyClass getJavaInterfaceClass() {
+    public RubyClass getJavaInterfaceClass()
+    {
         return javaInterfaceClass;
     }
 
-    /** Returns the reference to the Numeric class.
+    /**
+     * Returns the reference to the Numeric class.
+     *
      * @return The Numeric class.
      */
-    public RubyClass getNumericClass() {
+    public RubyClass getNumericClass()
+    {
         return numericClass;
     }
 
-    /** Returns the reference to the Time class.
+    /**
+     * Returns the reference to the Time class.
+     *
      * @return The Time class.
      */
-    public RubyClass getTimeClass() {
+    public RubyClass getTimeClass()
+    {
         return timeClass;
     }
 
-    /** Returns a RubyMap with references to all named classes in
+    /**
+     * Returns a RubyMap with references to all named classes in
      * a ruby runtime..
+     *
      * @return A map with references to all named classes.
      */
-    public RubyMap getClassMap() {
+    public RubyMap getClassMap()
+    {
         return classMap;
     }
 
-    public RubyModule getClass(String name) {
+    /**
+     * Gets the class attribute of the RubyClasses object
+     *
+     * @param name Description of the Parameter
+     * @return The class value
+     */
+    public RubyModule getClass(String name)
+    {
         return (RubyModule) classMap.get(name);
     }
 
-    public RubyModule getClassFromPath(String path) {
+    /**
+     * Gets the classFromPath attribute of the RubyClasses object
+     *
+     * @param path Description of the Parameter
+     * @return The classFromPath value
+     */
+    public RubyModule getClassFromPath(String path)
+    {
         RubyModule result = getClass(path);
         if (result != null) {
             return result;
@@ -596,11 +762,25 @@ public class RubyClasses {
         return (RubyModule) evaluatedPath;
     }
 
-    public void putClass(String name, RubyModule rbClass) {
+    /**
+     * Description of the Method
+     *
+     * @param name Description of the Parameter
+     * @param rbClass Description of the Parameter
+     */
+    public void putClass(String name, RubyModule rbClass)
+    {
         classMap.put(name, rbClass);
     }
 
-    public Iterator nameIterator() {
+    /**
+     * Description of the Method
+     *
+     * @return Description of the Return Value
+     */
+    public Iterator nameIterator()
+    {
         return classMap.keySet().iterator();
     }
 }
+
