@@ -42,8 +42,8 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class DRegexpNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = 7307853378003210140L;
 
-    private int options;
-    private boolean once;
+    private final int options;
+    private final boolean once;
     
     public DRegexpNode(SourcePosition position) {
         this(position, 0, false);
@@ -73,26 +73,10 @@ public class DRegexpNode extends ListNode implements ILiteralNode {
     }
 
     /**
-     * Sets the once.
-     * @param once The once to set
-     */
-    public void setOnce(boolean once) {
-        this.once = once;
-    }
-
-    /**
      * Gets the options.
      * @return Returns a int
      */
     public int getOptions() {
         return options;
-    }
-
-    /**
-     * Sets the options.
-     * @param options The options to set
-     */
-    public void setOptions(int options) {
-        this.options = options;
     }
 }

@@ -45,13 +45,14 @@ public class FlipNode extends Node {
     private final Node beginNode;
     private final Node endNode;
     private final boolean exclusive;
-    private int count;
+    private final int count;
     
-    public FlipNode(SourcePosition position, Node beginNode, Node endNode, boolean exclusive) {
+    public FlipNode(SourcePosition position, Node beginNode, Node endNode, boolean exclusive, int count) {
         super(position);
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
+        this.count = count;
     }
 
     /**
@@ -95,13 +96,5 @@ public class FlipNode extends Node {
      */
     public int getCount() {
         return count;
-    }
-
-    /**
-     * Sets the count.
-     * @param count The count to set
-     */
-    public void setCount(int count) {
-        this.count = count;
     }
 }

@@ -434,15 +434,12 @@ public class ParserSupport {
             getLocalNames().ensureLocalRegistered("~");
             return new Match2Node(node.getPosition(), node, new GlobalVarNode(node.getPosition(), "$_"));
         } else if (node instanceof DotNode) {
-            FlipNode flipNode =
-                new FlipNode(
+            return new FlipNode(
                     node.getPosition(),
                     getFlipConditionNode(((DotNode) node).getBeginNode()),
                     getFlipConditionNode(((DotNode) node).getEndNode()),
-                    ((DotNode) node).isExclusive());
-
-            flipNode.setCount(localNames.registerLocal(null));
-            return flipNode;
+                    ((DotNode) node).isExclusive(),
+					localNames.registerLocal(null));
         } else if (node instanceof RegexpNode) {
             return new MatchNode(node.getPosition(), node);
         } else if (node instanceof StrNode) {
