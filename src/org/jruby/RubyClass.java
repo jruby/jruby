@@ -96,7 +96,7 @@ public class RubyClass extends RubyModule {
     }
 
     public static void createClassClass(RubyClass classClass) {
-        classClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyClass.class, "newInstance"));
+        classClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyClass.class, "newClass"));
 
         classClass.defineMethod("new", CallbackFactory.getOptMethod(RubyClass.class, "newInstance"));
         classClass.defineMethod("superclass", CallbackFactory.getMethod(RubyClass.class, "superclass"));
@@ -224,7 +224,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_s_new
      *
      */
-    public static RubyModule newInstance(IRubyObject recv, IRubyObject[] args) {
+    public static RubyClass newClass(IRubyObject recv, IRubyObject[] args) {
         RubyClass superClass = recv.getRuntime().getClasses().getObjectClass();
 
         if (args.length >= 1) {

@@ -59,7 +59,7 @@ public class RubyYaccLexer implements IYaccLexer {
 
     // Lexer:
     private LexState lexState;
-    private StringBuffer tokenbuf; // FIX: replace with special class.
+    private StringBuffer tokenBuffer = new StringBuffer(60); // FIX: replace with special class.
 
     // COND and CMDARG stacks
     private long cond_stack;
@@ -146,23 +146,23 @@ public class RubyYaccLexer implements IYaccLexer {
     }
 
     private String tok() {
-        return tokenbuf.toString();
+        return tokenBuffer.toString();
     }
 
     private int toklen() {
-        return tokenbuf.length();
+        return tokenBuffer.length();
     }
 
     private char toklast() {
-        return tokenbuf.charAt(toklen() - 1);
+        return tokenBuffer.charAt(toklen() - 1);
     }
 
-    private void newtok() {
-        tokenbuf = new StringBuffer(60);
+    private void newToken() {
+        tokenBuffer.setLength(0);
     }
 
     private void tokadd(int c) {
-        tokenbuf.append((char) c);
+        tokenBuffer.append((char) c);
     }
 
     // yylex helpers...................
@@ -615,7 +615,7 @@ public class RubyYaccLexer implements IYaccLexer {
         ISourcePosition position = support.getPosition();
         // int linesave = ruby.getSourceLine();
 
-        newtok();
+        newToken();
 
         switch (closeQuote) {
             case '\'' :
@@ -1250,7 +1250,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     return '%';
                 case '$' :
                     lexState = LexState.EXPR_END;
-                    newtok();
+                    newToken();
                     c = nextc();
                     switch (c) {
                         case '_' : // $_: last read line string
@@ -1330,7 +1330,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     break;
                 case '@' :
                     c = nextc();
-                    newtok();
+                    newToken();
                     tokadd('@');
                     if (c == '@') {
                         tokadd('@');
@@ -1358,7 +1358,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         continue retry;
                     }
 
-                    newtok();
+                    newToken();
                     break;
             }
             break retry;
