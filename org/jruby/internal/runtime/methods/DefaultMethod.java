@@ -35,12 +35,6 @@ public final class DefaultMethod extends AbstractMethod {
             args = new RubyObject[0];
         }
 
-        RubyProc optionalBlockArg = null;
-
-        if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
-            optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
-        }
-
         ruby.getScope().push();
 
         Namespace savedNamespace = null;
@@ -59,16 +53,14 @@ public final class DefaultMethod extends AbstractMethod {
 
         try {
             if (argsNode != null) {
-                int i = argsNode.getArgsCount();
-                if (i > args.length) {
-                    throw new ArgumentError(ruby, "Wrong # of arguments(" + args.length + " for " + i + ")");
+                int expectedArgsCount = argsNode.getArgsCount();
+                if (expectedArgsCount > args.length) {
+                    throw new ArgumentError(ruby, "Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
                 }
                 if (argsNode.getRestArg() == -1 && argsNode.getOptArgs() != null) {
-                    int opt = i;
+                    int opt = expectedArgsCount;
 
-                    IListNode optNode = argsNode.getOptArgs();
-
-                    Iterator iter = optNode.iterator();
+                    Iterator iter = argsNode.getOptArgs().iterator();
                     while (iter.hasNext()) {
                         iter.next();
                         opt++;
@@ -82,8 +74,8 @@ public final class DefaultMethod extends AbstractMethod {
                 }
 
                 if (ruby.getScope().hasLocalValues()) {
-                    if (i > 0) {
-                        for (int j = 0; j < i; j++) {
+                    if (expectedArgsCount > 0) {
+                        for (int j = 0; j < expectedArgsCount; j++) {
                             ruby.getScope().setValue(j + 2, args[j]);
                         }
                     }
@@ -92,9 +84,9 @@ public final class DefaultMethod extends AbstractMethod {
                         IListNode optArgs = argsNode.getOptArgs();
 
                         Iterator iter = optArgs.iterator();
-                        for (int j = i; j < args.length && iter.hasNext(); j++) {
-                            new AssignmentVisitor(ruby, receiver).assign((INode)iter.next(), args[j], true);
-                            i++;
+                        for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
+                            new AssignmentVisitor(ruby, receiver).assign((INode)iter.next(), args[i], true);
+                            expectedArgsCount++;
                         }
 
                         // assign the default values.
@@ -105,9 +97,9 @@ public final class DefaultMethod extends AbstractMethod {
 
                     if (argsNode.getRestArg() >= 0) {
                         RubyArray array = null;
-                        if (args.length > i) {
-                            ArrayList list = new ArrayList(args.length - i);
-                            for (int j = i; j < args.length; j++) {
+                        if (args.length > expectedArgsCount) {
+                            ArrayList list = new ArrayList(args.length - expectedArgsCount);
+                            for (int j = expectedArgsCount; j < args.length; j++) {
                                 list.add(args[j]);
                             }
                             array = RubyArray.newArray(ruby, list);
@@ -119,7 +111,8 @@ public final class DefaultMethod extends AbstractMethod {
                 }
             }
 
-            if (optionalBlockArg != null) {
+            if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
+                RubyProc optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
                 ruby.getScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
 

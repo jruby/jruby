@@ -135,8 +135,6 @@ public final class Ruby {
     private IStack iterStack = CollectionFactory.getInstance().newStack();
     private BlockStack block = new BlockStack(this);
 
-    private RubyModule cBase;
-
     private int actMethodScope;
 
     private RubyModule wrapper;
@@ -340,7 +338,7 @@ public final class Ruby {
     }
 
     /** Setter for property securityLevel.
-     * @param securityLevel New value of property securityLevel.
+     * @param safeLevel New value of property securityLevel.
      */
     public void setSafeLevel(int safeLevel) {
         this.safeLevel = safeLevel;
@@ -455,13 +453,10 @@ public final class Ruby {
         Namespace oldNamespace = getNamespace();
         setNamespace(getActFrame().getNamespace());
 
-        Scope oldScope = (Scope) getScope().getTop();
+        Scope oldScope = currentScope();
         getScope().setTop(actBlock.getScope());
-        // getScope().push(tmpBlock.scope);
 
-        // block.pop();
-        // XXX
-        block.pop(); // setAct((Block)actBlock.getNext());
+        block.pop();
 
         setDynamicVars(actBlock.getDynamicVars());
 
@@ -484,7 +479,6 @@ public final class Ruby {
         INode blockVar = actBlock.getVar();
 
         if (blockVar != null) {
-            // try {
             if (blockVar instanceof ZeroArgNode) {
                 if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
                     throw new ArgumentError(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
@@ -533,10 +527,12 @@ public final class Ruby {
 
             setNamespace(oldNamespace);
 
-            // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
-            //    scope_dup(old_scope);
             getScope().setTop(oldScope);
         }
+    }
+
+    public Scope currentScope() {
+        return getScope().current();
     }
 
     /** Getter for property rubyTopSelf.
@@ -595,7 +591,7 @@ public final class Ruby {
         // Init_heap();
         getScope().push(); // PUSH_SCOPE();
         // rubyScope.setLocalVars(null);
-        topScope = (Scope) getScope().getTop();
+        topScope = currentScope();
 
         setActMethodScope(Constants.SCOPE_PRIVATE);
 
@@ -779,16 +775,10 @@ public final class Ruby {
         return javaSupport;
     }
 
-    /** Getter for property iter.
-     * @return Value of property iter.
-     */
     public final IStack getIterStack() {
         return iterStack;
     }
 
-    /** Setter for property iter.
-     * @param iter New value of property iter.
-     */
     public final Iter getActIter() {
         return (Iter) getIterStack().peek();
     }

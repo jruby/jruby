@@ -70,7 +70,7 @@ public class ScopeStack extends AbstractStack {
         top = newElement;
     }
 
-    private Scope current() {
+    public Scope current() {
         return (Scope) top;
     }
 
@@ -101,11 +101,7 @@ public class ScopeStack extends AbstractStack {
     }
 
     public boolean hasLocalValues() {
-        return getLocalValues() != null;
-    }
-
-    private List getLocalValues() {
-        return current().getLocalValues();
+        return current().getLocalValues() != null;
     }
 
     public RubyObject getValue(int count) {

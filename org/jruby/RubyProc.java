@@ -87,7 +87,7 @@ public class RubyProc extends RubyObject {
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
 
         newProc.block.setFrame(ruby.getActFrame());
-        newProc.block.setScope((Scope)ruby.getScope().getTop());
+        newProc.block.setScope(ruby.currentScope());
         // +++
 
         return newProc;
