@@ -65,8 +65,8 @@ public class ProcMetaClass extends BuiltinClass {
 		return newProc;
 	}
 
-    public RubyProc newInstance(IRubyObject receiver, IRubyObject[] args) {
-        RubyProc proc = receiver.getRuntime().newProc();
+    public IRubyObject newInstance(IRubyObject[] args) {
+        RubyProc proc = getRuntime().newProc();
         
         proc.callInit(args);
        
