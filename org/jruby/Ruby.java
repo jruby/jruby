@@ -84,7 +84,7 @@ public final class Ruby {
     
     // Eval
     
-    private RubyScope rubyScope = new RubyScope();
+    private RubyScope rubyScope = new RubyScope(this);
     private RubyScope topScope = null;
     private RubyVarmap dynamicVars = null;
     private RubyModule rubyClass = null;

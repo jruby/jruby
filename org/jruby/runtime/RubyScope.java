@@ -51,21 +51,28 @@ public class RubyScope {
     private RubyPointer localVars = null;
     private int flags = 0;
 
+    private int oldActMethodScope = Constants.NOEX_PRIVATE; // Same as default for top level...just in case
+    private Ruby ruby = null;
+
     private RubyScope old = null;
 
-    public RubyScope() {
+    public RubyScope(Ruby ruby) {
+	this.ruby = ruby;
     }
 
-    public RubyScope(RubyScope scope) {
+    public RubyScope(RubyScope scope, Ruby ruby) {
         this.superObject = scope.superObject;
         this.localTbl = scope.localTbl;
         this.localVars = scope.localVars;
         this.flags = scope.flags;
         this.old = scope.old;
+	this.ruby = ruby;
     }
 
     public void push() {
-        old = new RubyScope(this);
+	oldActMethodScope = ruby.getActMethodScope();	
+	ruby.setActMethodScope(Constants.NOEX_PUBLIC);
+        old = new RubyScope(this, ruby);
 
         localTbl = null;
         localVars = null;
@@ -73,6 +80,7 @@ public class RubyScope {
     }
 
     public void pop() {
+	ruby.setActMethodScope(oldActMethodScope);
         this.superObject = old.superObject;
         this.localTbl = old.localTbl;
         this.localVars = old.localVars;
