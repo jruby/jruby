@@ -233,6 +233,8 @@ public class RubyClasses {
         floatClass = RbFloat.createFloat(ruby);
         
         stringClass = RbString.createStringClass(ruby);
+        regExpClass = RbRegexp.createRegexpClass(ruby);
+        matchDataClass = RbMatchData.createMatchDataClass(ruby);
         
         arrayClass = RbArray.createArrayClass(ruby);
         rangeClass = RbRange.createRangeClass(ruby);

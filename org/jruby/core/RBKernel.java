@@ -43,6 +43,7 @@ public class RBKernel {
         kernelModule.defineMethod("print", getKernelMethod("m_print"));
         kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
         kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
+        kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
         
         kernelModule.defineModuleFunction("singleton_method_added", getDummyMethod());
         
@@ -71,7 +72,7 @@ public class RBKernel {
         } else {
             for (int i = 0; i < args.length; i++) {
                 if (args[i] != null) {
-                    System.out.println(((RubyString)args[i].funcall(ruby.intern("to_s"))).getString());
+                    System.out.println(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
                 }
             }
         }
@@ -81,7 +82,7 @@ public class RBKernel {
     public static RubyObject m_print(Ruby ruby, RubyObject recv, RubyObject args[]) {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
-                System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getString());
+                System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
             }
         }
         return ruby.getNil();

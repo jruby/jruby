@@ -159,15 +159,6 @@ public class RubyString extends RubyObject {
         return this;
     }
     
-    
-    /** rb_str_cat
-     *
-     */
-    public RubyString m_cat(RubyString str) {
-        value = value + str.getValue();
-        return this;
-    }
-    
     /** rb_str_to_s
      *
      */
@@ -252,6 +243,25 @@ public class RubyString extends RubyObject {
         }
         /* use Java implementation */
         return getString().equals(((RubyString)other).getString()) ? getRuby().getTrue() : getRuby().getFalse();
+    }
+
+    /** rb_str_match
+     *
+     */
+    public RubyObject m_match(RubyObject other) {
+        if (other instanceof RubyRegexp) {
+            return ((RubyRegexp)other).m_match(this);
+        } else if (other instanceof RubyString) {
+            return RubyRegexp.m_newRegexp(getRuby(), (RubyString)other, 0).m_match(this);
+        }
+        return other.funcall(getRuby().intern("=~"), this);
+    }
+
+    /** rb_str_match2
+     *
+     */
+    public RubyObject m_match2() {
+        return RubyRegexp.m_newRegexp(getRuby(), this, 0).m_match2();
     }
 
     /** rb_str_capitalize
@@ -440,5 +450,26 @@ public class RubyString extends RubyObject {
      */
     public RubyFixnum m_hash() {
         return RubyFixnum.m_newFixnum(getRuby(), getString().hashCode());
+    }
+
+    /** rb_str_length
+     *
+     */
+    public RubyFixnum m_length() {
+        return new RubyFixnum(getRuby(), getString().length());
+    }
+
+    /** rb_str_empty
+     *
+     */
+    public RubyBoolean m_empty() {
+        return new RubyBoolean(getRuby(), getString().length() == 0);
+    }
+
+    /** rb_str_concat
+     *
+     */
+    public RubyString m_concat(RubyString str) {
+        return m_cat(str.getValue());
     }
 }

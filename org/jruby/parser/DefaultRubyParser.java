@@ -2068,7 +2068,7 @@ case 330:
 		        if (((NODE)yyVals[-1+yyTop]).nd_type() == NODE.NODE_DSTR) {
 			        ph.list_append(((NODE)yyVals[-1+yyTop]), nf.newStr(((VALUE)yyVals[0+yyTop])));
 			    } else {
-			        ((RubyString)((NODE)yyVals[-1+yyTop]).nd_lit()).m_cat((RubyString)((VALUE)yyVals[0+yyTop]));
+			        ((RubyString)((NODE)yyVals[-1+yyTop]).nd_lit()).m_concat((RubyString)((VALUE)yyVals[0+yyTop]));
 			    }
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
@@ -2847,7 +2847,7 @@ case 415:
     }
     
     private RubyRegexp rb_reg_new(String s, int len, int options) {
-        return new RubyRegexp(ruby, RubyString.m_newString(ruby, s, len), options);
+        return RubyRegexp.m_newRegexp(ruby, RubyString.m_newString(ruby, s, len), options);
     }
     
     // -----------------------------------------------------------------------

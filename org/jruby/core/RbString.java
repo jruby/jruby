@@ -58,13 +58,13 @@ public class RbString {
         stringClass.defineMethod("*", getMethod("op_mul", RubyInteger.class));
      /*rb_define_method(rb_cString, "%", rb_str_format, 1); */
         stringClass.defineMethod("[]", getMethod("m_slice", true));
-    /*rb_define_method(rb_cString, "[]=", rb_str_aset_m, -1);
-    rb_define_method(rb_cString, "length", rb_str_length, 0);
-    rb_define_method(rb_cString, "size", rb_str_length, 0);
-    rb_define_method(rb_cString, "empty?", rb_str_empty, 0);
-    rb_define_method(rb_cString, "=~", rb_str_match, 1);
-    rb_define_method(rb_cString, "~", rb_str_match2, 0);
-    rb_define_method(rb_cString, "succ", rb_str_succ, 0);
+    /*rb_define_method(rb_cString, "[]=", rb_str_aset_m, -1);*/
+        stringClass.defineMethod("length", getMethod("m_length", false));
+        stringClass.defineMethod("size", getMethod("m_length", false));
+        stringClass.defineMethod("empty?", getMethod("m_empty", false));
+        stringClass.defineMethod("=~", getMethod("m_match", RubyObject.class));
+        stringClass.defineMethod("~", getMethod("m_match2", false));
+    /*rb_define_method(rb_cString, "succ", rb_str_succ, 0);
     rb_define_method(rb_cString, "succ!", rb_str_succ_bang, 0);
     rb_define_method(rb_cString, "next", rb_str_succ, 0);
     rb_define_method(rb_cString, "next!", rb_str_succ_bang, 0);
@@ -95,10 +95,10 @@ public class RbString {
     rb_define_method(rb_cString, "oct", rb_str_oct, 0);
     rb_define_method(rb_cString, "split", rb_str_split_m, -1);*/
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));
-    /*rb_define_method(rb_cString, "reverse!", rb_str_reverse_bang, 0);
-    rb_define_method(rb_cString, "concat", rb_str_concat, 1);
-    rb_define_method(rb_cString, "<<", rb_str_concat, 1);
-    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
+    /*rb_define_method(rb_cString, "reverse!", rb_str_reverse_bang, 0);*/
+        stringClass.defineMethod("concat", getMethod("m_concat", RubyString.class));
+        stringClass.defineMethod("<<", getMethod("m_concat", RubyString.class));
+    /*rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
     rb_define_method(rb_cString, "intern", rb_str_intern, 0);
 
     rb_define_method(rb_cString, "include?", rb_str_include, 1);

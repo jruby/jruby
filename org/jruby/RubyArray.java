@@ -234,6 +234,13 @@ public class RubyArray extends RubyObject {
         return m_newArray(ruby, Arrays.asList(args));
     }
     
+    /** rb_ary_length
+     *
+     */
+    public RubyFixnum m_length() {
+        return new RubyFixnum(getRuby(), length());
+    }
+
     /** rb_ary_push_m
      *
      */
@@ -336,6 +343,10 @@ public class RubyArray extends RubyObject {
             array.add(args[1]);
         }
         return this;
+    }
+
+    public RubyObject m_dup() {
+      return m_slice(new RubyObject[] { new RubyFixnum(getRuby(), 0), m_length() });
     }
 
     /** rb_ary_aref

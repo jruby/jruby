@@ -6314,7 +6314,7 @@ case 432:
     /** Creates a new regular expression from "s" */
     RubyObject rb_reg_new(String s, int len, int options) {
         //XXX well...
-        return new RubyRegexp(ruby, (RubyString)rb_str_new(s, len), options);
+        return RubyRegexp.m_newRegexp(ruby, (RubyString)rb_str_new(s, len), options);
     }
 
     /** Creates a new integer object (Fixnum or Bignum) from "s" */

@@ -32,18 +32,20 @@
 
     <target depends="init" name="compile">
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}"/>
+        <copy todir="${build.dest}">
+          <fileset dir="${src.dir}">
+            <include name="**/*.properties" />
+          </fileset>
+        </copy>
+        <jar basedir="${build.dest}" compress="true" jarfile="${base.dir}/jruby.jar" manifest="${base.dir}/jruby.mf"/>
     </target>
 
     <target depends="init,compile," name="bin-gz">
-        <jar basedir="${build.dest}" compress="true" jarfile="${build.dir}/jruby.jar" manifest="${base.dir}/jruby.mf"/>
-
         <mkdir dir="${build.tars}"/>
         
         <copy todir="${build.tars}">
-            <fileset dir="${build.dir}">
-                <include name="jruby.jar"/>
-            </fileset>
             <fileset dir="${base.dir}">
+                <include name="jruby.jar"/>
                 <include name="COPYING"/>
                 <include name="README"/>
                 <include name="test.rb"/>

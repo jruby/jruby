@@ -658,4 +658,25 @@ public final class Ruby implements token {
         this.topCRef = topCRef;
     }
     
+    /** Gets the value of the last_line variable, $_
+     * @return Contents of $_, or Nil if $_ hasn't been set in this scope.
+     */
+    public RubyObject getLastLine() {
+        return getRubyScope().getLocalVars(0);
+    }
+    
+    /** Gets the value of the last-match variable, $~
+     * @return Contents of $~, or Nil if $~ hasn't been set in this scope.
+     */
+    public RubyObject getBackRef() {
+        return getRubyScope().getLocalVars(1);
+    }
+    
+    /** Sets the value of the last-match variable, $~.
+     * @param match  The new value of $~
+     */
+    public void setBackRef(RubyObject match) {
+        getRubyScope().setLocalVars(1, match);
+    }
+    
 }

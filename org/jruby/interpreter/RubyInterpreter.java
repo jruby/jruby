@@ -118,24 +118,21 @@ public class RubyInterpreter implements node_type, Scope {
                     
                 /* nodes for speed-up(default match) */
                 case NODE_MATCH:
-                    // return rb_reg_match2(node.nd_head().nd_lit());
-                    return getRuby().getNil();
+                    return ((RubyRegexp)node.nd_head().nd_lit()).m_match2();
                     
                 /* nodes for speed-up(literal match) */
                 case NODE_MATCH2:
-                    // return rb_reg_match(eval(node.nd_recv()), eval(node.nd_value()));
-                    return getRuby().getNil();
+                    return ((RubyRegexp)eval(self, node.nd_recv())).m_match(eval(self, node.nd_value()));
                     
                 /* nodes for speed-up(literal match) */
                 case NODE_MATCH3:
                     RubyObject r = eval(self, node.nd_recv());
                     RubyObject l = eval(self, node.nd_value());
                     if (l instanceof RubyString) {
-                        // return rb_reg_match(r, l);
+                        return ((RubyRegexp)r).m_match(l);
                     } else {
-                        return l.funcall(ruby.intern("=~"), r);
+                        return l.funcall(getRuby().intern("=~"), r);
                     }
-                    return getRuby().getNil();
                     
                 /* node for speed-up(top-level loop for -n/-p) */
                 case NODE_OPT_N:
@@ -803,26 +800,25 @@ public class RubyInterpreter implements node_type, Scope {
                     return getRuby().getClasses().getObjectClass().getConstant((RubyId)node.nd_mid());
                     
                 case NODE_NTH_REF:
-                    // return rom.rb_reg_nth_match(node.nd_nth(), MATCH_DATA);
-                    return null;
+                    return RubyRegexp.m_nth_match(node.nd_nth(), getRuby().getBackRef());
                     
                 case NODE_BACK_REF:
-                    /*switch ((char)node.nd_nth()) {
+                    switch ((char)node.nd_nth()) {
                         case '&':
-                            return rom.rb_reg_last_match(MATCH_DATA);
+                            return RubyRegexp.m_last_match(getRuby().getBackRef());
                             
                         case '`':
-                            return rom.rb_reg_match_pre(MATCH_DATA);
+                            return RubyRegexp.m_match_pre(getRuby().getBackRef());
                             
                         case '\'':
-                            return rom.rb_reg_match_post(MATCH_DATA);
+                            return RubyRegexp.m_match_post(getRuby().getBackRef());
                             
                         case '+':
-                            return rom.rb_reg_match_last(MATCH_DATA);
+                            return RubyRegexp.m_match_last(getRuby().getBackRef());
                             
                         default:
-                            rom.rb_bug("unexpected back-ref");
-                    }*/
+                            throw new RubyBugException("unexpected back-ref");
+                    }
                     
                 case NODE_HASH:
                     RubyHash hash = RubyHash.m_newHash(ruby);
@@ -860,10 +856,11 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_DXSTR:
                 case NODE_DREGX:
                 case NODE_DREGX_ONCE:
-/*                    NODE list = node.nd_next();
+                    list = node.nd_next();
                     
-                    RubyString str = RubyString.m_newString(getRuby(), (RubyObject)node.nd_lit());
-                    RubyString str2;
+                    RubyString str = (RubyString)node.nd_lit();
+                    RubyString str2 = null;
+//                    RubyString str2 = (RubyString)node.nd_next().nd_head().nd_lit();
                     
                     while (list != null) {
                         if (list.nd_head() != null) {
@@ -872,46 +869,46 @@ public class RubyInterpreter implements node_type, Scope {
                                     str2 = (RubyString)list.nd_head().nd_lit();
                                     break;
                                     
-                                case NODE_EVSTR:
-                                    result = ruby_errinfo;
-                                    ruby_errinfo = Qnil;
-                                    ruby_sourceline = nd_line(node);
-                                    ruby_in_eval++;
-                                    list.nd_head(compile(list.nd_head().nd_lit(), ruby_sourcefile,ruby_sourceline));
-                                    ruby_eval_tree = 0;
-                                    ruby_in_eval--;
-                                    if (ruby_nerrs > 0) {
-                                        compile_error("string expansion");
-                                    }
-                                    if (!NIL_P(result)) ruby_errinfo = result;
-                        /* fall through */
-/*                                default:
-                                    str2 = (RubyString)rom.rb_obj_as_string(eval(list.nd_head()));
+//                                case NODE_EVSTR:
+//                                    result = ruby_errinfo;
+//                                    ruby_errinfo = Qnil;
+//                                    ruby_sourceline = nd_line(node);
+//                                    ruby_in_eval++;
+//                                    list.nd_head(compile(list.nd_head().nd_lit(), ruby_sourcefile,ruby_sourceline));
+//                                    ruby_eval_tree = 0;
+//                                    ruby_in_eval--;
+//                                    if (ruby_nerrs > 0) {
+//                                        compile_error("string expansion");
+//                                    }
+//                                    if (!NIL_P(result)) ruby_errinfo = result;
+//                                /* fall through */
+                                default:
+                                    str2 = (RubyString)eval(self, list.nd_head()).convertType(RubyString.class, "String", "to_str");
                                     break;
                             }
                             
-                            str.append(str2);
-                            str.infectObject(str2);
+                            str.m_concat(str2);
+//                            str.infectObject(str2);
                         }
                         list = list.nd_next();
                     }
                     switch (node.nd_type()) {
                         case NODE_DREGX:
-                            return rom.rb_reg_new(str.getString(), str.getString().length(), node.nd_cflag());
+                            return RubyRegexp.m_newRegexp(getRuby(), str, node.nd_cflag().intValue());
                             
-                        case NODE_DREGX_ONCE:	/* regexp expand once */
-/*                            VALUE result = rom.rb_reg_new(str.getString(), str.getString().length(), node.nd_cflag());
+                        case NODE_DREGX_ONCE:	/* regex expand once */
+                            RubyObject regex = RubyRegexp.m_newRegexp(getRuby(), str, node.nd_cflag().intValue());
                             node.nd_set_type(NODE_LIT);
-                            node.nd_lit(result);
-                            return result;
+                            node.nd_lit(regex);
+                            return regex;
                             
-                        case NODE_DXSTR:
-                            return rom.rb_funcall(this, '`', 1, str);
+//                        case NODE_DXSTR:
+//                            return rom.rb_funcall(this, '`', 1, str);
                             
                         default:
                             return str;
-                    }*/
-                    return null;
+                    }
+//                    return null;
                     
                 case NODE_XSTR:
                     return self.funcall(getRuby().intern("`"), (RubyObject)node.nd_lit());
@@ -1189,7 +1186,7 @@ public class RubyInterpreter implements node_type, Scope {
     private void popClass() {
         ruby.setRubyClass((RubyModule)classStack.pop());
     }
-    
+
     private void PUSH_CREF(Object c) {
         ruby.setRubyCRef(new NODE(NODE.NODE_CREF, c, null, ruby.getRubyCRef()));
     }

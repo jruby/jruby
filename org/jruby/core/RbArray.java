@@ -78,9 +78,10 @@ public class RbArray {
 /*    rb_define_method(rb_cArray, "each", rb_ary_each, 0);
     rb_define_method(rb_cArray, "each_index", rb_ary_each_index, 0);
     rb_define_method(rb_cArray, "reverse_each", rb_ary_reverse_each, 0);
-    rb_define_method(rb_cArray, "length", rb_ary_length, 0);
-    rb_define_alias(rb_cArray,  "size", "length");
-    rb_define_method(rb_cArray, "empty?", rb_ary_empty_p, 0);
+ */
+    arrayClass.defineMethod("length", getMethod("m_length"));
+    arrayClass.defineMethod("size", getMethod("m_length"));
+/*    rb_define_method(rb_cArray, "empty?", rb_ary_empty_p, 0);
     rb_define_method(rb_cArray, "index", rb_ary_index, 1);
     rb_define_method(rb_cArray, "rindex", rb_ary_rindex, 1);
     rb_define_method(rb_cArray, "indexes", rb_ary_indexes, -1);
