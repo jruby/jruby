@@ -67,8 +67,12 @@ public class RubyKernel {
                 if (args[i] instanceof RubyArray) {
                     puts(ruby, recv, ((RubyArray) args[i]).toJavaArray());
                 } else {
-                    ruby.getRuntime().getOutputStream().println(
-                        args[i].isNil() ? "nil" : ((RubyString) args[i].funcall("to_s")).getValue());
+                    String line = args[i].isNil() ? "nil" : args[i].toString();
+                    if (line.endsWith("\n")) {
+                        ruby.getRuntime().getOutputStream().print(line);
+                    } else {
+                        ruby.getRuntime().getOutputStream().println(line);
+                    }
                 }
             }
         }

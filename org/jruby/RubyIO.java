@@ -41,17 +41,18 @@ import org.jruby.util.*;
  * @version $Revision$
  */
 public class RubyIO extends RubyObject {
-    private RubyInputStream inStream = null;
-    private OutputStream outStream = null;
+    protected RubyInputStream inStream = null;
+    protected OutputStream outStream = null;
 
-    private boolean sync = false;
+    protected boolean sync = false;
 
-    private boolean readable = false;
-    private boolean writeable = false;
+    protected boolean readable = false;
+    protected boolean writeable = false;
+    protected boolean append = false;
 
-    private int lineNumber = 0;
+    protected int lineNumber = 0;
 
-    private String path;
+    protected String path;
 
     public RubyIO(Ruby ruby) {
         super(ruby, ruby.getClasses().getIoClass());
@@ -72,12 +73,16 @@ public class RubyIO extends RubyObject {
 
         ioClass.defineMethod("<<", CallbackFactory.getMethod(RubyIO.class, "addString", RubyObject.class));
 
+		ioClass.defineMethod("each", CallbackFactory.getOptMethod(RubyIO.class, "each_line"));
+		ioClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyIO.class, "each_line"));
         ioClass.defineMethod("gets", CallbackFactory.getOptMethod(RubyIO.class, "gets"));
 
         ioClass.defineMethod("lineno", CallbackFactory.getMethod(RubyIO.class, "lineno"));
         ioClass.defineMethod("lineno=", CallbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
         ioClass.defineMethod("sync", CallbackFactory.getMethod(RubyIO.class, "sync"));
         ioClass.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
+        
+        ioClass.defineMethod("close", CallbackFactory.getMethod(RubyIO.class, "close"));
 
         ruby.defineHookedVariable("$stdin", stdin(ruby, ioClass), null, new StdInSetter());
         ruby.defineHookedVariable("$stdout", stdout(ruby, ioClass), null, new StdOutSetter());
@@ -153,6 +158,10 @@ public class RubyIO extends RubyObject {
      * 
      */
     protected void setMode(String mode) {
+        readable = false;
+        writeable = false;
+        append = false;
+        
         if (mode.length() == 0) {
             throw new RubyArgumentException(getRuby(), "illegal access mode");
         }
@@ -161,8 +170,9 @@ public class RubyIO extends RubyObject {
             case 'r' :
                 readable = true;
                 break;
-            case 'w' :
             case 'a' :
+            	append = true;
+            case 'w' :
                 writeable = true;
                 break;
             default :
@@ -201,6 +211,43 @@ public class RubyIO extends RubyObject {
                 throw new IOError(getRuby(), "Bad file descriptor");
         }
     }
+    
+    /** Read a line.
+     * 
+     */
+    public RubyString internalGets(RubyObject[] args) {
+		checkReadable();
+        
+        RubyObject sepVal = getRuby().getGlobalEntry("$/").get();
+
+        if (args.length > 0) {
+            sepVal = args[0];
+        }
+
+        String separator = sepVal.isNil() ? null : ((RubyString) sepVal).getValue();
+
+        if (separator == null) {
+        } else if (separator.length() == 0) {
+            separator = "\n\n";
+        }
+
+        try {
+            String newLine = inStream.gets(separator);
+
+            if (newLine != null) {
+                lineNumber++;
+
+                RubyString result = RubyString.newString(getRuby(), newLine);
+                result.taint();
+
+                return result;
+            }
+        } catch (IOException ioExcptn) {
+        }
+
+        return RubyString.nilString(getRuby());
+    }
+
 
     // IO class methods.
 
@@ -306,40 +353,41 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    /** Closes the IO.
+     * 
+     * @return The IO.
+     */
+    public RubyObject close() {
+        closeStreams();
+
+        return this;
+    }
+
     /** Read a line.
      * 
      */
     public RubyString gets(RubyObject[] args) {
-        RubyObject sepVal = getRuby().getGlobalEntry("$/").get();
-
-        if (args.length > 0) {
-            sepVal = args[0];
+        RubyString result = internalGets(args);
+        
+        if (!result.isNil()) {
+        	getRuby().getParserHelper().setLastline(result);
         }
+        
+        return result;
+    }
 
-        String separator = sepVal.isNil() ? null : ((RubyString) sepVal).getValue();
-
-        if (separator == null) {
-        } else if (separator.length() == 0) {
-            separator = "\n\n";
+    /** Invoke a block for each line.
+     * 
+     */
+    public RubyIO each_line(RubyObject[] args) {
+        RubyString nextLine = internalGets(args);
+        
+        while (!nextLine.isNil()) {
+        	getRuby().yield(nextLine);
+        	nextLine = internalGets(args);
         }
-
-        try {
-            String newLine = inStream.gets(separator);
-
-            if (newLine != null) {
-                lineNumber++;
-
-                RubyString result = RubyString.newString(getRuby(), newLine);
-                result.taint();
-
-                getRuby().getParserHelper().setLastline(result);
-
-                return result;
-            }
-        } catch (IOException ioExcptn) {
-        }
-
-        return RubyString.nilString(getRuby());
+        
+        return this;
     }
 
     private static class StdInSetter implements RubyGlobalEntry.SetterMethod {

@@ -253,6 +253,7 @@ public class RubyClasses {
         javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
         
         ioClass = RubyIO.createIOClass(ruby);
+        fileClass = RubyFile.createFileClass(ruby);
 
         exceptionClass = RubyException.createExceptionClass(ruby);
 
