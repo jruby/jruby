@@ -78,12 +78,17 @@ public class JavaArray extends JavaObject implements IndexCallable {
             throw new TypeError(getRuntime(), "not a java object:" + value);
         }
         Object[] array = ((Object[]) getValue());
+        Object javaObject = ((JavaObject) value).getValue();
         try {
-            array[intIndex] = ((JavaObject) value).getValue();
+            array[intIndex] = javaObject;
         } catch (IndexOutOfBoundsException e) {
             throw new ArgumentError(getRuntime(),
                                     "index out of bounds for java array (" + intIndex +
                                     " for length " + array.length + ")");
+        } catch (ArrayStoreException e) {
+            throw new ArgumentError(getRuntime(),
+                                    "wrong element type " + javaObject.getClass() + "(array is " +
+                                    array.getClass() + ")");
         }
         return value;
     }

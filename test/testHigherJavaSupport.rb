@@ -69,7 +69,7 @@ if defined? Java
     test_equal(9223372036854775807, Long::MAX_VALUE)
     test_ok(! defined? Character::Y_DATA)  # Known private field in Character
 
-    # Arrays
+    # Using arrays
     list = ArrayList.new
     list.add(10)
     list.add(20)
@@ -82,6 +82,14 @@ if defined? Java
     test_equal(1234, array[1])
     test_equal([10, 1234], array.entries)
     test_equal(10, array.min)
+
+    # Creating arrays
+    array = Double[].new(3)
+    test_equal(3, array.length)
+    array[0] = 3.14
+    array[2] = 17.0
+    test_equal(3.14, array[0])
+    test_equal(17.0, array[2])
 
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",

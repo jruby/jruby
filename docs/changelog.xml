@@ -2,6 +2,7 @@
 
 <changelog>
         <release version="0.5.4">
+        <change type="update" description="Support for Java array types" author="ndrs"/>
         <change type="update" description="Added Module#java_alias method" author="ndrs"/>
         </release>
         <release version="0.5.3"/>

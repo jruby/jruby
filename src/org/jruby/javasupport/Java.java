@@ -14,6 +14,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyBignum;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
+import org.jruby.RubyFloat;
 
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -58,6 +59,8 @@ public class Java {
             javaObject = new Long(((RubyFixnum) object).getLongValue());
         } else if (object instanceof RubyBignum) {
             javaObject = ((RubyBignum) object).getValue();
+        } else if (object instanceof RubyFloat) {
+            javaObject = new Double(((RubyFloat) object).getValue());
         } else if (object instanceof RubyString) {
             javaObject = ((RubyString) object).getValue();
         } else if (object instanceof RubyBoolean) {

@@ -140,10 +140,12 @@ module JavaUtilities
       end
       if java_class.interface?
 	create_interface_constructor(java_class, proxy_class)
+        create_array_type_accessor(java_class, proxy_class)
       elsif java_class.array?
-        # ... array constructor?
+        create_array_class_constructor(java_class, proxy_class)
       else
         create_class_constructor(java_class, proxy_class)
+        create_array_type_accessor(java_class, proxy_class)
       end
       if java_class.array?
         setup_array_methods(java_class, proxy_class)
@@ -171,6 +173,26 @@ module JavaUtilities
           result.java_class = @java_class
           result.java_object = java_object
           result
+        end
+      end
+    end
+
+    def create_array_class_constructor(java_class, proxy_class)
+      class << proxy_class
+        def new(size)
+          java_object = java_class.component_type.new_array(size)
+          result = new_proxy
+          result.java_class = @java_class
+          result.java_object = java_object
+          result
+        end
+      end
+    end
+
+    def create_array_type_accessor(java_class, proxy_class)
+      class << proxy_class
+        def []
+          JavaUtilities.new_proxy_class(java_class.array_class.name)
         end
       end
     end
