@@ -26,10 +26,18 @@ Threading:
     JRuby uses Java's threads, which are usually the native threads of
     the operating system, while 'ruby' uses it's own "green" thread
     implementation.
-    JRuby has the ability to do non-blocking IO with threads, but
-    lacks the Thread.critical= method used for synchronization in
-    'ruby'.
-
+    Because Java does not provide a pthreads-compatible threading
+    library, some thread operations are simulated. When told to stop,
+    sleep, wait, criticalize, or wakeup, JRuby threads' behavior will
+    differ slightly from pthreads.
+    Threads will also act according to the thread scheduling semantics
+    of the host system rather than according to the semantics of ruby's
+    internal scheduler. This can mean that new bugs will appear in
+    multithreaded programs because assumptions made under ruby's thread
+    scheduler do not hold under JVM threading or platform-native thread
+    schedulers. In general, threads provided by JRuby will act just
+    like native threads.
+    
 Character encoding:
 
     JRuby uses Java's Unicode support for strings. [Something on what
