@@ -127,30 +127,30 @@ public class DefaultRubyParser implements RubyParser {
 %type <RubyId>    fitem variable sym symbol operation operation2 operation3
 %type <RubyId>    cname fname op f_rest_arg
 %type <Integer>   f_norm_arg f_arg
-%token <Integer> tUPLUS 	/* unary+ */
-%token <Integer> tUMINUS 	/* unary- */
-%token <Integer> tPOW		/* ** */
-%token <Integer> tCMP  		/* <=> */
-%token <Integer> tEQ  		/* == */
-%token <Integer> tEQQ  		/* === */
-%token <Integer> tNEQ  		/* != */
-%token <Integer> tGEQ  		/* >= */
-%token <Integer> tLEQ  		/* <= */
-%token <Integer> tANDOP tOROP	/* && and || */
-%token <Integer> tMATCH tNMATCH	/* =~ and !~ */
-%token <Integer> tDOT2 tDOT3	/* .. and ... */
-%token <Integer> tAREF tASET	/* [] and []= */
-%token <Integer> tLSHFT tRSHFT	/* << and >> */
-%token <Integer> tCOLON2	/* :: */
-%token <Integer> tCOLON3	/* :: at EXPR_BEG */
-%token <Integer> tOP_ASGN	/* +=, -=  etc. */
-%token <Integer> tASSOC		/* => */
-%token <Integer> tLPAREN	/* ( */
-%token <Integer> tLBRACK	/* [ */
-%token <Integer> tLBRACE	/* { */
-%token <Integer> tSTAR		/* * */
-%token <Integer> tAMPER		/* & */
-%token <Integer> tSYMBEG
+%token <RubyId> tUPLUS 	/* unary+ */
+%token <RubyId> tUMINUS 	/* unary- */
+%token <RubyId> tPOW		/* ** */
+%token <RubyId> tCMP  		/* <=> */
+%token <RubyId> tEQ  		/* == */
+%token <RubyId> tEQQ  		/* === */
+%token <RubyId> tNEQ  		/* != */
+%token <RubyId> tGEQ  		/* >= */
+%token <RubyId> tLEQ  		/* <= */
+%token <RubyId> tANDOP tOROP	/* && and || */
+%token <RubyId> tMATCH tNMATCH	/* =~ and !~ */
+%token <RubyId> tDOT2 tDOT3	/* .. and ... */
+%token <RubyId> tAREF tASET	/* [] and []= */
+%token <RubyId> tLSHFT tRSHFT	/* << and >> */
+%token <RubyId> tCOLON2	/* :: */
+%token <RubyId> tCOLON3	/* :: at EXPR_BEG */
+%token <RubyId> tOP_ASGN	/* +=, -=  etc. */
+%token <RubyId> tASSOC		/* => */
+%token <RubyId> tLPAREN	/* ( */
+%token <RubyId> tLBRACK	/* [ */
+%token <RubyId> tLBRACE	/* { */
+%token <RubyId> tSTAR		/* * */
+%token <RubyId> tAMPER		/* & */
+%token <RubyId> tSYMBEG
 
 /*
  *	precedence table
@@ -528,7 +528,7 @@ fname		: tIDENTIFIER
 		| reswords
 		    {
 			    ph.setLexState(LexState.EXPR_END);
-			    $$ = $<RubyId>1;
+			    $$ = $<>1;
 		    }
 
 fitem		: fname
@@ -543,32 +543,32 @@ undef_list	: fitem
 			    $$ = ph.block_append($1, nf.newUndef($4));
 		    }
 
-op		: '|'		{ $$ = new Integer('|'); }
-		| '^'		{ $$ = new Integer('^'); }
-		| '&'		{ $$ = new Integer('&'); }
-		| tCMP		{ $$ = new Integer(tCMP); }
-		| tEQ		{ $$ = new Integer(tEQ); }
-		| tEQQ		{ $$ = new Integer(tEQQ); }
-		| tMATCH	{ $$ = new Integer(tMATCH); }
-		| '>'		{ $$ = new Integer('>'); }
-		| tGEQ		{ $$ = new Integer(tGEQ); }
-		| '<'		{ $$ = new Integer('<'); }
-		| tLEQ		{ $$ = new Integer(tLEQ); }
-		| tLSHFT	{ $$ = new Integer(tLSHFT); }
-		| tRSHFT	{ $$ = new Integer(tRSHFT); }
-		| '+'		{ $$ = new Integer('+'); }
-		| '-'		{ $$ = new Integer('-'); }
-		| '*'		{ $$ = new Integer('*'); }
-		| tSTAR		{ $$ = new Integer('*'); }
-		| '/'		{ $$ = new Integer('/'); }
-		| '%'		{ $$ = new Integer('%'); }
-		| tPOW		{ $$ = new Integer(tPOW); }
-		| '~'		{ $$ = new Integer('~'); }
-		| tUPLUS	{ $$ = new Integer(tUPLUS); }
-		| tUMINUS	{ $$ = new Integer(tUMINUS); }
-		| tAREF		{ $$ = new Integer(tAREF); }
-		| tASET		{ $$ = new Integer(tASET); }
-		| '`'		{ $$ = new Integer('`'); }
+op		: '|'		{ $$ = RubyId.newId(ruby, '|'); }
+		| '^'		{ $$ = RubyId.newId(ruby, '^'); }
+		| '&'		{ $$ = RubyId.newId(ruby, '&'); }
+		| tCMP		{ $$ = RubyId.newId(ruby, tCMP); }
+		| tEQ		{ $$ = RubyId.newId(ruby, tEQ); }
+		| tEQQ		{ $$ = RubyId.newId(ruby, tEQQ); }
+		| tMATCH	{ $$ = RubyId.newId(ruby, tMATCH); }
+		| '>'		{ $$ = RubyId.newId(ruby, '>'); }
+		| tGEQ		{ $$ = RubyId.newId(ruby, tGEQ); }
+		| '<'		{ $$ = RubyId.newId(ruby, '<'); }
+		| tLEQ		{ $$ = RubyId.newId(ruby, tLEQ); }
+		| tLSHFT	{ $$ = RubyId.newId(ruby, tLSHFT); }
+		| tRSHFT	{ $$ = RubyId.newId(ruby, tRSHFT); }
+		| '+'		{ $$ = RubyId.newId(ruby, '+'); }
+		| '-'		{ $$ = RubyId.newId(ruby, '-'); }
+		| '*'		{ $$ = RubyId.newId(ruby, '*'); }
+		| tSTAR		{ $$ = RubyId.newId(ruby, '*'); }
+		| '/'		{ $$ = RubyId.newId(ruby, '/'); }
+		| '%'		{ $$ = RubyId.newId(ruby, '%'); }
+		| tPOW		{ $$ = RubyId.newId(ruby, tPOW); }
+		| '~'		{ $$ = RubyId.newId(ruby, '~'); }
+		| tUPLUS	{ $$ = RubyId.newId(ruby, tUPLUS); }
+		| tUMINUS	{ $$ = RubyId.newId(ruby, tUMINUS); }
+		| tAREF		{ $$ = RubyId.newId(ruby, tAREF); }
+		| tASET		{ $$ = RubyId.newId(ruby, tASET); }
+		| '`'		{ $$ = RubyId.newId(ruby, '`'); }
 
 reswords	: k__LINE__ | k__FILE__  | klBEGIN | klEND
 		| kALIAS | kAND | kBEGIN | kBREAK | kCASE | kCLASS | kDEF
@@ -609,9 +609,9 @@ arg		: lhs '=' arg
 			    ph.list_append($3, nf.newNil());
 			    ph.list_concat(args, $3);
                 if ($5.intValue() == Token.tOROP) {
-			        $<>5 = new Integer(0);
+			        $<>5 = RubyId.newId(ruby, 0);
 			    } else if ($5.intValue() == Token.tANDOP) {
-			        $<>5 = new Integer(1);
+			        $<>5 = RubyId.newId(ruby, 1);
 			    }
 			    $$ = nf.newOpAsgn1($1, $5, args);
 		        ph.fixpos($$, $1);
@@ -619,9 +619,9 @@ arg		: lhs '=' arg
 		| primary '.' tIDENTIFIER tOP_ASGN arg
 		    {
                 if ($4.intValue() == Token.tOROP) {
-			        $<>4 = new Integer(0);
+			        $<>4 = RubyId.newId(ruby, 0);
 			    } else if ($4.intValue() == Token.tANDOP) {
-			        $<>4 = new Integer(1);
+			        $<>4 = RubyId.newId(ruby, 1);
 			    }
 			    $$ = nf.newOpAsgn2($1, $3, $4, $5);
 		        ph.fixpos($$, $1);
@@ -629,9 +629,9 @@ arg		: lhs '=' arg
 		| primary '.' tCONSTANT tOP_ASGN arg
 		    {
                 if ($4.intValue() == Token.tOROP) {
-			        $<>4 = new Integer(0);
+			        $<>4 = RubyId.newId(ruby, 0);
 			    } else if ($4.intValue() == Token.tANDOP) {
-			        $<>4 = new Integer(1);
+			        $<>4 = RubyId.newId(ruby, 1);
 			    }
 			    $$ = nf.newOpAsgn2($1, $3, $4, $5);
 		        ph.fixpos($$, $1);
@@ -639,9 +639,9 @@ arg		: lhs '=' arg
 		| primary tCOLON2 tIDENTIFIER tOP_ASGN arg
 		    {
 			    if ($4.intValue() == Token.tOROP) {
-			        $<>4 = new Integer(0);
+			        $<>4 = RubyId.newId(ruby, 0);
 			    } else if ($4.intValue() == Token.tANDOP) {
-			        $<>4 = new Integer(1);
+			        $<>4 = RubyId.newId(ruby, 1);
 			    }
 			    $$ = nf.newOpAsgn2($1, $3, $4, $5);
 		        ph.fixpos($$, $1);
@@ -1201,7 +1201,7 @@ primary		: literal
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("nested method definition");
 			    $$ = ph.getCurMid();
-			    ph.setCurMid($2);
+                ph.setCurMid($2);
 			    ph.setInDef(ph.getInDef() + 1);
 			    ph.local_push();
 		    }
@@ -1552,19 +1552,23 @@ f_arglist	: '(' f_args opt_nl ')'
 
 f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs($1, $3, $5), $6);
+                // +++
+			    $$ = ph.block_append(nf.newArgs($<>1, $3, $5), $6);
 		    }
 		| f_arg ',' f_optarg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs($1, $3, new Integer(-1)), $4);
+                // +++
+			    $$ = ph.block_append(nf.newArgs($<>1, $3, new Integer(-1)), $4);
 		    }
 		| f_arg ',' f_rest_arg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs($1, null, $3), $4);
+                // +++
+			    $$ = ph.block_append(nf.newArgs($<>1, null, $3), $4);
 		    }
 		| f_arg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs($1, null, new Integer(-1)), $2);
+                // +++
+			    $$ = ph.block_append(nf.newArgs($<>1, null, new Integer(-1)), $2);
 		    }
 		| f_optarg ',' f_rest_arg opt_f_block_arg
 		    {

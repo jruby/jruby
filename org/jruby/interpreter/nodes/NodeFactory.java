@@ -320,16 +320,16 @@ public class NodeFactory {
         return newDefaultNode(NODE.NODE_EVSTR, RubyString.m_newString(ruby, s, len), null, null);
     }
        
-    public NODE newCall(Object r, Object m, Object a) {
-        return newDefaultNode(NODE.NODE_CALL, r, m, a);
+    public NODE newCall(NODE recv, Object m, Object a) {
+        return newDefaultNode(NODE.NODE_CALL, recv, m, a);
     }
     
     public NODE newFCall(Object m, Object a) {
         return newDefaultNode(NODE.NODE_FCALL, null, m, a);
     }
     
-    public NODE newVCall(Object m) {
-        return newDefaultNode(NODE.NODE_VCALL, null, m, null);
+    public NODE newVCall(RubyId mid) {
+        return newDefaultNode(NODE.NODE_VCALL, null, mid, null);
     }
     
     public NODE newSuper(Object a) {

@@ -125,14 +125,14 @@ public class RBKernel {
     public static RubyObject m_require(Ruby ruby, RubyObject recv, RubyString arg1) {
         if (arg1.getValue().endsWith(".rb")) {
             // Not supported yet
-            // ruby.getInterpreter().load((RubyString)arg1, false);
-            System.err.println("[BUG] Not supported yet.");
+            ruby.getInterpreter().load((RubyString)arg1, false);
+            // System.err.println("[BUG] Not supported yet.");
         } else if (arg1.getValue().endsWith(".jar")) {
             File jarFile = new File(arg1.getValue());
             if (!jarFile.exists()) {
                 jarFile = new File(new File(ruby.getSourceFile()).getParentFile(), arg1.getValue());
                 if (!jarFile.exists()) {
-                    System.err.println("[BUG] Jarfile not found.");
+                    System.err.println("[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
                 }
             }
             if (jarFile.exists()) {

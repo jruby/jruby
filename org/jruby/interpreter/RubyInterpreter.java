@@ -1681,7 +1681,7 @@ public class RubyInterpreter implements node_type, Scope {
                     }
                     br.close();
                     
-                    ruby.getRubyParser().compileString(sb.toString(), fname, 0);
+                    ruby.getRubyParser().compileString(fname.getValue(), RubyString.m_newString(ruby, sb.toString()), 0);
                 
                 } catch (IOException ioExcptn) {
                     System.out.println("Cannot read Rubyfile: \"" + fname.getValue() + "\"");
@@ -1690,8 +1690,20 @@ public class RubyInterpreter implements node_type, Scope {
             // ---
             
             ruby.setInEval(ruby.getInEval() - 1);
-            eval(self, ruby.getParserHelper().getEvalTree()); // evalNode
-        } catch (RubyException excptn) {
+            
+            // evalNode +++
+            if (ruby.getParserHelper().getEvalTreeBegin() != null) {
+                System.out.println("EvalTreeBegin");
+                eval(self, ruby.getParserHelper().getEvalTreeBegin());
+                ruby.getParserHelper().setEvalTreeBegin(null);
+            }
+            if (ruby.getParserHelper().getEvalTree() != null) {
+                System.out.println("EvalTree");
+                eval(self, ruby.getParserHelper().getEvalTree());
+            }
+            // evalNode ---
+        } catch (Exception excptn) {
+            excptn.printStackTrace();
         }
         ruby.getRubyFrame().setLastFunc(last_func);
         
