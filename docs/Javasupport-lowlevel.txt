@@ -10,15 +10,14 @@ Java:
 
     java_to_primitive(obj) -> ruby primitive or obj
         If obj is a Java object and either a boolean, numeric type or
-        string, a corresponding instance of a primitive (boolean, numeric or
-        string) Ruby type is
+        string, a corresponding instance of a primitive (boolean,
+        numeric or string) Ruby type is returned. Otherwise obj is
         returned.
-        Otherwise obj is returned.
 
-    primitive_to_java(obj) -> java primitive or obj
+    primitive_to_java(obj) -> aJavaObject
         If obj is of a primitive Ruby type (boolean, numeric or string) a
-        corresponding Java object is returned. Otherwise obj is returned.
-
+        corresponding JavaObject is returned. Otherwise a JavaObject
+        wrapping obj is returned.
 
 Java::JavaClass:
 

@@ -47,9 +47,11 @@ if defined? Java
     test_equal(nil , sb.dispatchObject(nil))
 
     # Calling with ruby array arguments
+    java_alias :JavaString, :String
     a = [104, 101, 108, 108, 111]
-#    test_equal("hello", String.new(a))   # (char[]) matches here
-    test_equal("104101108108111",        # append(Object) triumphs here
+#    test_equal("hello", # (char[]) matches here
+#               JavaString.new(a, "iso-8859-1").toString)
+    test_equal("104101108108111", # append(Object) triumphs here
                StringBuffer.new.append(a).toString) 
 
     # FIXME: easy method for importing java class with colliding name

@@ -10,6 +10,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyBignum;
+import org.jruby.RubyString;
+import org.jruby.RubyBoolean;
 
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -43,8 +47,24 @@ public class Java {
     }
 
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
+        if (object instanceof JavaObject) {
+            return object;
+        }
         Ruby runtime = recv.getRuntime();
-        Object javaObject = JavaUtil.convertRubyToJava(object);
+        Object javaObject;
+        if (object.isNil()) {
+            javaObject = null;
+        } else if (object instanceof RubyFixnum) {
+            javaObject = new Long(((RubyFixnum) object).getLongValue());
+        } else if (object instanceof RubyBignum) {
+            javaObject = ((RubyBignum) object).getValue();
+        } else if (object instanceof RubyString) {
+            javaObject = ((RubyString) object).getValue();
+        } else if (object instanceof RubyBoolean) {
+            javaObject = new Boolean(object.isTrue());
+        } else {
+            javaObject = object;
+        }
         return JavaObject.wrap(runtime, javaObject);
     }
 
