@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
@@ -75,8 +76,9 @@ public class RubyModule extends RubyObject {
     private String classId;
     private String classPath;
 
-    // The methods.
     private Map methods = new HashMap();
+
+    private Map methodCache = new TreeMap();
 
     private RubyModule(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, null);
@@ -477,7 +479,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (changed) {
-            runtime.getMethodCache().clear();
+            clearMethodCache();
         }
     }
 
@@ -514,8 +516,8 @@ public class RubyModule extends RubyObject {
         if (isFrozen()) {
             throw new FrozenError(getRuntime(), "class/module");
         }
-        runtime.getMethodCache().clearByName(name);
         getMethods().put(name, method);
+        clearMethodCache();
     }
 
     public void defineMethod(String name, Callback method) {
@@ -651,7 +653,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected CacheEntry getMethodBodyCached(String name) {
-        CacheEntry result = getRuntime().getMethodCache().getEntry(this, name);
+        CacheEntry result = (CacheEntry) methodCache.get(name);
         if (result != null) {
             return result;
         }
@@ -659,13 +661,24 @@ public class RubyModule extends RubyObject {
         ICallable method = searchMethod(name);
         if (method.isUndefined()) {
             CacheEntry undefinedEntry = CacheEntry.createUndefined(name, this);
-            getRuntime().getMethodCache().saveEntry(this, name, undefinedEntry);
+            methodCache.put(name, undefinedEntry);
             return undefinedEntry;
         }
         result = new CacheEntry(name, this);
         method.initializeCacheEntry(result);
-        getRuntime().getMethodCache().saveEntry(this, name, result);
+        methodCache.put(name, result);
         return result;
+    }
+
+    public static void clearMethodCache(Ruby runtime) {
+        Iterator iter = runtime.getClasses().getClassMap().values().iterator();
+        while (iter.hasNext()) {
+            ((RubyModule) iter.next()).methodCache.clear();
+        }
+    }
+
+    private void clearMethodCache() {
+        clearMethodCache(getRuntime());
     }
 
     /** rb_call
@@ -785,8 +798,8 @@ public class RubyModule extends RubyObject {
             method = ((AliasMethod) method).getOldMethod();
         }
 
-        getRuntime().getMethodCache().clearByName(name);
         getMethods().put(name, new AliasMethod(method, oldName, origin, method.getVisibility()));
+        clearMethodCache();
     }
 
     /** remove_method
@@ -806,7 +819,7 @@ public class RubyModule extends RubyObject {
             throw new NameError(getRuntime(), "method '" + name + "' not defined in " + toName());
         }
 
-        getRuntime().getMethodCache().clearByName(name);
+        clearMethodCache();
     }
 
     /** rb_define_class_under
@@ -970,12 +983,10 @@ public class RubyModule extends RubyObject {
      *
      */
     public boolean isMethodBound(String name, boolean checkVisibility) {
-        CacheEntry entry = runtime.getMethodCache().getEntry(this, name);
-
+        CacheEntry entry = (CacheEntry) methodCache.get(name);
         if (entry == null) {
             entry = getMethodBodyCached(name);
         }
-
         if (entry.isDefined()) {
             if (checkVisibility && entry.getVisibility().isPrivate()) {
                 return false;

@@ -1260,7 +1260,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             if (receiver.getMetaClass() instanceof MetaClass) {
-                runtime.getMethodCache().clear();
+                RubyModule.clearMethodCache(runtime);
             }
 
             singletonClass = receiver.getSingletonClass();

@@ -55,7 +55,6 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
-import org.jruby.internal.runtime.methods.RubyMethodCache;
 import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.Parser;
@@ -119,8 +118,6 @@ public final class Ruby {
     public void dispose() {
         threadContext.dereferenceMainContext();
     }
-
-    private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
 
@@ -195,8 +192,6 @@ public final class Ruby {
         falseObject = new RubyBoolean(this, false);
 
         javaSupport = new JavaSupport(this);
-
-        methodCache = new RubyMethodCache();
     }
 
     /**
@@ -451,13 +446,6 @@ public final class Ruby {
      */
     public ScopeStack getScope() {
         return getCurrentContext().getScopeStack();
-    }
-
-    /** Getter for property methodCache.
-     * @return Value of property methodCache.
-     */
-    public RubyMethodCache getMethodCache() {
-        return methodCache;
     }
 
     /** Getter for property sourceFile.
