@@ -6372,6 +6372,7 @@ case 432:
     int TYPE(VALUE v) {
         if (v instanceof RubyFixnum) return T_FIXNUM;
         if (v instanceof RubyRegex) return T_REGEXP;
+	if (v instanceof RubyFloat) return T_FLOAT;
         throw missing();
     }
     static final int T_FIXNUM = 0;
