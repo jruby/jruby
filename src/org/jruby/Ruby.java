@@ -66,7 +66,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
-import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
 
 import java.io.BufferedReader;
@@ -151,9 +150,7 @@ public final class Ruby {
     /**
      * Create and initialize a new jruby Runtime.
      */
-    private Ruby(Class regexpAdapterClass) {
-        this.regexpAdapterClass = regexpAdapterClass;
-
+    private Ruby() {
         nilObject = RubyObject.nilObject(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
@@ -168,8 +165,7 @@ public final class Ruby {
      * @return the JRuby runtime
      */
     public static Ruby getDefaultInstance(String regexpEngineName) {
-        Class regexpAdapterClass = IRegexpAdapter.getAdapter(regexpEngineName);
-        Ruby runtime = new Ruby(regexpAdapterClass);
+        Ruby runtime = new Ruby();
         runtime.init();
         return runtime;
     }

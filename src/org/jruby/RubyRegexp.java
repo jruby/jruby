@@ -29,14 +29,15 @@
  */
 package org.jruby;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.regexp.IRegexpAdapter;
-import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
 
 /**
@@ -45,19 +46,11 @@ import org.jruby.util.PrintfFormat;
  * @version $Revision$
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
-    private IRegexpAdapter matcher;
-    private String pattern;
-    private int options;
+    private Pattern pattern;
     private String lang = null;
 
     public RubyRegexp(Ruby runtime) {
         super(runtime, runtime.getClass("Regexp"));
-        try {
-            matcher = (IRegexpAdapter) runtime.getRegexpAdapterClass().newInstance();
-        } catch (Exception ex) {
-            // can't happen if JRuby is invoked via Main class
-            Asserts.notReached("Couldn't create regexp adapter");
-        }
     }
 
     public static RubyClass createRegexpClass(Ruby runtime) {
@@ -88,19 +81,18 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return regexpClass;
     }
 
-    public void initialize(String pat, int opts) {
-        pattern = pat;
-        options = opts;
+    public void initialize(String regex, int options) {
+    	int flags = 0;
         if ((options & RE_OPTION_IGNORECASE) > 0) {
-            matcher.setCasefold(true);
+            flags |= Pattern.CASE_INSENSITIVE;
         }
         if ((options & RE_OPTION_EXTENDED) > 0) {
-            matcher.setExtended(true);
+        	flags |= Pattern.COMMENTS;
         }
         if ((options & RE_OPTION_MULTILINE) > 0) {
-            matcher.setMultiline(true);
+        	flags |= Pattern.DOTALL;
         }
-        matcher.compile(getRuntime(), pattern);
+        pattern = Pattern.compile(regex, flags);
     }
 
     public static String quote(String orig) {
@@ -117,13 +109,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     private void recompileIfNeeded() {
         checkInitialized();
-        if (matcher.getCasefold() && (options & RE_OPTION_IGNORECASE) == 0) {
-            initialize(pattern, options);
-        }
     }
 
     private void checkInitialized() {
-        if (matcher == null) {
+        if (pattern == null) {
             throw new TypeError(getRuntime(), "uninitialized Regexp");
         }
     }
@@ -215,8 +204,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         	return getRuntime().getFalse();
         }
         
-        return RubyBoolean.newBoolean(getRuntime(), 
-        		!(matcher.getCasefold() ^ re.matcher.getCasefold()));
+        return RubyBoolean.newBoolean(getRuntime(), pattern.flags() == re.pattern.flags());
     }
 
     /** rb_reg_match2
@@ -257,7 +245,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyString source() {
         checkInitialized();
-        return RubyString.newString(getRuntime(), pattern);
+        return RubyString.newString(getRuntime(), pattern.pattern());
     }
 
     /** rb_reg_casefold_p
@@ -265,7 +253,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyBoolean casefold() {
         checkInitialized();
-        return RubyBoolean.newBoolean(getRuntime(), matcher.getCasefold());
+        return RubyBoolean.newBoolean(getRuntime(), (pattern.flags() & Pattern.CASE_INSENSITIVE) != 0);
     }
 
     /** rb_reg_nth_match
@@ -323,7 +311,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         recompileIfNeeded();
 
         // If nothing match then nil will be returned
-        IRubyObject result = matcher.search(getRuntime(), str, pos);
+        IRubyObject result = match(str, pos);
         getRuntime().getScope().setBackref(result);
 
         // If nothing match then -1 will be returned
@@ -331,8 +319,24 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
     
     public IRubyObject search2(String str) {
-    	return matcher.search(getRuntime(), str, 0);
+    	return match(str, 0);
     }
+    
+    private IRubyObject match(String target, int startPos) {
+    	Matcher matcher = pattern.matcher(target);
+        if (matcher.find(startPos)) {
+            int count = matcher.groupCount() + 1;
+            int[] begin = new int[count];
+            int[] end = new int[count];
+            for (int i = 0; i < count; i++) {
+                begin[i] = matcher.start(i);
+                end[i] = matcher.end(i);
+            }
+            return new RubyMatchData(runtime, target, begin, end);
+        }
+        return runtime.getNil();
+    }
+
 
     /** rb_reg_regsub
      *
@@ -392,7 +396,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     // TODO: Could this be better hooked up to RubyObject#clone?
     public IRubyObject rbClone() {
-    	RubyRegexp newObj = newRegexp(source(), options, lang);
+    	RubyRegexp newObj = new RubyRegexp(runtime);
+    	newObj.pattern = pattern;
+    	newObj.lang = lang;
     	setupClone(newObj);
         return newObj;
     }
@@ -401,12 +407,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public RubyString inspect() {
-        final int length = pattern.length();
+        final String regex = pattern.pattern();
+		final int length = regex.length();
         StringBuffer sb = new StringBuffer(length + 2);
 
         sb.append('/');
         for (int i = 0; i < length; i++) {
-            char c = pattern.charAt(i);
+            char c = regex.charAt(i);
 
             if (RubyString.isAlnum(c)) {
                 sb.append(c);
@@ -434,13 +441,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
         sb.append('/');
 
-        if ((options & RE_OPTION_IGNORECASE) > 0) {
+        if ((pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
             sb.append('i');
         }
-        if ((options & RE_OPTION_MULTILINE) > 0) {
+        if ((pattern.flags() & Pattern.DOTALL) > 0) {
             sb.append('m');
         }
-        if ((options & RE_OPTION_EXTENDED) > 0) {
+        if ((pattern.flags() & Pattern.COMMENTS) > 0) {
             sb.append('x');
         }
 
@@ -449,7 +456,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('/');
-        output.dumpString(pattern);
-        output.dumpInt(options);
+        output.dumpString(pattern.pattern());
+        output.dumpInt(pattern.flags());
     }
 }

@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-    <classpathentry kind="src" path="src"/>
-    <classpathentry excluding="**/CVS/*" kind="src" path="test"/>
-    <classpathentry excluding="**/Constants.java" kind="src" path="build/gen-src"/>
-    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-    <classpathentry kind="lib" path="lib/bsf.jar"/>
-    <classpathentry kind="lib" path="lib/jakarta-oro-2.0.6.jar"/>
-    <classpathentry kind="lib" path="lib/junit.jar"/>
-    <classpathentry kind="lib" path="lib/gnu-regexp-1.1.4.jar"/>
-    <classpathentry kind="lib" path="lib/ant.jar"/>
-    <classpathentry kind="output" path="build/classes"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="**/CVS/*" kind="src" path="test"/>
+	<classpathentry excluding="**/Constants.java" kind="src" path="build/gen-src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/bsf.jar"/>
+	<classpathentry kind="lib" path="lib/jakarta-oro-2.0.6.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar"/>
+	<classpathentry kind="lib" path="lib/ant.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
 </classpath>

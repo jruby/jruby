@@ -19,11 +19,8 @@
   	<patternset id="java.src.pattern">
     	<include name="**/*.java"/>
     	<exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
-    	<exclude unless="oro.present" name="**/ORORegexpAdapter.java"/>
-    	<exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
     	<exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     	<exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
-    	<exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
   		<!-- Removed cglib for now
         <exclude unless="cglib.present" name="**/Cglib*.java"/>
         -->
@@ -69,12 +66,6 @@
     	<available property="junit.present"
                	classname="junit.framework.TestCase"
                	classpathref="build.classpath"/>
-    	<available property="oro.present"
-               	classname="org.apache.oro.text.regex.Perl5Pattern"
-               	classpathref="build.classpath"/>
-    	<available property="gnuregexp.present"
-               	classname="gnu.regexp.RE"
-	       		classpathref="build.classpath"/>
         <available property="cglib.present"
                 classname="net.sf.cglib.reflect.FastClass"
 				classpathref="build.classpath"/>
