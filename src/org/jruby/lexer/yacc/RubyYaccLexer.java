@@ -278,25 +278,6 @@ public class RubyYaccLexer {
         return tryLen;
     }
 
-    // HACK::::
-    long scan_hex(int tryLen) {
-        long retVal = 0;
-        int i = 0;
-        
-        for (; i < tryLen; i++) {
-            int c = Character.digit(support.getCharAt(i), 16);
-            
-            if (c == 0) {
-                break;
-            }
-            
-            retVal <<= 4;
-            retVal |= c & 15;
-        }
-
-        return retVal;
-    }
-    
     // Was a goto in original ruby lexer
     boolean escaped(int term) {
         char c;
