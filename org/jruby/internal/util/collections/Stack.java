@@ -38,34 +38,35 @@ import org.jruby.util.collections.IStack;
  * @version $Revision$
  */
 public class Stack implements IStack {
-    protected LinkedObject top;
+	public static final LinkedObject EMPTY = new LinkedObject(null);
+    protected LinkedObject top = EMPTY;
 
     /**
      * Constructor for Stack.
      */
     public Stack() {
-        super();
+		super();
     }
 
     /**
      * @see IStack#isEmpty()
      */
     public boolean isEmpty() {
-        return top == null;
+        return top == EMPTY;
     }
 
     /**
      * @see IStack#peek()
      */
     public Object peek() {
-        return top != null ? top.data : null;
+        return top.data;
     }
 
     /**
      * @see IStack#pop()
      */
     public Object pop() {
-        if (top == null) {
+        if (top == EMPTY) {
             throw new StackEmptyException("Stack is empty.");
         } else {
             Object data = top.data;

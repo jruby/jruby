@@ -34,9 +34,8 @@ import org.jruby.internal.util.*;
  * @version $Revision$
  */
 public class LinkedObject {
-    public LinkedObject next;
-
-    public Object data;
+    public final LinkedObject next;
+    public final Object data;
 
     /**
      * Constructor for LinkedObject.
@@ -49,6 +48,10 @@ public class LinkedObject {
         this.next = next;
         this.data = data;
     }
+
+	public Object data() {
+		return data;
+	}
 
     /**
      * @see Object#equals(Object)

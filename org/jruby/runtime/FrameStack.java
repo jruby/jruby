@@ -16,7 +16,10 @@ public class FrameStack extends Stack {
     }
 
     public Frame getPrevious() {
-        return top != null ? (Frame)top.next.data : null;
+        if (isEmpty()) {
+        	return null;	
+        }
+        return (Frame) top.next.data;
     }
 
     public void push() {

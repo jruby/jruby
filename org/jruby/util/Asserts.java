@@ -22,8 +22,6 @@
  */
 package org.jruby.util;
 
-import org.jruby.runtime.ReflectionCallbackMethod;
-
 /** Debugging util class to terminate the application if the assertion fails.
  *
  * The methods can be turned off in final releases of code by 

@@ -57,9 +57,7 @@ public class LinkedObjectIterator implements Iterator {
      */
     public Object next() {
         Object data = next.data;
-        
         next = next.next;
-        
         return data;
     }
 
