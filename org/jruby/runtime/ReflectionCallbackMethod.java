@@ -114,17 +114,14 @@ public final class ReflectionCallbackMethod implements Callback {
     protected IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs) {
         Object[] reflectionArguments = packageArgumentsForReflection(methodArgs, recv);
         try {
-            return (IRubyObject) getMethod().invoke(
-                isStaticMethod ? null : recv,
-                reflectionArguments);
+            return (IRubyObject) getMethod().invoke(isStaticMethod ? null : recv, reflectionArguments);
         } catch (InvocationTargetException itExcptn) {
             if (itExcptn.getTargetException() instanceof RaiseException) {
                 throw (RaiseException) itExcptn.getTargetException();
             } else if (itExcptn.getTargetException() instanceof JumpException) {
                 throw (JumpException) itExcptn.getTargetException();
             } else {
-                recv.getRuntime().getJavaSupport().handleNativeException(
-                    (Exception) itExcptn.getTargetException());
+                recv.getRuntime().getJavaSupport().handleNativeException((Exception) itExcptn.getTargetException());
                 return recv.getRuntime().getNil();
             }
         } catch (IllegalAccessException iaExcptn) {
@@ -165,14 +162,10 @@ public final class ReflectionCallbackMethod implements Callback {
         return result;
     }
 
-    private Object[] packageStaticArgumentsForReflection(
-        Object[] arguments,
-        Ruby ruby,
-        IRubyObject rubyClass) {
-        Object[] result = new Object[arguments.length + 2];
-        result[0] = ruby;
-        result[1] = rubyClass;
-        System.arraycopy(arguments, 0, result, 2, arguments.length);
+    private Object[] packageStaticArgumentsForReflection(Object[] arguments, Ruby ruby, IRubyObject rubyClass) {
+        Object[] result = new Object[arguments.length + 1];
+        result[0] = rubyClass;
+        System.arraycopy(arguments, 0, result, 1, arguments.length);
         return result;
     }
 
@@ -180,12 +173,7 @@ public final class ReflectionCallbackMethod implements Callback {
         IRubyObject[] restArray = new IRubyObject[originalArgs.length - (args.length - 1)];
         Object[] result = new Object[args.length];
         try {
-            System.arraycopy(
-                originalArgs,
-                args.length - 1,
-                restArray,
-                0,
-                originalArgs.length - (args.length - 1));
+            System.arraycopy(originalArgs, args.length - 1, restArray, 0, originalArgs.length - (args.length - 1));
         } catch (ArrayIndexOutOfBoundsException aioobExcptn) {
             throw new RuntimeException(
                 "Cannot call \""

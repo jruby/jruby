@@ -364,7 +364,7 @@ public class RubyKernel {
 
         RubyString str = RubyString.stringValue(args[0]);
 
-        RubyArray newArgs = RubyArray.create(recv, args);
+        RubyArray newArgs = RubyArray.newArray(recv.getRuntime(), args);
         newArgs.shift();
 
         return str.format(newArgs);
