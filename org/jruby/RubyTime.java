@@ -33,6 +33,7 @@ import java.text.*;
 import java.util.*;
 
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  * @author chadfowler
@@ -55,6 +56,16 @@ public class RubyTime extends RubyObject {
 
         timeClass.defineMethod("to_s", CallbackFactory.getMethod(RubyTime.class, "to_s"));
         timeClass.defineMethod("inspect", CallbackFactory.getMethod(RubyTime.class, "to_s"));
+        
+        timeClass.defineMethod("strftime", CallbackFactory.getMethod(RubyTime.class, "strftime", RubyObject.class));
+        
+        timeClass.defineMethod("tv_usec", CallbackFactory.getMethod(RubyTime.class, "usec"));
+        timeClass.defineMethod("usec", CallbackFactory.getMethod(RubyTime.class, "usec"));
+
+        timeClass.defineMethod("tv_sec", CallbackFactory.getMethod(RubyTime.class, "to_i"));
+        timeClass.defineMethod("to_i", CallbackFactory.getMethod(RubyTime.class, "to_i"));
+        
+        timeClass.defineMethod("zone", CallbackFactory.getMethod(RubyTime.class, "zone"));
 
         return timeClass;
     }
@@ -83,6 +94,10 @@ public class RubyTime extends RubyObject {
         return RubyString.newString(ruby, cal.getTimeZone().getID());
     }
     
+    public RubyString strftime(RubyObject format) {
+        return RubyString.newString(ruby, new RubyDateFormat(format.toString()).format(cal.getTime()));
+    }
+    
     public RubyObject op_minus(RubyObject other) {
         long time = cal.getTimeInMillis();
 
@@ -105,6 +120,18 @@ public class RubyTime extends RubyObject {
         String result = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy").format(cal.getTime());
 
         return RubyString.newString(ruby, result);
+    }
+    
+    public RubyInteger to_i() {
+        return RubyFixnum.newFixnum(ruby, cal.getTimeInMillis() / 1000);
+    }
+    
+    public RubyInteger usec() {
+        return RubyFixnum.newFixnum(ruby, cal.getTimeInMillis() % 1000 * 1000);
+    }
+    
+    public RubyString zone() {
+        return RubyString.newString(ruby, cal.getTimeZone().getDisplayName(true, TimeZone.SHORT));
     }
 
     public void setJavaCalendar(Calendar cal) {
