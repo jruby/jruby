@@ -15,6 +15,7 @@ Items marked '-' are done and will be available in the next release.
         - Overview
         - Low-level API docs
         * High-level API docs
+        * Convert docs to Docbook, or at least HTML
 
 * Internal class restructuring
     * Move Ruby class creation and method init into classes separate from
