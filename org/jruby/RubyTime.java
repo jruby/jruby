@@ -61,7 +61,7 @@ public class RubyTime extends RubyObject {
     }
 
     public static RubyTime s_at(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
-        long secs = ((RubyFixnum) args[0]).getValue();
+        long secs = RubyNumeric.num2long(args[0]);
         RubyTime time = new RubyTime(ruby, (RubyClass) rubyClass.getRubyClass());
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date(secs));

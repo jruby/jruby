@@ -24,11 +24,11 @@ public class JavaSupport {
         } else if (loadedJavaClasses.get(javaClass) != null) {
             return (RubyModule) loadedJavaClasses.get(javaClass);
         } else {
-        	if (rubyName == null) {
-            	String javaName = javaClass.getName();
-            	rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
-        	}
-        	
+            if (rubyName == null) {
+                String javaName = javaClass.getName();
+                rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
+            }
+
             if (javaClass.isInterface()) {
                 return createRubyInterface(javaClass, rubyName);
             } else {
@@ -36,13 +36,14 @@ public class JavaSupport {
             }
         }
     }
-    
+
     private RubyClass createRubyClass(Class javaClass, String rubyName) {
         RubyClass superClass = (RubyClass) loadClass(javaClass.getSuperclass(), null);
         RubyClass rubyClass = ruby.defineClass(rubyName, superClass);
         
         defineWrapperMethods(javaClass, rubyClass, true);
         defineConstants(javaClass, rubyClass);
+        defineFields(javaClass, rubyClass);
         addDefaultModules(rubyClass);
 
         loadedJavaClasses.put(javaClass, rubyClass);
@@ -52,56 +53,80 @@ public class JavaSupport {
 
     private RubyModule createRubyInterface(Class javaInterface, String rubyName) {
         RubyModule newInterface = ruby.defineModule(rubyName);
-        
+
         Map methods = sortMethodsByName(Arrays.asList(javaInterface.getMethods()));
-        
+
         for (Iterator iter = methods.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry)iter.next();
-            
-            newInterface.defineModuleFunction((String)entry.getKey(), new JavaInterfaceMethod((String)entry.getKey(), (Set)entry.getValue()));
+            Map.Entry entry = (Map.Entry) iter.next();
+
+            newInterface.defineModuleFunction((String) entry.getKey(), new JavaInterfaceMethod((String) entry.getKey(), (Set) entry.getValue()));
         }
 
         newInterface.defineModuleFunction("new" + rubyName, new JavaInterfaceConstructor(javaInterface));
 
         return newInterface;
     }
-    
+
     private static Map sortMethodsByName(List methodList) {
         Map methodMap = new HashMap();
-        
+
         Iterator iter = methodList.iterator();
         while (iter.hasNext()) {
             Method method = (Method) iter.next();
-            
+
             if (!methodMap.containsKey(method.getName())) {
                 methodMap.put(method.getName(), new HashSet());
             }
-            
-            ((Set)methodMap.get(method.getName())).add(method);
+
+            ((Set) methodMap.get(method.getName())).add(method);
         }
-        
+
         return methodMap;
     }
-    
-	private void defineConstants(Class javaClass, RubyClass rubyClass) {
+
+    private void defineConstants(Class javaClass, RubyClass rubyClass) {
         // add constants
         Field[] fields = javaClass.getFields();
-        
+
         for (int i = 0; i < fields.length; i++) {
             int modifiers = fields[i].getModifiers();
             if (Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers)) {
                 try {
                     String name = fields[i].getName();
-                    
+
                     // Uppercase first character of the constant name
                     name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-                    
+
                     rubyClass.defineConstant(name, JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
                 } catch (IllegalAccessException iaExcptn) {
                 }
             }
         }
-	}
+    }
+
+    private void defineFields(Class javaClass, RubyClass rubyClass) {
+        // add constants
+        Field[] fields = javaClass.getFields();
+
+        for (int i = 0; i < fields.length; i++) {
+            int modifiers = fields[i].getModifiers();
+            if (Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
+                String name = fields[i].getName();
+
+                // Create read access
+                if (!rubyClass.isMethodDefined(name)) {
+                    ruby.getMethodCache().clearByName(name);
+                    rubyClass.defineMethod(name, new JavaFieldReader(fields[i]));
+                }
+
+                // Create write access
+                if (!rubyClass.isMethodDefined(name + "=")) {
+                    ruby.getMethodCache().clearByName(name + "=");
+                    rubyClass.defineMethod(name + "=", new JavaFieldWriter(fields[i]));
+                }
+            }
+        }
+    }
 
     private void defineWrapperMethods(Class javaClass, RubyClass rubyClass, boolean searchSuper) {
         Map methodMap = new HashMap();
@@ -134,8 +159,8 @@ public class JavaSupport {
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             methods = (Method[]) ((List) entry.getValue()).toArray(new Method[((List) entry.getValue()).size()]);
-            
-            String javaName = (String)entry.getKey();
+
+            String javaName = (String) entry.getKey();
             String rubyName = toRubyName(javaName);
 
             rubyClass.defineMethod(javaName, new JavaMethod(methods, searchSuper));
@@ -150,19 +175,19 @@ public class JavaSupport {
             Map.Entry entry = (Map.Entry) iter.next();
             methods = (Method[]) ((List) entry.getValue()).toArray(new Method[((List) entry.getValue()).size()]);
 
-            rubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, searchSuper, true));
+            rubyClass.defineSingletonMethod((String) entry.getKey(), new JavaMethod(methods, searchSuper, true));
         }
 
     }
 
     /**
-	 * translate java naming convention in ruby naming convention.
-	 * translate getter and setter in ruby style accessor and 
-	 * boolean getter in ruby style ? method
-	 * @param javaName the name of the java method
-	 * @return the name of the equivalent rubyMethod if a translation
-	 * was needed null otherwise
-	 **/
+     * translate java naming convention in ruby naming convention.
+     * translate getter and setter in ruby style accessor and 
+     * boolean getter in ruby style ? method
+     * @param javaName the name of the java method
+     * @return the name of the equivalent rubyMethod if a translation
+     * was needed null otherwise
+     **/
     private String toRubyName(String javaName) {
         if (javaName.equals("get")) {
             return "[]";
@@ -202,7 +227,7 @@ public class JavaSupport {
         if (rubyClass.isMethodDefined("compareTo")) {
             rubyClass.includeModule(ruby.getClasses().getComparableModule());
             if (!rubyClass.isMethodDefined("<=>")) {
-            	rubyClass.defineAlias("<=>", "compareTo");
+                rubyClass.defineAlias("<=>", "compareTo");
             }
         }
     }

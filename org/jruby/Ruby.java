@@ -172,6 +172,24 @@ public final class Ruby {
         RubyObject result = getRubyTopSelf().eval(getRubyParser().compileJavaString("<script>", script, script.length(), 1));
         return JavaUtil.convertRubyToJava(this, result, returnClass);
     }
+    
+    /**
+     * 
+     * Prints out an error message.
+     * 
+     * @param exception An Exception thrown by JRuby
+     */
+    public void printException(Exception exception) {
+        if (exception instanceof RaiseException) {
+            getRuntime().printError(((RaiseException)exception).getActException());
+        } else if (exception instanceof ThrowJump) {
+            getRuntime().printError(((ThrowJump)exception).getNameError());
+        } else if (exception instanceof BreakJump) {
+            getRuntime().getErrorStream().println("break without block.");
+        } else if (exception instanceof ReturnException) {
+            getRuntime().getErrorStream().println("return without block.");
+        }
+    }
 
     public Class getRegexpAdapterClass() {
         return regexpAdapterClass;
@@ -495,7 +513,7 @@ public final class Ruby {
             while (true) {
                 try {
                     return iterateMethod.execute(data1, null, this);
-                } catch (BreakException bExcptn) {
+                } catch (BreakJump bExcptn) {
                     return getNil();
                 } catch (ReturnException rExcptn) {
                     return rExcptn.getReturnValue();
@@ -505,12 +523,6 @@ public final class Ruby {
         } finally {
             getIter().pop();
             getBlock().pop();
-        }
-    }
-
-    private void createFixnumCache() {
-        for (int i = 0; i <= FIXNUM_CACHE_MAX; i++) {
-            fixnumCache[i] = new RubyFixnum(this, i);
         }
     }
 
@@ -527,8 +539,6 @@ public final class Ruby {
                 return RubyString.m_newString(ruby, "main");
             }
         });*/
-
-        createFixnumCache();
     }
 
     /** ruby_init

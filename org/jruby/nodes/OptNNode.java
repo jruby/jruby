@@ -57,7 +57,7 @@ public class OptNNode extends Node {
                 }
                 break;
             } catch (NextException nExcptn) {
-            } catch (BreakException bExcptn) {
+            } catch (BreakJump bExcptn) {
                 break;
             }
         }

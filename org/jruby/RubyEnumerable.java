@@ -86,7 +86,7 @@ public class RubyEnumerable {
     public static RubyObject each_with_index_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         ruby.yield(RubyArray.newArray(ruby, blockArg, arg1));
 
-        ((RubyFixnum) arg1).setValue(((RubyFixnum) arg1).getValue() + 1);
+        ((RubyFixnum) arg1).setValue(RubyNumeric.fix2long(arg1) + 1);
 
         return ruby.getNil();
     }
@@ -100,7 +100,7 @@ public class RubyEnumerable {
     public static RubyObject find_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         if (ruby.yield(blockArg).isTrue()) {
             ((RubyArray) arg1).push(blockArg);
-            throw new BreakException();
+            throw new BreakJump();
         }
 
         return ruby.getNil();
@@ -167,7 +167,7 @@ public class RubyEnumerable {
     public static RubyObject member_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
         if (blockArg.funcall("==", ((RubyArray) arg1).entry(0)).isTrue()) {
             ((RubyArray) arg1).push(ruby.getTrue());
-            throw new BreakException();
+            throw new BreakJump();
         }
 
         return ruby.getNil();

@@ -1063,7 +1063,7 @@ case 166:
 					// line 689 "DefaultRubyParser.y"
   {
 			    if (((Node)yyVals[0+yyTop]) != null && ((Node)yyVals[0+yyTop]) instanceof LitNode && ((Node)yyVals[0+yyTop]).getLiteral() instanceof RubyFixnum) {
-			        long i = ((RubyFixnum)((Node)yyVals[0+yyTop]).getLiteral()).getValue();
+			        long i = RubyNumeric.num2long(((Node)yyVals[0+yyTop]).getLiteral());
 
 			        ((Node)yyVals[0+yyTop]).setLiteral(RubyFixnum.newFixnum(ruby, -i));
 			        yyVal = ((Node)yyVals[0+yyTop]);

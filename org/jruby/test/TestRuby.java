@@ -64,7 +64,7 @@ public class TestRuby extends TestRubyBase {
         assertTrue(lCol == lI && lI == lLoad && lLoad != null);
         RubyArray lLoadA = (RubyArray) lLoad;
         //check that we have 2 non null element
-        assertTrue(((RubyFixnum) lLoadA.nitems()).getValue() == 2);
+        assertTrue(RubyNumeric.num2long(lLoadA.nitems()) == 2);
         //check that it is what we expect, a RubyString of the correct type
         assertTrue(new RubyString(ruby, "toto").equal(lLoadA.shift()));
         assertTrue(new RubyString(ruby, ".").equal(lLoadA.shift()));

@@ -1,10 +1,9 @@
 /*
- * RubyFixnum.java - No description
+ * RubyFixnum.java - Implementation of the Fixnum class.
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,14 +26,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
+
+import java.nio.*;
 
 import org.jruby.runtime.*;
 
-/**
+/** Implementation of the Fixnum class.
  *
- * @author  jpetersen
+ * @author jpetersen
+ * @version $Revision$
  */
 public class RubyFixnum extends RubyInteger {
     private long value;
@@ -48,38 +49,15 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
 
-    public Class getJavaClass() {
-        return Long.TYPE;
-    }
-
-    /** Getter for property value.
-     * @return Value of property value.
-     */
-    public long getValue() {
-        return this.value;
-    }
-
-    /** Setter for property value.
-     * @param value New value of property value.
-     */
-    public void setValue(long value) {
-        this.value = value;
-    }
-
-    public double getDoubleValue() {
-        return (double) value;
-    }
-
-    public long getLongValue() {
-        return value;
-    }
-    
 	public static RubyClass createFixnumClass(Ruby ruby) {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
 
         fixnumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("to_str", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("hash", CallbackFactory.getMethod(RubyFixnum.class, "hash"));
+
+		// fixnumClass.defineMethod("<<", CallbackFactory.getMethod(RubyFixnum.class, "op_lshift", RubyObject.class));
+		// fixnumClass.defineMethod(">>", CallbackFactory.getMethod(RubyFixnum.class, "op_rshift", RubyObject.class));
 
         fixnumClass.defineMethod("+", CallbackFactory.getMethod(RubyFixnum.class, "op_plus", RubyObject.class));
         fixnumClass.defineMethod("-", CallbackFactory.getMethod(RubyFixnum.class, "op_minus", RubyObject.class));
@@ -98,6 +76,22 @@ public class RubyFixnum extends RubyInteger {
         return fixnumClass;
     }
 
+    public Class getJavaClass() {
+        return Long.TYPE;
+    }
+
+    public void setValue(long value) {
+        this.value = value;
+    }
+
+    public double getDoubleValue() {
+        return (double) value;
+    }
+
+    public long getLongValue() {
+        return value;
+    }
+    
     public static RubyFixnum zero(Ruby ruby) {
         return newFixnum(ruby, 0);
     }
@@ -119,7 +113,7 @@ public class RubyFixnum extends RubyInteger {
             return thisVal > otherVal ? 1 : thisVal < otherVal ? -1 : 0;
         } else {
             long otherVal = other.getLongValue();
-            return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
+            return getLongValue() > otherVal ? 1 : getLongValue() < otherVal ? -1 : 0;
         }
     }
 
@@ -128,19 +122,29 @@ public class RubyFixnum extends RubyInteger {
     public static RubyFixnum newFixnum(Ruby ruby, long value) {
         // Cache for Fixnums (Performance)
         if ((value & ~Ruby.FIXNUM_CACHE_MAX) == 0) {
-            return ruby.fixnumCache[(int) value];
+            RubyFixnum newNum = ruby.fixnumCache[(int) value];
+            if (newNum == null) {
+                newNum = new RubyFixnum(ruby, value);
+                ruby.fixnumCache[(int) value] = newNum;
+            }
+            return newNum;
+        } else {
+        	return new RubyFixnum(ruby, value);
         }
-
-        return new RubyFixnum(ruby, value);
     }
 
     public RubyFixnum newFixnum(long value) {
         // Cache for Fixnums (Performance)
         if ((value & ~Ruby.FIXNUM_CACHE_MAX) == 0) {
-            return getRuby().fixnumCache[(int) value];
+            RubyFixnum newNum = ruby.fixnumCache[(int) value];
+            if (newNum == null) {
+                newNum = new RubyFixnum(ruby, value);
+                ruby.fixnumCache[(int) value] = newNum;
+            }
+            return newNum;
+        } else {
+        	return new RubyFixnum(ruby, value);
         }
-
-        return new RubyFixnum(getRuby(), value);
     }
 
     public RubyFixnum hash() {
@@ -206,7 +210,7 @@ public class RubyFixnum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuby(), getLongValue()).op_div(other);
         } else {
-            return newFixnum(getRuby(), getValue() / other.getLongValue());
+            return newFixnum(getRuby(), getLongValue() / other.getLongValue());
         }
     }
 
@@ -217,7 +221,7 @@ public class RubyFixnum extends RubyInteger {
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuby(), getLongValue()).op_mod(other);
         } else {
-            return newFixnum(getRuby(), getValue() % other.getLongValue());
+            return newFixnum(getRuby(), getLongValue() % other.getLongValue());
         }
     }
 
@@ -273,6 +277,6 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuby(), String.valueOf(getValue()));
+        return RubyString.newString(getRuby(), String.valueOf(getLongValue()));
     }
 }

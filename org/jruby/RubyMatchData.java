@@ -162,7 +162,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyFixnum.newFixnum(getRuby(), begin[(int) index.getValue()]);
+        return RubyFixnum.newFixnum(getRuby(), begin[(int) index.getLongValue()]);
     }
 
     /** match_end
@@ -172,7 +172,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyFixnum.newFixnum(getRuby(), end[(int) index.getValue()]);
+        return RubyFixnum.newFixnum(getRuby(), end[(int) index.getLongValue()]);
     }
 
     /** match_size

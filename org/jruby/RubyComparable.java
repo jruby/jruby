@@ -1,10 +1,9 @@
 /*
- * RubyComparable.java - No description
+ * RubyComparable.java - Implementation of the Comparable module.
  * Created on 11. September 2001, 22:51
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -33,7 +32,7 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
-/**
+/** Implementation of the Comparable module.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -42,17 +41,11 @@ public class RubyComparable {
     public static RubyModule createComparable(Ruby ruby) {
         RubyModule comparableModule = ruby.defineModule("Comparable");
 
-        comparableModule.defineMethod(
-            "==",
-            CallbackFactory.getSingletonMethod(RubyComparable.class, "equal", RubyObject.class));
+        comparableModule.defineMethod("==", CallbackFactory.getSingletonMethod(RubyComparable.class, "equal", RubyObject.class));
         comparableModule.defineMethod(">", CallbackFactory.getSingletonMethod(RubyComparable.class, "op_gt", RubyObject.class));
-        comparableModule.defineMethod(
-            ">=",
-            CallbackFactory.getSingletonMethod(RubyComparable.class, "op_ge", RubyObject.class));
+        comparableModule.defineMethod(">=", CallbackFactory.getSingletonMethod(RubyComparable.class, "op_ge", RubyObject.class));
         comparableModule.defineMethod("<", CallbackFactory.getSingletonMethod(RubyComparable.class, "op_lt", RubyObject.class));
-        comparableModule.defineMethod(
-            "<=",
-            CallbackFactory.getSingletonMethod(RubyComparable.class, "op_le", RubyObject.class));
+        comparableModule.defineMethod("<=", CallbackFactory.getSingletonMethod(RubyComparable.class, "op_le", RubyObject.class));
         comparableModule.defineMethod(
             "between?",
             CallbackFactory.getSingletonMethod(RubyComparable.class, "between_p", RubyObject.class, RubyObject.class));
@@ -61,49 +54,40 @@ public class RubyComparable {
     }
 
     public static RubyBoolean equal(Ruby ruby, RubyObject recv, RubyObject other) {
-        if (recv == other) {
-            return ruby.getTrue();
-        } else {
-            try {
-                RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
-                return RubyBoolean.newBoolean(ruby, fn.getValue() == 0);
-            } catch (NameError rnExcptn) {
-                return ruby.getFalse();
+        try {
+            if (recv == other) {
+                return ruby.getTrue();
+            } else {
+                return (RubyNumeric.fix2int(recv.funcall("<=>", other)) == 0) ? ruby.getTrue() : ruby.getFalse();
             }
+        } catch (NameError rnExcptn) {
+            return ruby.getFalse();
         }
     }
 
     public static RubyBoolean op_gt(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
-        return RubyBoolean.newBoolean(ruby, fn.getValue() > 0);
+        return RubyNumeric.fix2int(recv.funcall("<=>", other)) > 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean op_ge(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
-        return RubyBoolean.newBoolean(ruby, fn.getValue() >= 0);
+        return RubyNumeric.fix2int(recv.funcall("<=>", other)) >= 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean op_lt(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
-        return RubyBoolean.newBoolean(ruby, fn.getValue() < 0);
+        return RubyNumeric.fix2int(recv.funcall("<=>", other)) < 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
     public static RubyBoolean op_le(Ruby ruby, RubyObject recv, RubyObject other) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", other);
-        return RubyBoolean.newBoolean(ruby, fn.getValue() <= 0);
+        return RubyNumeric.fix2int(recv.funcall("<=>", other)) <= 0 ? ruby.getTrue() : ruby.getFalse();
     }
 
-    public static RubyBoolean between_p(Ruby ruby, RubyObject recv, RubyObject arg1, RubyObject arg2) {
-        RubyFixnum fn = (RubyFixnum) recv.funcall("<=>", arg1);
-        if (fn.getValue() < 0) {
+    public static RubyBoolean between_p(Ruby ruby, RubyObject recv, RubyObject first, RubyObject second) {
+        if (RubyNumeric.fix2int(recv.funcall("<=>", first)) < 0) {
             return ruby.getFalse();
-        }
-
-        fn = (RubyFixnum) recv.funcall("<=>", arg2);
-        if (fn.getValue() > 0) {
+        } else if (RubyNumeric.fix2int(recv.funcall("<=>", second)) > 0) {
             return ruby.getFalse();
+        } else {
+            return ruby.getTrue();
         }
-
-        return ruby.getTrue();
     }
 }

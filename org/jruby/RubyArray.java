@@ -589,7 +589,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject at(RubyFixnum pos) {
-        return entry(pos.getValue());
+        return entry(pos.getLongValue());
     }
 
     /** rb_ary_concat
@@ -1020,18 +1020,19 @@ public class RubyArray extends RubyObject {
         RubyArray ary = arrayValue(other);
         int otherLen = ary.getLength();
         int len = getLength();
-        int lesser = Math.min(len, otherLen);
-        RubyFixnum result = RubyFixnum.zero(getRuby());
-        for (int i = 0; i < lesser; i++) {
-            result = (RubyFixnum) entry(i).funcall("<=>", ary.entry(i));
-            if (result.getValue() != 0) {
-                return result;
-            }
-        }
+
         if (len != otherLen) {
             return (len > otherLen) ? RubyFixnum.one(getRuby()) : RubyFixnum.minus_one(getRuby());
         }
-        return result;
+
+        for (int i = 0; i < len; i++) {
+            RubyFixnum result = (RubyFixnum) entry(i).funcall("<=>", ary.entry(i));
+            if (result.getLongValue() != 0) {
+                return result;
+            }
+        }
+
+        return RubyFixnum.zero(getRuby());
     }
 
     /** rb_ary_slice_bang
@@ -1044,7 +1045,7 @@ public class RubyArray extends RubyObject {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
             replace(beg, len, getRuby().getNil());
-        } else if ((args[0] instanceof RubyFixnum) && ((RubyFixnum) args[0]).getValue() < getLength()) {
+        } else if ((args[0] instanceof RubyFixnum) && (RubyNumeric.fix2long(args[0]) < getLength())) {
             replace(RubyNumeric.fix2long(args[0]), 1, getRuby().getNil());
         } else if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), false, true);

@@ -1,10 +1,9 @@
 /*
- * RubyInteger.java - No description
+ * RubyInteger.java - Implementation of the Integer class.
  * Created on 10. September 2001, 17:49
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,13 +26,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
-/**
+/** Implementation of the Integer class.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -61,14 +59,20 @@ public abstract class RubyInteger extends RubyNumeric {
         integerClass.defineMethod("succ", CallbackFactory.getMethod(RubyInteger.class, "succ"));
 
         integerClass.defineMethod("downto", CallbackFactory.getMethod(RubyInteger.class, "downto", RubyNumeric.class));
-        integerClass.defineMethod(
-            "step",
-            CallbackFactory.getMethod(RubyInteger.class, "step", RubyNumeric.class, RubyNumeric.class));
+        integerClass.defineMethod("step", CallbackFactory.getMethod(RubyInteger.class, "step", RubyNumeric.class, RubyNumeric.class));
         integerClass.defineMethod("times", CallbackFactory.getMethod(RubyInteger.class, "times"));
         integerClass.defineMethod("upto", CallbackFactory.getMethod(RubyInteger.class, "upto", RubyNumeric.class));
 
         return integerClass;
     }
+    
+    // conversion
+    protected RubyFloat toFloat() {
+        return RubyFloat.newFloat(ruby, getDoubleValue());
+    }
+    
+    
+    // Integer methods
 
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {

@@ -53,7 +53,7 @@ public class UntilNode extends Node {
                 } catch (RedoException rExcptn) {
                 } catch (NextException nExcptn) {
                     break;
-                } catch (BreakException bExcptn) {
+                } catch (BreakJump bExcptn) {
                     return ruby.getNil();
                 }
             }

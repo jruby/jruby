@@ -1,12 +1,12 @@
 /*
- * BreakNode.java - No description
- * Created on 05. November 2001, 21:45
+ * BreakException.java - No description
+ * Created on 19.01.2002, 18:02:24
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,34 +27,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
-package org.jruby.nodes;
-
-import org.jruby.*;
-import org.jruby.exceptions.*;
-import org.jruby.runtime.*;
+package org.jruby.exceptions;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class BreakNode extends Node {
+public class BreakJump extends JumpException {
 
-    public BreakNode() {
-        super(Constants.NODE_BREAK);
+    /** Creates new BreakException */
+    public BreakJump() {
     }
-
- 	public RubyObject eval(Ruby ruby, RubyObject self) {
-        throw new BreakJump();
-    }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitBreakNode(this);
-	}
-
 }

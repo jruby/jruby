@@ -33,11 +33,13 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.*;
+import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 
 import org.jruby.runtime.*;
 
 import org.jruby.runtime.*;
+
 import com.ibm.bsf.*;
 import com.ibm.bsf.util.*;
 
@@ -95,43 +97,54 @@ public class JRubyEngine extends BSFEngineImpl {
         ruby.setSourceFile(file);
         ruby.setSourceLine(line);
 
-        Object result = ruby.evalScript((String) expr, Object.class);
+        try {
+            Object result = ruby.evalScript((String) expr, Object.class);
 
-        ruby.setSourceFile(oldFile);
-        ruby.setSourceLine(oldLine);
+            ruby.setSourceFile(oldFile);
+            ruby.setSourceLine(oldLine);
 
-        return result;
+            return result;
+        } catch (Exception excptn) {
+            throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
+        }
     }
 
     public void exec(String file, int line, int col, Object expr) throws BSFException {
-        String oldFile = ruby.getSourceFile();
-        int oldLine = ruby.getSourceLine();
+        try {
+            String oldFile = ruby.getSourceFile();
+            int oldLine = ruby.getSourceLine();
 
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
+            ruby.setSourceFile(file);
+            ruby.setSourceLine(line);
 
-        ruby.evalScript((String) expr, Object.class);
+            ruby.evalScript((String) expr, Object.class);
 
-        ruby.setSourceFile(oldFile);
-        ruby.setSourceLine(oldLine);
+            ruby.setSourceFile(oldFile);
+            ruby.setSourceLine(oldLine);
+        } catch (Exception excptn) {
+            throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
+        }
     }
 
     public Object call(Object recv, String method, Object[] args) throws BSFException {
-        RubyObject rubyRecv = JavaUtil.convertJavaToRuby(ruby, recv, recv.getClass());
+        try {
+            RubyObject rubyRecv = JavaUtil.convertJavaToRuby(ruby, recv, recv.getClass());
 
-        RubyObject[] rubyArgs = new RubyObject[args.length];
-        for (int i = args.length; i >= 0; i--) {
-            rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args[i], args[i].getClass());
+            RubyObject[] rubyArgs = new RubyObject[args.length];
+            for (int i = args.length; i >= 0; i--) {
+                rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args[i], args[i].getClass());
+            }
+            RubyObject result = rubyRecv.funcall(method, rubyArgs);
+
+            return JavaUtil.convertRubyToJava(ruby, result, Object.class);
+        } catch (Exception excptn) {
+            throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
-
-        RubyObject result = rubyRecv.funcall(method, rubyArgs);
-
-        return JavaUtil.convertRubyToJava(ruby, result, Object.class);
     }
 
     public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
-
+        
         ruby = Ruby.getDefaultInstance(org.jruby.regexp.GNURegexpAdapter.class);
 
         int size = declaredBeans.size();
@@ -140,7 +153,7 @@ public class JRubyEngine extends BSFEngineImpl {
             BeanAccessor accessor = new BeanAccessor(ruby, bean);
             ruby.defineVirtualVariable(bean.name, accessor, accessor);
         }
-        
+
         // ruby.defineGlobalFunction("declareBean", method);
     }
 
@@ -152,6 +165,11 @@ public class JRubyEngine extends BSFEngineImpl {
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
         ruby.getGlobalEntry(bean.name).undefine();
     }
+
+    public void handleException(BSFException bsfExcptn) {
+        ruby.printException((Exception)bsfExcptn.getTargetException());
+    }
+
 
     private static class BeanAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
         private Ruby ruby;

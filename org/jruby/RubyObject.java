@@ -258,17 +258,22 @@ public class RubyObject {
 
         ruby.defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
     }
-
+    
+    // Some helper functions:
+    
     protected int argCount(RubyObject[] args, int min, int max) {
         int len = args.length;
         if (len < min || (max > -1 && len > max)) {
-            String msg = "Wrong number of arguments for method '" + ruby.getRubyFrame().getLastFunc() + 
-                         "' in class " + getRubyClass().toName() + ". " + args.length +
-                         " is not in Range " + min + ".." + max;
-            throw new RubyArgumentException(getRuby(), msg);
+            throw new RubyArgumentException(getRuby(), "Wrong # of arguments for method. " + args.length +
+                         " is not in Range " + min + ".." + max);
         }
         return len;
     }
+    
+    protected RubyBoolean toBoolean(boolean value) {
+        return value ? ruby.getTrue() : ruby.getFalse();
+    }
+    
 
     /** rb_special_const_p
      *

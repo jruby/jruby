@@ -71,7 +71,7 @@ public class ForNode extends Node {
             }
         } catch (ReturnException rExcptn) {
             return rExcptn.getReturnValue();
-        } catch (BreakException bExcptn) {
+        } catch (BreakJump bExcptn) {
             return ruby.getNil();
         } finally {
             ruby.getIter().pop();

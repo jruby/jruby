@@ -223,11 +223,11 @@ public class RubyRange extends RubyObject {
         boolean excl = getInstanceVar("excl").isTrue();
 
         if ((beg instanceof RubyFixnum) && (obj instanceof RubyFixnum) && (end instanceof RubyFixnum)) {
-            long b = ((RubyFixnum) beg).getValue();
-            long o = ((RubyFixnum) obj).getValue();
+            long b = RubyNumeric.fix2long(beg);
+            long o = RubyNumeric.fix2long(obj);
 
             if (b <= o) {
-                long e = ((RubyFixnum) end).getValue();
+                long e =  RubyNumeric.fix2long(end);
                 if (excl) {
                     if (o < e) {
                         return getRuby().getTrue();
