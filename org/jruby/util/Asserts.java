@@ -22,6 +22,8 @@
  */
 package org.jruby.util;
 
+import org.jruby.runtime.ReflectionCallbackMethod;
+
 /** Debugging util class to terminate the application if the assertion fails.
  *
  * The methods can be turned off in final releases of code by 
@@ -30,13 +32,13 @@ package org.jruby.util;
  * 
  * @author jpetersen
  */
-public class Asserts {
+public final class Asserts {
     private static final boolean ENABLE_ASSERTS = true;
 
     /** If the assertion fails (i.e. the expression is not true), an error 
      * message is logged and the application is terminated.
      */    
-    public void assertExpression(boolean condition) {
+    public static void assertExpression(boolean condition) {
         if (ENABLE_ASSERTS && !condition) {
             throw new AssertionError("assertTrue failed.");
         }
@@ -45,9 +47,23 @@ public class Asserts {
     /** If the assertion fails (i.e. the method is invoked), an error 
      * message is logged and the application is terminated.
      */    
-    public void assertNotReached() {
+    public static void assertNotReached() {
         if (ENABLE_ASSERTS) {
             throw new AssertionError("assertNotReached failed.");
         }
     }
+	/** If the assertion fails (i.e. the method is invoked), an error 
+     * message is logged and the application is terminated.
+     * 
+	 * @param errorMessage An ErrorMessage which is used to create an user
+     * defined ErrorMessage, if the assertin failed.
+	 */
+	public static void assertNotReached(ErrorMessage errorMessage) {
+        if (ENABLE_ASSERTS) {
+            StringBuffer buffer = new StringBuffer(200);
+            buffer.append("assertNotReached failed.\n");
+            errorMessage.generate(buffer);
+            throw new AssertionError(buffer.toString());
+        }
+	}
 }
