@@ -48,6 +48,9 @@ public class RubyKernel {
         ruby.defineGlobalFunction("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
         ruby.defineGlobalFunction("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
         ruby.defineGlobalFunction("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
+		//FIXME load,autoload method needs to be implemented
+        //ruby.defineGlobalFunction("load", CallbackFactory.getSingletonMethod(RubyKernel.class, "load", RubyString.class));
+        //ruby.defineGlobalFunction("autoload", CallbackFactory.getSingletonMethod(RubyKernel.class, "autoload", RubyString.class));
         ruby.defineGlobalFunction("raise", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "raise"));
         ruby.defineGlobalFunction("require", CallbackFactory.getSingletonMethod(RubyKernel.class, "require", RubyString.class));
         ruby.defineGlobalFunction("singleton_method_added", CallbackFactory.getNilMethod());
