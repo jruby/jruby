@@ -43,8 +43,17 @@ public class RubyException extends RubyObject {
     private RubyArray backtrace;
     public RubyObject message;
 
-    public RubyException(Ruby ruby, RubyClass rubyClass) {
+    private RubyException(Ruby ruby, RubyClass rubyClass) {
+        this(ruby, rubyClass, null);
+    }
+
+    private RubyException(Ruby ruby, RubyClass rubyClass, String message) {
         super(ruby, rubyClass);
+        if (message == null) {
+            this.message = ruby.getNil();
+        } else {
+            this.message = RubyString.newString(ruby, message);
+        }
     }
 
     public static RubyClass createExceptionClass(Ruby ruby) {
@@ -65,31 +74,13 @@ public class RubyException extends RubyObject {
         exceptionClass.defineMethod("backtrace", CallbackFactory.getMethod(RubyException.class, "backtrace"));
         exceptionClass.defineMethod(
             "set_backtrace",
-            CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyObject.class));
-
-        // exceptionClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
+            CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyArray.class));
 
         return exceptionClass;
     }
 
-    private RubyArray createBacktrace(RubyObject newBackTrace) {
-        if (newBackTrace instanceof RubyString) {
-            return RubyArray.newArray(ruby, newBackTrace);
-        } else if (newBackTrace instanceof RubyArray) {
-            for (int i = 0; i < ((RubyArray) newBackTrace).getLength(); i++) {
-                if (!(((RubyArray) newBackTrace).entry(i) instanceof RubyString)) {
-                    throw new TypeError(ruby, "backtrace must be Array of String");
-                }
-            }
-            return (RubyArray) newBackTrace;
-        }
-        throw new TypeError(ruby, "backtrace must be Array of String");
-    }
-
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
-        RubyException newException = new RubyException(ruby, excptnClass);
-        newException.message = RubyString.newString(ruby, msg);
-        return newException;
+        return new RubyException(ruby, excptnClass, msg);
     }
 
     // Exception methods
@@ -116,9 +107,9 @@ public class RubyException extends RubyObject {
         return backtrace;
     }
 
-    public RubyArray set_backtrace(RubyObject newBacktrace) {
-        backtrace = createBacktrace(newBacktrace);
-        return backtrace;
+    public RubyArray set_backtrace(RubyArray newBacktrace) {
+        backtrace = newBacktrace;
+        return newBacktrace;
     }
 
     public RubyException exception(RubyObject[] args) {
@@ -138,7 +129,7 @@ public class RubyException extends RubyObject {
     }
 
     public RubyString to_s() {
-        if (message == null || message.isNil()) {
+        if (message.isNil()) {
             return getRubyClass().getClassPath();
         } else {
             message.setTaint(isTaint());
