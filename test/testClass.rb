@@ -45,3 +45,22 @@ end
 
 test_exception(NameError) {CM1::A}
 test_equal(CM2::A, "A")
+
+class GV1
+  def initialize
+    @@a = 1;
+  end
+  def modifyAfterFreeze
+  	freeze
+  	@aa = 2;
+  end
+  def createAfterFreeze
+  	@@b = 2;
+  end 
+end
+
+g = GV1.new
+test_exception(TypeError) { g.modifyAfterFreeze }
+test_no_exception {g = GV1.new}
+g.class.freeze
+test_exception(TypeError) {g.createAfterFreeze}
