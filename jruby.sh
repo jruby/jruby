@@ -106,7 +106,7 @@ fi
 # shift
 #  touch $JRUBY_BASE/logs/jruby.out
 DEBUG=""
-if [ "$1" = "debug" ]; then
+if [ "$1" = "JAVA_DEBUG" ]; then
   DEBUG="-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"
   shift
 fi
