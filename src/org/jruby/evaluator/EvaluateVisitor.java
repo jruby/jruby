@@ -63,7 +63,6 @@ import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.ClassFactory;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
@@ -843,7 +842,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         RubyModule module;
         if (enclosingModule == runtime.getClasses().getObjectClass()) {
-            module = new ClassFactory(runtime).getOrCreateModule(iVisited.getName());
+            module = runtime.getOrCreateModule(iVisited.getName());
         } else {
             module = enclosingModule.defineModuleUnder(iVisited.getName());
         }

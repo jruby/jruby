@@ -39,7 +39,6 @@ import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.ClassFactory;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -270,23 +269,61 @@ public final class Ruby {
      * MRI: rb_define_class / rb_define_class_id
      *
      */
-    public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentClass) {
-        return new ClassFactory(this).defineClass(superClass, parentClass, name);
-    }
     public RubyClass defineClass(String name, RubyClass superClass) {
-        return new ClassFactory(this).defineClass(superClass, getClasses().getObjectClass(), name);
+        return defineClassUnder(name, superClass, getClasses().getObjectClass());
+    }
+    
+    public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentClass) {
+        if (superClass == null) {
+            superClass = getClasses().getObjectClass();
+        }
+        
+        RubyClass newClass = RubyClass.newClass(this, superClass, parentClass, name);
+        
+        newClass.makeMetaClass(superClass.getMetaClass());
+        newClass.inheritedBy(superClass);
+        getClasses().putClass(name, newClass);
+        
+        return newClass;
     }
     
     /** rb_define_module / rb_define_module_id
      *
      */
     public RubyModule defineModule(String name) {
-        return new ClassFactory(this).defineModule(name, getClasses().getObjectClass());
+        return defineModuleUnder(name, getClasses().getObjectClass());
     }
     
     public RubyModule defineModuleUnder(String name, RubyModule parentModule) {
-        return new ClassFactory(this).defineModule(name, parentModule);
+        RubyModule newModule = RubyModule.newModule(this, name, parentModule);
+
+        getClasses().putClass(name, newModule);
+        
+        return newModule;
     }
+    
+    /**
+     * In the current context, get the named module. If it doesn't exist a
+     * new module is created.
+     */
+    public RubyModule getOrCreateModule(String name) {
+        RubyModule module;
+        if (getRubyClass().isConstantDefined(name)) {
+            module = (RubyModule) getRubyClass().getConstant(name);
+            if (getSafeLevel() >= 4) {
+                throw new SecurityError(this, "Extending module prohibited.");
+            }
+        } else {
+            module = defineModule(name);
+            getRubyClass().setConstant(name, module);
+        }
+        if (getWrapper() != null) {
+            module.getSingletonClass().includeModule(getWrapper());
+            module.includeModule(getWrapper());
+        }
+        return module;
+    }
+    
 
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
