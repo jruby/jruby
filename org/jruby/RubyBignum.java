@@ -91,15 +91,14 @@ public class RubyBignum extends RubyInteger {
 		//
 		//rb_define_method(rb_cBignum, "===", rb_big_eq, 1);
 		//    rb_define_method(rb_cBignum, "eql?", rb_big_eq, 1);
-		//  rb_define_method(rb_cBignum, "hash", rb_big_hash, 0);
-		//rb_define_method(rb_cBignum, "to_f", rb_big_to_f, 0);
 		//    rb_define_method(rb_cBignum, "abs", rb_big_abs, 0);
 		//    rb_define_method(rb_cBignum, "size", rb_big_size, 0);
 		//  rb_define_method(rb_cBignum, "zero?", rb_big_zero_p, 0);
 
 		bignumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBignum.class, "to_s"));
-		bignumClass.defineMethod("coerce", CallbackFactory.getMethod(RubyBignum.class, "coerce"));
+		bignumClass.defineMethod("coerce", CallbackFactory.getMethod(RubyBignum.class, "coerce", RubyObject.class));
 		bignumClass.defineMethod("hash", CallbackFactory.getMethod(RubyBignum.class, "hash"));
+		bignumClass.defineMethod("to_f", CallbackFactory.getMethod(RubyBignum.class, "to_f"));
 
 		bignumClass.defineMethod("+", CallbackFactory.getMethod(RubyBignum.class, "op_plus", RubyObject.class));
 		bignumClass.defineMethod("-", CallbackFactory.getMethod(RubyBignum.class, "op_minus", RubyObject.class));
@@ -251,6 +250,10 @@ public class RubyBignum extends RubyInteger {
 		return RubyString.newString(getRuby(), getValue().toString());
 	}
 
+	public RubyFloat to_f() {
+		return RubyFloat.newFloat(getRuby(), getDoubleValue());
+	}
+	
 	public RubyNumeric[] coerce(RubyNumeric iNum)
 	{
 		RubyNumeric other = numericValue(iNum);
