@@ -974,7 +974,7 @@ public final class Ruby {
      * @fixme
      **/
     public INode compile(String content, String file, int line) {
-        // FIXME
+        // FIXME (fix what?)
         RubyParserConfiguration config = new RubyParserConfiguration();
 
         config.setLocalVariables(getScope().getLocalNames());
@@ -985,43 +985,34 @@ public final class Ruby {
 
         if (result.getLocalVariables() != null) {
             getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
-            if (getScope().getLocalNames() != null && getScope().getLocalNames().size() > 0) {
-                if (getScope().getLocalValues() == null) {
-                    getScope().setLocalValues(new ArrayList(Collections.nCopies(getScope().getLocalNames().size(), getNil())));
-                } else {
-                    getScope().getLocalValues().addAll(Collections.nCopies(getScope().getLocalNames().size() - getScope().getLocalValues().size(), getNil()));
-                }
-            }
         }
 
         return result.getAST();
     }
 
     public RubyObject getLastline() {
-        if (getScope().getLocalValues() != null) {
+        if (getScope().hasLocalValues()) {
             return getScope().getValue(0);
         }
         return RubyString.nilString(this);
     }
 
     public void setLastline(RubyObject value) {
-        if (getScope().getLocalValues() == null) {
-            getScope().setLocalValues(new ArrayList(Collections.nCopies(2, getNil())));
+        if (! getScope().hasLocalValues()) {
             getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
         }
         getScope().setValue(0, value);
     }
 
     public RubyObject getBackref() {
-        if (getScope().getLocalValues() != null) {
+        if (getScope().hasLocalValues()) {
             return getScope().getValue(1);
         }
         return getNil();
     }
 
     public void setBackref(RubyObject match) {
-        if (getScope().getLocalValues() == null) {
-            getScope().setLocalValues(new ArrayList(Collections.nCopies(2, getNil())));
+        if (! getScope().hasLocalValues()) {
             getScope().setLocalNames(new ArrayList(Arrays.asList(new String[] { "_", "~" })));
         }
         getScope().setValue(1, match);

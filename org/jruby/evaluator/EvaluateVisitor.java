@@ -746,7 +746,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             int newLen = result.getLocalVariables() != null ? result.getLocalVariables().size() : 0;
             if (newLen > oldLen) {
                 ruby.getScope().setLocalNames(result.getLocalVariables());
-                ruby.getScope().getLocalValues().addAll(Collections.nCopies(newLen - oldLen, ruby.getNil()));
             }
 
             iVisited.setEvaluatedNode(result.getAST());

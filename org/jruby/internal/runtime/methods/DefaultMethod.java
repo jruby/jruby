@@ -52,7 +52,6 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         if (body.getLocalNames() != null) {
-            ruby.getScope().setLocalValues(new ArrayList(Collections.nCopies(body.getLocalNames().size(), ruby.getNil())));
             ruby.getScope().setLocalNames(body.getLocalNames());
         }
 
@@ -82,7 +81,7 @@ public final class DefaultMethod extends AbstractMethod {
                     ruby.getActFrame().setArgs(args);
                 }
 
-                if (ruby.getScope().getLocalValues() != null) {
+                if (ruby.getScope().hasLocalValues()) {
                     if (i > 0) {
                         for (int j = 0; j < i; j++) {
                             ruby.getScope().setValue(j + 2, args[j]);

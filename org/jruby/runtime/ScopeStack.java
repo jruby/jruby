@@ -100,12 +100,12 @@ public class ScopeStack extends AbstractStack {
         current().setLocalNames(localName);
     }
 
-    public List getLocalValues() {
-        return current().getLocalValues();
+    public boolean hasLocalValues() {
+        return getLocalValues() != null;
     }
 
-    public void setLocalValues(List localValue) {
-        current().setLocalValues(localValue);
+    private List getLocalValues() {
+        return current().getLocalValues();
     }
 
     public RubyObject getValue(int count) {

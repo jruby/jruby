@@ -102,7 +102,7 @@ public class Scope implements StackElement {
      * Gets the localNames.
      * @return Returns a NameList
      */
-    public List getLocalNames() {
+    List getLocalNames() {
         return localNames;
     }
 
@@ -113,7 +113,7 @@ public class Scope implements StackElement {
     public void setLocalNames(List localNames) {
         this.localNames = localNames;
         if (localNames != null) {
-            setLocalValues(new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil())));
+            this.localValues = new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil()));
         }
     }
 
@@ -121,16 +121,8 @@ public class Scope implements StackElement {
      * Gets the localValues.
      * @return Returns a ArrayList
      */
-    public List getLocalValues() {
+    List getLocalValues() {
         return localValues;
-    }
-
-    /**
-     * Sets the localValues.
-     * @param localValues The localValues to set
-     */
-    public void setLocalValues(List localValues) {
-        this.localValues = localValues;
     }
 
 	public RubyObject getValue(int count) {

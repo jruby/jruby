@@ -1861,7 +1861,7 @@ public class RubyModule extends RubyObject {
         }
 
         /** Setter for property klass.
-         * @param klass New value of property klass.
+         * @param recvClass New value of property klass.
          */
         public void setRecvClass(RubyModule recvClass) {
             this.recvClass = recvClass;
@@ -1874,9 +1874,6 @@ public class RubyModule extends RubyObject {
             return noex;
         }
 
-        /** Setter for property scope.
-         * @param scope New value of property scope.
-         */
         public void setNoex(int noex) {
             this.noex = noex;
         }
