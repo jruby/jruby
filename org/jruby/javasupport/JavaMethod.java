@@ -31,9 +31,13 @@
 package org.jruby.javasupport;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Iterator;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -70,20 +74,21 @@ public class JavaMethod implements Callback {
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-        Method method = findMatchingMethod(args);
+        Ruby runtime = recv.getRuntime();
 
+        Method method = findMatchingMethod(args);
         if (method == null) {
             if (callSuper) {
-            	return recv.getRuntime().callSuper(args);
+            	return runtime.callSuper(args);
             } else {
-            	throw new ArgumentError(recv.getRuntime(), "wrong argument count or types.");
+            	throw new ArgumentError(runtime, "wrong argument count or types.");
             }
         }
 
         int argsLength = args != null ? args.length : 0;
         Object[] newArgs = new Object[argsLength];
         for (int i = 0; i < argsLength; i++) {
-            newArgs[i] = JavaUtil.convertRubyToJava(recv.getRuntime(), args[i], method.getParameterTypes()[i]);
+            newArgs[i] = JavaUtil.convertRubyToJava(runtime, args[i], method.getParameterTypes()[i]);
         }
 
         try {
@@ -92,15 +97,57 @@ public class JavaMethod implements Callback {
                 receiver = ((RubyJavaObject) recv).getValue();
             }
             Object javaResult = method.invoke(receiver, newArgs);
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), javaResult, method.getReturnType());
+            Class returnType = returnedObjectType(javaResult, method);
+            return JavaUtil.convertJavaToRuby(runtime, javaResult, returnType);
         } catch (InvocationTargetException itException) {
-            convertException(recv.getRuntime(), (Exception)itException.getTargetException());
+            convertException(runtime, (Exception)itException.getTargetException());
             Asserts.notReached();
             return null;
         } catch (IllegalAccessException iaException) {
-            convertException(recv.getRuntime(), iaException);
+            convertException(runtime, iaException);
             Asserts.notReached();
             return null;
+        }
+    }
+
+    private Class returnedObjectType(Object javaResult, Method returningMethod) {
+        Class narrowestClass = javaResult.getClass();
+        Class widestClass = returningMethod.getReturnType();
+
+        if (narrowestClass.isPrimitive()) {
+            return narrowestClass;
+        }
+        if (widestClass.isPrimitive()) {
+            return widestClass;
+        }
+
+        Asserts.assertExpression(widestClass.isAssignableFrom(narrowestClass));
+
+        if (Modifier.isPublic(narrowestClass.getModifiers())) {
+            return narrowestClass;
+        }
+        if (widestClass.isInterface()) {
+            return widestClass;
+        }
+
+        // If there is any interface on the narrowest that isn't on the widest,
+        // then we should use that. The theory is that this should minimize information
+        // loss. (This theory is open to discussion ;-)
+        Iterator narrowestClassInterfaces = Arrays.asList(narrowestClass.getInterfaces()).iterator();
+        List widestClassInterfaces = Arrays.asList(widestClass.getInterfaces());
+        while (narrowestClassInterfaces.hasNext()) {
+            Class iface = (Class) narrowestClassInterfaces.next();
+            if (! widestClassInterfaces.contains(iface)) {
+                return iface;
+            }
+        }
+
+        while (true) {
+            narrowestClass = narrowestClass.getSuperclass();
+            Asserts.assertExpression(narrowestClass != null);
+            if (Modifier.isPublic(narrowestClass.getModifiers())) {
+                return narrowestClass;
+            }
         }
     }
 
