@@ -32,7 +32,6 @@ import org.ablaf.parser.IParser;
 import org.ablaf.lexer.ILexerSource;
 import org.ablaf.lexer.LexerFactory;
 import org.jruby.Ruby;
-import org.jruby.common.RubyErrorHandler;
 
 import java.util.ArrayList;
 import java.util.List;

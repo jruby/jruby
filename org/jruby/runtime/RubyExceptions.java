@@ -31,7 +31,9 @@ public class RubyExceptions implements IErrno {
     private RubyClass systemCallError = null;
     
     private RubyClass localJumpError = null;
-    
+
+    private RubyClass threadError = null;
+
     private Ruby ruby = null;
     private RubyModule errnoModule;
    
@@ -114,6 +116,8 @@ public class RubyExceptions implements IErrno {
         eofError = ruby.defineClass("EOFError", ioError);
         systemCallError = ruby.defineClass("SystemCallError", standardError);
         localJumpError = ruby.defineClass("LocalJumpError", standardError);
+        threadError = ruby.defineClass("ThreadError", standardError);
+
         errnoModule = ruby.defineModule("Errno");
 
         _ENOTEMPTY = setSysErr(ENOTEMPTY, "ENOTEMPTY");   
@@ -341,5 +345,9 @@ public class RubyExceptions implements IErrno {
      */
     public RubyClass getLocalJumpError() {
         return localJumpError;
+    }
+
+    public RubyClass getThreadError() {
+        return threadError;
     }
 }

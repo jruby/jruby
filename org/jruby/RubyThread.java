@@ -22,11 +22,17 @@
  */
 package org.jruby;
 
-import java.util.*;
-
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.exceptions.*;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.Frame;
+import org.jruby.exceptions.NotImplementedError;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.ThreadError;
+
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -173,8 +179,8 @@ public class RubyThread extends RubyObject {
      * @return Description of the Return Value
      */
     protected static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
-        if (!recv.getRuntime().isBlockGiven()) {
-            System.out.println("No block given to thread!");
+        if (! recv.getRuntime().isBlockGiven()) {
+            throw new ThreadError(recv.getRuntime(), "must be called with a block");
         }
         final RubyThread result = new RubyThread(recv.getRuntime(), (RubyClass) recv);
         if (callInit) {
@@ -412,9 +418,7 @@ public class RubyThread extends RubyObject {
      * @param exc Description of the Parameter
      */
     public void raise(RubyException exc) {
-        // TODO: How do we raise the exception from the target thread
-        // (as opposed to the calling thread)?
-        //throw exc;
+        throw new NotImplementedError();
     }
 
     /**
