@@ -51,7 +51,8 @@ public class RubyNil {
         nilClass.defineMethod("|", CallbackFactory.getSingletonMethod(RubyNil.class, "op_or", IRubyObject.class));
         nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", IRubyObject.class));
         nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod(0));
-        
+        nilClass.defineMethod("id", CallbackFactory.getSingletonMethod(RubyNil.class, "id"));
+
         nilClass.getInternalClass().undefMethod("new");
         
         ruby.defineGlobalConstant("NIL", ruby.getNil());
@@ -123,5 +124,9 @@ public class RubyNil {
         } else {
             return recv.getRuntime().getFalse();
         }
+    }
+
+    public static RubyFixnum id(IRubyObject recv) {
+        return RubyFixnum.newFixnum(recv.getRuntime(), 4);
     }
 }

@@ -72,6 +72,7 @@ public class RubyBoolean extends RubyObject {
         falseClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", IRubyObject.class));
         falseClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", IRubyObject.class));
         falseClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", IRubyObject.class));
+        falseClass.defineMethod("id", CallbackFactory.getMethod(RubyBoolean.class, "id"));
 
         falseClass.getInternalClass().undefMethod("new");
 
@@ -89,6 +90,7 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", IRubyObject.class));
         trueClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", IRubyObject.class));
         trueClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", IRubyObject.class));
+        trueClass.defineMethod("id", CallbackFactory.getMethod(RubyBoolean.class, "id"));
 
         trueClass.getInternalClass().undefMethod("new");
 
@@ -161,6 +163,10 @@ public class RubyBoolean extends RubyObject {
         } else {
             return getRuntime().getFalse();
         }
+    }
+
+    public RubyFixnum id() {
+        return RubyFixnum.newFixnum(getRuntime(), (value ? 2 : 0));
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

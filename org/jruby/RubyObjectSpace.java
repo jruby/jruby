@@ -55,11 +55,13 @@ public class RubyObjectSpace {
         } else {
             rubyClass = (RubyModule) args[0];
         }
+        int count = 0;
         Iterator iter = recv.getRuntime().objectSpace.iterator(rubyClass);
         while (iter.hasNext()) {
+            count++;
             recv.getRuntime().yield((IRubyObject) iter.next());
         }
-        return recv.getRuntime().getNil();
+        return RubyFixnum.newFixnum(recv.getRuntime(), count);
     }
 
     public static IRubyObject garbage_collect(IRubyObject recv) {
