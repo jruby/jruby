@@ -112,17 +112,17 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitClassVarAsgnNode(ClassVarAsgnNode)
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        threadContext.getCBase().setClassVar(iVisited.getName(), value);
+        threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
     }
 
     /**
      * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        if (ruby.isVerbose() && threadContext.getCBase().isSingleton()) {
+        if (ruby.isVerbose() && threadContext.getRubyClass().isSingleton()) {
             errorHandler.handleError(IErrors.WARN, "Declaring singleton class variable.");
         }
-        threadContext.getCBase().declareClassVar(iVisited.getName(), value);
+        threadContext.getRubyClass().declareClassVar(iVisited.getName(), value);
     }
 
     /**

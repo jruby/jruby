@@ -54,7 +54,7 @@ public final class DefaultMethod extends AbstractMethod {
         Namespace savedNamespace = null;
 
         savedNamespace = ruby.getNamespace();
-        Namespace ns = new Namespace(module);
+        Namespace ns = new Namespace(module, ruby.getNamespace());
         ruby.setNamespace(ns);
         context.getCurrentFrame().setNamespace(ns);
 
