@@ -271,16 +271,14 @@ public class JavaClass extends RubyObject implements IndexCallable {
     }
 
     public RubyBoolean assignable_from_p(IRubyObject other) {
-        if (other == getRuntime().getClasses().getNilClass()) {
-            return new RubyBoolean(getRuntime(), ! isPrimitive());
-        }
         if (! (other instanceof JavaClass)) {
             throw new TypeError(getRuntime(), "assignable_from requires JavaClass (" + other.getType() + " given)");
         }
 
         Class otherClass = ((JavaClass) other).getValue();
 
-        if (javaClass.isAssignableFrom(otherClass)) {
+        if ((!javaClass.isPrimitive() && otherClass == Void.TYPE) ||
+            javaClass.isAssignableFrom(otherClass)) {
             return getRuntime().getTrue();
         }
         otherClass = JavaUtil.primitiveToWrapper(otherClass);
