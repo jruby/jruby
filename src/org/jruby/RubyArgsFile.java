@@ -106,15 +106,15 @@ public class RubyArgsFile extends RubyObject {
             return getRuntime().getNil();
         }
         
-        RubyString line = (RubyString)currentFile.callMethod("gets", args);
+        IRubyObject line = currentFile.callMethod("gets", args);
         
-        while (line.isNil()) {
+        while (line instanceof RubyNil) {
             currentFile.callMethod("close");
             if (! nextArgsFile()) {
                 currentFile = null;
                 return line;
         	}
-            line = (RubyString) currentFile.callMethod("gets", args);
+            line = currentFile.callMethod("gets", args);
         }
         
         currentLineNumber++;
