@@ -110,6 +110,7 @@ public class RubyClasses {
     private RubyClass hashClass;
     private RubyClass integerClass;
     private RubyClass ioClass;
+    private RubyClass javaInterfaceClass;
     private RubyClass javaObjectClass;
     private RubyClass matchDataClass;
     private RubyClass methodClass;
@@ -244,6 +245,7 @@ public class RubyClasses {
         rangeClass = RbRange.createRangeClass(ruby);
 
         javaObjectClass = RbJavaObject.createJavaObjectClass(ruby);
+        javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
 
         exceptionClass = RbException.createExceptionClass(ruby);
 
@@ -525,6 +527,13 @@ public class RubyClasses {
      */
     public RubyClass getJavaObjectClass() {
         return javaObjectClass;
+    }
+
+    /** Returns the reference to the JavaInterface class.
+     * @return The JavaInterface class.
+     */
+    public RubyClass getJavaInterfaceClass() {
+        return javaInterfaceClass;
     }
 
     /** Returns the reference to the Numeric class.

@@ -395,22 +395,30 @@ public class RubyModule extends RubyObject {
         while (true) {
             while (tmp != null) {
                 if (tmp.getInstanceVariables().get(id) != null) {
-System.out.println("First if");
+// +++ jpetersen
+// System.out.println("First if");
+// --- jpetersen
                     return (RubyObject) tmp.getInstanceVariables().get(id);
                 }
                 if (tmp == getRuby().getClasses().getObjectClass() && getRuby().getTopConstant(id) != null) {
-System.out.println("Second if");
+// +++ jpetersen
+// System.out.println("Second if");
+// --- jpetersen
                     return getRuby().getTopConstant(id);
                 }
                 tmp = tmp.getSuperClass();
             }
             if (!mod_retry && isModule()) {
-System.out.println("First if outside while tmp!= null");
+// +++ jpetersen
+// System.out.println("First if outside while tmp!= null");
+// --- jpetersen
                 mod_retry = true;
                 tmp = getRuby().getClasses().getObjectClass();
                 continue;
             }
-System.out.println("Outside all ifs");
+// +++ jpetersen
+// System.out.println("Outside all ifs");
+// --- jpetersen
             break;
         }
 

@@ -40,6 +40,8 @@ import org.jruby.nodes.*;
  * @author  jpetersen
  */
 public class RubyRuntime {
+    private boolean printBugs = false;
+
     private Ruby ruby;
 
     private InputStream inputStream;
@@ -50,15 +52,22 @@ public class RubyRuntime {
         this.ruby = ruby;
     }
 
+    /** Print a bug report to the Error stream if bug 
+     * reporting is enabled
+     * 
+     */
+    public void printBug(String description) {
+        if (printBugs) {
+            getErrorStream().println("[BUG] " + description);
+        }
+    }
+
     /** This method compiles and interprets a Ruby script.
      *
      *  It can be used if you want to use JRuby as a Macro language.
      *
      */
-    public void loadScript(
-        RubyString scriptName,
-        RubyString source,
-        boolean wrap) {
+    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
         RubyObject self = ruby.getRubyTopSelf();
         CRefNode savedCRef = ruby.getCRef();
 
@@ -211,4 +220,18 @@ public class RubyRuntime {
         this.outputStream = outputStream;
     }
 
+    /**
+     * Gets the printBugs
+     * @return Returns a boolean
+     */
+    public boolean getPrintBugs() {
+        return printBugs;
+    }
+    /**
+     * Sets the printBugs
+     * @param printBugs The printBugs to set
+     */
+    public void setPrintBugs(boolean printBugs) {
+        this.printBugs = printBugs;
+    }
 }

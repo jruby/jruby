@@ -51,11 +51,14 @@ import org.jruby.javasupport.JavaUtil;
 public class Main {
 
     private static Class sRegexpAdapter;
-    
+
+    // print bugs
+    private static boolean printBugs = false;
+
     /**
      * @param args the command line arguments
      */
-    public static void main (String args[])  {
+    public static void main(String args[]) {
         /*
         System.out.println();
         System.out.println("----------------------------------------------------");
@@ -66,6 +69,7 @@ public class Main {
 
         // Benchmark
         long now = -1;
+
         if (args.length == 0) {
             printUsage();
         } else {
@@ -84,6 +88,8 @@ public class Main {
                 } else if (args[i].equals("-b")) {
                     // Benchmark
                     now = System.currentTimeMillis();
+                } else if (args[i].equals("-bugs")) {
+                    printBugs = true;
                 } else if (args[i].equals("-rx")) {
                     if (++i >= lenArg) {
                         System.err.println("invalid argument " + i);
@@ -93,7 +99,7 @@ public class Main {
                         try {
                             sRegexpAdapter = Class.forName(args[i]);
                         } catch (Exception e) {
-                            System.err.println("invalid argument " + i );
+                            System.err.println("invalid argument " + i);
                             System.err.println("failed to load RegexpAdapter: " + args[i]);
                             System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
                         }
@@ -118,7 +124,7 @@ public class Main {
      *           -e 'command'   one line of script. Several -e's allowed. Omit [programfile]
      *           -b             benchmark mode
      *           -rx 'adapter'  used to select a regexp engine
-     */ 
+     */
     protected static void printUsage() {
         System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
         System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
@@ -136,6 +142,7 @@ public class Main {
     protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
         // Initialize Runtime
         Ruby ruby = new Ruby();
+        ruby.getRuntime().setPrintBugs(printBugs);
         if (sRegexpAdapter == null) {
             try {
                 sRegexpAdapter = Class.forName("org.jruby.regexp.GNURegexpAdapter");
@@ -172,7 +179,7 @@ public class Main {
             System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
         } else {
             try {
-                StringBuffer sb = new StringBuffer((int)rubyFile.length());
+                StringBuffer sb = new StringBuffer((int) rubyFile.length());
                 BufferedReader br = new BufferedReader(new FileReader(rubyFile));
                 String line;
                 while ((line = br.readLine()) != null) {

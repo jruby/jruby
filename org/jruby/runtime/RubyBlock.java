@@ -39,10 +39,10 @@ import org.jruby.nodes.*;
  * @version 
  */
 public class RubyBlock {
-    public static final int BLOCK_D_SCOPE  = 1;
-    public static final int BLOCK_DYNAMIC  = 2;
-    public static final int BLOCK_ORPHAN   = 4;
-    
+    public static final int BLOCK_D_SCOPE = 1;
+    public static final int BLOCK_DYNAMIC = 2;
+    public static final int BLOCK_ORPHAN = 4;
+
     public Node var;
     public Node body;
     public RubyObject self;
@@ -56,18 +56,29 @@ public class RubyBlock {
     public RubyVarmap dynamicVars;
     public RubyObject origThread;
     public RubyBlock prev;
-    
+
     private Ruby ruby;
 
     public RubyBlock(Ruby ruby) {
         this.ruby = ruby;
     }
-    
-    protected RubyBlock(Node var, Node body, RubyObject self, RubyFrame frame, RubyScope scope, 
-                        RubyModule klass, int iter, int vmode, int flags, RubyVarmap dynamicVars,
-                        RubyObject origThread, RubyBlock prev, Ruby ruby) {
+
+    protected RubyBlock(
+        Node var,
+        Node body,
+        RubyObject self,
+        RubyFrame frame,
+        RubyScope scope,
+        RubyModule klass,
+        int iter,
+        int vmode,
+        int flags,
+        RubyVarmap dynamicVars,
+        RubyObject origThread,
+        RubyBlock prev,
+        Ruby ruby) {
         this(ruby);
-                            
+
         this.var = var;
         this.body = body;
         this.self = self;
@@ -83,10 +94,9 @@ public class RubyBlock {
     }
 
     public void push(Node v, Node b, RubyObject newSelf) {
-        RubyBlock oldBlock = new RubyBlock(var, body, self, frame, scope, klass,
-                                           iter, vmode, flags, dynamicVars,
-                                           origThread, prev, ruby);
-        
+        RubyBlock oldBlock =
+            new RubyBlock(var, body, self, frame, scope, klass, iter, vmode, flags, dynamicVars, origThread, prev, ruby);
+
         var = v;
         body = b;
         self = newSelf;
@@ -103,11 +113,11 @@ public class RubyBlock {
     }
 
     public void pop() {
-    	if (prev == null) {
-    		System.err.println("[BUG] Try to pop block from empty stack.");
-    		return;
-    	}
-    	
+        if (prev == null) {
+            ruby.getRuntime().printBug("Try to pop block from empty stack.");
+            return;
+        }
+
         this.var = prev.var;
         this.body = prev.body;
         this.self = prev.self;
@@ -121,19 +131,28 @@ public class RubyBlock {
         this.origThread = prev.origThread;
         this.prev = prev.prev;
     }
-    
+
     public RubyBlock getTmp() {
-        return new RubyBlock(var, body, self, frame, scope, klass,
-                                           iter, vmode, flags, dynamicVars,
-                                           origThread, prev, ruby);
+        return new RubyBlock(var, body, self, frame, scope, klass, iter, vmode, flags, dynamicVars, origThread, prev, ruby);
     }
 
     public RubyBlock cloneBlock() {
-    	return new RubyBlock(var, body, self, frame, scope, klass,
-                                           iter, vmode, flags, dynamicVars,
-                                           origThread, prev != null ? prev.cloneBlock() : null, ruby);
+        return new RubyBlock(
+            var,
+            body,
+            self,
+            frame,
+            scope,
+            klass,
+            iter,
+            vmode,
+            flags,
+            dynamicVars,
+            origThread,
+            prev != null ? prev.cloneBlock() : null,
+            ruby);
     }
-    
+
     public void setTmp(RubyBlock block) {
         this.var = block.var;
         this.body = block.body;
