@@ -1403,7 +1403,9 @@ public class RubyArray extends RubyObject {
             IRubyObject obj1 = (IRubyObject) o1;
             IRubyObject obj2 = (IRubyObject) o2;
             if (o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
-                return (int) (RubyNumeric.fix2long(obj1) - RubyNumeric.fix2long(obj2));
+            	long diff = RubyNumeric.fix2long(obj1) - RubyNumeric.fix2long(obj2);
+
+            	return diff < 0 ? -1 : diff > 0 ? 1 : 0;
             }
 
             if (o1 instanceof RubyString && o2 instanceof RubyString) {
