@@ -130,6 +130,10 @@ public class ThreadContext {
     public ArrayStack getIterStack() {
         return iterStack;
     }
+    
+    public ArrayStack getClassStack() {
+    	return classStack;
+    }
 
     public Frame getCurrentFrame() {
         return (Frame) getFrameStack().peek();
