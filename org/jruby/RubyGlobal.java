@@ -155,6 +155,8 @@ public class RubyGlobal {
         ruby.defineGlobalFunction("set_trace_func", CallbackFactory.getSingletonMethod(RubyGlobal.class, "set_trace_func", RubyObject.class));
         ruby.defineGlobalFunction("`", CallbackFactory.getSingletonMethod(RubyGlobal.class, "backquote", RubyString.class));
 
+        ruby.defineGlobalFunction("srand", CallbackFactory.getSingletonMethod(RubyGlobal.class, "srand", RubyObject.class));
+        ruby.defineGlobalFunction("rand", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "rand"));
         ruby.defineGlobalFunction("exit", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "exit"));
     }
 
@@ -579,6 +581,32 @@ public class RubyGlobal {
             return RubyString.newString(ruby, "");
         }
     }
+
+    public static RubyInteger srand(Ruby ruby, RubyObject recv, RubyObject arg) {
+        long oldRandomSeed = ruby.randomSeed;
+        RubyInteger integerSeed = (RubyInteger) arg.convertToType("Integer", "to_int", true);
+        ruby.randomSeed = integerSeed.getLongValue();
+        ruby.random.setSeed(ruby.randomSeed);
+        return RubyFixnum.newFixnum(ruby, oldRandomSeed);
+    }
+
+    public static RubyNumeric rand(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length == 0) {
+            double result = ruby.random.nextDouble();
+            return RubyFloat.newFloat(ruby, result);
+        } else if (args.length == 1) {
+            RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
+            long ceil = integerCeil.getLongValue();
+            if (ceil > Integer.MAX_VALUE) {
+                throw new NotImplementedError("Random values larger than Integer.MAX_VALUE not supported");
+            }
+            return RubyFixnum.newFixnum(ruby, ruby.random.nextInt((int) ceil));
+            
+        } else {
+            throw new ArgumentError(ruby, "wrong # of arguments(" + args.length + " for 1)");
+        }
+    }
+
 
     // Accessor methods.
 

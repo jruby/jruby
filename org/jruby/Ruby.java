@@ -79,6 +79,10 @@ public final class Ruby {
 
     public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
 
+    public long randomSeed = 0;
+    public Random random = new Random();
+
+
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)
     		1 - no dangerous operation by tainted value

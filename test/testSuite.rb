@@ -50,6 +50,7 @@ test_load('test/testBackquote.rb')
 test_load('test/testHash.rb')
 test_load('test/testSymbol.rb')
 test_load('test/testPackUnpack.rb')
+test_load('test/testRandom.rb')
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
