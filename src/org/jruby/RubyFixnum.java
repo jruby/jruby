@@ -33,7 +33,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.IndexedCallback;
+import org.jruby.internal.runtime.builtin.definitions.FixnumDefinition;
 
 /** Implementation of the Fixnum class.
  *
@@ -54,121 +54,68 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         this.value = value;
     }
 
-    private static final int M_TO_F = 1;
-    private static final int M_TO_S = 2;
-    private static final int M_OP_LSHIFT = 3;
-    private static final int M_OP_RSHIFT = 4;
-    private static final int M_OP_PLUS = 5;
-    private static final int M_OP_MINUS = 6;
-    private static final int M_OP_MUL = 7;
-    private static final int M_OP_DIV = 8;
-    private static final int M_OP_MOD = 9;
-    private static final int M_OP_POW = 10;
-    private static final int M_EQUAL = 11;
-    private static final int M_OP_CMP = 12;
-    private static final int M_OP_GT = 13;
-    private static final int M_OP_GE = 14;
-    private static final int M_OP_LT = 15;
-    private static final int M_OP_LE = 16;
-    private static final int M_OP_AND = 17;
-//     private static final int M_OP_OR = 18;
-//     private static final int M_OP_XOR = 19;
-    private static final int M_SIZE = 20;
-    private static final int M_HASH = 100;
-    private static final int M_ID2NAME = 101;
-    private static final int M_INVERT = 102;
-    private static final int M_ID = 103;
+    public static RubyClass createFixnumClass(Ruby runtime) {
+        RubyClass fixnumClass = new FixnumDefinition(runtime).getType();
 
-    public static RubyClass createFixnumClass(Ruby ruby) {
-        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
-        fixnumClass.includeModule(ruby.getClasses().getPrecisionModule());
+        fixnumClass.includeModule(runtime.getClasses().getPrecisionModule());
 
-        fixnumClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyFixnum.class, "induced_from", IRubyObject.class));
-
-        fixnumClass.defineMethod("to_f", IndexedCallback.create(M_TO_F, 0));
-        fixnumClass.defineMethod("to_s", IndexedCallback.create(M_TO_S, 0));
-        fixnumClass.defineMethod("to_str", IndexedCallback.create(M_TO_S, 0));
-        fixnumClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
-        fixnumClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
-
-        fixnumClass.defineMethod("<<", IndexedCallback.create(M_OP_LSHIFT, 1));
-        fixnumClass.defineMethod(">>", IndexedCallback.create(M_OP_RSHIFT, 1));
-
-        fixnumClass.defineMethod("+", IndexedCallback.create(M_OP_PLUS, 1));
-        fixnumClass.defineMethod("-", IndexedCallback.create(M_OP_MINUS, 1));
-
-        fixnumClass.defineMethod("*", IndexedCallback.create(M_OP_MUL, 1));
-        fixnumClass.defineMethod("/", IndexedCallback.create(M_OP_DIV, 1));
-        fixnumClass.defineMethod("%", IndexedCallback.create(M_OP_MOD, 1));
-        fixnumClass.defineMethod("**", IndexedCallback.create(M_OP_POW, 1));
-
-        fixnumClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
-        fixnumClass.defineMethod("eql?", IndexedCallback.create(M_EQUAL, 1));
-        fixnumClass.defineMethod("equal?", IndexedCallback.create(M_EQUAL, 1));
-        fixnumClass.defineMethod("<=>", IndexedCallback.create(M_OP_CMP, 1));
-        fixnumClass.defineMethod(">", IndexedCallback.create(M_OP_GT, 1));
-        fixnumClass.defineMethod(">=", IndexedCallback.create(M_OP_GE, 1));
-        fixnumClass.defineMethod("<", IndexedCallback.create(M_OP_LT, 1));
-        fixnumClass.defineMethod("<=", IndexedCallback.create(M_OP_LE, 1));
-        fixnumClass.defineMethod("&", IndexedCallback.create(M_OP_AND, 1));
         fixnumClass.defineMethod("|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
         fixnumClass.defineMethod("^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
-        fixnumClass.defineMethod("size", IndexedCallback.create(M_SIZE, 0));
         fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
-        fixnumClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
-        fixnumClass.defineMethod("id2name", IndexedCallback.create(M_ID2NAME, 0));
-        fixnumClass.defineMethod("~", IndexedCallback.create(M_INVERT, 0));
-        fixnumClass.defineMethod("id", IndexedCallback.create(M_ID, 0));
 
         return fixnumClass;
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-        case M_TO_F:
+        case FixnumDefinition.TO_F:
             return to_f();
-        case M_TO_S:
+        case FixnumDefinition.TO_S:
             return to_s();
-        case M_OP_LSHIFT:
+        case FixnumDefinition.OP_LSHIFT:
             return op_lshift(args[0]);
-        case M_OP_RSHIFT:
+        case FixnumDefinition.OP_RSHIFT:
             return op_rshift(args[0]);
-        case M_OP_PLUS:
+        case FixnumDefinition.OP_PLUS:
             return op_plus(args[0]);
-        case M_OP_MINUS:
+        case FixnumDefinition.OP_MINUS:
             return op_minus(args[0]);
-        case M_OP_MUL:
+        case FixnumDefinition.OP_MUL:
             return op_mul(args[0]);
-        case M_OP_DIV:
+        case FixnumDefinition.OP_DIV:
             return op_div(args[0]);
-        case M_OP_MOD:
+        case FixnumDefinition.OP_MOD:
             return op_mod(args[0]);
-        case M_OP_POW:
+        case FixnumDefinition.OP_POW:
             return op_pow(args[0]);
-        case M_EQUAL:
+        case FixnumDefinition.EQUAL:
             return equal(args[0]);
-        case M_OP_CMP:
+        case FixnumDefinition.OP_CMP:
             return op_cmp(args[0]);
-        case M_OP_GT:
+        case FixnumDefinition.OP_GT:
             return op_gt(args[0]);
-        case M_OP_GE:
+        case FixnumDefinition.OP_GE:
             return op_ge(args[0]);
-        case M_OP_LT:
+        case FixnumDefinition.OP_LT:
             return op_lt(args[0]);
-        case M_OP_LE:
+        case FixnumDefinition.OP_LE:
             return op_le(args[0]);
-        case M_OP_AND:
+        case FixnumDefinition.OP_AND:
             return op_and(args[0]);
-        case M_SIZE:
+        case FixnumDefinition.SIZE:
             return size();
-        case M_HASH:
+        case FixnumDefinition.HASH:
             return hash();
-        case M_ID2NAME:
+        case FixnumDefinition.ID2NAME:
             return id2name();
-        case M_INVERT:
+        case FixnumDefinition.INVERT:
             return invert();
-        case M_ID:
+        case FixnumDefinition.ID:
             return id();
+        case FixnumDefinition.TAINT:
+            return taint();
+        case FixnumDefinition.FREEZE:
+            return freeze();
         }
         return super.callIndexed(index, args);
     }
@@ -432,6 +379,14 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
 
     public RubyFixnum id() {
         return newFixnum(value * 2 + 1);
+    }
+
+    public IRubyObject taint() {
+        return this;
+    }
+
+    public IRubyObject freeze() {
+        return this;
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
