@@ -101,7 +101,7 @@ class Module
       result
     end
 
-    def proxy_class.create_methods(java_class)
+    def proxy_class.create_instance_methods(java_class)
       public_methods =
         java_class.java_instance_methods.select {|m| m.public? }
       grouped_methods = public_methods.group_by {|m| m.name }
@@ -130,8 +130,21 @@ class Module
         end
       }
     end
-    proxy_class.create_methods(java_class)
+    proxy_class.create_instance_methods(java_class)
 
+    public_methods =
+      java_class.java_class_methods.select {|m| m.public? }
+    grouped_methods = public_methods.group_by {|m| m.name }
+    proxy_class.class_eval("@class_methods = grouped_methods")
+    # FIXME: error handling, arity awareness, ...
+    grouped_methods.each {|name, methods|
+      proxy_class.class_eval("def self." + name + "(*args);" +
+                             "args = JavaProxy.convert_arguments(args);" +
+                             "methods = @class_methods['" + name + "'];" +
+                             "method = methods.first;" +
+                             "method.invoke(*args);" +
+                             "end")
+    }
     return proxy_class
   end
 end

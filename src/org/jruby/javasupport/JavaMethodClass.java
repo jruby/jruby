@@ -59,7 +59,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         javaMethodClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
         javaMethodClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
         javaMethodClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
-        javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE, 1));
+        javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE));
         javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
         javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
         javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));

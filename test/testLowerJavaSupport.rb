@@ -46,6 +46,7 @@ if defined? Java
 #    inner_class = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeImplementation")
 #    test_equal("org.jruby.test.TestHelper$SomeImplementation", inner_class.name)
 #  end
+
   string_class = Java::JavaClass.for_name("java.lang.String")
   test_equal("java.lang.String", string_class.to_s)
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
