@@ -59,7 +59,6 @@ public final class EvaluateVisitor implements NodeVisitor {
     private RubyObject self;
     private RubyObject result;
 
-    private INode _curNode;
     private ISourcePosition _curPos;
 
     public EvaluateVisitor(Ruby ruby, RubyObject self) {
@@ -67,20 +66,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         this.self = self;
 
         builtins = new Builtins(ruby);
-    }
-
-    /**
-     * helper method.
-     * used to record the current node and position.
-     * this method will be removed (and the associated fields)
-     * once the global current position is kept up to date in 
-     * the ruby interp
-     **/
-    private void setPosition(INode inode) {
-        _curNode = inode;
-        ISourcePosition lPos = _curNode.getPosition();
-        if (lPos != null)
-            _curPos = lPos;
     }
 
     /**
@@ -101,6 +86,10 @@ public final class EvaluateVisitor implements NodeVisitor {
         result = ruby.getNil();
         try {
             if (node != null) {
+                ISourcePosition position = node.getPosition();
+                if (position != null) {
+                    _curPos = position;
+                }
                 node.accept(this);
             }
 
@@ -109,7 +98,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } catch (RubyBugException lException) {
             throw lException;
         } catch (RuntimeException e) {
-            System.err.println("native exception thrown when evaluating Node " + _curNode + " at position: " + _curPos);
+            System.err.println("native exception thrown when evaluating Node " + node + " at position: " + _curPos);
             //	
             e.printStackTrace();
             RubyBugException lBug = new RubyBugException(e.getClass().getName() + ": " + e.getMessage());
@@ -123,7 +112,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitAliasNode(AliasNode)
      */
     public void visitAliasNode(AliasNode iVisited) {
-        setPosition(iVisited);
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no class to make alias");
         }
@@ -136,7 +124,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitAndNode(AndNode)
      */
     public void visitAndNode(AndNode iVisited) {
-        setPosition(iVisited);
         if (eval(iVisited.getFirstNode()).isTrue()) {
             eval(iVisited.getSecondNode());
         }
@@ -146,14 +133,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
     public void visitArgsNode(ArgsNode iVisited) {
-        setPosition(iVisited);
     }
 
     /**
      * @see NodeVisitor#visitArrayNode(ArrayNode)
      */
     public void visitArrayNode(ArrayNode iVisited) {
-        setPosition(iVisited);
         ArrayList list = new ArrayList();
 
         Iterator iterator = iVisited.iterator();
@@ -173,7 +158,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitAttrSetNode(AttrSetNode)
      */
     public void visitAttrSetNode(AttrSetNode iVisited) {
-        setPosition(iVisited);
         if (ruby.getActFrame().getArgs().length != 1) {
             throw new ArgumentError(ruby, "wrong # of arguments(" + ruby.getActFrame().getArgs().length + "for 1)");
         }
@@ -185,7 +169,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBackRefNode(BackRefNode)
      */
     public void visitBackRefNode(BackRefNode iVisited) {
-        setPosition(iVisited);
         switch (iVisited.getType()) {
             case '&' :
                 result = RubyRegexp.last_match(ruby.getBackref());
@@ -206,7 +189,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBeginNode(BeginNode)
      */
     public void visitBeginNode(BeginNode iVisited) {
-        setPosition(iVisited);
         eval(iVisited.getBodyNode());
     }
 
@@ -214,7 +196,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockArgNode(BlockArgNode)
      */
     public void visitBlockArgNode(BlockArgNode iVisited) {
-        setPosition(iVisited);
         /*if (ruby.getScope().getLocalValues() == null) {
           throw new RuntimeException("BUG: unexpected block argument");
           } else*/
@@ -235,7 +216,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockNode(BlockNode)
      */
     public void visitBlockNode(BlockNode iVisited) {
-        setPosition(iVisited);
         Iterator iter = iVisited.iterator();
         while (iter.hasNext()) {
             eval((INode) iter.next());
@@ -246,7 +226,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockPassNode(BlockPassNode)
      */
     public void visitBlockPassNode(BlockPassNode iVisited) {
-        setPosition(iVisited);
         RubyObject block = eval(iVisited.getBodyNode());
 
         if (block.isNil()) {
@@ -276,7 +255,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBreakNode(BreakNode)
      */
     public void visitBreakNode(BreakNode iVisited) {
-        setPosition(iVisited);
         throw new BreakJump();
     }
 
@@ -284,7 +262,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCDeclNode(CDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
-        setPosition(iVisited);
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no class/module to define constant");
         }
@@ -296,7 +273,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCVAsgnNode(CVAsgnNode)
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
-        setPosition(iVisited);
         eval(iVisited.getValueNode());
         ruby.getCBase().setClassVar(iVisited.getName(), result);
     }
@@ -305,7 +281,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCVDeclNode(CVDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        setPosition(iVisited);
         if (ruby.getCBase() == null) {
             throw new TypeError(ruby, "no class/module to define class variable");
         }
@@ -322,7 +297,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCVarNode(CVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        setPosition(iVisited);
         if (ruby.getCBase() == null) {
             result = self.getRubyClass().getClassVar(iVisited.getName());
         } else if (!ruby.getCBase().isSingleton()) {
@@ -336,7 +310,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCallNode(CallNode)
      */
     public void visitCallNode(CallNode iVisited) {
-        setPosition(iVisited);
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
 
         RubyObject receiver = eval(iVisited.getReceiverNode());
@@ -351,7 +324,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCaseNode(CaseNode)
      */
     public void visitCaseNode(CaseNode iVisited) {
-        setPosition(iVisited);
         if (iVisited.getCaseNode() != null) {
             RubyObject expression = eval(iVisited.getCaseNode());
 
@@ -414,7 +386,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
     public void visitClassNode(ClassNode iVisited) {
-        setPosition(iVisited);
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no outer class/module");
         }
@@ -487,7 +458,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon2Node(Colon2Node)
      */
     public void visitColon2Node(Colon2Node iVisited) {
-        setPosition(iVisited);
         eval(iVisited.getLeftNode());
         if (result instanceof RubyModule) {
             result = ((RubyModule) result).getConstant(iVisited.getName());
@@ -500,7 +470,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon3Node(Colon3Node)
      */
     public void visitColon3Node(Colon3Node iVisited) {
-        setPosition(iVisited);
         result = ruby.getClasses().getObjectClass().getConstant(iVisited.getName());
     }
 
@@ -508,7 +477,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        setPosition(iVisited);
         result = ruby.getActFrame().getNamespace().getConstant(self, iVisited.getName());
     }
 
@@ -516,7 +484,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        setPosition(iVisited);
         eval(iVisited.getValueNode());
         RubyVarmap.assignCurrent(ruby, iVisited.getName(), result);
     }
@@ -525,7 +492,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {
-        setPosition(iVisited);
         eval(iVisited.getValueNode());
         RubyVarmap.assign(ruby, iVisited.getName(), result);
     }
@@ -534,7 +500,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDRegxNode(DRegxNode)
      */
     public void visitDRegxNode(DRegexpNode iVisited) {
-        setPosition(iVisited);
         StringBuffer sb = new StringBuffer();
 
         Iterator iterator = iVisited.iterator();
@@ -550,7 +515,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDStrNode(DStrNode)
      */
     public void visitDStrNode(DStrNode iVisited) {
-        setPosition(iVisited);
         StringBuffer sb = new StringBuffer();
 
         Iterator iterator = iVisited.iterator();
@@ -566,7 +530,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDVarNode(DVarNode)
      */
     public void visitDVarNode(DVarNode iVisited) {
-        setPosition(iVisited);
         result = ruby.getDynamicVars().getRef(ruby, iVisited.getName());
     }
 
@@ -574,7 +537,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDXStrNode(DXStrNode)
      */
     public void visitDXStrNode(DXStrNode iVisited) {
-        setPosition(iVisited);
         StringBuffer sb = new StringBuffer();
 
         Iterator iterator = iVisited.iterator();
@@ -590,7 +552,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDefinedNode(DefinedNode)
      */
     public void visitDefinedNode(DefinedNode iVisited) {
-        setPosition(iVisited);
         String def = new DefinedVisitor(ruby, self).getDefinition(iVisited.getExpressionNode());
         if (def != null) {
             result = builtins.toString(def);
@@ -602,7 +563,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @fixme Create new method store class.
      */
     public void visitDefnNode(DefnNode iVisited) {
-        setPosition(iVisited);
         RubyModule rubyClass = ruby.getRubyClass();
         if (rubyClass == null) {
             throw new TypeError(ruby, "No class to add method.");
@@ -668,7 +628,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @fixme see above in visitDefnNode
      */
     public void visitDefsNode(DefsNode iVisited) {
-        setPosition(iVisited);
         RubyObject receiver = eval(iVisited.getReceiverNode());
 
         if (ruby.getSafeLevel() >= 4 && !receiver.isTaint()) {
@@ -707,7 +666,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitDotNode(DotNode)
      */
     public void visitDotNode(DotNode iVisited) {
-        setPosition(iVisited);
         result = RubyRange.newRange(ruby, eval(iVisited.getBeginNode()), eval(iVisited.getEndNode()), iVisited.isExclusive());
     }
 
@@ -715,7 +673,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitEnsureNode(EnsureNode)
      */
     public void visitEnsureNode(EnsureNode iVisited) {
-        setPosition(iVisited);
         try {
             result = eval(iVisited.getBodyNode());
         } finally {
@@ -733,7 +690,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @fixme Move the variable stuff to a Runtime method
      */
     public void visitEvStrNode(EvStrNode iVisited) {
-        setPosition(iVisited);
         if (iVisited.getEvaluatedNode() == null) {
             // FIXME Move the variable stuff to a Runtime method
 
@@ -761,7 +717,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
     public void visitFCallNode(FCallNode iVisited) {
-        setPosition(iVisited);
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
         RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
@@ -773,7 +728,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFalseNode(FalseNode)
      */
     public void visitFalseNode(FalseNode iVisited) {
-        setPosition(iVisited);
         result = ruby.getFalse();
     }
 
@@ -781,7 +735,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFlipNode(FlipNode)
      */
     public void visitFlipNode(FlipNode iVisited) {
-        setPosition(iVisited);
         if (iVisited.isExclusive()) {
             if (ruby.getScope().getValue(iVisited.getCount()).isFalse()) {
                 //Benoit: I don't understand why the result is inversed
@@ -815,8 +768,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitForNode(ForNode)
      */
     public void visitForNode(ForNode iVisited) {
-        setPosition(iVisited);
-
         ruby.getBlock().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
         ruby.getIterStack().push(Iter.ITER_PRE);
 
@@ -854,8 +805,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitGAsgnNode(GlobalAsgnNode)
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        setPosition(iVisited);
-
         eval(iVisited.getValueNode());
         ruby.setGlobalVar(iVisited.getName(), result);
     }
@@ -864,8 +813,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitGVarNode(GVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        setPosition(iVisited);
-
         result = ruby.getGlobalVar(iVisited.getName());
     }
 
@@ -873,8 +820,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitHashNode(HashNode)
      */
     public void visitHashNode(HashNode iVisited) {
-        setPosition(iVisited);
-
         RubyHash hash = RubyHash.newHash(ruby);
 
         if (iVisited.getListNode() != null) {
@@ -897,8 +842,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIAsgnNode(InstVarAsgnNode)
      */
     public void visitInstAsgnNode(InstAsgnNode iVisited) {
-        setPosition(iVisited);
-
         eval(iVisited.getValueNode());
         self.setInstanceVar(iVisited.getName(), result);
     }
@@ -907,8 +850,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIVarNode(IVarNode)
      */
     public void visitInstVarNode(InstVarNode iVisited) {
-        setPosition(iVisited);
-
         result = self.getInstanceVar(iVisited.getName());
     }
 
@@ -916,8 +857,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIfNode(IfNode)
      */
     public void visitIfNode(IfNode iVisited) {
-        setPosition(iVisited);
-
         if (eval(iVisited.getCondition()).isTrue()) {
             eval(iVisited.getThenBody());
         } else {
@@ -929,8 +868,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIterNode(IterNode)
      */
     public void visitIterNode(IterNode iVisited) {
-        setPosition(iVisited);
-
         ruby.getBlock().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
         ruby.getIterStack().push(Iter.ITER_PRE);
         try {
@@ -955,8 +892,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitLAsgnNode(LAsgnNode)
      */
     public void visitLocalAsgnNode(LocalAsgnNode iVisited) {
-        setPosition(iVisited);
-
         eval(iVisited.getValueNode());
         ruby.getScope().setValue(iVisited.getCount(), result);
     }
@@ -965,8 +900,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitLVarNode(LocalVarNode)
      */
     public void visitLocalVarNode(LocalVarNode iVisited) {
-        setPosition(iVisited);
-
         result = ruby.getScope().getValue(iVisited.getCount());
     }
 
@@ -974,8 +907,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitMAsgnNode(MultipleAsgnNode)
      */
     public void visitMultipleAsgnNode(MultipleAsgnNode iVisited) {
-        setPosition(iVisited);
-
         result = new AssignmentVisitor(ruby, self).assign(iVisited, eval(iVisited.getValueNode()), false);
     }
 
@@ -983,8 +914,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitMatch2Node(Match2Node)
      */
     public void visitMatch2Node(Match2Node iVisited) {
-        setPosition(iVisited);
-
         result = ((RubyRegexp) eval(iVisited.getReceiverNode())).match(eval(iVisited.getValueNode()));
     }
 
@@ -992,8 +921,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitMatch3Node(Match3Node)
      */
     public void visitMatch3Node(Match3Node iVisited) {
-        setPosition(iVisited);
-
         RubyObject receiver = eval(iVisited.getReceiverNode());
         RubyObject value = eval(iVisited.getValueNode());
         if (value instanceof RubyString) {
@@ -1007,8 +934,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitMatchNode(MatchNode)
      */
     public void visitMatchNode(MatchNode iVisited) {
-        setPosition(iVisited);
-
         result = ((RubyRegexp) eval(iVisited.getRegexpNode())).match2();
     }
 
@@ -1016,8 +941,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitModuleNode(ModuleNode)
      */
     public void visitModuleNode(ModuleNode iVisited) {
-        setPosition(iVisited);
-
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no outer class/module");
         }
@@ -1057,8 +980,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNewlineNode(NewlineNode)
      */
     public void visitNewlineNode(NewlineNode iVisited) {
-        setPosition(iVisited);
-
         if (iVisited.getPosition() != null) {
             ruby.setSourceFile(iVisited.getPosition().getFile());
             ruby.setSourceLine(iVisited.getPosition().getLine());
@@ -1081,8 +1002,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNextNode(NextNode)
      */
     public void visitNextNode(NextNode iVisited) {
-        setPosition(iVisited);
-
         throw new NextJump();
     }
 
@@ -1090,16 +1009,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNilNode(NilNode)
      */
     public void visitNilNode(NilNode iVisited) {
-        setPosition(iVisited);
-
     }
 
     /**
      * @see NodeVisitor#visitNotNode(NotNode)
      */
     public void visitNotNode(NotNode iVisited) {
-        setPosition(iVisited);
-
         result = eval(iVisited.getConditionNode()).isTrue() ? ruby.getFalse() : ruby.getTrue();
     }
 
@@ -1107,8 +1022,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNthRefNode(NthRefNode)
      */
     public void visitNthRefNode(NthRefNode iVisited) {
-        setPosition(iVisited);
-
         result = RubyRegexp.nth_match(iVisited.getMatchNumber(), ruby.getBackref());
     }
 
@@ -1116,8 +1029,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOpAsgn1Node(OpAsgn1Node)
      */
     public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
-        setPosition(iVisited);
-
         RubyObject receiver = eval(iVisited.getReceiverNode());
 
         RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
@@ -1152,8 +1063,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOpAsgn2Node(OpAsgn2Node)
      */
     public void visitOpAsgnNode(OpAsgnNode iVisited) {
-        setPosition(iVisited);
-
         RubyObject receiver = eval(iVisited.getReceiverNode());
         RubyObject value = receiver.funcall(iVisited.getVariableName(), (RubyObject[]) null);
 
@@ -1184,8 +1093,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOpAsgnAndNode(OpAsgnAndNode)
      */
     public void visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
-        setPosition(iVisited);
-
         if (eval(iVisited.getFirstNode()).isTrue()) {
             eval(iVisited.getSecondNode());
         }
@@ -1195,8 +1102,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOpAsgnOrNode(OpAsgnOrNode)
      */
     public void visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
-        setPosition(iVisited);
-
         if (eval(iVisited.getFirstNode()).isFalse()) {
             eval(iVisited.getSecondNode());
         }
@@ -1206,8 +1111,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
     public void visitOptNNode(OptNNode iVisited) {
-        setPosition(iVisited);
-
         while (RubyKernel.gets(ruby, ruby.getRubyTopSelf(), new RubyObject[0]).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
@@ -1230,8 +1133,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOrNode(OrNode)
      */
     public void visitOrNode(OrNode iVisited) {
-        setPosition(iVisited);
-
         if (eval(iVisited.getFirstNode()).isFalse()) {
             eval(iVisited.getSecondNode());
         }
@@ -1241,16 +1142,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitPostExeNode(PostExeNode)
      */
     public void visitPostExeNode(PostExeNode iVisited) {
-        setPosition(iVisited);
-
     }
 
     /**
      * @see NodeVisitor#visitRedoNode(RedoNode)
      */
     public void visitRedoNode(RedoNode iVisited) {
-        setPosition(iVisited);
-
         throw new RedoJump();
     }
 
@@ -1258,8 +1155,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRescueBodyNode(RescueBodyNode)
      */
     public void visitRescueBodyNode(RescueBodyNode iVisited) {
-        setPosition(iVisited);
-
         eval(iVisited.getBodyNode());
     }
 
@@ -1267,8 +1162,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRescueNode(RescueNode)
      */
     public void visitRescueNode(RescueNode iVisited) {
-        setPosition(iVisited);
-
         RescuedBlock : while (true) {
             try {
                 // Execute rescue block
@@ -1310,8 +1203,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRestArgsNode(RestArgsNode)
      */
     public void visitRestArgsNode(RestArgsNode iVisited) {
-        setPosition(iVisited);
-
         result = builtins.toArray(eval(iVisited.getArgumentNode()));
     }
 
@@ -1319,8 +1210,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRetryNode(RetryNode)
      */
     public void visitRetryNode(RetryNode iVisited) {
-        setPosition(iVisited);
-
         throw new RetryException();
     }
 
@@ -1328,8 +1217,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitReturnNode(ReturnNode)
      */
     public void visitReturnNode(ReturnNode iVisited) {
-        setPosition(iVisited);
-
         throw new ReturnException(eval(iVisited.getValueNode()));
     }
 
@@ -1337,8 +1224,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSClassNode(SClassNode)
      */
     public void visitSClassNode(SClassNode iVisited) {
-        setPosition(iVisited);
-
         RubyObject receiver = eval(iVisited.getReceiverNode());
 
         RubyClass singletonClass = null;
@@ -1373,8 +1258,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitScopeNode(ScopeNode)
      */
     public void visitScopeNode(ScopeNode iVisited) {
-        setPosition(iVisited);
-
         ruby.getActFrame().tmpPush();
         ruby.getScope().push(iVisited.getLocalNames());
 
@@ -1401,8 +1284,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSelfNode(SelfNode)
      */
     public void visitSelfNode(SelfNode iVisited) {
-        setPosition(iVisited);
-
         result = self;
     }
 
@@ -1410,8 +1291,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitStrNode(StrNode)
      */
     public void visitStrNode(StrNode iVisited) {
-        setPosition(iVisited);
-
         result = builtins.toString(iVisited.getValue());
     }
 
@@ -1419,8 +1298,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
-        setPosition(iVisited);
-
         if (ruby.getActFrame().getLastClass() == null) {
             throw new NameError(ruby, "Superclass method '" + ruby.getActFrame().getLastFunc() + "' disabled.");
         }
@@ -1441,8 +1318,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitTrueNode(TrueNode)
      */
     public void visitTrueNode(TrueNode iVisited) {
-        setPosition(iVisited);
-
         result = ruby.getTrue();
     }
 
@@ -1450,8 +1325,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitUndefNode(UndefNode)
      */
     public void visitUndefNode(UndefNode iVisited) {
-        setPosition(iVisited);
-
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "No class to undef method '" + iVisited.getName() + "'.");
         }
@@ -1463,8 +1336,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitUntilNode(UntilNode)
      */
     public void visitUntilNode(UntilNode iVisited) {
-        setPosition(iVisited);
-
         while (eval(iVisited.getConditionNode()).isFalse()) {
             while (true) { // Used for the 'redo' command
                 try {
@@ -1487,8 +1358,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitVAliasNode(VAliasNode)
      */
     public void visitVAliasNode(VAliasNode iVisited) {
-        setPosition(iVisited);
-
         ruby.aliasGlobalVar(iVisited.getOldName(), iVisited.getNewName());
     }
 
@@ -1496,8 +1365,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
-        setPosition(iVisited);
-
         result = self.getRubyClass().call(self, iVisited.getMethodName(), null, 2);
     }
 
@@ -1505,8 +1372,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitWhenNode(WhenNode)
      */
     public void visitWhenNode(WhenNode iVisited) {
-        setPosition(iVisited);
-
         eval(iVisited.getBodyNode());
     }
 
@@ -1514,8 +1379,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitWhileNode(WhileNode)
      */
     public void visitWhileNode(WhileNode iVisited) {
-        setPosition(iVisited);
-
         while (eval(iVisited.getConditionNode()).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
@@ -1538,8 +1401,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitXStrNode(XStrNode)
      */
     public void visitXStrNode(XStrNode iVisited) {
-        setPosition(iVisited);
-
         result = self.funcall("`", builtins.toString(iVisited.getValue()));
     }
 
@@ -1547,7 +1408,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitYieldNode(YieldNode)
      */
     public void visitYieldNode(YieldNode iVisited) {
-        setPosition(iVisited);
         eval(iVisited.getArgsNode());
         if (iVisited.getArgsNode() instanceof ExpandArrayNode && ((RubyArray) result).getLength() == 1) {
             result = ((RubyArray) result).entry(0);
@@ -1559,8 +1419,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitZArrayNode(ZArrayNode)
      */
     public void visitZArrayNode(ZArrayNode iVisited) {
-        setPosition(iVisited);
-
         result = builtins.newArray();
     }
 
@@ -1568,8 +1426,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
-        setPosition(iVisited);
-
         if (ruby.getActFrame().getLastClass() == null) {
             throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' disabled");
         }
@@ -1588,8 +1444,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBignumNode(BignumNode)
      */
     public void visitBignumNode(BignumNode iVisited) {
-        setPosition(iVisited);
-
         result = RubyBignum.newBignum(ruby, iVisited.getValue());
     }
 
@@ -1597,8 +1451,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFixnumNode(FixnumNode)
      */
     public void visitFixnumNode(FixnumNode iVisited) {
-        setPosition(iVisited);
-
         result = RubyFixnum.newFixnum(ruby, iVisited.getValue());
     }
 
@@ -1606,8 +1458,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFloatNode(FloatNode)
      */
     public void visitFloatNode(FloatNode iVisited) {
-        setPosition(iVisited);
-
         result = RubyFloat.newFloat(ruby, iVisited.getValue());
     }
 
@@ -1615,8 +1465,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRegexpNode(RegexpNode)
      */
     public void visitRegexpNode(RegexpNode iVisited) {
-        setPosition(iVisited);
-
         result = RubyRegexp.newRegexp(ruby, builtins.toString(iVisited.getValue()), iVisited.getOptions());
     }
 
@@ -1624,8 +1472,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
     public void visitSymbolNode(SymbolNode iVisited) {
-        setPosition(iVisited);
-
         result = builtins.toSymbol(iVisited.getName());
     }
 
@@ -1633,8 +1479,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitExpandArrayNode(ExpandArrayNode)
      */
     public void visitExpandArrayNode(ExpandArrayNode iVisited) {
-        setPosition(iVisited);
-
         eval(iVisited.getExpandNode());
         if (!(result instanceof RubyArray)) {
             if (result.isNil()) {
