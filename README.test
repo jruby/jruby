@@ -33,7 +33,7 @@ Unit tests should ALWAYS run at 100% pass rate when checked into CVS.
 When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby. It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
 In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI. Run all of them with:
 
-        jruby.sh test/testSuite.rb
+        ./jruby.sh test/testSuite.rb
 or
         jruby.bat test/testSuite.rb
 
@@ -46,4 +46,8 @@ To use Rubicon for testing you must first install it. Get it from CVS with
         cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src co rubicon
 
 Then follow Rubicon's README on how to install and run it.
-Rubicon requires that your configuration for the jruby installation be correct, for this you should first copy other the lib directory from a compatible (1.6.7 for now but any 1.6 should work) version to your JRUBY_HOME directory. (If you built jruby from CVS it is the build directory). You should then run jruby mkconfig.rb.  You are then set to go in your rubicon directory and run the tests.
+
+You must first install RubyUnit in your original Ruby interpreter (1.6 required). Then copy the lib directory from that to your JRUBY_HOME directory. (If you built jruby from CVS it is the build directory). You should then run
+        <jruby> mkconfig.rb
+(Replace <jruby> with the platform-dependent start script).
+Now your JRuby is ready to (partially) run Rubicon.
