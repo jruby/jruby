@@ -1791,7 +1791,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 
 	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
 		RubyString result = RubyString.newString(input.getRuntime(), input.unmarshalString());
-        input.register(result);
+        input.registerLinkTarget(result);
         return result;
 	}
 

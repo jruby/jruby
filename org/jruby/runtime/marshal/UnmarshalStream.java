@@ -65,17 +65,15 @@ public class UnmarshalStream extends FilterInputStream {
     public IRubyObject unmarshalObject() throws IOException {
         int type = readUnsignedByte();
         IRubyObject result;
-        if (type == '@') {
-            result = cache.linkedByIndex(unmarshalInt());
-        } else if (type == ';') {
-            result = cache.symbolByIndex(unmarshalInt());
+        if (cache.isLinkType(type)) {
+            result = cache.readLink(this, type);
         } else {
           result = unmarshalObjectDirectly(type);
         }
         return result;
     }
 
-    public void register(IRubyObject newObject) {
+    public void registerLinkTarget(IRubyObject newObject) {
         cache.register(newObject);
     }
 
@@ -182,7 +180,7 @@ public class UnmarshalStream extends FilterInputStream {
         Asserts.assertNotNull(type, "type shouldn't be null.");
 
         IRubyObject result = runtime.getFactory().newObject(type);
-        register(result);
+        registerLinkTarget(result);
 
         for (int i = 0, count = unmarshalInt(); i < count; i++) {
             result.setInstanceVariable(unmarshalObject().toId(), unmarshalObject());
@@ -198,7 +196,7 @@ public class UnmarshalStream extends FilterInputStream {
         IRubyObject result = classInstance.callMethod(
             "_load",
             RubyString.newString(runtime, marshaled));
-        register(result);
+        registerLinkTarget(result);
         return result;
     }
 }

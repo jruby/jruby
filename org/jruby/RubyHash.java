@@ -1,30 +1,30 @@
 /*
  * RubyHash.java - No description
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 
 package org.jruby;
@@ -87,7 +87,7 @@ public class RubyHash extends RubyObject {
 	/**
 	 * gets an iterator on a copy of the keySet.
 	 * modifying the iterator will NOT modify the map.
-	 * if the map is modified while iterating on this iterator, the iterator 
+	 * if the map is modified while iterating on this iterator, the iterator
 	 * will not be invalidated but the content will be the same as the old one.
 	 * @return the iterator
 	 **/
@@ -120,12 +120,12 @@ public class RubyHash extends RubyObject {
 		return valueMap.entrySet().iterator();
 	}
 
-    
-	
+
+
 	/**
 	 * gets an iterator on a copy of the entries.
 	 * modifying this iterator will NOT modify the map.
-	 * if the map is modified while iterating on this iterator, the iterator 
+	 * if the map is modified while iterating on this iterator, the iterator
 	 * will not be invalidated but the content will be the same as the old one.
 	 * @return the iterator
 	 */
@@ -251,7 +251,7 @@ public class RubyHash extends RubyObject {
     public RubyString inspect() {
         final String sep = ", ";
         final String arrow = "=>";
-        
+
         final StringBuffer sb = new StringBuffer("{");
 
         valueMap.foreach(new RubyMapMethod() {
@@ -388,11 +388,11 @@ public class RubyHash extends RubyObject {
 
     public RubyArray indexes(IRubyObject[] indices) {
         ArrayList values = new ArrayList(indices.length);
-        
+
         for (int i = 0; i < indices.length; i++) {
             values.add(aref(indices[i]));
         }
-        
+
         return RubyArray.newArray(runtime, values);
     }
 
@@ -417,7 +417,7 @@ public class RubyHash extends RubyObject {
         Iterator iter = modifiableEntryIterator();		//Benoit: this is ok, nobody is modifying the map
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
-            
+
             Object value = ((RubyHash)other).valueMap.get(entry.getKey());
             if (value == null || !entry.getValue().equals(value)) {
                 return runtime.getFalse();
@@ -529,7 +529,7 @@ public class RubyHash extends RubyObject {
 
     public static RubyHash unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyHash result = newHash(input.getRuntime());
-        input.register(result);
+        input.registerLinkTarget(result);
         int size = input.unmarshalInt();
         for (int i = 0; i < size; i++) {
             IRubyObject key = input.unmarshalObject();

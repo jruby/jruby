@@ -27,6 +27,7 @@ import org.jruby.RubySymbol;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.io.IOException;
 
 public class MarshalCache {
     private Map linkCache = new HashMap();
@@ -41,11 +42,20 @@ public class MarshalCache {
         cache.put(value, new Integer(cache.size()));
     }
 
-    public int registeredIndex(IRubyObject value) {
+    private int registeredIndex(IRubyObject value) {
         return ((Integer) selectCache(value).get(value)).intValue();
     }
 
     private Map selectCache(IRubyObject value) {
         return (value instanceof RubySymbol) ? symbolCache : linkCache;
+    }
+
+    public void writeLink(MarshalStream output, IRubyObject value) throws IOException {
+        output.write(linkType(value));
+        output.dumpInt(registeredIndex(value));
+    }
+
+    private static char linkType(IRubyObject value) {
+        return (value instanceof RubySymbol) ? ';' : '@';
     }
 }

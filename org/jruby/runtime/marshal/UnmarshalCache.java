@@ -25,11 +25,13 @@ package org.jruby.runtime.marshal;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubySymbol;
 import org.jruby.Ruby;
+import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.io.IOException;
 
 public class UnmarshalCache {
     private final Ruby runtime;
@@ -48,7 +50,22 @@ public class UnmarshalCache {
         return (value instanceof RubySymbol) ? symbols : links;
     }
 
-    public IRubyObject linkedByIndex(int index) {
+    public boolean isLinkType(int c) {
+        return (c == ';' || c == '@');
+    }
+
+    public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
+        if (type == '@') {
+          return linkedByIndex(input.unmarshalInt());
+        } else if (type == ';') {
+            return symbolByIndex(input.unmarshalInt());
+        } else {
+            Asserts.assertNotReached();
+            return null;
+        }
+    }
+
+    private IRubyObject linkedByIndex(int index) {
         try {
             return (IRubyObject) links.get(index);
         } catch (IndexOutOfBoundsException e) {
@@ -56,7 +73,7 @@ public class UnmarshalCache {
         }
     }
 
-    public RubySymbol symbolByIndex(int index) {
+    private RubySymbol symbolByIndex(int index) {
         try {
             return (RubySymbol) symbols.get(index);
         } catch (IndexOutOfBoundsException e) {

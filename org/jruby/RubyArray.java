@@ -1416,7 +1416,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 
     public static RubyArray unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubyArray result = newArray(input.getRuntime());
-        input.register(result);
+        input.registerLinkTarget(result);
         int size = input.unmarshalInt();
         for (int i = 0; i < size; i++) {
             result.append(input.unmarshalObject());

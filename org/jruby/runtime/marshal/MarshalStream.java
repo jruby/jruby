@@ -94,14 +94,9 @@ public class MarshalStream extends FilterOutputStream {
         return true;
     }
 
-    private char linkType(IRubyObject value) {
-        return (value instanceof RubySymbol) ? ';' : '@';
-    }
-
     private void writeAndRegister(IRubyObject value) throws IOException {
         if (cache.isRegistered(value)) {
-            out.write(linkType(value));
-            dumpInt(cache.registeredIndex(value));
+            cache.writeLink(this, value);
         } else {
             cache.register(value);
             value.marshalTo(this);
