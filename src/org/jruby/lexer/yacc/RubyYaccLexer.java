@@ -198,7 +198,7 @@ public class RubyYaccLexer {
     }
 
     private boolean ISUPPER(char c) {
-        return Character.toUpperCase(c) == c;
+        return Character.isUpperCase(c);
     }
 
     /**
