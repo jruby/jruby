@@ -164,6 +164,8 @@ public class Main {
         defineGlobal(runtime, "$-a", commandline.sDoSplit);
         defineGlobal(runtime, "$-l", commandline.processLineEnds);
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
+        // TODO this is a fake cause we have no real process number in Java
+        runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(runtime.hashCode())));
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", runtime.newString(filename)));
         runtime.getLoadService().init(commandline.loadPaths());
         Iterator iter = commandline.requiredLibraries().iterator();
