@@ -35,7 +35,6 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
