@@ -39,13 +39,13 @@ public class RubyString extends RubyObject {
         this(ruby, null);
     }
     
-    public RubyString(Ruby ruby, String string) {
-        this(ruby, ruby.getStringClass(), string);
+    public RubyString(Ruby ruby, String str) {
+        this(ruby, ruby.getStringClass(), str);
     }
     
-    public RubyString(Ruby ruby, RubyModule rubyClass, String string) {
+    public RubyString(Ruby ruby, RubyModule rubyClass, String str) {
         super(ruby, rubyClass);
-        this.string = string;
+        this.value = str;
     }
     
     public Class getJavaString() {
@@ -154,8 +154,8 @@ public class RubyString extends RubyObject {
     /** rb_str_cat
      *
      */
-    public RubyString m_cat(String value) {
-        string = string + value;
+    public RubyString m_cat(String str) {
+        value = value + str;
         return this;
     }
     
