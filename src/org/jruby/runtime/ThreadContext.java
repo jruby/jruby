@@ -163,6 +163,10 @@ public class ThreadContext {
         return runtime.getNil();
     }
 
+    public RubyModule getCBase() {
+        return getCurrentFrame().getNamespace().getNamespaceModule();
+    }
+
     public Visibility getCurrentVisibility() {
         return getScopeStack().current().getVisibility();
     }
@@ -307,8 +311,6 @@ public class ThreadContext {
         classStack.pop();
     }
 
-
-
     public RubyModule getRubyClass() {
         RubyModule rubyClass = (RubyModule) classStack.peek();
         if (rubyClass.isIncluded()) {
@@ -331,18 +333,5 @@ public class ThreadContext {
             return runtime.getNil();
         }
         return result;
-    }
-
-    public RubyArray moduleNesting() {
-        ArrayStack tmpStack = (ArrayStack) classStack.clone();
-        int size = tmpStack.depth();
-        RubyArray ary = RubyArray.newArray(runtime, size);
-        for (int i = 0; i < size; i++) {
-            RubyModule module = (RubyModule) tmpStack.pop();
-            if (! (module instanceof RubyClass)) {
-                ary.append(module);
-            }
-        }
-        return ary;
     }
 }

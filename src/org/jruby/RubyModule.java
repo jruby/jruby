@@ -1070,7 +1070,11 @@ public class RubyModule extends RubyObject {
         threadContext.getCurrentFrame().setLastFunc(frame.getLastFunc());
         threadContext.getCurrentFrame().setLastClass(frame.getLastClass());
         threadContext.getCurrentFrame().setArgs(frame.getArgs());
-        runtime.setNamespace(new Namespace(this));
+        if (threadContext.getCBase() != this) {
+            threadContext.getCurrentFrame().setNamespace(new Namespace(this,
+                                                                       threadContext.getCurrentFrame().getNamespace()));
+        }
+        runtime.setNamespace(new Namespace(this, runtime.getNamespace()));
 
         try {
             return method.execute(this, args);
@@ -1311,7 +1315,19 @@ public class RubyModule extends RubyObject {
      *
      */
     public static RubyArray nesting(IRubyObject recv) {
-        return recv.getRuntime().getCurrentContext().moduleNesting();
+        Namespace ns = recv.getRuntime().getCurrentFrame().getNamespace();
+
+        RubyArray ary = RubyArray.newArray(recv.getRuntime());
+
+        while (ns != null && ns.getParent() != null) {
+            if (!ns.getNamespaceModule().isNil()) {
+                ary.append(ns.getNamespaceModule());
+            }
+
+            ns = ns.getParent();
+        }
+
+        return ary;
     }
 
     /** rb_mod_attr

@@ -50,8 +50,8 @@
  */
 package org.jruby.runtime;
 
+import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyModule;
 
 /** Represents an element in the nested module/class namespace hierarchy.
  *

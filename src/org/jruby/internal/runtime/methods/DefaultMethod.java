@@ -7,7 +7,6 @@ import org.ablaf.common.ISourcePosition;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
-import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ScopeNode;
 import org.jruby.ast.types.IListNode;
@@ -29,13 +28,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
-    private RubyModule module;
+    private Namespace namespace;
 
-    public DefaultMethod(ScopeNode body, ArgsNode argsNode, RubyModule module, Visibility visibility) {
+    public DefaultMethod(ScopeNode body, ArgsNode argsNode, Namespace namespace, Visibility visibility) {
         super(visibility);
         this.body = body;
         this.argsNode = argsNode;
-        this.module = module;
+        this.namespace = namespace;
     }
 
     /**
@@ -54,9 +53,8 @@ public final class DefaultMethod extends AbstractMethod {
         Namespace savedNamespace = null;
 
         savedNamespace = ruby.getNamespace();
-        Namespace ns = new Namespace(module, ruby.getNamespace());
-        ruby.setNamespace(ns);
-        context.getCurrentFrame().setNamespace(ns);
+        ruby.setNamespace(namespace);
+        context.getCurrentFrame().setNamespace(namespace);
 
         if (body.getLocalNames() != null) {
             context.getScopeStack().resetLocalVariables(body.getLocalNames());

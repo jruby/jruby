@@ -378,30 +378,30 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        threadContext.getRubyClass().setClassVar(iVisited.getName(), result);
+        threadContext.getCBase().setClassVar(iVisited.getName(), result);
     }
 
     /**
      * @see NodeVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
+        if (threadContext.getCBase() == null) {
             throw new TypeError(runtime, "no class/module to define class variable");
         }
         eval(iVisited.getValueNode());
-        threadContext.getRubyClass().declareClassVar(iVisited.getName(), result);
+        threadContext.getCBase().declareClassVar(iVisited.getName(), result);
     }
 
     /**
      * @see NodeVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
+        if (threadContext.getCBase() == null) {
             result = self.getMetaClass().getClassVar(iVisited.getName());
-        } else if (! threadContext.getRubyClass().isSingleton()) {
-            result = threadContext.getRubyClass().getClassVar(iVisited.getName());
+        } else if (! threadContext.getCBase().isSingleton()) {
+            result = threadContext.getCBase().getClassVar(iVisited.getName());
         } else {
-            result = ((RubyModule) threadContext.getRubyClass().getInstanceVariable("__attached__")).getClassVar(iVisited.getName());
+            result = ((RubyModule) threadContext.getCBase().getInstanceVariable("__attached__")).getClassVar(iVisited.getName());
         }
     }
 
@@ -539,7 +539,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        result = threadContext.getRubyClass().getConstant(iVisited.getName());
+        result = threadContext.getCurrentFrame().getNamespace().getConstant(self, iVisited.getName());
     }
 
     /**
@@ -635,10 +635,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             visibility = iVisited.getVisibility();
         }
 
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
-                                                    (ArgsNode) iVisited.getArgsNode(),
-                                                    runtime.getRubyClass(),
-                                                    visibility);
+        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), runtime.getNamespace(), visibility);
 
         rubyClass.addMethod(name, newMethod);
 
@@ -674,7 +671,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
                                                     (ArgsNode) iVisited.getArgsNode(),
-                                                    runtime.getRubyClass(),
+                                                    runtime.getNamespace(),
                                                     Visibility.PUBLIC);
         rubyClass.addMethod(iVisited.getName(), newMethod);
         receiver.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
