@@ -48,6 +48,10 @@ def test_ok(cond, msg="")
   end
 end
 
+def test_fail(msg="")
+  test_ok(false, msg)
+end
+
 def test_equal(a,b)
  test_ok(a == b, "expected #{a.inspect}, found #{b.inspect}") 
 end
