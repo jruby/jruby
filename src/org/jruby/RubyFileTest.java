@@ -39,22 +39,50 @@ public class RubyFileTest {
         fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod(RubyFileTest.class, "directory_p", RubyString.class));
         fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod(RubyFileTest.class, "exist_p", RubyString.class));
         fileTestModule.defineMethod("exists?", callbackFactory.getSingletonMethod(RubyFileTest.class, "exist_p", RubyString.class));
+        fileTestModule.defineMethod("readable?", callbackFactory.getSingletonMethod(RubyFileTest.class, "readable_p", RubyString.class));
+        fileTestModule.defineMethod("readable_real?", callbackFactory.getSingletonMethod(RubyFileTest.class, "readable_p", RubyString.class));
+        fileTestModule.defineMethod("size", callbackFactory.getSingletonMethod(RubyFileTest.class, "size", RubyString.class));
         fileTestModule.defineMethod("writable?", callbackFactory.getSingletonMethod(RubyFileTest.class, "writable_p", RubyString.class));
+        fileTestModule.defineMethod("writable_real?", callbackFactory.getSingletonMethod(RubyFileTest.class, "writable_p", RubyString.class));
+        fileTestModule.defineMethod("zero?", callbackFactory.getSingletonMethod(RubyFileTest.class, "zero_p", RubyString.class));
         
         return fileTestModule;
     }
     
     public static RubyBoolean directory_p(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).isDirectory());
+        return RubyBoolean.newBoolean(recv.getRuntime(), 
+                new File(filename.getValue()).isDirectory());
     }
     
     public static IRubyObject exist_p(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).exists());
+        return RubyBoolean.newBoolean(recv.getRuntime(), 
+                new File(filename.getValue()).exists());
+    }
+
+    // We do both readable and readable_real through the same method because
+    // in our java process effective and real userid will always be the same.
+    public static RubyBoolean readable_p(IRubyObject recv, RubyString filename) {
+        return RubyBoolean.newBoolean(filename.getRuntime(), 
+                new File(filename.getValue()).canRead());
     }
     
-    public static RubyBoolean writable_p(IRubyObject recv, RubyString filename) {
-        File file = new File(filename.getValue());
-        
-        return RubyBoolean.newBoolean(filename.getRuntime(), file.exists());
+    public static IRubyObject size(RubyString filename) {
+        return RubyFixnum.newFixnum(filename.getRuntime(),
+                new File(filename.getValue()).length());
     }
+    
+    // We do both writable and writable_real through the same method because
+    // in our java process effective and real userid will always be the same.
+    public static RubyBoolean writable_p(IRubyObject recv, RubyString filename) {
+        return RubyBoolean.newBoolean(filename.getRuntime(), 
+                new File(filename.getValue()).canWrite());
+    }
+    
+    public static RubyBoolean zero_p(RubyString filename) {
+        File file = new File(filename.getValue());
+        return RubyBoolean.newBoolean(filename.getRuntime(),
+                file.exists() == true && file.length() == 0L);
+                
+    }
+    
 }
