@@ -205,11 +205,8 @@ public class RubyClass extends RubyModule {
         if (isSingleton()) {
             throw new TypeError(getRuntime(), "can't create instance of virtual class");
         }
-
         IRubyObject obj = getRuntime().getFactory().newObject(this);
-
         obj.callInit(args);
-
         return obj;
     }
 
@@ -217,17 +214,21 @@ public class RubyClass extends RubyModule {
      *
      */
     public static RubyClass newClass(IRubyObject recv, IRubyObject[] args) {
-        RubyClass superClass = recv.getRuntime().getClasses().getObjectClass();
+        final Ruby runtime = recv.getRuntime();
+        RubyClass superClass = runtime.getClasses().getObjectClass();
 
         if (args.length >= 1) {
+            if (! (args[0] instanceof RubyClass)) {
+                throw new TypeError(runtime, args[0], runtime.getClasses().getClassClass());
+            }
             superClass = (RubyClass) args[0];
         }
 
         if (superClass.isSingleton()) {
-            throw new TypeError(recv.getRuntime(), "Can't make subclass of virtual class.");
+            throw new TypeError(runtime, "Can't make subclass of virtual class.");
         }
 
-        RubyClass newClass = newClass(recv.getRuntime(), superClass);
+        RubyClass newClass = newClass(runtime, superClass);
 
         newClass.makeMetaClass(superClass.getInternalClass());
 

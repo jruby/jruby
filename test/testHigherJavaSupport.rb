@@ -52,7 +52,7 @@ if defined? Java
     test_equal(HashMap, h.type)
     h.put("a", 1)
     iter = h.entrySet.iterator
-    test_equal("java.util.Iterator", iter.type.class_eval("@java_class.name"))
+    test_equal("java.util.Iterator", iter.java_class.name)
     inner_instance_entry = iter.next
     #test_equal("a", inner_instance_entry.getKey)
   end
