@@ -636,10 +636,9 @@ public class KernelModule {
 
             // Fairly innefficient impl, but readLine is unable to tell 
             // whether the last line in a process ended with a newline or not.
-            char[] buf = new char[1024];
-            int num = 0;
-            while ((num = reader.read(buf)) != -1) {
-            	output.append(buf, 0, num);
+            int c;
+            while ((c = reader.read()) != -1) {
+            	output.append((char)c);
             }
             
             aProcess.getErrorStream().close();
