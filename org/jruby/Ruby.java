@@ -815,14 +815,20 @@ public final class Ruby {
      * @return Value of property cBase.
      */
     public RubyModule getCBase() {
-        return cBase;
+        return (RubyModule)getRubyFrame().getCbase().getClassValue();
+        // +++
+        // return cBase;
+        // ---
     }
 
     /** Setter for property cBase.
      * @param cBase New value of property cBase.
      */
     public void setCBase(RubyModule cBase) {
-        this.cBase = cBase;
+        getRubyFrame().getCbase().setClassValue(cBase);
+        // +++
+        // this.cBase = cBase;
+        // ---
     }
 
     public boolean isScope(int scope) {

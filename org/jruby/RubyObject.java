@@ -254,9 +254,10 @@ public class RubyObject {
         kernelModule.defineAlias("===", "==");
         kernelModule.defineAlias("equal?", "==");
 
-        kernelModule.getRuby().defineGlobalFunction(
-            "method_missing",
-            CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
+		Ruby ruby = kernelModule.getRuby();
+
+        ruby.defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
+		ruby.defineGlobalFunction("eval", CallbackFactory.getOptMethod(RubyObject.class, "eval", RubyString.class));
     }
 
     protected int argCount(RubyObject[] args, int min, int max) {
@@ -971,5 +972,43 @@ public class RubyObject {
         } finally {
             getRuby().getIter().pop();
         }
+    }
+    
+    public RubyObject eval(RubyString src, RubyObject[] args) {
+        RubyObject scope = args.length > 0 ? args[0] : ruby.getNil();
+        String file = "(eval)";
+        int line = 1;
+        
+        if (args.length > 1) {
+            // +++
+            file = args[1].toString();
+            // ---
+        }
+        
+        if (args.length > 2) {
+            line = RubyFixnum.fix2int(args[2]);
+        }
+
+        // +++
+        src.checkSafeString();        
+        // ---
+        
+        if (scope.isNil() && ruby.getRubyFrame().getPrev() != null) {
+            try {
+                // +++
+                RubyFrame prev = new RubyFrame(ruby.getRubyFrame());
+            	ruby.getRubyFrame().push();
+            	
+            	ruby.setRubyFrame(prev.getPrev());
+            	ruby.getRubyFrame().setPrev(prev);
+            	// ---
+            	            	
+            	return eval(src, scope, file, line);
+            } finally {
+                ruby.getRubyFrame().pop();
+            }
+        }
+        
+        return eval(src, scope, file, line);
     }
 }
