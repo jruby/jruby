@@ -3,12 +3,13 @@
  *  Created on 05. Oktober 2001, 01:43
  *
  *  Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- *  Copyright (C) 2004 Thomas E Enebo
+ *  Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  *  Jan Arne Petersen <jpetersen@uni-bonn.de>
  *  Stefan Matthias Aust <sma@3plus4.de>
  *  Alan Moore <alan_moore@gmx.net>
  *  Benoit Cerrina <b.cerrina@wanadoo.fr>
  *  Thomas E Enebo <enebo@acm.org>
+ *  Charles O Nutter <headius@headius.com>
  *
  *  JRuby - http://jruby.sourceforge.net
  *
@@ -239,6 +240,7 @@ public class RubyClasses {
         falseClass = RubyBoolean.createFalseClass(runtime);
         trueClass = RubyBoolean.createTrueClass(runtime);
 
+        threadGroupClass = RubyThreadGroup.createThreadGroupClass(runtime);
         threadClass = ThreadClass.createThreadClass(runtime);
 
         runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {

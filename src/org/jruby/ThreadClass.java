@@ -1,9 +1,10 @@
 /*
  *  Copyright (C) 2002 Jason Voegele
  *  Copyright (C) 2002 Anders Bengtsson
- *  Copyright (C) 2004 Thomas E Enebo
+ *  Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * 
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  *  JRuby - http://jruby.sourceforge.net
  *
@@ -60,8 +61,9 @@ public class ThreadClass extends RubyObject {
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
-    private RaiseException exitingException = null;
-    private IRubyObject receivedException = null;
+    private RaiseException exitingException;
+    private IRubyObject receivedException;
+    private RubyThreadGroup threadGroup;
 
     private ThreadService threadService;
     private Object hasStartedLock = new Object();
@@ -82,6 +84,8 @@ public class ThreadClass extends RubyObject {
                 callbackFactory.getMethod(ThreadClass.class, "abort_on_exception_set", IRubyObject.class, IRubyObject.class));
         threadClass.defineMethod("alive?", 
                 callbackFactory.getMethod(ThreadClass.class, "is_alive"));
+        threadClass.defineMethod("group", 
+                callbackFactory.getMethod(ThreadClass.class, "group"));
         threadClass.defineMethod("join", 
                 callbackFactory.getMethod(ThreadClass.class, "join"));
         threadClass.defineMethod("key?", 
@@ -115,6 +119,9 @@ public class ThreadClass extends RubyObject {
         ThreadClass currentThread = new ThreadClass(ruby, threadClass);
         currentThread.jvmThread = Thread.currentThread();
         ruby.getThreadService().setMainThread(currentThread);
+        
+        // set to default thread group
+        currentThread.setThreadGroup((RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default"));
 
         return threadClass;
     }
@@ -208,6 +215,8 @@ public class ThreadClass extends RubyObject {
     private ThreadClass(Ruby ruby, RubyClass type) {
         super(ruby, type);
         this.threadService = ruby.getThreadService();
+        // set to default thread group
+        setThreadGroup((RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default"));
     }
 
     /**
@@ -296,6 +305,18 @@ public class ThreadClass extends RubyObject {
             throw exitingException;
         }
         return this;
+    }
+
+    public IRubyObject group() {
+        if (threadGroup == null) {
+        	return getRuntime().getNil();
+        }
+        
+        return threadGroup;
+    }
+    
+    void setThreadGroup(RubyThreadGroup rubyThreadGroup) {
+    	threadGroup = rubyThreadGroup;
     }
 
     public RubyBoolean has_key(IRubyObject key) {
