@@ -17,6 +17,7 @@ public class RubyJava {
         javaModule.defineModuleFunction("define_exception_handler", CallbackFactory.getOptSingletonMethod(RubyJava.class, "define_exception_handler"));
         javaModule.defineModuleFunction("primitive_to_java", CallbackFactory.getSingletonMethod(RubyJava.class, "primitive_to_java", IRubyObject.class));
         javaModule.defineModuleFunction("java_to_primitive", CallbackFactory.getSingletonMethod(RubyJava.class, "java_to_primitive", IRubyObject.class));
+        javaModule.defineModuleFunction("type_of", CallbackFactory.getSingletonMethod(RubyJava.class, "type_of", IRubyObject.class));
 
         JavaClassClass.createJavaClassClass(runtime, javaModule);
         JavaMethodClass.createJavaMethodClass(runtime, javaModule);
@@ -61,5 +62,12 @@ public class RubyJava {
         } else {
             return object;
         }
+    }
+
+    public static IRubyObject type_of(IRubyObject recv, IRubyObject object) {
+        if (! (object instanceof JavaObject)) {
+            return recv.getRuntime().getNil();
+        }
+        return ((JavaObject) object).java_type();
     }
 }

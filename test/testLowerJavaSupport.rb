@@ -80,9 +80,11 @@ if defined? Java
   test_equal(1, constructor.arity)
   random = constructor.new_instance(Object, Java.primitive_to_java(2002))
   result = method.invoke(random)
-  test_ok("java.lang.Integer", result.java_type)
+  test_equal("java.lang.Integer", result.java_type)
+  test_equal("java.lang.Integer", Java.type_of(result))
   result = Java.java_to_primitive(result)
   test_ok(result.kind_of?(Fixnum))
+  test_equal(nil, Java.type_of(result))
 
   test_equal("java.lang.Long", Java.primitive_to_java(10).java_type)
   method = random_class.java_method(:nextInt, "int")
@@ -117,5 +119,3 @@ if defined? Java
   test_ok(array[3].nil?)
   test_exception(ArgumentError) { array[10] }
 end
-
-test_print_report
