@@ -6,7 +6,7 @@
 - Loading external libraries written in Java.
 
 - Thread support
-    - Able to start from a different JVM thread
+    - Able to start from a different JVM thread (see also samples/swing2.rb)
 
 - Usability
     - Simplify installation (replace mkconfig.rb?)
@@ -14,3 +14,5 @@
 
 - Finish ASTWriterVisitor
 - Implement ASTReader
+
+- FIX build.xml
