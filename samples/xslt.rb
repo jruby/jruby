@@ -22,5 +22,5 @@ stylesheet = XSLT::Source.new(ARGV[1])
 result =     XSLT::Result.new(JavaIO::FileOutputStream.new(ARGV[2]))
 
 transformer = XSLT::TransformerFactory.newInstance.newTransformer(stylesheet)
-transformer.transform(document, result);
+transformer.transform(document, result)
 
