@@ -23,6 +23,10 @@
 
 module JavaProxy
   attr :java_class, true
+
+  def convert_arguments(arguments)
+    arguments.collect {|v| Java.primitive_to_java(v) }
+  end
 end
 
 # Extensions to existing classes and modules
@@ -85,6 +89,7 @@ class Module
           if methods.length == 1
             m = methods.first
             define_method(m.name) {|*args|
+              args = convert_arguments(args)
               m.invoke(self, *args)
             }
           else
@@ -94,6 +99,7 @@ class Module
                 # just one method with this length
                 define_method(name) {|*args|
                   m = methods_by_arity[args.length].first
+                  args = convert_arguments(args)
                   m.invoke(self, *args)
                 }
               else
@@ -132,6 +138,6 @@ if __FILE__ == $0
   p r.type.instance_methods
 
   p r.nextInt
-  p r.nextInt
+  p r.nextInt(10)
   p r.nextInt
 end
