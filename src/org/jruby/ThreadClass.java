@@ -127,6 +127,8 @@ public class ThreadClass extends RubyObject {
                 callbackFactory.getSingletonMethod(ThreadClass.class, "critical"));
         threadClass.defineSingletonMethod("stop", 
                 callbackFactory.getSingletonMethod(ThreadClass.class, "stop"));
+        threadClass.defineSingletonMethod("kill", 
+                callbackFactory.getMethod(ThreadClass.class, "s_kill", ThreadClass.class));
 
         ThreadClass currentThread = new ThreadClass(ruby, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
@@ -375,6 +377,11 @@ public class ThreadClass extends RubyObject {
     	return receiver.getRuntime().getNil();
     }
     
+    public static IRubyObject s_kill(ThreadClass rubyThread) {
+    	// TODO: stubbed for now, will need to implement kill hooks into call stack
+    	return rubyThread.kill();
+    }
+
     public RubyBoolean isStopped() {
     	// not valid for "dead" state
     	return RubyBoolean.newBoolean(getRuntime(), isStopped);
