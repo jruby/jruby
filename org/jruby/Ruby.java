@@ -202,7 +202,16 @@ public final class Ruby {
     }
 
     public static Ruby getDefaultInstance() {
-        return getDefaultInstance(null);
+        return getDefaultInstance((String) null);
+    }
+
+    /**
+     * @deprecated use getDefaultInstance(String) or getDefaultInstance() instead.
+     */
+    public static Ruby getDefaultInstance(Class regexpAdapterClass) {
+        Ruby ruby = new Ruby(regexpAdapterClass);
+        ruby.init();
+        return ruby;
     }
 
     /**
