@@ -107,7 +107,8 @@ public class JavaField extends RubyObject implements IndexCallable {
 
             field.set(javaObject, convertedValue);
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(), "illegal access");
+            throw new TypeError(getRuntime(),
+                                "illegal access on setting variable: " + iae.getMessage());
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(),
                                 "wrong type for " + field.getType().getName() + ": " +
@@ -124,7 +125,8 @@ public class JavaField extends RubyObject implements IndexCallable {
         try {
             return JavaObject.wrap(getRuntime(), field.get(null));
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(), "illegal access");
+            throw new TypeError(getRuntime(),
+                                "illegal static value access: " + iae.getMessage());
         }
     }
 

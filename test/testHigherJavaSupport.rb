@@ -53,6 +53,7 @@ if defined? Java
 
     # Constants
     test_equal(9223372036854775807, Long::MAX_VALUE)
+    test_ok(! defined? Character::Y_DATA)  # Known private field in Character
 
     # Arrays
     list = ArrayList.new
@@ -107,4 +108,7 @@ if defined? Java
     l.add(100)
     test_equal(1, l.foo)
   end
+
+
+
 end

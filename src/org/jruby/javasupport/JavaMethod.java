@@ -203,10 +203,6 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
                 return static_p();
             case RETURN_TYPE :
                 return return_type();
-//            case PROXY_CLASS :
-//                return proxy_class();
-//            case SET_PROXY_CLASS :
-//                return set_proxy_class(args[0]);
             default :
                 return super.callIndexed(index, args);
         }
