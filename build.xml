@@ -24,7 +24,9 @@
     	<exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     	<exclude unless="jdk1.4+" name="**/AstPersistenceDelegates.java"/>
     	<exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
+  		<!-- Removed cglib for now
         <exclude unless="cglib.present" name="**/Cglib*.java"/>
+        -->
   	</patternset>
 
   	<patternset id="ruby.src.pattern">

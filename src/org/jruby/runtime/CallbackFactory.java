@@ -160,6 +160,7 @@ public abstract class CallbackFactory {
     }
 
     public static CallbackFactory createFactory() {
+        /* Removed cglib for now
         try {
             // Check if we have CGLIB support compiled in.
             Class factoryClass = Class.forName("org.jruby.runtime.callback.CglibCallbackFactory");
@@ -175,5 +176,8 @@ public abstract class CallbackFactory {
         } catch (ClassNotFoundException e) {
             return new ReflectionCallbackFactory();
         }
+        */
+        
+        return new ReflectionCallbackFactory();
     }
 }
