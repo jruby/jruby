@@ -86,11 +86,11 @@ public class RbModule {
     /*
     rb_define_method(rb_cModule, "module_eval", rb_mod_module_eval, -1);
     rb_define_method(rb_cModule, "class_eval", rb_mod_module_eval, -1);
-
-    rb_define_private_method(rb_cModule, "remove_method", rb_mod_remove_method, 1);
-    rb_define_private_method(rb_cModule, "undef_method", rb_mod_undef_method, 1);
-    rb_define_private_method(rb_cModule, "alias_method", rb_mod_alias_method, 2);
-    rb_define_private_method(rb_cModule, "define_method", rb_mod_define_method, -1);
+	*/
+		moduleClass.defineMethod("remove_method", getMethod("remove_method", RubyObject.class, false));
+		moduleClass.defineMethod("undef_method", getMethod("undef_method", RubyObject.class, false));
+		moduleClass.defineMethod("alias_method", getMethod("alias_method", RubyObject.class, RubyObject.class));
+    /*rb_define_private_method(rb_cModule, "define_method", rb_mod_define_method, -1);
 
     rb_define_singleton_method(rb_cModule, "nesting", rb_mod_nesting, 0);
     rb_define_singleton_method(rb_cModule, "constants", rb_mod_s_constants, 0);*/

@@ -567,10 +567,9 @@ public class RubyModule extends RubyObject {
 			} else {
 				if (isIncluded() || isModule()) {
 					desc = "module";
-				} else
-					if (isClass()) {
-						desc = "class";
-					}
+				} else if (isClass()) {
+					desc = "class";
+				}
 			}
 			throw new RubyFrozenException(getRuby(), desc);
 		}
@@ -603,10 +602,9 @@ public class RubyModule extends RubyObject {
 					c = (RubyModule) obj;
 					s0 = "";
 				}
-			} else
-				if (c.isModule()) {
-					s0 = " module";
-				}
+			} else if (c.isModule()) {
+				s0 = " module";
+			}
 			throw new RubyNameException(
 				getRuby(),
 				"undefined method " + id.toName() + " for" + s0 + " '" + c.toName() + "'");
@@ -870,6 +868,26 @@ public class RubyModule extends RubyObject {
 			nf.newMethod(nf.newFBody(body, oldId, origin), methodNode.getNoex()));
 	}
 
+	/** remove_method
+	 * 
+	 */
+	public void removeMethod(RubyId methodId) {
+		if (this == getRuby().getClasses().getObjectClass()) {
+			getRuby().secure(4);
+		}
+		if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+			throw new RubySecurityException(getRuby(), "Insecure: can't remove method");
+		}
+		if (isFrozen()) {
+			// rb_error_frozen("class/module");
+		}
+		if (methods.remove(methodId) == null) {
+			throw new RubyNameException(
+				getRuby(),
+				"method '" + methodId.toName() + "' not defined in " + toName());
+		}
+	}
+
 	/** rb_singleton_class_clone
 	 *
 	 */
@@ -1024,12 +1042,11 @@ public class RubyModule extends RubyObject {
 		if (ex) {
 			if (getRuby().getActMethodScope() == Constants.SCOPE_PRIVATE) {
 				noex = Constants.NOEX_PRIVATE;
-			} else
-				if (getRuby().getActMethodScope() == Constants.SCOPE_PROTECTED) {
-					noex = Constants.NOEX_PROTECTED;
-				} else {
-					noex = Constants.NOEX_PUBLIC;
-				}
+			} else if (getRuby().getActMethodScope() == Constants.SCOPE_PROTECTED) {
+				noex = Constants.NOEX_PROTECTED;
+			} else {
+				noex = Constants.NOEX_PUBLIC;
+			}
 		}
 
 		String name = id.toName();
@@ -1164,13 +1181,13 @@ public class RubyModule extends RubyObject {
 			}
 		}
 	}
-	
+
 	/** rb_method_boundp
 	 * 
 	 */
 	private boolean isMethodBound(RubyId id, int ex) {
 		RubyMethodCacheEntry entry = RubyMethodCacheEntry.getEntry(getRuby(), this, id);
-		
+
 		if (entry != null) {
 			if (ex != 0 && (entry.getNoex() & Constants.NOEX_PRIVATE) != 0) {
 				return false;
@@ -1182,19 +1199,22 @@ public class RubyModule extends RubyObject {
 		}
 
 		GetMethodBodyResult gmbr = getMethodBody(id, ex);
-		
+
 		if (gmbr != null) {
 			if (ex != 0 && (gmbr.getNoex() & Constants.NOEX_PRIVATE) != 0) {
 				return false;
 			} else {
 				return true;
 			}
-	    }
-	    return false;
+		}
+		return false;
 	}
 
-	public RubyObject newMethod(RubyObject recv, RubyId id, RubyClass methodClass) {
-		RubyClass originalClass = (RubyClass)this;
+	public RubyObject newMethod(
+		RubyObject recv,
+		RubyId id,
+		RubyClass methodClass) {
+		RubyClass originalClass = (RubyClass) this;
 		RubyId originalId = id;
 
 		GetMethodBodyResult gmbr = getMethodBody(id, 0);
@@ -1202,7 +1222,7 @@ public class RubyModule extends RubyObject {
 			// printUndef();
 			return getRuby().getNil();
 		}
-		
+
 		while (gmbr.getBody() instanceof ZSuperNode) {
 			gmbr = gmbr.getRecvClass().getSuperClass().getMethodBody(gmbr.getId(), 0);
 			if (gmbr == null) {
@@ -1210,15 +1230,15 @@ public class RubyModule extends RubyObject {
 				return getRuby().getNil();
 			}
 		}
-		
+
 		RubyMethod newMethod = new RubyMethod(getRuby(), methodClass);
-		newMethod.setReceiverClass((RubyClass)gmbr.getRecvClass());
+		newMethod.setReceiverClass((RubyClass) gmbr.getRecvClass());
 		newMethod.setReceiver(recv);
 		newMethod.setMethodId(gmbr.getId());
 		newMethod.setBodyNode(gmbr.getBody());
 		newMethod.setOriginalClass(originalClass);
 		newMethod.setOriginalId(originalId);
-		
+
 		return newMethod;
 	}
 
@@ -1580,11 +1600,11 @@ public class RubyModule extends RubyObject {
 						}
 						ary.push(name);
 					}
-				} else
-					if (body.getBodyNode() != null && body.getBodyNode() instanceof ZSuperNode) {
-						ary.push(getRuby().getNil());
-						ary.push(RubyString.m_newString(getRuby(), id.toName()));
-					}
+				} else if (
+					body.getBodyNode() != null && body.getBodyNode() instanceof ZSuperNode) {
+					ary.push(getRuby().getNil());
+					ary.push(RubyString.m_newString(getRuby(), id.toName()));
+				}
 				return RubyMapMethod.CONTINUE;
 			}
 		});
@@ -1610,18 +1630,16 @@ public class RubyModule extends RubyObject {
 				if (body.getBodyNode() == null) {
 					ary.push(getRuby().getNil());
 					ary.push(RubyString.m_newString(getRuby(), id.toName()));
-				} else
-					if ((body.getNoex() & Constants.NOEX_PROTECTED) != 0) {
-						RubyString name = RubyString.m_newString(getRuby(), id.toName());
+				} else if ((body.getNoex() & Constants.NOEX_PROTECTED) != 0) {
+					RubyString name = RubyString.m_newString(getRuby(), id.toName());
 
-						if (ary.m_includes(name).isFalse()) {
-							ary.push(name);
-						}
-					} else
-						if (body.getBodyNode() instanceof ZSuperNode) {
-							ary.push(getRuby().getNil());
-							ary.push(RubyString.m_newString(getRuby(), id.toName()));
-						}
+					if (ary.m_includes(name).isFalse()) {
+						ary.push(name);
+					}
+				} else if (body.getBodyNode() instanceof ZSuperNode) {
+					ary.push(getRuby().getNil());
+					ary.push(RubyString.m_newString(getRuby(), id.toName()));
+				}
 				return RubyMapMethod.CONTINUE;
 			}
 		});
@@ -1647,18 +1665,16 @@ public class RubyModule extends RubyObject {
 				if (body.getBodyNode() == null) {
 					ary.push(getRuby().getNil());
 					ary.push(RubyString.m_newString(getRuby(), id.toName()));
-				} else
-					if ((body.getNoex() & Constants.NOEX_PRIVATE) != 0) {
-						RubyString name = RubyString.m_newString(getRuby(), id.toName());
+				} else if ((body.getNoex() & Constants.NOEX_PRIVATE) != 0) {
+					RubyString name = RubyString.m_newString(getRuby(), id.toName());
 
-						if (ary.m_includes(name).isFalse()) {
-							ary.push(name);
-						}
-					} else
-						if (body.getBodyNode() instanceof ZSuperNode) {
-							ary.push(getRuby().getNil());
-							ary.push(RubyString.m_newString(getRuby(), id.toName()));
-						}
+					if (ary.m_includes(name).isFalse()) {
+						ary.push(name);
+					}
+				} else if (body.getBodyNode() instanceof ZSuperNode) {
+					ary.push(getRuby().getNil());
+					ary.push(RubyString.m_newString(getRuby(), id.toName()));
+				}
 				return RubyMapMethod.CONTINUE;
 			}
 		});
@@ -1680,10 +1696,9 @@ public class RubyModule extends RubyObject {
 		RubyId id = null;
 		if (name instanceof RubySymbol) {
 			id = ((RubySymbol) name).toId();
-		} else
-			if (name instanceof RubyString) {
-				id = getRuby().intern(((RubyString) name).getValue());
-			}
+		} else if (name instanceof RubyString) {
+			id = getRuby().intern(((RubyString) name).getValue());
+		}
 
 		if (!id.isClassId()) {
 			throw new RubyNameException(getRuby(), "wrong class variable name " + name);
@@ -1828,23 +1843,43 @@ public class RubyModule extends RubyObject {
 
 		return this;
 	}
-	
+
 	public RubyObject m_method_defined(RubyObject symbol) {
-		return isMethodBound(symbol.toId(), 1) ? getRuby().getTrue() : getRuby().getFalse();
+		return isMethodBound(symbol.toId(), 1)
+			? getRuby().getTrue()
+			: getRuby().getFalse();
 	}
 
 	public RubyObject m_public_class_method(RubyObject[] args) {
 		getRubyClass().setMethodVisibility(args, Constants.NOEX_PUBLIC);
-		
+
 		return this;
 	}
-	
+
 	public RubyObject m_private_class_method(RubyObject[] args) {
 		getRubyClass().setMethodVisibility(args, Constants.NOEX_PRIVATE);
 
 		return this;
 	}
-	
+
+	public RubyModule alias_method(RubyObject newId, RubyObject oldId) {
+		aliasMethod(newId.toId(), oldId.toId());
+
+		return this;
+	}
+
+	public RubyModule undef_method(RubyObject name) {
+		undef(name.toId());
+
+		return this;
+	}
+
+	public RubyModule remove_method(RubyObject name) {
+		removeMethod(name.toId());
+
+		return this;
+	}
+
 	private static class GetMethodBodyResult {
 		private Node body;
 		private RubyModule recvClass;
