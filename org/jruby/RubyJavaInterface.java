@@ -93,10 +93,7 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
         Class[] interfaces = new Class[args.length];
 
         for (int i = 0; i < args.length; i++) {
-            try {
-                interfaces[i] = Class.forName(((RubyString) args[i]).getValue());
-            } catch (ClassNotFoundException cnfExcptn) {
-            }
+            interfaces[i] = loadJavaClass(getRuby(), (RubyString)args[i]);
         }
 
         try {

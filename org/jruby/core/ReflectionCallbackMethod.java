@@ -125,7 +125,7 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
             }
         } else {
             if (methodArgs.length != args.length) {
-                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+            	throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
             }
         }
     }
