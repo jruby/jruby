@@ -32,6 +32,7 @@ package org.jruby.javasupport.bsf;
 import java.util.Vector;
 
 import org.jruby.*;
+import org.jruby.exceptions.*;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
 
@@ -131,7 +132,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
             return JavaUtil.convertRubyToJava(ruby, result, Object.class);
         } catch (Exception excptn) {
-            ruby.printException(excptn);
+            printException(ruby, excptn);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, excptn.getMessage(), excptn);
         }
     }
@@ -159,7 +160,25 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     public void handleException(BSFException bsfExcptn) {
-        ruby.printException((Exception)bsfExcptn.getTargetException());
+        printException(ruby, (Exception)bsfExcptn.getTargetException());
+    }
+
+    /**
+     *
+     * Prints out an error message.
+     *
+     * @param exception An Exception thrown by JRuby
+     */
+    private static void printException(Ruby ruby, Exception exception) {
+        if (exception instanceof RaiseException) {
+            ruby.getRuntime().printError(((RaiseException) exception).getActException());
+        } else if (exception instanceof ThrowJump) {
+            ruby.getRuntime().printError(((ThrowJump) exception).getNameError());
+        } else if (exception instanceof BreakJump) {
+            ruby.getRuntime().getErrorStream().println("break without block.");
+        } else if (exception instanceof ReturnException) {
+            ruby.getRuntime().getErrorStream().println("return without block.");
+        }
     }
 
 

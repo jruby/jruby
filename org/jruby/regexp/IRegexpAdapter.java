@@ -39,6 +39,19 @@ import org.jruby.exceptions.RubyRegexpException;
  */
 public abstract class IRegexpAdapter
 {
+    private static final String[] REGEXP_ADAPTER =
+        { "org.jruby.regexp.JDKRegexpAdapter", "org.jruby.regexp.GNURegexpAdapter", "org.jruby.regexp.ORORegexpAdapter" };
+
+    public static Class getAdapterClass() {
+        for (int i = 0; i < REGEXP_ADAPTER.length; i++) {
+            try {
+                return Class.forName(REGEXP_ADAPTER[i]);
+            } catch (ClassNotFoundException cnfExcptn) {
+            } catch (NoClassDefFoundError ncdfError) {
+            }
+        }
+        throw new RuntimeException("No regexp adapter found.");
+    }
 
     /**
      * Compile the regex.

@@ -57,7 +57,6 @@ import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnException;
 import org.jruby.exceptions.RubyBugException;
 import org.jruby.exceptions.RubySecurityException;
-import org.jruby.exceptions.ThrowJump;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
 import org.jruby.javasupport.JavaSupport;
@@ -88,6 +87,7 @@ import org.jruby.util.RubyMap;
 import org.jruby.util.RubyStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
+import org.jruby.regexp.IRegexpAdapter;
 
 /**
  * The jruby runtime.
@@ -100,9 +100,6 @@ public final class Ruby {
 
     public static final String RUBY_MAJOR_VERSION = "1.6";
     public static final String RUBY_VERSION = "1.6.7";
-
-    private static final String[] REGEXP_ADAPTER =
-        { "org.jruby.regexp.JDKRegexpAdapter", "org.jruby.regexp.GNURegexpAdapter", "org.jruby.regexp.ORORegexpAdapter" };
 
     private RubyMethodCache methodCache;
 
@@ -214,12 +211,8 @@ public final class Ruby {
      * @return the JRuby runtime
      */
     public static Ruby getDefaultInstance(Class regexpAdapterClass) {
-        for (int i = 0; regexpAdapterClass == null && i < REGEXP_ADAPTER.length; i++) {
-            try {
-                regexpAdapterClass = Class.forName(REGEXP_ADAPTER[i]);
-            } catch (ClassNotFoundException cnfExcptn) {
-            } catch (NoClassDefFoundError ncdfError) {
-            }
+        if (regexpAdapterClass == null) {
+            regexpAdapterClass = IRegexpAdapter.getAdapterClass();
         }
 
         Ruby ruby = new Ruby();
@@ -249,24 +242,6 @@ public final class Ruby {
 
     public RubyObject eval(INode node) {
         return getRubyTopSelfEvaluateVisitor().eval(node);
-    }
-
-    /**
-     * 
-     * Prints out an error message.
-     * 
-     * @param exception An Exception thrown by JRuby
-     */
-    public void printException(Exception exception) {
-        if (exception instanceof RaiseException) {
-            getRuntime().printError(((RaiseException) exception).getActException());
-        } else if (exception instanceof ThrowJump) {
-            getRuntime().printError(((ThrowJump) exception).getNameError());
-        } else if (exception instanceof BreakJump) {
-            getRuntime().getErrorStream().println("break without block.");
-        } else if (exception instanceof ReturnException) {
-            getRuntime().getErrorStream().println("return without block.");
-        }
     }
 
     public Class getRegexpAdapterClass() {
@@ -855,10 +830,10 @@ public final class Ruby {
     }
 
     /** Setter for property currentMethodScope.
-     * @param actMethodScope New value of property currentMethodScope.
+     * @param currentMethodScope New value of property currentMethodScope.
      */
-    public void setCurrentMethodScope(int actMethodScope) {
-        this.currentMethodScope = actMethodScope;
+    public void setCurrentMethodScope(int currentMethodScope) {
+        this.currentMethodScope = currentMethodScope;
     }
 
     /** Getter for property wrapper.
