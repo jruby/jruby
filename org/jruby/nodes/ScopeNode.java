@@ -104,6 +104,7 @@ public class ScopeNode extends Node implements CallableNode {
         
         ruby.pushClass();
         ruby.setRubyClass(module);
+        ruby.setCBase(module); //CHAD
         ruby.getRubyScope().push();
         RubyVarmap.push(ruby);
         
