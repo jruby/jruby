@@ -82,9 +82,9 @@ public class RubyRange extends RubyObject {
      * Converts this Range to a pair of integers representing a start position 
      * and length.  If either of the range's endpoints is negative, it is added to 
      * the <code>limit</code> parameter in an attempt to arrive at a position 
-     * <i>p</i> such that <i>0&nbsp;<=&nbsp;p&nbsp;<=&nbsp;limit</i>. If 
+     * <i>p</i> such that <i>0&nbsp;&lt;=&nbsp;p&nbsp;&lt;=&nbsp;limit</i>. If 
      * <code>truncate</code> is true, the result will be adjusted, if possible, so 
-     * that <i>begin&nbsp;+&nbsp;length&nbsp;<=&nbsp;limit</i>.  If <code>strict</code> 
+     * that <i>begin&nbsp;+&nbsp;length&nbsp;&lt;=&nbsp;limit</i>.  If <code>strict</code> 
      * is true, an exception will be raised if the range can't be converted as 
      * described above; otherwise it just returns <b>null</b>. 
      * 
@@ -101,7 +101,7 @@ public class RubyRange extends RubyObject {
         boolean excl = getInstanceVar("excl").isTrue();
         end += excl ? 0 : 1;
 
-        if (begin < 0 && (begin += limit) < 0) {
+        if (begin < 0 && (begin += limit) < 0) {		//attention side effect in the if test
             if (strict) {
                 throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
@@ -119,18 +119,24 @@ public class RubyRange extends RubyObject {
             end = limit;
         }
 
-        if (end < 0 && (end += limit) < 0) {
-            if (strict) {
-                throw new RangeError(ruby, inspect().toString() + " out of range.");
-            }
-            end = begin;
-        }
+        //if ((end < 0 || (!excl && end == 0)) && (end += limit) < 0) {		//attention side effect in the if test
+		if (end < 0  || (!excl && end == 0)) {
+			end += limit;
+			if (end < 0) {		//attention side effect in the if test
+				if (strict) {
+					throw new RangeError(ruby, inspect().toString() + " out of range.");
+				}
+//				end = begin;
+				return null;
+			}
+		}
 
         if (begin > end) {
             if (strict) {
                 throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
-            end = begin;
+//            end = begin;
+			return null;
         }
 
         return new long[] { begin, end - begin };

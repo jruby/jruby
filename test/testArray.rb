@@ -3,8 +3,11 @@ test_check "Test Array:"
 arr = ["zero", "first"]
 
 arr.unshift "second", "third"
-
-
+test_equal(["second", "third", "zero", "first"], arr)
+test_equal(["first"], arr[-1..-1])
+test_equal(["first"], arr[3..3])
+test_equal([], arr[3..2])
+test_equal(nil, arr[3..1])
 test_ok(["third", "zero", "first"] == arr[1..4])
 test_ok('["third", "zero", "first"]' == arr[1..4].inspect)
 
