@@ -76,7 +76,7 @@ public class RubyFloat extends RubyNumeric {
         
         result.defineMethod("+", callbackFactory.getMethod(RubyFloat.class, "op_plus", RubyNumeric.class));
         result.defineMethod("-", callbackFactory.getMethod(RubyFloat.class, "op_minus", RubyNumeric.class));
-        result.defineMethod("*", callbackFactory.getMethod(RubyFloat.class, "op_mul", RubyNumeric.class));
+        result.defineMethod("*", callbackFactory.getMethod(RubyFloat.class, "op_mul", IRubyObject.class));
         result.defineMethod("/", callbackFactory.getMethod(RubyFloat.class, "op_div", RubyNumeric.class));
         result.defineMethod("%", callbackFactory.getMethod(RubyFloat.class, "op_mod", RubyNumeric.class));
         result.defineMethod("**", callbackFactory.getMethod(RubyFloat.class, "op_pow", RubyNumeric.class));
@@ -188,8 +188,15 @@ public class RubyFloat extends RubyNumeric {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue() - other.getDoubleValue());
     }
 
-    public RubyNumeric op_mul(RubyNumeric num) {
-        return num.multiplyWith(this);
+    // TODO: Coercion messages needed for all ops...Does this sink Anders
+    // dispatching optimization?
+    public RubyNumeric op_mul(IRubyObject other) {
+    	if (other instanceof RubyNumeric == false) {
+    		throw new TypeError(getRuntime(), other.getMetaClass().getName() +
+    			" can't be coerced into Float");
+    	}
+    	
+        return ((RubyNumeric) other).multiplyWith(this);
     }
 
     public RubyNumeric multiplyWith(RubyNumeric other) {
@@ -207,7 +214,7 @@ public class RubyFloat extends RubyNumeric {
     public RubyNumeric multiplyWith(RubyBignum other) {
         return other.multiplyWith(this);
     }
-
+    
     public RubyNumeric op_div(RubyNumeric other) {
         return RubyFloat.newFloat(getRuntime(), getDoubleValue() / other.getDoubleValue());
     }
@@ -239,6 +246,9 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyInteger to_i() {
+    	if (value > Integer.MAX_VALUE) {
+    		return RubyBignum.newBignum(getRuntime(), getValue());
+    	}
         return RubyFixnum.newFixnum(getRuntime(), getLongValue());
     }
 
