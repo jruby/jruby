@@ -1,28 +1,28 @@
 /*
  * DefinedVisitor.java - description
  * Created on 19.02.2002, 16:31:56
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.evaluator;
 
@@ -121,7 +121,7 @@ public class DefinedVisitor extends AbstractVisitor {
         } catch (JumpException jumpExcptn) {
         }
     }
-    
+
 	/**
      * @see AbstractVisitor#visitSuperNode(SuperNode)
      */
@@ -150,7 +150,7 @@ public class DefinedVisitor extends AbstractVisitor {
         if (getDefinition(iVisited.getReceiverNode()) != null) {
             try {
                 IRubyObject receiver = EvaluateVisitor.createVisitor(self).eval(iVisited.getReceiverNode());
-                
+
                 Visibility visibility = receiver.getMetaClass().getMethodVisibility(iVisited.getName());
 
                 if (!visibility.isPrivate() && (!visibility.isProtected() || self.isKindOf(receiver.getMetaClass().getRealClass()))) {
@@ -158,7 +158,7 @@ public class DefinedVisitor extends AbstractVisitor {
                         definition = getArgumentDefinition(iVisited.getArgsNode(), "method");
                         return;
                     }
-                }                
+                }
             } catch (JumpException excptn) {
             }
         }
@@ -328,18 +328,18 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitClassVarNode(ClassVarNode)
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
-        if (ruby.getCBase() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
+        if (threadContext.getCBase() == null && self.getMetaClass().isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
-        } else if (!ruby.getCBase().isSingleton() && ruby.getCBase().isClassVarDefined(iVisited.getName())) {
+        } else if (!threadContext.getCBase().isSingleton() && threadContext.getCBase().isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
-        } else if (((RubyModule)ruby.getCBase().getInstanceVariable("__attached__")).isClassVarDefined(iVisited.getName())) {
+        } else if (((RubyModule)threadContext.getCBase().getInstanceVariable("__attached__")).isClassVarDefined(iVisited.getName())) {
             definition = "class_variable";
         }
     }
 
     /**
      * @see AbstractVisitor#visitConstNode(ConstNode)
-     * 
+     *
      * @fixme Implement this method.
      */
     public void visitConstNode(ConstNode iVisited) {
@@ -385,7 +385,7 @@ public class DefinedVisitor extends AbstractVisitor {
 
     /**
      * @see AbstractVisitor#visitBackRefNode(BackRefNode)
-     * 
+     *
      * @fixme Add test if back ref exists.
      */
     public void visitBackRefNode(BackRefNode iVisited) {
@@ -396,7 +396,7 @@ public class DefinedVisitor extends AbstractVisitor {
 
     /**
      * @see AbstractVisitor#visitNthRefNode(NthRefNode)
-     * 
+     *
      * @fixme Add test if nth ref exists.
      */
     public void visitNthRefNode(NthRefNode iVisited) {

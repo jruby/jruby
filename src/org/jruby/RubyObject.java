@@ -529,7 +529,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
                 ((Frame) frameStack.peek()).setIter(frameStack.getPrevious().getIter());
             }
         }
-        threadContext.pushClass(runtime.getCBase());
+        threadContext.pushClass(threadContext.getCBase());
         IRubyObject result = getRuntime().getNil();
         try {
             INode node = getRuntime().parse(src.toString(), file);

@@ -378,7 +378,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitClassVarAsgnNode(ClassVarAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        runtime.getCBase().setClassVar(iVisited.getName(), result);
+        threadContext.getCBase().setClassVar(iVisited.getName(), result);
     }
 
     /**
@@ -794,8 +794,8 @@ public final class EvaluateVisitor implements NodeVisitor {
         } catch (BreakJump bExcptn) {
             result = runtime.getNil();
         } finally {
-            runtime.getIterStack().pop();
-            runtime.getBlockStack().pop();
+            threadContext.getIterStack().pop();
+            threadContext.getBlockStack().pop();
         }
     }
 

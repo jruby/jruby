@@ -338,5 +338,4 @@ public class ThreadContext {
         }
         return result;
     }
-
 }

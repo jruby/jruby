@@ -538,19 +538,8 @@ public final class Ruby {
         return getCurrentContext().getIterStack();
     }
 
-    public Iter getCurrentIter() {
-        return getCurrentContext().getCurrentIter();
-    }
-
     public BlockStack getBlockStack() {
         return getCurrentContext().getBlockStack();
-    }
-
-    /** Getter for property cBase.
-     * @return Value of property cBase.
-     */
-    public RubyModule getCBase() {
-        return getCurrentFrame().getNamespace().getNamespaceModule();
     }
 
     public Visibility getCurrentVisibility() {
@@ -566,13 +555,6 @@ public final class Ruby {
      */
     public RubyModule getWrapper() {
         return getCurrentContext().getWrapper();
-    }
-
-    /** Setter for property wrapper.
-     * @param wrapper New value of property wrapper.
-     */
-    public void setWrapper(RubyModule wrapper) {
-        getCurrentContext().setWrapper(wrapper);
     }
 
     /**
@@ -842,10 +824,10 @@ public final class Ruby {
         } else {
             /* load in anonymous module as toplevel */
             context.setWrapper(RubyModule.newModule(this));
-            context.pushClass(getWrapper());
+            context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
-            setNamespace(new Namespace(getWrapper(), getNamespace()));
+            setNamespace(new Namespace(context.getWrapper(), getNamespace()));
         }
 
         String last_func = context.getCurrentFrame().getLastFunc();
@@ -896,7 +878,7 @@ public final class Ruby {
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
-            setNamespace(new Namespace(getWrapper(), getNamespace()));
+            setNamespace(new Namespace(context.getWrapper(), getNamespace()));
         }
 
         String last_func = getCurrentFrame().getLastFunc();
