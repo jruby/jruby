@@ -50,8 +50,8 @@
  */
 package org.jruby.runtime;
 
-import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.RubyModule;
 
 /** Represents an element in the nested module/class namespace hierarchy.
  *
@@ -81,41 +81,37 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Namespace {
     private final Namespace parent;
-    private final RubyModule namespaceModule;
+    private final RubyModule module;
 
     public Namespace(RubyModule namespaceModule) {
         this(namespaceModule, null);
     }
 
     public Namespace(RubyModule namespaceModule, Namespace parent) {
-        this.namespaceModule = namespaceModule;
+        this.module = namespaceModule;
         this.parent = parent;
     }
 
     public Namespace cloneNamespace() {
-        return new Namespace(namespaceModule, parent != null ? parent.cloneNamespace() : null);
+        return new Namespace(module, parent != null ? parent.cloneNamespace() : null);
     }
 
     public Namespace getParent() {
         return parent;
     }
 
-    /**
-     * Gets the namespaceModule.
-     * @return Returns a RubyModule
-     */
-    public RubyModule getNamespaceModule() {
-        return namespaceModule;
+    public RubyModule getModule() {
+        return module;
     }
 
     public IRubyObject getConstant(IRubyObject self, String name) {
         for (Namespace ns = this; ns != null && ns.getParent() != null; ns = ns.getParent()) {
-            if (ns.getNamespaceModule() == null) {
+            if (ns.getModule() == null) {
                 return self.getMetaClass().getConstant(name);
-            } else if (ns.getNamespaceModule().hasInstanceVariable(name)) {
-                return ns.getNamespaceModule().getInstanceVariable(name);
+            } else if (ns.getModule().hasInstanceVariable(name)) {
+                return ns.getModule().getInstanceVariable(name);
             }
         }
-        return getNamespaceModule().getConstant(name);
+        return getModule().getConstant(name);
     }
 }

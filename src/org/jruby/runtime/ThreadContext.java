@@ -160,7 +160,7 @@ public class ThreadContext {
     }
 
     public RubyModule getCBase() {
-        return getCurrentFrame().getNamespace().getNamespaceModule();
+        return getCurrentFrame().getNamespace().getModule();
     }
 
     public Visibility getCurrentVisibility() {

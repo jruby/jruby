@@ -443,7 +443,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     public IRubyObject specificEval(RubyModule mod, IRubyObject[] args) {
         if (getRuntime().isBlockGiven()) {
             if (args.length > 0) {
-                throw new ArgumentError(getRuntime(), "wrong # of arguments (" + args.length + " for 0)");
+                throw new ArgumentError(getRuntime(), args.length, 0);
             }
             return yieldUnder(mod);
         } else {
@@ -491,23 +491,17 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         }, new IRubyObject[] { this, src, file, line });
     }
 
-    public IRubyObject yieldUnder(RubyModule under) {
+    private IRubyObject yieldUnder(RubyModule under) {
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                // if () {
-                Block oldBlock = runtime.getBlockStack().getCurrent().cloneBlock();
-
-                /* copy the block to avoid modifying global data. */
-                runtime.getBlockStack().getCurrent().getFrame().setNamespace(runtime.getCurrentFrame().getNamespace());
+                Block savedBlock = runtime.getBlockStack().getCurrent().cloneBlock();
+                Namespace ns = runtime.getCurrentFrame().getNamespace();
+                runtime.getBlockStack().getCurrent().getFrame().setNamespace(ns);
                 try {
                     return runtime.yield(args[0], args[0], runtime.getRubyClass(), false);
                 } finally {
-                    runtime.getBlockStack().setCurrent(oldBlock);
+                    runtime.getBlockStack().setCurrent(savedBlock);
                 }
-                // }
-                /* static block, no need to restore */
-                // ruby.getBlock().frame.setNamespace(ruby.getRubyFrame().getNamespace());
-                // return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
             }
 
             public Arity getArity() {
