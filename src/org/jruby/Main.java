@@ -42,7 +42,6 @@ import org.jruby.ast.Node;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.exceptions.ThrowJump;
-import org.jruby.internal.runtime.ReadonlyAccessor;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
@@ -160,7 +159,6 @@ public class Main {
         IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
         runtime.setVerbose(runtime.newBoolean(commandline.verbose));
 
-        defineGlobalKCODE(runtime);
         defineGlobalVERBOSE(runtime);
         runtime.getClasses().getObjectClass().setConstant("$VERBOSE", 
         		commandline.verbose ? runtime.getTrue() : runtime.getNil());
@@ -206,10 +204,6 @@ public class Main {
                 return newValue;
             }
         });
-    }
-
-    private static void defineGlobalKCODE(final Ruby runtime) {
-        runtime.getGlobalVariables().define("$KCODE", new ReadonlyAccessor("$KCODE", new ValueAccessor(new RubyString(runtime,"u"))));
     }
 
     private static void defineGlobal(Ruby runtime, String name, boolean value) {
