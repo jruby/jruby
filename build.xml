@@ -12,8 +12,8 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="version" value="0.5.0"/>
-    <property name="version.file" value="0_5_0"/>
+    <property name="version" value="0.5.1"/>
+    <property name="version.file" value="0_5_1"/>
     <property name="javadoc.title" value="JRuby"/>
 
     <property name="build.dest" value="${build.dir}/classes"/>
@@ -88,6 +88,7 @@
                 <include name="test.rb"/>
                 <include name="jruby.bat"/>
 				<include name="jruby.sh"/>
+				<include name="mkconfig.rb"/>
                 <include name="samples/**/*"/>
                 <include name="lib/**/*"/>
             </fileset>
