@@ -737,20 +737,20 @@ public class RubyModule extends RubyObject {
         IRubyObject[] args,
         ICallable method,
         boolean noSuper) {
-        // ...
-        runtime.getIterStack().push(runtime.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
+        ThreadContext context = runtime.getCurrentContext();
+        context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
 
-        runtime.getFrameStack().push();
-        runtime.getCurrentFrame().setLastFunc(name);
-        runtime.getCurrentFrame().setLastClass(noSuper ? null : this);
-        runtime.getCurrentFrame().setSelf(recv);
-        runtime.getCurrentFrame().setArgs(args);
+        context.getFrameStack().push();
+        context.getCurrentFrame().setLastFunc(name);
+        context.getCurrentFrame().setLastClass(noSuper ? null : this);
+        context.getCurrentFrame().setSelf(recv);
+        context.getCurrentFrame().setArgs(args);
 
         try {
             return method.call(runtime, recv, name, args, noSuper);
         } finally {
-            runtime.getFrameStack().pop();
-            runtime.getIterStack().pop();
+            context.getFrameStack().pop();
+            context.getIterStack().pop();
         }
     }
 

@@ -370,7 +370,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no class/module to define constant");
         }
-        threadContext.getRubyClass().setConstant(iVisited.getName(), eval(iVisited.getValueNode()));
+        setConstant(iVisited.getName(), eval(iVisited.getValueNode()));
     }
 
     /**
@@ -409,15 +409,15 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitCallNode(CallNode)
      */
     public void visitCallNode(CallNode iVisited) {
-        Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
+        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
 
         IRubyObject receiver = null;
         IRubyObject[] args = null;
         try {
             receiver = eval(iVisited.getReceiverNode());
-            args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+            args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
         } finally {
-            ArgsUtil.endCallArgs(runtime, tmpBlock);
+            ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
         Asserts.notNull(receiver.getMetaClass(), receiver.getClass().getName());
 
@@ -480,8 +480,8 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         RubyClass rubyClass = null;
 
-        if (threadContext.getRubyClass().isConstantDefined(iVisited.getClassName())) {
-            IRubyObject type = threadContext.getRubyClass().getConstant(iVisited.getClassName());
+        if (isConstantDefined(iVisited.getClassName())) {
+            IRubyObject type = getConstant(iVisited.getClassName());
 
             if (!(type instanceof RubyClass)) {
                 throw new TypeError(runtime, iVisited.getClassName() + " is not a class");
@@ -493,7 +493,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
 
                 rubyClass.setClassPath(threadContext.getRubyClass(), iVisited.getClassName());
-                threadContext.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
+                setConstant(iVisited.getClassName(), rubyClass);
             } else {
                 if (runtime.getSafeLevel() >= 4) {
                     throw new SecurityError(runtime, "extending class prohibited");
@@ -504,7 +504,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 superClass = runtime.getClasses().getObjectClass();
             }
             rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
-            threadContext.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
+            setConstant(iVisited.getClassName(), rubyClass);
             rubyClass.setClassPath(threadContext.getRubyClass(), iVisited.getClassName());
         }
 
@@ -715,12 +715,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFCallNode(FCallNode)
      */
     public void visitFCallNode(FCallNode iVisited) {
-        Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
+        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+            args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
         } finally {
-            ArgsUtil.endCallArgs(runtime, tmpBlock);
+            ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
 
         result = self.getMetaClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
@@ -777,14 +777,14 @@ public final class EvaluateVisitor implements NodeVisitor {
             while (true) {
                 try {
                     ISourcePosition position = threadContext.getPosition();
-                    Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
+                    Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
 
                     IRubyObject recv = null;
                     try {
                         recv = eval(iVisited.getIterNode());
                     } finally {
                         threadContext.setPosition(position);
-                        ArgsUtil.endCallArgs(runtime, tmpBlock);
+                        ArgsUtil.endCallArgs(threadContext, tmpBlock);
                     }
                     result = recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
                     return;
@@ -943,15 +943,15 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         RubyModule module = null;
 
-        if (threadContext.getRubyClass().isConstantDefined(iVisited.getName())) {
-            module = (RubyModule) threadContext.getRubyClass().getConstant(iVisited.getName());
+        if (isConstantDefined(iVisited.getName())) {
+            module = (RubyModule) getConstant(iVisited.getName());
 
             if (runtime.getSafeLevel() >= 4) {
                 throw new SecurityError(runtime, "Extending module prohibited.");
             }
         } else {
             module = runtime.defineModule(iVisited.getName());
-            threadContext.getRubyClass().setConstant(iVisited.getName(), module);
+            setConstant(iVisited.getName(), module);
             module.setClassPath(threadContext.getRubyClass(), iVisited.getName());
         }
 
@@ -961,6 +961,18 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
+    }
+
+    private boolean isConstantDefined(String name) {
+        return threadContext.getRubyClass().isConstantDefined(name);
+    }
+
+    private void setConstant(String name, IRubyObject value) {
+        threadContext.getRubyClass().setConstant(name, value);
+    }
+
+    private IRubyObject getConstant(String name) {
+        return threadContext.getRubyClass().getConstant(name);
     }
 
     /**
@@ -1010,7 +1022,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitOpElementAsgnNode(OpElementAsgnNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
 
-        IRubyObject[] args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+        IRubyObject[] args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
 
         IRubyObject firstValue = receiver.callMethod("[]", args);
 
@@ -1267,13 +1279,13 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new NameError(runtime, "Superclass method '" + threadContext.getCurrentFrame().getLastFunc() + "' disabled.");
         }
 
-        Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
+        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
 
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+            args = ArgsUtil.setupArgs(threadContext, this, iVisited.getArgsNode());
         } finally {
-            ArgsUtil.endCallArgs(runtime, tmpBlock);
+            ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
         threadContext.callSuper(args);
     }
@@ -1487,13 +1499,13 @@ public final class EvaluateVisitor implements NodeVisitor {
             return currentException.isKindOf(runtime.getExceptions().getStandardError());
         }
 
-        Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
+        Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
 
         IRubyObject[] args = null;
         try {
-            args = ArgsUtil.setupArgs(runtime, this, exceptionNodes);
+            args = ArgsUtil.setupArgs(threadContext, this, exceptionNodes);
         } finally {
-            ArgsUtil.endCallArgs(runtime, tmpBlock);
+            ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
 
         for (int i = 0; i < args.length; i++) {

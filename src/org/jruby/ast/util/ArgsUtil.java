@@ -31,12 +31,14 @@ import java.util.Iterator;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
-import org.jruby.*;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.ExpandArrayNode;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Iter;
+import org.jruby.RubyArray;
 
 /**
  *
@@ -44,26 +46,27 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public final class ArgsUtil {
-    public static Block beginCallArgs(Ruby runtime) {
-        Block currentBlock = runtime.getBlockStack().getCurrent();
 
-        if (runtime.getCurrentIter().isPre()) {
-            runtime.getBlockStack().pop();
+    public static Block beginCallArgs(ThreadContext context) {
+        Block currentBlock = context.getBlockStack().getCurrent();
+
+        if (context.getCurrentIter().isPre()) {
+            context.getBlockStack().pop();
         }
-        runtime.getIterStack().push(Iter.ITER_NOT);
+        context.getIterStack().push(Iter.ITER_NOT);
         return currentBlock;
     }
 
-    public static void endCallArgs(Ruby runtime, Block currentBlock) {
-        runtime.getBlockStack().setCurrent(currentBlock);
-        runtime.getIterStack().pop();
+    public static void endCallArgs(ThreadContext context, Block currentBlock) {
+        context.getBlockStack().setCurrent(currentBlock);
+        context.getIterStack().pop();
     }
 
-    public static IRubyObject[] setupArgs(Ruby runtime, EvaluateVisitor visitor, INode node) {
+    public static IRubyObject[] setupArgs(ThreadContext context, EvaluateVisitor visitor, INode node) {
         if (node == null) {
             return IRubyObject.NULL_ARRAY;
         }
-        final ISourcePosition position = runtime.getPosition();
+        final ISourcePosition position = context.getPosition();
 
         if (node instanceof ArrayNode) {
             final int size = ((ArrayNode) node).size();
@@ -78,14 +81,14 @@ public final class ArgsUtil {
                 }
             }
 
-            runtime.setPosition(position);
+            context.setPosition(position);
 
             return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
 
         IRubyObject args = visitor.eval(node);
 
-        runtime.setPosition(position);
+        context.setPosition(position);
 
         if (args instanceof RubyArray) {
             return ((RubyArray) args).toJavaArray();
