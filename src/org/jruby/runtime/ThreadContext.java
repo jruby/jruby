@@ -23,7 +23,6 @@
  */
 package org.jruby.runtime;
 
-import org.jruby.exceptions.*;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -32,12 +31,25 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
-import org.jruby.*;
+import org.jruby.util.Asserts;
+import org.jruby.util.IdUtil;
+import org.jruby.Ruby;
+import org.jruby.ThreadClass;
+import org.jruby.RubyModule;
+import org.jruby.RubyClass;
+import org.jruby.RubyArray;
+import org.jruby.IncludedModuleWrapper;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.NextJump;
+import org.jruby.exceptions.RedoJump;
+import org.jruby.exceptions.ArgumentError;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
 
 import java.util.List;
+import java.util.Iterator;
 
 /**
  * @author jpetersen
@@ -328,28 +340,28 @@ public class ThreadContext {
     }
 
     public IRubyObject getConstant(IRubyObject self, String name) {
+        Asserts.isTrue(IdUtil.isConstant(name));
+
+        // First search the current class hierarchy (the class-stack/namespace stack) ..?
         Namespace initial = getCurrentFrame().getNamespace();
         for (Namespace ns = initial; ns != null && ns.getParent() != null; ns = ns.getParent()) {
-            if (ns.getModule() == null) {
-                return self.getMetaClass().getConstant(name);
-            } else if (ns.getModule().hasInstanceVariable(name)) {
+            if (ns.getModule().hasInstanceVariable(name)) {
                 return ns.getModule().getInstanceVariable(name);
             }
         }
+        // Then search the inheritance hierarchy ..?
         return initial.getModule().getConstant(name);
     }
 
-
     public RubyArray moduleNesting() {
-         ArrayStack tmpStack = (ArrayStack) classStack.clone();
-         int size = tmpStack.depth();
-         RubyArray ary = RubyArray.newArray(runtime, size);
-         for (int i = 0; i < size; i++) {
-             RubyModule module = (RubyModule) tmpStack.pop();
-             if (! (module instanceof RubyClass)) {
-                 ary.append(module);
-             }
-         }
-         return ary;
+        RubyArray result = RubyArray.newArray(runtime);
+        Iterator iter = classStack.contents();
+        while (iter.hasNext()) {
+            RubyModule module = (RubyModule) iter.next();
+            if (! (module instanceof RubyClass)) {
+                 result.append(module);
+            }
+        }
+        return result;
     }
 }

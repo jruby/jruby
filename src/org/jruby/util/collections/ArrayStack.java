@@ -27,6 +27,8 @@ package org.jruby.util.collections;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Arrays;
 
 /**
  *
@@ -60,5 +62,13 @@ public class ArrayStack implements Cloneable {
         ArrayStack clone = new ArrayStack();
         clone.elements = new ArrayList(elements);
         return clone;
+    }
+
+    public Iterator contents() {
+        ArrayList reverseElements = new ArrayList(elements.size());
+        for (int i = elements.size() - 1; i >= 0; i--) {
+            reverseElements.add(elements.get(i));
+        }
+        return reverseElements.iterator();
     }
 }

@@ -37,6 +37,7 @@ release.
     * Subclassing Java classes
     * Dispatcher should prefer the narrower type if there are
       many types matching
+    * Examine performance of the high level parts
 
 * Thread support
     * Implement Mutex, ConditionVariable and Queue as native Java libs
