@@ -64,7 +64,9 @@ super(runtime);
 }
 
 protected RubyClass createType(Ruby runtime) {
-return runtime.defineClass("Array", (RubyClass) runtime.getClasses().getClass("Object"));
+RubyClass result = runtime.defineClass("Array", (RubyClass) runtime.getClasses().getClass("Object"));
+result.includeModule(runtime.getClasses().getClass("Enumerable"));
+return result;
 }
 
 protected void defineMethods(MethodContext context) {

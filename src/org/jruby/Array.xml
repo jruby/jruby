@@ -3,11 +3,9 @@
 <module type="class">
   <name>Array</name>
   <superclass>Object</superclass>
-  <implementation>org.jruby.RubyArray</implementation>
+  <ancestor>Enumerable</ancestor>
 
-  <!--
-        arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
-  -->
+  <implementation>org.jruby.RubyArray</implementation>
 
   <instance-methods>
     <method name="initialize">
