@@ -119,7 +119,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             //	
             e.printStackTrace();
             RubyBugException lBug = new RubyBugException(e.getClass().getName() + ": " + e.getMessage());
-            lBug.initCause(e);
+            //lBug.initCause(e);
             throw lBug;
         }
         return result;
