@@ -191,4 +191,15 @@ module Enumerable
     end
     false
   end
+
+  # WARNING this isn't a default ruby method
+  def group_by
+    result = {}
+    each do |item|
+      group = yield(item)
+      result[group] = [] if result[group].nil?
+      result[group] << item
+    end
+    result
+  end
 end
