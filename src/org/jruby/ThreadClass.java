@@ -103,7 +103,7 @@ public class ThreadClass extends RubyObject {
         threadClass.defineSingletonMethod("pass",
                 callbackFactory.getSingletonMethod(ThreadClass.class, "pass"));
         threadClass.defineSingletonMethod("start",
-                callbackFactory.getSingletonMethod(ThreadClass.class, "start"));
+                callbackFactory.getOptSingletonMethod(ThreadClass.class, "start"));
 
         ThreadClass currentThread = new ThreadClass(ruby, threadClass);
         currentThread.jvmThread = Thread.currentThread();
