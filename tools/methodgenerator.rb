@@ -1,7 +1,6 @@
 
 require 'rexml/sax2parser'
 
-
 INCLUDES = %w(
 org.jruby.Ruby
 org.jruby.RubyClass
@@ -38,8 +37,8 @@ class MethodDescription < AbstractMethodDescription
   attr :java_name, true
   attr :name
 
-  def initialize(generator, name, count)
-    @generator, @name, @count = generator, name, count
+  def initialize(class_description, name, count)
+    @class_description, @name, @count = class_description, name, count
     @arity = 0
     @is_optional = false
     @java_name = name
@@ -56,7 +55,7 @@ class MethodDescription < AbstractMethodDescription
   def generate_constant(output)
     output.write('public static final int ')
     output.write("#{constant_name} = ")
-    output.write("#{@generator.constant_name} | #{@count.to_s};\n")
+    output.write("#{@class_description.constant_name} | #{@count.to_s};\n")
   end
 
   def generate_creation(output)
@@ -85,7 +84,7 @@ class StaticMethodDescription < MethodDescription
 
   def generate_switch_case(output)
     output.write("case #{constant_name} :\n")
-    output.write("return #{@generator.implementation}.#{java_name}(")
+    output.write("return #{@class_description.implementation}.#{java_name}(")
     output.write("receiver")
     if optional?
       output.write(", args")
@@ -141,11 +140,16 @@ class UndefineMethod < AbstractMethodDescription
 end
 
 
+class ClassDescription
+  attr :is_module, true
+  attr :name, true
+  attr :methods, true
+  attr :class_methods, true
+  attr :implementation, true
+  attr :superclass, true
+  attr :package, true
 
-class MethodGenerator
-
-  def initialize(input)
-    @input = input
+  def initialize
     @is_module = false
     @name = nil
     @methods = []
@@ -155,19 +159,7 @@ class MethodGenerator
     @package = nil
   end
 
-  attr :implementation
-
-  def package=(package)
-    @package = package
-  end
-
-  def constant_name
-    @name.upcase
-  end
-
-  def generate(output)
-    read_input
-
+  def generate_java(output)
     output.write("/* Generated code - do not edit! */\n")
     output.write("\n")
 
@@ -261,6 +253,36 @@ class MethodGenerator
     }
   end
 
+  def constant_name
+    @name.upcase
+  end
+end
+
+
+class MethodGenerator
+
+  def initialize(input)
+    @input = input
+    @class_description = ClassDescription.new
+  end
+
+  def implementation
+    @class_description.implementation
+  end
+
+  def generate(output)
+    read_input
+    @class_description.generate_java(output)
+  end
+
+  def constant_name
+    @class_description.constant_name
+  end
+
+  def package=(package)
+    @class_description.package = package
+  end
+
   def read_input
     method_count = nil
     methods = nil
@@ -269,35 +291,35 @@ class MethodGenerator
     parser = Parser.new(@input)
     parser.on_tag_start("module") {|name, attributes|
       if attributes['type'] == "module"
-        @is_module = true
+        @class_description.is_module = true
       end
     }
     parser.on_tag_content("name") {|text|
-      @name = text
+      @class_description.name = text
     }
     parser.on_tag_content("superclass") {|text|
       if text == 'none'
-        @superclass = :none
+        @class_description.superclass = :none
       else
-        @superclass = text
+        @class_description.superclass = text
       end
     }
     parser.on_tag_content("implementation") {|text|
-      @implementation = text
+      @class_description.implementation = text
     }
     parser.on_tag_start("instance-methods") {|name, attributes|
-      methods = @methods
+      methods = @class_description.methods
       method_count = 0
       method_description_class = MethodDescription
     }
     parser.on_tag_start("class-methods") {|name, attributes|
-      methods = @class_methods
+      methods = @class_description.class_methods
       method_count = 0
       method_description_class = StaticMethodDescription
     }
     parser.on_tag_start("method") {|name, attributes|
       method_count += 1
-      methods << method_description_class.new(self,
+      methods << method_description_class.new(@class_description,
                                               attributes['name'],
                                               method_count)
     }
