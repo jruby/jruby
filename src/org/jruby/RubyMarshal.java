@@ -3,10 +3,12 @@
  * Created on Mar 20 22:20:56 2002
  * 
  * Copyright (C) 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Anders Bengtsson
+ * Copyright (C) 2003 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -38,9 +40,8 @@ import java.io.OutputStream;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.internal.runtime.builtin.definitions.MarshalDefinition;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -53,13 +54,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 public class RubyMarshal {
 
-    public static RubyModule createMarshalModule(Ruby ruby) {
-        RubyModule marshalModule = ruby.defineModule("Marshal");
-
-        marshalModule.defineSingletonMethod("dump", CallbackFactory.getOptSingletonMethod(RubyMarshal.class, "dump"));
-        marshalModule.defineSingletonMethod("load", CallbackFactory.getOptSingletonMethod(RubyMarshal.class, "load"));
-        marshalModule.defineSingletonMethod("restore", CallbackFactory.getOptSingletonMethod(RubyMarshal.class, "load"));
-        return marshalModule;
+    public static RubyModule createMarshalModule(Ruby runtime) {
+    	return new MarshalDefinition(runtime).getModule();
     }
 
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args) {
