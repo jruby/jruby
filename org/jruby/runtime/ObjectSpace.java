@@ -43,22 +43,22 @@ import org.jruby.RubyModule;
  */
 
 public class ObjectSpace {
-
-    private List objects = new LinkedList();
+    private Set references = new HashSet();
     private ReferenceQueue deadReferences = new ReferenceQueue();
 
     public void add(RubyObject object) {
-        objects.add(new SoftReference(object, deadReferences));
+		cleanup();
+        references.add(new WeakReference(object, deadReferences));
     }
 
     public Iterator iterator(RubyModule rubyClass) {
         return new ObjectSpaceIterator(rubyClass);
     }
 
-    public void cleanup() {
+    private void cleanup() {
         Reference reference;
         while ((reference = deadReferences.poll()) != null) {
-            objects.remove(reference);
+            references.remove(reference);
         }
     }
 
@@ -71,7 +71,7 @@ public class ObjectSpace {
 
         public ObjectSpaceIterator(RubyModule rubyClass) {
             this.rubyClass = rubyClass;
-            this.iterator = new LinkedList(objects).iterator();
+            this.iterator = new ArrayList(references).iterator();
             prefetch();
         }
 
@@ -98,10 +98,10 @@ public class ObjectSpace {
                     next = null;
                     return;
                 }
-                SoftReference ref = (SoftReference) iterator.next();
+                WeakReference ref = (WeakReference) iterator.next();
                 next = (RubyObject) ref.get();
                 if (next == null) {
-                    objects.remove(ref);
+                    references.remove(ref);
                 } else if (next != null && next.isKindOf(rubyClass)) {
                     return;
                 }

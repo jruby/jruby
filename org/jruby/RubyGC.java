@@ -46,13 +46,12 @@ public class RubyGC {
     public static RubyModule createGCModule(Ruby ruby) {
         RubyModule gcModule = ruby.defineModule("GC");
         gcModule.defineSingletonMethod("start", CallbackFactory.getSingletonMethod(RubyGC.class, "start"));
-        gcModule.defineSingletonMethod("garbage_collect", CallbackFactory.getSingletonMethod(RubyGC.class, "start"));
+        gcModule.defineAlias("garbage_collect", "start");
         return gcModule;
     }
 
     public static RubyObject start(Ruby ruby, RubyObject recv) {
         System.gc();
-        ruby.objectSpace.cleanup();
         return ruby.getNil();
     }
 }
