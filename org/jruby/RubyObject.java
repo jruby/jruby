@@ -113,18 +113,6 @@ public class RubyObject implements Cloneable {
     }
 
     /**
-     * This method is just a wrapper around the Ruby "hash" method,
-     * provided so that RubyObjects can be used as keys in the Java
-     * HashMap object underlying RubyHash.
-     */
-//     public int hashCode() {
-//         long rubyHash = RubyNumeric.fix2long(funcall("hash"));
-//         int result = (int) rubyHash;
-//         result ^= (rubyHash >> 32);
-//         return result;
-//     }
-
-    /**
      * This method is just a wrapper around the Ruby "==" method,
      * provided so that RubyObjects can be used as keys in the Java
      * HashMap object underlying RubyHash.

@@ -69,7 +69,7 @@ public class RubyMethodCache {
     public void saveEntry(RubyModule recvClass, String name, CacheEntry entry) {
         methodCache.put(getKey(recvClass, name), entry);
     }
-    
+
     /**
      * Receives a method entry from the cache
      * 
@@ -78,12 +78,7 @@ public class RubyMethodCache {
      * @return CacheEntry The CacheEntry to save.
      */
     public CacheEntry getEntry(RubyModule recvClass, String name) {
-        CacheEntry entry = (CacheEntry)methodCache.get(getKey(recvClass, name));
-        if (entry != null && entry.getName().equals(name) && entry.getRecvClass() == recvClass) {
-            return entry;
-        } else {
-            return null;
-        }
+        return (CacheEntry) methodCache.get(getKey(recvClass, name));
     }
     
     /**
@@ -92,11 +87,10 @@ public class RubyMethodCache {
      * @param name The name of the methods.
      */
     public void clearByName(String name) {
-        Iterator iter = methodCache.entrySet().iterator();
+        Iterator iter = methodCache.values().iterator();
         while (iter.hasNext()) {
-            Map.Entry entry = (Map.Entry) iter.next();
-
-            if (((CacheEntry)entry.getValue()).getName().equals(name)) {
+            CacheEntry entry = (CacheEntry) iter.next();
+            if (entry.getName().equals(name)) {
                 iter.remove();
             }
         }
@@ -111,12 +105,33 @@ public class RubyMethodCache {
     
     /**
      * Create a hash key to save an entry.
-     * 
-     * @param recvClass The receiver module/class.
-     * @param name The method name.
-     * @return The hash key.
      */
-    private static Integer getKey(RubyModule recvClass, String name) {
-        return new Integer(System.identityHashCode(recvClass) ^ name.hashCode());
+    private EntryKey getKey(RubyModule recvClass, String name) {
+        return new EntryKey(recvClass, name);
+    }
+
+    private class EntryKey {
+        private final RubyModule recvClass;
+        private final String name;
+
+        public EntryKey(RubyModule recvClass, String name) {
+            this.recvClass = recvClass;
+            this.name = name;
+        }
+
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (other == null || (! (other instanceof EntryKey))) {
+                return false;
+            }
+            EntryKey otherKey = (EntryKey) other;
+            return (name.equals(otherKey.name) && recvClass == otherKey.recvClass);
+        }
+
+        public int hashCode() {
+            return (System.identityHashCode(recvClass) ^ name.hashCode());
+        }
     }
 }
