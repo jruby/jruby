@@ -114,19 +114,20 @@ public class RubyProc extends RubyObject {
         RubyModule oldWrapper = context.getWrapper();
         context.setWrapper(wrapper);
         try {
-        	block.arity().checkArity(getRuntime(), args);
-        	
-        	return block.call(args, self);
-        } catch (ReturnJump e) {
         	if (block.isLambda) {
-        		return e.getReturnValue();
+        		block.arity().checkArity(getRuntime(), args);
         	}
         	
-        	if (context.getFrameStack().getPrevious() == block.getFrame()) {
-        			throw e;
-	        }
-        	
-		  	throw new LocalJumpError(getRuntime(), "unexpected return");
+        	return block.call(args, self);
+        } catch (ReturnJump rj) {
+        	Object target = rj.getTarget();
+
+            if (target == this || block.isLambda) {
+                return rj.getReturnValue();
+            } else if (target == null) {
+            	throw new LocalJumpError(getRuntime(), "unexpected return");
+            }
+            throw rj;
         } finally {
             context.setWrapper(oldWrapper);
         }

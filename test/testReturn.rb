@@ -74,3 +74,12 @@ end
 
 
 test_ok(2 == B.new([1, 2, 3, 4]).detect {|c| c > 1})
+
+def proc_call(&b)
+  b.call
+end
+def proc_return1
+  proc_call{return 42}+1
+end
+test_ok(proc_return1() == 42)
+
