@@ -650,10 +650,23 @@ public class RubyKernel {
             // Fairly innefficient impl, but readLine is unable to tell 
             // whether the last line in a process ended with a newline or not.
             int c;
+            boolean crSeen = false;
             while ((c = reader.read()) != -1) {
-            	output.append((char)c);
+            	if (c == '\r') {
+            		crSeen = true;
+            	} else {
+            		if (crSeen) {
+            			if (c != '\n') {
+            				output.append('\r');
+            			}
+            			crSeen = false;
+            		}
+            		output.append((char)c);
+            	}
             }
-            
+            if (crSeen) {
+            	output.append('\r');
+            }
             aProcess.getErrorStream().close();
             aProcess.getOutputStream().close();
             reader.close();
