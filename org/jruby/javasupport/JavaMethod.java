@@ -30,6 +30,7 @@
 
 package org.jruby.javasupport;
 
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -105,7 +106,16 @@ public class JavaMethod implements Callback {
             
             return JavaUtil.convertJavaToRuby(ruby, method.invoke(receiver, newArgs));
         } catch (Exception excptn) {
-            throw new RaiseException(ruby, "RuntimeError", excptn.getMessage());
+            StringWriter stackTrace = new StringWriter();
+            excptn.printStackTrace(new PrintWriter(stackTrace));
+            
+            StringBuffer sb = new StringBuffer();
+            sb.append("Native Exception: '");
+            sb.append(excptn.getClass()).append("\'; Message: ");
+            sb.append(excptn.getMessage());
+            sb.append("; StackTrace: ");
+            sb.append(stackTrace.getBuffer().toString());
+            throw new RaiseException(ruby, "RuntimeError", sb.toString());
         }
     }
 }
