@@ -51,7 +51,6 @@ public class ThreadContext {
     private RubyStack dynamicVarsStack;
 
     private RubyThread currentThread;
-    private Map localVariables;
 
     private ScopeStack scopeStack;
     private FrameStack frameStack;
@@ -67,9 +66,6 @@ public class ThreadContext {
 
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new RubyStack();
-
-        this.localVariables = new HashMap();
-
         this.scopeStack = new ScopeStack(ruby);
         this.frameStack = new FrameStack(ruby);
         this.iterStack = CollectionFactory.getInstance().newStack();
@@ -99,14 +95,6 @@ public class ThreadContext {
      */
     public RubyThread getCurrentThread() {
         return currentThread;
-    }
-
-    /**
-     * Returns the localVariables.
-     * @return Map
-     */
-    public Map getLocalVariables() {
-        return localVariables;
     }
 
     /**

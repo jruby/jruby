@@ -29,10 +29,13 @@ import org.jruby.runtime.Frame;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ThreadError;
+import org.jruby.util.Asserts;
 
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -47,12 +50,13 @@ import java.util.Arrays;
  * @version $Revision$
  */
 public class RubyThread extends RubyObject {
-    /** Underlying JVM thread */
-    protected Thread jvmThread;
 
     protected static boolean static_abort_on_exception;
 
-    protected boolean abort_on_exception;
+    /** Underlying JVM thread */
+    private Thread jvmThread;
+    private Map threadLocalVariables = new HashMap();
+    private boolean abortOnException;
 
     public static RubyClass createThreadClass(Ruby ruby) {
         RubyClass threadClass = ruby.defineClass("Thread", ruby.getClasses().getObjectClass());
@@ -73,17 +77,17 @@ public class RubyThread extends RubyObject {
         threadClass.defineSingletonMethod(
             "fork",
             CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
-        threadClass.defineSingletonMethod(
-            "kill",
-            CallbackFactory.getSingletonMethod(RubyThread.class, "kill", RubyThread.class));
+//        threadClass.defineSingletonMethod(
+//            "kill",
+//            CallbackFactory.getSingletonMethod(RubyThread.class, "kill", RubyThread.class));
         threadClass.defineSingletonMethod("list", CallbackFactory.getSingletonMethod(RubyThread.class, "list"));
-        threadClass.defineSingletonMethod("main", CallbackFactory.getSingletonMethod(RubyThread.class, "main"));
+//        threadClass.defineSingletonMethod("main", CallbackFactory.getSingletonMethod(RubyThread.class, "main"));
         threadClass.defineSingletonMethod(
             "new",
             CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
-        threadClass.defineSingletonMethod("pass", CallbackFactory.getSingletonMethod(RubyThread.class, "pass"));
+    //    threadClass.defineSingletonMethod("pass", CallbackFactory.getSingletonMethod(RubyThread.class, "pass"));
         threadClass.defineSingletonMethod("start", CallbackFactory.getOptSingletonMethod(RubyThread.class, "start"));
-        threadClass.defineSingletonMethod("stop", CallbackFactory.getSingletonMethod(RubyThread.class, "stop"));
+    //    threadClass.defineSingletonMethod("stop", CallbackFactory.getSingletonMethod(RubyThread.class, "stop"));
 
         // instance methods
         threadClass.defineMethod("[]", CallbackFactory.getMethod(RubyThread.class, "aref", IRubyObject.class));
@@ -108,7 +112,7 @@ public class RubyThread extends RubyObject {
         threadClass.defineMethod("raise", CallbackFactory.getMethod(RubyThread.class, "raise", RubyException.class));
         threadClass.defineMethod("run", CallbackFactory.getMethod(RubyThread.class, "run"));
         threadClass.defineMethod("safe_level", CallbackFactory.getMethod(RubyThread.class, "safe_level"));
-        threadClass.defineMethod("status", CallbackFactory.getMethod(RubyThread.class, "status"));
+//        threadClass.defineMethod("status", CallbackFactory.getMethod(RubyThread.class, "status"));
         threadClass.defineMethod("stop?", CallbackFactory.getMethod(RubyThread.class, "is_stopped"));
         threadClass.defineMethod("value", CallbackFactory.getMethod(RubyThread.class, "value"));
         threadClass.defineMethod("wakeup", CallbackFactory.getMethod(RubyThread.class, "wakeup"));
@@ -220,32 +224,37 @@ public class RubyThread extends RubyObject {
     }
 
     public IRubyObject aref(IRubyObject key) {
-        if (!(key instanceof RubySymbol) || !(key instanceof RubyString)) {
-            throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
+        String name = keyName(key);
+        if (! threadLocalVariables.containsKey(name)) {
+            return getRuntime().getNil();
         }
-
-        IRubyObject result = (IRubyObject) runtime.getCurrentContext().getLocalVariables().get(key);
-        if (result == null) {
-            result = getRuntime().getNil();
-        }
-        return result;
+        return (IRubyObject) threadLocalVariables.get(name);
     }
 
-    public IRubyObject aset(IRubyObject key, IRubyObject val) {
-        if (!(key instanceof RubySymbol) || !(key instanceof RubyString)) {
+    public IRubyObject aset(IRubyObject key, IRubyObject value) {
+        String name = keyName(key);
+        threadLocalVariables.put(name, value);
+        return value;
+    }
+
+    private String keyName(IRubyObject key) {
+        String name;
+        if (key instanceof RubySymbol) {
+            name = ((RubySymbol) key).toId();
+        } else if (key instanceof RubyString) {
+            name = ((RubyString) key).getValue();
+        } else {
             throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
         }
-
-        runtime.getCurrentContext().getLocalVariables().put(key, val);
-        return val;
+        return name;
     }
 
     public RubyBoolean abort_on_exception() {
-        return abort_on_exception ? getRuntime().getTrue() : getRuntime().getFalse();
+        return abortOnException ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public RubyBoolean abort_on_exception_set(RubyBoolean val) {
-        abort_on_exception = val.isTrue();
+        abortOnException = val.isTrue();
         return val;
     }
 
@@ -257,14 +266,14 @@ public class RubyThread extends RubyObject {
         try {
             jvmThread.join();
         } catch (InterruptedException e) {
+            // FIXME: output warning
         }
         return this;
     }
 
     public RubyBoolean has_key(IRubyObject key) {
-        return runtime.getCurrentContext().getLocalVariables().containsKey(key)
-            ? getRuntime().getTrue()
-            : getRuntime().getFalse();
+        String name = keyName(key);
+        return RubyBoolean.newBoolean(getRuntime(), threadLocalVariables.containsKey(name));
     }
 
     public RubyFixnum priority() {
