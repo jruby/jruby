@@ -41,8 +41,6 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.visitor.AbstractVisitor;
-import org.jruby.common.IErrors;
-import org.jruby.common.IRubyErrorHandler;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,8 +55,6 @@ public class AssignmentVisitor extends AbstractVisitor {
     private Ruby runtime;
     private ThreadContext threadContext;
     private IRubyObject self;
-
-    private IRubyErrorHandler errorHandler;
 
     private IRubyObject value;
     private boolean check;
@@ -115,7 +111,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
         if (runtime.getVerbose().isTrue() && threadContext.getRubyClass().isSingleton()) {
-            errorHandler.handleError(IErrors.WARN, iVisited.getPosition(), "Declaring singleton class variable.");
+            runtime.getWarnings().warn(iVisited.getPosition(), "Declaring singleton class variable.");
         }
         threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
     }

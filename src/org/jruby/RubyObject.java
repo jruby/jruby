@@ -661,6 +661,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         return getMetaClass().getRealClass();
     }
 
+    public RubyClass type_deprecated() {
+        getRuntime().getWarnings().warn("Object#type is deprecated; use Object#class");
+        return type();
+    }
+
     /** rb_obj_clone
      *
      */
@@ -1014,7 +1019,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         module.defineMethod("dup", callbackFactory.getMethod("dup"));
         module.defineMethod("eql?", equal);
         module.defineMethod("equal?", callbackFactory.getMethod("same", IRubyObject.class));
-        module.defineMethod("type", callbackFactory.getMethod("type"));
+        module.defineMethod("type", callbackFactory.getMethod("type_deprecated"));
         module.defineMethod("class", callbackFactory.getMethod("type"));
         module.defineMethod("inspect", callbackFactory.getMethod("inspect"));
         module.defineMethod("=~", callbackFactory.getFalseMethod(1));

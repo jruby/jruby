@@ -54,7 +54,7 @@ public class UndefinedAccessor implements IAccessor {
      * @see org.jruby.runtime.IAccessor#getValue()
      */
     public IRubyObject getValue() {
-        runtime.getErrorHandler().warning(notInitializedWarning);
+        runtime.getWarnings().warning(notInitializedWarning);
         return runtime.getNil();
     }
 

@@ -103,7 +103,7 @@ public class GlobalVariables {
 	    if (variable != null) {
 	        return variable.getAccessor().getValue();
 	    }
-		runtime.getErrorHandler().warning("global variable `" + name + "' not initialized");
+		runtime.getWarnings().warning("global variable `" + name + "' not initialized");
 		return runtime.getNil();
 	}
 

@@ -33,8 +33,7 @@ import java.math.BigInteger;
 
 import org.jruby.ast.BackRefNode;
 import org.jruby.ast.NthRefNode;
-import org.jruby.common.IErrors;
-import org.jruby.common.IRubyErrorHandler;
+import org.jruby.common.RubyWarnings;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.Token;
 import org.jruby.util.IdUtil;
@@ -61,8 +60,8 @@ public class RubyYaccLexer {
     // The current location of the lexer immediately after a call to yylex()
     private SourcePosition currentPos;
 
-    // What handles errors
-    private IRubyErrorHandler errorHandler;
+    // What handles warnings
+    private RubyWarnings warnings;
 
     // Additional context surrounding tokens that both the lexer and
     // grammar use.
@@ -166,8 +165,8 @@ public class RubyYaccLexer {
         cmdArgumentState.reset();
     }
     
-    public void setErrorHandler(IRubyErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
+    public void setWarnings(RubyWarnings warnings) {
+        this.warnings = warnings;
     }
 
 
@@ -366,7 +365,7 @@ public class RubyYaccLexer {
     }
     
     private void arg_ambiguous() {
-        errorHandler.handleError(IErrors.WARNING, src.getPosition(), "Ambiguous first argument; make sure.");
+        warnings.warning(src.getPosition(), "Ambiguous first argument; make sure.");
     }
 
 
@@ -565,7 +564,7 @@ public class RubyYaccLexer {
                     }
                     src.unread(c);
                     if (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c)) {
-                        errorHandler.handleError(IErrors.WARNING, src.getPosition(), "`*' interpreted as argument prefix");
+                        warnings.warning(src.getPosition(), "`*' interpreted as argument prefix");
                         c = Token.tSTAR;
                     } else if (lex_state == LexState.EXPR_BEG || 
                             lex_state == LexState.EXPR_MID) {
@@ -778,7 +777,7 @@ public class RubyYaccLexer {
                             break;
                         }
                         if (c2 != 0) {
-                            errorHandler.handleError(IErrors.WARN, src.getPosition(), "invalid character syntax; use ?\\" + c2);
+                            warnings.warn(src.getPosition(), "invalid character syntax; use ?\\" + c2);
                         }
                     }
                     src.unread(c);
@@ -821,7 +820,7 @@ public class RubyYaccLexer {
                 }
                 src.unread(c);
                 if (lex_state.isArgument() && spaceSeen && !Character.isWhitespace(c)){
-                    errorHandler.handleError(IErrors.WARNING, src.getPosition(), "`&' interpreted as argument prefix");
+                    warnings.warning(src.getPosition(), "`&' interpreted as argument prefix");
                     c = Token.tAMPER;
                 } else if (lex_state == LexState.EXPR_BEG || 
                         lex_state == LexState.EXPR_MID) {
@@ -1058,7 +1057,7 @@ public class RubyYaccLexer {
                     if (lex_state == LexState.EXPR_CMDARG) {
                         c = Token.tLPAREN_ARG;
                     } else if (lex_state == LexState.EXPR_ARG) {
-                        errorHandler.handleError(IErrors.WARN, src.getPosition(), "don't put space before argument parentheses");
+                        warnings.warn(src.getPosition(), "don't put space before argument parentheses");
                         c = '(';
                     }
                 }
@@ -1630,7 +1629,7 @@ public class RubyYaccLexer {
             try {
                 d = Double.valueOf(number);
             } catch (NumberFormatException e) {
-                errorHandler.handleError(IErrors.WARN, src.getPosition(), "Float " + number + " out of range.");
+                warnings.warn(src.getPosition(), "Float " + number + " out of range.");
                 if (number.startsWith("-")) {
                     d = Double.valueOf(Double.NEGATIVE_INFINITY);
                 } else {

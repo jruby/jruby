@@ -60,7 +60,7 @@ public class Parser {
         RubyParserResult result = null;
         try {
             parser = RubyParserPool.getInstance().borrowParser();
-            parser.setErrorHandler(runtime.getErrorHandler());
+            parser.setWarnings(runtime.getWarnings());
             parser.init(config);
             LexerSource lexerSource = LexerSource.getSource(file, content);
             result = parser.parse(lexerSource);

@@ -27,8 +27,7 @@ import org.jruby.ast.SelfNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.TrueNode;
-import org.jruby.common.IErrors;
-import org.jruby.common.IRubyErrorHandler;
+import org.jruby.common.RubyWarnings;
 
 /**
  *
@@ -36,10 +35,10 @@ import org.jruby.common.IRubyErrorHandler;
  * @version $Revision$
  */
 public class UselessStatementVisitor extends AbstractVisitor {
-    private IRubyErrorHandler errorHandler;
+    private RubyWarnings warnings;
     
-    public UselessStatementVisitor(IRubyErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
+    public UselessStatementVisitor(RubyWarnings warnings) {
+        this.warnings = warnings;
     }
 
     /**
@@ -49,7 +48,7 @@ public class UselessStatementVisitor extends AbstractVisitor {
     }
 
     private void handleUselessWarn(Node node, String useless) {
-        errorHandler.handleError(IErrors.WARN, node.getPosition(), "Useless use of " + useless + "in void context.", null);
+        warnings.warn(node.getPosition(), "Useless use of " + useless + "in void context.");
     }
 
     /**

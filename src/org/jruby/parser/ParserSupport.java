@@ -88,9 +88,9 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.ast.util.NodeUtil;
 import org.jruby.ast.visitor.UselessStatementVisitor;
-import org.jruby.common.IErrors;
-import org.jruby.common.IRubyErrorHandler;
+import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.util.IdUtil;
 
 /** Ruby 1.8.1 compatible.
@@ -109,8 +109,7 @@ public class ParserSupport {
 
     private int classNest;
 
-    // Abstract Language Framework
-    private IRubyErrorHandler errorHandler;
+    private RubyWarnings warnings;
 
     private RubyParserConfiguration configuration;
     private RubyParserResult result;
@@ -192,45 +191,41 @@ public class ParserSupport {
             return new ConstNode(position, id);
         } else if (IdUtil.isClassVariable(id)) {
             return new ClassVarNode(position, id);
-        } else {
-            errorHandler.handleError(IErrors.COMPILE_ERROR, position, "identifier " + id + " is not valid");
         }
+        // not reached
+        assert false;
         return null;
     }
 
-    
-    public void yyerror(String message) {
-        errorHandler.handleError(IErrors.SYNTAX_ERROR, null, message, null);
-    }
     
     public Node assignable(SourcePosition position, Object id, Node value) {
         checkExpression(value);
         
         if (id instanceof SelfNode) {
-            yyerror("Can't change the value of self"); 
+            throw new SyntaxException(value.getPosition(), "Can't change the value of self");
         } else if (id instanceof NilNode) {
-            yyerror("Can't assign to nil");
+            throw new SyntaxException(value.getPosition(), "Can't assign to nil");
         } else if (id instanceof TrueNode) {
-    	    yyerror("Can't assign to true");
+            throw new SyntaxException(value.getPosition(), "Can't assign to true");
         } else if (id instanceof FalseNode) {
-    	    yyerror("Can't assign to false");
-        } 
+            throw new SyntaxException(value.getPosition(), "Can't assign to false");
+        }
         // TODO: Support FILE and LINE by making nodes of them.
-        /*else if (id == k__FILE__) {
-    	    yyerror("Can't assign to __FILE__");
-        } else if (id == k__LINE__) {
-            yyerror("Can't assign to __LINE__");
-        } */else {
+        /*
+         * else if (id == k__FILE__) { yyerror("Can't assign to __FILE__"); } else if (id ==
+         * k__LINE__) { yyerror("Can't assign to __LINE__"); }
+         */else {
             String name = (String) id;
             if (IdUtil.isLocal(name)) {
                 // TODO: Add curried dvar?
-                /*if (rb_dvar_curr(id)) {
-                    return NEW_DASGN_CURR(id, value);
-                } else*/
+                /*
+                 * if (rb_dvar_curr(id)) { return NEW_DASGN_CURR(id, value); } else
+                 */
                 if (blockNames.isDefined(name)) {
                     return new DAsgnNode(position, name, value);
                 } else if (getLocalNames().isLocalRegistered(name) || !blockNames.isInBlock()) {
-                    return new LocalAsgnNode(position, name, getLocalNames().getLocalIndex(name), value);
+                    return new LocalAsgnNode(position, name, getLocalNames().getLocalIndex(name),
+                            value);
                 } else {
                     blockNames.add(name);
                     // TODO: Should be curried
@@ -242,7 +237,7 @@ public class ParserSupport {
                 return new InstAsgnNode(position, name, value);
             } else if (IdUtil.isConstant(name)) {
                 if (isInDef() || isInSingle()) {
-                    yyerror("dynamic constant assignment");
+                    throw new SyntaxException(value.getPosition(), "dynamic constant assignment");
                 }
                 return new ConstDeclNode(position, name, value);
             } else if (IdUtil.isClassVariable(name)) {
@@ -250,11 +245,10 @@ public class ParserSupport {
                     return new ClassVarAsgnNode(position, name, value);
                 }
                 return new ClassVarDeclNode(position, name, value);
-            } else {
-                errorHandler.handleError(IErrors.COMPILE_ERROR, position, "identifier " + name + " is not valid"); 
             }
         }
-        
+        // not reached
+        assert false;
         return null;
     }
 
@@ -279,8 +273,8 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (errorHandler.isVerbose() && NodeUtil.isBreakStatement(ListNodeUtil.getLast((ListNode) head))) {
-            errorHandler.handleError(IErrors.WARNING, tail.getPosition(), "Statement not reached.", null);
+        if (warnings.isVerbose() && NodeUtil.isBreakStatement(ListNodeUtil.getLast((ListNode) head))) {
+            warnings.warning(tail.getPosition(), "Statement not reached.");
         }
 
         if (tail instanceof BlockNode) {
@@ -329,16 +323,11 @@ public class ParserSupport {
         return new CallNode(recv.getPosition(), recv, name + "=", null);
     }
 
-	/**
-	 * @fixme need to handle positions
-	 **/
     public void backrefAssignError(Node node) {
         if (node instanceof NthRefNode) {
-            // FIXME: position
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Can't set variable $" + ((NthRefNode) node).getMatchNumber() + '.', null);
+            throw new SyntaxException(node.getPosition(), "Can't set variable $" + ((NthRefNode) node).getMatchNumber() + '.');
         } else if (node instanceof BackRefNode) {
-            // FIXME: position
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Can't set variable $" + ((BackRefNode) node).getType() + '.', null);
+            throw new SyntaxException(node.getPosition(), "Can't set variable $" + ((BackRefNode) node).getType() + '.');
         }
     }
 
@@ -374,7 +363,7 @@ public class ParserSupport {
     public Node ret_args(Node node, SourcePosition position) {
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                errorHandler.handleError(IErrors.COMPILE_ERROR, position, "Dynamic constant assignment.");
+                throw new SyntaxException(position, "Dynamic constant assignment.");
             } else if (node instanceof ArrayNode &&
                     ((ArrayNode)node).size() == 1) {
                 node = (Node) ((ArrayNode)node).iterator().next();
@@ -388,18 +377,18 @@ public class ParserSupport {
 
     public void checkExpression(Node node) {
         if (!NodeUtil.isExpression(node)) {
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, node.getPosition(), "Void value expression.", null);
+            warnings.warning(node.getPosition(), "void value expression");
         }
     }
 
     public void checkUselessStatement(Node node) {
-        if (errorHandler.isVerbose()) {
-            new UselessStatementVisitor(errorHandler).acceptNode(node);
+        if (warnings.isVerbose()) {
+            new UselessStatementVisitor(warnings).acceptNode(node);
         }
     }
 
     public void checkUselessStatements(BlockNode blockNode) {
-        if (errorHandler.isVerbose()) {
+        if (warnings.isVerbose()) {
             Iterator iterator = blockNode.iterator();
             while (iterator.hasNext()) {
                 checkUselessStatement((Node) iterator.next());
@@ -412,13 +401,11 @@ public class ParserSupport {
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
         if (node instanceof MultipleAsgnNode) {
-            // FIXME
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Multiple assignment in conditional.", null);
-            return true;
+            throw new SyntaxException(node.getPosition(), "Multiple assignment in conditional.");
         } else if (node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (valueNode instanceof ILiteralNode || valueNode instanceof NilNode || valueNode instanceof TrueNode || valueNode instanceof FalseNode) {
-                errorHandler.handleError(IErrors.WARN, null, "Found '=' in conditional, should be '=='.", null);
+                warnings.warn(node.getPosition(), "Found '=' in conditional, should be '=='.");
             }
             return true;
         } 
@@ -483,15 +470,11 @@ public class ParserSupport {
         return new OrNode(left.getPosition(), getConditionNode(left), getConditionNode(right));
     }
 
-	/**
-	 * @fixme position
-	 **/
     public Node getReturnArgsNode(Node node) {
         if (node instanceof ArrayNode && ListNodeUtil.getLength((ListNode) node) == 1) {
             return (Node) ((ListNode) node).iterator().next();
         } else if (node instanceof BlockPassNode) {
-            // FIXME: position
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Block argument should not be given.", null);
+            throw new SyntaxException(node.getPosition(), "Block argument should not be given.");
         }
         return node;
     }
@@ -671,12 +654,8 @@ public class ParserSupport {
         this.configuration = configuration;
     }
 
-    /**
-     * Sets the errorHandler.
-     * @param errorHandler The errorHandler to set
-     */
-    public void setErrorHandler(IRubyErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
+    public void setWarnings(RubyWarnings warnings) {
+        this.warnings = warnings;
     }
     
     public Node literal_concat(SourcePosition position, Node head, 
@@ -725,7 +704,7 @@ public class ParserSupport {
         
         if (node != null) {
             if (node instanceof BlockPassNode) {
-                errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Block argument should not be given.", null);
+                throw new SyntaxException(node.getPosition(), "Block argument should not be given.");
             }
             
             if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {

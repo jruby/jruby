@@ -46,7 +46,7 @@ import java.util.Random;
 import java.util.Stack;
 
 import org.jruby.ast.Node;
-import org.jruby.common.RubyErrorHandler;
+import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.IOError;
@@ -138,7 +138,7 @@ public final class Ruby {
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
     private GlobalVariables globalVariables = new GlobalVariables(this);
-    private RubyErrorHandler errorHandler = new RubyErrorHandler(this);
+    private RubyWarnings warnings = new RubyWarnings(this);
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
@@ -578,12 +578,8 @@ public final class Ruby {
         return loadService;
     }
 
-    /**
-     * Returns the errorHandler.
-     * @return IRubyErrorHandler
-     */
-    public RubyErrorHandler getErrorHandler() {
-        return errorHandler;
+    public RubyWarnings getWarnings() {
+        return warnings;
     }
 
     public PrintStream getErrorStream() {

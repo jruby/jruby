@@ -69,7 +69,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			} else if (lang.charAt(0) == 'u' || lang.charAt(0) == 'U') {
 				return UTF8;
 			} else if (lang.charAt(0) == 's' || lang.charAt(0) == 'S') {
-				runtime.getErrorHandler().warn("JRuby supports only Unicode regexp.");
+				runtime.getWarnings().warn("JRuby supports only Unicode regexp.");
 				return SJIS;
 			}
 			return NIL;

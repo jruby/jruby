@@ -680,7 +680,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         String name = iVisited.getName();
         if (rubyClass == runtime.getClasses().getObjectClass() && name.equals("initialize")) {
-            runtime.getErrorHandler().warn("redefining Object#initialize may cause infinite loop");
+            runtime.getWarnings().warn("redefining Object#initialize may cause infinite loop");
         }
 
         Visibility visibility = threadContext.getCurrentVisibility();

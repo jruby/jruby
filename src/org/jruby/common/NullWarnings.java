@@ -30,31 +30,28 @@ import org.jruby.lexer.yacc.SourcePosition;
  * @author  jpetersen
  * @version $Revision$
  */
-public class NullErrorHandler implements IRubyErrorHandler {
-
-    /**
-     * Constructor for NullErrorHandler.
-     */
-    public NullErrorHandler() {
-        super();
+public class NullWarnings extends RubyWarnings {
+    public NullWarnings() {
+        super(null);
     }
 
-    /**
-     * @see org.jruby.common.IRubyErrorHandler#handleError(int, SourcePosition, String)
-     */
-    public void handleError(int type, SourcePosition position, String message) {
+    public boolean isVerbose() {
+        return false;
     }
 
-    /**
-     * @see org.jruby.common.IRubyErrorHandler#handleError(int, SourcePosition, String, Object)
-     */
-    public void handleError(int type, SourcePosition position, String message, Object args) {
+    public void warn(SourcePosition position, String message) {
+        // don't do anything 
     }
 
-	/**
-	 * @see org.jruby.common.IRubyErrorHandler#isVerbose()
-	 */
-	public boolean isVerbose() {
-		return false;
-	}
+    public void warn(String message) {
+        // don't do anything 
+    }
+
+    public void warning(SourcePosition position, String message) {
+        // don't do anything 
+    }
+
+    public void warning(String message) {
+        // don't do anything 
+    }
 }

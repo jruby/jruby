@@ -111,13 +111,13 @@ import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ListNodeUtil;
-import org.jruby.common.IErrors;
-import org.jruby.common.IRubyErrorHandler;
+import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.yacc.LexState;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.lexer.yacc.StrTerm;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.IdUtil;
 
@@ -125,20 +125,20 @@ public class DefaultRubyParser {
     private ParserSupport support;
     private RubyYaccLexer lexer;
 
-    private IRubyErrorHandler errorHandler;
+    private RubyWarnings warnings;
 
     public DefaultRubyParser() {
         this.support = new ParserSupport();
         this.lexer = new RubyYaccLexer();
-	// lame
-	this.lexer.setParserSupport(support);
+        // lame
+        this.lexer.setParserSupport(support);
     }
 
-    public void setErrorHandler(IRubyErrorHandler errorHandler) {
-        this.errorHandler = errorHandler;
+    public void setWarnings(RubyWarnings warnings) {
+        this.warnings = warnings;
 
-	support.setErrorHandler(errorHandler);
-	lexer.setErrorHandler(errorHandler);
+        support.setWarnings(warnings);
+        lexer.setWarnings(warnings);
     }
 
 /*
@@ -278,7 +278,7 @@ public class DefaultRubyParser {
     */
   public void yyerror (String message, Object expected) {
      // FIXME: in skeleton.jruby: postition
-     errorHandler.handleError(IErrors.SYNTAX_ERROR, getPosition(), message, expected);
+     throw new SyntaxException(getPosition(), "syntax error");
   }
 
   /** debugging support, requires the package jay.yydebug.
@@ -460,7 +460,7 @@ case 3:
 		 if (((RescueBodyNode)yyVals[-2+yyTop]) != null) {
 		    node = new RescueNode(getPosition(), ((Node)yyVals[-3+yyTop]), ((RescueBodyNode)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
 		 } else if (((Node)yyVals[-1+yyTop]) != null) {
-		       errorHandler.handleError(IErrors.WARN, getPosition(), "else without rescue is useless");
+		     warnings.warn(getPosition(), "else without rescue is useless");
                        node = support.appendToBlock(((Node)yyVals[-3+yyTop]), ((Node)yyVals[-1+yyTop]));
 		 }
 		 if (((Node)yyVals[0+yyTop]) != null) {
@@ -788,7 +788,7 @@ case 53:
                     yyVal = support.new_fcall(((String)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]), getPosition()); 
 	            if (((IterNode)yyVals[0+yyTop]) != null) {
                         if (yyVal instanceof BlockPassNode) {
-			      errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
+                            throw new SyntaxException(getPosition(), "Both block arg and actual block given.");
                         }
                         ((IterNode)yyVals[0+yyTop]).setIterNode(((Node)yyVal));
                         yyVal = ((Node)yyVals[-1+yyTop]);
@@ -807,7 +807,7 @@ case 55:
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((String)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop])); 
 		    if (((IterNode)yyVals[0+yyTop]) != null) {
 		        if (yyVal instanceof BlockPassNode) {
-			      errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
+			      throw new SyntaxException(getPosition(), "Both block arg and actual block given.");
                         }
                         ((IterNode)yyVals[0+yyTop]).setIterNode(((Node)yyVal));
 			yyVal = ((IterNode)yyVals[0+yyTop]);
@@ -826,7 +826,7 @@ case 57:
                     yyVal = support.new_call(((Node)yyVals[-4+yyTop]), ((String)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop])); 
 		    if (((IterNode)yyVals[0+yyTop]) != null) {
 		        if (yyVal instanceof BlockPassNode) {
-			    errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
+		            throw new SyntaxException(getPosition(), "Both block arg and actual block given.");
                         }
                         ((IterNode)yyVals[0+yyTop]).setIterNode(((Node)yyVal));
 			yyVal = ((IterNode)yyVals[0+yyTop]);
@@ -1521,7 +1521,7 @@ case 217:
 case 219:
 					// line 962 "DefaultRubyParser.y"
   {
-                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
+                    warnings.warn(getPosition(), "parenthesize argument(s) for future version");
                     yyVal = new ArrayNode(getPosition()).add(((Node)yyVals[-1+yyTop]));
                 }
   break;
@@ -1566,21 +1566,21 @@ case 225:
 case 226:
 					// line 987 "DefaultRubyParser.y"
   {
-                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
+    				warnings.warn(getPosition(), "parenthesize argument(s) for future version");
                     yyVal = new ArrayNode(getPosition()).add(((Node)yyVals[-2+yyTop]));
                 }
   break;
 case 227:
 					// line 991 "DefaultRubyParser.y"
   {
-                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
+    				warnings.warn(getPosition(), "parenthesize argument(s) for future version");
                     yyVal = ((ListNode)yyVals[-4+yyTop]).add(((Node)yyVals[-2+yyTop]));
                 }
   break;
 case 230:
 					// line 999 "DefaultRubyParser.y"
   {
-                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
+    				warnings.warn(getPosition(), "parenthesize argument(s) for future version");
                     yyVal = new ArrayNode(getPosition()).add(((Node)yyVals[0+yyTop]));
                 }
   break;
@@ -1737,7 +1737,7 @@ case 254:
 case 255:
 					// line 1086 "DefaultRubyParser.y"
   {
-                    errorHandler.handleError(IErrors.WARN, getPosition(), "don't put space before argument parentheses");
+    warnings.warn(getPosition(), "don't put space before argument parentheses");
 		    yyVal = null;
 		  }
   break;
@@ -1750,7 +1750,7 @@ case 256:
 case 257:
 					// line 1092 "DefaultRubyParser.y"
   {
-                    errorHandler.handleError(IErrors.WARN, getPosition(), "don't put space before argument parentheses");
+    warnings.warn(getPosition(), "don't put space before argument parentheses");
 		    yyVal = ((Node)yyVals[-2+yyTop]);
 		  }
   break;
@@ -1813,7 +1813,7 @@ case 276:
 					// line 1139 "DefaultRubyParser.y"
   {
 		    lexer.setState(LexState.EXPR_ENDARG);
-		    errorHandler.handleError(IErrors.WARN, getPosition(), "(...) interpreted as grouped expression");
+		    warnings.warn(getPosition(), "(...) interpreted as grouped expression");
                     yyVal = ((Node)yyVals[-2+yyTop]);
 		}
   break;
@@ -1905,7 +1905,7 @@ case 291:
 					// line 1189 "DefaultRubyParser.y"
   {
 		    if (((Node)yyVals[-1+yyTop]) != null && ((Node)yyVals[-1+yyTop]) instanceof BlockPassNode) {
-		          errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
+		        throw new SyntaxException(getPosition(), "Both block arg and actual block given.");
 		    }
                     ((IterNode)yyVals[0+yyTop]).setIterNode(((Node)yyVals[-1+yyTop]));
                     yyVal = ((IterNode)yyVals[0+yyTop]);
@@ -2209,7 +2209,7 @@ case 342:
 					// line 1392 "DefaultRubyParser.y"
   {
                     if (((Node)yyVals[-1+yyTop]) instanceof BlockPassNode) {
- 		          errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
+                        throw new SyntaxException(getPosition(), "Both block arg and actual block given.");
                     }
                     ((IterNode)yyVals[0+yyTop]).setIterNode(((Node)yyVals[-1+yyTop]));
                     yyVal = ((IterNode)yyVals[0+yyTop]);

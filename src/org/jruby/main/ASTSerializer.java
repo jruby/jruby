@@ -39,7 +39,7 @@ import org.ablaf.ast.IAstEncoder;
 import org.ablaf.internal.ast.XmlAstMarshal;
 import org.jruby.ast.util.AstPersistenceDelegates;
 import org.jruby.ast.util.RubyAstMarshal;
-import org.jruby.common.NullErrorHandler;
+import org.jruby.common.NullWarnings;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.parser.DefaultRubyParser;
 import org.jruby.parser.RubyParserConfiguration;
@@ -74,7 +74,7 @@ public class ASTSerializer {
         RubyParserResult result = null;
         try {
             parser = RubyParserPool.getInstance().borrowParser();
-            parser.setErrorHandler(new NullErrorHandler());
+            parser.setWarnings(new NullWarnings());
             parser.init(config);
             result = parser.parse(LexerSource.getSource(input.toString(), reader));
         } finally {
