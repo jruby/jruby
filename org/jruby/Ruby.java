@@ -421,7 +421,7 @@ public final class Ruby {
 
         getBlockStack().pop();
 
-        setDynamicVars(currentBlock.getDynamicVars());
+        dynamicVars = currentBlock.getDynamicVars();
 
         pushClass((klass != null) ? klass : currentBlock.getKlass());
 
@@ -649,13 +649,6 @@ public final class Ruby {
      */
     public RubyVarmap getDynamicVars() {
         return dynamicVars;
-    }
-
-    /** Setter for property dynamicVars.
-     * @param dynamicVars New value of property dynamicVars.
-     */
-    public void setDynamicVars(RubyVarmap dynamicVars) {
-        this.dynamicVars = dynamicVars;
     }
 
     /** Getter for property rubyClass.
@@ -934,49 +927,25 @@ public final class Ruby {
 
     public void pushVarmap() {
        varMapStack.push(getDynamicVars());
-       setDynamicVars(null);
+        dynamicVars = null;
     }
 
     public void popVarmap() {
-        setDynamicVars((RubyVarmap) varMapStack.pop());
+        dynamicVars = (RubyVarmap) varMapStack.pop();
     }
 
     public void pushVarmap(String rubyId, RubyObject val) {
-        setDynamicVars(new RubyVarmap(rubyId, val, getDynamicVars()));
-    }
-
-    private RubyVarmap assignVarmapInternal(RubyVarmap varMap, String id, RubyObject value, boolean current) {
-        int n = 0;
-        RubyVarmap tmpMap = varMap;
-
-        while (tmpMap != null) {
-            if (current && tmpMap.getName() == null) {
-                n++;
-                if (n == 2) {
-                    break;
-                }
-            }
-            if (id.equals(tmpMap.getName())) {
-                tmpMap.setVal(value);
-                return varMap;
-            }
-            tmpMap = tmpMap.getNext();
-        }
-        if (varMap == null) {
-            return new RubyVarmap(id, value, null);
-        } else {
-            tmpMap = new RubyVarmap(id, value, varMap.getNext());
-            varMap.setNext(tmpMap);
-            return varMap;
-        }
+        dynamicVars = new RubyVarmap(rubyId, val, getDynamicVars());
     }
 
     public void assignVarmap(String id, RubyObject value) {
-        setDynamicVars(assignVarmapInternal(getDynamicVars(), id, value, false));
+        RubyVarmap varMap = getDynamicVars();
+        dynamicVars = (varMap != null) ? varMap.assignVarmapInternal(id, value, false) : new RubyVarmap(id, value, null);
     }
 
     public void assignCurrentVarmap(String id, RubyObject value) {
-        setDynamicVars(assignVarmapInternal(getDynamicVars(), id, value, true));
+        RubyVarmap varMap = getDynamicVars();
+        dynamicVars = (varMap != null) ? varMap.assignVarmapInternal(id, value, true) : new RubyVarmap(id, value, null);
     }
 
     public List getVarmapNames() {
