@@ -908,29 +908,22 @@ public class RubyModule extends RubyObject {
         throw new NameError(getRuntime(), "class variable " + name.asSymbol() + " not defined for " + toName());
     }
 
-    private void addAttribute(String name, boolean read, boolean write, boolean ex) {
-        Visibility attributeScope = Visibility.PUBLIC;
-
-        if (ex) {
-            attributeScope = getRuntime().getCurrentVisibility();
-            if (attributeScope.isPrivate()) {
-                //FIXME warning
-            } else if (attributeScope.isModuleFunction()) {
-                attributeScope = Visibility.PRIVATE;
-                // FIXME warning
-            }
+    private void addAccessor(String name, boolean readable, boolean writeable) {
+        Visibility attributeScope = getRuntime().getCurrentVisibility();
+        if (attributeScope.isPrivate()) {
+            //FIXME warning
+        } else if (attributeScope.isModuleFunction()) {
+            attributeScope = Visibility.PRIVATE;
+            // FIXME warning
         }
-
-        String attrIV = "@" + name;
-
-        if (read) {
-            addMethod(name, new EvaluateMethod(new InstVarNode(getRuntime().getPosition(), attrIV), attributeScope));
+        String variableName = "@" + name;
+        if (readable) {
+            addMethod(name, new EvaluateMethod(new InstVarNode(getRuntime().getPosition(), variableName), attributeScope));
             callMethod("method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
-
-        if (write) {
+        if (writeable) {
             name = name + "=";
-            addMethod(name, new EvaluateMethod(new AttrSetNode(getRuntime().getPosition(), attrIV), attributeScope));
+            addMethod(name, new EvaluateMethod(new AttrSetNode(getRuntime().getPosition(), variableName), attributeScope));
             callMethod("method_added", RubySymbol.newSymbol(getRuntime(), name));
         }
     }
@@ -1354,7 +1347,7 @@ public class RubyModule extends RubyObject {
             writeable = args[0].isTrue();
         }
 
-        addAttribute(symbol.asSymbol(), true, writeable, true);
+        addAccessor(symbol.asSymbol(), true, writeable);
 
         return getRuntime().getNil();
     }
@@ -1364,7 +1357,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_reader(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(args[i].asSymbol(), true, false, true);
+            addAccessor(args[i].asSymbol(), true, false);
         }
 
         return getRuntime().getNil();
@@ -1375,7 +1368,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_writer(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(args[i].asSymbol(), false, true, true);
+            addAccessor(args[i].asSymbol(), false, true);
         }
 
         return getRuntime().getNil();
@@ -1386,7 +1379,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_accessor(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(args[i].asSymbol(), true, true, true);
+            addAccessor(args[i].asSymbol(), true, true);
         }
 
         return getRuntime().getNil();

@@ -36,11 +36,10 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class AttrSetNode extends AbstractNode {
-    private String attributeName;
+    private final String attributeName;
 
     public AttrSetNode(ISourcePosition position, String attributeName) {
         super(position);
-
         this.attributeName = attributeName;
     }
 
@@ -58,13 +57,5 @@ public class AttrSetNode extends AbstractNode {
      */
     public String getAttributeName() {
         return attributeName;
-    }
-
-    /**
-     * Sets the attributeName.
-     * @param attributeName The attributeName to set
-     */
-    public void setAttributeName(String attributeName) {
-        this.attributeName = attributeName;
     }
 }

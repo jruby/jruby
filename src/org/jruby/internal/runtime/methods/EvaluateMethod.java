@@ -41,7 +41,7 @@ import org.jruby.ast.InstVarNode;
  * @version $Revision$
  */
 public class EvaluateMethod extends AbstractMethod {
-    private INode node;
+    private final INode node;
 
     public EvaluateMethod(INode node, Visibility visibility) {
         super(visibility);
@@ -58,10 +58,6 @@ public class EvaluateMethod extends AbstractMethod {
 
     public INode getNode() {
         return node;
-    }
-
-    public void setNode(INode node) {
-        this.node = node;
     }
 
     public Arity getArity() {
