@@ -43,6 +43,7 @@ import org.jruby.exceptions.ThrowJump;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
 import org.jruby.util.CommandlineParser;
+import org.jruby.util.Asserts;
 import org.ablaf.ast.INode;
 
 /**
@@ -56,9 +57,12 @@ import org.ablaf.ast.INode;
  * @version $Revision$
  */
 public class Main {
+    private static CommandlineParser commandline;
+    private static boolean hasPrintedUsage = false;
+
 
     public static void main(String args[]) {
-        CommandlineParser commandline = new CommandlineParser(args);
+        commandline = new CommandlineParser(args);
 
         if (commandline.showVersion) {
             showVersion();
@@ -68,17 +72,12 @@ public class Main {
         }
 
         long now = -1;
-        if (commandline.isBenchmarking)
+        if (commandline.isBenchmarking) {
             now = System.currentTimeMillis();
-        if (commandline.hasInlineScript()) {
-            runInterpreter(new StringReader(commandline.inlineScript()), "-e", commandline.scriptArguments, commandline);
-        } else if (commandline.scriptFilename != null) {
-            runInterpreterOnFile(commandline.scriptFilename, commandline.scriptArguments, commandline);
-        } else {
-            System.err.println("nothing to interpret");
-            printUsage();
-            return;
         }
+
+        runInterpreter(getScriptSource(), displayedFileName());
+
         if (commandline.isBenchmarking) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
@@ -94,15 +93,6 @@ public class Main {
         System.out.println("]");
     }
 
-    static boolean hasPrintedUsage = false;
-    /**
-     * Prints the usage for the class.
-     *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
-     *           -e 'command'   one line of script. Several -e's allowed. Omit [programfile]
-     *           -b             benchmark mode
-     *           -Idirectory    specify $LOAD_PATH directory (may be used more than once)
-     *           -R 'adapter'  used to select a regexp engine
-     */
     public static void printUsage() {
         if (!hasPrintedUsage) {
             System.out.println("Usage: jruby [switches] [rubyfile.rb] [arguments]");
@@ -114,42 +104,11 @@ public class Main {
         }
     }
 
-    /**
-     * Launch the interpreter on a specific String.
-     *
-     * @param reader the string to evaluate
-     * @param filename the name of the File from which the string comes.
-     */
-    protected static void runInterpreter(Reader reader, String filename, String[] args, CommandlineParser commandline) {
+    private static void runInterpreter(Reader reader, String filename) {
         Ruby runtime = Ruby.getDefaultInstance(commandline.sRegexpAdapter);
-
-        IRubyObject argumentArray = JavaUtil.convertJavaToRuby(runtime, args);
-
-        runtime.setVerbose(commandline.verbose);
-        defineGlobal(runtime, "$VERBOSE", commandline.verbose);
-        runtime.defineGlobalConstant("ARGV", argumentArray);
-        defineGlobal(runtime, "$-p", commandline.assumePrinting);
-        defineGlobal(runtime, "$-n", commandline.assumeLoop);
-        defineGlobal(runtime, "$-a", commandline.sDoSplit);
-        defineGlobal(runtime, "$-l", commandline.processLineEnds);
-        runtime.defineReadonlyVariable("$*", argumentArray);
-        runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
-
-        runtime.getLoadService().init(runtime, commandline.loadPaths());
         try {
-            Iterator iter = commandline.requiredLibraries().iterator();
-            while (iter.hasNext()) {
-                String scriptName = (String) iter.next();
-                KernelModule.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
-            }
-
-            INode parsedScript = runtime.parse(reader, filename);
-            if (commandline.assumePrinting) {
-                parsedScript = new ParserSupport().appendPrintToBlock(parsedScript);
-            }
-            if (commandline.assumeLoop) {
-                parsedScript = new ParserSupport().appendWhileLoopToBlock(parsedScript, commandline.processLineEnds, commandline.sDoSplit);
-            }
+            initializeRuntime(runtime, filename);
+            INode parsedScript = getParsedScript(runtime, reader, filename);
             runtime.eval(parsedScript);
 
         } catch (RaiseException rExcptn) {
@@ -159,28 +118,66 @@ public class Main {
         }
     }
 
+    private static INode getParsedScript(Ruby runtime, Reader reader, String filename) {
+        INode result = runtime.parse(reader, filename);
+        if (commandline.assumePrinting) {
+            result = new ParserSupport().appendPrintToBlock(result);
+        }
+        if (commandline.assumeLoop) {
+            result = new ParserSupport().appendWhileLoopToBlock(result, commandline.processLineEnds, commandline.sDoSplit);
+        }
+        return result;
+    }
+
+    private static void initializeRuntime(Ruby runtime, String filename) {
+        IRubyObject argumentArray = JavaUtil.convertJavaToRuby(runtime, commandline.scriptArguments);
+        runtime.setVerbose(commandline.verbose);
+        defineGlobal(runtime, "$VERBOSE", commandline.verbose);
+        runtime.defineGlobalConstant("ARGV", argumentArray);
+        defineGlobal(runtime, "$-p", commandline.assumePrinting);
+        defineGlobal(runtime, "$-n", commandline.assumeLoop);
+        defineGlobal(runtime, "$-a", commandline.sDoSplit);
+        defineGlobal(runtime, "$-l", commandline.processLineEnds);
+        runtime.defineReadonlyVariable("$*", argumentArray);
+        runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
+        runtime.getLoadService().init(runtime, commandline.loadPaths());
+
+        Iterator iter = commandline.requiredLibraries().iterator();
+        while (iter.hasNext()) {
+            String scriptName = (String) iter.next();
+            KernelModule.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
+        }
+    }
+
     private static void defineGlobal(Ruby runtime, String name, boolean value) {
         runtime.defineReadonlyVariable(name, (value ? runtime.getTrue() : runtime.getNil()));
     }
 
-    /**
-     * Run the interpreter on a File.
-     * open a file and feeds it to the interpreter.
-     *
-     * @param fileName the name of the file to interpret
-     */
-    protected static void runInterpreterOnFile(String fileName, String[] args, CommandlineParser commandline) {
-        File file = new File(fileName);
-        if (!file.canRead()) {
-            System.out.println("Cannot read source file: \"" + fileName + "\"");
-        } else {
+    private static Reader getScriptSource() {
+        if (commandline.hasInlineScript()) {
+            return new StringReader(commandline.inlineScript());
+        } else if (commandline.scriptFileName != null) {
+            File file = new File(commandline.scriptFileName);
             try {
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                runInterpreter(reader, fileName, args, commandline);
-                reader.close();
-            } catch (IOException ioExcptn) {
-                System.out.println("Error reading source file: " + ioExcptn.getMessage());
+                return new BufferedReader(new FileReader(file));
+            } catch (IOException e) {
+                System.err.println("Error opening script file: " + e.getMessage());
+                System.exit(1);
             }
+        } else {
+            System.err.println("nothing to interpret");
+            printUsage();
+            System.exit(0);
+        }
+        Asserts.notReached();
+        return null;
+    }
+
+    private static String displayedFileName() {
+        if (commandline.hasInlineScript()) {
+            return "-e";
+        } else {
+            return commandline.scriptFileName;
         }
     }
 }

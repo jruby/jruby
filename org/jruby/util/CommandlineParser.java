@@ -36,7 +36,7 @@ public class CommandlineParser {
     public String sRegexpAdapter;
     private ArrayList loadPaths = new ArrayList();
     private StringBuffer inlineScript = new StringBuffer();
-    public String scriptFilename = null;
+    public String scriptFileName = null;
     private ArrayList requiredLibraries = new ArrayList();
     public boolean isBenchmarking = false;
     public boolean assumeLoop = false;
@@ -63,7 +63,7 @@ public class CommandlineParser {
         }
         if (inlineScript.length() == 0) {//only get a filename if there were no -e
             if (argumentIndex < arguments.length) {
-                scriptFilename = arguments[argumentIndex]; //consume the file name
+                scriptFileName = arguments[argumentIndex]; //consume the file name
                 argumentIndex++;
             }
         }
