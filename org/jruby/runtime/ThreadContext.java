@@ -6,19 +6,18 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.evaluator.Evaluator;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.util.RubyStack;
+import org.jruby.util.collections.CollectionFactory;
+import org.jruby.util.collections.IStack;
 import org.ablaf.ast.INode;
 
 /**
  * @author jpetersen
- * @version $$Revision$$
+ * @version $Revision$
  */
 public class ThreadContext {
     private final Ruby ruby;
-
-    private Evaluator evaluator;
 
     private BlockStack blockStack;
     private RubyStack dynamicVarsStack;
@@ -27,18 +26,24 @@ public class ThreadContext {
     private RubyThread currentThread;
     private Map localVariables;
 
+    private ScopeStack scopeStack;
+    private FrameStack frameStack;
+    private IStack iterStack;
+
     /**
      * Constructor for Context.
      */
     public ThreadContext(Ruby ruby) {
         this.ruby = ruby;
 
-        this.evaluator = new Evaluator(ruby);
-
         this.blockStack = new BlockStack();
         this.dynamicVarsStack = new RubyStack();
 
         this.localVariables = new HashMap();
+
+        this.scopeStack = new ScopeStack(ruby);
+        this.frameStack = new FrameStack(ruby);
+        this.iterStack = CollectionFactory.getInstance().newStack();
 
         pushDynamicVars();
     }
@@ -59,9 +64,6 @@ public class ThreadContext {
         dynamicVarsStack.push(new HashMap());
     }
 
-    public Evaluator getEvaluator() {
-        return evaluator;
-    }
     /**
      * Returns the currentThread.
      * @return RubyThread
@@ -88,5 +90,25 @@ public class ThreadContext {
 
     public IRubyObject eval(Ruby ruby1, INode node) {
         return EvaluateVisitor.createVisitor(ruby.getRubyTopSelf()).eval(node);
+    }
+
+    public ScopeStack getScopeStack() {
+        return scopeStack;
+    }
+
+    public FrameStack getFrameStack() {
+        return frameStack;
+    }
+
+    public IStack getIterStack() {
+        return iterStack;
+    }
+
+    public Frame getCurrentFrame() {
+        return (Frame) getFrameStack().peek();
+    }
+
+    public Iter getCurrentIter() {
+        return (Iter) getIterStack().peek();
     }
 }

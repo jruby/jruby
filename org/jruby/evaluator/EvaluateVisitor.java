@@ -173,15 +173,13 @@ import org.jruby.util.Asserts;
  */
 public final class EvaluateVisitor implements NodeVisitor {
     private Ruby ruby;
-    private Evaluator evaluator;
     private Builtins builtins;
 
     private IRubyObject self;
     private IRubyObject result;
 
-    public EvaluateVisitor(Ruby ruby, Evaluator evaluator, IRubyObject self) {
+    public EvaluateVisitor(Ruby ruby, IRubyObject self) {
         this.ruby = ruby;
-        this.evaluator = evaluator;
         this.self = self;
 
         builtins = new Builtins(ruby);
@@ -189,7 +187,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     public static EvaluateVisitor createVisitor(RubyObject self) {
         Ruby ruby = self.getRuby();
-        return new EvaluateVisitor(ruby, ruby.getCurrentEvaluator(), self);
+        return new EvaluateVisitor(ruby, self);
     }
 
     /**

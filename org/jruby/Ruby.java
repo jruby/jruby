@@ -44,7 +44,6 @@ import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.Evaluator;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LoadError;
@@ -135,7 +134,7 @@ public final class Ruby {
     private RubyClasses classes;
     private RubyExceptions exceptions;
 
-    private RubyRuntime runtime = new RubyRuntime(this);
+    private final RubyRuntime runtime = new RubyRuntime(this);
 
     private RubyObject rubyTopSelf;
 
@@ -571,7 +570,7 @@ public final class Ruby {
      * @return Value of property rubyScope.
      */
     public ScopeStack getScope() {
-        return getCurrentEvaluator().getScopeStack();
+        return getCurrentContext().getScopeStack();
     }
 
     /** Getter for property methodCache.
@@ -670,11 +669,11 @@ public final class Ruby {
     }
 
     public FrameStack getFrameStack() {
-        return getCurrentEvaluator().getFrameStack();
+        return getCurrentContext().getFrameStack();
     }
 
     public Frame getCurrentFrame() {
-        return getCurrentEvaluator().getCurrentFrame();
+        return getCurrentContext().getCurrentFrame();
     }
 
     /** Getter for property topFrame.
@@ -708,11 +707,11 @@ public final class Ruby {
     }
 
     public IStack getIterStack() {
-        return getCurrentEvaluator().getIterStack();
+        return getCurrentContext().getIterStack();
     }
 
     public Iter getCurrentIter() {
-        return getCurrentEvaluator().getCurrentIter();
+        return getCurrentContext().getCurrentIter();
     }
 
     public BlockStack getBlockStack() {
@@ -913,10 +912,6 @@ public final class Ruby {
 
     public ThreadContext getCurrentContext() {
         return (ThreadContext)threadContext.get();
-    }
-
-    public Evaluator getCurrentEvaluator() {
-        return getCurrentContext().getEvaluator();
     }
 
     public ISourcePosition getPosition() {

@@ -28,12 +28,12 @@
  */
 package org.jruby.runtime;
 
-import java.io.*;
-
 import org.ablaf.ast.INode;
-import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.*;
+
+import java.io.*;
 
 /**
  * @version $Revision$
