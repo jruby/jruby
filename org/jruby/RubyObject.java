@@ -215,9 +215,9 @@ public class RubyObject implements Cloneable {
         return isNil();
     }
 
-	/**
-	 * @todo convert to CallbackFactory invokes.
-	 **/
+    /**
+     * @todo convert to CallbackFactory invokes.
+     **/
     public static void createObjectClass(RubyModule kernelModule) {
         // TODO: convert to CallbackFactory invokes.
         Callback clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
@@ -231,6 +231,7 @@ public class RubyObject implements Cloneable {
         Callback inspect = new ReflectionCallbackMethod(RubyObject.class, "inspect");
         Callback instance_eval = new ReflectionCallbackMethod(RubyObject.class, "instance_eval", RubyObject[].class, true);
         Callback instance_of = new ReflectionCallbackMethod(RubyObject.class, "instance_of", RubyModule.class);
+        Callback instance_variables = new ReflectionCallbackMethod(RubyObject.class, "instance_variables");
         Callback kind_of = new ReflectionCallbackMethod(RubyObject.class, "kind_of", RubyModule.class);
         Callback method = new ReflectionCallbackMethod(RubyObject.class, "method", RubyObject.class);
         Callback methods = new ReflectionCallbackMethod(RubyObject.class, "methods");
@@ -259,6 +260,7 @@ public class RubyObject implements Cloneable {
         kernelModule.defineMethod("inspect", inspect);
         kernelModule.defineMethod("instance_eval", instance_eval);
         kernelModule.defineMethod("instance_of?", instance_of);
+        kernelModule.defineMethod("instance_variables", instance_variables);
         kernelModule.defineMethod("is_a?", kind_of);
         kernelModule.defineMethod("kind_of?", kind_of);
         kernelModule.defineMethod("method", method);
@@ -908,6 +910,14 @@ public class RubyObject implements Cloneable {
         return RubyBoolean.newBoolean(getRuby(), type() == type);
     }
 
+    /**
+     *
+     */
+    public RubyObject instance_variables(RubyModule type) {
+        Set variableNames = instanceVariables.keySet();
+        return RubyArray.newArray(ruby, new ArrayList(variableNames));
+    }
+
     /** rb_obj_is_kind_of
      *
      */
@@ -1038,21 +1048,5 @@ public class RubyObject implements Cloneable {
             output.dumpObject(RubySymbol.newSymbol(ruby, name));
             output.dumpObject(value);
         }
-    }
-
-    public static RubyObject unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubySymbol className = (RubySymbol) input.unmarshalObject();
-        int variableCount = input.unmarshalInt();
-        Ruby ruby = input.getRuby();
-
-        Map variables = new HashMap(variableCount);
-        for (int i = 0; i < variableCount; i++) {
-            RubySymbol name = (RubySymbol) input.unmarshalObject();
-            RubyObject value = input.unmarshalObject();
-            variables.put(name, value);
-        }
-
-        RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
-        return new RubyObject(ruby, rubyClass);
     }
 }

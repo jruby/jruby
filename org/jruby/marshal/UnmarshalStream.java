@@ -77,7 +77,18 @@ public class UnmarshalStream extends FilterInputStream {
         } else if (type == 'm') {
             return RubyModule.unmarshalFrom(this);
         } else if (type == 'o') {
-            return RubyObject.unmarshalFrom(this);
+            RubySymbol className = (RubySymbol) unmarshalObject();
+            int variableCount = unmarshalInt();
+
+            Map variables = new HashMap(variableCount);
+            for (int i = 0; i < variableCount; i++) {
+                RubySymbol name = (RubySymbol) unmarshalObject();
+                RubyObject value = unmarshalObject();
+                variables.put(name, value);
+            }
+
+            RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
+            return new RubyObject(ruby, rubyClass);
         }
 
         throw new NotImplementedError(); // FIXME
