@@ -10,4 +10,4 @@ end
 #test_equal(Class, TestModule_Foo.new.foo.type)
 #test_equal(TestModule_Foo, TestModule_Foo.new.foo.type)
 
-test_ok(TestModule_Foo.new.foo.kind_of?(Class))
+test_equal("Class", TestModule_Foo.new.foo.type.name)
