@@ -73,7 +73,7 @@ public class TestRuby extends TestRubyBase {
 		assertTrue(new RubyString(ruby,"toto").equal(lLoadA.shift()));
 		assertTrue(new RubyString(ruby,".").equal(lLoadA.shift()));
 		//check the case when RubyHome is valuated
-		System.setProperty("org.jruby.HOME", "RubyHome");
+		System.setProperty("jruby.home", "RubyHome");
 		//MRI result
 		/*
 C:\dev\jruby>ruby -e "puts $:"
