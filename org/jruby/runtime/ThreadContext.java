@@ -32,7 +32,7 @@ public class ThreadContext {
 
         this.evaluator = new Evaluator(ruby);
 
-        this.blockStack = new BlockStack(ruby);
+        this.blockStack = new BlockStack();
         this.dynamicVarsStack = new RubyStack();
 
         this.localVariables = new HashMap();

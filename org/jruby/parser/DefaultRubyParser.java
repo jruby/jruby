@@ -337,7 +337,7 @@ public class DefaultRubyParser implements IParser {
 case 1:
 					// line 206 "DefaultRubyParser.y"
   {
-                  /* $<Object>$ = ruby.getDynamicVars();*/
+                  /* $<Object>$ = ruby.getDynamicVariables();*/
                   lexer.setState(LexState.EXPR_BEG);
                   support.initTopLocalVariables();
 		  /* FIXME move to ruby runtime*/
@@ -362,7 +362,7 @@ case 2:
                   support.getResult().setAST(support.appendToBlock(support.getResult().getAST(), ((INode)yyVals[0+yyTop])));
                   support.updateTopLocalVariables();
                   support.setClassNest(0);
-                  /* ruby.setDynamicVars($<RubyVarmap>1);*/
+                  /* ruby.setDynamicVariables($<RubyVarmap>1);*/
               }
   break;
 case 3:

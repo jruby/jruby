@@ -419,7 +419,7 @@ public final class Ruby {
 
         getBlockStack().pop();
 
-        getCurrentContext().getDynamicVarsStack().push(currentBlock.getDynamicVars());
+        getCurrentContext().getDynamicVarsStack().push(currentBlock.getDynamicVariables());
 
         pushClass((klass != null) ? klass : currentBlock.getKlass());
 

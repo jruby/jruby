@@ -1,36 +1,35 @@
 /*
  * RubyBlock.java - description
  * Created on 02.03.2002, 17:46:25
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.runtime;
 
 import java.util.Map;
 
 import org.ablaf.ast.INode;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
+import org.jruby.*;
 import org.jruby.util.collections.StackElement;
 
 /**
@@ -46,12 +45,17 @@ public class Block implements StackElement {
     private Scope scope;
     private RubyModule klass;
     private Iter iter;
-    private Map dynamicVars;
+    private Map dynamicVariables;
     private RubyObject origThread;
 
     private Block next;
 
-    public Block(
+    public static Block createBlock(INode var, ICallable method, RubyObject self) {
+        Ruby ruby = self.getRuby();
+        return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars(), null);
+    }
+
+    private Block(
         INode var,
         ICallable method,
         RubyObject self,
@@ -69,76 +73,19 @@ public class Block implements StackElement {
         this.scope = scope;
         this.klass = klass;
         this.iter = iter;
-        this.dynamicVars = dynamicVars;
+        this.dynamicVariables = dynamicVars;
         this.origThread = origThread;
     }
 
-    /*public void push(INode v, INode b, RubyObject newSelf) {
-        Block oldBlock = new Block(var, body, self, frame, scope, klass, iter, dynamicVars, origThread, next, ruby);
-    
-        var = v;
-        body = b;
-        self = newSelf;
-        frame = ruby.getRubyFrame();
-        klass = ruby.getRubyClass();
-        frame.setFile(ruby.getSourceFile());
-        frame.setLine(ruby.getSourceLine());
-        scope = (Scope) ruby.getScope().getTop();
-        next = oldBlock;
-        iter = ruby.getIter().getIter();
-        dynamicVars = ruby.getDynamicVars();
-    }*/
-
-    /*public void pop() {
-        if (next == null) {
-            ruby.getRuntime().printBug("Try to pop block from empty stack.");
-            return;
-        }
-    
-        this.var = next.var;
-        this.body = next.body;
-        this.self = next.self;
-        this.frame = next.frame;
-        this.scope = next.scope;
-        this.klass = next.klass;
-        this.iter = next.iter;
-        this.dynamicVars = next.dynamicVars;
-        this.origThread = next.origThread;
-        this.next = next.next;
-    }*/
-
-    /*public Block getTmp() {
-        return new Block(var, body, self, frame, scope, klass, iter, dynamicVars, origThread, next, ruby);
-    }
-    */
     public Block cloneBlock() {
-        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVars, origThread);
+        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVariables, origThread);
 
-        // XXX
         if (getNext() != null) {
-            // XXX
-            // newBlock.setNext(((Block)getNext()).cloneBlock());
             newBlock.setNext(((Block)getNext()));
         }
 
         return newBlock;
     }
-    /*
-        public void setTmp(Block block) {
-            this.var = block.var;
-            this.body = block.body;
-            this.self = block.self;
-            this.frame = block.frame;
-            this.scope = block.scope;
-            this.klass = block.klass;
-            this.iter = block.iter;
-            // this.vmode = block.vmode;
-            // this.flags = block.flags;
-            this.dynamicVars = block.dynamicVars;
-            this.origThread = block.origThread;
-    
-            this.next = block.next;
-        }*/
 
     /**
      * @see StackElement#getNext()
@@ -155,19 +102,19 @@ public class Block implements StackElement {
     }
 
     /**
-     * Gets the dynamicVars.
+     * Gets the dynamicVariables.
      * @return Returns a RubyVarmap
      */
-    public Map getDynamicVars() {
-        return dynamicVars;
+    public Map getDynamicVariables() {
+        return dynamicVariables;
     }
 
     /**
-     * Sets the dynamicVars.
-     * @param dynamicVars The dynamicVars to set
+     * Sets the dynamicVariables.
+     * @param dynamicVars The dynamicVariables to set
      */
-    public void setDynamicVars(Map dynamicVars) {
-        this.dynamicVars = dynamicVars;
+    public void setDynamicVariables(Map dynamicVars) {
+        this.dynamicVariables = dynamicVars;
     }
 
     /**
