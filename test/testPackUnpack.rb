@@ -28,15 +28,6 @@ test_equal("\364\377\377\377A\000\000\000\037\002\000\000dk%\260" ,[-12, 65, 543
 test_equal([4294967284, 65, 543, 2955242340],  [-12, 65, 543, 2955242340].pack('V*').unpack('V*'))
 test_equal("\364\377A\000\037\002\212W" ,[-12, 65, 543, 295524234].pack('v*'))
 test_equal([65524, 65, 543, 22410], [-12, 65, 543, 295524234].pack('v*').unpack('v*'))
-
-
-   test_equal("\xc2\xa9B\xe2\x89\xa0", [0xa9, 0x42, 0x2260].pack("U*"))
-   test_equal([0xa9, 0x42, 0x2260], [0xa9, 0x42, 0x2260].pack("U*").unpack('U*'))
-
-
-
-
-
-
-
-
+test_equal("\xc2\xa9B\xe2\x89\xa0", [0xa9, 0x42, 0x2260].pack("U*"))
+test_equal([0xa9, 0x42, 0x2260], [0xa9, 0x42, 0x2260].pack("U*").unpack('U*'))
+test_equal([127, 128], [127, 128].pack("xCxC").unpack("xCxC"))
