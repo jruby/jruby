@@ -37,6 +37,7 @@ testVisibility.rb
 testModule.rb
 #testRbConfig.rb
 testLoad.rb
+testKernel.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
