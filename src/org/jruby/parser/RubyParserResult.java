@@ -84,9 +84,6 @@ public class RubyParserResult {
         return afterEndStream;
     }
 
-    /**
-     * @see IParserResult#getAST()
-     */
     public Node getAST() {
         return ast;
     }

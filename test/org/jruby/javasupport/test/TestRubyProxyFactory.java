@@ -216,7 +216,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
         assertTrue(!test.isSelf(test.duplicate()));
     }
 
-    public void testGlobalVariable() throws ClassNotFoundException {
+    public void testGlobalVariable() {
         RubyTestObject global =
             (RubyTestObject) factory.getProxyForGlobal("$global_test");
 

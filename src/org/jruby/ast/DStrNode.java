@@ -38,7 +38,7 @@ import org.jruby.lexer.yacc.SourcePosition;
  * @author  jpetersen
  * @version $Revision$
  */
-public final class DStrNode extends ListNode implements ILiteralNode {
+public class DStrNode extends ListNode implements ILiteralNode {
     static final long serialVersionUID = -1488812415812799395L;
 
     public DStrNode(SourcePosition position) {

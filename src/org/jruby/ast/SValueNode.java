@@ -29,7 +29,9 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
 
 public class SValueNode extends Node {
-    private Node node;
+	private static final long serialVersionUID = 3834587720830891576L;
+
+	private final Node node;
     
     public SValueNode(SourcePosition position, Node node) {
         super(position);

@@ -349,8 +349,8 @@ public class RubyHash extends RubyObject {
         	return value;
         }
         
-        if (defaultProc.isNil() == false) {
-        	IRubyObject args[] = {this, key};
+        if (!defaultProc.isNil()) {
+        	IRubyObject[] args = {this, key};
         	return ((RubyProc) defaultProc).call(args, this);
         } 
 

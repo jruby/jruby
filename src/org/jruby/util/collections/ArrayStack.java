@@ -34,7 +34,7 @@ import java.util.List;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ArrayStack implements Cloneable {
+public class ArrayStack /*implements Cloneable*/ {
     private List elements;
 
     public ArrayStack() {

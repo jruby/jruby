@@ -72,7 +72,7 @@ public class IOHandlerUnseekable extends IOHandler {
         }
         
         // Neither stream exists?
-        if (isOpen == false) {
+        if (!isOpen) {
             throw new IOError(runtime, "Opening nothing?");
         }
         
@@ -139,7 +139,7 @@ public class IOHandlerUnseekable extends IOHandler {
      * @see org.jruby.util.IOHandler#close()
      */
     public void close() {
-        if (isOpen() == false) {
+        if (!isOpen()) {
             throw ErrnoError.getErrnoError(getRuntime(), "EBADF", "Bad File Descriptor");
         }
         

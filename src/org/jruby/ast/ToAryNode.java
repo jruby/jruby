@@ -30,7 +30,9 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
 
 public class ToAryNode extends Node {
-    private Node node;
+	private static final long serialVersionUID = 3256723961709802546L;
+
+	private final Node node;
 
     public ToAryNode(SourcePosition position, Node node) {
         super(position);

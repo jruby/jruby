@@ -46,7 +46,6 @@ public class ZeroArgNode extends Node {
 
     /**
      * Constructor for ZeroArgNode.
-     * @param position
      */
     public ZeroArgNode() {
         super();

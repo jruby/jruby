@@ -76,9 +76,8 @@ public final class DynamicVariableSet {
         int index = indexOf(name);
         if (index == -1) {
             return null;
-        } else {
-            return values[index];
         }
+		return values[index];
     }
 
     public List names() {

@@ -147,17 +147,16 @@ public class CommandlineParser {
         argumentIndex++;
         if (argumentIndex < arguments.length) {
             return arguments[argumentIndex];
-        } else {
-            System.err.println("invalid argument " + argumentIndex);
-            System.err.println(errorMessage);
-            Main.printUsage();
-            System.exit(1);
         }
+		System.err.println("invalid argument " + argumentIndex);
+		System.err.println(errorMessage);
+		Main.printUsage();
+		System.exit(1);
         return null;
     }
 
     public boolean hasInlineScript() {
-        return (inlineScript.length() > 0);
+        return inlineScript.length() > 0;
     }
 
     public String inlineScript() {

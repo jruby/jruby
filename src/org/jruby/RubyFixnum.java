@@ -99,7 +99,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public double getDoubleValue() {
-        return (double) value;
+        return value;
     }
 
     public long getLongValue() {
@@ -120,7 +120,7 @@ public class RubyFixnum extends RubyInteger {
 
     protected int compareValue(RubyNumeric other) {
         if (other instanceof RubyBignum) {
-            return -((RubyBignum) other).compareValue(this);
+            return -other.compareValue(this);
         } else if (other instanceof RubyFloat) {
             final double otherVal = other.getDoubleValue();
             return value > otherVal ? 1 : value < otherVal ? -1 : 0;
@@ -131,7 +131,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum hash() {
-        return newFixnum((((int) value) ^ (int) (value >> 32)));
+        return newFixnum((int) value ^ (int) (value >> 32));
     }
 
     // Methods of the Fixnum Class (fix_*):
@@ -212,9 +212,8 @@ public class RubyFixnum extends RubyInteger {
         long result = value * otherValue;
         if (result > MAX || result < MIN || result / otherValue != value) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mul(other);
-        } else {
-            return newFixnum(result);
         }
+		return newFixnum(result);
     }
 
     public RubyNumeric multiplyWith(RubyInteger other) {
@@ -241,7 +240,7 @@ public class RubyFixnum extends RubyInteger {
 	    long div = x / y;
 	    long mod = x % y;
 
-	    if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+	    if (mod < 0 && y > 0 || mod > 0 && y < 0) {
 		div -= 1;
 	    }
 
@@ -261,7 +260,7 @@ public class RubyFixnum extends RubyInteger {
 	    long div = x / y;
 	    long mod = x % y;
 
-	    if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+	    if (mod < 0 && y > 0 || mod > 0 && y < 0) {
 		mod += y;
 	    }
 
@@ -272,17 +271,16 @@ public class RubyFixnum extends RubyInteger {
     public RubyNumeric op_pow(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_pow(other);
-        } else {
-            if (other.getLongValue() == 0) {
-                return newFixnum(getRuntime(), 1);
-            } else if (other.getLongValue() == 1) {
-                return this;
-            } else if (other.getLongValue() > 1) {
-                return RubyBignum.newBignum(getRuntime(), getLongValue()).op_pow(other);
-            } else {
-                return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_pow(other);
-            }
         }
+		if (other.getLongValue() == 0) {
+		    return newFixnum(getRuntime(), 1);
+		} else if (other.getLongValue() == 1) {
+		    return this;
+		} else if (other.getLongValue() > 1) {
+		    return RubyBignum.newBignum(getRuntime(), getLongValue()).op_pow(other);
+		} else {
+		    return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_pow(other);
+		}
     }
 
     public RubyString to_s() {
@@ -295,8 +293,9 @@ public class RubyFixnum extends RubyInteger {
 
     public RubyInteger op_lshift(RubyNumeric other) {
         long width = other.getLongValue();
-        if (width < 0)
-            return op_rshift(other.op_uminus());
+        if (width < 0) {
+			return op_rshift(other.op_uminus());
+		}
         if (value > 0) {
 	    if (width >= BIT_SIZE - 2 ||
 		value >> (BIT_SIZE - width) > 0) {
@@ -320,8 +319,9 @@ public class RubyFixnum extends RubyInteger {
 
     public RubyInteger op_rshift(RubyNumeric other) {
         long width = other.getLongValue();
-        if (width < 0)
-            return op_lshift(other.op_uminus());
+        if (width < 0) {
+			return op_lshift(other.op_uminus());
+		}
         return newFixnum(value >> width);
     }
 
@@ -358,11 +358,11 @@ public class RubyFixnum extends RubyInteger {
             return bignum.aref(other);
         }
 
-        return newFixnum((value & (1L << position)) == 0 ? 0 : 1);
+        return newFixnum((value & 1L << position) == 0 ? 0 : 1);
     }
 
     public RubyString id2name() {
-        return (RubyString) RubySymbol.getSymbol(runtime, value).to_s();
+        return RubySymbol.getSymbol(runtime, value).to_s();
     }
 
     public RubyFixnum invert() {

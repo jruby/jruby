@@ -34,8 +34,8 @@ import org.jruby.lexer.yacc.SourcePosition;
 /**
  * A structuring node (linked list of other nodes).
  * This type of node is used to structure the AST.
- * Used in many places it is created throught the {
- * @link org.jruby.parser.ParserSupport#appendToBlock appendToBlock} method
+ * Used in many places it is created throught the
+ * {@link org.jruby.parser.ParserSupport#appendToBlock appendToBlock()} method
  * 
  * @author  jpetersen
  * @version $Revision$

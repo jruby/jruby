@@ -67,11 +67,7 @@ public class LocalNamesElement implements StackElement {
      * variable named id.
      */
     public boolean isLocalRegistered(String name) {
-        if (localNames == null) {
-            return false;
-        } else {
-            return localNames.contains(name);
-        }
+		return localNames != null && localNames.contains(name);
     }
 
     /**

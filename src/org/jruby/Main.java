@@ -60,7 +60,7 @@ public class Main {
     private static CommandlineParser commandline;
     private static boolean hasPrintedUsage = false;
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         commandline = new CommandlineParser(args);
 
         if (commandline.showVersion) {
@@ -141,7 +141,7 @@ public class Main {
             }
             
             public IRubyObject setValue(IRubyObject newValue) {
-            	runtime.setVerbose(newValue.isNil() == false);
+            	runtime.setVerbose(!newValue.isNil());
             	
             	return newValue;
             }

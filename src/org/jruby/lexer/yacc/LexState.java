@@ -72,10 +72,6 @@ public final class LexState {
         this.debug = debug;
     }
 
-    public boolean equals(Object other) {
-        return other == this;
-    }
-
     public boolean isExprBeg() {
         return this == EXPR_BEG;
     }

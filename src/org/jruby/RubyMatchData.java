@@ -99,7 +99,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     public long getSize() {
-        return (long) begin.length;
+        return begin.length;
     }
 
     public IRubyObject group(long n) {
@@ -122,7 +122,7 @@ public class RubyMatchData extends RubyObject {
 
     private boolean outOfBounds(RubyFixnum index) {
         long n = index.getLongValue();
-        return (n < 0 || n >= getSize());
+        return n < 0 || n >= getSize();
     }
 
     //

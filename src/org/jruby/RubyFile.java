@@ -80,7 +80,7 @@ public class RubyFile extends RubyIO {
         separator.freeze();
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
-        RubyString altSeparator = RubyString.newString(runtime, (File.separatorChar == '/'? "\\" : "/"));
+        RubyString altSeparator = RubyString.newString(runtime, File.separatorChar == '/' ? "\\" : "/");
         altSeparator.freeze();
         fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
         RubyString pathSeparator = RubyString.newString(runtime, File.pathSeparator);
@@ -241,9 +241,10 @@ public class RubyFile extends RubyIO {
         for (int i = 0; i < args.length; i++) {
             args[i].checkSafeString();
             File lToDelete = new File(args[i].toString());
-            if (!lToDelete.exists())
-                throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
+            if (!lToDelete.exists()) {
+				throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
                         " No such file or directory - \"" + args[i].toString() + "\"");
+			}
             if (!lToDelete.delete()) {
                 return recv.getRuntime().getFalse();
             }
@@ -256,7 +257,7 @@ public class RubyFile extends RubyIO {
         newName.checkSafeString();
         File oldFile = new File(oldName.asSymbol());
         
-        if (oldFile.exists() == false) {
+        if (!oldFile.exists()) {
             throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
                     "No such file: " + oldName.asSymbol());
         }
@@ -299,18 +300,15 @@ public class RubyFile extends RubyIO {
 			
 			if (index == -1) {
 				return RubyString.newString(recv.getRuntime(), "."); 
-			} else
-			{
-				alt = true;
 			}
+			alt = true;
 		}
 		
 		
 		if (index == 0) {
 			return RubyString.newString(recv.getRuntime(), alt ? altSeparator() : separator());
-		} else {		
-			return RubyString.newString(recv.getRuntime(), name.substring(0, index));
 		}
+		return RubyString.newString(recv.getRuntime(), name.substring(0, index));
 	}
 	
 	/**

@@ -89,11 +89,10 @@ public class RubyMarshal {
             if (io != null) {
                 dumpToStream(objectToDump, io.getOutStream(), depthLimit);
                 return io;
-            } else {
-                ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-                dumpToStream(objectToDump, stringOutput, depthLimit);
-                return RubyString.newString(recv.getRuntime(), stringOutput.toByteArray());
             }
+			ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
+			dumpToStream(objectToDump, stringOutput, depthLimit);
+			return RubyString.newString(recv.getRuntime(), stringOutput.toByteArray());
 
         } catch (IOException ioe) {
             throw IOError.fromException(recv.getRuntime(), ioe);

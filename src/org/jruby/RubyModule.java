@@ -100,7 +100,7 @@ public class RubyModule extends RubyObject {
 
         // If no parent is passed in, it is safe to assume Object.
         if (this.parentModule == null) {
-            this.parentModule = (RubyModule) runtime.getClasses().getObjectClass();
+            this.parentModule = runtime.getClasses().getObjectClass();
 
             // We are constructing object itself...Set its parent to itself.
             if (this.parentModule == null) {
@@ -1234,7 +1234,7 @@ public class RubyModule extends RubyObject {
                 ICallable method = (ICallable) entry.getValue();
 
                 if (method.getVisibility().is(visibility) &&
-                    method.isUndefined() == false) {
+                        !method.isUndefined()) {
                     RubyString name = RubyString.newString(getRuntime(), 
                     	(String) entry.getKey());
 

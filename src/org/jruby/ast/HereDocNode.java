@@ -29,9 +29,11 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
 
 public class HereDocNode extends Node {
-    String value;
-    int func;
-    String lastLine;
+	private static final long serialVersionUID = 3257007635709702709L;
+
+	private final String value;
+	private final int func;
+	private final String lastLine;
     
     public HereDocNode(SourcePosition position, String value, int func, 
             String lastLine) {

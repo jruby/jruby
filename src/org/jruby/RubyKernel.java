@@ -248,7 +248,7 @@ public class RubyKernel {
     }
     
     
-    public static IRubyObject p(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject p(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
         for (int i = 0; i < args.length; i++) {
@@ -260,7 +260,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
-    public static IRubyObject puts(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
         RubyIO.puts(defout, args);
@@ -268,7 +268,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
-    public static IRubyObject print(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject print(IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
         RubyIO.print(defout, args);
@@ -276,7 +276,7 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
-    public static IRubyObject printf(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject printf(IRubyObject recv, IRubyObject[] args) {
         if (args.length != 0) {
             IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
@@ -336,11 +336,11 @@ public class RubyKernel {
         }
     }
 
-    public static IRubyObject sub_bang(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject sub_bang(IRubyObject recv, IRubyObject[] args) {
         return getLastlineString(recv.getRuntime()).sub_bang(args);
     }
 
-    public static IRubyObject sub(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject sub(IRubyObject recv, IRubyObject[] args) {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
         if (!str.sub_bang(args).isNil()) {
@@ -350,11 +350,11 @@ public class RubyKernel {
         return str;
     }
 
-    public static IRubyObject gsub_bang(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject gsub_bang(IRubyObject recv, IRubyObject[] args) {
         return getLastlineString(recv.getRuntime()).gsub_bang(args);
     }
 
-    public static IRubyObject gsub(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject gsub(IRubyObject recv, IRubyObject[] args) {
         RubyString str = (RubyString) getLastlineString(recv.getRuntime()).dup();
 
         if (!str.gsub_bang(args).isNil()) {
@@ -415,10 +415,10 @@ public class RubyKernel {
         }
 
         return RubyFixnum.newFixnum(recv.getRuntime(), 
-        		Math.round(((double)(System.currentTimeMillis() - startTime))/1000));
+        		Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
 
-    public static IRubyObject exit(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         recv.getRuntime().secure(4);
 
         int status = 0;
@@ -474,7 +474,7 @@ public class RubyKernel {
         return RubyBoolean.newBoolean(recv.getRuntime(), recv.getRuntime().isFBlockGiven());
     }
 
-    public static IRubyObject sprintf(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw new ArgumentError(recv.getRuntime(), "sprintf must have at least one argument");
         }
@@ -487,7 +487,7 @@ public class RubyKernel {
         return str.format(newArgs);
     }
 
-    public static IRubyObject raise(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject raise(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         switch (args.length) {
         case 0 :
@@ -499,17 +499,15 @@ public class RubyKernel {
         case 1 :
             if (args[0] instanceof RubyException) {
                 throw new RaiseException((RubyException) args[0]);
-            } else {
-                throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
             }
+            throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
         case 2 :
             if (args[0] == runtime.getClasses().getExceptionClass()) {
                 throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
-            } else {
-                RubyString string = (RubyString) args[1];
-                RubyException excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
-                throw new RaiseException(excptn);
             }
+            RubyString string = (RubyString) args[1];
+            RubyException excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
+            throw new RaiseException(excptn);
         default :
             throw new ArgumentError(runtime, "wrong # of arguments");
         }
@@ -573,9 +571,8 @@ public class RubyKernel {
         } catch (ThrowJump throwJump) {
             if (throwJump.getTag().equals(tag.asSymbol())) {
                 return throwJump.getValue();
-            } else {
-                throw throwJump;
             }
+			throw throwJump;
         }
     }
 
@@ -691,9 +688,8 @@ public class RubyKernel {
         if (ceil == 0) {
             double result = recv.getRuntime().random.nextDouble();
             return RubyFloat.newFloat(recv.getRuntime(), result);
-        } else {
-            return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
         }
+		return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {

@@ -44,12 +44,12 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
 
     /**
      * Construtor.
-     * @param iName the name of the instance variable
-     * @param iValueNode the value of the variable
+     * @param name the name of the instance variable
+     * @param valueNode the value of the variable
      **/
-    public InstAsgnNode(SourcePosition position, String iName, Node valueNode) {
+    public InstAsgnNode(SourcePosition position, String name, Node valueNode) {
         super(position);
-        name = iName;
+        this.name = name;
         setValueNode(valueNode);
     }
 

@@ -122,7 +122,7 @@ public abstract class AbstractCallback implements Callback {
 
     protected void testArgsCount(Ruby runtime, IRubyObject[] methodArgs) {
         if (isRestArgs) {
-            if (methodArgs.length < (argumentTypes.length - 1)) {
+            if (methodArgs.length < argumentTypes.length - 1) {
                 throw new ArgumentError(runtime, getExpectedArgsString(methodArgs));
             }
         } else {
@@ -182,7 +182,7 @@ public abstract class AbstractCallback implements Callback {
     protected abstract CallType callType(boolean isStaticMethod);
 
 
-    protected abstract class CallType {
+    protected abstract static class CallType {
         public abstract IRubyObject invokeMethod(IRubyObject recv, Object[] methodArgs)
                 throws IllegalAccessException, InvocationTargetException;
 

@@ -86,8 +86,9 @@ public class ThreadService {
     public synchronized void setCritical(boolean critical) {
     	// TODO: this implementation is obviously dependent on native threads
     	if (this.critical) {
-    		if (critical) return;
-    		
+    		if (critical) {
+				return;
+			}
     		this.critical = false;
     		
     		Thread[] activeThreads = new Thread[rubyThreadGroup.activeCount()];
@@ -104,8 +105,9 @@ public class ThreadService {
     			rubyThread.decriticalize();
     		}
     	} else {
-    		if (!critical) return;
-    		
+    		if (!critical) {
+				return;
+			}
     		this.critical = true;
     		
     		Thread[] activeThreads = new Thread[rubyThreadGroup.activeCount()];
@@ -135,11 +137,6 @@ public class ThreadService {
     	}
     }
     
-    /**
-	 * @param activeThreads
-	 * @param i
-	 * @return
-	 */
 	private RubyThread getRubyThreadFromThread(Thread activeThread) {
 		RubyThread rubyThread;
 		if (activeThread instanceof RubyNativeThread) {

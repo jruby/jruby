@@ -65,7 +65,7 @@ public class Parser {
             parser.setErrorHandler(runtime.getErrorHandler());
             parser.init(config);
             LexerSource lexerSource = LexerSource.getSource(file, content);
-            result = (RubyParserResult) parser.parse(lexerSource);
+            result = parser.parse(lexerSource);
         } finally {
             pool.returnParser(parser);
         }

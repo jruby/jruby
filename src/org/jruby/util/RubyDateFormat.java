@@ -364,7 +364,7 @@ public class RubyDateFormat extends DateFormat {
                         toAppendTo.append('-');
                     }
                     value = Math.abs(value);
-                    if ((value / 3600000) < 10) {
+                    if (value / 3600000 < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value / 3600000);

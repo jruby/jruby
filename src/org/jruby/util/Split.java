@@ -87,7 +87,7 @@ public class Split {
 			int end = matchData.matchEndPosition();
 
 			// Whitespace splits are supposed to ignore leading whitespace
-			if (beg != 0 || isWhitespace != true) {
+			if (beg != 0 || !isWhitespace) {
 			    addResult(substring(splitee, pos, (beg == pos && end == beg) ? 1 : beg - pos));
 			    // Add to list any /(.)/ matched.
 			    long extraPatterns = matchData.getSize();
@@ -113,12 +113,11 @@ public class Split {
 		}
     }
 
-    private int getLimit(IRubyObject[] args) {
+    private static int getLimit(IRubyObject[] args) {
         if (args.length == 2) {
             return RubyNumeric.fix2int(args[1]);
-        } else {
-            return 0;
         }
+		return 0;
     }
 
     private RubyRegexp getPattern(IRubyObject[] args) {
@@ -131,21 +130,19 @@ public class Split {
             // mark it as whitespace.  Apparently, this is so ruby can
             // still get the do not ignore the front match behavior.
             return RubyRegexp.regexpValue(args[0]);
-        } else {
-            String stringPattern = RubyString.stringValue(args[0]).getValue();
-            
-            if (stringPattern.equals(" ")) {
-                isWhitespace = true;
-                return RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
-            } else {
-                return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0, null);
-            }
         }
+		String stringPattern = RubyString.stringValue(args[0]).getValue();
+		
+		if (stringPattern.equals(" ")) {
+		    isWhitespace = true;
+		    return RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
+		}
+		return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0, null);
     }
 
     // Perhaps somewhere else in jruby this can be done easier.
     // I did not rely on jdk1.4 (or I could use 1.4 regexp to do this).
-    private String unescapeString(String unescapedString) {
+    private static String unescapeString(String unescapedString) {
         int length = unescapedString.length();
         char[] charsToEscape = {'|', '(', ')', '.', '*', 
                 '[', ']', '^', '$', '\\'};
@@ -174,7 +171,7 @@ public class Split {
         result.add(string);
     }
 
-	private String substring(String string, int start, int length) {
+	private static String substring(String string, int start, int length) {
 		int stringLength = string.length();
 		if (length < 0 || start > stringLength) {
 			return null;

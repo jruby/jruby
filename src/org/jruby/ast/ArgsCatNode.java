@@ -29,14 +29,15 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
 
 public class ArgsCatNode extends Node {
-    private Node firstNode;
-    private Node secondNode;
+	private static final long serialVersionUID = 3906082365066327860L;
 
-    public ArgsCatNode(SourcePosition position, Node node1, Node node2) {
+	private final Node firstNode;
+    private final Node secondNode;
+
+    public ArgsCatNode(SourcePosition position, Node firstNode, Node secondNode) {
         super(position);
-        
-        this.firstNode = node1;
-        this.secondNode = node2;
+        this.firstNode = firstNode;
+        this.secondNode = secondNode;
     }
 
     public void accept(NodeVisitor visitor) {

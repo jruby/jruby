@@ -276,7 +276,7 @@ public class JavaClass extends RubyObject {
 
         Class otherClass = ((JavaClass) other).getValue();
 
-        if ((!javaClass.isPrimitive() && otherClass == Void.TYPE) ||
+        if (!javaClass.isPrimitive() && otherClass == Void.TYPE ||
             javaClass.isAssignableFrom(otherClass)) {
             return getRuntime().getTrue();
         }

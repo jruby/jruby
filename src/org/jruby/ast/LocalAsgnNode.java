@@ -41,7 +41,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = 1118108700098164006L;
 
     private final int count;
-    private String name;
+    private final String name;
 
     public LocalAsgnNode(SourcePosition position, String name, int count, Node valueNode) {
         super(position);

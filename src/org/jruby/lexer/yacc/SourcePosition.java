@@ -37,26 +37,35 @@ import java.io.Serializable;
  * @author enebo
  */
 public class SourcePosition implements Serializable {
-	// Often times many nodes share the same position (LexerSource has commentary
-	// on the weakness of this scheme).
-    private static SourcePosition lastPosition = new SourcePosition("", -1);
+    private static final long serialVersionUID = 3762529027281400377L;
+
+    // Often times many nodes share the same position (LexerSource has commentary
+    // on the weakness of this scheme).
+    private static SourcePosition lastPosition = new SourcePosition();
     
     // The file of the source
-    private String file;
+    private final String file;
     
     // The row of the source
-    private int line;
+    private final int line;
 
-    // For serialization purposes
-    public SourcePosition() { super(); }
+    /**
+     * Creates a default source position - required for serialization.
+     */
+    public SourcePosition() {
+    	this("", -1);
+    }
     
     /**
-     * Create a new source position
+     * Creates a new source position.
      * 
-     * @param file location of the source
+     * @param file location of the source (must not be null)
      * @param line what line within the source
      */
 	public SourcePosition(String file, int line) {
+		if (file == null) { //otherwise equals() and getInstance() will fail
+			throw new NullPointerException();  
+		}
 		this.file = file;
 		this.line = line;
 	}
@@ -79,6 +88,9 @@ public class SourcePosition implements Serializable {
      * @return simple Object.equals() implementation
      */
     public boolean equals(Object object) {
+    	if (object == this) {
+    		return true;
+    	}
         if (object instanceof SourcePosition) {
         	return false;
         }

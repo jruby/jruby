@@ -17,7 +17,7 @@ public class FrameStack extends Stack {
     public synchronized Frame getPrevious() {
     	int size = size();
                 
-    	return size <= 1 ? null : (Frame) elementAt(size-2); 
+    	return size <= 1 ? null : (Frame) elementAt(size - 2);
     }
 
     public void push() {
@@ -28,11 +28,8 @@ public class FrameStack extends Stack {
         push(((Frame) peek()).duplicate());
     }
 
-    /**
-     * @see Stack#pop()
-     */
     public Object pop() {
-        final Frame frame  = (Frame) super.pop();
+        Frame frame = (Frame) super.pop();
         threadContext.setPosition(frame.getPosition());
         return frame;
     }

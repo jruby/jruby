@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class StrNode extends Node implements ILiteralNode {
     static final long serialVersionUID = 4544779503072130759L;
 
-    private String value;
+    private final String value;
 
     public StrNode(SourcePosition position, String value) {
         super(position);
@@ -61,13 +61,5 @@ public class StrNode extends Node implements ILiteralNode {
      */
     public String getValue() {
         return value;
-    }
-
-    /**
-     * Sets the value.
-     * @param value The value to set
-     */
-    public void setValue(String value) {
-        this.value = value;
     }
 }

@@ -36,7 +36,7 @@ import org.jruby.lexer.yacc.SourcePosition;
  * @author  jpetersen
  * @version $Revision$
  */
-public final class FCallNode extends Node {
+public class FCallNode extends Node {
     static final long serialVersionUID = 3590332973770104094L;
 
     private final String name;

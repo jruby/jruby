@@ -53,9 +53,8 @@ public abstract class AbstractStack {
         	StackElement result = top;
             top = top.getNext();
             return result;
-        } else {
-			throw new EmptyStackException();
         }
+		throw new EmptyStackException();
     }
 
     public boolean isEmpty() {

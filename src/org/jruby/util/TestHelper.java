@@ -86,10 +86,10 @@ public class TestHelper {
         }
         public String dispatchObject(Object iObject)
         {
-        	if (iObject == null)
-        		return null;
-        	else
-        		return iObject.toString();
+        	if (iObject == null) {
+				return null;
+			}
+			return iObject.toString();
         }
     }
 
@@ -106,8 +106,7 @@ public class TestHelper {
         try {
 
             runtime.getCurrentContext().pushClass(self.getType());
-            return (IRubyObject) method.invoke(null,
-                                               new Object[] { runtime, self });
+            return (IRubyObject) method.invoke(null, new Object[] { runtime, self });
         } catch (InvocationTargetException e) {
             throw unrollException(e);
         } finally {

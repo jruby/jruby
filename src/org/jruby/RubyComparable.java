@@ -72,9 +72,8 @@ public class RubyComparable {
         try {
             if (recv == other) {
                 return recv.getRuntime().getTrue();
-            } else {
-                return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
             }
+            return (RubyNumeric.fix2int(recv.callMethod("<=>", other)) == 0) ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
         } catch (NameError rnExcptn) {
             return recv.getRuntime().getFalse();
         }

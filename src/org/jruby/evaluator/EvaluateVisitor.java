@@ -361,10 +361,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             expression = eval(iVisited.getCaseNode());
         }
         
-        Node aNode = (WhenNode) iVisited.getFirstWhenNode();
+        Node aNode = iVisited.getFirstWhenNode();
         
         while (aNode != null) {
-            if (aNode instanceof WhenNode == false) {
+            if (!(aNode instanceof WhenNode)) {
                 eval(aNode);
                 break;
             } 
@@ -415,10 +415,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                 String name = ((INameNode) superNode).getName();
                 throw new TypeError(runtime,
                                     "undefined superclass '" + name + "'");
-            } else {
-                throw new TypeError(runtime,
-                                    "superclass undefined");
             }
+			throw new TypeError(runtime, "superclass undefined");
         }
         if (result instanceof MetaClass) {
             throw new TypeError(runtime, "can't make subclass of virtual class");
@@ -953,16 +951,14 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (firstValue.isTrue()) {
                 result = firstValue;
                 return;
-            } else {
-                firstValue = eval(iVisited.getValueNode());
             }
+			firstValue = eval(iVisited.getValueNode());
         } else if (iVisited.getOperatorName().equals("&&")) {
             if (!firstValue.isTrue()) {
                 result = firstValue;
                 return;
-            } else {
-                firstValue = eval(iVisited.getValueNode());
             }
+			firstValue = eval(iVisited.getValueNode());
         } else {
             firstValue = firstValue.callMethod(iVisited.getOperatorName(), eval(iVisited.getValueNode()));
         }
@@ -984,16 +980,14 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (value.isTrue()) {
                 result = value;
                 return;
-            } else {
-                value = eval(iVisited.getValueNode());
             }
+			value = eval(iVisited.getValueNode());
         } else if (iVisited.getOperatorName().equals("&&")) {
             if (!value.isTrue()) {
                 result = value;
                 return;
-            } else {
-                value = eval(iVisited.getValueNode());
             }
+			value = eval(iVisited.getValueNode());
         } else {
             value = value.callMethod(iVisited.getOperatorName(), eval(iVisited.getValueNode()));
         }
@@ -1142,7 +1136,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitSClassNode(SClassNode iVisited) {
         IRubyObject receiver = eval(iVisited.getReceiverNode());
 
-        RubyClass singletonClass = null;
+        RubyClass singletonClass;
 
         if (receiver.isNil()) {
             singletonClass = runtime.getClasses().getNilClass();
@@ -1203,7 +1197,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitSValueNode(StrNode)
+     * @see NodeVisitor#visitSValueNode(SValueNode)
      */
     public void visitSValueNode(SValueNode iVisited) {
         result = aValueSplat(eval(iVisited.getValue()));
@@ -1471,8 +1465,8 @@ public final class EvaluateVisitor implements NodeVisitor {
     }
 
     private IRubyObject aValueSplat(IRubyObject value) {
-        if (value instanceof RubyArray == false || 
-            ((RubyArray)value).length().getLongValue() == 0) {
+        if (!(value instanceof RubyArray) ||
+            ((RubyArray) value).length().getLongValue() == 0) {
             return runtime.getNil();
         }
         

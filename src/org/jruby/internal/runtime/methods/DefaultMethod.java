@@ -178,22 +178,21 @@ public final class DefaultMethod extends AbstractMethod {
         //a lot of complication to try to get a line number and a file name
         //without a NullPointerException
         SourcePosition lPosition = null;
-        if (body != null)
-            if (body.getBodyNode() != null)
-                if(body.getBodyNode().getPosition() != null)
+        if (body != null) {
+            if (body.getBodyNode() != null) {
+                if(body.getBodyNode().getPosition() != null) {
                     lPosition = body.getBodyNode().getPosition();
-                else
-                    ;
-            else
-                if (body.getPosition() != null)
+                }
+            } else {
+                if (body.getPosition() != null) {
                     lPosition = body.getPosition();
-                else
-                    ;
-        else
-            if (argsNode != null)
+                }
+            }
+        } else {
+            if (argsNode != null) {
                 lPosition = argsNode.getPosition();
-
-
+            }
+        }
         if (lPosition == null) {
            lPosition = runtime.getPosition();
         }

@@ -102,10 +102,9 @@ public class GlobalVariables {
 	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
 	    if (variable != null) {
 	        return variable.getAccessor().getValue();
-	    } else {
-	        runtime.getErrorHandler().warning("global variable `" + name + "' not initialized");
-	        return runtime.getNil();
 	    }
+		runtime.getErrorHandler().warning("global variable `" + name + "' not initialized");
+		return runtime.getNil();
 	}
 
     public IRubyObject set(String name, IRubyObject value) {

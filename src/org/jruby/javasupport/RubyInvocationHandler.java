@@ -93,7 +93,7 @@ public class RubyInvocationHandler implements InvocationHandler {
     }
 
     /** Simple helper method for RubyObject.respond_to(RubySymbol).  */
-    protected boolean respondsTo(IRubyObject obj, String methodName) {
+    protected static boolean respondsTo(IRubyObject obj, String methodName) {
         return obj.respondsTo(methodName);
     }
 }

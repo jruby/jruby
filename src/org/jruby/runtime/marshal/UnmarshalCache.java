@@ -51,7 +51,7 @@ public class UnmarshalCache {
     }
 
     public boolean isLinkType(int c) {
-        return (c == ';' || c == '@');
+        return c == ';' || c == '@';
     }
 
     public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {

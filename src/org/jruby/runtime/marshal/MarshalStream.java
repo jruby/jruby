@@ -53,7 +53,7 @@ public class MarshalStream extends FilterOutputStream {
         super(out);
 
         this.runtime = runtime;
-        this.depthLimit = (depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE);
+        this.depthLimit = depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE;
         this.cache = new MarshalCache();
 
         out.write(Constants.MARSHAL_MAJOR);
@@ -73,7 +73,9 @@ public class MarshalStream extends FilterOutputStream {
             writeAndRegister(value);
         }
         depth--;
-        if (depth == 0) out.flush(); // flush afer whole dump is complete
+        if (depth == 0) {
+        	out.flush(); // flush afer whole dump is complete
+        }
     }
 
     private void writeDirectly(IRubyObject value) throws IOException {

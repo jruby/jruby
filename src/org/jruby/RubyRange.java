@@ -210,7 +210,7 @@ public class RubyRange extends RubyObject {
             }
         } else { // Support length for arbitrary classes
             IRubyObject currentObject = begin;
-	    String compareMethod = (isExclusive ? "<" : "<=");
+	    String compareMethod = isExclusive ? "<" : "<=";
 
 	    while (currentObject.callMethod(compareMethod, end).isTrue()) {
 		size++;
@@ -236,7 +236,7 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyBoolean op_eqq(IRubyObject obj) {
-        if ((begin instanceof RubyFixnum) && (obj instanceof RubyFixnum) && (end instanceof RubyFixnum)) {
+        if (begin instanceof RubyFixnum && obj instanceof RubyFixnum && end instanceof RubyFixnum) {
             long b = RubyNumeric.fix2long(begin);
             long o = RubyNumeric.fix2long(obj);
 
@@ -316,7 +316,7 @@ public class RubyRange extends RubyObject {
     
     public RubyArray to_a() {
         IRubyObject currentObject = begin;
-	    String compareMethod = (isExclusive ? "<" : "<=");
+	    String compareMethod = isExclusive ? "<" : "<=";
 	    RubyArray array = RubyArray.newArray(getRuntime());
         
 	    while (currentObject.callMethod(compareMethod, end).isTrue()) {

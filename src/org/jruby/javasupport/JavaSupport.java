@@ -140,12 +140,11 @@ public class JavaSupport {
     	if (ref == null) {
     		return null;
     	}
-    	JavaObject javaObject = (JavaObject)(ref).get();
+    	JavaObject javaObject = (JavaObject) ref.get();
     	if (javaObject != null && javaObject.getValue() == object) {
     		return javaObject;
-    	} else {
-    		return null;
     	}
+        return null;
     }
     
     public void putJavaObjectIntoCache(JavaObject object) {

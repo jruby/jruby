@@ -51,11 +51,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * 
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
-	private final static class Code {
-		private final static Code NIL = new Code(null);
-		private final static Code NONE = new Code("none");
-		private final static Code UTF8 = new Code("utf8");
-		private final static Code SJIS = new Code("sjis");
+        private static final class Code {
+		private static final Code NIL = new Code(null);
+		private static final Code NONE = new Code("none");
+		private static final Code UTF8 = new Code("utf8");
+		private static final Code SJIS = new Code("sjis");
 
 		private String kcode;
 
@@ -64,29 +64,30 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 		}
 
 		public static Code create(String lang) {
-			if (lang == null)
+			if (lang == null) {
 				return NIL;
-			if (lang.charAt(0) == 'n' || lang.charAt(0) == 'N')
+			} else if (lang.charAt(0) == 'n' || lang.charAt(0) == 'N') {
 				return NONE;
-			if (lang.charAt(0) == 'u' || lang.charAt(0) == 'U')
+			} else if (lang.charAt(0) == 'u' || lang.charAt(0) == 'U') {
 				return UTF8;
-			if (lang.charAt(0) == 's' || lang.charAt(0) == 'S')
+			} else if (lang.charAt(0) == 's' || lang.charAt(0) == 'S') {
 				return SJIS;
+			}
 			return NIL;
 		}
 
 		public IRubyObject kcode(Ruby runtime) {
-			if (kcode == null)
+			if (kcode == null) {
 				return runtime.getNil();
-			else
-				return RubyString.newString(runtime, kcode);
+			}
+			return RubyString.newString(runtime, kcode);
 		}
 
 		public int flags() {
-			if (this == UTF8) 
+			if (this == UTF8) {
 				return Pattern.UNICODE_CASE;
-			else
-				return 0;			
+			}
+			return 0;
 		}
 	}
 	

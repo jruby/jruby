@@ -81,9 +81,9 @@ public class IOModes {
 
     // TODO: Make sure all open flags are added to this check.
     public void checkSubsetOf(IOModes superset) {
-        if ((superset.isReadable() == false && isReadable()) ||
-            (superset.isWriteable() == false && isWriteable()) ||
-            (superset.isAppendable() == false) && isAppendable()) {
+        if ((!superset.isReadable() && isReadable()) ||
+            (!superset.isWriteable() && isWriteable()) ||
+            !superset.isAppendable() && isAppendable()) {
             throw ErrnoError.getErrnoError(runtime, "EINVAL", "bad permissions");
         }
     }

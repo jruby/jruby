@@ -121,7 +121,7 @@ public class JavaObject extends RubyObject {
     }
 
     public IRubyObject equal(IRubyObject other) {
-    	if (other instanceof JavaObject == false) {
+    	if (!(other instanceof JavaObject)) {
     		return getRuntime().getFalse();
     	}
     	
@@ -136,9 +136,8 @@ public class JavaObject extends RubyObject {
     	if (other instanceof JavaObject && 
     			value == ((JavaObject) other).value) {
     		return getRuntime().getTrue();
-    	} else {
-    		return getRuntime().getFalse();
     	}
+		return getRuntime().getFalse();
     }
 
     public RubyString java_type() {

@@ -70,7 +70,7 @@ public class RubyFileTest {
     public static IRubyObject size(IRubyObject recv, RubyString filename) {
         File file = new File(filename.getValue());
         
-        if (file.exists() == false) {
+        if (!file.exists()) {
             throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
                     "No such file: " + filename.getValue());
         }
@@ -87,7 +87,7 @@ public class RubyFileTest {
     public static RubyBoolean zero_p(IRubyObject recv, RubyString filename) {
         File file = new File(filename.getValue());
         return RubyBoolean.newBoolean(filename.getRuntime(),
-                file.exists() == true && file.length() == 0L);
+                file.exists() && file.length() == 0L);
                 
     }
     

@@ -45,7 +45,7 @@ public class RubyTestCase extends TestCase {
     }
 
     // Is there something built into JRuby to do this?
-    protected void initRuby(Ruby runtime) throws IOException {
+    protected void initRuby(Ruby runtime) {
         IRubyObject empty =
             JavaUtil.convertJavaToRuby(
                 runtime,

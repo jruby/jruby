@@ -449,7 +449,6 @@ public class RubyString extends RubyObject {
 	 * String#match(pattern)
 	 * 
 	 * @param pattern Regexp or String 
-	 * @return
 	 */
 	public IRubyObject match3(IRubyObject pattern) {
 		if (pattern instanceof RubyRegexp) {
@@ -535,8 +534,7 @@ public class RubyString extends RubyObject {
 	    RubyString newString = newString(getValue());
 		IRubyObject swappedString = newString.swapcase_bang();
 		
-		return (RubyString) (swappedString.isNil() == true ? newString : 
-			swappedString);
+		return (RubyString) (swappedString.isNil() ? newString : swappedString);
 	}
 
 	/** rb_str_swapcase_bang
@@ -584,7 +582,7 @@ public class RubyString extends RubyObject {
 	private RubyString inspect(boolean dump) {
 		final int length = getValue().length();
 
-		StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
+		StringBuffer sb = new StringBuffer(length + 2 + length / 100);
 
 		sb.append('\"');
 
@@ -730,7 +728,7 @@ public class RubyString extends RubyObject {
 		if (pat.search(this, 0) >= 0) {
 			RubyMatchData match = (RubyMatchData) getRuntime().getBackref();
 			RubyString newStr = match.pre_match();
-			newStr.append((iter ? getRuntime().yield(match.group(0)) : pat.regsub(repl, match)));
+			newStr.append(iter ? getRuntime().yield(match.group(0)) : pat.regsub(repl, match));
 			newStr.append(match.post_match());
 			newStr.setTaint(isTaint() || repl.isTaint());
 			if (bang) {
@@ -789,7 +787,7 @@ public class RubyString extends RubyObject {
 			taint |= newStr.isTaint();
 			sbuf.append(((RubyString) newStr).getValue());
 			offset = match.matchEndPosition();
-			beg = pat.search(this, (offset == beg ? beg + 1 : offset));
+			beg = pat.search(this, offset == beg ? beg + 1 : offset);
 		}
 		sbuf.append(str.substring(offset, str.length()));
 		if (bang) {
@@ -822,8 +820,9 @@ public class RubyString extends RubyObject {
 	private IRubyObject index(IRubyObject[] args, boolean reverse) {
 		//FIXME may be a problem with pos when doing reverse searches
 		int pos = 0;
-		if (reverse)
+		if (reverse) {
 			pos = getValue().length();
+		}
 		if (argCount(args, 1, 2) == 2) {
 			pos = RubyNumeric.fix2int(args[1]);
 		}
@@ -1015,9 +1014,8 @@ public class RubyString extends RubyObject {
 				args[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
 			}
 			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(args));
-		} else {
-			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
 		}
+		return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
 	}
 
 	/** rb_str_succ
@@ -1051,11 +1049,10 @@ public class RubyString extends RubyObject {
 					sbuf.setCharAt(i, (char) (c + 1));
 					pos = -1;
 					break;
-				} else {
-					pos = i;
-					n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
-					sbuf.setCharAt(i, n);
 				}
+				pos = i;
+				n = isDigit(c) ? '0' : (isLower(c) ? 'a' : 'A');
+				sbuf.setCharAt(i, n);
 			}
 		}
 		if (!alnumSeen) {
@@ -1065,11 +1062,10 @@ public class RubyString extends RubyObject {
 					sbuf.setCharAt(i, (char) (c + 1));
 					pos = -1;
 					break;
-				} else {
-					pos = i;
-					n = '\u0001';
-					sbuf.setCharAt(i, '\u0000');
 				}
+				pos = i;
+				n = '\u0001';
+				sbuf.setCharAt(i, '\u0000');
 			}
 		}
 		if (pos > -1) {
@@ -1083,11 +1079,10 @@ public class RubyString extends RubyObject {
 		if (bang) {
 			setValue(sbuf.toString());
 			return this;
-		} else {
-			RubyString newStr = (RubyString) dup();
-			newStr.setValue(sbuf.toString());
-			return newStr;
 		}
+		RubyString newStr = (RubyString) dup();
+		newStr.setValue(sbuf.toString());
+		return newStr;
 	}
 
 	/** rb_str_upto_m
@@ -1329,7 +1324,7 @@ public class RubyString extends RubyObject {
 		int i = 0;
 		
 		for (; i < length; i++) {
-			if (Character.isWhitespace(value.charAt(i)) == false) {
+			if (!Character.isWhitespace(value.charAt(i))) {
 				break;
 			}
 		}
@@ -1353,7 +1348,7 @@ public class RubyString extends RubyObject {
 		int i = value.length() - 1;
 		
 		for (; i >= 0; i--) {
-			if (Character.isWhitespace(value.charAt(i)) == false) {
+			if (!Character.isWhitespace(value.charAt(i))) {
 				break;
 			}
 		}
@@ -1397,16 +1392,15 @@ public class RubyString extends RubyObject {
 		return this;
 	}
 
-	private String expandTemplate(String spec, boolean invertOK) {
+	private static String expandTemplate(String spec, boolean invertOK) {
 		int len = spec.length();
 		if (len <= 1) {
 			return spec;
 		}
 		StringBuffer sbuf = new StringBuffer();
 		int pos = (invertOK && spec.startsWith("^")) ? 1 : 0;
-		char c1, c2;
 		while (pos < len) {
-			c1 = spec.charAt(pos);
+			char c1 = spec.charAt(pos), c2;
 			if (pos + 2 < len && spec.charAt(pos + 1) == '-') {
 				if ((c2 = spec.charAt(pos + 2)) > c1) {
 					for (int i = c1; i <= c2; i++) {
@@ -1427,10 +1421,10 @@ public class RubyString extends RubyObject {
 		int numSets = 0;
 		for (int i = 0; i < specs.length; i++) {
 			String template = expandTemplate(specs[i], true);
-			boolean invert = (specs[i].length() > 1 && specs[i].startsWith("^"));
+			boolean invert = specs[i].length() > 1 && specs[i].startsWith("^");
 			for (int j = 0; j < 256; j++) {
 				if (template.indexOf(j) != -1) {
-					table[j] += (invert ? -1 : 1);
+					table[j] += invert ? -1 : 1;
 				}
 			}
 			numSets += invert ? 0 : 1;
@@ -1573,18 +1567,16 @@ public class RubyString extends RubyObject {
 		}
 		int repLen = repl.length();
 		StringBuffer sbuf = new StringBuffer(strLen);
-		char cs, cr;
 		int last = -1;
-		int pos;
 		for (int i = 0; i < strLen; i++) {
-			cs = getValue().charAt(i);
-			pos = srch.indexOf(cs);
+			char cs = getValue().charAt(i);
+			int pos = srch.indexOf(cs);
 			if (pos == -1) {
 				sbuf.append(cs);
 				last = -1;
 			} else if (repLen > 0) {
-				cr = repl.charAt(Math.min(pos, repLen - 1));
-				if (squeeze && (int) cr == last) {
+				char cr = repl.charAt(Math.min(pos, repLen - 1));
+				if (squeeze && cr == last) {
 					continue;
 				}
 				sbuf.append(cr);

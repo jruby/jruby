@@ -40,7 +40,7 @@ public class StrTermNode extends Node {
         super(position);
 
         this.func = func;
-        this.termParen = term | (paren << 16);  
+        this.termParen = term | paren << 16;
         this.nest = 0;
     }
 

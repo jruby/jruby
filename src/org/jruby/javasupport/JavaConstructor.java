@@ -83,7 +83,7 @@ public class JavaConstructor extends JavaCallable {
         } catch (IllegalAccessException iae) {
             throw new TypeError(getRuntime(), "illegal access");
         } catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException((Exception) ite.getTargetException());
+            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
             Asserts.notReached();
             return null;
         } catch (InstantiationException ie) {

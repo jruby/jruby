@@ -95,7 +95,7 @@ public class RubyBoolean extends RubyObject {
 	}
 
 	public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
-        return (value ? runtime.getTrue() : runtime.getFalse());
+        return value ? runtime.getTrue() : runtime.getFalse();
 	}
 
 	/** false_type

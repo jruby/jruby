@@ -55,10 +55,10 @@ public class RubyProxyFactory {
         IRubyObject[] rubyArgs = convertJavaToRuby(args);
         IRubyObject obj = rubyClass.newInstance(rubyArgs);
 
-        if (obj != null)
+        if (obj != null) {
             return getProxyForObject(obj, javaInterface);
-        else
-            return null;
+        }
+		return null;
     }
 
     public RubyProxy getProxyForGlobal(String globalVar) {
@@ -68,9 +68,9 @@ public class RubyProxyFactory {
     public RubyProxy getProxyForGlobal(String globalVar, Class javaInterface) {
         IRubyObject obj = getRuntime().getGlobalVariables().get(globalVar);
 
-        if (obj != null && !obj.isNil())
-            return getProxyForObject(obj, javaInterface);
-
+        if (obj != null && !obj.isNil()) {
+			return getProxyForObject(obj, javaInterface);
+		}
         return null;
     }
 
@@ -85,9 +85,9 @@ public class RubyProxyFactory {
     }
 
     public RubyProxy getProxyForObject(IRubyObject obj, Class javaInterface) {
-        if (javaInterface == null)
-            javaInterface = getJavaClassForRubyClass(obj.getMetaClass());
-
+        if (javaInterface == null) {
+			javaInterface = getJavaClassForRubyClass(obj.getMetaClass());
+		}
         return (RubyProxy) Proxy.newProxyInstance(
             getClass().getClassLoader(),
             new Class[] { javaInterface, RubyProxy.class },

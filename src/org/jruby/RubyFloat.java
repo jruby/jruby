@@ -109,9 +109,6 @@ public class RubyFloat extends RubyNumeric {
 
     // Float methods (flo_*)
 
-    /**
-     *
-     */
     public static RubyFloat newFloat(Ruby runtime, double value) {
         return new RubyFloat(runtime, value);
     }
@@ -135,9 +132,8 @@ public class RubyFloat extends RubyNumeric {
 
         if (val < RubyFixnum.MIN || val > RubyFixnum.MAX) {
             return RubyBignum.newBignum(getRuntime(), val);
-        } else {
-            return RubyFixnum.newFixnum(getRuntime(), (long) val);
         }
+		return RubyFixnum.newFixnum(getRuntime(), (long) val);
     }
 
     public RubyInteger floor() {
@@ -145,26 +141,24 @@ public class RubyFloat extends RubyNumeric {
 
         if (val < Long.MIN_VALUE || val > Long.MAX_VALUE) {
             return RubyBignum.newBignum(getRuntime(), val);
-        } else {
-            return RubyFixnum.newFixnum(getRuntime(), (long) val);
         }
+		return RubyFixnum.newFixnum(getRuntime(), (long) val);
     }
 
     public RubyInteger round() {
-	double value = getDoubleValue();
-	double decimal = value % 1;
-	double round = Math.round(value);
+        double value = getDoubleValue();
+        double decimal = value % 1;
+        double round = Math.round(value);
 
-	// Ruby rounds differently than java for negative numbers.
-	if (value < 0 && decimal == -0.5) {
-	    round -= 1;
-	}
+        // Ruby rounds differently than java for negative numbers.
+        if (value < 0 && decimal == -0.5) {
+            round -= 1;
+        }
 
         if (value < RubyFixnum.MIN || value > RubyFixnum.MAX) {
             return RubyBignum.newBignum(getRuntime(), round);
-        } else {
-            return RubyFixnum.newFixnum(getRuntime(), (long) round);
         }
+        return RubyFixnum.newFixnum(getRuntime(), (long) round);
     }
 
     public RubyInteger truncate() {
@@ -192,7 +186,7 @@ public class RubyFloat extends RubyNumeric {
     // TODO: Coercion messages needed for all ops...Does this sink Anders
     // dispatching optimization?
     public RubyNumeric op_mul(IRubyObject other) {
-    	if (other instanceof RubyNumeric == false) {
+    	if ((other instanceof RubyNumeric) == false) {
     		throw new TypeError(getRuntime(), other.getMetaClass().getName() +
     			" can't be coerced into Float");
     	}
@@ -226,7 +220,7 @@ public class RubyFloat extends RubyNumeric {
         double y = other.getDoubleValue();
         double mod = x % y;
 
-        if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
             mod += y;
         }
 
@@ -286,7 +280,7 @@ public class RubyFloat extends RubyNumeric {
 		String strValue = this.toString();
 		double value = getValue();
 		if (Double.isInfinite(value)) {
-			strValue = (value < 0 ? "-inf" : "inf");
+			strValue = value < 0 ? "-inf" : "inf";
 		} else if (Double.isNaN(value)) {
 			strValue = "nan";
 		}

@@ -79,7 +79,7 @@ public class Glob {
         for (int length = dirs.length; idx < length; idx++) {
             ArrayList currentMatchingFiles = new ArrayList();
             for (int i = 0, size = matchingFiles.size(); i < size; i++) {
-                boolean isDirectory = (idx + 1 != length);
+                boolean isDirectory = idx + 1 != length;
                 String pattern = dirs[idx];
                 File parent = (File) matchingFiles.get(i);
                 currentMatchingFiles.addAll(getMatchingFiles(parent, pattern, isDirectory));
@@ -89,7 +89,7 @@ public class Glob {
         return (File[])matchingFiles.toArray(new File[matchingFiles.size()]);
     }
     
-    private Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
+    private static Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
         if (pattern.equals("**")) {
             // TODO: This kind of recursive globbing pattern needs to be implemented!
             return Collections.EMPTY_LIST;

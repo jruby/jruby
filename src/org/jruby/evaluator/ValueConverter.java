@@ -43,10 +43,9 @@ public final class ValueConverter {
             return RubyArray.newArray(runtime, 0);
         } else if (value instanceof RubyArray) {
             if (((RubyArray)value).getLength() == 1) {
-                return ((RubyArray)value);
-            } else {
-                return RubyArray.newArray(runtime, value);
+                return (RubyArray) value;
             }
+			return RubyArray.newArray(runtime, value);
         } else {
             return toArray(value);
         }
@@ -70,7 +69,7 @@ public final class ValueConverter {
         if (value == null || value.isNil()) {
             return RubyArray.newArray(runtime, 0);
         } else if (value instanceof RubyArray) {
-            return ((RubyArray)value);
+            return (RubyArray) value;
         } else {
             return toArray(value);
         }

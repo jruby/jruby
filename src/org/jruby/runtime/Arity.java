@@ -94,15 +94,14 @@ public final class Arity {
     }
 
     private boolean isFixed() {
-        return (value >= 0);
+        return value >= 0;
     }
 
     private int required() {
         if (value < 0) {
             return -(1 + value);
-        } else {
-            return value;
         }
+		return value;
     }
 
     public boolean equals(Object other) {

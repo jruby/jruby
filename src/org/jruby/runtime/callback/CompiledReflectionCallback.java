@@ -39,10 +39,9 @@ public class CompiledReflectionCallback implements Callback {
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
-            } else {
-                Asserts.notReached(e.getCause().toString());
-                return null;
             }
+			Asserts.notReached(e.getCause().toString());
+			return null;
         }
     }
 

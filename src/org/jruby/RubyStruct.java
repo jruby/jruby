@@ -172,7 +172,7 @@ public class RubyStruct extends RubyObject {
             if (!IdUtil.isConstant(name)) {
                 throw new NameError(recv.getRuntime(), "identifier " + name + " needs to be constant");
             }
-            newStruct = ((RubyClass) recv).defineClassUnder(name, ((RubyClass) recv));
+            newStruct = ((RubyClass) recv).defineClassUnder(name, (RubyClass) recv);
         }
 
         newStruct.setInstanceVariable("__size__", member.length());

@@ -766,10 +766,10 @@ public class PrintfFormat {
             }
             if (n1In + expon <= 0) {
                 ca3 = new char[-expon + n2In];
-                for (j = 0, k = 0; k < (-n1In - expon); k++, j++) {
+                for (j = 0, k = 0; k < -n1In - expon; k++, j++) {
                     ca3[j] = '0';
                 }
-                for (i = 0; i < (n1In + n2In); i++, j++) {
+                for (i = 0; i < n1In + n2In; i++, j++) {
                     ca3[j] = ca2[i];
                 }
             } else {
@@ -1299,7 +1299,7 @@ public class PrintfFormat {
                     }
                     carry = ii < ca1.length;
                     if (!carry && icarry > 0) {
-                        carry = ("13579".indexOf(ca1[icarry - 1]) != -1);
+                        carry = "13579".indexOf(ca1[icarry - 1]) != -1;
                     }
                 }
             }
@@ -1407,9 +1407,8 @@ public class PrintfFormat {
         private String printEFormat(double x) {
             if (conversionCharacter == 'e') {
                 return eFormatString(x, 'e');
-            } else {
-                return eFormatString(x, 'E');
             }
+			return eFormatString(x, 'E');
         }
 
         private String printGFormat(double x) {
@@ -1565,7 +1564,7 @@ public class PrintfFormat {
                     nLeadingZeros = precision - sx.length();
                 }
             } else {
-                if (precisionSet && (sx.length() - 1) < precision) {
+                if (precisionSet && sx.length() - 1 < precision) {
                     nLeadingZeros = precision - sx.length() + 1;
                 }
             }
@@ -1696,7 +1695,7 @@ public class PrintfFormat {
                         break;
                 }
             } else {
-                sx = Integer.toString((int) x, 16);
+                sx = Integer.toString(x, 16);
             }
             return printXFormat(sx);
         }
@@ -1944,7 +1943,7 @@ public class PrintfFormat {
                         break;
                 }
             } else {
-                sx = Integer.toString((int) x, 8);
+                sx = Integer.toString(x, 8);
             }
             return printOFormat(sx);
         }
@@ -2244,28 +2243,27 @@ public class PrintfFormat {
             precisionSet = false;
             if (pos < fmt.length() && fmt.charAt(pos) == '.') {
                 pos++;
-                if ((pos < fmt.length()) && (fmt.charAt(pos) == '*')) {
+                if (pos < fmt.length() && fmt.charAt(pos) == '*') {
                     pos++;
                     if (!setPrecisionArgPosition()) {
                         variablePrecision = true;
                         precisionSet = true;
                     }
                     return;
-                } else {
-                    while (pos < fmt.length()) {
-                        char c = fmt.charAt(pos);
-                        if (Character.isDigit(c)) {
-                            pos++;
-                        } else {
-                            break;
-                        }
-                    }
-                    if (pos > firstPos + 1) {
-                        String sz = fmt.substring(firstPos + 1, pos);
-                        precision = Integer.parseInt(sz);
-                        precisionSet = true;
-                    }
                 }
+				while (pos < fmt.length()) {
+				    char c = fmt.charAt(pos);
+				    if (Character.isDigit(c)) {
+				        pos++;
+				    } else {
+				        break;
+				    }
+				}
+				if (pos > firstPos + 1) {
+				    String sz = fmt.substring(firstPos + 1, pos);
+				    precision = Integer.parseInt(sz);
+				    precisionSet = true;
+				}
             }
         }
 
@@ -2273,7 +2271,7 @@ public class PrintfFormat {
             int firstPos = pos;
             fieldWidth = 0;
             fieldWidthSet = false;
-            if ((pos < fmt.length()) && (fmt.charAt(pos) == '*')) {
+            if ((pos < fmt.length()) && fmt.charAt(pos) == '*') {
                 pos++;
                 if (!setFieldWidthArgPosition()) {
                     variableFieldWidth = true;
@@ -2428,7 +2426,7 @@ public class PrintfFormat {
 
         private int precision = 0;
 
-        private final static int defaultDigits = 6;
+        private static final int defaultDigits = 6;
 
         private boolean variablePrecision = false;
 

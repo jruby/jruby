@@ -64,7 +64,7 @@ public class Java {
         } else if (object instanceof RubyString) {
             javaObject = ((RubyString) object).getValue();
         } else if (object instanceof RubyBoolean) {
-            javaObject = new Boolean(object.isTrue());
+            javaObject = Boolean.valueOf(object.isTrue());
         } else {
             javaObject = object;
         }
@@ -74,9 +74,8 @@ public class Java {
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object) {
         if (object instanceof JavaObject) {
             return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
-        } else {
-            return object;
         }
+		return object;
     }
 
     public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args) {
@@ -105,7 +104,7 @@ public class Java {
                     return Boolean.valueOf(proxy == args[1]);
                 }
                 int length = args == null ? 0 : args.length;
-                IRubyObject rubyArgs[] = new IRubyObject[length + 2];
+                IRubyObject[] rubyArgs = new IRubyObject[length + 2];
                 rubyArgs[0] = JavaObject.wrap(recv.getRuntime(), proxy);
                 rubyArgs[1] = new JavaMethod(recv.getRuntime(), method);
                 for (int i = 0; i < length; i++) {

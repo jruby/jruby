@@ -62,9 +62,8 @@ public class CallbackMethod extends AbstractMethod {
             } finally {
                 runtime.callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
             }
-        } else {
-            return callback.execute(receiver, args);
         }
+		return callback.execute(receiver, args);
     }
 
     public Callback getCallback() {

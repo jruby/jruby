@@ -19,9 +19,9 @@ public class ReflectionClassMap implements RubyToJavaClassMap {
     {
         String name = javaClass.getName();
 
-        if (name.lastIndexOf(".") >= 0)
-            name = name.substring(name.lastIndexOf(".") + 1);
-
+        if (name.lastIndexOf(".") >= 0) {
+			name = name.substring(name.lastIndexOf(".") + 1);
+		}
         return name;
     }
 

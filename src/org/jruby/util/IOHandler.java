@@ -68,58 +68,46 @@ public abstract class IOHandler {
         this.fileno = fileno;
     }
 
-    /**
-     * @return
-     */
     protected Ruby getRuntime() {
         return runtime;
     }
     
-    /**
-     * @return
-     */
     public boolean isReadable() {
         return modes.isReadable();
     }
 
-    /**
-     * @return
-     */
     public boolean isOpen() {
         return isOpen;
     }
 
-    /**
-     * @return
-     */
     public boolean isWriteable() {
         return modes.isWriteable();
     }
 
     protected void checkOpen() {
-        if (isOpen == false) {
+        if (!isOpen) {
             throw new IOError(getRuntime(), "not opened");
         }
     }
     
     protected void checkReadable() {
-        if (isOpen == false) {
+        if (!isOpen) {
             throw ErrnoError.getErrnoError(getRuntime(), "EBADF",
                     "Bad file descriptor");
         }
         
-        if (modes.isReadable() == false) {
+        if (!modes.isReadable()) {
             throw new IOError(getRuntime(), "not opened for reading");
         }
     }
 
     protected void checkWriteable() {
-        if (isOpen == false) {
+        if (!isOpen) {
             throw ErrnoError.getErrnoError(getRuntime(), "EBADF",
             "Bad file descriptor");
         }
         
-        if (modes.isWriteable() == false) {
+        if (!modes.isWriteable()) {
             throw new IOError(getRuntime(), "not opened for writing");
         }
     }
@@ -132,21 +120,15 @@ public abstract class IOHandler {
     	return modes;
     }
     
-    /**
-     * @return
-     */
     public boolean isSync() {
         return isSync;
     }
 
-    /**
-     * @param b
-     */
     public void setIsSync(boolean isSync) {
         this.isSync = isSync;
     }
     
-    public String gets(String separatorString) throws IOException {
+    public String gets(String separatorString) {
         checkReadable();
         
         if (separatorString == null) {
@@ -175,14 +157,14 @@ public abstract class IOHandler {
                     continue LineLoop;
                 }
                 buffer.append((char) c);
-                if (i < (separator.length - 1)) {
+                if (i < separator.length - 1) {
                     c = read();
                 }
             }
             break;
         }
         
-        if (separatorString.equals(PARAGRAPH_DELIMETER) == true) {
+        if (separatorString.equals(PARAGRAPH_DELIMETER)) {
             while (c == separator[0]) {
                 c = read();
             }
@@ -267,7 +249,7 @@ public abstract class IOHandler {
     
     public void putc(int c) {
         try {
-            syswrite(new String(""+(char) c));         // LAME
+            syswrite("" + (char) c);         // LAME
         } catch (IOError e) {
         }
     }
@@ -310,7 +292,7 @@ public abstract class IOHandler {
 
     // Question: We should read bytes or chars?
     public String sysread(int number) {
-        if (isOpen() == false) {
+        if (!isOpen()) {
             throw new IOError(getRuntime(), "File not open");
         }
         checkReadable();
@@ -364,7 +346,7 @@ public abstract class IOHandler {
      * handler.</p>  
      * 
      * @return the current position in the file.
-     * @throws Errno::ESPIPE (illegal seek) when not a file
+     * @throws ErrnoError ESPIPE (illegal seek) when not a file
      * 
      */
     public abstract long pos();

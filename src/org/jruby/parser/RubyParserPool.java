@@ -52,9 +52,6 @@ public class RubyParserPool {
         return instance;
     }
 
-    /**
-     * @see org.ablaf.parser.RubyParserPool#borrowParser()
-     */
     public DefaultRubyParser borrowParser() {
         synchronized (pool) {
             Iterator iter = pool.iterator();
@@ -69,9 +66,6 @@ public class RubyParserPool {
         return new DefaultRubyParser();
     }
 
-    /**
-     * @see org.ablaf.parser.IParserPool#returnParser(IParser)
-     */
     public void returnParser(DefaultRubyParser parser) {
         synchronized (pool) {
             pool.add(new SoftReference(parser));

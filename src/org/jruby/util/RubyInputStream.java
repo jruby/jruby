@@ -70,7 +70,7 @@ public class RubyInputStream extends PushbackInputStream {
                     continue LineLoop;
                 }
                 buffer.append((char) c);
-                if (i < (separator.length - 1)) {
+                if (i < separator.length - 1) {
                     c = read();
                 }
             }

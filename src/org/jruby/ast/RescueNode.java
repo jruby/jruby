@@ -39,9 +39,9 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class RescueNode extends Node {
     static final long serialVersionUID = -4757038578511808125L;
 
-    private Node bodyNode;
-    private RescueBodyNode rescueNode;
-    private Node elseNode;
+    private final Node bodyNode;
+    private final RescueBodyNode rescueNode;
+    private final Node elseNode;
     
     public RescueNode(SourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
         super(position);

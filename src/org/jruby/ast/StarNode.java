@@ -40,8 +40,7 @@ public class StarNode extends Node {
 
 
     /**
-     * Constructor for StartNode.
-     * @param position
+     * Constructor for StarNode.
      */
     public StarNode() {
         super();

@@ -41,10 +41,10 @@ import org.jruby.runtime.Visibility;
 public class DefnNode extends Node {
     static final long serialVersionUID = -7634791007500033454L;
 
-    private String name;
-    private Node argsNode;
-    private ScopeNode bodyNode;
-    private Visibility visibility;
+    private final String name;
+    private final Node argsNode;
+    private final ScopeNode bodyNode;
+    private final Visibility visibility;
     
     public DefnNode(SourcePosition position, String name, Node argsNode, ScopeNode bodyNode, Visibility visibility) {
         super(position);

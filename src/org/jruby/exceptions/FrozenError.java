@@ -37,11 +37,7 @@ import org.jruby.Ruby;
  * @author  jpetersen
  */
 public class FrozenError extends RaiseException {
-    /**
-     * Constructs a <code>RubyFrozenException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public FrozenError(Ruby runtime, String objectType) {
+	public FrozenError(Ruby runtime, String objectType) {
         super(runtime, runtime.getExceptions().getTypeError(), "can't modify frozen " + objectType);
     }
 }

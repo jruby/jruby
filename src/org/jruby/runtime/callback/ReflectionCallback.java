@@ -54,9 +54,8 @@ public class ReflectionCallback extends AbstractCallback {
     protected CallType callType(boolean isStaticMethod) {
         if (isStaticMethod) {
             return new StaticCallType();
-        } else {
-            return new InstanceCallType();
         }
+		return new InstanceCallType();
     }
 
     private Method getMethod() {

@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class EvStrNode extends Node {
     static final long serialVersionUID = 1681935012117120817L;
 
-    private Node body;
+    private final Node body;
 
     public EvStrNode(SourcePosition position, Node body) {
         super(position);

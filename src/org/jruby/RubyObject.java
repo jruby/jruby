@@ -75,7 +75,7 @@ import java.util.Map;
 public class RubyObject implements Cloneable, IRubyObject {
 
     // A reference to the JRuby runtime.
-    protected transient Ruby runtime;
+    protected Ruby runtime;
 
     // The class of this object
     private RubyClass metaClass;
@@ -102,7 +102,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         this.taint = false;
 
         // Do not store any immediate objects into objectspace.
-        if (useObjectSpace && isImmediate() == false) {
+        if (useObjectSpace && !isImmediate()) {
             runtime.objectSpace.add(this);
         }
     }
@@ -140,7 +140,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * HashMap object underlying RubyHash.
      */
     public boolean equals(Object other) {
-        return other == this || (other instanceof IRubyObject) && callMethod("==", (IRubyObject) other).isTrue();
+        return other == this || other instanceof IRubyObject && callMethod("==", (IRubyObject) other).isTrue();
     }
 
     public String toString() {
@@ -481,9 +481,8 @@ public class RubyObject implements Cloneable, IRubyObject {
                 throw new SecurityError(
                     runtime,
                     "Insecure operation - " + runtime.getCurrentFrame().getLastFunc());
-            } else {
-                throw new SecurityError(runtime, "Insecure operation: -r");
             }
+            throw new SecurityError(runtime, "Insecure operation: -r");
         }
         getRuntime().secure(4);
         if (!(this instanceof RubyString)) {
@@ -502,34 +501,33 @@ public class RubyObject implements Cloneable, IRubyObject {
                 throw new ArgumentError(getRuntime(), args.length, 0);
             }
             return yieldUnder(mod);
-        } else {
-            if (args.length == 0) {
-                throw new ArgumentError(getRuntime(), "block not supplied");
-            } else if (args.length > 3) {
-                String lastFuncName = runtime.getCurrentFrame().getLastFunc();
-                throw new ArgumentError(
-                    getRuntime(),
-                    "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
-            }
-            /*
-            if (ruby.getSecurityLevel() >= 4) {
-            	Check_Type(argv[0], T_STRING);
-            } else {
-            	Check_SafeStr(argv[0]);
-            }
-            */
-            IRubyObject file = args.length > 1 ? args[1] : RubyString.newString(getRuntime(), "(eval)");
-            IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
-
-            Scope currentScope = runtime.getScope().current();
-            Visibility savedVisibility = currentScope.getVisibility();
-            currentScope.setVisibility(Visibility.PUBLIC);
-            try {
-                return evalUnder(mod, args[0], file, line);
-            } finally {
-                currentScope.setVisibility(savedVisibility);
-            }
         }
+		if (args.length == 0) {
+		    throw new ArgumentError(getRuntime(), "block not supplied");
+		} else if (args.length > 3) {
+		    String lastFuncName = runtime.getCurrentFrame().getLastFunc();
+		    throw new ArgumentError(
+		        getRuntime(),
+		        "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
+		}
+		/*
+		if (ruby.getSecurityLevel() >= 4) {
+			Check_Type(argv[0], T_STRING);
+		} else {
+			Check_SafeStr(argv[0]);
+		}
+		*/
+		IRubyObject file = args.length > 1 ? args[1] : RubyString.newString(getRuntime(), "(eval)");
+		IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
+
+		Scope currentScope = runtime.getScope().current();
+		Visibility savedVisibility = currentScope.getVisibility();
+		currentScope.setVisibility(Visibility.PUBLIC);
+		try {
+		    return evalUnder(mod, args[0], file, line);
+		} finally {
+		    currentScope.setVisibility(savedVisibility);
+		}
     }
 
     public IRubyObject evalUnder(RubyModule under, IRubyObject src, IRubyObject file, IRubyObject line) {
@@ -693,7 +691,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
     }
     
-    public IRubyObject display(IRubyObject args[]) {
+    public IRubyObject display(IRubyObject[] args) {
         IRubyObject port = args.length == 0
             ? getRuntime().getGlobalVariables().get("$>") : args[0];
         
@@ -906,7 +904,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     /**
      *  @fixme: Check_Type?
      **/
-    public IRubyObject extend(IRubyObject args[]) {
+    public IRubyObject extend(IRubyObject[] args) {
         if (args.length == 0) {
             throw new ArgumentError(runtime, "wrong # of arguments");
         }

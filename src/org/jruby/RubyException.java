@@ -130,9 +130,8 @@ public class RubyException extends RubyObject {
             case 1 :
                 if (args[0] == this) {
                     return this;
-                } else {
-                    return newInstance(getMetaClass(), args);
                 }
+                return newInstance(getMetaClass(), args);
             default :
                 throw new ArgumentError(getRuntime(), "Wrong argument count");
         }
@@ -142,10 +141,9 @@ public class RubyException extends RubyObject {
     public RubyString to_s() {
         if (message.isNil()) {
             return RubyString.newString(getRuntime(), getMetaClass().getName());
-        } else {
-            message.setTaint(isTaint());
-            return (RubyString) message.callMethod("to_s");
         }
+        message.setTaint(isTaint());
+        return (RubyString) message.callMethod("to_s");
     }
 
     /** inspects an object and return a kind of debug information
@@ -159,14 +157,13 @@ public class RubyException extends RubyObject {
 
         if (exception.getValue().length() == 0) {
             return RubyString.newString(getRuntime(), rubyClass.getName());
-        } else {
-            StringBuffer sb = new StringBuffer();
-            sb.append("#<");
-            sb.append(rubyClass.getName());
-            sb.append(": ");
-            sb.append(exception.getValue());
-            sb.append(">");
-            return RubyString.newString(getRuntime(), sb.toString());
         }
+        StringBuffer sb = new StringBuffer();
+        sb.append("#<");
+        sb.append(rubyClass.getName());
+        sb.append(": ");
+        sb.append(exception.getValue());
+        sb.append(">");
+        return RubyString.newString(getRuntime(), sb.toString());
     }
 }

@@ -35,7 +35,9 @@ import org.jruby.lexer.yacc.SourcePosition;
  * @author enebo
  */
 public class DSymbolNode extends Node {
-	DStrNode node;
+	private static final long serialVersionUID = 3763093063878326071L;
+
+	private final DStrNode node;
 
 	public DSymbolNode(SourcePosition position, DStrNode node) {
 		super(position);

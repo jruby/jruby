@@ -46,10 +46,6 @@ public class IOHandlerProcess extends IOHandler {
     protected OutputStream output = null;
     protected Process process = null;
 
-    /**
-     * @param inStream
-     * @param outStream
-     */
     public IOHandlerProcess(Ruby runtime, Process process, IOModes modes) {
         super(runtime);
         
@@ -78,7 +74,7 @@ public class IOHandlerProcess extends IOHandler {
      * @see org.jruby.util.IOHandler#close()
      */
     public void close() {
-        if (isOpen() == false) {
+        if (!isOpen()) {
             throw ErrnoError.getErrnoError(getRuntime(), "EBADF", "Bad File Descriptor");
         }
         

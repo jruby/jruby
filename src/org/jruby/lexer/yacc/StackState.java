@@ -57,7 +57,7 @@ public class StackState implements Cloneable {
     }
 
     public void restart() {
-        stack |= ((stack & 1) << 1);
+        stack |= (stack & 1) << 1;
         stack >>= 1;
     }
     

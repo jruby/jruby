@@ -361,7 +361,7 @@ public class ParserSupport {
 			if (lArgs == null) {
 				lArgs = new ArrayNode(lhs.getPosition());
 				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
-			} else if (lArgs instanceof ListNode == false) {
+			} else if (!(lArgs instanceof ListNode)) {
 				lArgs = new ArrayNode(lhs.getPosition()).add(lArgs);
 				result = new CallNode(lCallLHS.getPosition(), lCallLHS.getReceiverNode(), lCallLHS.getName(), lArgs);
 			}
@@ -712,7 +712,7 @@ public class ParserSupport {
                     return node;
                 }
                 
-                if (node instanceof NewlineNode == false) {
+                if (!(node instanceof NewlineNode)) {
                     break;
                 }
                 
@@ -747,7 +747,7 @@ public class ParserSupport {
     }
     
     public ListNode list_concat(ListNode first, Node second) {
-        if (second instanceof ListNode == false) {
+        if (!(second instanceof ListNode)) {
             return first.add(second);
         }
         ListNode concatee = (ListNode) second;

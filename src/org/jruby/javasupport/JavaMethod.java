@@ -152,7 +152,7 @@ public class JavaMethod extends JavaCallable {
         } catch (IllegalAccessException iae) {
             throw new TypeError(getRuntime(), "illegal access on '" + method.getName() + "': " + iae.getMessage());
         } catch (InvocationTargetException ite) {
-            getRuntime().getJavaSupport().handleNativeException((Throwable) ite.getTargetException());
+            getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
             // This point is only reached if there was an exception handler installed.
             return runtime.getNil();
         }

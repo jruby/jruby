@@ -58,9 +58,9 @@ import java.lang.ref.WeakReference;
  * @version $Revision$
  */
 public class RubyIO extends RubyObject {
-    public final static int STDIN = 0;
-    public final static int STDOUT = 1;
-    public final static int STDERR = 2;
+    public static final int STDIN = 0;
+    public static final int STDOUT = 1;
+    public static final int STDERR = 2;
     
     protected IOHandler handler = null;
     protected IOModes modes = null;
@@ -146,7 +146,7 @@ public class RubyIO extends RubyObject {
     }
     
     public IOHandler getIOHandlerByFileno(int fileno) {
-        return (IOHandler) (((WeakReference) getRuntime().ioHandlers.get(new Integer(fileno))).get());
+        return (IOHandler) ((WeakReference) getRuntime().ioHandlers.get(new Integer(fileno))).get();
     }
     
     protected static int fileno = 2;
@@ -273,7 +273,7 @@ public class RubyIO extends RubyObject {
      * See checkReadable for commentary.
      */
     protected void checkWriteable() {
-        if (isOpen() == false || modes.isWriteable() == false) {
+        if (!isOpen() || !modes.isWriteable()) {
             throw new IOError(getRuntime(), "not opened for writing");
         }
     }
@@ -288,7 +288,7 @@ public class RubyIO extends RubyObject {
      * operations.
      */
     protected void checkReadable() {
-        if (isOpen() == false || modes.isReadable() == false) {
+        if (!isOpen() || !modes.isReadable()) {
             throw new IOError(getRuntime(), "not opened for reading");            
         }
     }
@@ -305,7 +305,7 @@ public class RubyIO extends RubyObject {
         return handler.getInputStream();
     }
     
-    public IRubyObject reopen(IRubyObject arg1, IRubyObject args[]) {
+    public IRubyObject reopen(IRubyObject arg1, IRubyObject[] args) {
         if (arg1.isKindOf(getRuntime().getClasses().getIoClass())) {
             RubyIO ios = (RubyIO) arg1;
 
@@ -373,19 +373,15 @@ public class RubyIO extends RubyObject {
             separator = IOHandler.PARAGRAPH_DELIMETER;
         }
 
-        try {
-            String newLine = handler.gets(separator);
+        String newLine = handler.gets(separator);
 
-            if (newLine != null) {
-                lineNumber++;
-                runtime.getGlobalVariables().set("$.", RubyFixnum.newFixnum(runtime, lineNumber));
-                RubyString result = RubyString.newString(getRuntime(), newLine);
-                result.taint();
-                return result;
-            }
-        } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
-        }
+		if (newLine != null) {
+		    lineNumber++;
+		    runtime.getGlobalVariables().set("$.", RubyFixnum.newFixnum(runtime, lineNumber));
+		    RubyString result = RubyString.newString(getRuntime(), newLine);
+		    result.taint();
+		    return result;
+		}
         return RubyString.nilString(getRuntime());
     }
 
@@ -452,7 +448,7 @@ public class RubyIO extends RubyObject {
             handler = existingIOHandler;
             
             // Inherit if no mode specified otherwise create new one
-            modes = (mode == null) ? handler.getModes() :
+            modes = mode == null ? handler.getModes() :
             	new IOModes(getRuntime(), mode);
 
             // Reset file based on modes.
@@ -668,7 +664,7 @@ public class RubyIO extends RubyObject {
      * @return The IO.
      */
     public RubyBoolean closed() {
-        return isOpen() == true ? getRuntime().getFalse() : 
+        return isOpen() ? getRuntime().getFalse() :
             getRuntime().getTrue();
     }
 
@@ -754,13 +750,9 @@ public class RubyIO extends RubyObject {
     }
     
     public IRubyObject read(IRubyObject[] args) {
-        String buf = (args.length > 0 ? 
-            handler.read(RubyFixnum.fix2int(args[0])) : 
-            handler.getsEntireStream());
+        String buf = args.length > 0 ? handler.read(RubyFixnum.fix2int(args[0])) : handler.getsEntireStream();
 
-        return (buf == null ? 
-            getRuntime().getNil() : // EOF 
-            RubyString.newString(getRuntime(), new String(buf)));
+        return buf == null ? getRuntime().getNil() : RubyString.newString(getRuntime(), buf);
     }
 
     /** Read a byte. On EOF throw EOFError.
@@ -802,7 +794,7 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
-    public static IRubyObject puts(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             recv.callMethod("write", RubyString.newString(recv.getRuntime(), "\n"));
             return recv.getRuntime().getNil();
@@ -829,7 +821,7 @@ public class RubyIO extends RubyObject {
     /** Print some objects to the stream.
      * 
      */
-    public static IRubyObject print(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject print(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             args = new IRubyObject[] { recv.getRuntime().getLastline()};
         }
@@ -854,7 +846,7 @@ public class RubyIO extends RubyObject {
         return recv.getRuntime().getNil();
     }
 
-    public static IRubyObject printf(IRubyObject recv, IRubyObject args[]) {
+    public static IRubyObject printf(IRubyObject recv, IRubyObject[] args) {
         recv.callMethod("write", RubyKernel.sprintf(recv, args));
         return recv.getRuntime().getNil();
     }
@@ -880,7 +872,7 @@ public class RubyIO extends RubyObject {
         return result;
     }
 
-    public static RubyArray readlines(IRubyObject recv, IRubyObject args[]) {
+    public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
             throw new ArgumentError(recv.getRuntime(), args.length, 1);
         }
@@ -891,8 +883,7 @@ public class RubyIO extends RubyObject {
         }
         
         IRubyObject[] fileArguments = new IRubyObject[] {(RubyString) args[0]};
-        IRubyObject[] separatorArguments = (args.length >= 2 ? 
-             new IRubyObject[] { args[1] } : IRubyObject.NULL_ARRAY);
+        IRubyObject[] separatorArguments = args.length >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
         RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments);
 
         return file.readlines(separatorArguments);
@@ -906,9 +897,9 @@ public class RubyIO extends RubyObject {
     // by a jruby script (their own fault if they forget).  If an IO 
     // object gets GC'd and it has not been closed yet, then we should 
     // clean up.
-    public void finalize() throws Throwable {
+    protected void finalize() throws Throwable {
         try {
-            if (isOpen() == true) {
+            if (isOpen()) {
                 close();
             }
         } finally {

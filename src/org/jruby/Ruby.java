@@ -168,7 +168,7 @@ public final class Ruby {
     }
 
     public static Ruby getDefaultInstance() {
-        return getDefaultInstance((String) null);
+        return getDefaultInstance(null);
     }
 
     /**
@@ -832,9 +832,9 @@ public final class Ruby {
             if (file == null) {
                 file = "(ruby)";
             }
-            if (type == null)
-                type = getFalse();
-
+            if (type == null) {
+				type = getFalse();
+			}
             getFrameStack().push();
             getCurrentFrame().setIter(Iter.ITER_NOT);
 
@@ -889,7 +889,7 @@ public final class Ruby {
      * things that need to be cleaned up at shutdown.  
      */
     public void tearDown() {
-        while (atExitBlocks.isEmpty() == false) {
+        while (!atExitBlocks.isEmpty()) {
             RubyProc proc = (RubyProc) atExitBlocks.pop();
             
             proc.call(null);

@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.SourcePosition;
 public class ClassVarDeclNode extends AssignableNode implements INameNode {
     static final long serialVersionUID = -6227934966029974915L;
 
-    private String name;
+    private final String name;
 
     public ClassVarDeclNode(SourcePosition position, String name, Node valueNode) {
         super(position);

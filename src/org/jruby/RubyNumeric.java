@@ -253,9 +253,8 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric[] getCoerce(RubyNumeric other) {
         if (getMetaClass() == other.getMetaClass()) {
             return new RubyNumeric[] { this, other };
-        } else {
-            return new RubyNumeric[] { RubyFloat.newFloat(getRuntime(), getDoubleValue()), RubyFloat.newFloat(getRuntime(), other.getDoubleValue())};
         }
+		return new RubyNumeric[] { RubyFloat.newFloat(getRuntime(), getDoubleValue()), RubyFloat.newFloat(getRuntime(), other.getDoubleValue())};
     }
 
     /** num_clone
@@ -282,7 +281,7 @@ public abstract class RubyNumeric extends RubyObject {
     }
     
     public IRubyObject cmp(IRubyObject other) {
-    	if (other instanceof RubyNumeric == false) {
+    	if (!(other instanceof RubyNumeric)) {
     		return getRuntime().getNil();
     	}
     	
@@ -329,7 +328,7 @@ public abstract class RubyNumeric extends RubyObject {
     }
 
     protected int compareValue(RubyNumeric other) {
-        System.out.println("ALLYOURBASE");
+        System.out.println("ALLYOURBASE"); //TODO this can't be correct --sma
         return -1;
     }
     
@@ -375,9 +374,8 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric abs() {
         if (callMethod("<", RubyFixnum.zero(getRuntime())).isTrue()) {
             return (RubyNumeric) callMethod("-@");
-        } else {
-            return this;
         }
+		return this;
     }
 
     /** num_int_p

@@ -170,7 +170,7 @@ public class LexerSource {
         	
         	// If \r\n then just pass along \n (windows)
         	// If \r[^\n] then pass along \n (MAC)
-        	if (c == '\r' && ((c = reader.read()) != '\n')) {
+        	if (c == '\r' && (c = reader.read()) != '\n') {
 				unread((char)c);
 				c = '\n';
         	}

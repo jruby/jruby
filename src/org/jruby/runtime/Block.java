@@ -116,7 +116,7 @@ public class Block implements StackElement {
         newBlock.isLambda = isLambda;
 
         if (getNext() != null) {
-            newBlock.setNext(((Block)getNext()));
+            newBlock.setNext(getNext());
         }
 
         return newBlock;

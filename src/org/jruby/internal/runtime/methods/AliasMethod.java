@@ -46,7 +46,7 @@ public class AliasMethod extends AbstractMethod {
     public AliasMethod(ICallable oldMethod, String oldName) {
         super(oldMethod.getVisibility());
         if (oldMethod instanceof AliasMethod) {
-            initializeFrom(((AliasMethod) oldMethod));
+            initializeFrom((AliasMethod) oldMethod);
         } else {
             this.oldName = oldName;
             this.origin = oldMethod.getImplementationClass();

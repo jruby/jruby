@@ -160,9 +160,8 @@ public class Method extends RubyObject {
     public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
         if (blockArg instanceof RubyArray) {
             return ((Method) arg1).call(((RubyArray) blockArg).toJavaArray());
-        } else {
-            return ((Method) arg1).call(new IRubyObject[] { blockArg });
         }
+        return ((Method) arg1).call(new IRubyObject[] { blockArg });
     }
 
     public UnboundMethod unbind() {

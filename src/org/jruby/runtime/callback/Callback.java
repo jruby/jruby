@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public interface Callback {
-    public IRubyObject execute(IRubyObject recv, IRubyObject args[]);
+    public IRubyObject execute(IRubyObject recv, IRubyObject[] args);
 
     public Arity getArity();
 }

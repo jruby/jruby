@@ -55,7 +55,7 @@ public class Keyword implements Token {
     private static final int MIN_HASH_VALUE = 6;
     private static final int MAX_HASH_VALUE = 55;
 
-    private static final byte asso_values[] = {
+    private static final byte[] asso_values = {
         56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
         56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
         56, 56, 56, 56, 56, 56, 56, 56, 56, 56,
@@ -161,8 +161,9 @@ public class Keyword implements Token {
         if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH) {
             int key = hash(str, len);
             if (key <= MAX_HASH_VALUE && key >= MIN_HASH_VALUE) {
-                if (str.equals(wordlist[key].name))
-                    return wordlist[key];
+                if (str.equals(wordlist[key].name)) {
+					return wordlist[key];
+				}
             }
         }
         return null;

@@ -7,7 +7,7 @@ public class RubyOptions {
         return javaSupport;
     }
     
-    public class JavaSupport {
+    public static class JavaSupport {
 		private boolean rubyNames = true;
 		private boolean javaNames = true;
 		private boolean rubyModules = true;

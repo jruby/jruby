@@ -164,7 +164,7 @@ public class RubyDir extends RubyObject {
         
         File directory = new File(path.toString());
         
-        if (directory.isDirectory() == false) {
+        if (!directory.isDirectory()) {
             throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT", 
             	"No such directory");
         }
@@ -208,7 +208,7 @@ public class RubyDir extends RubyObject {
     public static IRubyObject rmdir(IRubyObject recv, RubyString path) {
         File directory = new File(path.toString());
         
-        if (directory.delete() == false) {
+        if (!directory.delete()) {
             throw new SystemCallError(recv.getRuntime(), "No such directory");
         }
         
@@ -323,7 +323,7 @@ public class RubyDir extends RubyObject {
 
     /** Returns the next entry from this directory. */
     public RubyString read() {
-	if (isOpen == false) {
+	if (!isOpen) {
 	    throw new IOError(getRuntime(), "Directory already closed");
 	}
 

@@ -40,13 +40,13 @@ public class NullErrorHandler implements IRubyErrorHandler {
     }
 
     /**
-     * @see org.jruby.common.IRubyErrorHandler#handleError(int, ISourcePosition, String)
+     * @see org.jruby.common.IRubyErrorHandler#handleError(int, SourcePosition, String)
      */
     public void handleError(int type, SourcePosition position, String message) {
     }
 
     /**
-     * @see org.jruby.common.IRubyErrorHandler#handleError(int, ISourcePosition, String, Object)
+     * @see org.jruby.common.IRubyErrorHandler#handleError(int, SourcePosition, String, Object)
      */
     public void handleError(int type, SourcePosition position, String message, Object args) {
     }

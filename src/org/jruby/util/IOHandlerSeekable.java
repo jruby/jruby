@@ -61,11 +61,11 @@ public class IOHandlerSeekable extends IOHandler {
                 // If we only want to open for writing we should remove
                 // the old file before opening the fresh one.  If it fails
                 // to remove it we should do something?
-                if (theFile.delete() == false) {
+                if (!theFile.delete()) {
                 }
             }
         } else {
-            if (modes.isReadable() == true && modes.isWriteable() == false) {
+            if (modes.isReadable() && !modes.isWriteable()) {
                 throw ErrnoError.getErrnoError(runtime, "ENOENT", "No such file");
             }
         }
@@ -102,7 +102,7 @@ public class IOHandlerSeekable extends IOHandler {
      * @see org.jruby.util.IOHandler#close()
      */
     public void close() {
-        if (isOpen() == false) {
+        if (!isOpen()) {
             throw ErrnoError.getErrnoError(getRuntime(), "EBADF", "Bad File Descriptor");
         }
         

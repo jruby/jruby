@@ -75,52 +75,45 @@ public class JavaUtil {
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return new Boolean(rubyObject.isTrue());
+                return Boolean.valueOf(rubyObject.isTrue());
             } else if (cName == "float") {
                 if (rubyObject.respondsTo("to_f")) {
                     return new Float(((RubyNumeric) rubyObject.callMethod("to_f")).getDoubleValue());
-                } else {
-                    return new Float(0.0);
                 }
+				return new Float(0.0);
             } else if (cName == "double") {
                 if (rubyObject.respondsTo("to_f")) {
                     return new Double(((RubyNumeric) rubyObject.callMethod("to_f")).getDoubleValue());
-                } else {
-                    return new Double(0.0);
                 }
+				return new Double(0.0);
             } else if (cName == "long") {
                 if (rubyObject.respondsTo("to_i")) {
                     return new Long(((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
-                } else {
-                    return new Long(0);
                 }
+				return new Long(0);
             } else if (cName == "int") {
                 if (rubyObject.respondsTo("to_i")) {
                     return new Integer((int) ((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
-                } else {
-                    return new Integer(0);
                 }
+				return new Integer(0);
             } else if (cName == "short") {
                 if (rubyObject.respondsTo("to_i")) {
                     return new Short((short) ((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
-                } else {
-                    return new Short((short) 0);
                 }
+				return new Short((short) 0);
             } else if (cName == "byte") {
                 if (rubyObject.respondsTo("to_i")) {
                     return new Byte((byte) ((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
-                } else {
-                    return new Byte((byte) 0);
                 }
+				return new Byte((byte) 0);
             }
 
             // XXX this probably isn't good enough -AM
             String s = ((RubyString) rubyObject.callMethod("to_s")).getValue();
             if (s.length() > 0) {
                 return new Character(s.charAt(0));
-            } else {
-                return new Character('\0');
             }
+			return new Character('\0');
         } else if (javaClass == String.class) {
             return ((RubyString) rubyObject.callMethod("to_s")).getValue();
         } else {

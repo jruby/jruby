@@ -34,9 +34,9 @@ import org.jruby.ast.*;
 /**
  * Visitor interface to be implemented by visitors of the jRuby AST.
  * each node will call the visit method appropriate to its type.
- * this interface is implemented in the NodeVisitorAdapter which 
- * can be used as a base class when creating a new Visitor.
- * @see NodeVisitorAdapter
+ * @see org.jruby.ast.Node
+ * @see org.jruby.ast.visitor.AbstractVisitor
+ * 
  * @author Benoit Cerrina
  * @version $Revision$
  **/

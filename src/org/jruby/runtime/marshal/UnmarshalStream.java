@@ -135,8 +135,9 @@ public class UnmarshalStream extends FilterInputStream {
                 throw new ArgumentError(getRuntime(), "dump format error(" + type + ")");
         }
         
-        if (proc != null) proc.callMethod("call", new IRubyObject[] {rubyObj});
-        
+        if (proc != null) {
+			proc.callMethod("call", new IRubyObject[] {rubyObj});
+		}
         return rubyObj;
     }
 
@@ -157,9 +158,8 @@ public class UnmarshalStream extends FilterInputStream {
         int b = readUnsignedByte();
         if (b > 127) {
             return (byte) (b - 256);
-        } else {
-            return (byte) b;
         }
+		return (byte) b;
     }
 
     public String unmarshalString() throws IOException {

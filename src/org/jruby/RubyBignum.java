@@ -47,8 +47,8 @@ import java.math.BigInteger;
 public class RubyBignum extends RubyInteger {
     private static final int BIT_SIZE = 64;
     private static final long MAX = (1L<<(BIT_SIZE - 2)) - 1;
-    private final static BigInteger LONG_MAX = BigInteger.valueOf(MAX);
-    private final static BigInteger LONG_MIN = BigInteger.valueOf(-MAX-1);
+    private static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
+    private static final BigInteger LONG_MIN = BigInteger.valueOf(-MAX-1);
 
     private final BigInteger value;
 
@@ -119,7 +119,7 @@ public class RubyBignum extends RubyInteger {
         return RubyFixnum.newFixnum(runtime, bi.longValue());
     }
 
-    static public BigInteger bigIntValue(RubyNumeric other) {
+    public static BigInteger bigIntValue(RubyNumeric other) {
         if (other instanceof RubyFloat) {
             Asserts.notReached("argument must be an integer");
         }
@@ -234,7 +234,7 @@ public class RubyBignum extends RubyInteger {
                                       getDoubleValue()).op_div(other);
         }
 
-        BigInteger results[] =
+        BigInteger[] results =
                 getValue().divideAndRemainder(bigIntValue(other));
 
         if (results[0].compareTo(BigInteger.ZERO) <= 0 &&
@@ -263,7 +263,7 @@ public class RubyBignum extends RubyInteger {
 
     public RubyFixnum aref(RubyNumeric pos) {
         boolean isSet = getValue().testBit((int) pos.getLongValue());
-        return RubyFixnum.newFixnum(getRuntime(), (isSet ? 1 : 0));
+        return RubyFixnum.newFixnum(getRuntime(), isSet ? 1 : 0);
     }
 
     public RubyString to_s() {
@@ -283,15 +283,17 @@ public class RubyBignum extends RubyInteger {
 
     public RubyBignum op_lshift(RubyNumeric other) {
         long shift = other.getLongValue();
-        if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE)
-            throw new RangeError(runtime, "bignum too big to convert into `int'");
+        if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE) {
+			throw new RangeError(runtime, "bignum too big to convert into `int'");
+		}
         return new RubyBignum(runtime, value.shiftLeft((int) shift));
     }
 
     public RubyBignum op_rshift(RubyNumeric other) {
         long shift = other.getLongValue();
-        if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE)
-            throw new RangeError(runtime, "bignum too big to convert into `int'");
+        if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE) {
+			throw new RangeError(runtime, "bignum too big to convert into `int'");
+		}
         return new RubyBignum(runtime, value.shiftRight((int) shift));
     }
 
@@ -312,7 +314,9 @@ public class RubyBignum extends RubyInteger {
         byte[] digits = absValue.toByteArray();
 
         int shortLength = digits.length / 2;
-        if (digits.length % 2 != 0) shortLength++;
+        if (digits.length % 2 != 0) {
+			shortLength++;
+		}
         output.dumpInt(shortLength);
         
         // TODO: This works now, but make sure it complies with Ruby
@@ -320,14 +324,14 @@ public class RubyBignum extends RubyInteger {
             output.write(digits[i]);
         }
         
-        if ((digits.length % 2 != 0)) {
+        if (digits.length % 2 != 0) {
             // Pad with a 0 if we've written all bytes and have an odd length.
             output.write(0);
         }
     }
 
     public static RubyBignum unmarshalFrom(UnmarshalStream input) throws IOException {
-        int signum = (input.readUnsignedByte() == '+' ? 1 : -1);
+        int signum = input.readUnsignedByte() == '+' ? 1 : -1;
         int shortLength = input.unmarshalInt();
 
         byte[] digits = new byte[shortLength * 2];

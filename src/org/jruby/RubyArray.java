@@ -272,7 +272,7 @@ public class RubyArray extends RubyObject {
         return (IRubyObject) list.get((int) offset);
     }
     
-    public IRubyObject fetch(RubyNumeric index, IRubyObject args[]) {
+    public IRubyObject fetch(RubyNumeric index, IRubyObject[] args) {
     	try {
     		return entry(index.getLongValue(), true);
     	} catch (IndexError e) {
@@ -286,7 +286,7 @@ public class RubyArray extends RubyObject {
     	}
     }
     
-    public IRubyObject insert(RubyNumeric index, IRubyObject args[]) {
+    public IRubyObject insert(RubyNumeric index, IRubyObject[] args) {
     	// ruby does not bother to bounds check index, if no elements are
     	// to be added.
     	if (args != null && args.length == 0) {
@@ -295,7 +295,7 @@ public class RubyArray extends RubyObject {
     	
     	// too negative of an offset will throw an IndexError
     	long offset = index.getLongValue();
-    	if (offset < 0 && (getLength() + offset) < 0) {
+    	if (offset < 0 && getLength() + offset < 0) {
     		throw new IndexError(getRuntime(), "index " + 
     				(getLength() + offset) + " out of array");
     	}
@@ -330,7 +330,7 @@ public class RubyArray extends RubyObject {
     	}
 
     	for (int i = 0; i < length; i++) {
-    	    if (entry(i) instanceof RubyArray == false) {
+    	    if (!(entry(i) instanceof RubyArray)) {
     		    throw new TypeError(getRuntime(), "Some error");
     	    }
     	}
@@ -355,7 +355,7 @@ public class RubyArray extends RubyObject {
     	return newArray;
     }
 
-    public IRubyObject values_at(IRubyObject args[]) {
+    public IRubyObject values_at(IRubyObject[] args) {
     	RubyArray newArray = RubyArray.newArray(getRuntime());
 
     	for (int i = 0; i < args.length; i++) {
@@ -470,14 +470,14 @@ public class RubyArray extends RubyObject {
     /** rb_ary_new2
      *
      */
-    public final static RubyArray newArray(final Ruby runtime, final long len) {
+    public static final RubyArray newArray(final Ruby runtime, final long len) {
         return new RubyArray(runtime, new ArrayList((int) len));
     }
 
     /** rb_ary_new
      *
      */
-    public final static RubyArray newArray(final Ruby runtime) {
+    public static final RubyArray newArray(final Ruby runtime) {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
          */
@@ -504,7 +504,7 @@ public class RubyArray extends RubyObject {
         return new RubyArray(runtime, list);
     }
 
-    public final static RubyArray newArray(final Ruby runtime, final List list) {
+    public static final RubyArray newArray(final Ruby runtime, final List list) {
         return new RubyArray(runtime, list);
     }
 
@@ -762,7 +762,7 @@ public class RubyArray extends RubyObject {
     	
     	// TODO: See if enough integer-only conversions to make this
     	// convenience function (which could replace RubyNumeric#fix2long).
-    	if (args[0] instanceof RubyInteger == false) {
+    	if (!(args[0] instanceof RubyInteger)) {
             throw new TypeError(getRuntime(), "Cannot convert " + 
             		args[0].getType() + " into Integer");
     	}
@@ -793,8 +793,12 @@ public class RubyArray extends RubyObject {
     			return length == 0 ? runtime.getNil() : entry(length - 1);
     		case 1:
     			sublistSize = RubyFixnum.fix2int(args[0]);
-    			if (sublistSize == 0) return RubyArray.newArray(runtime);
-    			if (sublistSize < 0) throw new ArgumentError(runtime, "negative array size (or size too big)");
+    			if (sublistSize == 0) {
+    				return RubyArray.newArray(runtime);
+    			}
+    			if (sublistSize < 0) {
+    				throw new ArgumentError(runtime, "negative array size (or size too big)");
+    			}
     			
     			startIndex = (sublistSize > listSize)? 0: listSize - sublistSize;
     			return RubyArray.newArray(runtime, list.subList(startIndex, listSize));
@@ -1018,7 +1022,7 @@ public class RubyArray extends RubyObject {
 
         modify();
         autoExpand(beg + len);
-        for (int i = beg; i < (beg + len); i++) {
+        for (int i = beg; i < beg + len; i++) {
             list.set(i, args[0]);
         }
         return this;
@@ -1143,7 +1147,7 @@ public class RubyArray extends RubyObject {
             return getRuntime().getNil();
         }
         
-        return (pos < 0 && (pos += len) < 0) ?
+        return pos < 0 && (pos += len) < 0 ?
             getRuntime().getNil() : (IRubyObject) list.remove(pos);
     }
 
@@ -1210,7 +1214,7 @@ public class RubyArray extends RubyObject {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
             replace(beg, len, getRuntime().getNil());
-        } else if ((args[0] instanceof RubyFixnum) && (RubyNumeric.fix2long(args[0]) < getLength())) {
+        } else if (args[0] instanceof RubyFixnum && RubyNumeric.fix2long(args[0]) < getLength()) {
             replace(RubyNumeric.fix2long(args[0]), 1, getRuntime().getNil());
         } else if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), false, true);
@@ -1224,7 +1228,7 @@ public class RubyArray extends RubyObject {
      */
     public IRubyObject assoc(IRubyObject arg) {
         for (int i = 0, len = getLength(); i < len; i++) {
-            if (!((entry(i) instanceof RubyArray) && ((RubyArray) entry(i)).getLength() > 0)) {
+            if (!(entry(i) instanceof RubyArray && ((RubyArray) entry(i)).getLength() > 0)) {
                 continue;
             }
             RubyArray ary = (RubyArray) entry(i);
@@ -1240,7 +1244,7 @@ public class RubyArray extends RubyObject {
      */
     public IRubyObject rassoc(IRubyObject arg) {
         for (int i = 0, len = getLength(); i < len; i++) {
-            if (!((entry(i) instanceof RubyArray) && ((RubyArray) entry(i)).getLength() > 1)) {
+            if (!(entry(i) instanceof RubyArray && ((RubyArray) entry(i)).getLength() > 1)) {
                 continue;
             }
             RubyArray ary = (RubyArray) entry(i);
@@ -1309,7 +1313,7 @@ public class RubyArray extends RubyObject {
         return new RubyArray(getRuntime(), newList);
     }
 
-    private ArrayList uniq(List oldList) {
+    private static ArrayList uniq(List oldList) {
         ArrayList newList = new ArrayList(oldList.size());
         Set passed = new HashSet(oldList.size());
 
@@ -1463,13 +1467,9 @@ public class RubyArray extends RubyObject {
             IRubyObject result = getRuntime().yield(RubyArray.newArray(getRuntime(), (IRubyObject) o1, (IRubyObject) o2), null, null, true);
             return (int) ((RubyNumeric) result).getLongValue();
         }
-
-        public boolean equals(Object other) {
-            return this == other;
-        }
     }
 
-    class DefaultComparator implements Comparator {
+    static class DefaultComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             IRubyObject obj1 = (IRubyObject) o1;
             IRubyObject obj2 = (IRubyObject) o2;
@@ -1484,10 +1484,6 @@ public class RubyArray extends RubyObject {
             }
 
             return RubyNumeric.fix2int(obj1.callMethod("<=>", obj2));
-        }
-
-        public boolean equals(Object other) {
-            return this == other;
         }
     }
 }
