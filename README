@@ -8,6 +8,7 @@ Authors: Jan Arne Petersen <japetersen@web.de>,
          Ed Sinjiashvili <slorcim@users.sourceforge.net>
          Chad Fowler <chadfowler@chadfowler.com>
          Anders Bengtsson <ndrsbngtssn@yahoo.se>
+         Jason Voegele <jason@jvoegele.com>
 
 JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
 in Java.
