@@ -50,6 +50,7 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
 import org.jruby.util.collections.IdentitySet;
 
@@ -141,7 +142,7 @@ public class RubyArray extends RubyObject {
         arrayClass.defineMethod("fetch", callbackFactory.getOptMethod(RubyArray.class, "fetch", RubyNumeric.class));
         arrayClass.defineMethod("first", callbackFactory.getOptMethod(RubyArray.class, "first"));
         arrayClass.defineMethod("insert", callbackFactory.getOptMethod(RubyArray.class, "insert", RubyNumeric.class));
-        arrayClass.defineMethod("last", callbackFactory.getMethod(RubyArray.class, "last"));
+        arrayClass.defineMethod("last", callbackFactory.getOptMethod(RubyArray.class, "last"));
         arrayClass.defineMethod("concat", callbackFactory.getMethod(RubyArray.class, "concat", IRubyObject.class));
         arrayClass.defineMethod("<<", callbackFactory.getMethod(RubyArray.class, "append", IRubyObject.class));
         arrayClass.defineMethod("push", callbackFactory.getOptMethod(RubyArray.class, "push"));
@@ -779,10 +780,30 @@ public class RubyArray extends RubyObject {
     /** rb_ary_last
      *
      */
-    public IRubyObject last() {
+    public IRubyObject last(IRubyObject[] args) {
     	int length = getLength();
-    	
-        return length == 0 ? getRuntime().getNil() : entry(length - 1);
+
+    	if (args != null) {
+    		int listSize = list.size();
+    		int sublistSize = 0;
+    		int startIndex = 0;
+    		
+    		switch (args.length) {
+    		case 0:
+    			return length == 0 ? runtime.getNil() : entry(length - 1);
+    		case 1:
+    			sublistSize = RubyFixnum.fix2int(args[0]);
+    			if (sublistSize == 0) return RubyArray.newArray(runtime);
+    			if (sublistSize < 0) throw new ArgumentError(runtime, "negative array size (or size too big)");
+    			
+    			startIndex = (sublistSize > listSize)? 0: listSize - sublistSize;
+    			return RubyArray.newArray(runtime, list.subList(startIndex, listSize));
+    		default:
+    			throw new ArgumentError(runtime, "wrong number of arguments (" + length + " for 1)");
+    		}
+    	}
+    	Asserts.notReached();
+    	return null;
     }
 
     /** rb_ary_each
