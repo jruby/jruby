@@ -31,13 +31,9 @@
 package org.jruby.javasupport;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Iterator;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -97,8 +93,7 @@ public class JavaMethod implements Callback {
                 receiver = ((RubyJavaObject) recv).getValue();
             }
             Object javaResult = method.invoke(receiver, newArgs);
-            Class returnType = returnedObjectType(javaResult, method);
-            return JavaUtil.convertJavaToRuby(runtime, javaResult, returnType);
+            return JavaUtil.convertJavaToRuby(runtime, javaResult, method);
         } catch (InvocationTargetException itException) {
             convertException(runtime, (Exception)itException.getTargetException());
             Asserts.notReached();
@@ -107,50 +102,6 @@ public class JavaMethod implements Callback {
             convertException(runtime, iaException);
             Asserts.notReached();
             return null;
-        }
-    }
-
-    private Class returnedObjectType(Object javaResult, Method returningMethod) {
-        Class widestClass = returningMethod.getReturnType();
-        if (javaResult == null) {
-            return widestClass;
-        }
-        Class narrowestClass = javaResult.getClass();
-
-        if (narrowestClass.isPrimitive()) {
-            return narrowestClass;
-        }
-        if (widestClass.isPrimitive()) {
-            return widestClass;
-        }
-
-        Asserts.assertExpression(widestClass.isAssignableFrom(narrowestClass));
-
-        if (Modifier.isPublic(narrowestClass.getModifiers())) {
-            return narrowestClass;
-        }
-        if (widestClass.isInterface()) {
-            return widestClass;
-        }
-
-        // If there is any interface on the narrowest that isn't on the widest,
-        // then we should use that. The theory is that this should minimize information
-        // loss. (This theory is open to discussion ;-)
-        Iterator narrowestClassInterfaces = Arrays.asList(narrowestClass.getInterfaces()).iterator();
-        List widestClassInterfaces = Arrays.asList(widestClass.getInterfaces());
-        while (narrowestClassInterfaces.hasNext()) {
-            Class iface = (Class) narrowestClassInterfaces.next();
-            if (! widestClassInterfaces.contains(iface)) {
-                return iface;
-            }
-        }
-
-        while (true) {
-            narrowestClass = narrowestClass.getSuperclass();
-            Asserts.assertExpression(narrowestClass != null);
-            if (Modifier.isPublic(narrowestClass.getModifiers())) {
-                return narrowestClass;
-            }
         }
     }
 

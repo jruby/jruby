@@ -35,11 +35,12 @@ if defined? Java
 
     o = TestHelper.getLooslyCastedInstance()
     test_equal("stuff done", o.doStuff())
-  end
 
-  test_exception(NameError) { Java::JavaClass.new }
-  inner_class = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeImplementation")
-  test_equal("org.jruby.test.TestHelper$SomeImplementation", inner_class.name)
+
+    test_exception(NameError) { Java::JavaClass.new }
+    inner_class = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeImplementation")
+    test_equal("org.jruby.test.TestHelper$SomeImplementation", inner_class.name)
+  end
   string_class = Java::JavaClass.for_name("java.lang.String")
   test_equal("java.lang.String", string_class.to_s)
   test_exception(NameError) { Java::JavaClass.for_name("not.existing.Class") }
@@ -76,10 +77,11 @@ if defined? Java
   test_equal(1, method.arity)
   test_ok(! method.final?)
 
-  interface = Java::JavaClass.for_name("org.jruby.test.TestHelper$SomeInterface")
-  method = interface.java_method(:doStuff)
-  result = method.invoke(TestHelper.getInterfacedInstance())
-  test_equal("stuff done", result)
+  random_class = Java::JavaClass.for_name("java.util.Random")
+  method = random_class.java_method(:nextInt)
+  Java::import("java.util")
+  result = method.invoke(Random.new)
+  test_ok(result.kind_of?(Fixnum))
 end
 
 test_print_report

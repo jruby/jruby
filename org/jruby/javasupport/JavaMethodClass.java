@@ -106,7 +106,7 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         System.arraycopy(args, 1, arguments, 0, arguments.length);
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return JavaUtil.convertJavaToRuby(getRuntime(), result);
+            return JavaUtil.convertJavaToRuby(getRuntime(), result, method);
 
         } catch (IllegalAccessException iae) {
             // FIXME: what's the best exception to throw here?
