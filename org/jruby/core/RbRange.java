@@ -43,6 +43,8 @@ public class RbRange {
 
         rangeClass.includeModule(ruby.getRubyClass("Enumerable"));
 
+        rangeClass.defineMethod("==", getMethod("m_eq", RubyObject.class));
+        rangeClass.defineMethod("===", getMethod("m_eqq", RubyObject.class));
         rangeClass.defineMethod("first", getMethod("m_first"));
         rangeClass.defineMethod("begin", getMethod("m_first"));
         rangeClass.defineMethod("last", getMethod("m_last"));
@@ -65,4 +67,9 @@ public class RbRange {
     public static RubyCallbackMethod getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyRange.class, methodName);
     }
+
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1)
+    {
+        return new ReflectionCallbackMethod(RubyRange.class, methodName, arg1);
+    }    
 }

@@ -138,6 +138,91 @@ public class RubyRange extends RubyObject {
             return getRuby().getFalse();
     }
 
+    public RubyObject m_length() {
+        RubyObject begin = getInstanceVar("begin");
+        RubyObject end = getInstanceVar("end");
+        boolean exclusive = getInstanceVar("excl").isTrue();
+
+        long size = 0;
+
+        if (begin.funcall(getRuby().intern(">"), end).isTrue())
+            return new RubyFixnum(getRuby(), 0);
+    
+        if (begin instanceof RubyFixnum &&
+            end instanceof RubyFixnum)
+        {
+            size = ((RubyNumeric)end).getLongValue() -
+                ((RubyNumeric)begin).getLongValue();
+            if (!exclusive)
+                size++;
+        }
+        return new RubyFixnum(getRuby(), size);
+    }   
+
+    public RubyBoolean m_eq(RubyObject obj)
+    {
+        if (! (obj instanceof RubyRange))
+            return getRuby().getFalse();
+
+        RubyObject o = getInstanceVar("begin");
+        RubyBoolean r = o.m_equal(obj.getInstanceVar("begin"));
+        if (r.isFalse())
+            return getRuby().getFalse();
+        
+        o = getInstanceVar("end");
+        r = o.m_equal(obj.getInstanceVar("end"));
+        if (r.isFalse())
+            return getRuby().getFalse();
+
+        if (getInstanceVar("excl").isTrue() !=
+            obj.getInstanceVar("excl").isTrue())
+            return getRuby().getFalse();
+
+        return getRuby().getTrue();
+    }
+
+    public RubyBoolean m_eqq(RubyObject obj)
+    {
+        RubyObject beg = getInstanceVar("begin");
+        RubyObject end = getInstanceVar("end");
+        boolean excl = getInstanceVar("excl").isTrue();
+
+        if ((beg instanceof RubyFixnum) && (obj instanceof RubyFixnum) &&
+                                           (end instanceof RubyFixnum))
+        {
+            long b = ((RubyFixnum)beg).getValue();
+            long o = ((RubyFixnum)obj).getValue();
+
+            if (b <= o)
+            {
+                long e = ((RubyFixnum)end).getValue();
+                if (excl)
+                {
+                    if (o < e)
+                        return getRuby().getTrue();
+                }
+                else
+                {
+                    if (o <= e)
+                        return getRuby().getTrue();
+                }                
+            }
+            return getRuby().getFalse();
+        }
+        else if (beg.funcall(getRuby().intern("<="), obj).isTrue())
+        {
+            if (excl) {
+                if (end.funcall(getRuby().intern(">"), obj).isTrue())
+                    return getRuby().getTrue();
+            }
+            else {
+                if (end.funcall(getRuby().intern(">="), obj).isTrue())
+                    return getRuby().getTrue();
+            }
+        }
+        return getRuby().getFalse();
+    }
+        
     public RubyObject m_each() {
         RubyObject begin = getInstanceVar("begin");
         RubyObject end = getInstanceVar("end");
