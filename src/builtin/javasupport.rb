@@ -259,6 +259,7 @@ END
           java_class.java_instance_methods.select {|m| m.public? }
         grouped_methods = public_methods.group_by {|m| m.name }
         grouped_methods.each {|name, methods|
+	  # Only one method by this name
           if methods.length == 1
             m = methods.first
             return_type = m.return_type
@@ -275,34 +276,17 @@ END
               result
             }
           else
-            methods_by_arity = methods.group_by {|m| m.arity }
-            methods_by_arity.each {|arity, same_arity_methods|
-              if same_arity_methods.length == 1
-                # just one method with this length
-                define_method(name) {|*args|
-                  m = methods_by_arity[args.length].first
-                  return_type = m.return_type
-                  args = convert_arguments(args)
-                  result = m.invoke(self.java_object, *args)
-                  result = Java.java_to_primitive(result)
-                  if result.kind_of?(JavaObject)
-                    result = JavaUtilities.wrap(result, m.return_type)
-                  end
-                  result
-                }
-              else
-                # overloaded on same length
-                define_method(name) {|*args|
-                  args = convert_arguments(args)
-                  m = JavaUtilities.matching_method(same_arity_methods, args)
-                  result = m.invoke(self.java_object, *args)
-                  result = Java.java_to_primitive(result)
-                  if result.kind_of?(JavaObject)
-                    result = JavaUtilities.wrap(result, m.return_type)
-                  end
-                  result
-                }
+            define_method(name) {|*args|
+              args = convert_arguments(args)
+              m = JavaUtilities.matching_method(methods.find_all {|m|
+	            m.arity == args.length
+                  }, args)
+              result = m.invoke(self.java_object, *args)
+              result = Java.java_to_primitive(result)
+              if result.kind_of?(JavaObject)
+                result = JavaUtilities.wrap(result, m.return_type)
               end
+              result
             }
           end
         }
@@ -311,18 +295,21 @@ END
     end
 
     def matching_method(methods, args)
-      argument_types = args.collect {|a| a.java_class }
-      type_names = argument_types.collect {|t| t.name }
+      # Only one method to match
+      return methods.first if methods.length == 1
+
+      arg_types = args.collect {|a| a.java_class }
+      arg_type_names = arg_types.collect {|t| t.name }
 
       exact_match = methods.detect {|m|
-        m.argument_types == type_names
+        m.argument_types == arg_type_names
       }
       return exact_match unless exact_match.nil?
       compatible_match = methods.detect {|m|
         types = m.argument_types.collect {|t| Java::JavaClass.for_name(t) }
         match = true
         0.upto(types.length - 1) {|i|
-          unless types[i].assignable_from?(argument_types[i])
+          unless types[i].assignable_from?(arg_types[i])
             match = false
           end
         }
@@ -332,11 +319,11 @@ END
 
       if methods.first.kind_of?(JavaConstructor)
         raise NameError.new("no constructor with arguments matching " +
-                            argument_types.inspect)
+                            arg_types.inspect)
       else
         raise NameError.new("no method '" + methods.first.name +
                             "' with argument types matching " +
-                            argument_types.inspect)
+                            arg_types.inspect)
       end
     end
 
