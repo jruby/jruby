@@ -40,8 +40,7 @@ import org.jruby.util.collections.*;
  * @author  jpetersen
  * @version 
  */
-public class Node
-{
+public class Node {
 	public static final Node ONE = new Node(-1);
 	public static final Node MINUS_ONE = new Node(-1);
 
@@ -52,45 +51,37 @@ public class Node
 	private Object u1;
 	private Object u2;
 	private Object u3;
-	protected String stringOrNull(Object io)
-	{
+	protected String stringOrNull(Object io) {
 		if (io == null)
 			return "null";
 		else 
 			return io.toString();
 	}
-	public String toString()	
-	{
+	public String toString()	 {
 		return "(l"+ line + ":" + Constants.NODE_TRANSLATOR[type] + ":";
 	}
 
-	protected Node(int type)
-	{
+	protected Node(int type) {
 		this(type, null, null, null);
 	}
 
-	protected Node(int type, int u1, Object u2, Object u3)
-	{
+	protected Node(int type, int u1, Object u2, Object u3) {
 		this(type, new Integer(u1), u2, u3);
 	}
 
-	protected Node(int type, Object u1, int u2, Object u3)
-	{
+	protected Node(int type, Object u1, int u2, Object u3) {
 		this(type, u1, new Integer(u2), u3);
 	}
 
-	protected Node(int type, Object u1, Object u2, int u3)
-	{
+	protected Node(int type, Object u1, Object u2, int u3) {
 		this(type, u1, u2, new Integer(u3));
 	}
 
-	protected Node(int type, Object u1, int u2, int u3)
-	{
+	protected Node(int type, Object u1, int u2, int u3) {
 		this(type, u1, new Integer(u2), new Integer(u3));
 	}
 
-	protected Node(int type, Object u1, Object u2, Object u3)
-	{
+	protected Node(int type, Object u1, Object u2, Object u3) {
 		this.type = type;
 
 		this.u1 = u1;
@@ -98,33 +89,27 @@ public class Node
 		this.u3 = u3;
 	}
 
-	public int getLine()
-	{
+	public int getLine() {
 		return line;
 	}
 
-	public void setLine(int line)
-	{
+	public void setLine(int line) {
 		this.line = line;
 	}
 
-	public String getFile()
-	{
+	public String getFile() {
 		return file;
 	}
 
-	public void setFile(String file)
-	{
+	public void setFile(String file) {
 		this.file = file;
 	}
 
-	public int getType()
-	{
+	public int getType() {
 		return type;
 	}
 
-	public RubyObject eval(Ruby ruby, RubyObject self)
-	{
+	public RubyObject eval(Ruby ruby, RubyObject self) {
 		ruby.getRuntime().getErrorStream().println(file+":"+line+" Unsupported feature, node class is" + this.getClass());
 		throw new UnsupportedOperationException(); 
 	}
@@ -132,12 +117,10 @@ public class Node
 	/** copy_node_scope
 	 *
 	 */
-	public Node copyNodeScope(CRefNode refValue)
-	{
+	public Node copyNodeScope(CRefNode refValue) {
 		Node copy = new ScopeNode(null, refValue.cloneCRefNode(), getNextNode());
 
-		if (getTable() != null)
-		{
+		if (getTable() != null) {
 			// ExtendedList newTable = new ExtendedList(getTable().size() + 1, null);
 			// newTable.copy(getTable(), getTable().size() + 1);
 
@@ -152,233 +135,187 @@ public class Node
 
 	// The getter and setter methods
 
-	public Node getHeadNode()
-	{
+	public Node getHeadNode() {
 		return (Node)u1;
 	}
 
-	public void setHeadNode(Node headNode)
-	{
+	public void setHeadNode(Node headNode) {
 		u1 = headNode;
 	}
 
-	public int getALength()
-	{
+	public int getALength() {
 		return u2 == null ? 0 : ((Integer)u2).intValue();
 	}
 
-	public void setALength(int alength)
-	{
+	public void setALength(int alength) {
 		u2 = new Integer(alength);
 	}
 
-	public Node getNextNode()
-	{
+	public Node getNextNode() {
 		return (Node)u3;
 	}
 
-	public void setNextNode(Node nextNode)
-	{
+	public void setNextNode(Node nextNode) {
 		u3 = nextNode;
 	}
 
-	public Node getConditionNode()
-	{
+	public Node getConditionNode() {
 		return (Node)u1;
 	}
 
-	public Node getBodyNode()
-	{
+	public Node getBodyNode() {
 		return (Node)u2;
 	}
 
-	public Node getElseNode()
-	{
+	public Node getElseNode() {
 		return (Node)u3;
 	}
 
-	public RubyObject getOrigin()
-	{
+	public RubyObject getOrigin() {
 		return (RubyObject)u3;
 	}
 
-	public Node getResqNode()
-	{
+	public Node getResqNode() {
 		return (Node)u2;
 	}
 
-	public Node getEnsureNode()
-	{
+	public Node getEnsureNode() {
 		return (Node)u3;
 	}
 
-	public Node getFirstNode()
-	{
+	public Node getFirstNode() {
 		return (Node)u1;
 	}
 
-	public Node getSecondNode()
-	{
+	public Node getSecondNode() {
 		return (Node)u2;
 	}
 
-	public Node getSttsNode()
-	{
+	public Node getSttsNode() {
 		return (Node)u1;
 	}
 
-	public RubyGlobalEntry getEntry()
-	{
+	public RubyGlobalEntry getEntry() {
 		return (RubyGlobalEntry)u3;
 	}
 
-	public String getVId()
-	{
+	public String getVId() {
 		return (String)u1;
 	}
 
-	public int getCFlag()
-	{
+	public int getCFlag() {
 		return u2 == null ? 0 : ((Integer)u2).intValue();
 	}
 
-	public void setCFlag(int cflag)
-	{
+	public void setCFlag(int cflag) {
 		u2 = cflag == 0 ? null : new Integer(cflag);
 	}
 
-	public RubyObject getCValue()
-	{
+	public RubyObject getCValue() {
 		return (RubyObject)u3;
 	}
 
-	public int getCount()
-	{
+	public int getCount() {
 		return u3 == null ? 0 : ((Integer)u3).intValue();
 	}
 
-	public ExtendedList getTable()
-	{
+	public ExtendedList getTable() {
 		return (ExtendedList)u1;
 	}
 
-	public void setTable(ExtendedList newTable)
-	{
+	public void setTable(ExtendedList newTable) {
 		u1 = newTable;
 	}
 
-	public Node getVarNode()
-	{
+	public Node getVarNode() {
 		return (Node)u1;
 	}
 
-	public Node getIBodyNode()
-	{
+	public Node getIBodyNode() {
 		return (Node)u2;
 	}
 
-	public Node getIterNode()
-	{
+	public Node getIterNode() {
 		return (Node)u3;
 	}
 
-	public void setIterNode(Node newIterNode)
-	{
+	public void setIterNode(Node newIterNode) {
 		u3 = newIterNode;
 	}
 
-	public Node getValueNode()
-	{
+	public Node getValueNode() {
 		return (Node)u2;
 	}
 
-	public void setValueNode(Node newValueNode)
-	{
+	public void setValueNode(Node newValueNode) {
 		u2 = newValueNode;
 	}
 
-	public String getAId()
-	{
+	public String getAId() {
 		return (String)u3;
 	}
 
-	public void setAId(String newAid)
-	{
+	public void setAId(String newAid) {
 		u3 = newAid;
 	}
 
-	public RubyObject getLiteral()
-	{
+	public RubyObject getLiteral() {
 		return (RubyObject)u1;
 	}
 
-	public void setLiteral(RubyObject newLiteral)
-	{
+	public void setLiteral(RubyObject newLiteral) {
 		u1 = newLiteral;
 	}
 
-	public Node getFrmlNode()
-	{
+	public Node getFrmlNode() {
 		return (Node)u1;
 	}
 
-	public int getRest()
-	{
+	public int getRest() {
 		return u2 == null ? 0 : ((Integer)u2).intValue();
 	}
 
-	public Node getOptNode()
-	{
+	public Node getOptNode() {
 		return (Node)u1;
 	}
 
-	public Node getRecvNode()
-	{
+	public Node getRecvNode() {
 		return (Node)u1;
 	}
 
-	public String getMId()
-	{
+	public String getMId() {
 		return (String)u2;
 	}
 
-	public Node getArgsNode()
-	{
+	public Node getArgsNode() {
 		return (Node)u3;
 	}
 
-	public void setArgsNode(Node newArgsNode)
-	{
+	public void setArgsNode(Node newArgsNode) {
 		u3 = newArgsNode;
 	}
 
-	public int getNoex()
-	{
+	public int getNoex() {
 		return u1 == null ? 0 : ((Integer)u1).intValue();
 	}
 
-	public void setNoex(int newNoex)
-	{
+	public void setNoex(int newNoex) {
 		u1 = newNoex == 0 ? null : new Integer(newNoex);
 	}
 
-	public Node getDefnNode()
-	{
+	public Node getDefnNode() {
 		return (Node)u3;
 	}
 
-	public String getOldId()
-	{
+	public String getOldId() {
 		return (String)u1;
 	}
 
-	public String getNewId()
-	{
+	public String getNewId() {
 		return (String)u2;
 	}
 
-	public Callback getCallbackMethod()
-	{
+	public Callback getCallbackMethod() {
 		return (Callback)u1;
 	}
 
@@ -386,103 +323,86 @@ public class Node
 	 *
 	 *@deprecated
 	 */
-	public int getArgsCount()
-	{
+	public int getArgsCount() {
 		return u2 == null ? 0 : ((Integer)u2).intValue();
 	}
 
-	public String getClassNameId()
-	{
+	public String getClassNameId() {
 		return (String)u1;
 	}
 
-	public Node getSuperNode()
-	{
+	public Node getSuperNode() {
 		return (Node)u3;
 	}
 
 	/* 
 	 * ?
 	 */ 
-	public String getModlId()
-	{
+	public String getModlId() {
 		return (String)u1;
 	}
 
 	/*
 	 * used by CRefNode
 	 */
-	public RubyObject getClassValue()
-	{
+	public RubyObject getClassValue() {
 		return (RubyObject)u1;
 	}
 
 	/*
 	 * used by CRefNode
 	 */
-	public void setClassValue(RubyObject newClassValue)
-	{
+	public void setClassValue(RubyObject newClassValue) {
 		u1 = newClassValue;
 	}
 
-	public Node getBeginNode()
-	{
+	public Node getBeginNode() {
 		return (Node)u1;
 	}
 
-	public void setBeginNode(Node newBeginNode)
-	{
+	public void setBeginNode(Node newBeginNode) {
 		u1 = newBeginNode;
 	}
 
-	public Node getEndNode()
-	{
+	public Node getEndNode() {
 		return (Node)u2;
 	}
 
-	public void setEndNode(Node newEndNode)
-	{
+	public void setEndNode(Node newEndNode) {
 		u2 = newEndNode;
 	}
 	/* ?
 	 *
 	 *@deprecated
 	 */
-	public int getState()
-	{
+	public int getState() {
 		return u3 == null ? 0 : ((Integer)u3).intValue();
 	}
 
 	/** nd_rval -> getRefValue
 	 * RubyObject -> CRefNode
 	 */
-	public CRefNode getRefValue()
-	{
+	public CRefNode getRefValue() {
 		return (CRefNode)u2;
 	}
 
-	public void setRefValue(CRefNode newRefValue)
-	{
+	public void setRefValue(CRefNode newRefValue) {
 		u2 = newRefValue;
 	}
 
-	public int getNth()
-	{
+	public int getNth() {
 		return u2 == null ? 0 : ((Integer)u2).intValue();
 	}
 
-	public void setNth(int newNth)
-	{
+	public void setNth(int newNth) {
 		u2 = newNth == 0 ? null : new Integer(newNth);
 	}
 
-	public String getTagId()
-	{
+	public String getTagId() {
 		return (String)u1;
 	}
 
-	public RubyObject getTValue()
-	{
+	public RubyObject getTValue() {
 		return (RubyObject)u2;
 	}
 }
