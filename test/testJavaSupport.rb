@@ -55,6 +55,7 @@ if defined? Java
   test_ok(! runnable_class.final?)
   test_ok(runnable_class.interface?)
   test_ok(! string_class.interface?)
+  test_ok(! string_class.array?)
 
   object_class = string_class.superclass
   test_equal("java.lang.Object", object_class.name)
@@ -68,8 +69,8 @@ if defined? Java
   test_ok(object_class != string_class)
 
   string_methods = string_class.java_instance_methods
-  test_ok(string_methods.include?("charAt"))
-  test_ok(string_methods.include?("substring"))
+  test_ok(string_methods.detect {|m| m.name == "charAt" })
+  test_ok(string_methods.detect {|m| m.name == "substring"})
 
   integer_constants = Java::JavaClass.for_name("java.lang.Integer").constants
   test_ok(integer_constants.include?("MAX_VALUE"))

@@ -23,6 +23,10 @@
 
 module JavaProxy
   attr :java_class, true
+
+  def runtime_self
+    self
+  end
 end
 
 class Module
@@ -67,18 +71,18 @@ class Module
         result
       end
 
-      # FIXME: look though all the public methods and create suitable
-      # proxy methods for them.
-#      def proxy_class.create_methods(java_class)
-#        toString_method = java_class.java_method(:toString)
-#        define_method(:to_s) {
-#          toString_method.invoke(runtime_self)
-#        }
-#        java_class.java_instance_methods.each {|method_name|
-#          # ...
-#        }
-#      end
-#      proxy_class.create_methods(java_class)
+      def proxy_class.create_methods(java_class)
+        # FIXME: look though all the public methods and create suitable
+        # proxy methods for them.
+        methods = java_class.java_instance_methods
+        methods = methods.select {|m| m.public? }
+        methods.each {|m|
+          define_method(m.name.intern) {|*args|
+            m.invoke(runtime_self, *args)
+          }
+        }
+      end
+      proxy_class.create_methods(java_class)
 
       return proxy_class
     end
@@ -103,15 +107,15 @@ if __FILE__ == $0
   r = Froboz::Random.new
   
   p r.to_s
-  p r.type
+  p r.type.instance_methods
 
-  module Froboz
-    class Random
-      def nextInt
-        java_class.java_method(:nextInt).invoke(self)
-      end
-    end
-  end
+#  module Froboz
+#    class Random
+#      def nextInt
+#        java_class.java_method(:nextInt).invoke(self)
+#      end
+#    end
+#  end
 
   p r.nextInt
   p r.nextInt

@@ -54,6 +54,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     private static final int PUBLIC_P = 1;
     private static final int FINAL_P = 2;
     private static final int INTERFACE_P = 3;
+    private static final int ARRAY_P = 4;
     private static final int NAME = 5;
     private static final int SUPERCLASS = 7;
     private static final int OP_CMP = 8;
@@ -72,6 +73,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
         javaClassClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
         javaClassClass.defineMethod("interface?", IndexedCallback.create(INTERFACE_P, 0));
+        javaClassClass.defineMethod("array?", IndexedCallback.create(ARRAY_P, 0));
         javaClassClass.defineMethod("name", IndexedCallback.create(NAME, 0));
         javaClassClass.defineMethod("to_s", IndexedCallback.create(NAME, 0));
         javaClassClass.defineMethod("superclass", IndexedCallback.create(SUPERCLASS, 0));
@@ -101,6 +103,10 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
 
     public RubyBoolean interface_p() {
         return RubyBoolean.newBoolean(runtime, javaClass.isInterface());
+    }
+
+    public RubyBoolean array_p() {
+        return RubyBoolean.newBoolean(runtime, javaClass.isArray());
     }
 
     public RubyString name() {
@@ -133,14 +139,14 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         Method[] methods = javaClass.getMethods();
         RubyArray result = RubyArray.newArray(runtime, methods.length);
         for (int i = 0; i < methods.length; i++) {
-            result.append(RubyString.newString(runtime, methods[i].getName()));
+            result.append(JavaMethodClass.create(runtime, methods[i]));
         }
         return result;
     }
 
     public RubyArray constants() {
         Field[] fields = javaClass.getFields();
-        RubyArray result = RubyArray.newArray(runtime);
+        RubyArray result = RubyArray.newArray(runtime, fields.length);
         for (int i = 0; i < fields.length; i++) {
             if (isConstant(fields[i])) {
                 result.append(RubyString.newString(runtime, fields[i].getName()));
@@ -199,6 +205,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return final_p();
             case INTERFACE_P :
                 return interface_p();
+            case ARRAY_P :
+                return array_p();
             case NAME :
                 return name();
             case SUPERCLASS :
