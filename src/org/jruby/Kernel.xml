@@ -40,6 +40,7 @@
     <method name="exit">
       <arity optional="true">0</arity>
     </method>
+    <method-alias name="format" original="sprintf"/>
     <method name="gets">
       <arity optional="true">0</arity>
     </method>
@@ -51,6 +52,7 @@
       <arity optional="true">0</arity>
       <java>gsub_bang</java>
     </method>
+    <method-alias name="lambda" original="proc"/>
     <method name="load">
       <arity optional="true">1</arity>
     </method>
