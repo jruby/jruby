@@ -39,7 +39,7 @@ import org.jruby.exceptions.*;
 public class RbInteger {
     
     public static RubyClass createIntegerClass(Ruby ruby) {
-        RubyClass integerClass = ruby.defineClass("Integer", ruby.getNumericClass());
+        RubyClass integerClass = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
      
         integerClass.defineMethod("ceil", getIntegerMethod("m_to_i"));
         integerClass.defineMethod("chr", getIntegerMethod("m_chr"));

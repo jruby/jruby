@@ -241,7 +241,7 @@ public class RubyRange extends RubyObject {
             }
         } else if (begin instanceof RubyString) {
             // rb_str_upto(b, e, EXCL(range));
-        } else if (begin.m_kind_of(getRuby().getNumericClass()).isTrue()) {
+        } else if (begin.m_kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
         /*
 	b = rb_Integer(b);
 	e = rb_Integer(e);

@@ -46,9 +46,9 @@ public class RubyBoolean extends RubyObject {
     
     public RubyModule getRubyClass() {
         if (value) {
-            return getRuby().getTrueClass();
+            return getRuby().getClasses().getTrueClass();
         } else {
-            return getRuby().getFalseClass();
+            return getRuby().getClasses().getFalseClass();
         }
     }
     

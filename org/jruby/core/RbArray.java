@@ -39,7 +39,7 @@ import org.jruby.exceptions.*;
 public class RbArray {
     
     public static RubyClass createArrayClass(Ruby ruby) {
-        RubyClass arrayClass = ruby.defineClass("Array", ruby.getObjectClass());
+        RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
         
         //rb_include_module(rb_cArray, rb_mEnumerable);
         

@@ -68,7 +68,7 @@ public class parse /*extends Ruby*/ implements lex_state, node_type, re_options 
     	this.ruby = ruby;
 	this.rom = ruby.getOriginalMethods();
 
-	rb_cObject = ruby.getObjectClass();
+	rb_cObject = ruby.getClasses().getObjectClass();
     }
 
     private long cond_stack;
@@ -454,7 +454,7 @@ case 1:
 		        yyVal = ruby.getInterpreter().getDynamicVars();// ruby_dyna_vars;
 			lex_state = EXPR_BEG;
                         top_local_init();
-			if (ruby.getInterpreter().getRubyClass() == ruby.getObjectClass()/*(VALUE)ruby_class == rb_cObject*/) class_nest = 0;
+			if (ruby.getInterpreter().getRubyClass() == ruby.getClasses().getObjectClass()/*(VALUE)ruby_class == rb_cObject*/) class_nest = 0;
 			else class_nest = 1;
 		    }
   break;
@@ -3704,10 +3704,10 @@ case 432:
     top_local_init()
     {
         local_push();
-        lvtbl.cnt = ruby.rubyScope.getLocalTbl() != null ? ruby.rubyScope.getLocalTbl(0).intValue() : 0;
+        lvtbl.cnt = ruby.getRubyScope().getLocalTbl() != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
         if (lvtbl.cnt > 0) {
             lvtbl.tbl = new ID[lvtbl.cnt+3];
-	    System.arraycopy(lvtbl.tbl, 0, ruby.rubyScope.getLocalTbl(), 0, lvtbl.cnt+1);
+	    System.arraycopy(lvtbl.tbl, 0, ruby.getRubyScope().getLocalTbl(), 0, lvtbl.cnt+1);
         }
         else {
             lvtbl.tbl = null;
@@ -3725,10 +3725,10 @@ case 432:
         int i;
 
         if (len > 0) {
-            i = ruby.rubyScope.getLocalTbl() != null ? ruby.rubyScope.getLocalTbl(0).intValue() : 0;
+            i = ruby.getRubyScope().getLocalTbl() != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
 
             if (i < len) {
-                if (i == 0 || (ruby.rubyScope.getFlags() & 1 /*SCOPE_MALLOC*/) == 0) {
+                if (i == 0 || (ruby.getRubyScope().getFlags() & 1 /*SCOPE_MALLOC*/) == 0) {
                     // SHIFTABLE +++
 		    /*VALUE[] vars = new VALUE[len + 1];
                     int vi = 0;
@@ -3744,19 +3744,19 @@ case 432:
 		    // SHIFTABLE ---
 		    List tmp = Collections.nCopies(len + 1, ruby.getNil()); // do rb_mem_clear
 		    ShiftableList vars = new ShiftableList(new ArrayList(tmp));
-		    if (ruby.rubyScope.getLocalVars() != null) {
-			vars.set(0, ruby.rubyScope.getLocalVars(-1));
+		    if (ruby.getRubyScope().getLocalVars() != null) {
+			vars.set(0, ruby.getRubyScope().getLocalVars(-1));
 	                vars.shift(1);
 			for (int j = 0; j < i; j++) {
-			    vars.set(j, ruby.rubyScope.getLocalVars(j));
+			    vars.set(j, ruby.getRubyScope().getLocalVars(j));
 			}
 		    } else {
 			vars.set(0, null);
 			vars.shift(1);
 		    }
 			    
-                    ruby.rubyScope.setLocalVars(vars);
-                    ruby.rubyScope.setFlags(ruby.rubyScope.getFlags() | 1); // SCOPE_MALLOC;
+                    ruby.getRubyScope().setLocalVars(vars);
+                    ruby.getRubyScope().setFlags(ruby.getRubyScope().getFlags() | 1); // SCOPE_MALLOC;
                 } else {
                     // VALUE[] vars = ruby.ruby_scope.local_vars-1;
                     // REALLOC_N(vars, VALUE, len+1);
@@ -3767,7 +3767,7 @@ case 432:
                 //     free(ruby_scope.local_tbl);
                 // }
                 // ruby_scope.local_vars[-1] = 0;
-                ruby.rubyScope.setLocalTbl(local_tbl());
+                ruby.getRubyScope().setLocalTbl(local_tbl());
             }
         }
         local_pop();
@@ -3847,19 +3847,19 @@ case 432:
 	top_local_init();
 	int cnt = local_cnt(c);
 	top_local_setup();
-	ruby.rubyScope.setLocalVars(cnt, (RubyObject)val);
+	ruby.getRubyScope().setLocalVars(cnt, (RubyObject)val);
     }
 
     VALUE rb_backref_get() {
-	if (ruby.rubyScope.getLocalVars() != null) {
-	    return ruby.rubyScope.getLocalVars(1);
+	if (ruby.getRubyScope().getLocalVars() != null) {
+	    return ruby.getRubyScope().getLocalVars(1);
 	}
 	return ruby.getNil(); //Qnil
     }
 
     void rb_backref_set(VALUE val) {
-	if (ruby.rubyScope.getLocalVars() != null) {
-	    ruby.rubyScope.setLocalVars(1, (RubyObject)val);
+	if (ruby.getRubyScope().getLocalVars() != null) {
+	    ruby.getRubyScope().setLocalVars(1, (RubyObject)val);
 	}
 	else {
 	    special_local_set('~', val);
@@ -3867,15 +3867,15 @@ case 432:
     }
 
     VALUE rb_lastline_get() {
-	if (ruby.rubyScope.getLocalVars() != null) {
-	    return ruby.rubyScope.getLocalVars(0);
+	if (ruby.getRubyScope().getLocalVars() != null) {
+	    return ruby.getRubyScope().getLocalVars(0);
 	}
 	return ruby.getNil(); //Qnil;
     }
 
     void rb_lastline_set(VALUE val) {
-	if (ruby.rubyScope.getLocalVars() != null) {
-	    ruby.rubyScope.setLocalVars(0, (RubyObject)val);
+	if (ruby.getRubyScope().getLocalVars() != null) {
+	    ruby.getRubyScope().setLocalVars(0, (RubyObject)val);
 	}
 	else {
 	    special_local_set('_', val);

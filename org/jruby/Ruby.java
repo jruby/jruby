@@ -43,11 +43,10 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public final class Ruby implements token {
+    public static final int FIXNUM_CACHE_SIZE = 0xff;
+    public static final boolean AUTOMATIC_BIGNUM_CAST = true;
     
-    /** rb_class_tbl
-     *
-     */
-    private RubyMap classMap;
+    public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_SIZE];
     
     /** rb_global_tbl
      *
@@ -58,29 +57,13 @@ public final class Ruby implements token {
     
     private RubyInterpreter rubyInterpreter = null;
 
-    // Default objects and classes.
-    
+    // Default objects
     private RubyNil nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     
-    private RubyClass classClass;
-    private RubyClass moduleClass;
-    private RubyClass objectClass;
-    
-    private RubyClass numericClass;
-    private RubyClass integerClass;
-    private RubyClass fixnumClass;
-    private RubyClass bignumClass;
-    private RubyClass floatClass;
-    
-    private RubyClass nilClass;
-    private RubyClass trueClass;
-    private RubyClass falseClass;
-    private RubyClass symbolClass;
-    
-    private RubyClass stringClass;
-    private RubyModule kernelModule;
+    // Default classes
+    private RubyClasses classes;
     
     private RubyObject rubyTopSelf;
     
@@ -90,7 +73,8 @@ public final class Ruby implements token {
      *
      */
     // public SCOPE ruby_scope = new SCOPE();
-    public RubyScope rubyScope = new RubyScope();
+    private RubyScope rubyScope = new RubyScope();
+    private RubyVarmap dynamicVars = null;
     
     public op_tbl[] op_tbl;
     
@@ -102,13 +86,18 @@ public final class Ruby implements token {
         originalMethods = new RubyOriginalMethods(this);
         
         globalMap = new RubyHashMap();
-        classMap = new RubyHashMap();
-
+        
         nilObject = new RubyNil(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
         
-        initializeCoreClasses();
+        classes = new RubyClasses(this);
+        
+        createFixnumCache();
+    }
+    
+    public RubyClasses getClasses() {
+        return classes;
     }
     
     /** Returns the "true" instance from the instance pool.
@@ -125,24 +114,11 @@ public final class Ruby implements token {
         return falseObject;
     }
     
+    /** Returns the "nil" singleton instance.
+     * @return "nil"
+     */    
     public RubyNil getNil() {
         return nilObject;
-    }
-    
-    public RubyClass getTrueClass() {
-        return trueClass;
-    }
-    
-    public RubyClass getFalseClass() {
-        return falseClass;
-    }
-    
-    public RubyClass getNilClass() {
-        return nilClass;
-    }
-    
-    public RubyClass getSymbolClass() {
-        return symbolClass;
     }
     
     /** Returns a class from the instance pool.
@@ -150,104 +126,7 @@ public final class Ruby implements token {
      * @return The class.
      */    
     public RubyModule getRubyClass(String name) {
-        return (RubyModule)classMap.get(intern(name));
-    }
-    
-    /** rb_define_boot?
-     *
-     */    
-    private RubyClass defineBootClass(String name, RubyClass superClass) {
-        RubyClass bootClass = RubyClass.m_newClass(this, superClass);
-        bootClass.setName(intern(name));
-        classMap.put(intern(name), bootClass);
-        
-        return bootClass;
-    }
-    
-    private void initializeCoreClasses() {
-        RubyClass metaClass;
-        
-        objectClass = defineBootClass("Object", null);
-        moduleClass = defineBootClass("Module", objectClass);
-        classClass = defineBootClass("Class", moduleClass);
-        
-        metaClass = classClass.newSingletonClass();
-        objectClass.setRubyClass(metaClass);
-        metaClass.attachSingletonClass(objectClass);
-        
-        metaClass = metaClass.newSingletonClass();
-        moduleClass.setRubyClass(metaClass);
-        metaClass.attachSingletonClass(moduleClass);
-        
-        metaClass = metaClass.newSingletonClass();
-        classClass.setRubyClass(metaClass);
-        metaClass.attachSingletonClass(classClass);
-        
-        RubyModule kernelModule = RBKernel.createKernelModule(this);
-        objectClass.includeModule(kernelModule);
-        
-        objectClass.definePrivateMethod("initialize", DefaultCallbackMethods.getMethodNil());
-        classClass.definePrivateMethod("inherited", DefaultCallbackMethods.getMethodNil());
-
-        /*
-         *
-         * Ruby's Class Hierarchy Chart
-         *
-         *                           +------------------+
-         *                           |                  |
-         *             Object---->(Object)              |
-         *              ^  ^        ^  ^                |
-         *              |  |        |  |                |
-         *              |  |  +-----+  +---------+      |
-         *              |  |  |                  |      |
-         *              |  +-----------+         |      |
-         *              |     |        |         |      |
-         *       +------+     |     Module--->(Module)  |
-         *       |            |        ^         ^      |
-         *  OtherClass-->(OtherClass)  |         |      |
-         *                             |         |      |
-         *                           Class---->(Class)  |
-         *                             ^                |
-         *                             |                |
-         *                             +----------------+
-         *
-         *   + All metaclasses are instances of the class `Class'.
-         */
-        
-        RbObject.initObjectClass(objectClass);
-        RbClass.initClassClass(classClass);
-        RbModule.initModuleClass(moduleClass);
-        
-        rubyTopSelf = objectClass.m_new((RubyObject[])null);
-        rubyTopSelf.defineSingletonMethod("to_s", new RubyCallbackMethod() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                return RubyString.m_newString(ruby, "main");
-            }
-        });
-        
-        
-        
-        symbolClass = RbSymbol.createSymbolClass(this);
-        
-        nilClass = RbNilClass.createNilClass(this);
-        
-        falseClass = RbFalseClass.createFalseClass(this);
-        trueClass = RbTrueClass.createTrueClass(this);
-        
-        RbComparable.createComparable(this);
-        RbEnumerable.createEnumerableModule(this);
-        
-        numericClass = RbNumeric.createNumericClass(this);
-        integerClass = RbInteger.createIntegerClass(this);
-        fixnumClass = RbFixnum.createFixnum(this);
-        floatClass = RbFloat.createFloat(this);
-        
-        stringClass = RbString.createStringClass(this);
-        
-        RbArray.createArrayClass(this);
-        RbRange.createRangeClass(this);
-        
-        RbJavaObject.defineJavaObjectClass(this);
+        return (RubyModule)classes.getClassMap().get(intern(name));
     }
     
     /** rb_define_class
@@ -256,7 +135,7 @@ public final class Ruby implements token {
     public RubyClass defineClass(String name, RubyClass superClass) {
         RubyClass newClass = defineClassId(intern(name), superClass);
         
-        classMap.put(intern(name), newClass);
+        classes.getClassMap().put(intern(name), newClass);
         
         return newClass;
     }
@@ -266,7 +145,7 @@ public final class Ruby implements token {
      */
     public RubyClass defineClassId(RubyId id, RubyClass superClass) {
         if (superClass == null) {
-            superClass = getObjectClass();
+            superClass = getClasses().getObjectClass();
         }
         
         RubyClass newClass = RubyClass.m_newClass(this, superClass);
@@ -286,7 +165,7 @@ public final class Ruby implements token {
     public RubyModule defineModule(String name) {
         RubyModule newModule = defineModuleId(intern(name));
         
-        classMap.put(intern(name), newModule);
+        getClasses().getClassMap().put(intern(name), newModule);
         
         return newModule;
     }
@@ -305,11 +184,7 @@ public final class Ruby implements token {
      *
      */
     public void defineGlobalFunction(String name, RubyCallbackMethod method) {
-        getKernelModule().defineModuleFunction(name, method);
-    }
-    
-    public RubyModule getKernelModule() {
-        return kernelModule;
+        getClasses().getKernelModule().defineModuleFunction(name, method);
     }
     
     /** Getter for property securityLevel.
@@ -325,43 +200,6 @@ public final class Ruby implements token {
     public void setSecurityLevel(int securityLevel) {
         this.securityLevel = securityLevel;
     }
-    
-    public RubyClass getClassClass() {
-        return classClass;
-    }
-    
-    public RubyClass getObjectClass() {
-        return objectClass;
-    }
-    
-    public RubyClass getModuleClass() {
-        return moduleClass;
-    }
-    
-    public RubyClass getNumericClass() {
-        return numericClass;
-    }
-    
-    public RubyClass getIntegerClass() {
-        return integerClass;
-    }
-    
-    public RubyClass getFixnumClass() {
-        return fixnumClass;
-    }
-    
-    public RubyClass getBignumClass() {
-        return bignumClass;
-    }
-    
-    public RubyClass getFloatClass() {
-        return floatClass;
-    }
-    
-    public RubyClass getStringClass() {
-        return stringClass;
-    }
-    
     public void secure(int security) {
     }
     
@@ -376,15 +214,15 @@ public final class Ruby implements token {
      *
      */
     public void defineGlobalConstant(String name, RubyObject value) {
-        getObjectClass().defineConstant(name, value);
+        getClasses().getObjectClass().defineConstant(name, value);
     }
     
     /** top_const_get
      *
      */
     public RubyObject getTopConstant(RubyId id) {
-        if (classMap.get(id) != null) {
-            return (RubyObject)classMap.get(id);
+        if (getClasses().getClassMap().get(id) != null) {
+            return (RubyObject)getClasses().getClassMap().get(id);
         }
         
         /* autoload */
@@ -521,21 +359,6 @@ public final class Ruby implements token {
     public RubyObject yield(RubyObject value) {
         return getInterpreter().yield0(value, null, null, false);
     }
-    
-    /** Getter for property classMap.
-     * @return Value of property classMap.
-     */
-    public org.jruby.util.RubyMap getClassMap() {
-        return classMap;
-    }
-    
-    /** Setter for property classMap.
-     * @param classMap New value of property classMap.
-     */
-    public void setClassMap(org.jruby.util.RubyMap classMap) {
-        this.classMap = classMap;
-    }
-    
     /** Getter for property rubyTopSelf.
      * @return Value of property rubyTopSelf.
      */
@@ -574,4 +397,25 @@ public final class Ruby implements token {
         
         return result;
     }
+    
+    private void createFixnumCache() {
+        for (int i = 0; i < FIXNUM_CACHE_SIZE; i++) {
+            fixnumCache[i] = new RubyFixnum(this, i);
+        }
+    }
+    
+    /** Getter for property rubyScope.
+     * @return Value of property rubyScope.
+     */
+    public org.jruby.interpreter.RubyScope getRubyScope() {
+        return rubyScope;
+    }
+    
+    /** Setter for property rubyScope.
+     * @param rubyScope New value of property rubyScope.
+     */
+    public void setRubyScope(org.jruby.interpreter.RubyScope rubyScope) {
+        this.rubyScope = rubyScope;
+    }
+    
 }

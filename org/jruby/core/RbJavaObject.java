@@ -35,8 +35,8 @@ import org.jruby.*;
  * @author  jpetersen
  */
 public class RbJavaObject {
-    public static void defineJavaObjectClass(Ruby ruby) {
-        RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getObjectClass());
+    public static RubyClass createJavaObjectClass(Ruby ruby) {
+        RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
         
         javaObjectClass.defineMethod("to_s", getMethod("m_to_s"));
         javaObjectClass.defineMethod("eql?", getMethod("m_equal"));
@@ -45,6 +45,7 @@ public class RbJavaObject {
         
         javaObjectClass.getRubyClass().undefMethod("new");
         
+        return javaObjectClass;
     }
     
     public static RubyCallbackMethod getMethod(String methodName) {

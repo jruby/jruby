@@ -62,7 +62,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public static RubyClass m_newClass(Ruby ruby, RubyClass superClass) {
-        return new RubyClass(ruby, ruby.getClassClass(), superClass);
+        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass);
     }
     
     /** rb_class_new_instance
@@ -84,7 +84,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public static RubyModule m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyClass superClass = ruby.getObjectClass();
+        RubyClass superClass = ruby.getClasses().getObjectClass();
 
         if (args.length >= 1) {
             superClass = (RubyClass)args[0];

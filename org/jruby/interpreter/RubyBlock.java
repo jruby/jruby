@@ -92,7 +92,7 @@ public class RubyBlock {
         klass = ruby.getInterpreter().getRubyClass();
     //    _block.frame.file = ruby_sourcefile;
     //    _block.frame.line = ruby_sourceline;
-        scope = ruby.rubyScope;
+        scope = ruby.getRubyScope();
         prev = oldBlock;
         iter = ruby.getInterpreter().getRubyIter().getIter();
         vmode = ruby.getInterpreter().getActMethodScope();

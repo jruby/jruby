@@ -36,7 +36,7 @@ public class RubySymbol extends RubyObject {
     private RubyId id = null;
     
     public RubySymbol(Ruby ruby, RubyId id) {
-        super(ruby, ruby.getSymbolClass());
+        super(ruby, ruby.getClasses().getSymbolClass());
         this.id = id;
     }
     

@@ -35,7 +35,7 @@ import org.jruby.exceptions.*;
  */
 public class RbTrueClass {
     public static RubyClass createTrueClass(Ruby ruby) {
-        RubyClass trueClass = ruby.defineClass("TrueClass", ruby.getObjectClass());
+        RubyClass trueClass = ruby.defineClass("TrueClass", ruby.getClasses().getObjectClass());
         
         trueClass.defineMethod("to_s", getMethod("m_to_s"));
         trueClass.defineMethod("type", getMethod("m_type"));

@@ -36,7 +36,7 @@ import org.jruby.*;
  */
 public class RbSymbol {
     public static RubyClass createSymbolClass(Ruby ruby) {
-        RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getObjectClass());
+        RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
         
         symbolClass.getRubyClass().undefMethod("new");
         symbolClass.defineMethod("to_i", getMethod("m_to_i"));

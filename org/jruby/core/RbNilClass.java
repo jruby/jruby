@@ -37,7 +37,7 @@ import org.jruby.exceptions.*;
  */
 public class RbNilClass {
     public static RubyClass createNilClass(Ruby ruby) {
-        RubyClass nilClass = ruby.defineClass("NilClass", ruby.getObjectClass());
+        RubyClass nilClass = ruby.defineClass("NilClass", ruby.getClasses().getObjectClass());
         
         nilClass.defineMethod("type", getMethod("m_type"));
         nilClass.defineMethod("to_i", getMethod("m_to_i"));

@@ -40,7 +40,7 @@ public class RubyString extends RubyObject {
     }
     
     public RubyString(Ruby ruby, String str) {
-        this(ruby, ruby.getStringClass(), str);
+        this(ruby, ruby.getClasses().getStringClass(), str);
     }
     
     public RubyString(Ruby ruby, RubyModule rubyClass, String str) {

@@ -178,19 +178,19 @@ public final class RubyOriginalMethods {
     //
     
     public VALUE rb_mKernel() {
-        return ruby.getKernelModule();
+        return ruby.getClasses().getKernelModule();
     }
     
     public VALUE rb_cObject() {
-        return ruby.getObjectClass();
+        return ruby.getClasses().getObjectClass();
     }
     
     public VALUE rb_cModule() {
-        return ruby.getModuleClass();
+        return ruby.getClasses().getModuleClass();
     }
     
     public VALUE rb_cClass() {
-        return ruby.getClassClass();
+        return ruby.getClasses().getClassClass();
     }
     
     public VALUE rb_cData() {
@@ -198,19 +198,19 @@ public final class RubyOriginalMethods {
     }
 
     public VALUE rb_cNilClass() {
-        return ruby.getNilClass();
+        return ruby.getClasses().getNilClass();
     }
     
     public VALUE rb_cTrueClass() {
-        return ruby.getTrueClass();
+        return ruby.getClasses().getTrueClass();
     }
     
     public VALUE rb_cFalseClass() {
-        return ruby.getFalseClass();
+        return ruby.getClasses().getFalseClass();
     }
     
     public VALUE rb_cSymbol() {
-        return ruby.getSymbolClass();
+        return ruby.getClasses().getSymbolClass();
     }
 
     public ID eq() {

@@ -57,9 +57,9 @@ public class RbNumeric {
     private static RubyCallbackMethod methodTruncate = null;
     
     public static RubyClass createNumericClass(Ruby ruby) {
-        RubyClass numericClass = ruby.defineClass("Numeric", ruby.getObjectClass());
+        RubyClass numericClass = ruby.defineClass("Numeric", ruby.getClasses().getObjectClass());
      
-        numericClass.includeModule(ruby.getRubyClass("Comparable"));
+        numericClass.includeModule(ruby.getClasses().getComparableModule());
         
         numericClass.defineMethod("coerce", getMethodCoerce());
         numericClass.defineMethod("clone", getMethodClone());

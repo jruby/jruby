@@ -39,7 +39,7 @@ import org.jruby.exceptions.*;
 public class RbRange {
     
     public static RubyClass createRangeClass(Ruby ruby) {
-        RubyClass rangeClass = ruby.defineClass("Range", ruby.getObjectClass());
+        RubyClass rangeClass = ruby.defineClass("Range", ruby.getClasses().getObjectClass());
 
         rangeClass.includeModule(ruby.getRubyClass("Enumerable"));
 

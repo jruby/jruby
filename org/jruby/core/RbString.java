@@ -38,7 +38,7 @@ import org.jruby.exceptions.*;
  */
 public class RbString {
     public static RubyClass createStringClass(Ruby ruby) {
-        RubyClass stringClass = ruby.defineClass("String", ruby.getObjectClass());
+        RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
         
         stringClass.includeModule(ruby.getRubyClass("Comparable"));
         stringClass.includeModule(ruby.getRubyClass("Enumerable"));

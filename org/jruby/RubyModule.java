@@ -115,7 +115,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (rbModule == null) {
-            rbModule = getRuby().getObjectClass();
+            rbModule = getRuby().getClasses().getObjectClass();
         }
         
         path = (RubyString)getInstanceVariables().get(getRuby().intern("__classpath__"));
@@ -190,7 +190,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 return RubyMapMethod.STOP;
             }
             
-            if (value.m_kind_of(getRuby().getModuleClass()).isTrue()) {
+            if (value.m_kind_of(getRuby().getClasses().getModuleClass()).isTrue()) {
                 if (value.getInstanceVariables() == null) {
                     return RubyMapMethod.CONTINUE;
                 }
@@ -229,15 +229,15 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     public RubyObject findClassPath() {
         FindClassPathResult arg = new FindClassPathResult();
         arg.klass = this;
-        arg.track = getRuby().getObjectClass();
+        arg.track = getRuby().getClasses().getObjectClass();
         arg.prev = null;
         
-        if (getRuby().getObjectClass().getInstanceVariables() != null) {
-            getRuby().getObjectClass().getInstanceVariables().foreach(new FindClassPathMapMethod(), arg);
+        if (getRuby().getClasses().getObjectClass().getInstanceVariables() != null) {
+            getRuby().getClasses().getObjectClass().getInstanceVariables().foreach(new FindClassPathMapMethod(), arg);
         }
         
         if (arg.name == null) {
-            getRuby().getClassMap().foreach(new FindClassPathMapMethod(), arg);
+            getRuby().getClasses().getClassMap().foreach(new FindClassPathMapMethod(), arg);
         }
         
         if (arg.name != null) {
@@ -251,7 +251,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public RubyClass newIncludeClass(RubyModule superClass) {
-        RubyClass newClass = new RubyClass(getRuby(), getRuby().getClassClass(), superClass);
+        RubyClass newClass = new RubyClass(getRuby(), getRuby().getClasses().getClassClass(), superClass);
         newClass.setIncluded(true);
         
         newClass.setInstanceVariables(getInstanceVariables());
@@ -276,7 +276,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     public void setClassPath(RubyModule under, String name) {
         RubyString value = null;
         
-        if (under == getRuby().getObjectClass()) {
+        if (under == getRuby().getClasses().getObjectClass()) {
             value = RubyString.m_newString(getRuby(), name);
         } else {
             value = (RubyString)under.getClassPath().m_dup();
@@ -393,21 +393,21 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 if (tmp.getInstanceVariables().get(id) != null) {
                     return (RubyObject)tmp.getInstanceVariables().get(id);
                 }
-                if (tmp == getRuby().getObjectClass() && getRuby().getTopConstant(id) != null) {
+                if (tmp == getRuby().getClasses().getObjectClass() && getRuby().getTopConstant(id) != null) {
                     return getRuby().getTopConstant(id);
                 }
                 tmp = tmp.getSuperClass();
             }
             if (!mod_retry && isModule()) {
                 mod_retry = true;
-                tmp = getRuby().getObjectClass();
+                tmp = getRuby().getClasses().getObjectClass();
                 continue;
             }
             break;
         }
 
         /* Uninitialized constant */
-        if (this != getRuby().getObjectClass()) {
+        if (this != getRuby().getClasses().getObjectClass()) {
             throw new RubyNameException("uninitialized constant " + id.toName() + " at " + getClassPath().getString());
         } else {
             throw new RubyNameException("uninitialized constant " + id.toName());
@@ -464,7 +464,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public void addMethod(RubyId id, NODE node, int noex) {
-        if (this == getRuby().getObjectClass()) {
+        if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
     
@@ -533,7 +533,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public void undef(RubyId id) {
-        if (this == getRuby().getObjectClass()) {
+        if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
         if (getRuby().getSecurityLevel() >= 4 && !isTaint())  {
@@ -598,7 +598,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         if (isModule()) {
-            return getRuby().getObjectClass().isConstantDefined(id);
+            return getRuby().getClasses().getObjectClass().isConstantDefined(id);
         }
 
         if (getRuby().isClassDefined(id)) {
@@ -724,7 +724,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 ShiftableList argsList = new ShiftableList(args);
                 ShiftableList localVarsList = null;
                 
-                getRuby().rubyScope.push();
+                getRuby().getRubyScope().push();
                 
                 if (body.nd_rval() != null) {
                     savedCref = interpreter.ruby_cref;
@@ -739,13 +739,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                     localVarsList.set(0, body);
                     localVarsList.shift(1);
                     
-                    getRuby().rubyScope.setLocalTbl(body.nd_tbl());
-                    getRuby().rubyScope.setLocalVars(localVarsList.getList());
+                    getRuby().getRubyScope().setLocalTbl(body.nd_tbl());
+                    getRuby().getRubyScope().setLocalVars(localVarsList.getList());
                 } else {
-                    localVarsList = getRuby().rubyScope.getLocalVars();
+                    localVarsList = getRuby().getRubyScope().getLocalVars();
                     
-                    getRuby().rubyScope.setLocalVars(null);
-                    getRuby().rubyScope.setLocalTbl(null);
+                    getRuby().getRubyScope().setLocalVars(null);
+                    getRuby().getRubyScope().setLocalTbl(null);
                 }
             
                 body = body.nd_next();
@@ -828,7 +828,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 
                 RubyVarmap.pop(getRuby());
                 
-                getRuby().rubyScope.pop();
+                getRuby().getRubyScope().pop();
                 interpreter.ruby_cref = savedCref;
                 
                 break;
@@ -865,7 +865,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             return;
         }
         
-        if (this == getRuby().getObjectClass()) {
+        if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
         
@@ -874,8 +874,8 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         
         if (orig == null || orig.nd_body() == null) {
             if (isModule()) {
-                orig = getRuby().getObjectClass().searchMethod(oldId);
-                origin = getRuby().getObjectClass().getMethodOrigin(oldId);
+                orig = getRuby().getClasses().getObjectClass().searchMethod(oldId);
+                origin = getRuby().getClasses().getObjectClass().getMethodOrigin(oldId);
             }
         }
         if (orig == null || orig.nd_body() == null) {
@@ -955,13 +955,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public String toName() {
-        if (this == getRuby().getNilClass()) {
+        if (this == getRuby().getClasses().getNilClass()) {
             return "nil";
         }
-        if (this == getRuby().getTrueClass()) {
+        if (this == getRuby().getClasses().getTrueClass()) {
             return "true";
         }
-        if (this == getRuby().getFalseClass()) {
+        if (this == getRuby().getClasses().getFalseClass()) {
             return "false";
         }
         
@@ -975,7 +975,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     public void defineConstant(String name, RubyObject value) {
         RubyId id = getRuby().intern(name);
         
-        if (this == getRuby().getClassClass()) {
+        if (this == getRuby().getClasses().getClassClass()) {
             getRuby().secure(4);
         }
         
@@ -1130,8 +1130,8 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         if (getInstanceVariables() != null) {
             getInstanceVariables().foreach(sv_i, ary);
         }
-        if (this == getRuby().getObjectClass()) {
-            getRuby().getClassMap().foreach(sv_i, ary);
+        if (this == getRuby().getClasses().getObjectClass()) {
+            getRuby().getClasses().getClassMap().foreach(sv_i, ary);
             /*if (autoload_tbl) {
                 st_foreach(autoload_tbl, autoload_i, ary);
             }*/
@@ -1156,7 +1156,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public void exportMethod(RubyId name, int noex) {
-        if (this == getRuby().getObjectClass()) {
+        if (this == getRuby().getClasses().getObjectClass()) {
             getRuby().secure(4);
         }
 
@@ -1164,8 +1164,8 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         RubyModule origin = getMethodOrigin(name);
         
         if (body == null && isModule()) {
-            body = getRuby().getObjectClass().searchMethod(name);
-            origin = getRuby().getObjectClass().getMethodOrigin(name);
+            body = getRuby().getClasses().getObjectClass().searchMethod(name);
+            origin = getRuby().getClasses().getObjectClass().getMethodOrigin(name);
         }
         
         if (body == null) {
@@ -1186,7 +1186,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public static RubyModule m_newModule(Ruby ruby) {
-        RubyModule newModule = new RubyModule(ruby, ruby.getModuleClass());
+        RubyModule newModule = new RubyModule(ruby, ruby.getClasses().getModuleClass());
         
         return newModule;
     }
@@ -1403,7 +1403,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         RubyModule mod = RubyModule.m_newModule(ruby);
         
         mod.setRubyClass((RubyModule)recv);
-        ruby.getModuleClass().callInit(null);
+        ruby.getClasses().getModuleClass().callInit(null);
         
         return mod;
     }

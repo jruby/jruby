@@ -35,7 +35,7 @@ import org.jruby.exceptions.*;
  */
 public class RbFixnum {
     public static RubyClass createFixnum(Ruby ruby) {
-        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getIntegerClass());
+        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
         
         fixnumClass.defineMethod("to_i", getMethod("m_to_i"));
         fixnumClass.defineMethod("to_s", getMethod("m_to_s"));

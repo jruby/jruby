@@ -39,7 +39,7 @@ public class RubyNil extends RubyObject {
     }
     
     public RubyModule getRubyClass() {
-        return getRuby().getNilClass();
+        return getRuby().getClasses().getNilClass();
     }
 
     public boolean isNil() {

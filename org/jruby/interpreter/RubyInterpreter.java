@@ -63,7 +63,7 @@ public class RubyInterpreter implements node_type, Scope {
     public RubyInterpreter(Ruby ruby) {
         this.ruby = ruby;
         
-        ruby_class = ruby.getObjectClass();
+        ruby_class = ruby.getClasses().getObjectClass();
         ruby_cbase = null;
         rubyBlock = new RubyBlock(ruby);
     }
@@ -110,9 +110,9 @@ public class RubyInterpreter implements node_type, Scope {
         // Init_stack(0);
         // Init_heap();
             
-        getRuby().rubyScope.push();// PUSH_SCOPE();
-        getRuby().rubyScope.setLocalVars(null);
-        getRuby().rubyScope.setLocalVars(null);
+        getRuby().getRubyScope().push();// PUSH_SCOPE();
+        getRuby().getRubyScope().setLocalVars(null);
+        getRuby().getRubyScope().setLocalVars(null);
         // top_scope = getRuby().ruby_scope;
             
         /* default visibility is private at toplevel */
@@ -121,9 +121,9 @@ public class RubyInterpreter implements node_type, Scope {
         // PUSH_TAG( PROT_NONE );
         // if ((state = EXEC_TAG()) == 0) {
             // rb_call_inits();
-            ruby_class = getRuby().getObjectClass();
+            ruby_class = getRuby().getClasses().getObjectClass();
             // ruby_frame.self = ruby_top_self;
-            top_cref = new NODE(NODE_CREF, getRuby().getObjectClass(), null, null);
+            top_cref = new NODE(NODE_CREF, getRuby().getClasses().getObjectClass(), null, null);
             ruby_cref = top_cref;
             getRubyFrame().setCbase((VALUE)ruby_cref);
             // rb_define_global_const( "TOPLEVEL_BINDING", rb_f_binding( ruby_top_self ) );
@@ -133,7 +133,7 @@ public class RubyInterpreter implements node_type, Scope {
         // if (state != 0) {
             // error_print();
         // }
-        getRuby().rubyScope.pop();// POP_SCOPE();
+        getRuby().getRubyScope().pop();// POP_SCOPE();
         // ruby_scope = top_scope;
     }
 
@@ -542,9 +542,9 @@ public class RubyInterpreter implements node_type, Scope {
                         rb_bug("unexpected local variable");
                     }*/
                     
-                    if (ruby.rubyScope.getLocalVars(node.nd_cnt()).isFalse()) {
+                    if (ruby.getRubyScope().getLocalVars(node.nd_cnt()).isFalse()) {
                         if (eval(self, node.nd_beg()).isTrue()) {
-                            ruby.rubyScope.setLocalVars(node.nd_cnt(), 
+                            ruby.getRubyScope().setLocalVars(node.nd_cnt(), 
                                 eval(self, node.nd_end()).isTrue() ? ruby.getFalse() : ruby.getTrue());
                             result = ruby.getTrue();
                         } else {
@@ -552,7 +552,7 @@ public class RubyInterpreter implements node_type, Scope {
                         }
                     } else {
                         if (eval(self, node.nd_end()).isTrue()) {
-                            ruby.rubyScope.setLocalVars(node.nd_cnt(), ruby.getFalse());
+                            ruby.getRubyScope().setLocalVars(node.nd_cnt(), ruby.getFalse());
                         }
                         result = ruby.getTrue();
                     }
@@ -563,12 +563,12 @@ public class RubyInterpreter implements node_type, Scope {
                         rb_bug("unexpected local variable");
                     }*/
                     
-                    if (ruby.rubyScope.getLocalVars(node.nd_cnt()).isFalse()) {
+                    if (ruby.getRubyScope().getLocalVars(node.nd_cnt()).isFalse()) {
                         result = eval(self, node.nd_beg()).isTrue() ? ruby.getFalse() : ruby.getTrue();
-                        ruby.rubyScope.setLocalVars(node.nd_cnt(), result);
+                        ruby.getRubyScope().setLocalVars(node.nd_cnt(), result);
                     } else {
                         if (eval(self, node.nd_end()).isTrue()) {
-                            ruby.rubyScope.setLocalVars(node.nd_cnt(), ruby.getFalse());
+                            ruby.getRubyScope().setLocalVars(node.nd_cnt(), ruby.getFalse());
                         }
                         result = ruby.getTrue();
                     }
@@ -643,7 +643,7 @@ public class RubyInterpreter implements node_type, Scope {
                     frame.setTmp(getRubyFrame());
                     rubyFrame = frame;
                     
-                    ruby.rubyScope.push();
+                    ruby.getRubyScope().push();
                     
                     if (node.nd_rval() != null) {
                         saved_cref = ruby_cref;
@@ -656,16 +656,16 @@ public class RubyInterpreter implements node_type, Scope {
                         ShiftableList vars = new ShiftableList(new ArrayList(tmp));
                         vars.set(0, (VALUE)node);
                         vars.shift(1);
-                        getRuby().rubyScope.setLocalVars(vars);
-                        getRuby().rubyScope.setLocalTbl(node.nd_tbl());
+                        getRuby().getRubyScope().setLocalVars(vars);
+                        getRuby().getRubyScope().setLocalTbl(node.nd_tbl());
                     } else {
-                        getRuby().rubyScope.setLocalVars(null);
-                        getRuby().rubyScope.setLocalTbl(null);
+                        getRuby().getRubyScope().setLocalVars(null);
+                        getRuby().getRubyScope().setLocalTbl(null);
                     }
                     
                     result = eval(self, node.nd_next());
                     
-                    ruby.rubyScope.pop();
+                    ruby.getRubyScope().pop();
                     rubyFrame = frame.getTmp();
                     
                     if (saved_cref != null) {
@@ -761,7 +761,7 @@ public class RubyInterpreter implements node_type, Scope {
                     //     rb_bug("unexpected local variable assignment");
                     // }
                     result = eval(self, node.nd_value());
-                    getRuby().rubyScope.setLocalVars(node.nd_cnt(), result);
+                    getRuby().getRubyScope().setLocalVars(node.nd_cnt(), result);
                     return result;
                     
                 case NODE_DASGN:
@@ -813,7 +813,7 @@ public class RubyInterpreter implements node_type, Scope {
                     //if (getRuby().ruby_scope.local_vars == null) {
                     //     rb_bug("unexpected local variable");
                     // }
-                    return (RubyObject)getRuby().rubyScope.getLocalVars(node.nd_cnt());
+                    return (RubyObject)getRuby().getRubyScope().getLocalVars(node.nd_cnt());
                     
                 case NODE_DVAR:
                     return getDynamicVars().getRef((RubyId)node.nd_vid());
@@ -841,12 +841,12 @@ public class RubyInterpreter implements node_type, Scope {
                     return self.getClassVarSingleton().getClassVar((RubyId)node.nd_vid());
                     
                 case NODE_BLOCK_ARG:
-                    if (ruby.rubyScope.getLocalVars() == null) {
+                    if (ruby.getRubyScope().getLocalVars() == null) {
                         throw new RuntimeException("BUG: unexpected block argument");
                     }
                     if (isBlockGiven()) {
                         result = getRuby().getNil(); // Create Proc object
-                        ruby.rubyScope.setLocalVars(node.nd_cnt(), result);
+                        ruby.getRubyScope().setLocalVars(node.nd_cnt(), result);
                         return result;
                     } else {
                         return getRuby().getNil();
@@ -861,7 +861,7 @@ public class RubyInterpreter implements node_type, Scope {
                     }
                     
                 case NODE_COLON3:
-                    return getRuby().getObjectClass().getConstant((RubyId)node.nd_mid());
+                    return getRuby().getClasses().getObjectClass().getConstant((RubyId)node.nd_mid());
                     
                 case NODE_NTH_REF:
                     // return rom.rb_reg_nth_match(node.nd_nth(), MATCH_DATA);
@@ -1017,7 +1017,7 @@ public class RubyInterpreter implements node_type, Scope {
                             noex = NOEX_PRIVATE;
                         } else if (isScope(SCOPE_PROTECTED)) {
                             noex = NOEX_PROTECTED;
-                        } else if (ruby_class == getRuby().getObjectClass()) {
+                        } else if (ruby_class == getRuby().getClasses().getObjectClass()) {
                             noex =  node.nd_noex();
                         } else {
                             noex = NOEX_PUBLIC;
@@ -1132,7 +1132,7 @@ public class RubyInterpreter implements node_type, Scope {
                                 superClass = tmp;
                                 //goto override_class;
                                 if (superClass == null) {
-                                    superClass = getRuby().getObjectClass();
+                                    superClass = getRuby().getClasses().getObjectClass();
                                 }
                                 rubyClass = getRuby().defineClassId((RubyId)node.nd_cname(), (RubyClass)superClass);
                                 ruby_class.setConstant((RubyId)node.nd_cname(), rubyClass);
@@ -1147,7 +1147,7 @@ public class RubyInterpreter implements node_type, Scope {
                     } else {
                         //override_class:
                         if (superClass == null) {
-                            superClass = getRuby().getObjectClass();
+                            superClass = getRuby().getClasses().getObjectClass();
                         }
                         rubyClass = getRuby().defineClassId((RubyId)node.nd_cname(), (RubyClass)superClass);
                         ruby_class.setConstant((RubyId)node.nd_cname(), rubyClass);
@@ -1167,7 +1167,7 @@ public class RubyInterpreter implements node_type, Scope {
                     
                     RubyModule module = null;
                     
-                    if ((ruby_class == getRuby().getObjectClass()) && getRuby().isAutoloadDefined((RubyId)node.nd_cname())) {
+                    if ((ruby_class == getRuby().getClasses().getObjectClass()) && getRuby().isAutoloadDefined((RubyId)node.nd_cname())) {
                         // getRuby().rb_autoload_load(node.nd_cname());
                     }
                     if (ruby_class.isConstantDefined((RubyId)node.nd_cname())) {
@@ -1269,8 +1269,8 @@ public class RubyInterpreter implements node_type, Scope {
         NODE cbase = cref;
         
         // HACK +++
-        if (ruby.getClassMap().get(id) != null) {
-            return (RubyObject)ruby.getClassMap().get(id);
+        if (ruby.getClasses().getClassMap().get(id) != null) {
+            return (RubyObject)ruby.getClasses().getClassMap().get(id);
         }
         // HACK ---
         
@@ -1300,7 +1300,7 @@ public class RubyInterpreter implements node_type, Scope {
 
         pushClass();
         ruby_class = module;
-        getRuby().rubyScope.push();
+        getRuby().getRubyScope().push();
         RubyVarmap.push(ruby);
 
         if (node.nd_tbl() != null) {
@@ -1308,10 +1308,10 @@ public class RubyInterpreter implements node_type, Scope {
             ShiftableList vars = new ShiftableList(new ArrayList(tmp));
             vars.set(0, (VALUE)node);
             vars.shift(1);
-            getRuby().rubyScope.setLocalTbl(node.nd_tbl());
+            getRuby().getRubyScope().setLocalTbl(node.nd_tbl());
         } else {
-            getRuby().rubyScope.setLocalVars(null);
-            getRuby().rubyScope.setLocalTbl(null);
+            getRuby().getRubyScope().setLocalVars(null);
+            getRuby().getRubyScope().setLocalTbl(null);
         }
 
         PUSH_CREF(module);
@@ -1331,7 +1331,7 @@ public class RubyInterpreter implements node_type, Scope {
         // POP_TAG();
         POP_CREF();
         RubyVarmap.pop(ruby);
-        getRuby().rubyScope.pop();
+        getRuby().getRubyScope().pop();
         popClass();
 
         rubyFrame = frame.getTmp();
@@ -1414,7 +1414,7 @@ public class RubyInterpreter implements node_type, Scope {
                 // if (getRuby().ruby_scope.local_vars == null) {
                 //    rb_bug( "unexpected local variable assignment" );
                 // }
-                getRuby().rubyScope.setLocalVars(lhs.nd_cnt(), val);
+                getRuby().getRubyScope().setLocalVars(lhs.nd_cnt(), val);
                 break;
 
             case NODE_DASGN:
@@ -1535,8 +1535,8 @@ public class RubyInterpreter implements node_type, Scope {
         VALUE old_cref = ruby_cref;
         ruby_cref = (NODE)getRubyFrame().getCbase();
         
-        RubyScope oldScope = ruby.rubyScope;
-        ruby.rubyScope = block.scope;
+        RubyScope oldScope = ruby.getRubyScope();
+        ruby.setRubyScope(block.scope);
         rubyBlock.pop();
         
         if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
@@ -1622,7 +1622,7 @@ public class RubyInterpreter implements node_type, Scope {
         
         // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
         //    scope_dup(old_scope);
-        ruby.rubyScope = oldScope;
+        ruby.setRubyScope(oldScope);
 
         /*
          * if (state) {

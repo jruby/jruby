@@ -102,7 +102,7 @@ public class Main {
 
         // Parse and interpret file
         RubyString rs = RubyString.m_newString(ruby, iString2Eval);
-        ruby.getInterpreter().eval(ruby.getObjectClass(), p.rb_compile_string(iFileName, rs, 0));
+        ruby.getInterpreter().eval(ruby.getClasses().getObjectClass(), p.rb_compile_string(iFileName, rs, 0));
     }
 
     /**
