@@ -39,6 +39,7 @@ import org.ablaf.ast.IAstEncoder;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.common.NullWarnings;
 import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.parser.DefaultRubyParser;
 import org.jruby.parser.RubyParserConfiguration;
 import org.jruby.parser.RubyParserPool;
@@ -77,6 +78,8 @@ public class ASTSerializer {
             parser.setWarnings(new NullWarnings());
             parser.init(config);
             result = parser.parse(LexerSource.getSource(input.toString(), reader));
+        } catch (SyntaxException e) {
+            // ignore the syntax exception
         } finally {
             RubyParserPool.getInstance().returnParser(parser);
         }
