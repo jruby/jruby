@@ -27,7 +27,7 @@ Items marked '-' are done and will be available in the next release.
     * Loading external libraries written in Java.
 
 * Thread support
-    * Able to start from a different JVM thread (see also samples/swing2.rb)
+    - The "samples/swing2.rb" problem (bug in exception polling)
     - Make it visible that the initial thread has a special ThreadContext
     * Implement Mutex, ConditionVariable and Queue as native Java libs
 
