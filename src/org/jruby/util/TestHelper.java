@@ -97,7 +97,7 @@ public class TestHelper {
      * Used by JVM bytecode compiler tests to run compiled code
      */
     public static IRubyObject loadAndCall(IRubyObject self, String name, byte[] javaClass, String methodName)
-            throws Exception
+            throws Throwable
     {
         Loader loader = new Loader();
         Class c = loader.loadClass(name, javaClass);
@@ -110,11 +110,11 @@ public class TestHelper {
         }
     }
 
-    private static Exception unrollException(InvocationTargetException e) {
+    private static Throwable unrollException(InvocationTargetException e) {
         while (e.getCause() instanceof InvocationTargetException) {
             e = (InvocationTargetException) e.getCause();
         }
-        return e;
+        return e.getCause();
     }
 
     private static class Loader extends ClassLoader {

@@ -86,6 +86,40 @@ module JRuby
         end
       end
 
+      class AssignConstant < Instruction
+        def initialize(name)
+          @name = name
+        end
+
+        def emit_jvm_bytecode(generator)
+          # Stack: ..., value
+          generator.append(BCEL::DUP.new)
+          # Stack: ..., value, value
+          push_runtime(generator)
+          generator.appendInvoke("org.jruby.Ruby",
+                                 "getRubyClass",
+                                 BCEL::ObjectType.new("org.jruby.RubyModule"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
+          # Stack: ..., value, value, module
+          generator.append(BCEL::SWAP.new)
+          # Stack: ..., value, module, value
+          generator.appendPush(@name)
+          # Stack: ..., value, module, value, name
+          generator.append(BCEL::SWAP.new)
+          # Stack: ..., value, module, name, value
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = BCEL::Type::STRING
+          arg_types[1] = IRUBYOBJECT_TYPE
+          generator.appendInvoke("org.jruby.RubyModule",
+                                 "setConstant",
+                                 BCEL::Type::VOID,
+                                 arg_types,
+                                 BCEL::Constants::INVOKEVIRTUAL)
+          # Stack: ..., value
+        end
+      end
+
       class AssignLocal < Instruction
         attr_reader :index
 
@@ -299,6 +333,30 @@ module JRuby
       class PushConstant < Instruction
         def initialize(name)
           @name = name
+        end
+
+        def emit_jvm_bytecode(generator)
+          push_runtime(generator)
+          generator.appendInvoke("org.jruby.Ruby",
+                                 "getCurrentFrame",
+                                 BCEL::ObjectType.new("org.jruby.runtime.Frame"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
+          generator.appendInvoke("org.jruby.runtime.Frame",
+                                 "getNamespace",
+                                 BCEL::ObjectType.new("org.jruby.runtime.Namespace"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
+          generator.append(BCEL::ALOAD.new(SELF_INDEX))
+          generator.appendPush(@name)
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = IRUBYOBJECT_TYPE
+          arg_types[1] = BCEL::Type::STRING
+          generator.appendInvoke("org.jruby.runtime.Namespace",
+                                 "getConstant",
+                                 IRUBYOBJECT_TYPE,
+                                 arg_types,
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 

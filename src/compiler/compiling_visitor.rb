@@ -337,6 +337,33 @@ module JRuby
       def visitNilNode(node)
         @bytecodes << PushNil.new
       end
+
+      def visitModuleNode(node)
+        # @bytecodes << CreateModule.new(node.getName)
+        # @bytecodes << AssignSelf.new
+
+        # .... etc. ... 
+
+        emit_bytecodes(node.getBodyNode)
+
+        # .. finally
+
+        # @bytecodes << RestoreSelf.new
+        @bytecodes << PushNil.new
+      end
+
+      def visitColon2Node(node)
+        emit_bytecodes(node.getLeftNode)
+        # ... if module on stack
+        #        getConstant(node.getName
+        # ... else
+        #        callMethod(node.getName)  .. no args
+      end
+
+      def visitConstDeclNode(node)
+        emit_bytecodes(node.getValueNode)
+        @bytecodes << AssignConstant.new(node.getName)
+      end
     end
 
     # Since we can't subclass Java interfaces properly we have

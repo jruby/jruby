@@ -38,9 +38,9 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.javasupport.*;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
+import org.jruby.javasupport.Java;
 import org.jruby.util.BuiltinScript;
 import org.jruby.internal.runtime.builtin.definitions.ObjectDefinition;
 

@@ -101,10 +101,17 @@ def test_compiled(expected, source)
   test_equal(expected, result)
 end
 
+
+test_compiled(nil, "module X; Y = 123; end")
+#test_compiled(123, "module X; Y = 123; end; X::Y")
+
+
 test_compiled(3, "3")
 test_compiled("hello", '"hello"')
 test_compiled(true, "true")
 test_compiled(false, "false")
+test_compiled(3, "PI = 3")
+test_compiled(3, "PI = 3; PI")
 test_compiled(3, "if true; 1 + 2; else; 'hello'; end")
 test_compiled(nil, "if false; 1; end")
 test_compiled("hello", "if false; 1 + 2; else; 'hello'; end")
@@ -117,6 +124,7 @@ test_compiled(2, "unless true; 1; else; 2; end")
 test_compiled(nil, "def hello(x); x * 2; end")
 test_compiled(7, "def abc(); 7; end; abc()")
 test_compiled(6, "def hello(x); x * 2; end; hello(3)")
+
 
 test_compiled(55, <<END
 def fib(n)
