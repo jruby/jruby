@@ -11,7 +11,8 @@ Items marked '-' are done and will be available in the next release.
     * Short users guide
     * Embedding/BSF doc
     * Embedding API docs (first determine what that API *is*)
-    * Javasupport API docs
+    * Javasupport docs
+        - Overview
         - Low-level API docs
         * High-level API docs
 

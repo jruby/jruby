@@ -11,14 +11,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 
 public class JavaSupport {
