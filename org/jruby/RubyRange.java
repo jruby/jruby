@@ -37,11 +37,15 @@ import org.jruby.runtime.*;
  */
 public class RubyRange extends RubyObject {
 
+    private RubyObject begin;
+    private RubyObject end;
+    private boolean isExclusive;
+
     public RubyRange(Ruby ruby) {
         super(ruby, ruby.getRubyClass("Range"));
     }
 
-    public void init(RubyObject begin, RubyObject end, RubyBoolean exclusive) {
+    public void init(RubyObject begin, RubyObject end, RubyBoolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum)) {
             try {
                 begin.funcall("<=>", end);
@@ -50,9 +54,9 @@ public class RubyRange extends RubyObject {
             }
         }
 
-        setInstanceVar("begin", begin);
-        setInstanceVar("end", end);
-        setInstanceVar("excl", exclusive);
+        this.begin = begin;
+        this.end = end;
+        this.isExclusive = isExclusive.isTrue();
     }
 
     public static RubyClass createRangeClass(Ruby ruby) {
@@ -95,65 +99,64 @@ public class RubyRange extends RubyObject {
      * @return         a two-element array representing a start value and a length, 
      *                 or <b>null</b> if the conversion failed.
      */
-    public long[] getBeginLength(long limit, boolean truncate, boolean strict) {
-        long begin = RubyNumeric.num2long(getInstanceVar("begin"));
-        long end = RubyNumeric.num2long(getInstanceVar("end"));
-        boolean excl = getInstanceVar("excl").isTrue();
-        end += excl ? 0 : 1;
+    public long[] getBeginLength(long limit, boolean truncate, boolean isStrict) {
+        long beginLong = RubyNumeric.num2long(begin);
+        long endLong = RubyNumeric.num2long(end);
 
-        if (begin < 0 && (begin += limit) < 0) {		//attention side effect in the if test
-            if (strict) {
+        if (! isExclusive) {
+            endLong++;
+        }
+
+        if (beginLong < 0) {
+            beginLong += limit;
+            if (beginLong < 0) {
+                if (isStrict) {
+                    throw new RangeError(ruby, inspect().toString() + " out of range.");
+                }
+                return null;
+            }
+        }
+
+        if (truncate && beginLong > limit) {
+            if (isStrict) {
                 throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
             return null;
         }
 
-        if (truncate && begin > limit) {
-            if (strict) {
-                throw new RangeError(ruby, inspect().toString() + " out of range.");
-            }
-            return null;
+        if (truncate && endLong > limit) {
+            endLong = limit;
         }
 
-        if (truncate && end > limit) {
-            end = limit;
-        }
-
-        //if ((end < 0 || (!excl && end == 0)) && (end += limit) < 0) {		//attention side effect in the if test
-		if (end < 0  || (!excl && end == 0)) {
-			end += limit;
-			if (end < 0) {		//attention side effect in the if test
-				if (strict) {
+		if (endLong < 0  || (!isExclusive && endLong == 0)) {
+			endLong += limit;
+			if (endLong < 0) {
+				if (isStrict) {
 					throw new RangeError(ruby, inspect().toString() + " out of range.");
 				}
-//				end = begin;
 				return null;
 			}
 		}
 
-        if (begin > end) {
-            if (strict) {
+        if (beginLong > endLong) {
+            if (isStrict) {
                 throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
-//            end = begin;
 			return null;
         }
 
-        return new long[] { begin, end - begin };
+        return new long[] { beginLong, endLong - beginLong };
     }
 
     // public Range methods
 
-    public static RubyRange newRange(Ruby ruby, RubyObject begin, RubyObject end, boolean exclusive) {
+    public static RubyRange newRange(Ruby ruby, RubyObject begin, RubyObject end, boolean isExclusive) {
         RubyRange range = new RubyRange(ruby);
-        range.init(begin, end, exclusive ? ruby.getTrue() : ruby.getFalse());
+        range.init(begin, end, isExclusive ? ruby.getTrue() : ruby.getFalse());
         return range;
     }
 
     public RubyObject initialize(RubyObject[] args) {
-        if (isInstanceVarDefined("begin")) {
-            throw new NameError(getRuby(), "'initialize' called twice.");
-        }
         if (args.length == 3) {
             init(args[0], args[1], (RubyBoolean) args[2]);
         } else if (args.length == 2) {
@@ -165,35 +168,27 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyObject first() {
-        return getInstanceVar("begin");
+        return begin;
     }
 
     public RubyObject last() {
-        return getInstanceVar("end");
+        return end;
     }
 
     public RubyString inspect() {
-        RubyString begStr = (RubyString) getInstanceVar("begin").funcall("to_s");
-        RubyString endStr = (RubyString) getInstanceVar("end").funcall("to_s");
+        RubyString begStr = (RubyString) begin.funcall("to_s");
+        RubyString endStr = (RubyString) end.funcall("to_s");
 
-        begStr.cat(getInstanceVar("excl").isTrue() ? "..." : "..");
+        begStr.cat(isExclusive ? "..." : "..");
         begStr.concat(endStr);
         return begStr;
     }
 
     public RubyBoolean exclude_end_p() {
-        if (getInstanceVar("excl").isTrue()) {
-            return getRuby().getTrue();
-        } else {
-            return getRuby().getFalse();
-        }
+        return RubyBoolean.newBoolean(getRuby(), isExclusive);
     }
 
     public RubyObject length() {
-        RubyObject begin = getInstanceVar("begin");
-        RubyObject end = getInstanceVar("end");
-        boolean exclusive = getInstanceVar("excl").isTrue();
-
         long size = 0;
 
         if (begin.funcall(">", end).isTrue()) {
@@ -202,7 +197,7 @@ public class RubyRange extends RubyObject {
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             size = ((RubyNumeric) end).getLongValue() - ((RubyNumeric) begin).getLongValue();
-            if (!exclusive) {
+            if (!isExclusive) {
                 size++;
             }
         }
@@ -213,27 +208,22 @@ public class RubyRange extends RubyObject {
         if (!(obj instanceof RubyRange)) {
             return getRuby().getFalse();
         }
-
+        RubyRange otherRange = (RubyRange) obj;
         boolean result =
-            getInstanceVar("begin").equals(obj.getInstanceVar("begin"))
-                && getInstanceVar("end").equals(obj.getInstanceVar("end"))
-                && (getInstanceVar("excl").isTrue() == obj.getInstanceVar("excl").isTrue());
-
+            begin.equals(otherRange.begin) &&
+            end.equals(otherRange.end) &&
+            isExclusive == otherRange.isExclusive;
         return RubyBoolean.newBoolean(getRuby(), result);
     }
 
     public RubyBoolean op_eqq(RubyObject obj) {
-        RubyObject beg = getInstanceVar("begin");
-        RubyObject end = getInstanceVar("end");
-        boolean excl = getInstanceVar("excl").isTrue();
-
-        if ((beg instanceof RubyFixnum) && (obj instanceof RubyFixnum) && (end instanceof RubyFixnum)) {
-            long b = RubyNumeric.fix2long(beg);
+        if ((begin instanceof RubyFixnum) && (obj instanceof RubyFixnum) && (end instanceof RubyFixnum)) {
+            long b = RubyNumeric.fix2long(begin);
             long o = RubyNumeric.fix2long(obj);
 
             if (b <= o) {
                 long e =  RubyNumeric.fix2long(end);
-                if (excl) {
+                if (isExclusive) {
                     if (o < e) {
                         return getRuby().getTrue();
                     }
@@ -244,8 +234,8 @@ public class RubyRange extends RubyObject {
                 }
             }
             return getRuby().getFalse();
-        } else if (beg.funcall("<=", obj).isTrue()) {
-            if (excl) {
+        } else if (begin.funcall("<=", obj).isTrue()) {
+            if (isExclusive) {
                 if (end.funcall(">", obj).isTrue()) {
                     return getRuby().getTrue();
                 }
@@ -259,15 +249,11 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyObject each() {
-        RubyObject begin = getInstanceVar("begin");
-        RubyObject end = getInstanceVar("end");
-        boolean exclusive = getInstanceVar("excl").isTrue();
-
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             long endLong = ((RubyNumeric) end).getLongValue();
             long i = ((RubyNumeric) begin).getLongValue();
 
-            if (!exclusive) {
+            if (!isExclusive) {
                 endLong += 1;
             }
 
@@ -275,9 +261,9 @@ public class RubyRange extends RubyObject {
                 getRuby().yield(RubyFixnum.newFixnum(getRuby(), i));
             }
         } else if (begin instanceof RubyString) {
-            ((RubyString) begin).upto(end, exclusive);
+            ((RubyString) begin).upto(end, isExclusive);
         } else if (begin.kind_of(getRuby().getClasses().getNumericClass()).isTrue()) {
-            if (!exclusive) {
+            if (!isExclusive) {
                 end = end.funcall("+", RubyFixnum.one(getRuby()));
             }
             while (begin.funcall("<", end).isTrue()) {
@@ -287,7 +273,7 @@ public class RubyRange extends RubyObject {
         } else {
             RubyObject v = begin;
 
-            if (exclusive) {
+            if (isExclusive) {
                 while (v.funcall("<", end).isTrue()) {
                     if (v.equals(end)) {
                         break;
