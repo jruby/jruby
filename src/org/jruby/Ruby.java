@@ -80,6 +80,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Random;
+import java.util.Stack;
 
 /**
  * The jruby runtime.
@@ -142,6 +143,10 @@ public final class Ruby {
     private IGlobalVariables globalVariables = new GlobalVariables(this);
     private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
+    // Contains a list of all blocks (as Procs) that should be called when
+    // the runtime environment exits.
+    private Stack atExitBlocks = new Stack();
+
     /**
      * Create and initialize a new jruby Runtime.
      */
@@ -170,29 +175,6 @@ public final class Ruby {
 
     public static Ruby getDefaultInstance() {
         return getDefaultInstance((String) null);
-    }
-
-    /**
-     * @deprecated use getDefaultInstance(String) or getDefaultInstance() instead.
-     */
-    public static Ruby getDefaultInstance(Class regexpAdapterClass) {
-        Ruby ruby = new Ruby(regexpAdapterClass);
-        ruby.init();
-        return ruby;
-    }
-
-    /**
-     * Evaluates a script and returns an instance of class returnClass.
-     *
-     * @deprecated If anyone actually uses this method then speak up now!
-     *
-     * @param script The script to evaluate
-     * @param returnClass The class which should be returned
-     * @return the result Object
-     */
-    public Object evalScript(String script, Class returnClass) {
-        IRubyObject result = evalScript(script);
-        return JavaUtil.convertRubyToJava(result, returnClass);
     }
 
     /**
@@ -365,7 +347,7 @@ public final class Ruby {
     }
 
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
-        return getCurrentContext().yield(value, self, klass, checkArguments);
+        return getCurrentContext().yield(value, self, klass, 0, checkArguments);
     }
 
     private Scope currentScope() {
@@ -906,5 +888,31 @@ public final class Ruby {
 
     public CallbackFactory callbackFactory() {
         return callbackFactory;
+    }
+
+    /**
+     * Push block onto exit stack.  When runtime environment exits
+     * these blocks will be evaluated.
+     * 
+     * @return the element that was pushed onto stack
+     */
+    public IRubyObject pushExitBlock(RubyProc proc) {
+        return (IRubyObject) atExitBlocks.push(proc);
+    }
+    
+    /**
+     * Make sure Kernel#at_exit procs get invoked on runtime shutdown.
+     * This method needs to be explicitly called to work properly.
+     * I thought about using finalize(), but that did not work and I
+     * am not sure the runtime will be at a state to run procs by the
+     * time Ruby is going away.  This method can contain any other
+     * things that need to be cleaned up at shutdown.  
+     */
+    public void tearDown() {
+        while (atExitBlocks.isEmpty() == false) {
+            RubyProc proc = (RubyProc) atExitBlocks.pop();
+            
+            proc.call(null);
+        }
     }
 }

@@ -111,6 +111,7 @@ public class Main {
         } catch (ThrowJump throwJump) {
             runtime.printError(throwJump.getNameError());
         }
+        runtime.tearDown();
     }
 
     private static INode getParsedScript(Ruby runtime, Reader reader, String filename) {

@@ -240,6 +240,7 @@ public class JRubyEngine extends BSFEngineImpl {
      * @see org.apache.bsf.BSFEngine#terminate()
      */
     public void terminate() {
+        runtime.tearDown();
         runtime.getThreadService().disposeCurrentThread();
         runtime = null;
         super.terminate();

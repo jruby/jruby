@@ -63,6 +63,7 @@ public class KernelModule {
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
         kernelModule.defineMethod("Array", callbackFactory.getSingletonMethod(KernelModule.class, "new_array", IRubyObject.class));
+        kernelModule.defineMethod("at_exit", callbackFactory.getSingletonMethod(KernelModule.class, "at_exit"));
         kernelModule.defineMethod("autoload", callbackFactory.getSingletonMethod(KernelModule.class, "autoload", IRubyObject.class, IRubyObject.class));
         kernelModule.defineMethod("`", callbackFactory.getSingletonMethod(KernelModule.class, "backquote", IRubyObject.class));
         kernelModule.defineMethod("block_given?", callbackFactory.getSingletonMethod(KernelModule.class, "block_given"));
@@ -111,6 +112,10 @@ public class KernelModule {
         kernelModule.defineMethod("throw", callbackFactory.getOptSingletonMethod(KernelModule.class, "rbThrow"));
 
         return kernelModule;
+    }
+
+    public static IRubyObject at_exit(IRubyObject recv) {
+        return recv.getRuntime().pushExitBlock(RubyProc.newProc(recv.getRuntime()));
     }
 
     public static IRubyObject autoload(IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
@@ -450,15 +455,9 @@ public class KernelModule {
         Ruby runtime = recv.getRuntime();
         RubyString src = (RubyString) args[0];
         IRubyObject scope = args.length > 1 ? args[1] : runtime.getNil();
+        String file = args.length > 2 ? args[2].toString() : "(eval)";
+        int line = args.length > 3 ? RubyFixnum.fix2int(args[3]) : 1;
 
-        String file = "(eval)";
-        if (args.length > 2) {
-            file = args[2].toString();
-        }
-        int line = 1;
-        if (args.length > 3) {
-            line = RubyFixnum.fix2int(args[3]);
-        }
         src.checkSafeString();
 
         if (scope.isNil() && runtime.getFrameStack().getPrevious() != null) {
