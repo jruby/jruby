@@ -8,7 +8,7 @@ public class DefaultToken implements IToken {
     public final static IToken TOKEN_WHITESPACE = new DefaultToken(TT_WHITESPACE);
 
     private int type;
-
+    
     public DefaultToken(int type) {
         this.type = type;
     }

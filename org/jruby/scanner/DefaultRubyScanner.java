@@ -23,7 +23,10 @@ public class DefaultRubyScanner implements IRubyScanner {
             case '#':
                 String comment = ScannerUtil.getLine(cs);
                 // return new LineCommentToken(comment);
-            //case '':
+            case '=':
+            	if (cs.readChar() == 'b') {
+            		
+            	}
         }
 
         return null;
