@@ -1512,7 +1512,9 @@ strings       : string {
 		    }
 		} 
 
-string        : string1
+string        : string1 {
+                    $$ = support.literal_concat(getPosition(), null, $1);
+		}
               | string string1 {
                     $$ = support.literal_concat(getPosition(), $1, $2);
 		}
