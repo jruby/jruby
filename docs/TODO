@@ -38,7 +38,7 @@ Items marked '-' are done and will be available in the next release.
 
 * Storing/caching parsed code
     - Serialize builtin Ruby code
-    * General parse cache
+    * General parse cache?
 
 - Fix build.xml (use a filtered copying to fill constants)
 
@@ -52,5 +52,4 @@ Items marked '-' are done and will be available in the next release.
 
 * Warnings
 
-* Add a more embedding-friendly licence
-
+- Add a more embedding-friendly licence
