@@ -3,16 +3,29 @@ package org.jruby.javasupport;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
 
-import org.jruby.*;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.RubyClass;
+import org.jruby.RubyProc;
 
 public class JavaSupport {
     private Ruby ruby;
@@ -22,7 +35,6 @@ public class JavaSupport {
     private Map renamedJavaClasses = new HashMap();
     private Map exceptionHandlers = new HashMap();
 
-    //    private ClassLoader javaClassLoader = new ClassLoader() {};
     private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
 
     public JavaSupport(Ruby ruby) {
@@ -41,15 +53,17 @@ public class JavaSupport {
             String javaName = javaClass.getName();
             rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
         }
-        if (javaClass.isInterface()) {
-            return createRubyInterface(javaClass, rubyName);
-        } else {
-            return createRubyClass(javaClass, rubyName);
-        }
+        return createRubyClass(javaClass, rubyName);
     }
 
     private RubyClass createRubyClass(Class javaClass, String rubyName) {
-        RubyClass superClass = (RubyClass) loadClass(javaClass.getSuperclass(), null);
+        Class javaSuperClass = javaClass.getSuperclass();
+        RubyClass superClass;
+        if (javaSuperClass != null) {
+            superClass = (RubyClass) loadClass(javaSuperClass, null);
+        } else {
+            superClass = ruby.getClasses().getObjectClass();
+        }
         RubyClass rubyClass = ruby.defineClass(rubyName, superClass);
 
         loadedJavaClasses.put(javaClass, rubyClass);

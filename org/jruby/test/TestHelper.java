@@ -29,7 +29,8 @@
 package org.jruby.test;
 
 /**
- * Helper class to test java interop.
+ * Helper class, used for testing calls to java from ruby code.
+ *
  * @author  Benoit Cerrina
  * @version $Revision$
  **/
@@ -48,5 +49,23 @@ public class TestHelper {
      **/
     static public void throwException() {
         throw new RuntimeException("testException");
+    }
+
+    /**
+     * @return object used to test casting
+     */
+
+    static public SomeInterface getInterfacedInstance() {
+        return new SomeImplementation();
+    }
+
+    public static interface SomeInterface {
+        String doStuff();
+    }
+
+    private static class SomeImplementation implements SomeInterface {
+        public String doStuff() {
+            return "stuff done";
+        }
     }
 }

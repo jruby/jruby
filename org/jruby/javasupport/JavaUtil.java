@@ -278,7 +278,6 @@ public class JavaUtil {
         if (object == null) {
             return ruby.getNil();
         }
-
         return convertJavaToRuby(ruby, object, object.getClass());
     }
 
@@ -364,10 +363,8 @@ public class JavaUtil {
                     }
                 }
             }
-            return new RubyJavaObject(
-                ruby,
-                (RubyClass) ruby.getJavaSupport().loadClass(javaClass, null),
-                object);
+            RubyClass rubyClass = (RubyClass) ruby.getJavaSupport().loadClass(javaClass, null);
+            return new RubyJavaObject(ruby, rubyClass, object);
         }
     }
 
