@@ -29,15 +29,12 @@
 package org.jruby.parser;
 
 import java.math.*;
-import java.util.*;
-import java.io.*;
 
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.ablaf.lexer.*;
 import org.ablaf.parser.*;
 
-import org.jruby.*;
 import org.jruby.common.*;
 import org.jruby.lexer.yacc.*;
 import org.jruby.ast.*;

@@ -1,40 +1,28 @@
 package org.jruby.javasupport.test;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.HashSet;
 import java.net.URL;
 
+import org.jruby.Ruby;
+import org.jruby.javasupport.ReflectionClassMap;
 import org.jruby.javasupport.RubyProxyFactory;
 import org.jruby.javasupport.RubyToJavaClassMap;
-import org.jruby.javasupport.ReflectionClassMap;
-import org.jruby.Ruby;
 
 public class TestRubyProxyFactory extends RubyTestCase {
-    private static final double EPSILON      = 0.0;
+    private static final double EPSILON = 0.0;
     private static final String RUBY_PACKAGE = "org.jruby.javasupport.test";
     private static final String RUBY_FILE = "test.rb";
 
-    private Ruby               ruby     = null;
+    private Ruby ruby = null;
     private RubyToJavaClassMap classMap = null;
-    private RubyProxyFactory   factory  = null;
-    private RubyTestObject     test     = null;
+    private RubyProxyFactory factory = null;
+    private RubyTestObject test = null;
 
-    public TestRubyProxyFactory (String name)
-    {
+    public TestRubyProxyFactory(String name) {
         super(name);
     }
 
-    public void setUp ()
-        throws IOException
-    {
+    public void setUp() throws IOException {
         URL testFile = getClass().getResource(RUBY_FILE);
         if (testFile == null) {
             fail("Couldn't locate test file: " + RUBY_FILE);
@@ -42,11 +30,10 @@ public class TestRubyProxyFactory extends RubyTestCase {
         ruby = createRuby(testFile);
         classMap = new ReflectionClassMap(RUBY_PACKAGE);
         factory = new RubyProxyFactory(ruby, classMap);
-        test = (RubyTestObject)factory.newProxyObject(RubyTestObject.class);
+        test = (RubyTestObject) factory.newProxyObject(RubyTestObject.class);
     }
 
-    public void tearDown ()
-    {
+    public void tearDown() {
         ruby = null;
         classMap = null;
         factory = null;
@@ -57,200 +44,192 @@ public class TestRubyProxyFactory extends RubyTestCase {
       New javasupport doesn't automatically translate lists and arrays.
       Maybe this test needs to be rewritten to reflect that change,
       i don't know. --Anders
-
-
+    
+    
       public void testList ()
       {
           List l = new ArrayList();
-
+    
           test.setList(l);
           assertEquals("empty list", l, test.getList());
-
+    
           l.add("obj1");
-
+    
           assertTrue("unset list", !l.equals(test.getList()));
-
+    
           test.setList(l);
           assertEquals("one-element list", l, test.getList()); // HANGS
-
+    
           l.add("obj2");
-
+    
           test.setList(l);
           assertEquals("two-element list", l, test.getList()); // HANGS
-
+    
           assertEquals("joined list", "obj1,obj2", test.joinList());
       }
-
+    
     */
 
-      public void testNewProxyObject ()
-      {
-          assertNotNull(test);
-      }
+    public void testNewProxyObject() {
+        assertNotNull(test);
+    }
 
-      public void testDuplicateProxyObjects ()
-      {
-          RubyTestObject test2 =
-              (RubyTestObject)factory.newProxyObject(RubyTestObject.class);
+    public void testDuplicateProxyObjects() {
+        RubyTestObject test2 =
+            (RubyTestObject) factory.newProxyObject(RubyTestObject.class);
 
-          assertNotNull(test2);
-          assertTrue(test != test2);
-      }
+        assertNotNull(test2);
+        assertTrue(test != test2);
+    }
 
-      public void testNoArgs ()
-      {
-          test.noArgs();
-      }
+    public void testNoArgs() {
+        test.noArgs();
+    }
 
-      public void testInteger ()
-      {
-          test.setNumber(10);
-          assertEquals(10, test.getNumberAsInt());
-      }
+    public void testInteger() {
+        test.setNumber(10);
+        assertEquals(10, test.getNumberAsInt());
+    }
 
-      public void testDouble ()
-      {
-          test.setNumber(3.1415D);
-          assertEquals(3.1415D, test.getNumberAsDouble(), EPSILON); // FAILS
-      }
+    public void testDouble() {
+        test.setNumber(3.1415D);
+        assertEquals(3.1415D, test.getNumberAsDouble(), EPSILON); // FAILS
+    }
 
-      public void testLong ()
-      {
-          test.setNumber((long)Integer.MAX_VALUE + 2);
-          assertEquals((long)Integer.MAX_VALUE + 2, test.getNumberAsLong());
-          assertTrue(test.getNumberAsLong() > Integer.MAX_VALUE);
-      }
+    public void testLong() {
+        test.setNumber((long) Integer.MAX_VALUE + 2);
+        assertEquals((long) Integer.MAX_VALUE + 2, test.getNumberAsLong());
+        assertTrue(test.getNumberAsLong() > Integer.MAX_VALUE);
+    }
 
-      public void testNumberObjs ()
-      {
-          test.setNumber(new Integer(30));
-          assertEquals(new Integer(30), test.getNumberAsIntObj());
+    public void testNumberObjs() {
+        test.setNumber(new Integer(30));
+        assertEquals(new Integer(30), test.getNumberAsIntObj());
 
-          test.setNumber(new Double(30.145D));
-          assertEquals(new Double(30.145D), test.getNumberAsDoubleObj()); // FAILS
+        test.setNumber(new Double(30.145D));
+        assertEquals(new Double(30.145D), test.getNumberAsDoubleObj());
+        // FAILS
 
-          test.setNumber(new Long(100000000000001L));
-          assertEquals(new Long(100000000000001L), test.getNumberAsLongObj());
-      }
+        test.setNumber(new Long(100000000000001L));
+        assertEquals(new Long(100000000000001L), test.getNumberAsLongObj());
+    }
 
-      public void testNumberBoundaries ()
-      {
-          test.setNumber(Integer.MAX_VALUE);
-          assertEquals(Integer.MAX_VALUE, test.getNumberAsInt());
+    public void testNumberBoundaries() {
+        test.setNumber(Integer.MAX_VALUE);
+        assertEquals(Integer.MAX_VALUE, test.getNumberAsInt());
 
-          test.setNumber(Integer.MIN_VALUE);
-          assertEquals(Integer.MIN_VALUE, test.getNumberAsInt());
+        test.setNumber(Integer.MIN_VALUE);
+        assertEquals(Integer.MIN_VALUE, test.getNumberAsInt());
 
-          test.setNumber(Long.MAX_VALUE);
-          assertEquals(Long.MAX_VALUE, test.getNumberAsLong());
+        test.setNumber(Long.MAX_VALUE);
+        assertEquals(Long.MAX_VALUE, test.getNumberAsLong());
 
-          test.setNumber(Long.MIN_VALUE);
-          assertEquals(Long.MIN_VALUE, test.getNumberAsLong());
+        test.setNumber(Long.MIN_VALUE);
+        assertEquals(Long.MIN_VALUE, test.getNumberAsLong());
 
-          test.setNumber(0D);
-          assertEquals(0D, test.getNumberAsDouble(), EPSILON);
+        test.setNumber(0D);
+        assertEquals(0D, test.getNumberAsDouble(), EPSILON);
 
-          test.setNumber(-0D);
-          assertEquals(-0D, test.getNumberAsDouble(), EPSILON);
+        test.setNumber(-0D);
+        assertEquals(-0D, test.getNumberAsDouble(), EPSILON);
 
-          test.setNumber(Double.MAX_VALUE);
-          assertEquals(Double.MAX_VALUE, test.getNumberAsDouble(), EPSILON); // FAILS
+        test.setNumber(Double.MAX_VALUE);
+        assertEquals(Double.MAX_VALUE, test.getNumberAsDouble(), EPSILON);
+        // FAILS
 
-          test.setNumber(Double.MIN_VALUE);
-          assertEquals(Double.MIN_VALUE, test.getNumberAsDouble(), EPSILON); // FAILS
+        test.setNumber(Double.MIN_VALUE);
+        assertEquals(Double.MIN_VALUE, test.getNumberAsDouble(), EPSILON);
+        // FAILS
 
-          test.setNumber(Double.NaN);
-          assertTrue(Double.isNaN(test.getNumberAsDouble())); // FAILS
+        test.setNumber(Double.NaN);
+        assertTrue(Double.isNaN(test.getNumberAsDouble())); // FAILS
 
-          test.setNumber(Double.POSITIVE_INFINITY);
-          assertEquals(Double.POSITIVE_INFINITY, test.getNumberAsDouble(),
-                       EPSILON); // FAILS
+        test.setNumber(Double.POSITIVE_INFINITY);
+        assertEquals(
+            Double.POSITIVE_INFINITY,
+            test.getNumberAsDouble(),
+            EPSILON);
+        // FAILS
 
-          test.setNumber(Double.NEGATIVE_INFINITY);
-          assertEquals(Double.NEGATIVE_INFINITY, test.getNumberAsDouble(),
-                       EPSILON); // FAILS
-      }
+        test.setNumber(Double.NEGATIVE_INFINITY);
+        assertEquals(
+            Double.NEGATIVE_INFINITY,
+            test.getNumberAsDouble(),
+            EPSILON);
+        // FAILS
+    }
 
-      public void testString ()
-      {
-          test.setString("test string");
-          assertEquals("test string", test.getString());
-      }
+    public void testString() {
+        test.setString("test string");
+        assertEquals("test string", test.getString());
+    }
 
-      public void testBool ()
-      {
-          test.setBool(true);
-          assertEquals(true, test.getBool());
+    public void testBool() {
+        test.setBool(true);
+        assertEquals(true, test.getBool());
 
-          test.setBool(false);
-          assertEquals(false, test.getBool());
-      }
+        test.setBool(false);
+        assertEquals(false, test.getBool());
+    }
 
-      public void testEmptyString ()
-      {
-          test.setString("");
-          assertEquals("", test.getString());
-      }
+    public void testEmptyString() {
+        test.setString("");
+        assertEquals("", test.getString());
+    }
 
-      public void testObject ()
-      {
-          Object obj = new Object();
+    public void testObject() {
+        Object obj = new Object();
 
-          test.setObject(obj);
+        test.setObject(obj);
 
-          assertEquals(obj.getClass().getName(), test.getObject().getClass().getName());
-          assertEquals(obj, test.getObject());
-          assertTrue(obj == test.getObject());
-      }
+        assertEquals(
+            obj.getClass().getName(),
+            test.getObject().getClass().getName());
+        assertEquals(obj, test.getObject());
+        assertTrue(obj == test.getObject());
+    }
 
-      public void testToString ()
-      {
-          test.setString("foobar");
-          assertEquals("<foobar>", test.toString());
-      }
+    public void testToString() {
+        test.setString("foobar");
+        assertEquals("<foobar>", test.toString());
+    }
 
-      public void testNil ()
-      {
-          assertNull("implicit nil value", test.getString());
-          test.setString("test");
-          assertNotNull("non-nil value", test.getString());
-          test.setString(null);
-          assertNull("explicit nil value", test.getString());
-      }
+    public void testNil() {
+        assertNull("implicit nil value", test.getString());
+        test.setString("test");
+        assertNotNull("non-nil value", test.getString());
+        test.setString(null);
+        assertNull("explicit nil value", test.getString());
+    }
 
-      public void testOutcomingProxy ()
-      {
-          test.setString("str");
+    public void testOutcomingProxy() {
+        test.setString("str");
 
-          RubyTestObject test2 = test.duplicate();
-          assertTrue(test != test2);
-          assertEquals("str", test2.getString());
-      }
+        RubyTestObject test2 = test.duplicate();
+        assertTrue(test != test2);
+        assertEquals("str", test2.getString());
+    }
 
-      public void testIngoingProxy ()
-      {
-          assertTrue(test.isSelf(test)); // FAILS
-//          assertTrue(!test.isSelf(test));
-          assertTrue(!test.isSelf(test.duplicate()));
-      }
+    public void testIngoingProxy() {
+        assertTrue(test.isSelf(test)); // FAILS
+        //          assertTrue(!test.isSelf(test));
+        assertTrue(!test.isSelf(test.duplicate()));
+    }
 
-      public void testGlobalVariable ()
-          throws ClassNotFoundException
-      {
-          RubyTestObject global =
-              (RubyTestObject)factory.getProxyForGlobal("$global_test");
+    public void testGlobalVariable() throws ClassNotFoundException {
+        RubyTestObject global =
+            (RubyTestObject) factory.getProxyForGlobal("$global_test");
 
-          assertNotNull(global);
-          assertEquals("global obj", global.getString());
-      }
+        assertNotNull(global);
+        assertEquals("global obj", global.getString());
+    }
 
-      public void testNilGlobalVariable ()
-      {
-          RubyTestObject nilGlobal = 
-              (RubyTestObject)factory.getProxyForGlobal("$nil_global");
+    public void testNilGlobalVariable() {
+        RubyTestObject nilGlobal =
+            (RubyTestObject) factory.getProxyForGlobal("$nil_global");
 
-          assertNull(nilGlobal);
-      }
+        assertNull(nilGlobal);
+    }
 
     /*
       public void testListConversion ()
@@ -259,13 +238,13 @@ public class TestRubyProxyFactory extends RubyTestCase {
           l.add("obj1");
           l.add("obj2");
           l.add("obj3");
-
+    
           test.setList(l);
           assertTrue(l instanceof LinkedList);
           assertTrue(!(l instanceof ArrayList));
-
+    
           List l2 = test.getList(); // HANGS
-
+    
             assertTrue(l2 instanceof ArrayList);
             assertTrue(!(l2 instanceof LinkedList));
       }
@@ -278,10 +257,10 @@ public class TestRubyProxyFactory extends RubyTestCase {
           m.put("obj1", new Integer(1));
           m.put("obj2", new Integer(2));
           m.put("obj3", new Integer(3));
-
+    
           test.setMap(m);
           Map m2 = test.getMap();
-
+    
           assertTrue(m instanceof TreeMap);
           assertTrue(!(m instanceof HashMap));
           assertTrue(m2 instanceof HashMap);
@@ -297,10 +276,10 @@ public class TestRubyProxyFactory extends RubyTestCase {
           l.add("obj2");
           l.add("obj3");
           l.add("obj2");
-
+    
           test.setList(l);
           assertEquals("obj1,obj1,obj2,obj3,obj2", test.joinList());
-
+    
           List l2 = test.getList(); // HANGS
           assertTrue(l != l2);
           assertEquals(l, l2);
@@ -312,13 +291,13 @@ public class TestRubyProxyFactory extends RubyTestCase {
     {
         List l = new ArrayList();
         l.add("obj1");
-
+    
         test.setList(l);
         assertEquals("single object", "obj1", test.joinList());
-
+    
         test.addToList("obj2");
         assertEquals("added object", "obj1,obj2", test.joinList());
-
+    
         test.removeFromList("obj1");
         assertEquals("removed object", "obj2", test.joinList());
     }
@@ -327,7 +306,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
     public void testListAsArray ()
     {
         Object[] str = new Object[] {"obj1", "obj2"};
-
+    
         test.setList(Arrays.asList(str));
         assertTrue(Arrays.equals(str, test.getListAsArray()));
         assertEquals("obj1,obj2", test.joinList());
@@ -338,7 +317,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
     public void testListAsListToStringArray ()
     {
         String[] str = new String[] {"obj1", "obj2"};
-
+    
         test.setList(Arrays.asList(str));
         assertTrue(Arrays.equals(str, test.getListAsStringArray()));
         assertEquals("obj1,obj2", test.joinList());
@@ -348,7 +327,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
     public void testListAsStringArray ()
     {
         String[] str = new String[] {"obj1", "obj2"};
-
+    
         test.setList(str);
         assertTrue(Arrays.equals(str, test.getListAsStringArray()));
         assertEquals("obj1,obj2", test.joinList());
@@ -362,7 +341,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
         test.setList(Arrays.asList(arr));
         assertTrue(Arrays.equals(arr, test.getListAsIntegerArray()));
         assertEquals("1,2", test.joinList());
-
+    
         assertTrue(Arrays.equals(new int[] {1, 2}, test.getListAsIntArray()));
     }
     */
@@ -387,7 +366,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
           assertTrue(Arrays.equals(arr, test.getListAsIntegerArray()));
           assertEquals("1,2", test.joinList());
       }
-    */    
+    */
     /*
       public void testListAsSet ()
       {
@@ -396,18 +375,18 @@ public class TestRubyProxyFactory extends RubyTestCase {
           s.add("obj2");
           s.add("obj2");
           s.add("obj3");
-
+    
           test.setList(s);
           Set s3 = test.getListAsSet(); // HANGS
           
           assertTrue(s != s3);
           assertEquals(s, s3);
-
+    
           Set s2 = new HashSet();
           s2.add("obj3");
           s2.add("obj1");
           s2.add("obj2");
-
+    
           assertEquals(s2, s3);
       }
     */
@@ -420,10 +399,10 @@ public class TestRubyProxyFactory extends RubyTestCase {
           l.add("obj2");
           l.add("obj2");
           l.add("obj3");
-
+    
           test.setList(l);
           assertEquals("obj1,obj2,obj2,obj3", test.joinList());
-
+    
           assertEquals(new LinkedList(l), test.getListAsCollection()); // HANGS
       }
     */
@@ -433,17 +412,17 @@ public class TestRubyProxyFactory extends RubyTestCase {
       {
           List l = new ArrayList();
           TestIntWrapper obj;
-
+    
           for (int i = 1; i <= 3; i++) {
               l.add(new TestIntWrapperImpl(i));
           }
          
           test.setList(l);
           List l2 = test.getList();
-
+    
           assertTrue(l != l2);
           assertEquals(l, l2);
-
+    
           for (int i = 1; i <= 3; i++) {
               obj = (TestIntWrapper)l2.get(i - 1);
               assertEquals(i, obj.getInteger());
@@ -458,22 +437,22 @@ public class TestRubyProxyFactory extends RubyTestCase {
         {
             List l = new ArrayList();
             TestIntWrapper obj;
-
+    
             for (int i = 1; i <= 3; i++) {
                 obj = (TestIntWrapper)factory.newProxyObject(TestIntWrapper.class,
                                                              new Long[] {
                                                                  new Long(i)
                                                              });
-
+    
                 l.add(obj);
             }
         
             test.setList(l);
             List l2 = test.getList(); // HANGS
-
+    
             assertTrue(l != l2);
             assertEquals(l, l2);
-
+    
             for (int i = 1; i <= 3; i++) {
                 obj = (TestIntWrapper)l2.get(i - 1);
                 assertEquals(i, obj.getInteger());
@@ -487,14 +466,14 @@ public class TestRubyProxyFactory extends RubyTestCase {
         public void testMap ()
         {
             Map m = new HashMap();
-
+    
             m.put("key1", "value1");
             m.put("key2", "value2");
             m.put("key1", "value3");
-
+    
             test.setMap(m);
             Map m2 = test.getMap();
-
+    
             assertTrue(m != m2);
             assertEquals(m, m2);
         }
@@ -505,17 +484,17 @@ public class TestRubyProxyFactory extends RubyTestCase {
         {
             Map m = new HashMap();
             TestIntWrapper obj;
-
+    
             for (int i = 1; i <= 3; i++) {
                 m.put(new Long(i), new TestIntWrapperImpl(i));
             }
-
+    
             test.setMap(m);
             Map m2 = test.getMap();
-
+    
             assertTrue(m != m2);
             assertEquals(m, m2);
-
+    
             for (int i = 1; i <= 3; i++) {
                 obj = (TestIntWrapper)m2.get(new Long(i));
                 assertEquals(i, obj.getInteger());
@@ -528,42 +507,42 @@ public class TestRubyProxyFactory extends RubyTestCase {
         {
             Map m = new HashMap();
             TestIntWrapper obj;
-
+    
             for (int i = 1; i <= 3; i++) {
                 obj = (TestIntWrapper)factory.newProxyObject(TestIntWrapper.class,
                                                              new Long[] {
                                                                  new Long(i)
                                                              });
-
+    
                 m.put(new Long(i), obj);
             }
-
+    
             test.setMap(m);
             Map m2 = test.getMap();
-
+    
             assertTrue(m != m2);
-//            assertEquals(m, m2); // FAILS
-
+    //            assertEquals(m, m2); // FAILS
+    
             for (int i = 1; i <= 3; i++) {
-//                obj = (TestIntWrapper)m2.get(new Long(i));
-//               assertEquals(i, obj.getInteger());
-//                assertEquals("<ruby: " + i + ">", obj.toString());
+    //                obj = (TestIntWrapper)m2.get(new Long(i));
+    //               assertEquals(i, obj.getInteger());
+    //                assertEquals("<ruby: " + i + ">", obj.toString());
             }
       }
     */
-        /*****************************************************
-               Type Coercion Tests -- Not Yet Implemented
-         *****************************************************/
+    /*****************************************************
+           Type Coercion Tests -- Not Yet Implemented
+     *****************************************************/
 
-//      public void testDoubleToInt ()
-//      {
-//          test.setNumber(3.1415);
-//          assertEquals(3, test.getNumberAsInt());
-//      }
+    //      public void testDoubleToInt ()
+    //      {
+    //          test.setNumber(3.1415);
+    //          assertEquals(3, test.getNumberAsInt());
+    //      }
 
-//      public void testIntToDouble ()
-//      {
-//          test.setNumber(10);
-//          assertEquals(10.0, test.getNumberAsDouble(), EPSILON);
-//      }
+    //      public void testIntToDouble ()
+    //      {
+    //          test.setNumber(10);
+    //          assertEquals(10.0, test.getNumberAsDouble(), EPSILON);
+    //      }
 }

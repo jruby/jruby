@@ -1500,7 +1500,6 @@ public class RubyYaccLexer implements IYaccLexer {
                         support.unread();
                         return getNumberToken(number.toString(), true, nondigit);
                     } else {
-                        char oldC = c;
                         if (!Character.isDigit(c = support.read())) {
                             support.unread();
                             support.unread();

@@ -125,7 +125,6 @@ public class PrintfFormat {
     }
 
     private String nonControl(String s, int start) {
-        String ret = "";
         cPos = s.indexOf("%", start);
         if (cPos == -1) {
             cPos = s.length();
@@ -684,7 +683,6 @@ public class PrintfFormat {
             // int defaultDigits=6;
             String sx;
             // int defaultDigits=6;
-            String sxOut;
             int i;
             int j;
             int k;
@@ -928,7 +926,6 @@ public class PrintfFormat {
         }
 
         private String fFormatString(double x) {
-            boolean noDigits = false;
             char[] ca6;
             char[] ca7;
             if (Double.isInfinite(x)) {
@@ -943,7 +940,6 @@ public class PrintfFormat {
                 } else {
                     ca6 = "-Inf".toCharArray();
                 }
-                noDigits = true;
             } else if (Double.isNaN(x)) {
                 if (leadingSign) {
                     ca6 = "+NaN".toCharArray();
@@ -952,7 +948,6 @@ public class PrintfFormat {
                 } else {
                     ca6 = "NaN".toCharArray();
                 }
-                noDigits = true;
             } else {
                 ca6 = fFormatDigits(x);
             }
@@ -965,9 +960,7 @@ public class PrintfFormat {
             // int defaultDigits=6;
             String sx;
             // int defaultDigits=6;
-            String sxOut;
             int i, j, k, p;
-            int n1In, n2In;
             int expon = 0;
             int ePos, rPos, eSize;
             boolean minusSign = false;
@@ -988,22 +981,6 @@ public class PrintfFormat {
                 ePos = sx.indexOf('e');
             }
             rPos = sx.indexOf('.');
-            if (rPos != -1) {
-                n1In = rPos;
-            } else if (ePos != -1) {
-                n1In = ePos;
-            } else {
-                n1In = sx.length();
-            }
-            if (rPos != -1) {
-                if (ePos != -1) {
-                    n2In = ePos - rPos - 1;
-                } else {
-                    n2In = sx.length() - rPos - 1;
-                }
-            } else {
-                n2In = 0;
-            }
             if (ePos != -1) {
                 int ie = ePos + 1;
                 expon = 0;
@@ -1344,7 +1321,6 @@ public class PrintfFormat {
         }
 
         private String eFormatString(double x, char eChar) {
-            boolean noDigits = false;
             char[] ca4;
             char[] ca5;
             if (Double.isInfinite(x)) {
@@ -1359,7 +1335,6 @@ public class PrintfFormat {
                 } else {
                     ca4 = "-Inf".toCharArray();
                 }
-                noDigits = true;
             } else if (Double.isNaN(x)) {
                 if (leadingSign) {
                     ca4 = "+NaN".toCharArray();
@@ -1368,7 +1343,6 @@ public class PrintfFormat {
                 } else {
                     ca4 = "NaN".toCharArray();
                 }
-                noDigits = true;
             } else {
                 ca4 = eFormatDigits(x, eChar);
             }
@@ -1444,7 +1418,6 @@ public class PrintfFormat {
             int savePrecision = precision;
             int i;
             char[] ca4, ca5;
-            boolean noDigits = false;
             if (Double.isInfinite(x)) {
                 if (x == Double.POSITIVE_INFINITY) {
                     if (leadingSign) {
@@ -1457,7 +1430,6 @@ public class PrintfFormat {
                 } else {
                     ca4 = "-Inf".toCharArray();
                 }
-                noDigits = true;
             } else if (Double.isNaN(x)) {
                 if (leadingSign) {
                     ca4 = "+NaN".toCharArray();
@@ -1466,7 +1438,6 @@ public class PrintfFormat {
                 } else {
                     ca4 = "NaN".toCharArray();
                 }
-                noDigits = true;
             } else {
                 if (!precisionSet) {
                     precision = defaultDigits;

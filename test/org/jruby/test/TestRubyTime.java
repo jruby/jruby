@@ -55,7 +55,7 @@ public class TestRubyTime extends TestCase {
 
     public void setUp() {
         if (ruby == null) {
-        	ruby = Ruby.getDefaultInstance();
+            ruby = Ruby.getDefaultInstance();
         }
         rubyTime = ruby.getClasses().getTimeClass();
         IRubyObject[] args = new IRubyObject[1];
@@ -85,8 +85,6 @@ public class TestRubyTime extends TestCase {
     }
 
     public void testGmtimeAndZone() {
-        Date myDate = new Date(18000000);
         assertEquals("GMT", nineTeenSeventy.gmtime().zone().getValue());
     }
-
 }
