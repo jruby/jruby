@@ -40,35 +40,20 @@ import org.jruby.exceptions.*;
  * @version $Revision$
  */
 public class RubyThread extends RubyObject {
-    // The JVM thread mapped to this Ruby thread instance
     /**
-     * Description of the Field
+     * The JVM thread mapped to this Ruby thread instance
      */
     protected Thread jvmThread;
-    /**
-     * Description of the Field
-     */
-    protected Map locals;
 
     /**
      * Description of the Field
      */
     protected static boolean static_abort_on_exception;
-    /**
-     * Description of the Field
-     */
-    protected static boolean critical;
+
     /**
      * Description of the Field
      */
     protected boolean abort_on_exception;
-
-    // maps Java threads to Ruby threads
-    private static Map threads;
-    static {
-        threads = new HashMap();
-        // Put the main thread in the map under the key "main"
-    }
 
     /**
      * Description of the Method
@@ -280,7 +265,7 @@ public class RubyThread extends RubyObject {
         if (!ruby.isBlockGiven()) {
             System.out.println("No block given to thread!");
         }
-        RubyThread result = new RubyThread(ruby, (RubyClass) recv);
+        final RubyThread result = new RubyThread(ruby, (RubyClass) recv);
         if (callInit) {
             result.callInit(args);
         }
@@ -288,21 +273,19 @@ public class RubyThread extends RubyObject {
         final RubyProc proc = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
         
         final Frame currentFrame = ruby.getCurrentFrame();
-        //final Iter currentIter = ruby.getCurrentIter();
         final Block currentBlock = ruby.getBlockStack().getCurrent();
 
         //result.jvmThread = new Thread(result.new RubyThreadRunner(ruby, args));
         result.jvmThread = new Thread(new Runnable() {
             public void run() {
                 ruby.getFrameStack().push(currentFrame);
-                //ruby.getIterStack().push(currentIter);
                 ruby.getBlockStack().setCurrent(currentBlock);
+                
+                ruby.getCurrentContext().setCurrentThread(result);
 
                 proc.call(args);
             }
         });
-        result.threads.put(result.jvmThread, result);
-        result.locals = new HashMap();
 
         result.jvmThread.start();
         return result;
@@ -365,8 +348,7 @@ public class RubyThread extends RubyObject {
      * @return Description of the Return Value
      */
     public static RubyBoolean critical(Ruby ruby, RubyObject recv) {
-        // TODO: Probably should just throw NotImplementedError
-        return critical ? ruby.getTrue() : ruby.getFalse();
+        throw new NotImplementedError();
     }
 
     /**
@@ -381,9 +363,7 @@ public class RubyThread extends RubyObject {
         Ruby ruby,
         RubyObject recv,
         RubyBoolean val) {
-        // TODO: Probably should just throw NotImplementedError
-        critical = val.isTrue();
-        return val;
+        throw new NotImplementedError();
     }
 
     /**
@@ -394,7 +374,7 @@ public class RubyThread extends RubyObject {
      * @return Description of the Return Value
      */
     public static RubyThread current(Ruby ruby, RubyObject recv) {
-        return (RubyThread) threads.get(Thread.currentThread());
+        return ruby.getCurrentContext().getCurrentThread();
     }
 
     /**
@@ -405,7 +385,12 @@ public class RubyThread extends RubyObject {
      * @return Description of the Return Value
      */
     public static RubyArray list(Ruby ruby, RubyObject recv) {
-        return new RubyArray(ruby, new ArrayList(threads.values()));
+        ArrayList list = new ArrayList();
+        Iterator iter = ruby.objectSpace.iterator(ruby.getClasses().getThreadClass());
+        while (iter.hasNext()) {
+            list.add(iter.next());
+        }
+        return new RubyArray(ruby, list);
     }
 
     /**
@@ -421,7 +406,7 @@ public class RubyThread extends RubyObject {
                 key.inspect() + " is not a symbol");
         }
 
-        RubyObject result = (RubyObject) locals.get(key);
+        RubyObject result = (RubyObject) ruby.getCurrentContext().getLocalVariables().get(key);
         if (result == null) {
             result = getRuby().getNil();
         }
@@ -442,7 +427,7 @@ public class RubyThread extends RubyObject {
                 key.inspect() + " is not a symbol");
         }
 
-        locals.put(key, val);
+        ruby.getCurrentContext().getLocalVariables().put(key, val);
         return val;
     }
 
@@ -495,7 +480,7 @@ public class RubyThread extends RubyObject {
      * @return Description of the Return Value
      */
     public RubyBoolean has_key(RubyObject key) {
-        return locals.containsKey(key)
+        return ruby.getCurrentContext().getLocalVariables().containsKey(key)
             ? getRuby().getTrue()
             : getRuby().getFalse();
     }

@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyThread;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.evaluator.AssignmentVisitor;
@@ -32,6 +33,10 @@ public class ThreadContext {
     
     private BlockStack blockStack;
     private RubyStack dynamicVarsStack;
+    
+    /* Thread related stuff */
+    private RubyThread currentThread;
+    private Map localVariables;
 
     /**
      * Constructor for Context.
@@ -43,6 +48,8 @@ public class ThreadContext {
 
         this.blockStack = new BlockStack(ruby);
         this.dynamicVarsStack = new RubyStack();
+        
+        this.localVariables = new HashMap();
         
         pushDynamicVars();
     }
@@ -66,4 +73,28 @@ public class ThreadContext {
     public Evaluator getEvaluator() {
         return evaluator;
     }
+    /**
+     * Returns the currentThread.
+     * @return RubyThread
+     */
+    public RubyThread getCurrentThread() {
+        return currentThread;
+    }
+
+    /**
+     * Returns the localVariables.
+     * @return Map
+     */
+    public Map getLocalVariables() {
+        return localVariables;
+    }
+
+    /**
+     * Sets the currentThread.
+     * @param currentThread The currentThread to set
+     */
+    public void setCurrentThread(RubyThread currentThread) {
+        this.currentThread = currentThread;
+    }
+
 }

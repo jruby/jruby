@@ -945,10 +945,6 @@ public final class Ruby {
         getDynamicVars().put(id, value);
     }
 
-    public void assignCurrentVarmap(String id, RubyObject value) {
-        getDynamicVars().put(id, value);
-    }
-
     public List getDynamicNames() {
         return new ArrayList(getDynamicVars().keySet());
     }

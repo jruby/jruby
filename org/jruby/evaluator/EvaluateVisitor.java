@@ -613,7 +613,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         eval(iVisited.getValueNode());
-        ruby.assignCurrentVarmap(iVisited.getName(), result.toRubyObject());
+        ruby.assignVarmap(iVisited.getName(), result.toRubyObject());
     }
 
     /**
