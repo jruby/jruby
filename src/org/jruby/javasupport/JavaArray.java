@@ -24,7 +24,6 @@
 package org.jruby.javasupport;
 
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.Ruby;
@@ -41,16 +40,9 @@ public class JavaArray extends JavaObject implements IndexCallable {
         Asserts.isTrue(array.getClass().isArray());
     }
 
-    private static final int LENGTH = 1001;
-    private static final int AREF = 1002;
-
     public static RubyClass createJavaArrayClass(Ruby runtime) {
         RubyClass javaArrayClass =
                 runtime.defineClass("JavaArray", runtime.getClasses().getJavaObjectClass());
-
-        javaArrayClass.defineMethod("length", IndexedCallback.create(LENGTH, 0));
-        javaArrayClass.defineMethod("[]", IndexedCallback.create(AREF, 1));
-
         return javaArrayClass;
     }
 
@@ -80,10 +72,6 @@ public class JavaArray extends JavaObject implements IndexCallable {
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-            case LENGTH :
-                return length();
-            case AREF :
-                return aref(args[0]);
             default :
                 return super.callIndexed(index, args);
         }

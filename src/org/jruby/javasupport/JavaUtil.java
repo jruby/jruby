@@ -83,7 +83,7 @@ public class JavaUtil {
     }
 
     public static Object convertRubyToJava(Ruby ruby, IRubyObject rubyObject, Class javaClass) {
-        if (rubyObject == null || rubyObject == ruby.getNil()) {
+        if (rubyObject == null || rubyObject.isNil()) {
             return null;
         }
 

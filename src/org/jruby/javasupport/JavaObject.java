@@ -39,6 +39,8 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
+import org.jruby.util.Asserts;
+import org.jruby.exceptions.TypeError;
 
 /**
  *
@@ -60,7 +62,11 @@ public class JavaObject extends RubyObject implements IndexCallable {
     public static synchronized JavaObject wrap(Ruby runtime, Object value) {
         JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
         if (wrapper == null) {
-            wrapper = new JavaObject(runtime, value);
+            if (value != null && value.getClass().isArray()) {
+                wrapper = new JavaArray(runtime, value);
+            } else {
+                wrapper = new JavaObject(runtime, value);
+            }
             runtime.getJavaSupport().putJavaObjectIntoCache(wrapper);
         }
         return wrapper;
@@ -82,6 +88,8 @@ public class JavaObject extends RubyObject implements IndexCallable {
     private static final int HASH = 3;
     private static final int JAVA_TYPE = 4;
     private static final int JAVA_CLASS = 5;
+    private static final int LENGTH = 6;
+    private static final int AREF = 7;
 
     public static RubyClass createJavaObjectClass(Ruby ruby) {
         RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
@@ -92,6 +100,8 @@ public class JavaObject extends RubyObject implements IndexCallable {
 		javaObjectClass.defineMethod("hash", IndexedCallback.create(HASH, 0));
         javaObjectClass.defineMethod("java_type", IndexedCallback.create(JAVA_TYPE, 0));
         javaObjectClass.defineMethod("java_class", IndexedCallback.create(JAVA_CLASS, 0));
+        javaObjectClass.defineMethod("length", IndexedCallback.create(LENGTH, 0));
+        javaObjectClass.defineMethod("[]", IndexedCallback.create(AREF, 1));
 
         javaObjectClass.getMetaClass().undefMethod("new");
 
@@ -123,6 +133,14 @@ public class JavaObject extends RubyObject implements IndexCallable {
         return new JavaClass(getRuntime(), getJavaClass());
     }
 
+    public RubyFixnum length() {
+        throw new TypeError(getRuntime(), "not a java array");
+    }
+
+    public IRubyObject aref(IRubyObject index) {
+        throw new TypeError(getRuntime(), "not a java array");
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case TO_S :
@@ -135,6 +153,10 @@ public class JavaObject extends RubyObject implements IndexCallable {
                 return java_type();
             case JAVA_CLASS :
                 return java_class();
+            case LENGTH :
+                return length();
+            case AREF :
+                return aref(args[0]);
             default :
                 return super.callIndexed(index, args);
         }

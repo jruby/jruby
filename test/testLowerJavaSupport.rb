@@ -157,15 +157,24 @@ if defined? Java
   test_equal(JavaObject,
              method.invoke_static(Java.primitive_to_java(101)).type)
 
+  # Not arrays
+  test_exception(TypeError) { random[0] }     # Not an array
+  test_exception(TypeError) { random.length } # Not an array
+
   # Arrays
-  array = string_class.new_array(10)
-  test_equal(10, array.length)
-  string_array_class = Java::JavaClass.for_name(array.java_type)
+  constructed_array = string_class.new_array(10)
+  test_equal(10, constructed_array.length)
+  string_array_class = Java::JavaClass.for_name(constructed_array.java_type)
   test_ok(string_array_class.array?)
   test_equal("[Ljava.lang.String;", string_array_class.name)
   test_ok(string_array_class.constructors.empty?)
-  test_ok(array[3].nil?)
-  test_exception(ArgumentError) { array[10] }
+  test_equal("java.lang.String", string_array_class.component_type.name)
+  test_ok(constructed_array[3].nil?)
+  test_exception(ArgumentError) { constructed_array[10] }
+
+  list = arraylist_class.constructor().new_instance()
+  returned_array = arraylist_class.java_method(:toArray).invoke(list)
+  test_equal(0, returned_array.length)
 
   # java.lang.reflect.Proxy
   al = "java.awt.event.ActionListener"

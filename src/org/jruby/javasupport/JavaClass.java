@@ -80,6 +80,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int INTERFACES = 22;
     private static final int PRIMITIVE_P = 23;
     private static final int ASSIGNABLE_FROM_P = 24;
+    private static final int COMPONENT_TYPE = 25;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -107,6 +108,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("interfaces", IndexedCallback.create(INTERFACES, 0));
         javaClassClass.defineMethod("primitive?", IndexedCallback.create(PRIMITIVE_P, 0));
         javaClassClass.defineMethod("assignable_from?", IndexedCallback.create(ASSIGNABLE_FROM_P, 1));
+        javaClassClass.defineMethod("component_type", IndexedCallback.create(COMPONENT_TYPE, 0));
 
         javaClassClass.getMetaClass().undefMethod("new");
 
@@ -298,6 +300,13 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return getRuntime().getFalse();
     }
 
+    public JavaClass component_type() {
+        if (! javaClass.isArray()) {
+            throw new TypeError(getRuntime(), "not a java array-class");
+        }
+        return new JavaClass(getRuntime(), javaClass.getComponentType());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -338,6 +347,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return primitive_p();
             case ASSIGNABLE_FROM_P :
                 return assignable_from_p(args[0]);
+            case COMPONENT_TYPE :
+                return component_type();
             default :
                 return super.callIndexed(index, args);
         }

@@ -41,6 +41,7 @@ module JavaProxy
   end
 end
 
+
 module JavaUtilities
   class << self
 
@@ -104,13 +105,19 @@ module JavaUtilities
       end
       if java_class.interface?
 	create_interface_constructor(java_class, proxy_class)
+      elsif java_class.array?
+        # ... array constructor?
       else
         create_class_constructor(java_class, proxy_class)
       end
-      setup_instance_methods(java_class, proxy_class)
-      setup_class_methods(java_class, proxy_class)
-      setup_constants(java_class, proxy_class)
-      setup_inner_classes(java_class, proxy_class)
+      if java_class.array?
+        setup_array_methods(java_class, proxy_class)
+      else
+        setup_instance_methods(java_class, proxy_class)
+        setup_class_methods(java_class, proxy_class)
+        setup_constants(java_class, proxy_class)
+        setup_inner_classes(java_class, proxy_class)
+      end
       return proxy_class
     end
 
@@ -155,6 +162,23 @@ module JavaUtilities
 	  }
 	end
       end
+    end
+
+    def setup_array_methods(java_class, proxy_class)
+      def proxy_class.create_array_methods(java_class)
+        define_method(:[]) {|index|
+          value = java_object[index]
+          value = Java.java_to_primitive(value)
+          if value.kind_of?(JavaObject)
+            value = JavaUtilities.wrap(value, java_class.component_type.name)
+          end
+          value
+        }
+        define_method(:length) {| |
+          java_object.length
+        }
+      end
+      proxy_class.create_array_methods(java_class)
     end
 
     def setup_instance_methods(java_class, proxy_class)

@@ -44,6 +44,15 @@ if defined? Java
     # Constants
     test_equal(9223372036854775807, Long::MAX_VALUE)
 
+    # Arrays
+    list = ArrayList.new
+    list.add(10)
+    list.add(20)
+    array = list.toArray
+    test_equal(10, array[0])
+    test_equal(20, array[1])
+    test_equal(2, array.length)
+
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",
                Character::UnicodeBlock.class_eval("@java_class.name"))
