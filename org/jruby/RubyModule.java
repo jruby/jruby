@@ -1607,7 +1607,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray constants() {
-        List constantNames = new ArrayList();
+        ArrayList constantNames = new ArrayList();
         Iterator iter = getRuby().getClasses().nameIterator();
         while (iter.hasNext()) {
             String name = (String) iter.next();

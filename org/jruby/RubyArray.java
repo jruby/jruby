@@ -45,23 +45,14 @@ public class RubyArray extends RubyObject {
 	private ArrayList list;
 	private boolean tmpLock;
 
-	// private RubyId equals; RubyId will replaced by String next.
-
-	public RubyArray(Ruby ruby) {
-		this(ruby, new ArrayList());
-	}
-
-	public RubyArray(Ruby ruby, List array) {
-		this(ruby, new ArrayList(array), false);
-	}
-
-	public RubyArray(Ruby ruby, ArrayList array, boolean notCopy) {
+	public RubyArray(final Ruby ruby, final ArrayList list) {
 		super(ruby, ruby.getClasses().getArrayClass());
-		this.list = array;
+
+		this.list = list;
 	}
 
 	public static RubyArray nilArray(Ruby ruby) {
-		return new RubyArray(ruby) {
+		return new RubyArray(ruby, null) {
 			public boolean isNil() {
 				return true;
 			}
@@ -264,27 +255,21 @@ public class RubyArray extends RubyObject {
 	/** rb_ary_subseq
 	 *
 	 */
-	public RubyObject subseq(long beg, long len) {
-		int length = getLength();
+	public final RubyObject subseq(final long beg, long len) {
+		final int length = getLength();
 
-		if (beg > length) {
-			return getRuby().getNil();
-		}
-		if (beg < 0 || len < 0) {
+		if (beg > length || beg < 0 || len < 0) {
 			return getRuby().getNil();
 		}
 
 		if (beg + len > length) {
 			len = length - beg;
 		}
-		if (len < 0) {
-			len = 0;
-		}
-		if (len == 0) {
+		if (len <= 0) {
 			return newArray(getRuby(), 0);
 		}
 
-		RubyArray ary2 = newArray(getRuby(), list.subList((int) beg, (int) (len + beg)));
+		RubyArray ary2 = newArray(getRuby(), new ArrayList(list.subList((int) beg, (int) (len + beg))));
 
 		return ary2;
 	}
@@ -358,14 +343,14 @@ public class RubyArray extends RubyObject {
 	/** rb_ary_new2
 	 *
 	 */
-	public static RubyArray newArray(Ruby ruby, long len) {
+	public final static RubyArray newArray(final Ruby ruby, final long len) {
 		return new RubyArray(ruby, new ArrayList((int) len));
 	}
 
 	/** rb_ary_new
 	 *
 	 */
-	public static RubyArray newArray(Ruby ruby) {
+	public final static RubyArray newArray(final Ruby ruby) {
 		/* Ruby arrays default to holding 16 elements, so we create an
 		 * ArrayList of the same size if we're not told otherwise
 		 */
@@ -375,27 +360,33 @@ public class RubyArray extends RubyObject {
 	/**
 	 *
 	 */
-	public static RubyArray newArray(Ruby ruby, RubyObject obj) {
-		return new RubyArray(ruby, Collections.singletonList(obj));
+	public final static RubyArray newArray(final Ruby ruby, final RubyObject obj) {
+        final ArrayList list = new ArrayList(1);
+        list.add(obj);
+		return new RubyArray(ruby, list);
 	}
 
 	/** rb_assoc_new
 	 *
 	 */
-	public static RubyArray newArray(Ruby ruby, RubyObject car, RubyObject cdr) {
-		return new RubyArray(ruby, Arrays.asList(new RubyObject[] { car, cdr }));
+	public final static RubyArray newArray(final Ruby ruby, final RubyObject car, final RubyObject cdr) {
+		final ArrayList list = new ArrayList(2);
+        list.add(car);
+        list.add(cdr);
+        return new RubyArray(ruby, list);
 	}
 
-	public final static RubyArray newArray(Ruby ruby, List list) {
-		return new RubyArray(ruby, list);
-	}
-    
-    public final static RubyArray newArray(Ruby ruby, ArrayList list) {
-        return new RubyArray(ruby, list, true);
+    public final static RubyArray newArray(final Ruby ruby, final ArrayList list) {
+        return new RubyArray(ruby, list);
     }
 
-	public static RubyArray newArray(Ruby ruby, RubyObject[] args) {
-		return new RubyArray(ruby, Arrays.asList(args));
+	public final static RubyArray newArray(final Ruby ruby, final RubyObject[] args) {
+        final int size = args.length;
+        final ArrayList list = new ArrayList(size);
+        for (int i = 0; i < size; i++) {
+            list.add(args[i]);
+        }
+		return new RubyArray(ruby, list);
 	}
 
 	/** rb_ary_s_new
@@ -413,8 +404,8 @@ public class RubyArray extends RubyObject {
 	/** rb_ary_s_create
 	 *
 	 */
-	public static RubyArray create(Ruby ruby, RubyObject recv, RubyObject[] args) {
-		RubyArray array = newArray(ruby, Arrays.asList(args));
+	public final static RubyArray create(final Ruby ruby, final RubyObject recv, final RubyObject[] args) {
+		final RubyArray array = newArray(ruby, args);
 		array.setRubyClass((RubyClass) recv);
 
 		return array;

@@ -182,7 +182,7 @@ public class AssignmentVisitor extends AbstractVisitor {
             if (iVisited.getArgsNode() instanceof StarNode) {
                 // no check for '*'
             } else if (varLen < valueLen) {
-                List newList = ((RubyArray)value).getList().subList(varLen, valueLen);
+                ArrayList newList = new ArrayList(((RubyArray)value).getList().subList(varLen, valueLen));
                 new AssignmentVisitor(ruby, self).assign(iVisited.getArgsNode(), RubyArray.newArray(ruby, newList), check);
             } else {
                 new AssignmentVisitor(ruby, self).assign(iVisited.getArgsNode(), RubyArray.newArray(ruby, 0), check);

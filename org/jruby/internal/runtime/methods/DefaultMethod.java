@@ -107,7 +107,11 @@ public final class DefaultMethod extends AbstractMethod {
                     if (argsNode.getRestArg() >= 0) {
                         RubyArray array = null;
                         if (args.length > i) {
-                            array = RubyArray.newArray(ruby, Arrays.asList(args).subList(i, args.length));
+                            ArrayList list = new ArrayList(args.length - i);
+                            for (int j = i; j < args.length; j++) {
+                                list.add(args[j]);
+                            }
+                            array = RubyArray.newArray(ruby, list);
                         } else {
                             array = RubyArray.newArray(ruby, 0);
                         }

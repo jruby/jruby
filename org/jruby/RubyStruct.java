@@ -341,7 +341,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyArray to_a() {
-        return RubyArray.newArray(ruby, Arrays.asList(values));
+        return RubyArray.newArray(ruby, values);
     }
 
     public RubyFixnum size() {
