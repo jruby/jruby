@@ -19,8 +19,8 @@
     <property name="base.dir" value="."/>
 
     <target name="init">
-        <property name="version" value="0.1.8"/>
-        <property name="version.file" value="0_1_8"/>
+        <property name="version" value="0.1.9"/>
+        <property name="version.file" value="0_1_9"/>
 
         <property name="javadoc.title" value="JRuby"/>
 
