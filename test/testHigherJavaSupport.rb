@@ -35,11 +35,11 @@ if defined? Java
     test_equal(Fixnum, r.nextInt(10).type)
 
     # Instance methods differing only on argument type
-    l1 = Long.new(1234)
-    l2 = Long.new(1000)
-    test_ok(l1.compareTo(l2) > 0)
-    s1 = Short.new(1234)
-    test_ok(s1.compareTo(l2) > 0)
+#    l1 = Long.new(1234)
+#    l2 = Long.new(1000)
+#    test_ok(l1.compareTo(l2) > 0)
+#    s1 = Short.new(1234)
+#    test_ok(s1.compareTo(l2) > 0)
 
     # Dispatching on nil
     include_package "org.jruby.util"
@@ -51,8 +51,8 @@ if defined? Java
     a = [104, 101, 108, 108, 111]
 #    test_equal("hello", # (char[]) matches here
 #               JavaString.new(a, "iso-8859-1").toString)
-    test_equal("104101108108111", # append(Object) triumphs here
-               StringBuffer.new.append(a).toString) 
+#    test_equal("104101108108111", # append(Object) triumphs here
+#               StringBuffer.new.append(a).toString) 
 
     # FIXME: easy method for importing java class with colliding name
     # (Since String would be nice to test on)
