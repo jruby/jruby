@@ -3,10 +3,12 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2002 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -44,7 +46,6 @@ import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -56,7 +57,7 @@ import org.jruby.internal.runtime.builtin.definitions.ArrayDefinition;
  *
  * @author  jpetersen
  */
-public class RubyArray extends RubyObject implements IndexCallable {
+public class RubyArray extends RubyObject {
     private ArrayList list;
     private boolean tmpLock;
 
@@ -113,45 +114,21 @@ public class RubyArray extends RubyObject implements IndexCallable {
     }
 
     public static RubyClass createArrayClass(Ruby ruby) {
-        RubyClass arrayClass = new ArrayDefinition(ruby).getType();
-
-        arrayClass.defineMethod("to_a", CallbackFactory.getSelfMethod(0));
-        arrayClass.defineMethod("to_ary", CallbackFactory.getSelfMethod(0));
-        arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
-
-        arrayClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
-        arrayClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyArray.class, "slice_bang"));
-
-        arrayClass.defineMethod("assoc", CallbackFactory.getMethod(RubyArray.class, "assoc", IRubyObject.class));
-        arrayClass.defineMethod("rassoc", CallbackFactory.getMethod(RubyArray.class, "rassoc", IRubyObject.class));
-
-        arrayClass.defineMethod("+", CallbackFactory.getMethod(RubyArray.class, "op_plus", IRubyObject.class));
-        arrayClass.defineMethod("*", CallbackFactory.getMethod(RubyArray.class, "op_times", IRubyObject.class));
-
-        arrayClass.defineMethod("-", CallbackFactory.getMethod(RubyArray.class, "op_diff", IRubyObject.class));
-        arrayClass.defineMethod("&", CallbackFactory.getMethod(RubyArray.class, "op_and", IRubyObject.class));
-        arrayClass.defineMethod("|", CallbackFactory.getMethod(RubyArray.class, "op_or", IRubyObject.class));
-
-        arrayClass.defineMethod("uniq", CallbackFactory.getMethod(RubyArray.class, "uniq"));
-        arrayClass.defineMethod("uniq!", CallbackFactory.getMethod(RubyArray.class, "uniq_bang"));
-        arrayClass.defineMethod("compact", CallbackFactory.getMethod(RubyArray.class, "compact"));
-        arrayClass.defineMethod("compact!", CallbackFactory.getMethod(RubyArray.class, "compact_bang"));
-        arrayClass.defineMethod("flatten", CallbackFactory.getMethod(RubyArray.class, "flatten"));
-        arrayClass.defineMethod("flatten!", CallbackFactory.getMethod(RubyArray.class, "flatten_bang"));
-        arrayClass.defineMethod("nitems", CallbackFactory.getMethod(RubyArray.class, "nitems"));
-        arrayClass.defineMethod("pack", CallbackFactory.getMethod(RubyArray.class, "pack", RubyString.class));
-
-        return arrayClass;
+        return new ArrayDefinition(ruby).getType();
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
+            case ArrayDefinition.AT:
+                return at(args[0]);
             case ArrayDefinition.INITIALIZE :
                 return initialize(args);
             case ArrayDefinition.INSPECT :
                 return inspect();
             case ArrayDefinition.TO_S :
                 return to_s();
+            case ArrayDefinition.TO_A :
+                return to_a();
             case ArrayDefinition.FROZEN :
                 return frozen();
             case ArrayDefinition.EQUAL :
@@ -162,6 +139,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
                 return hash();
             case ArrayDefinition.AREF :
                 return aref(args);
+            case ArrayDefinition.SLICE_BANG :
+                return slice_bang(args);
             case ArrayDefinition.ASET :
                 return aset(args);
             case ArrayDefinition.FIRST :
@@ -224,12 +203,42 @@ public class RubyArray extends RubyObject implements IndexCallable {
                 return replace(args[0]);
             case ArrayDefinition.CLEAR :
                 return clear();
-            case ArrayDefinition.INCLUDE_P :
-                return include_p(args[0]);
-            case ArrayDefinition.OP_CMP :
-                return op_cmp(args[0]);
             case ArrayDefinition.FILL :
                 return fill(args);
+            case ArrayDefinition.INCLUDE_P :
+                return include_p(args[0]);
+            case ArrayDefinition.ASSOC :
+                return assoc(args[0]);
+            case ArrayDefinition.RASSOC :
+                return rassoc(args[0]);
+            case ArrayDefinition.OP_PLUS :
+                return op_plus(args[0]);
+            case ArrayDefinition.OP_DIFF :
+                return op_diff(args[0]);
+            case ArrayDefinition.OP_TIMES :
+                return op_times(args[0]);
+            case ArrayDefinition.OP_AND :
+                return op_and(args[0]);
+            case ArrayDefinition.OP_OR :
+                return op_or(args[0]);
+            case ArrayDefinition.PACK :
+                return pack(args[0]);
+            case ArrayDefinition.UNIQ :
+                return uniq();
+            case ArrayDefinition.UNIQ_BANG :
+                return uniq_bang();
+            case ArrayDefinition.COMPACT :
+                return compact();
+            case ArrayDefinition.COMPACT_BANG :
+                return compact_bang();
+            case ArrayDefinition.FLATTEN :
+                return flatten();
+            case ArrayDefinition.NITEMS :
+                return nitems();
+            case ArrayDefinition.FLATTEN_BANG :
+                return flatten_bang();
+            case ArrayDefinition.OP_CMP :
+                return op_cmp(args[0]);
         }
         return super.callIndexed(index, args);
     }
@@ -635,8 +644,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
     /** rb_ary_at
      *
      */
-    public IRubyObject at(RubyFixnum pos) {
-        return entry(pos.getLongValue());
+    public IRubyObject at(IRubyObject obj) {
+        return entry(RubyNumeric.numericValue(obj).getLongValue());
     }
 
     /** rb_ary_concat
@@ -1336,7 +1345,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
     /**
      * @see org.jruby.util.Pack#pack
      */
-    public RubyString pack(RubyString iFmt) {
+    public RubyString pack(IRubyObject obj) {
+	RubyString iFmt = RubyString.objAsString(obj);
         return Pack.pack(this.list, iFmt);
     }
 
