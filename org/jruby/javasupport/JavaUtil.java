@@ -100,6 +100,6 @@ public class JavaUtil {
         if (javaClass == String.class) {
             return RubyString.m_newString(ruby, object.toString());
         }
-        return new RubyJavaObject(ruby, ruby.getRubyClass("JavaObject"), object);
+        return new RubyJavaObject(ruby, RubyJavaObject.getRubyClass(ruby, javaClass), object);
     }
 }

@@ -1731,14 +1731,14 @@ public class RubyInterpreter implements node_type, Scope {
     /** Getter for property ruby_class.
      * @return Value of property ruby_class.
      */
-    public org.jruby.RubyModule getRuby_class() {
+    public org.jruby.RubyModule getRubyClass() {
         return ruby_class;
     }
     
     /** Setter for property ruby_class.
      * @param ruby_class New value of property ruby_class.
      */
-    public void setRuby_class(org.jruby.RubyModule ruby_class) {
+    public void setRubyClass(org.jruby.RubyModule ruby_class) {
         this.ruby_class = ruby_class;
     }
     

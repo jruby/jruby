@@ -32,6 +32,7 @@ import java.util.*;
 import java.io.*;
 
 import org.jruby.*;
+import org.jruby.interpreter.*;
 import org.jruby.original.*;
 import org.jruby.util.*;
 
@@ -53,9 +54,9 @@ public class parse /*extends Ruby*/ implements lex_state, node_type, re_options 
     private boolean in_defined;
 
     //XXX global variables
-    private RVarmap ruby_dyna_vars;
-    private VALUE ruby_class;
-    private Hashtable rb_global_tbl = new Hashtable();
+    // private RVarmap ruby_dyna_vars;
+    // private VALUE ruby_class;
+    // private Hashtable rb_global_tbl = new Hashtable();
 
     // jruby
     private Ruby ruby; // Runtime
@@ -450,10 +451,10 @@ public class parse /*extends Ruby*/ implements lex_state, node_type, re_options 
 case 1:
 					// line 246 "parse.y"
   {
-		        yyVal = ruby_dyna_vars;
+		        yyVal = ruby.getInterpreter().getDynamicVars();// ruby_dyna_vars;
 			lex_state = EXPR_BEG;
                         top_local_init();
-			if ((VALUE)ruby_class == rb_cObject) class_nest = 0;
+			if (ruby.getInterpreter().getRubyClass() == ruby.getObjectClass()/*(VALUE)ruby_class == rb_cObject*/) class_nest = 0;
 			else class_nest = 1;
 		    }
   break;
@@ -474,7 +475,7 @@ case 2:
 			ruby_eval_tree = block_append(ruby_eval_tree, ((NODE)yyVals[0+yyTop]));
                         top_local_setup();
 			class_nest = 0;
-		        ruby_dyna_vars = ((RVarmap)yyVals[-1+yyTop]);
+		        ruby.getInterpreter().setDynamicVars((RubyVarmap)yyVals[-1+yyTop]);
 		    }
   break;
 case 3:
@@ -2040,7 +2041,7 @@ case 312:
   {
 			yyVal = NEW_ITER(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        fixpos(yyVal, ((NODE)yyVals[-2+yyTop])!=null?((NODE)yyVals[-2+yyTop]):((NODE)yyVals[-1+yyTop]));
-			dyna_pop(((RVarmap)yyVals[-3+yyTop]));
+			dyna_pop(((RubyVarmap)yyVals[-3+yyTop]));
 		    }
   break;
 case 313:
@@ -2052,7 +2053,7 @@ case 314:
   {
 			yyVal = NEW_ITER(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        fixpos(yyVal, ((NODE)yyVals[-2+yyTop])!=null?((NODE)yyVals[-2+yyTop]):((NODE)yyVals[-1+yyTop]));
-			dyna_pop(((RVarmap)yyVals[-3+yyTop]));
+			dyna_pop(((RubyVarmap)yyVals[-3+yyTop]));
 		    }
   break;
 case 315:
@@ -2139,7 +2140,7 @@ case 325:
   {
 			yyVal = NEW_ITER(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        fixpos(yyVal, ((NODE)yyVals[-1+yyTop]));
-			dyna_pop(((RVarmap)yyVals[-3+yyTop]));
+			dyna_pop(((RubyVarmap)yyVals[-3+yyTop]));
 		    }
   break;
 case 326:
@@ -2153,7 +2154,7 @@ case 327:
   {
 			yyVal = NEW_ITER(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        fixpos(yyVal, ((NODE)yyVals[-1+yyTop]));
-			dyna_pop(((RVarmap)yyVals[-3+yyTop]));
+			dyna_pop(((RubyVarmap)yyVals[-3+yyTop]));
 		    }
   break;
 case 328:
@@ -3185,7 +3186,7 @@ case 432:
                 return NEW_LASGN(id, val);
             }
             else{
-                rb_dvar_push(id, Qnil);
+                rb_dvar_push(id, /*Qnil*/ ruby.getNil());
                 return NEW_DASGN_CURR(id, val);
             }
         }
@@ -3711,7 +3712,7 @@ case 432:
         else {
             lvtbl.tbl = null;
         }
-        if (ruby_dyna_vars != null)
+        if (ruby.getInterpreter().getDynamicVars() != null)
             lvtbl.dlev = 1;
         else
             lvtbl.dlev = 0;
@@ -3773,17 +3774,17 @@ case 432:
         // */
     }
 
-    private RVarmap dyna_push() {
-	RVarmap vars = ruby_dyna_vars;
+    private RubyVarmap dyna_push() {
+	RubyVarmap vars = ruby.getInterpreter().getDynamicVars();
 
 	rb_dvar_push(null, null);
 	lvtbl.dlev++;
 	return vars;
     }
 
-    private void dyna_pop(RVarmap vars) {
+    private void dyna_pop(RubyVarmap vars) {
 	lvtbl.dlev--;
-	ruby_dyna_vars = vars;
+	ruby.getInterpreter().setDynamicVars(vars);
     }
 
     private boolean dyna_in_block() {
@@ -3853,7 +3854,7 @@ case 432:
 	if (ruby.rubyScope.getLocalVars() != null) {
 	    return ruby.rubyScope.getLocalVars(1);
 	}
-	return Qnil;
+	return ruby.getNil(); //Qnil
     }
 
     void rb_backref_set(VALUE val) {
@@ -3869,7 +3870,7 @@ case 432:
 	if (ruby.rubyScope.getLocalVars() != null) {
 	    return ruby.rubyScope.getLocalVars(0);
 	}
-	return Qnil;
+	return ruby.getNil(); //Qnil;
     }
 
     void rb_lastline_set(VALUE val) {
@@ -4329,7 +4330,7 @@ case 432:
 	String s = ((RubyString)_s).getString();
 	if (lex_gets_ptr != 0) {
 	    if (s.length() == lex_gets_ptr)
-		return Qnil;
+		return ruby.getNil(); //Qnil;
 	    s = s.substring(lex_gets_ptr);
 	}
 	int end = 0;
@@ -6295,7 +6296,7 @@ case 432:
     //XXX globals
     boolean ruby_in_eval;
     VALUE ruby_verbose;
-    VALUE Qnil;
+    // VALUE Qnil; replaced by ruby.getNil()
 
     // SCOPE ruby_scope; replaced by ruby.ruby_scope
 
@@ -6401,46 +6402,28 @@ case 432:
     static final int T_HASH = 5;
 
     /** Returns true if "value" isn't the nil object */
-    boolean RTEST(VALUE value) { return value != Qnil; }
+    boolean RTEST(VALUE value) { return value != ruby.getNil(); }
 
     /** Returns true if "value" is the nil object */
-    boolean NIL_P(VALUE value) { return value == Qnil; }
+    boolean NIL_P(VALUE value) { return value == ruby.getNil(); }
 
     // Environment stuff
     // -----------------
 
     boolean rb_dvar_defined(ID id) {
-        RVarmap vars = ruby_dyna_vars;
-
-        while (vars != null) {
-            if (vars.id == null) break;
-            if (vars.id.equals(id)) return true;
-            vars = vars.next;
-        }
-        return false;
+	return ruby.getInterpreter().getDynamicVars().isDefined((RubyId)id);
     }
 
     boolean rb_dvar_curr(ID id) {
-        RVarmap vars = ruby_dyna_vars;
-
-        while (vars != null) {
-            if (vars.id == null) break;
-            if (vars.id.equals(id)) return true;
-            vars = vars.next;
-        }
-        return false;
+        return ruby.getInterpreter().getDynamicVars().isCurrent((RubyId)id);
     }
 
     void rb_dvar_push(ID id, VALUE value) {
-        ruby_dyna_vars = new_dvar(id, value, ruby_dyna_vars);
+	ruby.getInterpreter().getDynamicVars().push((RubyId)id, (RubyObject)value);
     }
 
-    private RVarmap new_dvar(ID id, VALUE value, RVarmap prev) {
-        RVarmap map = new RVarmap();
-        map.id = id;
-        map.val = value;
-        map.next = prev;
-        return map;
+    private RubyVarmap new_dvar(ID id, VALUE value, RubyVarmap prev) {
+	return new RubyVarmap((RubyId)id, (RubyObject)value, prev);
     }
 
     // array stuff

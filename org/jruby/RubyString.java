@@ -210,4 +210,40 @@ public class RubyString extends RubyObject {
         /* use Java implementation */
         return getString().equals(((RubyString)other).getString()) ? getRuby().getTrue() : getRuby().getFalse();
     }
+
+    /** rb_str_capitalize
+     *
+     */
+    public RubyString m_capitalize() {
+        final int length = getString().length();
+        
+        StringBuffer sb = new StringBuffer(length);
+        if (length > 0) {
+            sb.append(Character.toUpperCase(getString().charAt(0)));
+        }
+        if (length > 1) {
+            sb.append(getString().toLowerCase().substring(1));
+        }
+        
+        return newString(sb.toString());
+    }
+
+    /** rb_str_capitalize_bang
+     *
+     */
+    public RubyString m_capitalize_bang() {
+        final int length = getString().length();
+        
+        StringBuffer sb = new StringBuffer(length);
+        if (length > 0) {
+            sb.append(Character.toUpperCase(getString().charAt(0)));
+        }
+        if (length > 1) {
+            sb.append(getString().toLowerCase().substring(1));
+        }
+        
+        setString(sb.toString());
+        
+        return this;
+    }
 }

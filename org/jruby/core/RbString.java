@@ -85,13 +85,16 @@ public class RbString {
 
     rb_define_method(rb_cString, "upcase", rb_str_upcase, 0);
     rb_define_method(rb_cString, "downcase", rb_str_downcase, 0);
-    rb_define_method(rb_cString, "capitalize", rb_str_capitalize, 0);
-    rb_define_method(rb_cString, "swapcase", rb_str_swapcase, 0);
+     */
+        stringClass.defineMethod("capitalize", getMethod("m_capitalize", false));
+    /*rb_define_method(rb_cString, "swapcase", rb_str_swapcase, 0);
 
     rb_define_method(rb_cString, "upcase!", rb_str_upcase_bang, 0);
     rb_define_method(rb_cString, "downcase!", rb_str_downcase_bang, 0);
-    rb_define_method(rb_cString, "capitalize!", rb_str_capitalize_bang, 0);
-    rb_define_method(rb_cString, "swapcase!", rb_str_swapcase_bang, 0);
+     */
+        
+        stringClass.defineMethod("capitalize!", getMethod("m_capitalize_bang", false));
+    /*rb_define_method(rb_cString, "swapcase!", rb_str_swapcase_bang, 0);
 
     rb_define_method(rb_cString, "hex", rb_str_hex, 0);
     rb_define_method(rb_cString, "oct", rb_str_oct, 0);

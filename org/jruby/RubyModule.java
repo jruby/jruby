@@ -118,13 +118,13 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             rbModule = getRuby().getObjectClass();
         }
         
-        path = (RubyString)getInstanceVariables().get("__classpath__");
+        path = (RubyString)getInstanceVariables().get(getRuby().intern("__classpath__"));
         if (path == null) {
-            if (getInstanceVariables().get("__classid__") != null) {
-                path = RubyString.m_newString(getRuby(), ((RubyId)getInstanceVariables().get("__classid__")).toName()); // todo: convert from symbol to string
+            if (getInstanceVariables().get(getRuby().intern("__classid__")) != null) {
+                path = RubyString.m_newString(getRuby(), ((RubyId)getInstanceVariables().get(getRuby().intern("__classid__"))).toName()); // todo: convert from symbol to string
                 
-                getInstanceVariables().put("__classpath__", path);
-                getInstanceVariables().remove("__classid__");
+                getInstanceVariables().put(getRuby().intern("__classpath__"), path);
+                getInstanceVariables().remove(getRuby().intern("__classid__"));
             }
         }
         
@@ -156,7 +156,16 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     private class FindClassPathMapMethod implements RubyMapMethod {
         public int execute(Object _key, Object _value, Object _res) {
             // Cast the values.
-            RubyId key = (RubyId)_key;
+            RubyId key = null;
+            try {
+                key = (RubyId)_key;
+            } catch (ClassCastException ccExcptn) {
+                key = getRuby().intern((String)_key);
+                System.out.println("key isn't ID: \"" + _key + "\"");
+            }
+            if (!(_value instanceof RubyObject)) {
+                return RubyMapMethod.CONTINUE;
+            }
             RubyObject value = (RubyObject)_value;
             FindClassPathResult res = (FindClassPathResult)_res;
             
@@ -258,7 +267,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     }
     
     public void setName(RubyId id) {
-        getInstanceVariables().put("__classid__", id);
+        getInstanceVariables().put(getRuby().intern("__classid__"), id);
     }
     
     /** rb_set_class_path
@@ -275,7 +284,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             value.m_cat(name);
         }
         
-        getInstanceVariables().put("__classpath__", value);
+        getInstanceVariables().put(getRuby().intern("__classpath__"), value);
     }
     
     /** rb_class_path

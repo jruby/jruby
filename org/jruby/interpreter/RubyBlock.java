@@ -89,7 +89,7 @@ public class RubyBlock {
         body = b;
         self = newSelf;
         frame = ruby.getInterpreter().getRubyFrame();
-        klass = ruby.getInterpreter().getRuby_class();
+        klass = ruby.getInterpreter().getRubyClass();
     //    _block.frame.file = ruby_sourcefile;
     //    _block.frame.line = ruby_sourceline;
         scope = ruby.rubyScope;

@@ -42,6 +42,8 @@ import org.jruby.exceptions.*;
  */
 public class RubyJavaObject extends RubyObject {
     private Object value;
+    
+    private static Map loadedClassMap = new HashMap();
 
     public RubyJavaObject(Ruby ruby, RubyModule rubyClass) {
         this(ruby, rubyClass, null);
@@ -65,6 +67,24 @@ public class RubyJavaObject extends RubyObject {
      */
     public void setValue(Object value) {
         this.value = value;
+    }
+    
+    public static RubyModule getRubyClass(Ruby ruby, Class javaClass) {
+        Map classMap = (Map)loadedClassMap.get(ruby);
+        if (classMap != null) {
+            RubyModule rubyClass = (RubyModule)classMap.get(javaClass);
+            return rubyClass != null ? rubyClass : ruby.getRubyClass("JavaObject");
+        }
+        return ruby.getRubyClass("JavaObject");
+    }
+    
+    public static void putRubyClass(Ruby ruby, Class javaClass, RubyModule rubyClass) {
+        Map classMap = (Map)loadedClassMap.get(ruby);
+        if (classMap == null) {
+            classMap = new HashMap();
+            loadedClassMap.put(ruby, classMap);
+        }
+        classMap.put(javaClass, rubyClass);
     }
     
     // JavaObject methods
@@ -118,6 +138,8 @@ public class RubyJavaObject extends RubyObject {
                 methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
                 newRubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, true));
             }
+            
+            putRubyClass(ruby, c, newRubyClass);
             
             return newRubyClass;
         } catch (ClassNotFoundException cnfExcptn) {
