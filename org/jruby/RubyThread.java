@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2002 Jason Voegele
+ *  Copyright (C) 2002 Anders Bengtsson
  *
  *  JRuby - http://jruby.sourceforge.net
  *
@@ -28,7 +29,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ThreadError;
 import org.jruby.exceptions.RaiseException;
@@ -52,7 +52,7 @@ import java.util.HashMap;
  */
 public class RubyThread extends RubyObject {
 
-    protected static boolean static_abort_on_exception;
+    private static boolean globalAbortOnException;
 
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
@@ -191,7 +191,7 @@ public class RubyThread extends RubyObject {
                 try {
                     proc.call(args);
                 } catch (RaiseException e) {
-                    thread.exitingException = e;
+                    thread.exceptionRaised(e);
                 }
             }
         });
@@ -227,11 +227,11 @@ public class RubyThread extends RubyObject {
      * Thread.abort_on_exception= .
      */
     public static RubyBoolean abort_on_exception(IRubyObject recv) {
-        return static_abort_on_exception ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        return globalAbortOnException ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
     public static RubyBoolean abort_on_exception_set(IRubyObject recv, RubyBoolean val) {
-        static_abort_on_exception = val.isTrue();
+        globalAbortOnException = val.isTrue();
         return val;
     }
 
@@ -358,4 +358,17 @@ public class RubyThread extends RubyObject {
 
     }
 
+    private void exceptionRaised(RaiseException exception) {
+        Asserts.assertExpression(Thread.currentThread() == jvmThread);
+
+        if (abortOnException()) {
+            // FIXME: dump exception to output; raise SystemExit on main thread.
+        } else {
+            exitingException = exception;
+        }
+    }
+
+    private boolean abortOnException() {
+        return (globalAbortOnException || abortOnException);
+    }
 }
