@@ -19,13 +19,31 @@ any Java class and to embed the interpreter into any Java application.
 Run
 ===
 
-> java -jar jruby.jar rubyfile.rb
+    java -jar jruby.jar rubyfile.rb
 
 interprets the file 'rubyfile.rb'.
 
+You can also use the utility scripts 'jruby.sh' or 'jruby.bat' to
+run the interpreter.
 
-More Informations
-=================
+
+Compiling from source
+=====================
+
+You will need:
+
+* JDK 1.4 (earlier versions may work, but are not tested).
+* Apache Ant (http://jakarta.apache.org/ant/).
+
+Compiling is done with:
+
+    ant compile
+
+You will now find the file jruby.jar in the build/ directory.
+
+
+More Information
+================
 
 Visit http://jruby.sourceforge.net for more information.
 
