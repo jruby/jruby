@@ -195,7 +195,7 @@ public final class Ruby {
     }
 
     public static Ruby getDefaultInstance() {
-        return getDefaultInstance((String) null);
+        return getDefaultInstance(null);
     }
 
     /**
@@ -717,7 +717,7 @@ public final class Ruby {
     public ThreadContext getMainContext() {
         return mainContext;
     }
-    
+
     public void registerNewContext(ThreadClass thread) {
         threadContext.set(new ThreadContext(this));
         getCurrentContext().setCurrentThread(thread);

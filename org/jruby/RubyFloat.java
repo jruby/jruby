@@ -114,6 +114,8 @@ public class RubyFloat extends RubyNumeric {
         floatClass.defineMethod("round", CallbackFactory.getMethod(RubyFloat.class, "round"));
         floatClass.defineMethod("truncate", CallbackFactory.getMethod(RubyFloat.class, "truncate"));
         floatClass.defineMethod("infinite?", CallbackFactory.getMethod(RubyFloat.class, "infinite_p"));
+        floatClass.defineMethod("finite?", CallbackFactory.getMethod(RubyFloat.class, "finite_p"));
+        floatClass.defineMethod("nan?", CallbackFactory.getMethod(RubyFloat.class, "nan_p"));
 
         return floatClass;
     }
@@ -278,6 +280,20 @@ public class RubyFloat extends RubyNumeric {
         } else {
             return getRuntime().getNil();
         }
+    }
+
+    public RubyBoolean finite_p() {
+        if (! infinite_p().isNil()) {
+            return getRuntime().getFalse();
+        }
+        if (nan_p().isTrue()) {
+            return getRuntime().getFalse();
+        }
+        return getRuntime().getTrue();
+    }
+
+    public RubyBoolean nan_p() {
+        return RubyBoolean.newBoolean(getRuntime(), Double.isNaN(getValue()));
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
