@@ -26,29 +26,26 @@
 package org.jruby.util.collections;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Simple stack implementation API compatible to java.util.Stack but NOT synchronized. 
  * @author  jpetersen, sma
  * @version $Revision$
  */
-public class ArrayStack {
-    private final List elements = new ArrayList();
-    
+public class ArrayStack extends ArrayList{
     public void push(Object element) {
-        elements.add(element);
+        add(element);
     }
     
     public Object pop() {
-        return elements.remove(elements.size() - 1);
+        return remove(size() - 1);
     }
     
     public Object peek() {
-        return elements.get(elements.size() - 1);
+        return get(size() - 1);
     }
 
     public boolean empty() {
-        return elements.isEmpty();
+        return isEmpty();
     }
 }
