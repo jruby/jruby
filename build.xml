@@ -64,8 +64,8 @@
         </javac>
         <copy todir="${build.dest}">
 			<fileset dir="${src.dir}">
-				<exclude name="${build.dest}"/>
-                <include name="**/*.properties"/>
+				<include name="gnu/**/*.properties"/>
+				<include name="org/**/*.properties"/>
             </fileset>
         </copy>
         <!-- Create jar in build dir -->
@@ -110,7 +110,7 @@
             	<include name="jruby.mf"/>
             	<include name="README"/>
             	<include name="README.test"/>
-                <include name="**/*.rb"/>
+                <include name="*.rb"/>
                 <include name="samples/**/*"/>
                 <include name="gnu/**/*.java"/>
                 <include name="org/**/*.java"/>
