@@ -28,42 +28,30 @@
 
 package org.jruby.util;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyStack extends AbstractList {
-    private List delegate;
+public class RubyStack {
+    private List elements;
 
     public RubyStack() {
-        this(new LinkedList());
-    }
-    
-    public RubyStack(List delegate) {
-        super();
-        this.delegate = delegate;
-    }
-
-    public int size() {
-        return delegate.size();
-    }    
-    
-    public Object get(int index) {
-        return delegate.get(index);
+        this.elements = new ArrayList();
     }
     
     public void push(Object element) {
-        delegate.add(element);
+        elements.add(element);
     }
     
     public Object pop() {
-        return delegate.remove(delegate.size() - 1);
+        return elements.remove(elements.size() - 1);
     }
     
     public Object peek() {
-        return delegate.get(delegate.size() - 1);
+        return elements.get(elements.size() - 1);
     }
 }

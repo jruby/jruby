@@ -142,7 +142,6 @@ public final class Ruby {
 
     private Scope topScope = null;
     private RubyVarmap dynamicVars = null;
-    private RubyModule rubyClass = null;
 
     private Frame topFrame;
 
@@ -158,8 +157,8 @@ public final class Ruby {
 
     private RubyModule wrapper;
 
-    private RubyStack classStack = new RubyStack(new LinkedList());
-    public RubyStack varMapStack = new RubyStack(new LinkedList());
+    private RubyStack classStack = new RubyStack();
+    public RubyStack varMapStack = new RubyStack();
 
     // Java support
     private JavaSupport javaSupport;
@@ -556,7 +555,7 @@ public final class Ruby {
 
             rubyTopSelf = new RubyObject(this, classes.getObjectClass());
 
-            rubyClass = getClasses().getObjectClass();
+            classStack.push(getClasses().getObjectClass());
             getCurrentFrame().setSelf(rubyTopSelf);
             topNamespace = new Namespace(getClasses().getObjectClass());
             namespace = topNamespace;
@@ -632,12 +631,11 @@ public final class Ruby {
     }
 
     public void pushClass(RubyModule newClass) {
-        classStack.push(getRubyClass());
-        rubyClass = newClass;
+        classStack.push(newClass);
     }
 
     public void popClass() {
-        rubyClass = (RubyModule) classStack.pop();
+        classStack.pop();
     }
 
     /** Setter for property isVerbose.
@@ -665,6 +663,7 @@ public final class Ruby {
      * @return Value of property rubyClass.
      */
     public RubyModule getRubyClass() {
+        RubyModule rubyClass = (RubyModule) classStack.peek();
         if (rubyClass.isIncluded()) {
             return ((RubyIncludedClass) rubyClass).getDelegate();
         }
