@@ -142,10 +142,11 @@ public class LoadService implements ILoadService {
         if (loadedFeatures.contains(name)) {
             return false;
         }
+        loadedFeatures.add(name);
         if (load(file)) {
-            loadedFeatures.add(name);
             return true;
         }
+        loadedFeatures.remove(name);
         return false;
     }
 
