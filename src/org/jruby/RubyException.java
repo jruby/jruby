@@ -36,7 +36,6 @@ package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -44,7 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyException extends RubyObject implements IndexCallable {
+public class RubyException extends RubyObject {
 
     private RubyArray backtrace;
     public IRubyObject message;
