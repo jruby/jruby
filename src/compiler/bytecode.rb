@@ -86,6 +86,24 @@ module JRuby
         end
       end
 
+      class GetModule < Instruction
+        def initialize(name)
+          @name = name
+        end
+
+        def emit_jvm_bytecode(generator)
+          push_runtime(generator)
+          generator.appendPush(@name)
+          arg_types = BCEL::Type[].new(1)
+          arg_types[0] = BCEL::Type::STRING
+          generator.appendInvoke("org.jruby.Ruby",
+                                 "getModule",
+                                 BCEL::ObjectType.new("org.jruby.RubyModule"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKEVIRTUAL)
+        end
+      end
+
       class AssignConstant < Instruction
         def initialize(name)
           @name = name

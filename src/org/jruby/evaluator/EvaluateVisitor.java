@@ -662,16 +662,17 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
         RubyClass rubyClass = receiver.getSingletonClass();
 
-        ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
-        if (method != null) {
-            if (runtime.getSafeLevel() >= 4) {
+        if (runtime.getSafeLevel() >= 4) {
+            ICallable method = (ICallable) rubyClass.getMethods().get(iVisited.getName());
+            if (method != null) {
                 throw new SecurityError(runtime, "Redefining method prohibited.");
             }
         }
 
-        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(), (ArgsNode) iVisited.getArgsNode(), runtime.getNamespace(), Visibility.PUBLIC);
-
-        // FIXME , Constants.NOEX_PUBLIC | (method != null ? method.getVisibility() & Constants.NOEX_UNDEF : 0)
+        DefaultMethod newMethod = new DefaultMethod(iVisited.getBodyNode(),
+                                                    (ArgsNode) iVisited.getArgsNode(),
+                                                    runtime.getNamespace(),
+                                                    Visibility.PUBLIC);
         rubyClass.addMethod(iVisited.getName(), newMethod);
         receiver.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
 

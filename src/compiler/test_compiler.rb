@@ -75,7 +75,7 @@ end
 
 $class_counter = 0
 
-def test_compiled(expected, source)
+def jvm_compile(source)
   interfaces = JavaLang::JString[].new(0)
   classgen = BCEL::ClassGen.new("jruby.CompiledRuby" + $class_counter.to_s,
                                 "java.lang.Object",
@@ -98,13 +98,27 @@ def test_compiled(expected, source)
                                              classgen.getClassName,
                                              classgen.getJavaClass.getBytes,
                                              "doStuff")
-  test_equal(expected, result)
+  result
 end
 
 
-test_compiled(nil, "module X; Y = 123; end")
-#test_compiled(123, "module X; Y = 123; end; X::Y")
+def test_compiled(expected, source)
+  test_equal(expected, jvm_compile(source))
+end
 
+def test_compiled_type(expected_type, source)
+  test_equal(expected_type, jvm_compile(source).type)
+end
+
+
+
+test_compiled(nil, "class CL_1; end")
+#test_compiled_type(Class, "class CL_2; end; CL_2")
+
+test_compiled(nil, "module ABC; end")
+test_compiled(123, "module X; Y = 123; end")
+test_compiled_type(Module, "module X; end; X")
+test_compiled(123, "module X; Y = 123; end; X::Y")
 
 test_compiled(3, "3")
 test_compiled("hello", '"hello"')

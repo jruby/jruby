@@ -306,8 +306,11 @@ module JRuby
 
       def visitScopeNode(node)
         @bytecodes << NewScope.new(node.getLocalNames)
-        emit_bytecodes(node.getBodyNode)
-
+        unless node.getBodyNode.nil?
+          emit_bytecodes(node.getBodyNode)
+        else
+          @bytecodes << PushNil.new
+        end
         # ... finally
         @bytecodes << RestoreScope.new
       end
@@ -339,8 +342,9 @@ module JRuby
       end
 
       def visitModuleNode(node)
-        # @bytecodes << GetModule.new(node.getName)
-        # @bytecodes << AssignSelf.new
+        @bytecodes << GetModule.new(node.getName)
+
+        # pushClass() ...?
 
         # .... etc. ... 
 
@@ -348,16 +352,19 @@ module JRuby
 
         # .. finally
 
-        # @bytecodes << RestoreSelf.new
-        @bytecodes << PushNil.new
+        # popClass() ...?
+      end
+
+      def visitClassNode(node)
+        # FIXME
+        emit_bytecodes(node.getBodyNode)
       end
 
       def visitColon2Node(node)
         emit_bytecodes(node.getLeftNode)
-        # ... if module on stack
-        #        getConstant(node.getName
-        # ... else
-        #        callMethod(node.getName)  .. no args
+        # FIXME: if not module on stack now, do call instead
+        @bytecodes << PushSymbol.new(node.getName)
+        @bytecodes << Call.new("const_get", 1, :normal)
       end
 
       def visitConstDeclNode(node)
