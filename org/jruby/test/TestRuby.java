@@ -31,6 +31,7 @@
 
 /**
  * @author Benoit
+ * @version $Revision$
  */
 
 
@@ -45,7 +46,9 @@ import org.jruby.RubyArray;
 import org.jruby.regexp.GNURegexpAdapter;
 import java.util.ArrayList;
 import java.io.File;
-
+/**
+ * Unit test for the ruby class.
+ **/
 public class TestRuby extends TestRubyBase {
 
 	public TestRuby(String name) {
@@ -86,29 +89,25 @@ C:\dev\jruby>ruby -e "puts $:"
 
 		 */
 		ruby.initLoad(new ArrayList());
+		String wanted;
 		if (File.separatorChar == '/')
 		{
-			
-			assertEquals("6", eval("$:.size"));
-			String wanted = "RubyHome/lib/ruby/site_ruby/1.6" 
+			wanted = "RubyHome/lib/ruby/site_ruby/1.6" 
 				+ "RubyHome/lib/ruby/site_ruby/1.6/JAVA"
 				+ "RubyHome/lib/ruby/site_ruby"
 				+ "RubyHome/lib/ruby/1.6"
 				+ "RubyHome/lib/ruby/1.6/JAVA"
 				+ ".\n";
-			assertEquals(wanted, eval("puts $:"));
 		} else
 		{
-			String result = eval("puts $:");
-			String wanted = "RubyHome\\lib\\ruby\\site_ruby\\1.6" 
+			wanted = "RubyHome\\lib\\ruby\\site_ruby\\1.6" 
 				+ "RubyHome\\lib\\ruby\\site_ruby\\1.6\\JAVA"
 				+ "RubyHome\\lib\\ruby\\site_ruby"
 				+ "RubyHome\\lib\\ruby\\1.6"
 				+ "RubyHome\\lib\\ruby\\1.6\\JAVA"
 				+ ".";
-			assertEquals(wanted, result);
-
 		}
+		assertEquals(wanted, eval("puts $:"));
 	}
 
 	public void testFindFile() {

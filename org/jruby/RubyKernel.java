@@ -48,8 +48,8 @@ public class RubyKernel {
 		ruby.defineGlobalFunction("print", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "print"));
 		ruby.defineGlobalFunction("printf", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "printf"));
 		ruby.defineGlobalFunction("puts", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "puts"));
-		//FIXME load,autoload method needs to be implemented
-		//ruby.defineGlobalFunction("load", CallbackFactory.getSingletonMethod(RubyKernel.class, "load", RubyString.class));
+		ruby.defineGlobalFunction("load", CallbackFactory.getSingletonMethod(RubyKernel.class, "load", RubyString.class));
+		//FIXME autoload method needs to be implemented
 		//ruby.defineGlobalFunction("autoload", CallbackFactory.getSingletonMethod(RubyKernel.class, "autoload", RubyString.class));
 		ruby.defineGlobalFunction("raise", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "raise"));
 		ruby.defineGlobalFunction("require", CallbackFactory.getSingletonMethod(RubyKernel.class, "require", RubyString.class));
@@ -137,11 +137,25 @@ public class RubyKernel {
 	 * we allow requiring either .rb files or jars.
 	 * @param ruby the ruby interpreter to use.
 	 * @param recv ruby object used to call require (any object will do and it won't be used anyway).
-	 * @param arg1 the name of the file to require
+	 * @param i2Load the name of the file to require
 	 **/
-	public static RubyObject require(Ruby ruby, RubyObject recv, RubyString arg1) {
-		if (arg1.getValue().endsWith(".jar")) {
-			File jarFile = ruby.findFile(new File(arg1.getValue()));
+	public static RubyObject require(Ruby ruby, RubyObject recv, RubyString i2Load) 
+	{
+		//this is inefficient but it will do for now
+		RubyArray lFeatures =  (RubyArray) ruby.getGlobalVar("$\"");
+		if (lFeatures.index(i2Load).isNil())
+		{
+			load(ruby, recv, i2Load);
+			lFeatures.push( i2Load);
+			return ruby.getTrue();
+		}
+		return ruby.getFalse();
+	}
+
+	public static RubyObject load(Ruby ruby, RubyObject recv, RubyString i2Load) 
+	{	
+		if (i2Load.getValue().endsWith(".jar")) {
+			File jarFile = ruby.findFile(new File(i2Load.getValue()));
 			if (!jarFile.exists()) {
 				ruby.getRuntime().getErrorStream().println("[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
 			}
@@ -153,12 +167,18 @@ public class RubyKernel {
 				}*/
 			}
 		} else {
-			if (!arg1.getValue().endsWith(".rb")) {
-				arg1 = RubyString.newString(ruby, arg1.getValue() + ".rb");
+			if (!i2Load.getValue().endsWith(".rb")) {
+				i2Load = RubyString.newString(ruby, i2Load.getValue() + ".rb");
 			}
-			File rbFile = ruby.findFile(new File(arg1.getValue()));
+			File rbFile = ruby.findFile(new File(i2Load.getValue()));
 			ruby.getRuntime().loadFile(rbFile, false);
 		}
+		return ruby.getTrue();
+	}
+
+	public static RubyObject gets(Ruby ruby)
+	{
 		return ruby.getNil();
 	}
 }
+

@@ -17,11 +17,11 @@ public class TestJavaUtil extends TestCase {
     }
     
     public void testConvertJavaToRuby() {
-        // assertEquals(JavaUtil.convertJavaToRuby(ruby, null, Object.class).type().toName(), "NilClass");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, null, Object.class).type().toName(), "NilClass");
         assertEquals(JavaUtil.convertJavaToRuby(ruby, new Integer(1000), Integer.TYPE).type().toName(), "Fixnum");
         assertEquals(JavaUtil.convertJavaToRuby(ruby, new Double(1.0), Double.TYPE).type().toName(), "Float");
         assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.TRUE, Boolean.TYPE).type().toName(), "TrueClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.FALSE, Boolean.TYPE).type().toName(), "TrueClass");
+        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.FALSE, Boolean.TYPE).type().toName(), "FalseClass");
         assertEquals(JavaUtil.convertJavaToRuby(ruby, "AString", String.class).type().toName(), "String");
     }
 }

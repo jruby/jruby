@@ -69,6 +69,38 @@ public class Main
 	private static boolean sYyDebug = false;
 	private static boolean sBenchmarkMode = false;
 	private static boolean sCheckOnly = false;
+	private static boolean sDoLoop = false;
+	private static boolean sDoPrint = false;
+	private static boolean sDoLine = false;
+	private static boolean sDoSplit = false;
+	private static class ArgIter
+	{
+		int idxArg;
+		int idxChar;	
+	}
+	/*
+	 * helper function for args processing.
+	 */
+	private static String grabValue(String args[], String errorMessage, ArgIter ioIter)
+	{		
+		if (++ioIter.idxChar < args[ioIter.idxArg].length())
+		{
+			return args[ioIter.idxArg].substring(ioIter.idxChar);
+		}
+		else if (++ioIter.idxArg < args.length)
+		{
+			return args[ioIter.idxArg];
+		}
+		else
+		{
+			System.err.println("invalid argument " + ioIter.idxArg);
+			System.err.println(errorMessage);
+			printUsage();
+			System.exit(1);
+		}
+		return null;
+	}
+
 	/**
 	 * process the command line arguments.
 	 * This method will consume the appropriate arguments and valuate
@@ -80,73 +112,146 @@ public class Main
 	{
 		int lenArg = args.length;
 		StringBuffer lBuf = new StringBuffer();
-		int i = 0;
-		for (; i < lenArg; i++)
+		ArgIter lIter = new ArgIter();
+		for (; lIter.idxArg < lenArg; lIter.idxArg++)
 		{
-			if (args[i].equals("-h") || args[i].equals("-help"))
+			if (args[lIter.idxArg].charAt(0) == '-')
 			{
-				printUsage();
-			} else if (args[i].startsWith("-I"))
-			{
-				sLoadDirectories.add(args[i].substring(2));
-			} else if (args[i].startsWith("-r"))
-			{
-				sRequireFirst.add(args[i].substring(2));
-			} else if (args[i].equals("-e"))
-			{
-				if (i++ >= lenArg)
-				{
-					System.err.println("invalid argument " + i);
-					System.err.println(" -e must be followed by an expression to evaluate");
-					printUsage();
-				} else
-				{
-					lBuf.append(args[i]);
-				}
-			} else if (args[i].equals("-b"))
-			{
-				// Benchmark
-				sBenchmarkMode = true;
-				//FIXME remove if really not used Benoit
-				//				 else if (args[i].equals("-bugs")) 
-				//					printBugs = true;
-			} else if (args[i].equals("-rx"))
-			{
-				if (++i >= lenArg)
-				{
-					System.err.println("invalid argument " + i);
-					System.err.println(" -rx must be followed by an expression to evaluate");
-					printUsage();
-				} else
-				{
-					try
+FOR:				
+				for (lIter.idxChar = 1; lIter.idxChar < args[lIter.idxArg].length(); lIter.idxChar++)
+					switch(args[lIter.idxArg].charAt(lIter.idxChar))
 					{
-						sRegexpAdapter = Class.forName(args[i]);
-					} catch (Exception e)
-					{
-						System.err.println("invalid argument " + i);
-						System.err.println("failed to load RegexpAdapter: " + args[i]);
-						System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
+						case 'h':
+							printUsage();
+							break;
+						case 'I':
+							sLoadDirectories.add(
+									grabValue(args, 
+										" -I must be followed by a directory name to add to lib path", 
+										lIter));
+							break FOR;
+						case 'r':
+							sRequireFirst.add(grabValue(args,
+										"-r must be followed by a package to require", lIter));
+							break FOR;
+						case 'e':
+							lBuf.append(
+									grabValue(args,
+										" -e must be followed by an expression to evaluate", lIter))
+								.append("\n");
+							break FOR;
+						case 'b':
+							// Benchmark
+							sBenchmarkMode = true;
+							break;
+						case 'R':
+							String lRegexpAdapter = grabValue(args, 
+									" -R must be followed by an expression to evaluate", lIter);
+							try
+							{
+								sRegexpAdapter = Class.forName(lRegexpAdapter);
+							} catch (Exception e)
+							{
+								System.err.println("invalid argument " + lIter.idxArg);
+								System.err.println("failed to load RegexpAdapter: " + args[lIter.idxArg]);
+								System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
+							}
+							break FOR;
+						case 'c':
+							sCheckOnly = true;
+							break;
+						case 'y':
+							sYyDebug = true;
+							break;
+						case 'p':
+							sDoPrint = true;
+							//fall through on purpose
+						case 'n':
+							sDoLoop = true;
+							break;
+						case 'a':
+							sDoSplit = true;
+							break;
+						case 'l':
+							sDoLine = true;
+							break;
+						default:
+							System.err.println("unknown option " + args[lIter.idxArg].charAt(lIter.idxChar));
+							System.exit(1);
 					}
-				}
-			} else if (args[i].equals("-c"))
-			{
-				sCheckOnly = true;
-			}
-			 else if (args[i].equals("-y"))
-			{
-				sYyDebug = true;
 			}
 			else
 			{
 				if (lBuf.length() == 0)		//only get a filename if there were no -e
-					sFileName = args[i++];	//consume the file name
+					sFileName = args[lIter.idxArg++];	//consume the file name
 				break;						//the rests are args for the script
 			}
+			/*
+			   if (args[lIter.idxArg].equals("-h") || args[lIter.idxArg].equals("-help"))
+			   {
+			   printUsage();
+			   } else if (args[lIter.idxArg].startsWith("-I"))
+			   {
+			   sLoadDirectories.add(args[lIter.idxArg].substring(2));
+			   } else if (args[lIter.idxArg].startsWith("-r"))
+			   {
+			   sRequireFirst.add(args[lIter.idxArg].substring(2));
+			   } else if (args[lIter.idxArg].equals("-e"))
+			   {
+			   if (lIter.idxArg++ >= lenArg)
+			   {
+			   System.err.println("invalid argument " + lIter.idxArg);
+			   System.err.println(" -e must be followed by an expression to evaluate");
+			   printUsage();
+			   } else
+			   {
+			   lBuf.append(args[lIter.idxArg]);
+			   }
+			   } else if (args[lIter.idxArg].equals("-b"))
+			   {
+			// Benchmark
+			sBenchmarkMode = true;
+			//FIXME remove if really not used Benoit
+			//				 else if (args[lIter.idxArg].equals("-bugs")) 
+			//					printBugs = true;
+			} else if (args[lIter.idxArg].equals("-rx"))
+			{
+			if (++lIter.idxArg >= lenArg)
+			{
+			System.err.println("invalid argument " + lIter.idxArg);
+			System.err.println(" -rx must be followed by an expression to evaluate");
+			printUsage();
+			} else
+			{
+			try
+			{
+			sRegexpAdapter = Class.forName(args[lIter.idxArg]);
+			} catch (Exception e)
+			{
+			System.err.println("invalid argument " + lIter.idxArg);
+			System.err.println("failed to load RegexpAdapter: " + args[lIter.idxArg]);
+			System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
+			}
+			}
+			} else if (args[lIter.idxArg].equals("-c"))
+			{
+			sCheckOnly = true;
+			}
+			else if (args[lIter.idxArg].equals("-y"))
+			{
+			sYyDebug = true;
+			}
+			else
+			{
+			if (lBuf.length() == 0)		//only get a filename if there were no -e
+			sFileName = args[lIter.idxArg++];	//consume the file name
+			break;						//the rests are args for the script
+			}
+			 */
 		}
 		sScript = lBuf.toString();
-		String[] lRet = new String[lenArg - i];
-		System.arraycopy(args, i, lRet, 0, lRet.length);
+		String[] lRet = new String[lenArg - lIter.idxArg];
+		System.arraycopy(args, lIter.idxArg, lRet, 0, lRet.length);
 		return lRet;
 	}
 
@@ -176,6 +281,7 @@ public class Main
 			runInterpreterOnFile(sFileName, argv);
 		} else
 		{
+			System.err.println("nothing to interpret");
 			printUsage();	//interpreting from the command line not supported yet
 			return;
 		}
@@ -192,7 +298,7 @@ public class Main
 	 *           -e 'command'   one line of script. Several -e's allowed. Omit [programfile]
 	 *           -b             benchmark mode
 	 *           -Idirectory    specify $LOAD_PATH directory (may be used more than once)
-	 *           -rx 'adapter'  used to select a regexp engine
+	 *           -R 'adapter'  used to select a regexp engine
 	 *           -c 			check syntax and dump parse tree
 	 *           -y 			debug parser
 	 */
@@ -200,7 +306,7 @@ public class Main
 	{
 		if (!sPrintedUsage)
 		{
-			System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
+			System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments] $Date$");
 			System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
 			System.out.println("    -b              benchmark mode, times the script execution");
 			System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
@@ -241,16 +347,28 @@ public class Main
 		RubyString rs = RubyString.newString(ruby, iString2Eval);
 		RubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args, String[].class);
 		ruby.defineGlobalConstant("ARGV", lArgv);
+		RubyGlobalEntry.defineReadonlyVariable(ruby, "$-p", (sDoPrint? ruby.getTrue(): ruby.getNil()));
+		RubyGlobalEntry.defineReadonlyVariable(ruby, "$-n", (sDoLoop? ruby.getTrue(): ruby.getNil()));
+		RubyGlobalEntry.defineReadonlyVariable(ruby, "$-a", (sDoSplit? ruby.getTrue(): ruby.getNil()));
+		RubyGlobalEntry.defineReadonlyVariable(ruby, "$-l", (sDoLine? ruby.getTrue(): ruby.getNil()));
 		RubyGlobalEntry.defineReadonlyVariable(ruby, "$*",  lArgv);
 		ruby.initLoad(sLoadDirectories);
 		//require additional libraries
 		int lNbRequire = sRequireFirst.size();
 		for (int i = 0; i < lNbRequire; i++)
-		    RubyKernel.require(ruby, null, new RubyString(ruby, (String)sRequireFirst.get(i)));
+			RubyKernel.require(ruby, null, new RubyString(ruby, (String)sRequireFirst.get(i)));
 		// +++
 		try
 		{	
 			Node lScript = ruby.getRubyParser().compileString(iFileName, rs, 0);
+//				DumpVisitor laVisitor = new DumpVisitor();
+//				lScript.accept(laVisitor);
+//				ruby.getRuntime().getOutputStream().println(laVisitor.dump());
+			if (sDoPrint)
+				ruby.getParserHelper().rb_parser_append_print();
+			if (sDoLoop)
+				ruby.getParserHelper().rb_parser_while_loop(sDoLine, sDoSplit);
+			lScript = ruby.getParserHelper().getEvalTree();
 			if (sCheckOnly)
 			{
 				DumpVisitor lVisitor = new DumpVisitor();
@@ -258,7 +376,9 @@ public class Main
 				ruby.getRuntime().getOutputStream().println(lVisitor.dump());
 			}
 			else
+			{
 				ruby.getRubyTopSelf().eval(lScript);
+			}
 		} catch (RaiseException rExcptn)
 		{
 			System.out.println(rExcptn.getActException().to_s().getValue());

@@ -55,6 +55,9 @@ public class TestRubyBase extends TestCase {
         super(name);
     }
 
+    /**
+     * evaluate a string and returns the standard output
+     **/
     protected String eval(String script) {
         pipeIn = new PipedInputStream();
         in = new BufferedReader(new InputStreamReader(pipeIn));
