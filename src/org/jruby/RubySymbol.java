@@ -58,10 +58,8 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         super(ruby, ruby.getClasses().getSymbolClass());
         this.symbol = symbol;
 
-        synchronized (RubySymbol.class) {
-            lastId++;
-            this.id = lastId;
-        }
+        lastId++;
+        this.id = lastId;
     }
 
     /** rb_to_id
@@ -134,18 +132,24 @@ public class RubySymbol extends RubyObject implements IndexCallable {
      */
 
     public static RubySymbol newSymbol(Ruby ruby, String name) {
-        RubySymbol result = ruby.symbolTable.lookup(name);
-        if (result == null) {
-            if (name == null) {
-                result = new RubySymbol(ruby, null) {
-                    public boolean isNil() {
-                        return true;
-                    }
-                };
-            } else {
-                result = new RubySymbol(ruby, name);
+        RubySymbol result;
+        synchronized (RubySymbol.class) {
+            // Locked to prevent the creation of multiple instances of
+            // the same symbol. Most code depends on them being unique.
+
+            result = ruby.symbolTable.lookup(name);
+            if (result == null) {
+                if (name == null) {
+                    result = new RubySymbol(ruby, null) {
+                        public boolean isNil() {
+                            return true;
+                        }
+                    };
+                } else {
+                    result = new RubySymbol(ruby, name);
+                }
+                ruby.symbolTable.store(result);
             }
-            ruby.symbolTable.store(result);
         }
         return result;
     }
