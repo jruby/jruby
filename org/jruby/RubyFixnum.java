@@ -71,9 +71,9 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("%", CallbackFactory.getMethod(RubyFixnum.class, "op_mod", RubyObject.class));
         fixnumClass.defineMethod("**", CallbackFactory.getMethod(RubyFixnum.class, "op_pow", RubyObject.class));
 
-        fixnumClass.defineMethod("==", CallbackFactory.getMethod(RubyFixnum.class, "op_equal", RubyObject.class));
-        fixnumClass.defineMethod("eql?", CallbackFactory.getMethod(RubyFixnum.class, "op_equal", RubyObject.class));
-        fixnumClass.defineMethod("equal?", CallbackFactory.getMethod(RubyFixnum.class, "op_equal", RubyObject.class));
+        fixnumClass.defineMethod("==", CallbackFactory.getMethod(RubyFixnum.class, "equal", RubyObject.class));
+        fixnumClass.defineMethod("eql?", CallbackFactory.getMethod(RubyFixnum.class, "equal", RubyObject.class));
+        fixnumClass.defineMethod("equal?", CallbackFactory.getMethod(RubyFixnum.class, "equal", RubyObject.class));
         fixnumClass.defineMethod("<=>", CallbackFactory.getMethod(RubyFixnum.class, "op_cmp", RubyObject.class));
         fixnumClass.defineMethod(">", CallbackFactory.getMethod(RubyFixnum.class, "op_gt", RubyObject.class));
         fixnumClass.defineMethod(">=", CallbackFactory.getMethod(RubyFixnum.class, "op_ge", RubyObject.class));
@@ -248,7 +248,7 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
-    public RubyBoolean op_equal(RubyObject other) {
+    public RubyBoolean equal(RubyObject other) {
         if (!(other instanceof RubyNumeric)) {
             return getRuby().getFalse();
         } else {
@@ -327,14 +327,6 @@ public class RubyFixnum extends RubyInteger {
             return (RubyInteger) other.funcall("^", this);
         }
         return newFixnum(value ^ other.getLongValue());
-    }
-
-    /**
-     * @see RubyObject#equal(RubyObject)
-     */
-    public RubyBoolean equal(RubyObject obj) {
-        return RubyBoolean.newBoolean(ruby, obj instanceof RubyFixnum &&
-            ((RubyFixnum)obj).getLongValue() == getLongValue());
     }
 
     public RubyFixnum size() {

@@ -70,7 +70,7 @@ public class AssignmentVisitor extends AbstractVisitor {
         return result;
     }
 
-  	/**
+    /**
      * @see AbstractVisitor#visitNode(INode)
      */
     protected void visitNode(INode iVisited) {
@@ -173,8 +173,7 @@ public class AssignmentVisitor extends AbstractVisitor {
         int varLen = ListNodeUtil.getLength(iVisited.getHeadNode());
         
         Iterator iter = iVisited.getHeadNode() != null ? iVisited.getHeadNode().iterator() : Collections.EMPTY_LIST.iterator();
-        int i = 0;
-        for (; i < valueLen && iter.hasNext(); i++) {
+        for (int i = 0; i < valueLen && iter.hasNext(); i++) {
             new AssignmentVisitor(ruby, self).assign((INode)iter.next(), ((RubyArray)value).entry(i), check);
         }
 
@@ -196,7 +195,6 @@ public class AssignmentVisitor extends AbstractVisitor {
         }
 
         while (iter.hasNext()) {
-            i++;
             new AssignmentVisitor(ruby, self).assign((INode)iter.next(), ruby.getNil(), check);
         }
 
