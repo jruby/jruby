@@ -55,12 +55,13 @@ public class TestRubyBase extends TestCase {
      * @return the value printed out on  stdout and stderr by 
      **/
     protected String eval(String script) throws Exception {
-        pipeIn = new PipedInputStream();
+        /* pipeIn = new PipedInputStream();
         in = new BufferedReader(new InputStreamReader(pipeIn));
 
         String output = null;
-        StringBuffer result = new StringBuffer();
-        out = new PrintStream(new PipedOutputStream(pipeIn), true);
+        StringBuffer result = new StringBuffer(); */
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        out = new PrintStream(result);
         //            ruby.getRuntime().setOutputStream(out);
         //            ruby.getRuntime().setErrorStream(out);
         RubyIO lStream = new RubyIO(ruby);
@@ -70,11 +71,20 @@ public class TestRubyBase extends TestCase {
         lStream = (RubyIO) ruby.getGlobalVar("$stderr");
         lStream.initIO(null, out, null);
         ruby.setGlobalVar("$stderr", lStream);
-        new EvalThread("test", script).start();
-        while ((output = in.readLine()) != null) {
+        
+        ruby.getRuntime().loadScript(RubyString.newString(ruby, "test"), RubyString.newString(ruby, script), false);
+        
+        /*new EvalThread("test", script).start();*/
+        /*while ((output = in.readLine()) != null) {
             result.append(output);
+        }*/
+        
+        StringBuffer sb = new StringBuffer(new String(result.toByteArray()));
+        for (int idx = sb.indexOf("\n"); idx != -1; idx = sb.indexOf("\n")) {
+            sb.deleteCharAt(idx);
         }
-        return result.toString();
+        
+        return sb.toString();
     }
 
     class EvalThread extends Thread {
