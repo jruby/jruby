@@ -22,16 +22,14 @@
  */
 package org.jruby.runtime.marshal;
 
-import org.jruby.Ruby;
-import org.jruby.RubySymbol;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 public class UnmarshalCache {
     private final Ruby runtime;
@@ -69,7 +67,7 @@ public class UnmarshalCache {
         try {
             return (IRubyObject) links.get(index);
         } catch (IndexOutOfBoundsException e) {
-            throw new ArgumentError(runtime, "dump format error (unlinked, index: " + index + ")");
+            throw runtime.newArgumentError("dump format error (unlinked, index: " + index + ")");
         }
     }
 
@@ -77,7 +75,7 @@ public class UnmarshalCache {
         try {
             return (RubySymbol) symbols.get(index);
         } catch (IndexOutOfBoundsException e) {
-            throw new TypeError(runtime, "bad symbol");
+            throw runtime.newTypeError("bad symbol");
         }
     }
 }

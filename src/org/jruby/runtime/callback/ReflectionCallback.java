@@ -26,11 +26,11 @@
  */
 package org.jruby.runtime.callback;
 
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *

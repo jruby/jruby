@@ -31,13 +31,17 @@
  */
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.ZSuperNode;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.internal.runtime.methods.CallbackMethod;
@@ -60,12 +64,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  *
@@ -223,7 +221,7 @@ public class RubyModule extends RubyObject {
         }
         
         StringBuffer result = new StringBuffer(classId);
-        RubyClass objectClass = runtime.getClasses().getObjectClass();
+        RubyClass objectClass = getRuntime().getClasses().getObjectClass();
         
         for (RubyModule current = this.parentModule; 
         current != objectClass && current != this;
@@ -300,7 +298,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject getConstant(String name, boolean invokeConstMissing) {
     	// special case code for "NIL"
     	if (name.equals("NIL")) {
-    		return runtime.getNil();
+    		return getRuntime().getNil();
     	}
     	
     	// First look for constants in module hierachy
@@ -333,7 +331,7 @@ public class RubyModule extends RubyObject {
         
         if (invokeConstMissing) {
         	return callMethod("const_missing", 
-        			RubySymbol.newSymbol(runtime, name));
+        			RubySymbol.newSymbol(getRuntime(), name));
         }
         return null;
     }
@@ -353,11 +351,11 @@ public class RubyModule extends RubyObject {
     public void includeModule(IRubyObject arg) {
         testFrozen("module");
         if (!isTaint()) {
-            runtime.secure(4);
+            getRuntime().secure(4);
         }
 
         if (!(arg instanceof RubyModule)) {
-            throw new TypeError(runtime, "Wrong argument type " + arg.getMetaClass().getName() + " (expected Module).");
+            throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() + " (expected Module).");
         }
 
         RubyModule module = (RubyModule) arg;
@@ -475,7 +473,7 @@ public class RubyModule extends RubyObject {
     	if (!constant.isNil()) {
     		return constant;
     	} 
-    	if (this == runtime.getClasses().getObjectClass()) {
+    	if (this == getRuntime().getClasses().getObjectClass()) {
     		return getConstant(name, false);
     	}
     	return null;
@@ -552,7 +550,7 @@ public class RubyModule extends RubyObject {
         }
         CacheEntry entry = getMethodBodyCached(name);
 
-        final LastCallStatus lastCallStatus = runtime.getLastCallStatus();
+        final LastCallStatus lastCallStatus = getRuntime().getLastCallStatus();
         if (! entry.isDefined()) {
             callType.registerCallStatus(lastCallStatus, name);
             return callMethodMissing(recv, name, args);
@@ -571,7 +569,7 @@ public class RubyModule extends RubyObject {
                 while (defined.isIncluded()) {
                     defined = defined.getMetaClass();
                 }
-                if (!runtime.getCurrentFrame().getSelf().isKindOf(defined)) {
+                if (!getRuntime().getCurrentFrame().getSelf().isKindOf(defined)) {
                     lastCallStatus.setProtected();
                     return callMethodMissing(recv, name, args);
                 }
@@ -583,17 +581,17 @@ public class RubyModule extends RubyObject {
 
     private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
         if (name == "method_missing") {
-            runtime.getFrameStack().push();
+            getRuntime().getFrameStack().push();
             try {
                 return receiver.method_missing(args);
             } finally {
-                runtime.getFrameStack().pop();
+                getRuntime().getFrameStack().pop();
             }
         }
 
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
-        newArgs[0] = RubySymbol.newSymbol(runtime, name);
+        newArgs[0] = RubySymbol.newSymbol(getRuntime(), name);
 
         return receiver.callMethod("method_missing", newArgs);
     }
@@ -607,7 +605,7 @@ public class RubyModule extends RubyObject {
         IRubyObject[] args,
         ICallable method,
         boolean noSuper) {
-        ThreadContext context = runtime.getCurrentContext();
+        ThreadContext context = getRuntime().getCurrentContext();
         context.getIterStack().push(context.getCurrentIter().isPre() ? Iter.ITER_CUR : Iter.ITER_NOT);
 
         context.getFrameStack().push();
@@ -617,7 +615,7 @@ public class RubyModule extends RubyObject {
         context.getCurrentFrame().setArgs(args);
 
         try {
-            return method.call(runtime, recv, name, args, noSuper);
+            return method.call(getRuntime(), recv, name, args, noSuper);
         } finally {
             context.getFrameStack().pop();
             context.getIterStack().pop();
@@ -641,7 +639,7 @@ public class RubyModule extends RubyObject {
                 method = getRuntime().getClasses().getObjectClass().searchMethod(oldName);
             }
             if (method.isUndefined()) {
-                throw new NameError(runtime,
+                throw new NameError(getRuntime(),
                                     "undefined method '" + name + "' for " +
                                     (isModule() ? "module" : "class") + " '" +
                                     getName() + "'");
@@ -679,7 +677,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(type instanceof RubyClass)) {
-        	throw new TypeError(runtime, name + " is not a class.");
+        	throw getRuntime().newTypeError(name + " is not a class.");
         }
             
         return (RubyClass) type;
@@ -697,9 +695,9 @@ public class RubyModule extends RubyObject {
     	}
 
     	if (!(type instanceof RubyClass)) {
-    		throw new TypeError(runtime, name + " is not a class.");
+    		throw getRuntime().newTypeError(name + " is not a class.");
         } else if (((RubyClass) type).getSuperClass().getRealClass() != superClass) {
-        	throw new NameError(runtime, name + " is already defined.");
+        	throw new NameError(getRuntime(), name + " is already defined.");
         } 
             
     	return (RubyClass) type;
@@ -714,7 +712,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(type instanceof RubyModule)) {
-        	throw new TypeError(runtime, name + " is not a module.");
+        	throw getRuntime().newTypeError(name + " is not a module.");
         } 
 
         return (RubyModule) type;
@@ -812,7 +810,7 @@ public class RubyModule extends RubyObject {
 
         if (method.isUndefined()) {
             throw new NameError(
-                runtime,
+                getRuntime(),
                 "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + getName() + "'");
         }
 
@@ -871,35 +869,35 @@ public class RubyModule extends RubyObject {
     // What is argument 1 for in this method?
     public IRubyObject define_method(IRubyObject[] args) {
         if (args.length < 1 || args.length > 2) {
-            throw new ArgumentError(runtime, "wrong # of arguments(" + args.length + " for 1)");
+            throw getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
 
         String name = args[0].asSymbol();
         IRubyObject body;
         ICallable newMethod;
-        Visibility visibility = runtime.getCurrentVisibility();
+        Visibility visibility = getRuntime().getCurrentVisibility();
 
         if (visibility.isModuleFunction()) {
             visibility = Visibility.PRIVATE;
         }
         
         if (args.length == 1) {
-            body = RubyProc.newProc(runtime);
+            body = RubyProc.newProc(getRuntime());
             newMethod = new ProcMethod((RubyProc)body, visibility);
-        } else if (args[0].isKindOf(runtime.getClasses().getMethodClass())) {
+        } else if (args[0].isKindOf(getRuntime().getClasses().getMethodClass())) {
             body = args[0];
             newMethod = new MethodMethod(((RubyMethod)body).unbind(), visibility);
-        } else if (args[0].isKindOf(runtime.getClasses().getProcClass())) {
+        } else if (args[0].isKindOf(getRuntime().getClasses().getProcClass())) {
             body = args[0];
             newMethod = new ProcMethod((RubyProc)body, visibility);
         } else {
-            throw new TypeError(runtime, "wrong argument type " + args[0].getType().getName() + " (expected Proc/RubyMethod)");
+            throw getRuntime().newTypeError("wrong argument type " + args[0].getType().getName() + " (expected Proc/RubyMethod)");
         }
 
         addMethod(name, newMethod);
 
-        RubySymbol symbol = RubySymbol.newSymbol(runtime, name);
-        if (runtime.getCurrentVisibility().isModuleFunction()) {
+        RubySymbol symbol = RubySymbol.newSymbol(getRuntime(), name);
+        if (getRuntime().getCurrentVisibility().isModuleFunction()) {
             getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
             callMethod("singleton_method_added", symbol);
         }
@@ -910,7 +908,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
-        ThreadContext threadContext = runtime.getCurrentContext();
+        ThreadContext threadContext = getRuntime().getCurrentContext();
 
         threadContext.pushClass(this);
 
@@ -942,20 +940,20 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString name() {
-        return RubyString.newString(runtime, getName());
+        return getRuntime().newString(getName());
     }
 
     /** rb_mod_class_variables
      *
      */
     public RubyArray class_variables() {
-        RubyArray ary = RubyArray.newArray(getRuntime());
+        RubyArray ary = getRuntime().newArray();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             for (Iterator iter = p.instanceVariableNames(); iter.hasNext();) {
                 String id = (String) iter.next();
                 if (IdUtil.isClassVariable(id)) {
-                    RubyString kval = RubyString.newString(getRuntime(), id);
+                    RubyString kval = getRuntime().newString(id);
                     if (!ary.includes(kval)) {
                         ary.append(kval);
                     }
@@ -999,7 +997,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray included_modules() {
-        RubyArray ary = RubyArray.newArray(getRuntime());
+        RubyArray ary = getRuntime().newArray();
 
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isIncluded()) {
@@ -1014,7 +1012,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray ancestors() {
-        RubyArray ary = RubyArray.newArray(getRuntime());
+        RubyArray ary = getRuntime().newArray();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             if (p.isSingleton()) {
@@ -1035,14 +1033,14 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString to_s() {
-        return RubyString.newString(runtime, getName());
+        return getRuntime().newString(getName());
     }
 
     /** rb_mod_eqq
      *
      */
     public RubyBoolean op_eqq(IRubyObject obj) {
-        return RubyBoolean.newBoolean(runtime, obj.isKindOf(this));
+        return getRuntime().newBoolean(obj.isKindOf(this));
     }
 
     /** rb_mod_le
@@ -1050,7 +1048,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyBoolean op_le(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
-            throw new TypeError(getRuntime(), "compared with non class/module");
+            throw getRuntime().newTypeError("compared with non class/module");
         }
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) { 
@@ -1074,7 +1072,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyBoolean op_ge(IRubyObject obj) {
         if (!(obj instanceof RubyModule)) {
-            throw new TypeError(getRuntime(), "compared with non class/module");
+            throw getRuntime().newTypeError("compared with non class/module");
         }
 
         return ((RubyModule) obj).op_le(this);
@@ -1092,16 +1090,15 @@ public class RubyModule extends RubyObject {
      */
     public RubyFixnum op_cmp(IRubyObject obj) {
         if (this == obj) {
-            return RubyFixnum.newFixnum(getRuntime(), 0);
+            return getRuntime().newFixnum(0);
         }
 
         if (!(obj instanceof RubyModule)) {
-            throw new TypeError(
-                getRuntime(),
+            throw getRuntime().newTypeError(
                 "<=> requires Class or Module (" + getMetaClass().getName() + " given)");
         }
 
-        return RubyFixnum.newFixnum(getRuntime(), 
+        return getRuntime().newFixnum(
                 op_le(obj).isTrue() ? -1 : 1);
     }
 
@@ -1127,7 +1124,7 @@ public class RubyModule extends RubyObject {
     public static RubyArray nesting(IRubyObject recv) {
         RubyModule objectClass = recv.getRuntime().getClasses().getObjectClass();
         RubyModule recvModule = recv.getRuntime().getCurrentContext().getRubyClass();
-        RubyArray result = RubyArray.newArray(recv.getRuntime());
+        RubyArray result = recv.getRuntime().newArray();
         
         for (RubyModule current = recvModule; current != objectClass;
         	current = current.parentModule) {
@@ -1220,12 +1217,12 @@ public class RubyModule extends RubyObject {
             throw new NameError(getRuntime(), "wrong constant name " + name);
         }
 
-        return RubyBoolean.newBoolean(getRuntime(), getConstant(name, false) != null);
+        return getRuntime().newBoolean(getConstant(name, false) != null);
     }
 
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
-        RubyArray ary = RubyArray.newArray(getRuntime());
+        RubyArray ary = getRuntime().newArray();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             for (Iterator iter = p.getMethods().entrySet().iterator();
@@ -1235,7 +1232,7 @@ public class RubyModule extends RubyObject {
 
                 if (method.getVisibility().is(visibility) &&
                         !method.isUndefined()) {
-                    RubyString name = RubyString.newString(getRuntime(), 
+                    RubyString name = getRuntime().newString(
                     	(String) entry.getKey());
 
                     if (!ary.includes(name)) {
@@ -1284,12 +1281,12 @@ public class RubyModule extends RubyObject {
         ArrayList constantNames = new ArrayList();
         RubyModule objectClass = getRuntime().getClasses().getObjectClass();
         
-        if (runtime.getClasses().getModuleClass() == this) {
-            for (Iterator iter = runtime.getClasses().nameIterator(); 
+        if (getRuntime().getClasses().getModuleClass() == this) {
+            for (Iterator iter = getRuntime().getClasses().nameIterator(); 
             	iter.hasNext();) {
                 String name = (String) iter.next();
                 if (IdUtil.isConstant(name)) {
-                    constantNames.add(RubyString.newString(getRuntime(), name));
+                    constantNames.add(getRuntime().newString(name));
                 }
             }
             
@@ -1297,11 +1294,11 @@ public class RubyModule extends RubyObject {
             	vars.hasNext();) {
                 String name = (String) vars.next();
                 if (IdUtil.isConstant(name)) {
-                    constantNames.add(RubyString.newString(getRuntime(), name));
+                    constantNames.add(getRuntime().newString(name));
                 }
             }
             
-            return RubyArray.newArray(getRuntime(), constantNames);
+            return getRuntime().newArray(constantNames);
         }
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
@@ -1312,12 +1309,12 @@ public class RubyModule extends RubyObject {
             for (Iterator vars = p.instanceVariableNames(); vars.hasNext();) {
                 String name = (String) vars.next();
                 if (IdUtil.isConstant(name)) {
-                    constantNames.add(RubyString.newString(getRuntime(), name));
+                    constantNames.add(getRuntime().newString(name));
                 }
             }
         }
         
-        return RubyArray.newArray(getRuntime(), constantNames);
+        return getRuntime().newArray(constantNames);
     }
 
     /** rb_mod_remove_cvar

@@ -38,12 +38,19 @@ import org.jruby.runtime.marshal.MarshalStream;
  * @version $Revision$
  */
 public class RubyBoolean extends RubyObject {
+	private final Ruby runtime;
+	
 	private final boolean value;
 
 	public RubyBoolean(Ruby runtime, boolean value) {
 		super(runtime, null, // Don't initialize with class
 		false); // Don't put in object space
 		this.value = value;
+		this.runtime = runtime;
+	}
+	
+	public Ruby getRuntime() {
+		return runtime;
 	}
 	
 	public boolean isImmediate() {

@@ -33,8 +33,6 @@ package org.jruby;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.parser.ReOptions;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -81,7 +79,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 			if (kcode == null) {
 				return runtime.getNil();
 			}
-			return RubyString.newString(runtime, kcode);
+			return runtime.newString(kcode);
 		}
 
 		public int flags() {
@@ -103,9 +101,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getClasses().getObjectClass());
         CallbackFactory callbackFactory = runtime.callbackFactory();
         
-        regexpClass.defineConstant("IGNORECASE", RubyFixnum.newFixnum(runtime, RE_OPTION_IGNORECASE));
-        regexpClass.defineConstant("EXTENDED", RubyFixnum.newFixnum(runtime, RE_OPTION_EXTENDED));
-        regexpClass.defineConstant("MULTILINE", RubyFixnum.newFixnum(runtime, RE_OPTION_MULTILINE));
+        regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
+        regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
+        regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
         regexpClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyRegexp.class, "initialize"));
         regexpClass.defineMethod("clone", callbackFactory.getMethod(RubyRegexp.class, "rbClone"));
@@ -161,7 +159,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     private void checkInitialized() {
         if (pattern == null) {
-            throw new TypeError(getRuntime(), "uninitialized Regexp");
+            throw getRuntime().newTypeError("uninitialized Regexp");
         }
     }
 
@@ -171,7 +169,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else if (obj instanceof RubyString) {
             return newRegexp((RubyString) obj, 0, null);
         } else {
-            throw new ArgumentError(obj.getRuntime(), "can't convert arg to Regexp");
+            throw obj.getRuntime().newArgumentError("can't convert arg to Regexp");
         }
     }
 
@@ -209,9 +207,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             }
         }
         if (args.length > 2) {
-        	code = Code.create(runtime, RubyString.stringValue (args[2]).getValue());
+        	code = Code.create(getRuntime(), RubyString.stringValue (args[2]).getValue());
         } else {
-        	code = Code.create(runtime, null);
+        	code = Code.create(getRuntime(), null);
         }
 
         initialize(pat, opts);
@@ -222,7 +220,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public static RubyString quote(IRubyObject recv, RubyString str) {
-        return (RubyString) RubyString.newString(recv.getRuntime(), 
+        return (RubyString) recv.getRuntime().newString(
         		quote(str.toString())).infectBy(str);
     }
 
@@ -254,7 +252,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         	return getRuntime().getFalse();
         }
         
-        return runtime.getTrue();
+        return getRuntime().getTrue();
     }
 
     /** rb_reg_match2
@@ -276,7 +274,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         int result = search(target, 0);
         
         return result < 0 ? getRuntime().getNil() :
-        	RubyFixnum.newFixnum(getRuntime(), result);
+        	getRuntime().newFixnum(result);
     }
 
     /** rb_reg_match_m
@@ -287,7 +285,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return target;
         }
         IRubyObject result = match(target);
-        return result.isNil() ? result : runtime.getBackref().rbClone();
+        return result.isNil() ? result : getRuntime().getBackref().rbClone();
     }
 
     /** rb_reg_source
@@ -295,11 +293,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyString source() {
         checkInitialized();
-        return RubyString.newString(getRuntime(), pattern.pattern());
+        return getRuntime().newString(pattern.pattern());
     }
 
     public IRubyObject kcode() {
-        return code.kcode(runtime);
+        return code.kcode(getRuntime());
     }
 
     /** rb_reg_casefold_p
@@ -307,7 +305,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyBoolean casefold() {
         checkInitialized();
-        return RubyBoolean.newBoolean(getRuntime(), (pattern.flags() & Pattern.CASE_INSENSITIVE) != 0);
+        return getRuntime().newBoolean((pattern.flags() & Pattern.CASE_INSENSITIVE) != 0);
     }
 
     /** rb_reg_nth_match
@@ -386,9 +384,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 begin[i] = matcher.start(i);
                 end[i] = matcher.end(i);
             }
-            return new RubyMatchData(runtime, target, begin, end);
+            return new RubyMatchData(getRuntime(), target, begin, end);
         }
-        return runtime.getNil();
+        return getRuntime().getNil();
     }
 
 
@@ -445,12 +443,12 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 sb.append(c);
             }
         }
-        return RubyString.newString(getRuntime(), sb.toString());
+        return getRuntime().newString(sb.toString());
     }
 
     // TODO: Could this be better hooked up to RubyObject#clone?
     public IRubyObject rbClone() {
-    	RubyRegexp newObj = new RubyRegexp(runtime);
+    	RubyRegexp newObj = new RubyRegexp(getRuntime());
     	newObj.pattern = pattern;
     	newObj.code = code;
     	setupClone(newObj);
@@ -507,7 +505,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             sb.append('x');
         }
 
-        return RubyString.newString(getRuntime(), sb.toString());
+        return getRuntime().newString(sb.toString());
     }
     
     

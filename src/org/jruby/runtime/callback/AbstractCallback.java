@@ -24,18 +24,17 @@
  */
 package org.jruby.runtime.callback;
 
-import org.jruby.runtime.builtin.IRubyObject;
+import java.lang.reflect.InvocationTargetException;
+
+import org.jruby.Ruby;
+import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.Ruby;
-import org.jruby.util.Asserts;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.AssertError;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.ThreadKill;
-
-import java.lang.reflect.InvocationTargetException;
+import org.jruby.util.Asserts;
 
 public abstract class AbstractCallback implements Callback {
     protected final Class klass;
@@ -123,11 +122,11 @@ public abstract class AbstractCallback implements Callback {
     protected void testArgsCount(Ruby runtime, IRubyObject[] methodArgs) {
         if (isRestArgs) {
             if (methodArgs.length < argumentTypes.length - 1) {
-                throw new ArgumentError(runtime, getExpectedArgsString(methodArgs));
+                throw runtime.newArgumentError(getExpectedArgsString(methodArgs));
             }
         } else {
             if (methodArgs.length != argumentTypes.length) {
-                throw new ArgumentError(runtime, getExpectedArgsString(methodArgs));
+                throw runtime.newArgumentError(getExpectedArgsString(methodArgs));
             }
         }
     }

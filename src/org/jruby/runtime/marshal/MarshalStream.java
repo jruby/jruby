@@ -23,19 +23,18 @@
 
 package org.jruby.runtime.marshal;
 
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -63,7 +62,7 @@ public class MarshalStream extends FilterOutputStream {
     public void dumpObject(IRubyObject value) throws IOException {
         depth++;
         if (depth > depthLimit) {
-            throw new ArgumentError(runtime, "exceed depth limit");
+            throw runtime.newArgumentError("exceed depth limit");
         }
         if (! shouldBeRegistered(value)) {
             writeDirectly(value);
@@ -114,7 +113,7 @@ public class MarshalStream extends FilterOutputStream {
         out.write('u');
         dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getName()));
 
-        RubyInteger depth = RubyFixnum.newFixnum(runtime, depthLimit);
+        RubyInteger depth = runtime.newFixnum(depthLimit);
         RubyString marshaled = (RubyString) value.callMethod("_dump", depth);
         dumpString(marshaled.getValue());
     }

@@ -1,7 +1,5 @@
 package org.jruby.util;
 
-import org.apache.oro.io.GlobFilenameFilter;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
@@ -9,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+
+import org.apache.oro.io.GlobFilenameFilter;
 
 /**
  * 

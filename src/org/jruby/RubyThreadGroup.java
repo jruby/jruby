@@ -27,7 +27,6 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -74,7 +73,7 @@ public class RubyThreadGroup extends RubyObject {
 
     public IRubyObject add(RubyThread rubyThread) {
     	if (isFrozen()) {
-        	throw new TypeError(getRuntime(), "can't add to frozen ThreadGroup");
+        	throw getRuntime().newTypeError("can't add to frozen ThreadGroup");
     	}
     	
     	if (rubyThread.group() != getRuntime().getNil()) {
@@ -104,7 +103,7 @@ public class RubyThreadGroup extends RubyObject {
     }
     
     public IRubyObject list() {
-    	return RubyArray.newArray(getRuntime(), (IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
+    	return getRuntime().newArray((IRubyObject[])rubyThreadList.values().toArray(new IRubyObject[rubyThreadList.size()]));
     }
 
     private RubyThreadGroup(Ruby runtime, RubyClass type) {

@@ -22,6 +22,9 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -31,9 +34,6 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 public class JavaField extends RubyObject {
     private final Field field;
@@ -69,35 +69,35 @@ public class JavaField extends RubyObject {
     }
 
     public RubyString value_type() {
-        return RubyString.newString(getRuntime(), field.getType().getName());
+        return getRuntime().newString(field.getType().getName());
     }
 
     public RubyBoolean public_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(field.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isPublic(field.getModifiers()));
     }
 
     public RubyBoolean static_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isStatic(field.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isStatic(field.getModifiers()));
     }
 
     public JavaObject value(IRubyObject object) {
         if (! (object instanceof JavaObject)) {
-            throw new TypeError(getRuntime(), "not a java object");
+            throw getRuntime().newTypeError("not a java object");
         }
         Object javaObject = ((JavaObject) object).getValue();
         try {
             return JavaObject.wrap(getRuntime(), field.get(javaObject));
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(), "illegal access");
+            throw getRuntime().newTypeError("illegal access");
         }
     }
 
     public JavaObject set_value(IRubyObject object, IRubyObject value) {
          if (! (object instanceof JavaObject)) {
-            throw new TypeError(getRuntime(), "not a java object: " + object);
+            throw getRuntime().newTypeError("not a java object: " + object);
         }
         if (! (value instanceof JavaObject)) {
-            throw new TypeError(getRuntime(), "not a java object:" + value);
+            throw getRuntime().newTypeError("not a java object:" + value);
         }
         Object javaObject = ((JavaObject) object).getValue();
         try {
@@ -106,10 +106,10 @@ public class JavaField extends RubyObject {
 
             field.set(javaObject, convertedValue);
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(),
+            throw getRuntime().newTypeError(
                                 "illegal access on setting variable: " + iae.getMessage());
         } catch (IllegalArgumentException iae) {
-            throw new TypeError(getRuntime(),
+            throw getRuntime().newTypeError(
                                 "wrong type for " + field.getType().getName() + ": " +
                                 ((JavaObject) value).getValue().getClass().getName());
         }
@@ -117,7 +117,7 @@ public class JavaField extends RubyObject {
     }
 
     public RubyBoolean final_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isFinal(field.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isFinal(field.getModifiers()));
     }
 
     public JavaObject static_value() {
@@ -135,6 +135,6 @@ public class JavaField extends RubyObject {
     }
 
     public RubyString name() {
-        return RubyString.newString(getRuntime(), field.getName());
+        return getRuntime().newString(field.getName());
     }
 }

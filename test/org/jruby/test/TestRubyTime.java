@@ -33,7 +33,6 @@ package org.jruby.test;
 import junit.framework.TestCase;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyTime;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -58,7 +57,7 @@ public class TestRubyTime extends TestCase {
         }
         rubyTime = runtime.getClasses().getTimeClass();
         IRubyObject[] args = new IRubyObject[1];
-        args[0] = RubyFixnum.newFixnum(runtime, 18000000);
+        args[0] = runtime.newFixnum(18000000);
         nineTeenSeventy = RubyTime.s_at(rubyTime, args);
     }
 

@@ -1,14 +1,14 @@
 
 package org.jruby.runtime.load;
 
-import org.jruby.Ruby;
-import org.jruby.exceptions.IOError;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+
+import org.jruby.Ruby;
+import org.jruby.exceptions.IOError;
 
 public class ExternalScript implements Library {
     private final URL url;

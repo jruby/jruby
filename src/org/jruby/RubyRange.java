@@ -30,7 +30,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RangeError;
 import org.jruby.runtime.CallbackFactory;
@@ -55,7 +54,7 @@ public class RubyRange extends RubyObject {
             try {
                 begin.callMethod("<=>", end);
             } catch (RaiseException rExcptn) {
-                throw new ArgumentError(getRuntime(), "bad value for range");
+                throw getRuntime().newArgumentError("bad value for range");
             }
         }
 
@@ -119,7 +118,7 @@ public class RubyRange extends RubyObject {
             beginLong += limit;
             if (beginLong < 0) {
                 if (isStrict) {
-                    throw new RangeError(runtime, inspect().toString() + " out of range.");
+                    throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
                 }
                 return null;
             }
@@ -127,7 +126,7 @@ public class RubyRange extends RubyObject {
 
         if (truncate && beginLong > limit) {
             if (isStrict) {
-                throw new RangeError(runtime, inspect().toString() + " out of range.");
+                throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
             }
             return null;
         }
@@ -140,7 +139,7 @@ public class RubyRange extends RubyObject {
 			endLong += limit;
 			if (endLong < 0) {
 				if (isStrict) {
-					throw new RangeError(runtime, inspect().toString() + " out of range.");
+					throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
 				}
 				return null;
 			}
@@ -148,7 +147,7 @@ public class RubyRange extends RubyObject {
 
         if (beginLong > endLong) {
             if (isStrict) {
-                throw new RangeError(runtime, inspect().toString() + " out of range.");
+                throw new RangeError(getRuntime(), inspect().toString() + " out of range.");
             }
 			return null;
         }
@@ -170,7 +169,7 @@ public class RubyRange extends RubyObject {
         } else if (args.length == 2) {
             init(args[0], args[1], getRuntime().getFalse());
         } else {
-            throw new ArgumentError(getRuntime(), "Wrong arguments. (anObject, anObject, aBoolean = false) expected");
+            throw getRuntime().newArgumentError("Wrong arguments. (anObject, anObject, aBoolean = false) expected");
         }
         return getRuntime().getNil();
     }
@@ -193,14 +192,14 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyBoolean exclude_end_p() {
-        return RubyBoolean.newBoolean(getRuntime(), isExclusive);
+        return getRuntime().newBoolean(isExclusive);
     }
 
     public RubyFixnum length() {
         long size = 0;
 
         if (begin.callMethod(">", end).isTrue()) {
-            return RubyFixnum.newFixnum(getRuntime(), 0);
+            return getRuntime().newFixnum(0);
         }
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
@@ -220,7 +219,7 @@ public class RubyRange extends RubyObject {
 		currentObject = currentObject.callMethod("succ");
 	    }
 	}
-        return RubyFixnum.newFixnum(getRuntime(), size);
+        return getRuntime().newFixnum(size);
     }
 
     public IRubyObject equal(IRubyObject obj) {
@@ -232,7 +231,7 @@ public class RubyRange extends RubyObject {
             begin.equals(otherRange.begin) &&
             end.equals(otherRange.end) &&
             isExclusive == otherRange.isExclusive;
-        return RubyBoolean.newBoolean(getRuntime(), result);
+        return getRuntime().newBoolean(result);
     }
 
     public RubyBoolean op_eqq(IRubyObject obj) {
@@ -277,7 +276,7 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                getRuntime().yield(RubyFixnum.newFixnum(getRuntime(), i));
+                getRuntime().yield(getRuntime().newFixnum(i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, isExclusive);
@@ -317,7 +316,7 @@ public class RubyRange extends RubyObject {
     public RubyArray to_a() {
         IRubyObject currentObject = begin;
 	    String compareMethod = isExclusive ? "<" : "<=";
-	    RubyArray array = RubyArray.newArray(getRuntime());
+	    RubyArray array = getRuntime().newArray();
         
 	    while (currentObject.callMethod(compareMethod, end).isTrue()) {
 	        array.append(currentObject);

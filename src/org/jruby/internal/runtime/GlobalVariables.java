@@ -22,16 +22,16 @@
  */
 package org.jruby.internal.runtime;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * 

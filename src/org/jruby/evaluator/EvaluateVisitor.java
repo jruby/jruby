@@ -29,28 +29,123 @@
  */
 package org.jruby.evaluator;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.jruby.Builtins;
-import org.jruby.RubyKernel;
 import org.jruby.MetaClass;
-import org.jruby.RubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
+import org.jruby.RubyKernel;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
-import org.jruby.ast.*;
+import org.jruby.ast.AliasNode;
+import org.jruby.ast.AndNode;
+import org.jruby.ast.ArgsCatNode;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AttrSetNode;
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.BeginNode;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.BlockPassNode;
+import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.CaseNode;
+import org.jruby.ast.ClassNode;
+import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
+import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
+import org.jruby.ast.ConstDeclNode;
+import org.jruby.ast.ConstNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DStrNode;
+import org.jruby.ast.DSymbolNode;
+import org.jruby.ast.DVarNode;
+import org.jruby.ast.DXStrNode;
+import org.jruby.ast.DefinedNode;
+import org.jruby.ast.DefnNode;
+import org.jruby.ast.DefsNode;
+import org.jruby.ast.DotNode;
+import org.jruby.ast.EnsureNode;
+import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.FalseNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FlipNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.ForNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.IfNode;
+import org.jruby.ast.InstAsgnNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.LocalVarNode;
+import org.jruby.ast.Match2Node;
+import org.jruby.ast.Match3Node;
+import org.jruby.ast.MatchNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NextNode;
+import org.jruby.ast.NilNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.NotNode;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.OpAsgnAndNode;
+import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OpAsgnOrNode;
+import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.OptNNode;
+import org.jruby.ast.OrNode;
+import org.jruby.ast.PostExeNode;
+import org.jruby.ast.RedoNode;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RescueBodyNode;
+import org.jruby.ast.RescueNode;
+import org.jruby.ast.RetryNode;
+import org.jruby.ast.ReturnNode;
+import org.jruby.ast.SClassNode;
+import org.jruby.ast.SValueNode;
+import org.jruby.ast.ScopeNode;
+import org.jruby.ast.SelfNode;
+import org.jruby.ast.SplatNode;
+import org.jruby.ast.StrNode;
+import org.jruby.ast.SuperNode;
+import org.jruby.ast.SymbolNode;
+import org.jruby.ast.ToAryNode;
+import org.jruby.ast.TrueNode;
+import org.jruby.ast.UndefNode;
+import org.jruby.ast.UntilNode;
+import org.jruby.ast.VAliasNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.WhenNode;
+import org.jruby.ast.WhileNode;
+import org.jruby.ast.XStrNode;
+import org.jruby.ast.YieldNode;
+import org.jruby.ast.ZArrayNode;
+import org.jruby.ast.ZSuperNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NameError;
@@ -74,9 +169,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
 // real problem, the trampoline method of tail call elimination could be used.
@@ -172,7 +264,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         IRubyObject args = eval(iVisited.getFirstNode());
         IRubyObject secondArgs = splatValue(eval(iVisited.getSecondNode()));
         RubyArray list = args instanceof RubyArray ? (RubyArray) args :
-            RubyArray.newArray(runtime, args);
+            runtime.newArray(args);
         
         result = list.concat(secondArgs); 
     }
@@ -187,7 +279,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             list.add(eval((Node) iterator.next()));
         }
         
-        result = RubyArray.newArray(runtime, list);
+        result = runtime.newArray(list);
     }
 
     /**
@@ -195,7 +287,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitAttrSetNode(AttrSetNode iVisited) {
         if (runtime.getCurrentFrame().getArgs().length != 1) {
-            throw new ArgumentError(runtime, "wrong # of arguments(" + threadContext.getCurrentFrame().getArgs().length + "for 1)");
+            throw runtime.newArgumentError("wrong # of arguments(" + threadContext.getCurrentFrame().getArgs().length + "for 1)");
         }
 
         result = self.setInstanceVariable(iVisited.getAttributeName(), threadContext.getCurrentFrame().getArgs()[0]);
@@ -1400,7 +1492,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitFixnumNode(FixnumNode)
      */
     public void visitFixnumNode(FixnumNode iVisited) {
-        result = RubyFixnum.newFixnum(runtime, iVisited.getValue());
+        result = runtime.newFixnum(iVisited.getValue());
     }
 
     /**
@@ -1490,12 +1582,12 @@ public final class EvaluateVisitor implements NodeVisitor {
             return value.convertToType("Array", "to_ary", false);
         }
         
-        return RubyArray.newArray(runtime, value);
+        return runtime.newArray(value);
     }
     
     private IRubyObject splatValue(IRubyObject value) {
         if (value.isNil()) {
-            return RubyArray.newArray(runtime, value);
+            return runtime.newArray(value);
         }
         
         return arrayValue(value);
@@ -1519,7 +1611,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (newValue.isNil()) {
             // XXXEnebo: We should call to_a except if it is kernel def....
             // but we will forego for now.
-            newValue = RubyArray.newArray(runtime, value);
+            newValue = runtime.newArray(value);
         }
         
         return (RubyArray) newValue;

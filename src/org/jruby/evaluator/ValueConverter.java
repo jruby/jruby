@@ -40,12 +40,12 @@ public final class ValueConverter {
 
     public RubyArray singleToArray(IRubyObject value) {
         if (value == null || value.isNil()) {
-            return RubyArray.newArray(runtime, 0);
+            return runtime.newArray(0);
         } else if (value instanceof RubyArray) {
             if (((RubyArray)value).getLength() == 1) {
                 return (RubyArray) value;
             }
-			return RubyArray.newArray(runtime, value);
+			return runtime.newArray(value);
         } else {
             return toArray(value);
         }
@@ -67,7 +67,7 @@ public final class ValueConverter {
 
     public RubyArray singleToMultiple(IRubyObject value) {
         if (value == null || value.isNil()) {
-            return RubyArray.newArray(runtime, 0);
+            return runtime.newArray(0);
         } else if (value instanceof RubyArray) {
             return (RubyArray) value;
         } else {
@@ -93,13 +93,13 @@ public final class ValueConverter {
 
     private RubyArray toArray(IRubyObject value) {
         if (value.isNil()) {
-            return RubyArray.newArray(runtime, 0);
+            return runtime.newArray(0);
         } else if (value instanceof RubyArray) {
             return (RubyArray)value;
         }
         if (value.respondsTo("to_ary")) {
             return (RubyArray)value.convertType(RubyArray.class, "Array", "to_ary");
         }
-        return RubyArray.newArray(runtime, value);
+        return runtime.newArray(value);
     }
 }

@@ -28,20 +28,18 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 
 /**
  * Ruby File class equivalent in java.
@@ -76,36 +74,36 @@ public class RubyFile extends RubyIO {
         RubyClass fileClass = runtime.defineClass("File", 
                 runtime.getClasses().getIoClass());
 
-        RubyString separator = RubyString.newString(runtime, separator());
+        RubyString separator = runtime.newString(separator());
         separator.freeze();
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
-        RubyString altSeparator = RubyString.newString(runtime, File.separatorChar == '/' ? "\\" : "/");
+        RubyString altSeparator = runtime.newString(File.separatorChar == '/' ? "\\" : "/");
         altSeparator.freeze();
         fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
-        RubyString pathSeparator = RubyString.newString(runtime, File.pathSeparator);
+        RubyString pathSeparator = runtime.newString(File.pathSeparator);
         pathSeparator.freeze();
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
         
         // Create constants for open flags
         fileClass.setConstant("RDONLY", 
-        		RubyFixnum.newFixnum(runtime, IOModes.RDONLY));
+        		runtime.newFixnum(IOModes.RDONLY));
         fileClass.setConstant("WRONLY", 
-        		RubyFixnum.newFixnum(runtime, IOModes.WRONLY));
+        		runtime.newFixnum(IOModes.WRONLY));
         fileClass.setConstant("RDWR", 
-        		RubyFixnum.newFixnum(runtime, IOModes.RDWR));
+        		runtime.newFixnum(IOModes.RDWR));
         fileClass.setConstant("CREAT", 
-        		RubyFixnum.newFixnum(runtime, IOModes.CREAT));
+        		runtime.newFixnum(IOModes.CREAT));
         fileClass.setConstant("EXCL", 
-        		RubyFixnum.newFixnum(runtime, IOModes.EXCL));
+        		runtime.newFixnum(IOModes.EXCL));
         fileClass.setConstant("NOCTTY", 
-        		RubyFixnum.newFixnum(runtime, IOModes.NOCTTY));
+        		runtime.newFixnum(IOModes.NOCTTY));
         fileClass.setConstant("TRUNC", 
-        		RubyFixnum.newFixnum(runtime, IOModes.TRUNC));
+        		runtime.newFixnum(IOModes.TRUNC));
         fileClass.setConstant("APPEND", 
-        		RubyFixnum.newFixnum(runtime, IOModes.APPEND));
+        		runtime.newFixnum(IOModes.APPEND));
         fileClass.setConstant("NONBLOCK", 
-        		RubyFixnum.newFixnum(runtime, IOModes.NONBLOCK));
+        		runtime.newFixnum(IOModes.NONBLOCK));
 
         CallbackFactory callbackFactory = runtime.callbackFactory();
 
@@ -143,7 +141,7 @@ public class RubyFile extends RubyIO {
             
             registerIOHandler(handler);
         } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
+            throw IOError.fromException(getRuntime(), e);
         }
     }
 
@@ -168,12 +166,12 @@ public class RubyFile extends RubyIO {
 			return new IOModes(object.getRuntime(), ((RubyFixnum)object).getLongValue());
 		}
 
-		throw new TypeError(object.getRuntime(), "Invalid type for modes");
+		throw object.getRuntime().newTypeError("Invalid type for modes");
 	}
 	
 	public IRubyObject initialize(IRubyObject[] args) {
 	    if (args.length == 0) {
-	        throw new ArgumentError(getRuntime(), 0, 1);
+	        throw getRuntime().newArgumentError(0, 1);
 	    }
 
 	    args[0].checkSafeString();
@@ -202,7 +200,7 @@ public class RubyFile extends RubyIO {
 	public static IRubyObject open(IRubyObject recv, IRubyObject[] args,
 	        boolean tryToYield) {
 	    if (args.length == 0) {
-	        throw new ArgumentError(recv.getRuntime(), 0, 1);
+	        throw recv.getRuntime().newArgumentError(0, 1);
 	    }
 	    args[0].checkSafeString();
 	    String path = args[0].toString();
@@ -230,7 +228,7 @@ public class RubyFile extends RubyIO {
         // is added, we can create a ruby script to perform chmod and then
         // put it in our base distribution.  It could also be some embedded
         // eval? 
-        return RubyFixnum.newFixnum(recv.getRuntime(), 0);
+        return recv.getRuntime().newFixnum(0);
     }
 
     public static IRubyObject lstat(IRubyObject recv, RubyString name) {
@@ -249,7 +247,7 @@ public class RubyFile extends RubyIO {
                 return recv.getRuntime().getFalse();
             }
         }
-        return RubyFixnum.newFixnum(recv.getRuntime(), args.length);
+        return recv.getRuntime().newFixnum(args.length);
     }
 
     public static IRubyObject rename(IRubyObject recv, IRubyObject oldName, IRubyObject newName) {
@@ -287,7 +285,7 @@ public class RubyFile extends RubyIO {
         } catch (IOException e) {
             extractedPath = path.getAbsolutePath();
         }
-        return RubyString.newString(recv.getRuntime(), extractedPath);
+        return recv.getRuntime().newString(extractedPath);
     }
     
 	public static RubyString dirname(IRubyObject recv, RubyString filename) {
@@ -300,16 +298,16 @@ public class RubyFile extends RubyIO {
 			index = name.lastIndexOf(altSeparator());
 			
 			if (index == -1) {
-				return RubyString.newString(recv.getRuntime(), "."); 
+				return recv.getRuntime().newString("."); 
 			}
 			alt = true;
 		}
 		
 		
 		if (index == 0) {
-			return RubyString.newString(recv.getRuntime(), alt ? altSeparator() : separator());
+			return recv.getRuntime().newString(alt ? altSeparator() : separator());
 		}
-		return RubyString.newString(recv.getRuntime(), name.substring(0, index));
+		return recv.getRuntime().newString(name.substring(0, index));
 	}
 	
 	/**
@@ -322,7 +320,7 @@ public class RubyFile extends RubyIO {
 
     public static RubyString basename(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1 || args.length > 2) {
-            throw new ArgumentError(recv.getRuntime(), "This method expected 1 or 2 arguments."); // XXX
+            throw recv.getRuntime().newArgumentError("This method expected 1 or 2 arguments."); // XXX
         }
 
 		String name = args[0].toString();
@@ -333,7 +331,7 @@ public class RubyFile extends RubyIO {
 		    name = name.substring(0, name.length() - args[1].toString().length());
 		}
 
-		return RubyString.newString(recv.getRuntime(), name);
+		return recv.getRuntime().newString(name);
 	}
     
     public IRubyObject truncate(RubyFixnum newLength) {
@@ -349,7 +347,7 @@ public class RubyFile extends RubyIO {
     // Can we produce IOError which bypasses a close?
     public static IRubyObject truncate(IRubyObject recv, RubyString filename, RubyFixnum newLength) {
         IRubyObject[] args = new IRubyObject[] {filename, 
-                RubyString.newString(recv.getRuntime(), "w+")};
+                recv.getRuntime().newString("w+")};
         RubyFile file = (RubyFile) RubyFile.open(recv, args, false);
         file.truncate(newLength);
         file.close();
@@ -358,8 +356,8 @@ public class RubyFile extends RubyIO {
     }
 
     public static RubyString join(IRubyObject recv, IRubyObject[] args) {
-		RubyArray argArray = RubyArray.newArray(recv.getRuntime(), args);
-		return argArray.join(RubyString.newString(recv.getRuntime(), separator()));
+		RubyArray argArray = recv.getRuntime().newArray(args);
+		return argArray.join(recv.getRuntime().newString(separator()));
     }
     
     public String toString() {

@@ -29,7 +29,6 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -103,7 +102,7 @@ public class Block implements StackElement {
         context.getIterStack().push(Iter.ITER_CUR);
         context.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
-            return runtime.yield(args != null ? RubyArray.newArray(runtime, args) : null, null, null, true);
+            return runtime.yield(args != null ? runtime.newArray(args) : null, null, null, true);
         } finally {
             context.getIterStack().pop();
             context.getBlockStack().setCurrent(oldBlock);

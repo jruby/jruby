@@ -25,8 +25,6 @@
  */
 package org.jruby.util;
 
-import org.jruby.Main;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -36,6 +34,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jruby.Main;
 
 public class CommandlineParser {
     private final String[] arguments;

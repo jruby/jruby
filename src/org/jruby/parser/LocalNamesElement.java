@@ -26,11 +26,11 @@
  */
 package org.jruby.parser;
 
-import org.jruby.util.collections.StackElement;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.jruby.util.collections.StackElement;
 
 /**
  *

@@ -53,7 +53,7 @@ public class LexerSource {
     private ArrayList lineWidths = new ArrayList();
     
     // The name of this source (e.g. a filename: foo.rb)
-    private String sourceName;
+    private final String sourceName;
     
     // Number of newlines read from the reader
     private int line = 0;
@@ -121,8 +121,6 @@ public class LexerSource {
      * @param c to be put back onto the source
      */
     public void unread(char c) {
-    	int length = buf.length();
-
     	if (c == '\n') {
     		line--;
     		column = ((Integer)lineWidths.get(line)).intValue();

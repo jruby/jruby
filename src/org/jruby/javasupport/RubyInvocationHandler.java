@@ -1,10 +1,10 @@
 package org.jruby.javasupport;
 
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * A RubyInvocationHandler intercepts method calls to Proxy objects

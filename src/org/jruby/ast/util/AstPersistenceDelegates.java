@@ -22,10 +22,6 @@
  */
 package org.jruby.ast.util;
 
-import org.jruby.ast.ListNode;
-import org.jruby.runtime.Visibility;
-import org.jruby.util.Asserts;
-
 import java.beans.DefaultPersistenceDelegate;
 import java.beans.Encoder;
 import java.beans.Expression;
@@ -35,6 +31,10 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.jruby.ast.ListNode;
+import org.jruby.runtime.Visibility;
+import org.jruby.util.Asserts;
 
 /**
  * 

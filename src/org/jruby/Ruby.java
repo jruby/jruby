@@ -32,10 +32,25 @@
  */
 package org.jruby;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Random;
+import java.util.Stack;
+
 import org.jruby.ast.Node;
 import org.jruby.common.RubyErrorHandler;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
@@ -67,19 +82,6 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.util.Asserts;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
-import java.util.Stack;
 
 /**
  * The jruby runtime.
@@ -217,7 +219,7 @@ public final class Ruby {
         try {
             return (RubyClass) getModule(name); 
         } catch (ClassCastException e) {
-            throw new TypeError(this, name + " is not a Class");
+            throw newTypeError(name + " is not a Class");
         }
     }
 
@@ -838,9 +840,9 @@ public final class Ruby {
             try {
                 traceFunction
                     .call(new IRubyObject[] {
-                        RubyString.newString(this, event),
-                        RubyString.newString(this, file),
-                        RubyFixnum.newFixnum(this, position.getLine()),
+                        newString(event),
+                        newString(file),
+                        newFixnum(position.getLine()),
                         name != null ? RubySymbol.newSymbol(this, name) : getNil(),
                         self != null ? self: getNil(),
                         type });
@@ -891,5 +893,63 @@ public final class Ruby {
             
             proc.call(null);
         }
+    }
+    
+    // new factory methods ------------------------------------------------------------------------
+    
+    public RubyArray newArray() {
+    	return RubyArray.newArray(this);
+    }
+    
+    public RubyArray newArray(IRubyObject object) {
+    	return RubyArray.newArray(this, object);
+    }
+
+    public RubyArray newArray(IRubyObject car, IRubyObject cdr) {
+    	return RubyArray.newArray(this, car, cdr);
+    }
+    
+    public RubyArray newArray(IRubyObject[] objects) {
+    	return RubyArray.newArray(this, objects);
+    }
+    
+    public RubyArray newArray(List list) {
+    	return RubyArray.newArray(this, list);
+    }
+    
+    public RubyArray newArray(int size) {
+    	return RubyArray.newArray(this, size);
+    }
+    
+    public RubyBoolean newBoolean(boolean value) {
+    	return RubyBoolean.newBoolean(this, value);
+    }
+    
+    public RubyFixnum newFixnum(long value) {
+    	return RubyFixnum.newFixnum(this, value);
+    }
+    
+    public RubyString newString(String string) {
+    	return RubyString.newString(this, string);
+    }
+    
+    public ArgumentError newArgumentError(String message) {
+    	return new ArgumentError(this, message);
+    }
+    
+    public ArgumentError newArgumentError(int got, int expected) {
+    	return new ArgumentError(this, got, expected);
+    }
+    
+    public IndexError newIndexError(String message) {
+    	return new IndexError(this, message);
+    }
+
+    public TypeError newTypeError(String message) {
+    	return new TypeError(this, message);
+    }
+    
+    public TypeError newTypeError(IRubyObject receivedObject, RubyClass expectedClass) {
+    	return new TypeError(this, receivedObject, expectedClass);
     }
 }

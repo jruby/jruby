@@ -29,18 +29,16 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.RubyDateFormat;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.RubyDateFormat;
 
 /** The Time class.
  * 
@@ -157,7 +155,7 @@ public class RubyTime extends RubyObject {
 
     public static RubyTime s_new(IRubyObject receiver) {
         IRubyObject[] args = new IRubyObject[1];
-        args[0] = RubyFixnum.newFixnum(receiver.getRuntime(), new Date().getTime());
+        args[0] = receiver.getRuntime().newFixnum(new Date().getTime());
         return s_at(receiver, args);
     }
 
@@ -225,7 +223,7 @@ public class RubyTime extends RubyObject {
                         try {
                             month = Integer.parseInt(args[1].toString()) - 1;
                         } catch (NumberFormatException nfExcptn) {
-                            throw new ArgumentError(type.getRuntime(), "Argument out of range.");
+                            throw type.getRuntime().newArgumentError("Argument out of range.");
                         }
                     }
                 } else {
@@ -233,7 +231,7 @@ public class RubyTime extends RubyObject {
                 }
             }
             if (0 > month || month > 11) {
-                throw new ArgumentError(type.getRuntime(), "Argument out of range.");
+                throw type.getRuntime().newArgumentError("Argument out of range.");
             }
         }
 
@@ -243,7 +241,7 @@ public class RubyTime extends RubyObject {
             if (!args[i + 2].isNil()) {
                 int_args[i] = RubyNumeric.fix2int(args[i + 2]);
                 if (time_min[i] > int_args[i] || int_args[i] > time_max[i]) {
-                    throw new ArgumentError(type.getRuntime(), "Argument out of range.");
+                    throw type.getRuntime().newArgumentError("Argument out of range.");
                 }
             }
         }
@@ -283,7 +281,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyBoolean gmt() {
-        return RubyBoolean.newBoolean(runtime, cal.getTimeZone().getID().equals(UTC));
+        return getRuntime().newBoolean(cal.getTimeZone().getID().equals(UTC));
     }
 
     public RubyString strftime(IRubyObject format) {
@@ -291,18 +289,18 @@ public class RubyTime extends RubyObject {
         rubyDateFormat.applyPattern(format.toString());
         String result = rubyDateFormat.format(cal.getTime());
 
-        return RubyString.newString(runtime, result);
+        return getRuntime().newString(result);
     }
 
     public IRubyObject op_plus(IRubyObject other) {
         long time = getTimeInMillis();
 
         if (other instanceof RubyTime) {
-            throw new TypeError(runtime, "time + time ?");
+            throw getRuntime().newTypeError("time + time ?");
         }
 		time += ((RubyNumeric) other).getDoubleValue() * 1000;
 
-		RubyTime newTime = new RubyTime(runtime, getMetaClass());
+		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
 		newTime.cal = Calendar.getInstance();
 		newTime.cal.setTime(new Date(time));
 
@@ -315,11 +313,11 @@ public class RubyTime extends RubyObject {
         if (other instanceof RubyTime) {
             time -= ((RubyTime) other).getTimeInMillis();
 
-            return RubyFloat.newFloat(runtime, time * 10e-4);
+            return RubyFloat.newFloat(getRuntime(), time * 10e-4);
         }
 		time -= ((RubyNumeric) other).getDoubleValue() * 1000;
 
-		RubyTime newTime = new RubyTime(runtime, getMetaClass());
+		RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
 		newTime.cal = Calendar.getInstance();
 		newTime.cal.setTime(new Date(time));
 
@@ -335,21 +333,21 @@ public class RubyTime extends RubyObject {
             double time_other = ((RubyNumeric) other).getDoubleValue();
 
             if (time > time_other) {
-                return RubyFixnum.one(runtime);
+                return RubyFixnum.one(getRuntime());
             } else if (time < time_other) {
-                return RubyFixnum.minus_one(runtime);
+                return RubyFixnum.minus_one(getRuntime());
             } else {
-                return RubyFixnum.zero(runtime);
+                return RubyFixnum.zero(getRuntime());
             }
         }
 		long millis_other = (other instanceof RubyTime) ? ((RubyTime) other).getTimeInMillis() : RubyNumeric.num2long(other) * 1000;
 
 		if (millis > millis_other) {
-		    return RubyFixnum.one(runtime);
+		    return RubyFixnum.one(getRuntime());
 		} else if (millis < millis_other) {
-		    return RubyFixnum.minus_one(runtime);
+		    return RubyFixnum.minus_one(getRuntime());
 		} else {
-		    return RubyFixnum.zero(runtime);
+		    return RubyFixnum.zero(getRuntime());
 		}
     }
 
@@ -358,7 +356,7 @@ public class RubyTime extends RubyObject {
         simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss yyyy");
         String result = simpleDateFormat.format(cal.getTime());
 
-        return RubyString.newString(runtime, result);
+        return getRuntime().newString(result);
     }
 
     public RubyString to_s() {
@@ -366,11 +364,11 @@ public class RubyTime extends RubyObject {
         simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss z yyyy");
         String result = simpleDateFormat.format(cal.getTime());
 
-        return RubyString.newString(runtime, result);
+        return getRuntime().newString(result);
     }
 
     public RubyArray to_a() {
-        return RubyArray.newArray(runtime, new IRubyObject[] {
+        return getRuntime().newArray(new IRubyObject[] {
             sec(),
             min(),
             hour(),
@@ -385,15 +383,15 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyFloat to_f() {
-        return RubyFloat.newFloat(runtime, getTimeInMillis() / 1000 + microseconds() / 1000000.0);
+        return RubyFloat.newFloat(getRuntime(), getTimeInMillis() / 1000 + microseconds() / 1000000.0);
     }
 
     public RubyInteger to_i() {
-        return RubyFixnum.newFixnum(runtime, getTimeInMillis() / 1000);
+        return getRuntime().newFixnum(getTimeInMillis() / 1000);
     }
 
     public RubyInteger usec() {
-        return RubyFixnum.newFixnum(runtime, microseconds());
+        return getRuntime().newFixnum(microseconds());
     }
     
     public long microseconds() {
@@ -401,43 +399,43 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyInteger sec() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.SECOND));
+        return getRuntime().newFixnum(cal.get(Calendar.SECOND));
     }
 
     public RubyInteger min() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.MINUTE));
+        return getRuntime().newFixnum(cal.get(Calendar.MINUTE));
     }
 
     public RubyInteger hour() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.HOUR_OF_DAY));
+        return getRuntime().newFixnum(cal.get(Calendar.HOUR_OF_DAY));
     }
 
     public RubyInteger mday() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.DAY_OF_MONTH));
+        return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_MONTH));
     }
 
     public RubyInteger month() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.MONTH) + 1);
+        return getRuntime().newFixnum(cal.get(Calendar.MONTH) + 1);
     }
 
     public RubyInteger year() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.YEAR));
+        return getRuntime().newFixnum(cal.get(Calendar.YEAR));
     }
 
     public RubyInteger wday() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.DAY_OF_WEEK) - 1);
+        return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_WEEK) - 1);
     }
 
     public RubyInteger yday() {
-        return RubyFixnum.newFixnum(runtime, cal.get(Calendar.DAY_OF_YEAR));
+        return getRuntime().newFixnum(cal.get(Calendar.DAY_OF_YEAR));
     }
     
     public RubyBoolean isdst() {
-        return RubyBoolean.newBoolean(runtime, cal.getTimeZone().inDaylightTime(cal.getTime()));
+        return getRuntime().newBoolean(cal.getTimeZone().inDaylightTime(cal.getTime()));
     }
 
     public RubyString zone() {
-        return RubyString.newString(runtime, cal.getTimeZone().getID());
+        return getRuntime().newString(cal.getTimeZone().getID());
     }
 
     public void setJavaCalendar(Calendar cal) {
@@ -450,6 +448,6 @@ public class RubyTime extends RubyObject {
 
     public RubyFixnum hash() {
     	// modified to match how hash is calculated in 1.8.2
-        return RubyFixnum.newFixnum(runtime, (int)(((cal.getTimeInMillis() / 1000) ^ microseconds()) << 1) >> 1);
+        return getRuntime().newFixnum((int)(((cal.getTimeInMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }    
 }

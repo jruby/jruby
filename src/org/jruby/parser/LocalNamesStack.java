@@ -26,9 +26,9 @@
  */
 package org.jruby.parser;
 
-import org.jruby.util.collections.AbstractStack;
-
 import java.util.List;
+
+import org.jruby.util.collections.AbstractStack;
 
 /**
  *

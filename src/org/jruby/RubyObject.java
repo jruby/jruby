@@ -32,16 +32,20 @@
  */
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jruby.ast.Node;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
@@ -62,21 +66,12 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 /**
  *
  * @author  jpetersen
  */
 public class RubyObject implements Cloneable, IRubyObject {
-
-    // A reference to the JRuby runtime.
-    protected Ruby runtime;
-
+	
     // The class of this object
     private RubyClass metaClass;
 
@@ -87,16 +82,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     private boolean frozen;
     private boolean taint;
 
-    public RubyObject(Ruby runtime) {
-        this(runtime, null, false);
-    }
-
-    public RubyObject(Ruby runtime, RubyClass rubyClass) {
+	public RubyObject(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, true);
     }
 
     public RubyObject(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace) {
-        this.runtime = runtime;
         this.metaClass = rubyClass;
         this.frozen = false;
         this.taint = false;
@@ -151,7 +141,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      * @return Value of property ruby.
      */
     public Ruby getRuntime() {
-        return this.runtime;
+        return metaClass.getRuntime();
     }
 
     public boolean hasInstanceVariable(String name) {
@@ -252,10 +242,10 @@ public class RubyObject implements Cloneable, IRubyObject {
     public int checkArgumentCount(IRubyObject[] args, int min, int max) {
         int length = args.length;
         if (length < min) {
-            throw new ArgumentError(runtime, "wrong number of arguments (" + args.length + " for " + min + ")");
+            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for " + min + ")");
         }
         if (max > -1 && length > max) {
-            throw new ArgumentError(runtime, "wrong number of arguments (" + args.length + " for " + max + ")");
+            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for " + max + ")");
         }
         return length;
     }
@@ -342,7 +332,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
     	
     	if (!varName.startsWith("@")) {
-    		throw new NameError(runtime, "`" + varName + "' is not allowable as an instance variable name");
+    		throw new NameError(getRuntime(), "`" + varName + "' is not allowable as an instance variable name");
     	}
     	
     	return getInstanceVariable(varName);
@@ -363,7 +353,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     	String varName = var.asSymbol();
     	
     	if (!varName.startsWith("@")) {
-    		throw new NameError(runtime, "`" + varName + "' is not allowable as an instance variable name");
+    		throw new NameError(getRuntime(), "`" + varName + "' is not allowable as an instance variable name");
     	}
     	
     	return setInstanceVariable(var.asSymbol(), value);
@@ -407,11 +397,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public void callInit(IRubyObject[] args) {
-        runtime.getIterStack().push(runtime.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             callMethod("initialize", args);
         } finally {
-            runtime.getIterStack().pop();
+            getRuntime().getIterStack().pop();
         }
     }
 
@@ -423,7 +413,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public String asSymbol() {
-        throw new TypeError(getRuntime(), inspect().getValue() + " is not a symbol");
+        throw getRuntime().newTypeError(inspect().getValue() + " is not a symbol");
     }
 
     /** Converts this object to type 'targetType' using 'convertMethod' method.
@@ -442,13 +432,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         
         if (!respondsTo(convertMethod)) {
             if (raise) {
-                throw new TypeError(
-                    runtime,
+                throw getRuntime().newTypeError(
                     "cannot convert " + getMetaClass().getName() + " into " + targetType);
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
             } 
 
-            return runtime.getNil();
+            return getRuntime().getNil();
         }
         return callMethod(convertMethod);
     }
@@ -468,8 +457,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         IRubyObject result = convertToType(targetType, convertMethod, true);
 
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new TypeError(
-                runtime,
+            throw getRuntime().newTypeError(
                 getMetaClass().getName() + "#" + convertMethod + " should return " + targetType + ".");
         }
 
@@ -477,18 +465,17 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public void checkSafeString() {
-        if (runtime.getSafeLevel() > 0 && isTaint()) {
-            if (runtime.getCurrentFrame().getLastFunc() != null) {
+        if (getRuntime().getSafeLevel() > 0 && isTaint()) {
+            if (getRuntime().getCurrentFrame().getLastFunc() != null) {
                 throw new SecurityError(
-                    runtime,
-                    "Insecure operation - " + runtime.getCurrentFrame().getLastFunc());
+                    getRuntime(),
+                    "Insecure operation - " + getRuntime().getCurrentFrame().getLastFunc());
             }
-            throw new SecurityError(runtime, "Insecure operation: -r");
+            throw new SecurityError(getRuntime(), "Insecure operation: -r");
         }
         getRuntime().secure(4);
         if (!(this instanceof RubyString)) {
-            throw new TypeError(
-                getRuntime(),
+            throw getRuntime().newTypeError(
                 "wrong argument type " + getMetaClass().getName() + " (expected String)");
         }
     }
@@ -499,16 +486,15 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject specificEval(RubyModule mod, IRubyObject[] args) {
         if (getRuntime().isBlockGiven()) {
             if (args.length > 0) {
-                throw new ArgumentError(getRuntime(), args.length, 0);
+                throw getRuntime().newArgumentError(args.length, 0);
             }
             return yieldUnder(mod);
         }
 		if (args.length == 0) {
-		    throw new ArgumentError(getRuntime(), "block not supplied");
+		    throw getRuntime().newArgumentError("block not supplied");
 		} else if (args.length > 3) {
-		    String lastFuncName = runtime.getCurrentFrame().getLastFunc();
-		    throw new ArgumentError(
-		        getRuntime(),
+		    String lastFuncName = getRuntime().getCurrentFrame().getLastFunc();
+		    throw getRuntime().newArgumentError(
 		        "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
 		}
 		/*
@@ -518,10 +504,10 @@ public class RubyObject implements Cloneable, IRubyObject {
 			Check_SafeStr(argv[0]);
 		}
 		*/
-		IRubyObject file = args.length > 1 ? args[1] : RubyString.newString(getRuntime(), "(eval)");
+		IRubyObject file = args.length > 1 ? args[1] : getRuntime().newString("(eval)");
 		IRubyObject line = args.length > 2 ? args[2] : RubyFixnum.one(getRuntime());
 
-		Scope currentScope = runtime.getScope().current();
+		Scope currentScope = getRuntime().getScope().current();
 		Visibility savedVisibility = currentScope.getVisibility();
 		currentScope.setVisibility(Visibility.PUBLIC);
 		try {
@@ -560,7 +546,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     private IRubyObject yieldUnder(RubyModule under) {
         return under.executeUnder(new Callback() {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
-                ThreadContext context = runtime.getCurrentContext();
+                ThreadContext context = getRuntime().getCurrentContext();
 
                 Block block = context.getBlockStack().getCurrent();
                 Visibility savedVisibility = block.getVisibility();
@@ -573,7 +559,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 } catch (BreakJump e) {
                     IRubyObject breakValue = e.getBreakValue();
                     
-                    return breakValue == null ? runtime.getNil() : breakValue;
+                    return breakValue == null ? getRuntime().getNil() : breakValue;
                 } finally {
                     block.setVisibility(savedVisibility);
                 }
@@ -586,7 +572,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject eval(IRubyObject src, IRubyObject scope, String file, int line) {
-        ThreadContext threadContext = runtime.getCurrentContext();
+        ThreadContext threadContext = getRuntime().getCurrentContext();
         SourcePosition savedPosition = threadContext.getPosition();
         Iter iter = threadContext.getCurrentFrame().getIter();
         if (file == null) {
@@ -618,13 +604,13 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject equal(IRubyObject obj) {
         if (isNil()) {
-            return RubyBoolean.newBoolean(getRuntime(), obj.isNil());
+            return getRuntime().newBoolean(obj.isNil());
         }
-        return RubyBoolean.newBoolean(getRuntime(), this == obj);
+        return getRuntime().newBoolean(this == obj);
     }
     
 	public IRubyObject same(IRubyObject other) {
-		return this == other ? runtime.getTrue() : runtime.getFalse();
+		return this == other ? getRuntime().getTrue() : getRuntime().getFalse();
 	}
 
     /**
@@ -642,7 +628,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         String name = args[0].asSymbol();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
-        return RubyBoolean.newBoolean(runtime, getMetaClass().isMethodBound(name, !includePrivate));
+        return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate));
     }
 
     /** Return the internal id of an object.
@@ -653,11 +639,11 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyFixnum id() {
-        return RubyFixnum.newFixnum(getRuntime(), System.identityHashCode(this));
+        return getRuntime().newFixnum(System.identityHashCode(this));
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, System.identityHashCode(this));
+        return getRuntime().newFixnum(System.identityHashCode(this));
     }
 
     /**
@@ -707,7 +693,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject dup() {
         IRubyObject dup = callMethod("clone");
         if (!dup.getClass().equals(getClass())) {
-            throw new TypeError(getRuntime(), "duplicated object must be same type");
+            throw getRuntime().newTypeError("duplicated object must be same type");
         }
 
         dup.setMetaClass(type());
@@ -719,7 +705,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyBoolean tainted() {
-        return RubyBoolean.newBoolean(runtime, isTaint());
+        return getRuntime().newBoolean(isTaint());
     }
 
     /** rb_obj_taint
@@ -763,7 +749,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyBoolean frozen() {
-        return RubyBoolean.newBoolean(getRuntime(), isFrozen());
+        return getRuntime().newBoolean(isFrozen());
     }
 
     /** rb_obj_inspect
@@ -797,7 +783,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyBoolean instance_of(IRubyObject type) {
-        return RubyBoolean.newBoolean(getRuntime(), type() == type);
+        return getRuntime().newBoolean(type() == type);
     }
 
     public RubyArray instance_variables() {
@@ -805,16 +791,16 @@ public class RubyObject implements Cloneable, IRubyObject {
         Iterator iter = instanceVariableNames();
         while (iter.hasNext()) {
             String name = (String) iter.next();
-            names.add(RubyString.newString(getRuntime(), name));
+            names.add(getRuntime().newString(name));
         }
-        return RubyArray.newArray(runtime, names);
+        return getRuntime().newArray(names);
     }
 
     /** rb_obj_is_kind_of
      *
      */
     public RubyBoolean kind_of(IRubyObject type) {
-        return RubyBoolean.newBoolean(runtime, isKindOf((RubyModule)type));
+        return getRuntime().newBoolean(isKindOf((RubyModule)type));
     }
 
     // For cglib....why does it need this though?
@@ -853,7 +839,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public RubyArray singleton_methods() {
-        RubyArray result = RubyArray.newArray(getRuntime());
+        RubyArray result = getRuntime().newArray();
         RubyClass type = getMetaClass();
         while (type != null && type instanceof MetaClass) {
             Iterator iter = type.getMethods().entrySet().iterator();
@@ -861,7 +847,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 Map.Entry entry = (Map.Entry) iter.next();
                 String key = (String) entry.getKey();
                 ICallable value = (ICallable) entry.getValue();
-                RubyString name = RubyString.newString(getRuntime(), key);
+                RubyString name = getRuntime().newString(key);
                 if (value.getVisibility().isPublic()) {
                     if (! result.includes(name)) {
                         if (value == null) {
@@ -886,12 +872,12 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public RubyArray to_a() {
-        return RubyArray.newArray(getRuntime(), this);
+        return getRuntime().newArray(this);
     }
 
     public RubyString to_s() {
         String cname = getMetaClass().getName();
-        RubyString str = RubyString.newString(getRuntime(), "");
+        RubyString str = getRuntime().newString("");
         /* 6:tags 16:addr 1:eos */
         str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
         str.setTaint(isTaint());
@@ -907,7 +893,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      **/
     public IRubyObject extend(IRubyObject[] args) {
         if (args.length == 0) {
-            throw new ArgumentError(runtime, "wrong # of arguments");
+            throw getRuntime().newArgumentError("wrong # of arguments");
         }
         // FIXME: Check_Type?
         for (int i = 0; i < args.length; i++) {
@@ -918,7 +904,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public IRubyObject method_missing(IRubyObject[] args) {
         if (args.length == 0) {
-            throw new ArgumentError(getRuntime(), "no id given");
+            throw getRuntime().newArgumentError("no id given");
         }
 
         String name = args[0].asSymbol();
@@ -928,15 +914,15 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (isNil()) {
             noClass = true;
             description = "nil";
-        } else if (this == runtime.getTrue()) {
+        } else if (this == getRuntime().getTrue()) {
             noClass = true;
             description = "true";
-        } else if (this == runtime.getFalse()) {
+        } else if (this == getRuntime().getFalse()) {
             noClass = true;
             description = "false";
         }
 
-        LastCallStatus lastCallStatus = runtime.getLastCallStatus();
+        LastCallStatus lastCallStatus = getRuntime().getLastCallStatus();
 
         String format = lastCallStatus.errorMessageFormat(name);
 
@@ -969,14 +955,14 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public IRubyObject send(IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(runtime, "no method name given");
+            throw getRuntime().newArgumentError("no method name given");
         }
         String name = args[0].asSymbol();
 
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
-        runtime.getIterStack().push(runtime.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
             return getMetaClass().call(this, name, newArgs, CallType.FUNCTIONAL);
         } finally {
@@ -986,7 +972,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('o');
-        RubySymbol classname = RubySymbol.newSymbol(runtime, getMetaClass().getName());
+        RubySymbol classname = RubySymbol.newSymbol(getRuntime(), getMetaClass().getName());
         output.dumpObject(classname);
 
         if (getInstanceVariables() == null) {
@@ -998,7 +984,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 String name = (String) iter.next();
                 IRubyObject value = getInstanceVariable(name);
 
-                output.dumpObject(RubySymbol.newSymbol(runtime, name));
+                output.dumpObject(RubySymbol.newSymbol(getRuntime(), name));
                 output.dumpObject(value);
             }
         }
@@ -1011,7 +997,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     protected CallbackFactory callbackFactory() {
-        return runtime.callbackFactory();
+        return getRuntime().callbackFactory();
     }
 
     public static void createObjectClass(RubyClass module) {

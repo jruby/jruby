@@ -23,11 +23,6 @@
  */
 package org.ablaf.internal.ast;
 
-import org.ablaf.ast.IAstDecoder;
-import org.ablaf.ast.IAstEncoder;
-import org.ablaf.ast.IAstMarshal;
-import org.jruby.ast.Node;
-
 import java.beans.PersistenceDelegate;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
@@ -37,6 +32,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.ablaf.ast.IAstDecoder;
+import org.ablaf.ast.IAstEncoder;
+import org.ablaf.ast.IAstMarshal;
+import org.jruby.ast.Node;
 
 /**
  * 

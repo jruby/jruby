@@ -34,7 +34,6 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -57,7 +56,7 @@ public class RubyException extends RubyObject {
         if (message == null) {
             this.message = runtime.getNil();
         } else {
-            this.message = RubyString.newString(runtime, message);
+            this.message = runtime.newString(message);
         }
     }
 
@@ -113,7 +112,7 @@ public class RubyException extends RubyObject {
 
     public IRubyObject backtrace() {
         if (backtrace == null) {
-            return runtime.getNil();
+            return getRuntime().getNil();
         }
         return backtrace;
     }
@@ -133,14 +132,14 @@ public class RubyException extends RubyObject {
                 }
                 return newInstance(getMetaClass(), args);
             default :
-                throw new ArgumentError(getRuntime(), "Wrong argument count");
+                throw getRuntime().newArgumentError("Wrong argument count");
         }
 
     }
 
     public RubyString to_s() {
         if (message.isNil()) {
-            return RubyString.newString(getRuntime(), getMetaClass().getName());
+            return getRuntime().newString(getMetaClass().getName());
         }
         message.setTaint(isTaint());
         return (RubyString) message.callMethod("to_s");
@@ -156,7 +155,7 @@ public class RubyException extends RubyObject {
         RubyString exception = RubyString.stringValue(this);
 
         if (exception.getValue().length() == 0) {
-            return RubyString.newString(getRuntime(), rubyClass.getName());
+            return getRuntime().newString(rubyClass.getName());
         }
         StringBuffer sb = new StringBuffer();
         sb.append("#<");
@@ -164,6 +163,6 @@ public class RubyException extends RubyObject {
         sb.append(": ");
         sb.append(exception.getValue());
         sb.append(">");
-        return RubyString.newString(getRuntime(), sb.toString());
+        return getRuntime().newString(sb.toString());
     }
 }

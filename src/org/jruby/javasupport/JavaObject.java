@@ -37,7 +37,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -111,11 +110,11 @@ public class JavaObject extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, value == null ? 0 : value.hashCode());
+        return getRuntime().newFixnum(value == null ? 0 : value.hashCode());
     }
 
     public RubyString to_s() {
-        return RubyString.newString(runtime, 
+        return getRuntime().newString(
            value == null ? "null" : value.toString());
     }
 
@@ -152,7 +151,7 @@ public class JavaObject extends RubyObject {
     }
 
     public RubyString java_type() {
-        return RubyString.newString(getRuntime(), getJavaClass().getName());
+        return getRuntime().newString(getJavaClass().getName());
     }
 
     public IRubyObject java_class() {
@@ -160,14 +159,14 @@ public class JavaObject extends RubyObject {
     }
 
     public RubyFixnum length() {
-        throw new TypeError(getRuntime(), "not a java array");
+        throw getRuntime().newTypeError("not a java array");
     }
 
     public IRubyObject aref(IRubyObject index) {
-        throw new TypeError(getRuntime(), "not a java array");
+        throw getRuntime().newTypeError("not a java array");
     }
 
     public IRubyObject aset(IRubyObject index, IRubyObject value) {
-        throw new TypeError(getRuntime(), "not a java array");
+        throw getRuntime().newTypeError("not a java array");
     }
 }

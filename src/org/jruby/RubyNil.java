@@ -40,8 +40,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyNil extends RubyObject {
+	private final Ruby runtime;
+	
 	public RubyNil(Ruby runtime) {
-		super(runtime);
+		super(runtime, null);
+		this.runtime = runtime;
+	}
+	
+	public Ruby getRuntime() {
+		return runtime;
 	}
 	
     public static RubyClass createNilClass(Ruby runtime) {
@@ -94,21 +101,21 @@ public class RubyNil extends RubyObject {
      *
      */
     public static RubyString to_s(IRubyObject recv) {
-        return RubyString.newString(recv.getRuntime(), "");
+        return recv.getRuntime().newString("");
     }
     
     /** nil_to_a
      *
      */
     public static RubyArray to_a(IRubyObject recv) {
-        return RubyArray.newArray(recv.getRuntime(), 0);
+        return recv.getRuntime().newArray(0);
     }
     
     /** nil_inspect
      *
      */
     public static RubyString inspect(IRubyObject recv) {
-        return RubyString.newString(recv.getRuntime(), "nil");
+        return recv.getRuntime().newString("nil");
     }
     
     /** nil_type
@@ -129,27 +136,28 @@ public class RubyNil extends RubyObject {
      *
      */
     public static RubyBoolean op_or(IRubyObject recv, IRubyObject obj) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), obj.isTrue());
+        return recv.getRuntime().newBoolean(obj.isTrue());
     }
 
     /** nil_xor
      *
      */
     public static RubyBoolean op_xor(IRubyObject recv, IRubyObject obj) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), obj.isTrue());
+        return recv.getRuntime().newBoolean(obj.isTrue());
     }
 
     public static RubyFixnum id(IRubyObject recv) {
-        return RubyFixnum.newFixnum(recv.getRuntime(), 4);
+        return recv.getRuntime().newFixnum(4);
     }
 
     public boolean isNil() {
         return true;
-    }	
+    }
     
     public boolean isFalse() {
     	return true;
 	}
+
 	public boolean isTrue() {
 		return false;
 	}

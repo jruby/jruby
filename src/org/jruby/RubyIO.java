@@ -32,7 +32,11 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.ref.WeakReference;
+
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
@@ -42,15 +46,10 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.util.IOHandler;
+import org.jruby.util.IOHandlerProcess;
 import org.jruby.util.IOHandlerSeekable;
 import org.jruby.util.IOHandlerUnseekable;
 import org.jruby.util.IOModes;
-import org.jruby.util.IOHandlerProcess;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 
 /**
  * 
@@ -254,9 +253,9 @@ public class RubyIO extends RubyObject {
         result.defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
         
         // Constants for seek
-        result.setConstant("SEEK_SET", RubyFixnum.newFixnum(runtime, IOHandler.SEEK_SET));
-        result.setConstant("SEEK_CUR", RubyFixnum.newFixnum(runtime, IOHandler.SEEK_CUR));
-        result.setConstant("SEEK_END", RubyFixnum.newFixnum(runtime, IOHandler.SEEK_END));
+        result.setConstant("SEEK_SET", runtime.newFixnum(IOHandler.SEEK_SET));
+        result.setConstant("SEEK_CUR", runtime.newFixnum(IOHandler.SEEK_CUR));
+        result.setConstant("SEEK_END", runtime.newFixnum(IOHandler.SEEK_END));
         
         return result;
     }
@@ -328,8 +327,8 @@ public class RubyIO extends RubyObject {
             String mode = "r";
             if (args != null && args.length > 0) {
                 if (!args[0].isKindOf(getRuntime().getClasses().getStringClass())) {
-                    throw new TypeError(runtime, args[0], 
-                            runtime.getClasses().getStringClass());
+                    throw getRuntime().newTypeError(args[0], 
+                            getRuntime().getClasses().getStringClass());
                 }
                     
                 mode = ((RubyString) args[0]).getValue();
@@ -377,8 +376,8 @@ public class RubyIO extends RubyObject {
 
 		if (newLine != null) {
 		    lineNumber++;
-		    runtime.getGlobalVariables().set("$.", RubyFixnum.newFixnum(runtime, lineNumber));
-		    RubyString result = RubyString.newString(getRuntime(), newLine);
+		    getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(lineNumber));
+		    RubyString result = getRuntime().newString(newLine);
 		    result.taint();
 		    return result;
 		}
@@ -459,8 +458,7 @@ public class RubyIO extends RubyObject {
     }
 
     public IRubyObject syswrite(IRubyObject obj) {
-        return RubyFixnum.newFixnum(runtime, 
-                handler.syswrite(obj.toString()));
+        return getRuntime().newFixnum(handler.syswrite(obj.toString()));
     }
     
     /** io_write
@@ -472,11 +470,11 @@ public class RubyIO extends RubyObject {
         try {
             int totalWritten = handler.write(obj.toString());
 
-            return RubyFixnum.newFixnum(runtime, totalWritten);
+            return getRuntime().newFixnum(totalWritten);
         } catch (IOError e) {
-            return RubyFixnum.zero(runtime);
+            return RubyFixnum.zero(getRuntime());
         } catch (ErrnoError e) {
-            return RubyFixnum.zero(runtime);
+            return RubyFixnum.zero(getRuntime());
         }
     }
 
@@ -493,7 +491,7 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyFixnum fileno() {
-        return RubyFixnum.newFixnum(getRuntime(), handler.getFileno());
+        return getRuntime().newFixnum(handler.getFileno());
     }
     
     /** Returns the current line number.
@@ -501,7 +499,7 @@ public class RubyIO extends RubyObject {
      * @return the current line number.
      */
     public RubyFixnum lineno() {
-        return RubyFixnum.newFixnum(getRuntime(), lineNumber);
+        return getRuntime().newFixnum(lineNumber);
     }
 
     /** Sets the current line number.
@@ -519,7 +517,7 @@ public class RubyIO extends RubyObject {
      * @return the current sync mode.
      */
     public RubyBoolean sync() {
-        return RubyBoolean.newBoolean(getRuntime(), handler.isSync());
+        return getRuntime().newBoolean(handler.isSync());
     }
     
     /**
@@ -537,11 +535,11 @@ public class RubyIO extends RubyObject {
             return getRuntime().getNil();
         }
         
-        return RubyFixnum.newFixnum(getRuntime(), pid);
+        return getRuntime().newFixnum(pid);
     }
     
     public RubyFixnum pos() {
-        return RubyFixnum.newFixnum(getRuntime(), handler.pos());
+        return getRuntime().newFixnum(handler.pos());
     }
     
     public RubyFixnum pos_set(RubyFixnum newPosition) {
@@ -565,7 +563,7 @@ public class RubyIO extends RubyObject {
             if (value.length() > 0) {
                 c = value.charAt(0);
             } else {
-                throw new TypeError(getRuntime(), 
+                throw getRuntime().newTypeError(
                         "Cannot convert String to Integer");
             }
         } else if (object.isKindOf(getRuntime().getClasses().getFixnumClass())){
@@ -577,17 +575,17 @@ public class RubyIO extends RubyObject {
         try {
             handler.putc(c);
         } catch (ErrnoError e) {
-            return RubyFixnum.zero(runtime);
+            return RubyFixnum.zero(getRuntime());
         }
         
-        return RubyFixnum.newFixnum(getRuntime(), c);
+        return getRuntime().newFixnum(c);
     }
     
     // This was a getOpt with one mandatory arg, but it did not work
     // so I am parsing it for now.
     public RubyFixnum seek(IRubyObject[] args) {
         if (args == null || args.length == 0) {
-            throw new ArgumentError(getRuntime(), "wrong number of arguments");
+            throw getRuntime().newArgumentError("wrong number of arguments");
         }
         
         RubyFixnum offsetValue = (RubyFixnum) args[0];
@@ -609,7 +607,7 @@ public class RubyIO extends RubyObject {
         // Must be back on first line on rewind.
         lineNumber = 0;
         
-        return RubyFixnum.zero(runtime);
+        return RubyFixnum.zero(getRuntime());
     }
     
     public RubyFixnum fsync() {
@@ -618,10 +616,10 @@ public class RubyIO extends RubyObject {
         try {
             handler.sync();
         } catch (IOException e) {
-            throw IOError.fromException(runtime, e);
+            throw IOError.fromException(getRuntime(), e);
         }
 
-        return RubyFixnum.zero(runtime);
+        return RubyFixnum.zero(getRuntime());
     }
 
     /** Sets the current sync mode.
@@ -713,7 +711,7 @@ public class RubyIO extends RubyObject {
         RubyString line = gets(args);
 
         if (line.isNil()) {
-            throw new EOFError(runtime);
+            throw new EOFError(getRuntime());
         }
         
         return line;
@@ -729,7 +727,7 @@ public class RubyIO extends RubyObject {
         
         return c == -1 ? 
             getRuntime().getNil() : // EOF
-        	RubyFixnum.newFixnum(getRuntime(), c);
+        	getRuntime().newFixnum(c);
     }
     
     /** 
@@ -746,13 +744,13 @@ public class RubyIO extends RubyObject {
     public IRubyObject sysread(RubyFixnum number) {
         String buf = handler.sysread(RubyFixnum.fix2int(number));
         
-        return RubyString.newString(getRuntime(), buf);
+        return getRuntime().newString(buf);
     }
     
     public IRubyObject read(IRubyObject[] args) {
         String buf = args.length > 0 ? handler.read(RubyFixnum.fix2int(args[0])) : handler.getsEntireStream();
 
-        return buf == null ? getRuntime().getNil() : RubyString.newString(getRuntime(), buf);
+        return buf == null ? getRuntime().getNil() : getRuntime().newString(buf);
     }
 
     /** Read a byte. On EOF throw EOFError.
@@ -764,10 +762,10 @@ public class RubyIO extends RubyObject {
         int c = handler.getc();
         
         if (c == -1) {
-            throw new EOFError(runtime);
+            throw new EOFError(getRuntime());
         }
         
-        return RubyFixnum.newFixnum(getRuntime(), c);
+        return getRuntime().newFixnum(c);
     }
 
     /** 
@@ -776,10 +774,10 @@ public class RubyIO extends RubyObject {
     public IRubyObject each_byte() {
         for (int c = handler.getc(); c != -1; c = handler.getc()) {
             Asserts.isTrue(c < 256);
-            runtime.yield(RubyFixnum.newFixnum(runtime, c));
+            getRuntime().yield(getRuntime().newFixnum(c));
         }
 
-        return runtime.getNil();
+        return getRuntime().getNil();
     }
 
     /** 
@@ -796,7 +794,7 @@ public class RubyIO extends RubyObject {
 
     public static IRubyObject puts(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
-            recv.callMethod("write", RubyString.newString(recv.getRuntime(), "\n"));
+            recv.callMethod("write", recv.getRuntime().newString("\n"));
             return recv.getRuntime().getNil();
         }
 
@@ -810,9 +808,9 @@ public class RubyIO extends RubyObject {
             } else {
                 line = args[i].toString();
             }
-            recv.callMethod("write", RubyString.newString(recv.getRuntime(), line));
+            recv.callMethod("write", recv.getRuntime().newString(line));
             if (!line.endsWith("\n")) {
-                recv.callMethod("write", RubyString.newString(recv.getRuntime(), "\n"));
+                recv.callMethod("write", recv.getRuntime().newString("\n"));
             }
         }
         return recv.getRuntime().getNil();
@@ -834,7 +832,7 @@ public class RubyIO extends RubyObject {
                 recv.callMethod("write", fs);
             }
             if (args[i].isNil()) {
-                recv.callMethod("write", RubyString.newString(recv.getRuntime(), "nil"));
+                recv.callMethod("write", recv.getRuntime().newString("nil"));
             } else {
                 recv.callMethod("write", args[i]);
             }
@@ -854,17 +852,17 @@ public class RubyIO extends RubyObject {
     public RubyArray readlines(IRubyObject[] args) {
         IRubyObject[] separatorArgument;
         if (args.length > 0) {
-            if (!args[0].isKindOf(runtime.getClasses().getNilClass()) &&
-                !args[0].isKindOf(runtime.getClasses().getStringClass())) {
-                throw new TypeError(runtime, args[0], 
-                        runtime.getClasses().getStringClass());
+            if (!args[0].isKindOf(getRuntime().getClasses().getNilClass()) &&
+                !args[0].isKindOf(getRuntime().getClasses().getStringClass())) {
+                throw getRuntime().newTypeError(args[0], 
+                        getRuntime().getClasses().getStringClass());
             } 
             separatorArgument = new IRubyObject[] { args[0] };
         } else {
             separatorArgument = IRubyObject.NULL_ARRAY;
         }
 
-        RubyArray result = RubyArray.newArray(runtime);
+        RubyArray result = getRuntime().newArray();
         IRubyObject line;
         while (! (line = internalGets(separatorArgument)).isNil()) {
             result.append(line);
@@ -874,7 +872,7 @@ public class RubyIO extends RubyObject {
 
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(recv.getRuntime(), args.length, 1);
+            throw recv.getRuntime().newArgumentError(args.length, 1);
         }
         
         if (! args[0].isKindOf(recv.getRuntime().getClasses().getStringClass())) {

@@ -28,6 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;

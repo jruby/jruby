@@ -101,7 +101,7 @@ public class RubyMath {
             for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
         }
 	 
-        RubyArray result = RubyArray.newArray(recv.getRuntime(), 2);
+        RubyArray result = recv.getRuntime().newArray(2);
         
         result.append(RubyFloat.newFloat(recv.getRuntime(), sign * mantissa));
         result.append(RubyFloat.newFloat(recv.getRuntime(), exponent));

@@ -31,18 +31,16 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.IndexError;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /** Implementation of the Hash class.
  *
@@ -241,7 +239,7 @@ public class RubyHash extends RubyObject {
         if (args.length == 1) {
             hash.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
         } else if (args.length % 2 != 0) {
-            throw new ArgumentError(recv.getRuntime(), "odd number of args for Hash");
+            throw recv.getRuntime().newArgumentError("odd number of args for Hash");
         } else {
             for (int i = 0; i < args.length; i += 2) {
                 hash.aset(args[i], args[i + 1]);
@@ -281,11 +279,11 @@ public class RubyHash extends RubyObject {
             firstEntry = false;
         }
         sb.append("}");
-        return RubyString.newString(runtime, sb.toString());
+        return getRuntime().newString(sb.toString());
     }
 
     public RubyFixnum size() {
-        return RubyFixnum.newFixnum(getRuntime(), length());
+        return getRuntime().newFixnum(length());
     }
 
     public RubyBoolean empty_p() {
@@ -293,13 +291,13 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyArray to_a() {
-        RubyArray result = RubyArray.newArray(getRuntime(), length());
+        RubyArray result = getRuntime().newArray(length());
         
         for(Iterator iter = valueMap.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             IRubyObject key = (IRubyObject) entry.getKey();
             IRubyObject value = (IRubyObject) entry.getValue();
-            result.append(RubyArray.newArray(getRuntime(), key, value));
+            result.append(getRuntime().newArray(key, value));
         }
         return result;
     }
@@ -309,7 +307,7 @@ public class RubyHash extends RubyObject {
     }
 
 	public IRubyObject rbClone() {
-		RubyHash result = newHash(runtime, getValueMap(), getDefaultValue());
+		RubyHash result = newHash(getRuntime(), getValueMap(), getDefaultValue());
 		result.setupClone(this);
 		return result;
 	}
@@ -359,43 +357,43 @@ public class RubyHash extends RubyObject {
 
     public IRubyObject fetch(IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(runtime, args.length, 1);
+            throw getRuntime().newArgumentError(args.length, 1);
         }
         IRubyObject key = args[0];
         IRubyObject result = (IRubyObject) valueMap.get(key);
         if (result == null) {
             if (args.length > 1) {
                 return args[1];
-            } else if (runtime.isBlockGiven()) {
-                return runtime.yield(key);
+            } else if (getRuntime().isBlockGiven()) {
+                return getRuntime().yield(key);
             } 
 
-            throw new IndexError(runtime, "key not found");
+            throw getRuntime().newIndexError("key not found");
         }
         return result;
     }
 
 
     public RubyBoolean has_key(IRubyObject key) {
-        return RubyBoolean.newBoolean(runtime, valueMap.containsKey(key));
+        return getRuntime().newBoolean(valueMap.containsKey(key));
     }
 
     public RubyBoolean has_value(IRubyObject value) {
-        return RubyBoolean.newBoolean(runtime, valueMap.containsValue(value));
+        return getRuntime().newBoolean(valueMap.containsValue(value));
     }
 
     public RubyHash each() {
         for (Iterator iter = entryIterator(); iter.hasNext();) {
             checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
-			runtime.yield(RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
+			getRuntime().yield(getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()), null, null, true);
         }
         return this;
     }
 
     private void checkRehashing() {
         if (isRehashing) {
-            throw new IndexError(getRuntime(), "rehash occured during iteration");
+            throw getRuntime().newIndexError("rehash occured during iteration");
         }
     }
 
@@ -403,7 +401,7 @@ public class RubyHash extends RubyObject {
 		for (Iterator iter = valueIterator(); iter.hasNext();) {
             checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
-			runtime.yield(value);
+			getRuntime().yield(value);
 		}
 		return this;
 	}
@@ -412,7 +410,7 @@ public class RubyHash extends RubyObject {
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			checkRehashing();
             IRubyObject key = (IRubyObject) iter.next();
-			runtime.yield(key);
+			getRuntime().yield(key);
 		}
 		return this;
 	}
@@ -428,7 +426,7 @@ public class RubyHash extends RubyObject {
                 return (IRubyObject) key;
             }
         }
-        return runtime.getNil();
+        return getRuntime().getNil();
     }
 
     public RubyArray indices(IRubyObject[] indices) {
@@ -438,24 +436,24 @@ public class RubyHash extends RubyObject {
             values.add(aref(indices[i]));
         }
 
-        return RubyArray.newArray(runtime, values);
+        return getRuntime().newArray(values);
     }
 
     public RubyArray keys() {
-        return RubyArray.newArray(runtime, new ArrayList(valueMap.keySet()));
+        return getRuntime().newArray(new ArrayList(valueMap.keySet()));
     }
 
     public RubyArray values() {
-        return RubyArray.newArray(runtime, new ArrayList(valueMap.values()));
+        return getRuntime().newArray(new ArrayList(valueMap.values()));
     }
 
     public IRubyObject equal(IRubyObject other) {
         if (this == other) {
-            return runtime.getTrue();
+            return getRuntime().getTrue();
         } else if (!(other instanceof RubyHash)) {
-            return runtime.getFalse();
+            return getRuntime().getFalse();
         } else if (length() != ((RubyHash)other).length()) {
-            return runtime.getFalse();
+            return getRuntime().getFalse();
         }
 
         for (Iterator iter = modifiableEntryIterator(); iter.hasNext();) {
@@ -464,10 +462,10 @@ public class RubyHash extends RubyObject {
 
             Object value = ((RubyHash)other).valueMap.get(entry.getKey());
             if (value == null || !entry.getValue().equals(value)) {
-                return runtime.getFalse();
+                return getRuntime().getFalse();
             }
         }
-        return runtime.getTrue();
+        return getRuntime().getTrue();
     }
 
     public RubyArray shift() {
@@ -475,7 +473,7 @@ public class RubyHash extends RubyObject {
         Iterator iter = modifiableEntryIterator();
         Map.Entry entry = (Map.Entry)iter.next();
         iter.remove();
-		return RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
+		return getRuntime().newArray((IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
     }
 
 	public IRubyObject delete(IRubyObject key) {
@@ -483,8 +481,8 @@ public class RubyHash extends RubyObject {
 		IRubyObject result = (IRubyObject) valueMap.remove(key);
 		if (result != null) {
 			return result;
-		} else if (runtime.isBlockGiven()) {
-			return runtime.yield(key);
+		} else if (getRuntime().isBlockGiven()) {
+			return getRuntime().yield(key);
 		} 
 
 		return getDefaultValue();
@@ -507,14 +505,14 @@ public class RubyHash extends RubyObject {
 		for (Iterator iter = keyIterator(); iter.hasNext();) {
 			IRubyObject key = (IRubyObject) iter.next();
 			IRubyObject value = (IRubyObject) valueMap.get(key);
-			IRubyObject shouldDelete = runtime.yield(RubyArray.newArray(runtime, key, value), null, null, true);
+			IRubyObject shouldDelete = getRuntime().yield(getRuntime().newArray(key, value), null, null, true);
 			if (shouldDelete.isTrue()) {
 				valueMap.remove(key);
 				isModified = true;
 			}
 		}
 
-		return isModified ? this : nilHash(runtime); 
+		return isModified ? this : nilHash(getRuntime()); 
 	}
 
 	public RubyHash clear() {
@@ -524,7 +522,7 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash invert() {
-		RubyHash result = newHash(runtime);
+		RubyHash result = newHash(getRuntime());
 		
 		for (Iterator iter = modifiableEntryIterator(); iter.hasNext();) {
 			Map.Entry entry = (Map.Entry) iter.next();
@@ -556,7 +554,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyArray values_at(IRubyObject[] argv) {
-        RubyArray result = RubyArray.newArray(runtime);
+        RubyArray result = getRuntime().newArray();
         for (int i = 0; i < argv.length; i++) {
             IRubyObject key = argv[i];
             result.append(aref(key));

@@ -29,10 +29,10 @@
  */
 package org.jruby;
 
+import java.util.Iterator;
+
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.Iterator;
 
 public class RubyObjectSpace {
 
@@ -69,7 +69,7 @@ public class RubyObjectSpace {
             count++;
             recv.getRuntime().yield((IRubyObject) iter.next());
         }
-        return RubyFixnum.newFixnum(recv.getRuntime(), count);
+        return recv.getRuntime().newFixnum(count);
     }
 
     public static IRubyObject garbage_collect(IRubyObject recv) {

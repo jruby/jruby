@@ -33,11 +33,10 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.TypeError;
+import java.math.BigInteger;
+
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.math.BigInteger;
 
 /**
  *
@@ -91,27 +90,27 @@ public abstract class RubyNumeric extends RubyObject {
         if (arg instanceof RubyNumeric) {
             return ((RubyNumeric) arg).getLongValue();
         }
-        throw new TypeError(arg.getRuntime(), "argument is not numeric");
+        throw arg.getRuntime().newTypeError("argument is not numeric");
     }
 
     public static long fix2long(IRubyObject arg) {
         if (arg instanceof RubyFixnum) {
             return ((RubyFixnum) arg).getLongValue();
         }
-        throw new TypeError(arg.getRuntime(), "argument is not a Fixnum");
+        throw arg.getRuntime().newTypeError("argument is not a Fixnum");
     }
 
     public static int fix2int(IRubyObject arg) {
         long val = fix2long(arg);
         if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
-            throw new TypeError(arg.getRuntime(), "argument value is too big to convert to int");
+            throw arg.getRuntime().newTypeError("argument value is too big to convert to int");
         }
         return (int) val;
     }
 
     public static final RubyNumeric numericValue(IRubyObject arg) {
         if (!(arg instanceof RubyNumeric)) {
-            throw new TypeError(arg.getRuntime(), "argument not numeric");
+            throw arg.getRuntime().newTypeError("argument not numeric");
         }
         return (RubyNumeric) arg;
     }
@@ -189,7 +188,7 @@ public abstract class RubyNumeric extends RubyObject {
         }
         try {
             long l = Long.parseLong(sbuf.substring(0, pos), radix);
-            return RubyFixnum.newFixnum(runtime, l);
+            return runtime.newFixnum(l);
         } catch (NumberFormatException ex) {
             BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
             return new RubyBignum(runtime, bi);
@@ -238,11 +237,10 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyArray coerce(RubyNumeric other) {
         if (getMetaClass() == other.getMetaClass()) {
-            return RubyArray.newArray(getRuntime(), other, this);
+            return getRuntime().newArray(other, this);
         } 
           
-        return RubyArray.newArray(
-                getRuntime(),
+        return getRuntime().newArray(
                 RubyFloat.newFloat(getRuntime(), other.getDoubleValue()),
                 RubyFloat.newFloat(getRuntime(), getDoubleValue()));
     }
@@ -285,7 +283,7 @@ public abstract class RubyNumeric extends RubyObject {
     		return getRuntime().getNil();
     	}
     	
-        return RubyFixnum.newFixnum(getRuntime(), 
+        return getRuntime().newFixnum( 
         		compareValue((RubyNumeric) other));
     }
 
@@ -301,7 +299,7 @@ public abstract class RubyNumeric extends RubyObject {
             }
         }
 
-        return RubyArray.newArray(getRuntime(), div, modulo(other));
+        return getRuntime().newArray(div, modulo(other));
     }
 
     /** num_modulo
@@ -347,7 +345,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public IRubyObject equal(IRubyObject other) {
         if (other instanceof RubyNumeric) {
-            return RubyBoolean.newBoolean(getRuntime(), compareValue((RubyNumeric) other) == 0);
+            return getRuntime().newBoolean(compareValue((RubyNumeric) other) == 0);
         }
         return super.equal(other); // +++ rb_equal
     }

@@ -32,7 +32,6 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -148,21 +147,21 @@ public class JavaUtil {
             } else if (cName == "float" || cName == "double") {
                 return RubyFloat.newFloat(runtime, ((Number) object).doubleValue());
             } else if (cName == "char") {
-                return RubyFixnum.newFixnum(runtime, ((Character) object).charValue());
+                return runtime.newFixnum(((Character) object).charValue());
             } else {
                 // else it's one of the integral types
-                return RubyFixnum.newFixnum(runtime, ((Number) object).longValue());
+                return runtime.newFixnum(((Number) object).longValue());
             }
         } else if (javaClass == Boolean.class) {
             return RubyBoolean.newBoolean(runtime, ((Boolean) object).booleanValue());
         } else if (javaClass == Float.class || javaClass == Double.class) {
             return RubyFloat.newFloat(runtime, ((Number) object).doubleValue());
         } else if (javaClass == Character.class) {
-            return RubyFixnum.newFixnum(runtime, ((Character) object).charValue());
+            return runtime.newFixnum(((Character) object).charValue());
         } else if (Number.class.isAssignableFrom(javaClass)) {
-            return RubyFixnum.newFixnum(runtime, ((Number) object).longValue());
+            return runtime.newFixnum(((Number) object).longValue());
         } else if (javaClass == String.class) {
-            return RubyString.newString(runtime, object.toString());
+            return runtime.newString(object.toString());
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
         } else if (object instanceof RubyProxy) {

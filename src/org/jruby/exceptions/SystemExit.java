@@ -1,7 +1,6 @@
 package org.jruby.exceptions;
 
 import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
 
 /**
  * 
@@ -11,6 +10,6 @@ import org.jruby.RubyFixnum;
 public class SystemExit extends RaiseException {
     public SystemExit(Ruby runtime, int status) {
         super(runtime, runtime.getExceptions().getSystemExit(), "", true);
-        getException().setInstanceVariable("status", RubyFixnum.newFixnum(runtime, status));
+        getException().setInstanceVariable("status", runtime.newFixnum(status));
     }
 }

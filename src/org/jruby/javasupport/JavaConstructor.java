@@ -23,17 +23,15 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 public class JavaConstructor extends JavaCallable {
     private final Constructor constructor;
@@ -66,7 +64,7 @@ public class JavaConstructor extends JavaCallable {
 
     public IRubyObject new_instance(IRubyObject[] args) {
         if (args.length != getArity()) {
-            throw new ArgumentError(getRuntime(), args.length, getArity());
+            throw getRuntime().newArgumentError(args.length, getArity());
         }
         Object[] constructorArguments = new Object[args.length];
         Class[] types = constructor.getParameterTypes();
@@ -78,16 +76,16 @@ public class JavaConstructor extends JavaCallable {
             return JavaObject.wrap(getRuntime(), result);
 
         } catch (IllegalArgumentException iae) {
-            throw new TypeError(getRuntime(), "expected " + argument_types().inspect() +
+            throw getRuntime().newTypeError("expected " + argument_types().inspect() +
                                               ", got [" + constructorArguments[0].getClass().getName() + ", ...]");
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(), "illegal access");
+            throw getRuntime().newTypeError("illegal access");
         } catch (InvocationTargetException ite) {
             getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
             Asserts.notReached();
             return null;
         } catch (InstantiationException ie) {
-            throw new TypeError(getRuntime(), "can't make instance of " + constructor.getDeclaringClass().getName());
+            throw getRuntime().newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());
         }
     }
 

@@ -22,9 +22,9 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.CallbackFactory;
-
 import java.io.File;
+
+import org.jruby.runtime.CallbackFactory;
 
 /**
  * Implements File::Stat
@@ -49,6 +49,6 @@ public class FileStatClass extends RubyObject {
     }
 
     public RubyBoolean directory_p() {
-        return RubyBoolean.newBoolean(runtime, file.isDirectory());
+        return getRuntime().newBoolean(file.isDirectory());
     }
 }

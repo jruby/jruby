@@ -42,7 +42,7 @@ public class Builtins {
     }
     
     public RubyArray newArray() {
-        return RubyArray.newArray(runtime, 0);
+        return runtime.newArray(0);
     }
     
     public RubySymbol toSymbol(String name) {
@@ -50,7 +50,7 @@ public class Builtins {
     }
     
     public RubyString toString(String value) {
-        return RubyString.newString(runtime, value);
+        return runtime.newString(value);
     }
 
 	/** Converts a RubyObject into a RubyArray.
@@ -60,10 +60,10 @@ public class Builtins {
 	 * 
 	 */
     public RubyArray toArray(IRubyObject value) {
-        return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
+        return value instanceof RubyArray ? (RubyArray)value : runtime.newArray(value);
     }
 
     public RubyInteger toInteger(long value) {
-        return RubyFixnum.newFixnum(runtime, value);
+        return runtime.newFixnum(value);
     }
 }

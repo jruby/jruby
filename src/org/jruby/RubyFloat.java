@@ -30,7 +30,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -104,7 +103,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, new Double(value).hashCode());
+        return getRuntime().newFixnum(new Double(value).hashCode());
     }
 
     // Float methods (flo_*)
@@ -119,12 +118,12 @@ public class RubyFloat extends RubyNumeric {
         } else if (number instanceof RubyInteger) {
             return (RubyFloat) number.callMethod("to_f");
         } else {
-            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getMetaClass() + " into Float");
+            throw recv.getRuntime().newTypeError("failed to convert " + number.getMetaClass() + " into Float");
         }
     }
 
     public RubyArray coerce(RubyNumeric other) {
-        return RubyArray.newArray(getRuntime(), newFloat(getRuntime(), other.getDoubleValue()), this);
+        return getRuntime().newArray(newFloat(getRuntime(), other.getDoubleValue()), this);
     }
 
     public RubyInteger ceil() {
@@ -133,7 +132,7 @@ public class RubyFloat extends RubyNumeric {
         if (val < RubyFixnum.MIN || val > RubyFixnum.MAX) {
             return RubyBignum.newBignum(getRuntime(), val);
         }
-		return RubyFixnum.newFixnum(getRuntime(), (long) val);
+		return getRuntime().newFixnum((long) val);
     }
 
     public RubyInteger floor() {
@@ -142,7 +141,7 @@ public class RubyFloat extends RubyNumeric {
         if (val < Long.MIN_VALUE || val > Long.MAX_VALUE) {
             return RubyBignum.newBignum(getRuntime(), val);
         }
-		return RubyFixnum.newFixnum(getRuntime(), (long) val);
+		return getRuntime().newFixnum((long) val);
     }
 
     public RubyInteger round() {
@@ -158,7 +157,7 @@ public class RubyFloat extends RubyNumeric {
         if (value < RubyFixnum.MIN || value > RubyFixnum.MAX) {
             return RubyBignum.newBignum(getRuntime(), round);
         }
-        return RubyFixnum.newFixnum(getRuntime(), (long) round);
+        return getRuntime().newFixnum((long) round);
     }
 
     public RubyInteger truncate() {
@@ -187,7 +186,7 @@ public class RubyFloat extends RubyNumeric {
     // dispatching optimization?
     public RubyNumeric op_mul(IRubyObject other) {
     	if ((other instanceof RubyNumeric) == false) {
-    		throw new TypeError(getRuntime(), other.getMetaClass().getName() +
+    		throw getRuntime().newTypeError(other.getMetaClass().getName() +
     			" can't be coerced into Float");
     	}
     	
@@ -233,7 +232,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), "" + getValue());
+        return getRuntime().newString("" + getValue());
     }
 
     public RubyFloat to_f() {
@@ -244,14 +243,14 @@ public class RubyFloat extends RubyNumeric {
     	if (value > Integer.MAX_VALUE) {
     		return RubyBignum.newBignum(getRuntime(), getValue());
     	}
-        return RubyFixnum.newFixnum(getRuntime(), getLongValue());
+        return getRuntime().newFixnum(getLongValue());
     }
 
     public IRubyObject infinite_p() {
         if (getValue() == Double.POSITIVE_INFINITY) {
-            return RubyFixnum.newFixnum(getRuntime(), 1);
+            return getRuntime().newFixnum(1);
         } else if (getValue() == Double.NEGATIVE_INFINITY) {
-            return RubyFixnum.newFixnum(getRuntime(), -1);
+            return getRuntime().newFixnum(-1);
         } else {
             return getRuntime().getNil();
         }
@@ -268,11 +267,11 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyBoolean nan_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Double.isNaN(getValue()));
+        return getRuntime().newBoolean(Double.isNaN(getValue()));
     }
 
     public RubyBoolean zero_p() {
-        return RubyBoolean.newBoolean(getRuntime(), getValue() == 0);
+        return getRuntime().newBoolean(getValue() == 0);
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {

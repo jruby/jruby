@@ -29,7 +29,6 @@
 package org.jruby.common;
 
 import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.parser.SyntaxErrorState;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -86,7 +85,7 @@ public class RubyErrorHandler implements IRubyErrorHandler {
 
     private void writeError(String s) {
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        errorStream.callMethod("write", RubyString.newString(runtime, s));
+        errorStream.callMethod("write", runtime.newString(s));
     }
 
     /**

@@ -26,6 +26,8 @@
  *
  */package org.jruby.internal.runtime.methods;
 
+import java.util.Iterator;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -36,7 +38,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.ScopeNode;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Arity;
@@ -44,8 +45,6 @@ import org.jruby.runtime.ICallable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.Iterator;
 
 /**
  *
@@ -118,13 +117,13 @@ public final class DefaultMethod extends AbstractMethod {
 
         int expectedArgsCount = argsNode.getArgsCount();
         if (expectedArgsCount > args.length) {
-            throw new ArgumentError(runtime, "Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
+            throw runtime.newArgumentError("Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
         if (argsNode.getRestArg() == -1 && argsNode.getOptArgs() != null) {
             int opt = expectedArgsCount + argsNode.getOptArgs().size();
 
             if (opt < args.length) {
-                throw new ArgumentError(runtime, "wrong # of arguments(" + args.length + " for " + opt + ")");
+                throw runtime.newArgumentError("wrong # of arguments(" + args.length + " for " + opt + ")");
             }
 
             runtime.getCurrentFrame().setArgs(args);
@@ -153,7 +152,7 @@ public final class DefaultMethod extends AbstractMethod {
             }
 
             if (argsNode.getRestArg() >= 0) {
-                RubyArray array = RubyArray.newArray(runtime, args.length - expectedArgsCount);
+                RubyArray array = runtime.newArray(args.length - expectedArgsCount);
                 for (int i = expectedArgsCount; i < args.length; i++) {
                     array.append(args[i]);
                 }

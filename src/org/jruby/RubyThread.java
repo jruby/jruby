@@ -30,7 +30,6 @@ package org.jruby;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadError;
 import org.jruby.exceptions.ThreadKill;
@@ -303,7 +302,7 @@ public class RubyThread extends RubyObject {
     public static RubyArray list(IRubyObject recv) {
     	RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
-        return RubyArray.newArray(recv.getRuntime(), activeThreads);
+        return recv.getRuntime().newArray(activeThreads);
     }
 
     public IRubyObject aref(IRubyObject key) {
@@ -327,7 +326,7 @@ public class RubyThread extends RubyObject {
         } else if (key instanceof RubyString) {
             name = ((RubyString) key).getValue();
         } else {
-            throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
+            throw getRuntime().newArgumentError(key.inspect() + " is not a symbol");
         }
         return name;
     }
@@ -375,7 +374,7 @@ public class RubyThread extends RubyObject {
 
     public RubyBoolean has_key(IRubyObject key) {
         String name = keyName(key);
-        return RubyBoolean.newBoolean(getRuntime(), threadLocalVariables.containsKey(name));
+        return getRuntime().newBoolean(threadLocalVariables.containsKey(name));
     }
     
     // TODO: Determine overhead in implementing this
@@ -386,7 +385,7 @@ public class RubyThread extends RubyObject {
     }
 
     public static IRubyObject critical(IRubyObject receiver) {
-    	return RubyBoolean.newBoolean(receiver.getRuntime(), receiver.getRuntime().getThreadService().getCritical());
+    	return receiver.getRuntime().newBoolean(receiver.getRuntime().getThreadService().getCritical());
     }
 
     public static IRubyObject stop(IRubyObject receiver) {
@@ -429,7 +428,7 @@ public class RubyThread extends RubyObject {
 
     public RubyBoolean isStopped() {
     	// not valid for "dead" state
-    	return RubyBoolean.newBoolean(getRuntime(), isStopped);
+    	return getRuntime().newBoolean(isStopped);
     }
     
     public RubyThread wakeup() {
@@ -441,7 +440,7 @@ public class RubyThread extends RubyObject {
     }
     
     public RubyFixnum priority() {
-        return RubyFixnum.newFixnum(getRuntime(), threadImpl.getPriority());
+        return getRuntime().newFixnum(threadImpl.getPriority());
     }
 
     public IRubyObject priority_set(IRubyObject priority) {
@@ -490,14 +489,14 @@ public class RubyThread extends RubyObject {
         ensureStarted();
         if (threadImpl.isAlive()) {
         	if (isStopped) {
-            	return RubyString.newString(getRuntime(), "sleep");
+            	return getRuntime().newString("sleep");
             }
         	
-            return RubyString.newString(getRuntime(), "run");
+            return getRuntime().newString("run");
         } else if (exitingException != null) {
             return getRuntime().getNil();
         } else {
-            return RubyBoolean.newBoolean(getRuntime(), false);
+            return getRuntime().newBoolean(false);
         }
     }
 

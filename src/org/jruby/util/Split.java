@@ -27,18 +27,17 @@
  */
 package org.jruby.util;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Internals for String#split
@@ -53,7 +52,7 @@ public class Split {
 
     public Split(Ruby runtime, String splitee, IRubyObject[] args) {
         if (args.length > 2) {
-            throw new ArgumentError(runtime, args.length, 2);
+            throw runtime.newArgumentError(args.length, 2);
         }
         this.splitee = splitee;
         this.runtime = runtime;
@@ -63,10 +62,10 @@ public class Split {
 
     public RubyArray results() {
         process();
-        RubyArray resultArray = RubyArray.newArray(runtime, result.size());
+        RubyArray resultArray = runtime.newArray(result.size());
         Iterator iter = result.iterator();
         while (iter.hasNext()) {
-            resultArray.append(RubyString.newString(runtime, (String) iter.next()));
+            resultArray.append(runtime.newString((String) iter.next()));
         }
         return resultArray;
     }
@@ -80,7 +79,7 @@ public class Split {
 		int beg = 0;
 		int hits = 0;
 		int len = splitee.length();
-        RubyString rubySplitee = RubyString.newString(runtime, splitee);
+        RubyString rubySplitee = runtime.newString(splitee);
 		while ((beg = pattern.search(rubySplitee, pos)) > -1) {
 			hits++;
 			RubyMatchData matchData = (RubyMatchData) runtime.getBackref();

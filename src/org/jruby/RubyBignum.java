@@ -29,15 +29,15 @@
  */
 package org.jruby;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.jruby.exceptions.RangeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Asserts;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 /**
  *
@@ -64,7 +64,7 @@ public class RubyBignum extends RubyInteger {
     public long getLongValue() {
         long result = getTruncatedLongValue();
         if (! BigInteger.valueOf(result).equals(value)) {
-            throw new RangeError(runtime, "bignum too big to convert into 'int'");
+            throw new RangeError(getRuntime(), "bignum too big to convert into 'int'");
         }
         return result;
     }
@@ -116,7 +116,7 @@ public class RubyBignum extends RubyInteger {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {
             return newBignum(runtime, bi);
         }
-        return RubyFixnum.newFixnum(runtime, bi.longValue());
+        return runtime.newFixnum(bi.longValue());
     }
 
     public static BigInteger bigIntValue(RubyNumeric other) {
@@ -138,7 +138,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, value.hashCode());
+        return getRuntime().newFixnum(value.hashCode());
     }
 
     // Bignum methods
@@ -250,20 +250,20 @@ public class RubyBignum extends RubyInteger {
     }
 
     public RubyInteger op_or(RubyNumeric other) {
-        return new RubyBignum(runtime, value.or(bigIntValue(other)));
+        return new RubyBignum(getRuntime(), value.or(bigIntValue(other)));
     }
 
     public RubyInteger op_xor(RubyNumeric other) {
-        return new RubyBignum(runtime, value.xor(bigIntValue(other)));
+        return new RubyBignum(getRuntime(), value.xor(bigIntValue(other)));
     }
 
     public RubyFixnum aref(RubyNumeric pos) {
         boolean isSet = getValue().testBit((int) pos.getLongValue());
-        return RubyFixnum.newFixnum(getRuntime(), isSet ? 1 : 0);
+        return getRuntime().newFixnum(isSet ? 1 : 0);
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), getValue().toString());
+        return getRuntime().newString(getValue().toString());
     }
 
     public RubyFloat to_f() {
@@ -280,17 +280,17 @@ public class RubyBignum extends RubyInteger {
     public RubyBignum op_lshift(RubyNumeric other) {
         long shift = other.getLongValue();
         if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE) {
-			throw new RangeError(runtime, "bignum too big to convert into `int'");
+			throw new RangeError(getRuntime(), "bignum too big to convert into `int'");
 		}
-        return new RubyBignum(runtime, value.shiftLeft((int) shift));
+        return new RubyBignum(getRuntime(), value.shiftLeft((int) shift));
     }
 
     public RubyBignum op_rshift(RubyNumeric other) {
         long shift = other.getLongValue();
         if (shift > Integer.MAX_VALUE || shift < Integer.MIN_VALUE) {
-			throw new RangeError(runtime, "bignum too big to convert into `int'");
+			throw new RangeError(getRuntime(), "bignum too big to convert into `int'");
 		}
-        return new RubyBignum(runtime, value.shiftRight((int) shift));
+        return new RubyBignum(getRuntime(), value.shiftRight((int) shift));
     }
 
     public RubyFixnum size() {
@@ -298,7 +298,7 @@ public class RubyBignum extends RubyInteger {
         if (value.bitLength() % 8 != 0) {
             byteLength++;
         }
-        return RubyFixnum.newFixnum(runtime, byteLength);
+        return getRuntime().newFixnum(byteLength);
     }
 
     public void marshalTo(MarshalStream output) throws IOException {

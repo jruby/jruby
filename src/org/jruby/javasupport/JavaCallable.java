@@ -36,14 +36,14 @@ public abstract class JavaCallable extends RubyObject {
     }
 
     public final RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), getArity());
+        return getRuntime().newFixnum(getArity());
     }
 
     public final RubyArray argument_types() {
         Class[] parameterTypes = parameterTypes();
-        RubyArray result = RubyArray.newArray(getRuntime(), parameterTypes.length);
+        RubyArray result = getRuntime().newArray(parameterTypes.length);
         for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(RubyString.newString(getRuntime(), parameterTypes[i].getName()));
+            result.append(getRuntime().newString(parameterTypes[i].getName()));
         }
         return result;
     }
@@ -59,7 +59,7 @@ public abstract class JavaCallable extends RubyObject {
             }
         }
         result.append(")>");
-        return RubyString.newString(getRuntime(), result.toString());
+        return getRuntime().newString(result.toString());
     }
 
     protected abstract int getArity();

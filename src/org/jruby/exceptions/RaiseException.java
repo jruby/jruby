@@ -32,7 +32,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
-import org.jruby.RubyString;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
@@ -72,7 +71,7 @@ public class RaiseException extends JumpException {
      * @return an Array with the backtrace 
      */
     public static IRubyObject createBacktrace(Ruby runtime, int level, boolean nativeException) {
-        RubyArray backtrace = RubyArray.newArray(runtime);
+        RubyArray backtrace = runtime.newArray();
         FrameStack stack = runtime.getFrameStack();
         int traceSize = stack.size() - level - 1;
         
@@ -104,7 +103,7 @@ public class RaiseException extends JumpException {
             sb.append(":in `").append(frame.getLastFunc()).append('\'');
         }
 
-        backtrace.append(RubyString.newString(backtrace.getRuntime(), sb.toString()));
+        backtrace.append(backtrace.getRuntime().newString(sb.toString()));
 	}
 
     /**

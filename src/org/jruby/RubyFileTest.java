@@ -51,19 +51,19 @@ public class RubyFileTest {
     }
     
     public static RubyBoolean directory_p(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), 
+        return recv.getRuntime().newBoolean(
                 new File(filename.getValue()).isDirectory());
     }
     
     public static IRubyObject exist_p(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), 
+        return recv.getRuntime().newBoolean(
                 new File(filename.getValue()).exists());
     }
 
     // We do both readable and readable_real through the same method because
     // in our java process effective and real userid will always be the same.
     public static RubyBoolean readable_p(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(filename.getRuntime(), 
+        return filename.getRuntime().newBoolean(
                 new File(filename.getValue()).canRead());
     }
     
@@ -74,19 +74,19 @@ public class RubyFileTest {
             throw ErrnoError.getErrnoError(recv.getRuntime(), "ENOENT",
                     "No such file: " + filename.getValue());
         }
-        return RubyFixnum.newFixnum(filename.getRuntime(), file.length());
+        return filename.getRuntime().newFixnum(file.length());
     }
     
     // We do both writable and writable_real through the same method because
     // in our java process effective and real userid will always be the same.
     public static RubyBoolean writable_p(IRubyObject recv, RubyString filename) {
-        return RubyBoolean.newBoolean(filename.getRuntime(), 
+        return filename.getRuntime().newBoolean(
                 new File(filename.getValue()).canWrite());
     }
     
     public static RubyBoolean zero_p(IRubyObject recv, RubyString filename) {
         File file = new File(filename.getValue());
-        return RubyBoolean.newBoolean(filename.getRuntime(),
+        return filename.getRuntime().newBoolean(
                 file.exists() && file.length() == 0L);
                 
     }

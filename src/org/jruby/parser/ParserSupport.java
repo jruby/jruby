@@ -31,6 +31,10 @@
  */
 package org.jruby.parser;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArrayNode;
@@ -88,10 +92,6 @@ import org.jruby.common.IErrors;
 import org.jruby.common.IRubyErrorHandler;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.util.IdUtil;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /** Ruby 1.8.1 compatible.
  *

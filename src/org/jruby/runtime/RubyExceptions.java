@@ -3,7 +3,6 @@ package org.jruby.runtime;
 import org.jruby.IErrno;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 
 
@@ -180,7 +179,7 @@ public class RubyExceptions implements IErrno {
     private RubyClass setSysErr(int i, String iName)
     {
         RubyClass lError = errnoModule.defineClassUnder(iName, systemCallError);
-        lError.defineConstant("Errno", RubyFixnum.newFixnum(runtime, i));
+        lError.defineConstant("Errno", runtime.newFixnum(i));
         return lError;
     }
         

@@ -28,6 +28,8 @@
  */
 package org.jruby.evaluator;
 
+import java.util.Iterator;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArrayNode;
@@ -68,8 +70,6 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.Iterator;
 
 /** This visitor is used to evaluate a defined? statement.
  *

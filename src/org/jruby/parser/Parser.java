@@ -30,13 +30,13 @@
 
 package org.jruby.parser;
 
-import org.jruby.Ruby;
-import org.jruby.ast.Node;
-import org.jruby.lexer.yacc.LexerSource;
-
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
+
+import org.jruby.Ruby;
+import org.jruby.ast.Node;
+import org.jruby.lexer.yacc.LexerSource;
 
 public class Parser {
     private final Ruby runtime;

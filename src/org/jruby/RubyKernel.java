@@ -35,7 +35,11 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Iterator;
+
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NoMethodError;
@@ -51,11 +55,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.util.PrintfFormat;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Iterator;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -161,7 +160,7 @@ public class RubyKernel {
 
     public IRubyObject method_missing(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
-            throw new ArgumentError(recv.getRuntime(), "no id given");
+            throw recv.getRuntime().newArgumentError("no id given");
         }
 
         String name = args[0].asSymbol();
@@ -254,7 +253,7 @@ public class RubyKernel {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
                 defout.callMethod("write", args[i].callMethod("inspect"));
-                defout.callMethod("write", RubyString.newString(recv.getRuntime(), "\n"));
+                defout.callMethod("write", recv.getRuntime().newString("\n"));
             }
         }
         return recv.getRuntime().getNil();
@@ -307,7 +306,7 @@ public class RubyKernel {
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
         RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<");
 
-        RubyArray lines = RubyArray.newArray(recv.getRuntime());
+        RubyArray lines = recv.getRuntime().newArray();
 
         RubyString line = argsFile.internalGets(args);
         while (!line.isNil()) {
@@ -328,9 +327,9 @@ public class RubyKernel {
         IRubyObject line = runtime.getLastline();
 
         if (line.isNil()) {
-            throw new TypeError(runtime, "$_ value need to be String (nil given).");
+            throw runtime.newTypeError("$_ value need to be String (nil given).");
         } else if (!(line instanceof RubyString)) {
-            throw new TypeError(runtime, "$_ value need to be String (" + line.getMetaClass().getName() + " given).");
+            throw runtime.newTypeError("$_ value need to be String (" + line.getMetaClass().getName() + " given).");
         } else {
             return (RubyString) line;
         }
@@ -414,7 +413,7 @@ public class RubyKernel {
         } catch (InterruptedException iExcptn) {
         }
 
-        return RubyFixnum.newFixnum(recv.getRuntime(), 
+        return recv.getRuntime().newFixnum(
         		Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
 
@@ -434,13 +433,13 @@ public class RubyKernel {
      *
      */
     public static RubyArray global_variables(IRubyObject recv) {
-        RubyArray globalVariables = RubyArray.newArray(recv.getRuntime());
+        RubyArray globalVariables = recv.getRuntime().newArray();
 
         Iterator iter = recv.getRuntime().getGlobalVariables().getNames();
         while (iter.hasNext()) {
             String globalVariableName = (String) iter.next();
 
-            globalVariables.append(RubyString.newString(recv.getRuntime(), globalVariableName));
+            globalVariables.append(recv.getRuntime().newString(globalVariableName));
         }
 
         return globalVariables;
@@ -451,12 +450,12 @@ public class RubyKernel {
      */
     public static RubyArray local_variables(IRubyObject recv) {
         final Ruby runtime = recv.getRuntime();
-        RubyArray localVariables = RubyArray.newArray(runtime);
+        RubyArray localVariables = runtime.newArray();
 
         if (runtime.getScope().getLocalNames() != null) {
             for (int i = 2; i < runtime.getScope().getLocalNames().size(); i++) {
                 if (runtime.getScope().getLocalNames().get(i) != null) {
-                    localVariables.append(RubyString.newString(runtime, (String) runtime.getScope().getLocalNames().get(i)));
+                    localVariables.append(runtime.newString((String) runtime.getScope().getLocalNames().get(i)));
                 }
             }
         }
@@ -464,24 +463,24 @@ public class RubyKernel {
         Iterator dynamicNames = runtime.getDynamicNames().iterator();
         while (dynamicNames.hasNext()) {
             String name = (String) dynamicNames.next();
-            localVariables.append(RubyString.newString(runtime, name));
+            localVariables.append(runtime.newString(name));
         }
 
         return localVariables;
     }
 
     public static RubyBoolean block_given(IRubyObject recv) {
-        return RubyBoolean.newBoolean(recv.getRuntime(), recv.getRuntime().isFBlockGiven());
+        return recv.getRuntime().newBoolean(recv.getRuntime().isFBlockGiven());
     }
 
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
-            throw new ArgumentError(recv.getRuntime(), "sprintf must have at least one argument");
+            throw recv.getRuntime().newArgumentError("sprintf must have at least one argument");
         }
 
         RubyString str = RubyString.stringValue(args[0]);
 
-        RubyArray newArgs = RubyArray.newArray(recv.getRuntime(), args);
+        RubyArray newArgs = recv.getRuntime().newArray(args);
         newArgs.shift();
 
         return str.format(newArgs);
@@ -524,7 +523,7 @@ public class RubyKernel {
             excptn.set_backtrace(args[2]);
             throw new RaiseException(excptn);
         default :
-            throw new ArgumentError(runtime, "wrong number of arguments");
+            throw runtime.newArgumentError("wrong number of arguments");
         }
     }
 
@@ -574,7 +573,7 @@ public class RubyKernel {
         int level = args.length > 0 ? RubyFixnum.fix2int(args[0]) : 1;
 
         if (level < 0) {
-            throw new ArgumentError(recv.getRuntime(), "negative level(" + level + ')');
+            throw recv.getRuntime().newArgumentError("negative level(" + level + ')');
         }
 
         return RaiseException.createBacktrace(recv.getRuntime(), level, false);
@@ -599,7 +598,7 @@ public class RubyKernel {
         if (trace_func.isNil()) {
             recv.getRuntime().setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
-            throw new TypeError(recv.getRuntime(), "trace_func needs to be Proc.");
+            throw recv.getRuntime().newTypeError("trace_func needs to be Proc.");
         } else {
             recv.getRuntime().setTraceFunction((RubyProc) trace_func);
         }
@@ -625,10 +624,10 @@ public class RubyKernel {
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
         StringBuffer output = new StringBuffer();
         Ruby runtime = recv.getRuntime();
-        runtime.getGlobalVariables().set("$?", RubyFixnum.newFixnum(runtime, 
+        runtime.getGlobalVariables().set("$?", runtime.newFixnum(
             runInShell(runtime, aString.toString(), output)));
         
-        return RubyString.newString(recv.getRuntime(), output.toString());
+        return recv.getRuntime().newString(output.toString());
     }
 
     private static int runInShell(Ruby runtime, String command, StringBuffer output) {
@@ -682,7 +681,7 @@ public class RubyKernel {
 			  runtime.random.nextInt(Math.abs((int)runtime.randomSeed));
         }
         runtime.random.setSeed(runtime.randomSeed);
-        return RubyFixnum.newFixnum(runtime, oldRandomSeed);
+        return runtime.newFixnum(oldRandomSeed);
     }
 
     public static RubyNumeric rand(IRubyObject recv, IRubyObject[] args) {
@@ -697,24 +696,24 @@ public class RubyKernel {
                 throw new NotImplementedError(recv.getRuntime(), "Random values larger than Integer.MAX_VALUE not supported");
             }
         } else {
-            throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(" + args.length + " for 1)");
+            throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
 
         if (ceil == 0) {
             double result = recv.getRuntime().random.nextDouble();
             return RubyFloat.newFloat(recv.getRuntime(), result);
         }
-		return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
+		return recv.getRuntime().newFixnum(recv.getRuntime().random.nextInt((int) ceil));
     }
 
     public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         if (args.length > 1) {
-            throw new ArgumentError(runtime, "more arguments not yet supported");
+            throw runtime.newArgumentError("more arguments not yet supported");
         }
         StringBuffer output = new StringBuffer();
         int resultCode = runInShell(runtime, args[0].toString(), output);
-        recv.getRuntime().getGlobalVariables().set("$?", RubyFixnum.newFixnum(runtime, resultCode));
-        return RubyBoolean.newBoolean(runtime, resultCode == 0);
+        recv.getRuntime().getGlobalVariables().set("$?", runtime.newFixnum(resultCode));
+        return runtime.newBoolean(resultCode == 0);
     }
 }

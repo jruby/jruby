@@ -28,11 +28,11 @@
  */
 package org.jruby.ast;
 
+import java.math.BigInteger;
+
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
-
-import java.math.BigInteger;
 
 /** Represents a big integer literal.
  *

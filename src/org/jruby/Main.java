@@ -31,6 +31,10 @@
  */
 package org.jruby;
 
+import java.io.Reader;
+import java.util.Iterator;
+import java.util.Properties;
+
 import org.jruby.ast.Node;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThrowJump;
@@ -41,10 +45,6 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CommandlineParser;
-
-import java.io.Reader;
-import java.util.Iterator;
-import java.util.Properties;
 
 /**
  * Class used to launch the interpreter.
@@ -129,8 +129,8 @@ public class Main {
     }
 
     private static void initializeRuntime(final Ruby runtime, String filename) {
-        IRubyObject argumentArray = RubyArray.newArray(runtime, JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
-        runtime.setVerbose(RubyBoolean.newBoolean(runtime, commandline.verbose));
+        IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
+        runtime.setVerbose(runtime.newBoolean(commandline.verbose));
 
         // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
         runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
@@ -142,7 +142,7 @@ public class Main {
                 if (newValue.isNil()) {
                     runtime.setVerbose(newValue);
                 } else {
-                    runtime.setVerbose(RubyBoolean.newBoolean(runtime, newValue != runtime.getFalse()));
+                    runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
                 }
             	
                 return newValue;
@@ -164,12 +164,12 @@ public class Main {
         defineGlobal(runtime, "$-a", commandline.sDoSplit);
         defineGlobal(runtime, "$-l", commandline.processLineEnds);
         runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
-        runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
+        runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", runtime.newString(filename)));
         runtime.getLoadService().init(runtime, commandline.loadPaths());
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
             String scriptName = (String) iter.next();
-            RubyKernel.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
+            RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName));
         }
     }
 

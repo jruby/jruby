@@ -28,6 +28,9 @@
  */
 package org.jruby.ast.util;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.ast.ArrayNode;
@@ -39,9 +42,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  *
@@ -93,7 +93,7 @@ public final class ArgsUtil {
     
     public static IRubyObject[] arrayify(Ruby runtime, IRubyObject value) {
         if (value == null) {
-            value = RubyArray.newArray(runtime, 0);
+            value = runtime.newArray(0);
         }
         
         if (value instanceof RubyArray) {

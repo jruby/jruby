@@ -41,7 +41,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
@@ -90,10 +89,10 @@ public class UnmarshalStream extends FilterInputStream {
                 rubyObj = runtime.getNil();
                 break;
             case 'T' :
-                rubyObj = RubyBoolean.newBoolean(runtime, true);
+                rubyObj = runtime.getTrue();
                 break;
             case 'F' :
-                rubyObj = RubyBoolean.newBoolean(runtime, false);
+                rubyObj = runtime.getFalse();
                 break;
             case '"' :
                 rubyObj = RubyString.unmarshalFrom(this);
@@ -132,7 +131,7 @@ public class UnmarshalStream extends FilterInputStream {
                 rubyObj = userUnmarshal();
                 break;
             default :
-                throw new ArgumentError(getRuntime(), "dump format error(" + type + ")");
+                throw getRuntime().newArgumentError("dump format error(" + type + ")");
         }
         
         if (proc != null) {
@@ -223,7 +222,7 @@ public class UnmarshalStream extends FilterInputStream {
         RubyModule classInstance = runtime.getModule(className);
         IRubyObject result = classInstance.callMethod(
             "_load",
-            RubyString.newString(runtime, marshaled));
+            runtime.newString(marshaled));
         registerLinkTarget(result);
         return result;
     }

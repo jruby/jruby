@@ -25,6 +25,8 @@
  */
 package org.jruby.runtime.builtin;
 
+import java.io.IOException;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -32,8 +34,6 @@ import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
-
-import java.io.IOException;
 
 /** Object is the parent class of all classes in Ruby. Its methods are
  * therefore available to all objects unless explicitly overridden.

@@ -32,19 +32,17 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.IOError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.jruby.exceptions.IOError;
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
  * Marshal module
@@ -67,7 +65,7 @@ public class RubyMarshal {
 
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(at least 1)");
+            throw recv.getRuntime().newArgumentError("wrong # of arguments(at least 1)");
         }
         IRubyObject objectToDump = args[0];
 
@@ -103,11 +101,11 @@ public class RubyMarshal {
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args) {
         try {
             if (args.length < 1) {
-                throw new ArgumentError(recv.getRuntime(), "wrong number of arguments (0 for 1)");
+                throw recv.getRuntime().newArgumentError("wrong number of arguments (0 for 1)");
             }
             
             if (args.length > 2) {
-            	throw new ArgumentError(recv.getRuntime(), "wrong number of arguments (" + args.length + " for 2)");
+            	throw recv.getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
             }
             
             IRubyObject in = null;
@@ -127,7 +125,7 @@ public class RubyMarshal {
                 RubyString inString = (RubyString) in.callMethod("to_str");
                 rawInput = new ByteArrayInputStream(inString.toByteArray());
             } else {
-                throw new TypeError(recv.getRuntime(), "instance of IO needed");
+                throw recv.getRuntime().newTypeError("instance of IO needed");
             }
             
             UnmarshalStream input = new UnmarshalStream(recv.getRuntime(), rawInput);

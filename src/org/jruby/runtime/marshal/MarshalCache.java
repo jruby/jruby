@@ -22,12 +22,12 @@
  */
 package org.jruby.runtime.marshal;
 
-import org.jruby.RubySymbol;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jruby.RubySymbol;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class MarshalCache {
     private Map linkCache = new HashMap();

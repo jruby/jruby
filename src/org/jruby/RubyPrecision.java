@@ -26,7 +26,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -48,7 +47,7 @@ public class RubyPrecision {
     }
 
     public static IRubyObject induced_from(IRubyObject receiver, IRubyObject source) {
-        throw new TypeError(receiver.getRuntime(), "Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
+        throw receiver.getRuntime().newTypeError("Undefined conversion from " + source.getMetaClass().getName() + " into " + ((RubyClass)receiver).getName());
     }
 
     public static IRubyObject append_features(IRubyObject receiver, IRubyObject include) {

@@ -23,20 +23,18 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 public class JavaMethod extends JavaCallable {
     private final Method method;
@@ -89,7 +87,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public RubyString name() {
-        return RubyString.newString(getRuntime(), method.getName());
+        return getRuntime().newString(method.getName());
     }
 
     protected int getArity() {
@@ -97,20 +95,20 @@ public class JavaMethod extends JavaCallable {
     }
 
     public RubyBoolean public_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(method.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isPublic(method.getModifiers()));
     }
 
     public RubyBoolean final_p() {
-        return RubyBoolean.newBoolean(getRuntime(), Modifier.isFinal(method.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isFinal(method.getModifiers()));
     }
 
     public IRubyObject invoke(IRubyObject[] args) {
         if (args.length != 1 + getArity()) {
-            throw new ArgumentError(getRuntime(), args.length, 1 + getArity());
+            throw getRuntime().newArgumentError(args.length, 1 + getArity());
         }
         IRubyObject invokee = args[0];
         if (! (invokee instanceof JavaObject)) {
-            throw new TypeError(getRuntime(), "invokee not a java object");
+            throw getRuntime().newTypeError("invokee not a java object");
         }
         Object javaInvokee = ((JavaObject) invokee).getValue();
         Object[] arguments = new Object[args.length - 1];
@@ -118,7 +116,7 @@ public class JavaMethod extends JavaCallable {
         convertArguments(arguments);
 
         if (! method.getDeclaringClass().isInstance(javaInvokee)) {
-            throw new TypeError(getRuntime(), "invokee not instance of method's class (" +
+            throw getRuntime().newTypeError("invokee not instance of method's class (" +
                                               "got" + javaInvokee.getClass().getName() + " wanted " +
                                               method.getDeclaringClass().getName() + ")");
         }
@@ -127,7 +125,7 @@ public class JavaMethod extends JavaCallable {
 
     public IRubyObject invoke_static(IRubyObject[] args) {
         if (args.length != getArity()) {
-            throw new ArgumentError(getRuntime(), args.length, getArity());
+            throw getRuntime().newArgumentError(args.length, getArity());
         }
         Object[] arguments = new Object[args.length];
         System.arraycopy(args, 0, arguments, 0, arguments.length);
@@ -140,21 +138,21 @@ public class JavaMethod extends JavaCallable {
         if (result.equals("void")) {
             return getRuntime().getNil();
         }
-        return RubyString.newString(getRuntime(), result);
+        return getRuntime().newString(result);
     }
 
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return JavaObject.wrap(runtime, result);
+            return JavaObject.wrap(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
-            throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
+            throw getRuntime().newTypeError("expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(), "illegal access on '" + method.getName() + "': " + iae.getMessage());
+            throw getRuntime().newTypeError("illegal access on '" + method.getName() + "': " + iae.getMessage());
         } catch (InvocationTargetException ite) {
             getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
             // This point is only reached if there was an exception handler installed.
-            return runtime.getNil();
+            return getRuntime().getNil();
         }
     }
 
@@ -174,7 +172,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public RubyBoolean static_p() {
-        return RubyBoolean.newBoolean(getRuntime(), isStatic());
+        return getRuntime().newBoolean(isStatic());
     }
 
     private boolean isStatic() {

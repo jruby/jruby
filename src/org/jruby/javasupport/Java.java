@@ -1,5 +1,9 @@
 package org.jruby.javasupport;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -8,13 +12,8 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 public class Java {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -80,7 +79,7 @@ public class Java {
 
     public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(recv.getRuntime(), "wrong # of arguments(" + args.length + " for 1)");
+            throw recv.getRuntime().newArgumentError("wrong # of arguments(" + args.length + " for 1)");
         }
 
         final RubyProc proc = args[args.length - 1] instanceof RubyProc ? (RubyProc)args[args.length - 1] : RubyProc.newProc(recv.getRuntime());
@@ -89,7 +88,7 @@ public class Java {
         Class[] interfaces = new Class[size];
         for (int i = 0; i < size; i++) {
             if (!(args[i] instanceof JavaClass) || !((JavaClass)args[i]).interface_p().isTrue()) {
-                throw new ArgumentError(recv.getRuntime(), "Java interface expected.");
+                throw recv.getRuntime().newArgumentError("Java interface expected.");
             }
             interfaces[i] = ((JavaClass) args[i]).getValue();
         }

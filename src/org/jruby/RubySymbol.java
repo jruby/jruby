@@ -30,17 +30,16 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.UnmarshalStream;
-
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
  *
@@ -137,29 +136,29 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum to_i() {
-        return RubyFixnum.newFixnum(runtime, id);
+        return getRuntime().newFixnum(id);
     }
 
     public RubyString inspect() {
-        return RubyString.newString(getRuntime(), ":" + symbol);
+        return getRuntime().newString(":" + symbol);
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), symbol);
+        return getRuntime().newString(symbol);
     }
 
     public IRubyObject equal(IRubyObject other) {
         // Symbol table ensures only one instance for every name,
         // so object identity is enough to compare symbols.
-        return RubyBoolean.newBoolean(runtime, this == other);
+        return getRuntime().newBoolean(this == other);
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, symbol.hashCode());
+        return getRuntime().newFixnum(symbol.hashCode());
     }
 
     public IRubyObject rbClone() {
-        throw new TypeError(getRuntime(), "can't clone Symbol");
+        throw getRuntime().newTypeError("can't clone Symbol");
     }
 
     public IRubyObject freeze() {

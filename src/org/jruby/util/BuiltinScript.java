@@ -25,15 +25,15 @@
  */
 package org.jruby.util;
 
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+
 import org.ablaf.ast.IAstDecoder;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.exceptions.IOError;
 import org.jruby.runtime.load.Library;
-
-import java.io.BufferedInputStream;
-import java.io.InputStream;
 
 /**
  * Loading of pre-parsed, serialized, Ruby scripts that are built into JRuby.

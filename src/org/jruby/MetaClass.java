@@ -22,7 +22,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
@@ -44,7 +43,7 @@ public class MetaClass extends RubyClass {
     }
 
     protected RubyClass subclass() {
-        throw new TypeError(runtime, "can't make subclass of virtual class");
+        throw getRuntime().newTypeError("can't make subclass of virtual class");
     }
 
     public void attachToObject(IRubyObject object) {

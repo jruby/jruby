@@ -1,11 +1,6 @@
 
 package org.jruby.runtime.load;
 
-import org.jruby.Ruby;
-import org.jruby.RubyString;
-import org.jruby.exceptions.IOError;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,6 +9,10 @@ import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+
+import org.jruby.Ruby;
+import org.jruby.exceptions.IOError;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * Loading of Ruby scripts packaged in Jar files.
@@ -47,7 +46,7 @@ public class JarredScript implements Library {
                 if (entry != null) {
                     IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
                     try {
-                        runtime.getGlobalVariables().set("$JAR_URL", RubyString.newString(runtime, "jar:" + jarFile + "!/"));
+                        runtime.getGlobalVariables().set("$JAR_URL", runtime.newString("jar:" + jarFile + "!/"));
                         runtime.loadScript("init", new InputStreamReader(in), false);
                     } finally {
                         runtime.getGlobalVariables().set("$JAR_URL", old);

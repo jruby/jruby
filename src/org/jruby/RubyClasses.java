@@ -32,18 +32,16 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.BuiltinScript;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -855,11 +853,11 @@ public class RubyClasses {
 
     public RubyModule getClassFromPath(String path) {
         if (path.charAt(0) == '#') {
-            throw new ArgumentError(runtime, "can't retrieve anonymous class " + path);
+            throw runtime.newArgumentError("can't retrieve anonymous class " + path);
         }
         IRubyObject type = runtime.evalScript(path);
         if (!(type instanceof RubyModule)) {
-            throw new TypeError(runtime, "class path " + path + " does not point class");
+            throw runtime.newTypeError("class path " + path + " does not point class");
         }
         return (RubyModule) type;
     }

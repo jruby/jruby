@@ -30,12 +30,6 @@
  */
 package org.jruby.javasupport;
 
-import org.jruby.Ruby;
-import org.jruby.RubyProc;
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.builtin.IRubyObject;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
@@ -44,6 +38,12 @@ import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import org.jruby.Ruby;
+import org.jruby.RubyProc;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaSupport {
     private Ruby runtime;

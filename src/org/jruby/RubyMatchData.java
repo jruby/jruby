@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import org.jruby.exceptions.IndexError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -78,7 +77,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject subseq(long beg, long len) {
     	// Subsequence begins at a valid index and a positive length
         if (beg < 0 || beg > getSize() || len < 0) {
-            runtime.getNil();
+            getRuntime().getNil();
         }
 
         if (beg + len > getSize()) {
@@ -88,10 +87,10 @@ public class RubyMatchData extends RubyObject {
             len = 0;
         }
         if (len == 0) {
-            return RubyArray.newArray(getRuntime());
+            return getRuntime().newArray();
         }
         
-        RubyArray arr = RubyArray.newArray(getRuntime(), 0);
+        RubyArray arr = getRuntime().newArray(0);
         for (long i = beg; i < beg + len; i++) {
             arr.append(group(i));
         }
@@ -108,7 +107,7 @@ public class RubyMatchData extends RubyObject {
             return getRuntime().getNil();
         }
 
-        return RubyString.newString(getRuntime(), 
+        return getRuntime().newString(
         		str.substring(begin[(int) n], end[(int) n]));
     }
 
@@ -146,7 +145,7 @@ public class RubyMatchData extends RubyObject {
             return group(RubyNumeric.fix2int(args[0]));
         }
         if (args[0] instanceof RubyBignum) {
-            throw new IndexError(getRuntime(), "index too big");
+            throw getRuntime().newIndexError("index too big");
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getSize(), true, false);
@@ -165,7 +164,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuntime().getNil();
         }
-        return RubyFixnum.newFixnum(getRuntime(), begin[RubyNumeric.fix2int(index)]);
+        return getRuntime().newFixnum(begin[RubyNumeric.fix2int(index)]);
     }
 
     /** match_end
@@ -175,14 +174,14 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuntime().getNil();
         }
-        return RubyFixnum.newFixnum(getRuntime(), end[RubyNumeric.fix2int(index)]);
+        return getRuntime().newFixnum(end[RubyNumeric.fix2int(index)]);
     }
 
     /** match_size
      *
      */
     public RubyFixnum size() {
-        return RubyFixnum.newFixnum(getRuntime(), getSize());
+        return getRuntime().newFixnum(getSize());
     }
 
     /** match_offset
@@ -192,28 +191,28 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuntime().getNil();
         }
-        return RubyArray.newArray(getRuntime(), new IRubyObject[] { begin(index), end(index)});
+        return getRuntime().newArray(new IRubyObject[] { begin(index), end(index)});
     }
 
     /** match_pre_match
      *
      */
     public RubyString pre_match() {
-        return RubyString.newString(getRuntime(), str.substring(0, begin[0]));
+        return getRuntime().newString(str.substring(0, begin[0]));
     }
 
     /** match_post_match
      *
      */
     public RubyString post_match() {
-        return RubyString.newString(getRuntime(), str.substring(end[0]));
+        return getRuntime().newString(str.substring(end[0]));
     }
 
     /** match_string
      *
      */
     public RubyString string() {
-        RubyString frozenString = RubyString.newString(getRuntime(), str);
+        RubyString frozenString = getRuntime().newString(str);
         frozenString.freeze();
         return frozenString;
     }
@@ -222,7 +221,7 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyArray to_a() {
-        RubyArray arr = RubyArray.newArray(getRuntime(), begin.length);
+        RubyArray arr = getRuntime().newArray(begin.length);
         for (long i = 0; i < begin.length; i++) {
             arr.append(group(i));
         }
@@ -233,7 +232,7 @@ public class RubyMatchData extends RubyObject {
      *
      */
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), str.substring(begin[0], end[0]));
+        return getRuntime().newString(str.substring(begin[0], end[0]));
     }
 
     /** match_clone

@@ -107,15 +107,15 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return newFixnum(runtime, 0);
+        return runtime.newFixnum(0);
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return newFixnum(runtime, 1);
+        return runtime.newFixnum(1);
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return newFixnum(runtime, -1);
+        return runtime.newFixnum(-1);
     }
 
     protected int compareValue(RubyNumeric other) {
@@ -151,7 +151,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum newFixnum(long value) {
-        return newFixnum(runtime, value);
+        return getRuntime().newFixnum(value);
     }
 
     public boolean singletonMethodsAllowed() {
@@ -221,11 +221,11 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyNumeric multiplyWith(RubyFloat other) {
-       return other.multiplyWith(RubyFloat.newFloat(runtime, getLongValue()));
+       return other.multiplyWith(RubyFloat.newFloat(getRuntime(), getLongValue()));
     }
 
     public RubyNumeric quo(RubyNumeric other) {
-        return new RubyFloat(runtime, op_div(other).getDoubleValue());
+        return new RubyFloat(getRuntime(), op_div(other).getDoubleValue());
     }
     
     public RubyNumeric op_div(RubyNumeric other) {
@@ -245,7 +245,7 @@ public class RubyFixnum extends RubyInteger {
             div -= 1;
         }
 
-        return newFixnum(getRuntime(), div);
+        return getRuntime().newFixnum(div);
     }
 
     public RubyNumeric op_mod(RubyNumeric other) {
@@ -264,7 +264,7 @@ public class RubyFixnum extends RubyInteger {
             mod += y;
         }
 
-        return newFixnum(getRuntime(), mod);
+        return getRuntime().newFixnum(mod);
     }
 
     public RubyNumeric op_pow(RubyNumeric other) {
@@ -272,7 +272,7 @@ public class RubyFixnum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_pow(other);
         }
 		if (other.getLongValue() == 0) {
-		    return newFixnum(getRuntime(), 1);
+		    return getRuntime().newFixnum(1);
 		} else if (other.getLongValue() == 1) {
 		    return this;
 		} else if (other.getLongValue() > 1) {
@@ -283,7 +283,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), String.valueOf(getLongValue()));
+        return getRuntime().newString(String.valueOf(getLongValue()));
     }
 
     public RubyFloat to_f() {
@@ -299,7 +299,7 @@ public class RubyFixnum extends RubyInteger {
 	    if (width >= BIT_SIZE - 2 ||
 		value >> (BIT_SIZE - width) > 0) {
 		RubyBignum lBigValue = 
-		    RubyBignum.newBignum(runtime, 
+		    RubyBignum.newBignum(getRuntime(), 
 					 RubyBignum.bigIntValue(this));
 		return lBigValue.op_lshift(other);
 	    }
@@ -307,7 +307,7 @@ public class RubyFixnum extends RubyInteger {
 	    if (width >= BIT_SIZE - 1 ||
 		value >> (BIT_SIZE - width) < -1) {
 		RubyBignum lBigValue = 
-		    RubyBignum.newBignum(runtime, 
+		    RubyBignum.newBignum(getRuntime(), 
 					 RubyBignum.bigIntValue(this));
 		return lBigValue.op_lshift(other);
 	    }
@@ -352,7 +352,7 @@ public class RubyFixnum extends RubyInteger {
         // Seems mighty expensive to keep creating over and over again.
         // How else can this be done though?
         if (position > BIT_SIZE) {
-            RubyBignum bignum = RubyBignum.newBignum(runtime, value);
+            RubyBignum bignum = RubyBignum.newBignum(getRuntime(), value);
             
             return bignum.aref(other);
         }
@@ -361,7 +361,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject id2name() {
-        return RubySymbol.getSymbol(runtime, value).convertToString();
+        return RubySymbol.getSymbol(getRuntime(), value).convertToString();
     }
 
     public RubyFixnum invert() {
@@ -392,12 +392,11 @@ public class RubyFixnum extends RubyInteger {
             output.write('i');
             output.dumpInt((int) value);
         } else {
-            output.dumpObject(RubyBignum.newBignum(runtime, value));
+            output.dumpObject(RubyBignum.newBignum(getRuntime(), value));
         }
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        return RubyFixnum.newFixnum(input.getRuntime(),
-                                    input.unmarshalInt());
+        return input.getRuntime().newFixnum(input.unmarshalInt());
     }
 }

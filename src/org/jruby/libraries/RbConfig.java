@@ -22,14 +22,13 @@
  */
 package org.jruby.libraries;
 
+import java.io.File;
+
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
-
-import java.io.File;
 
 public class RbConfig implements Library {
     private RubyHash configHash;
@@ -51,7 +50,7 @@ public class RbConfig implements Library {
 
     private void setConfig(String key, String value) {
         Ruby runtime = configHash.getRuntime();
-        configHash.aset(RubyString.newString(runtime, key),
-                        RubyString.newString(runtime, value));
+        configHash.aset(runtime.newString(key),
+                        runtime.newString(value));
     }
 }

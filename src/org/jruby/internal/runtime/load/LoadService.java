@@ -23,6 +23,18 @@
  */
 package org.jruby.internal.runtime.load;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.JarFile;
+
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.exceptions.IOError;
@@ -35,18 +47,6 @@ import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.JarredScript;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.PreparsedScript;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.jar.JarFile;
 
 /**
  *
@@ -101,7 +101,7 @@ public class LoadService implements ILoadService {
     }
 
     private void addPath(String path) {
-        loadPath.add(RubyString.newString(runtime, path));
+        loadPath.add(runtime.newString(path));
     }
 
     /**
@@ -145,7 +145,7 @@ public class LoadService implements ILoadService {
      * @see org.jruby.runtime.load.ILoadService#require(String)
      */
     public boolean require(String file) {
-        RubyString name = RubyString.newString(runtime, file);
+        RubyString name = runtime.newString(file);
         if (loadedFeatures.contains(name)) {
             return false;
         }

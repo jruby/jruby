@@ -22,13 +22,12 @@
  */
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 /**
  * The arity of a method is the number of arguments it takes.
@@ -83,12 +82,12 @@ public final class Arity {
     public void checkArity(Ruby runtime, IRubyObject[] args) {
         if (isFixed()) {
             if (args.length != required()) {
-                throw new ArgumentError(runtime,
+                throw runtime.newArgumentError(
                                         "wrong # of arguments(" + args.length + " for " + required() + ")");
             }
         } else {
             if (args.length < required()) {
-                throw new ArgumentError(runtime, "wrong # of arguments(at least " + required() + ")");
+                throw runtime.newArgumentError("wrong # of arguments(at least " + required() + ")");
             }
         }
     }

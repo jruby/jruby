@@ -29,15 +29,20 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.jruby.ast.*;
+import java.math.BigInteger;
+
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.HereDocNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.StrTermNode;
 import org.jruby.common.IErrors;
 import org.jruby.common.IRubyErrorHandler;
 import org.jruby.parser.ParserSupport;
 import org.jruby.parser.ReOptions;
 import org.jruby.parser.Token;
 import org.jruby.util.IdUtil;
-
-import java.math.BigInteger;
 
 /** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
  *

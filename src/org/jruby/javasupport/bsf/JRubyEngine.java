@@ -25,13 +25,14 @@
  */
 package org.jruby.javasupport.bsf;
 
+import java.util.Vector;
+
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.ast.Node;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.RaiseException;
@@ -44,8 +45,6 @@ import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.Vector;
 
 /** An implementation of a JRuby BSF implementation.
  *
@@ -111,7 +110,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
                 if (obj instanceof JavaObject) {
                     rubyArgs[i] = javaUtilities.callMethod("wrap", new IRubyObject[] {
-                        obj, RubyString.newString(runtime, obj.getClass().getName())
+                        obj, runtime.newString(obj.getClass().getName())
                     });
                 }
             }
@@ -132,7 +131,7 @@ public class JRubyEngine extends BSFEngineImpl {
             result =
                 runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
                     "wrap",
-                    new IRubyObject[] { result, RubyString.newString(runtime, value.getClass().getName())});
+                    new IRubyObject[] { result, runtime.newString(value.getClass().getName())});
         }
         return result;
     }
@@ -209,7 +208,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 result =
                     runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
                         "wrap",
-                        new IRubyObject[] { result, RubyString.newString(runtime, bean.type.getName())});
+                        new IRubyObject[] { result, runtime.newString(bean.type.getName())});
             }
             return result;
         }
@@ -241,7 +240,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 result =
                     runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
                         "wrap",
-                        new IRubyObject[] { result, RubyString.newString(runtime, BSFFunctions.class.getName())});
+                        new IRubyObject[] { result, runtime.newString(BSFFunctions.class.getName())});
             }
             return result;
         }

@@ -30,9 +30,7 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RangeError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -69,7 +67,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // conversion
     protected RubyFloat toFloat() {
-        return RubyFloat.newFloat(runtime, getDoubleValue());
+        return RubyFloat.newFloat(getRuntime(), getDoubleValue());
     }
 
     // Integer methods
@@ -81,10 +79,10 @@ public abstract class RubyInteger extends RubyNumeric {
         } else if (number instanceof RubyFloat) {
             return ((RubyFloat) number).to_i();
         } else if (number instanceof RubyBignum) {
-            return RubyFixnum.newFixnum(recv.getRuntime(), 
+            return recv.getRuntime().newFixnum(
 					((RubyBignum) number).getLongValue());
         } else {
-            throw new TypeError(recv.getRuntime(), "failed to convert " + 
+            throw recv.getRuntime().newTypeError("failed to convert " + 
 				number.getMetaClass() + " into Integer");
         }
     }
@@ -93,7 +91,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
             throw new RangeError(getRuntime(), this.toString() + " out of char range");
         }
-        return RubyString.newString(getRuntime(), new String(new char[] {(char) getLongValue()}));
+        return getRuntime().newString(new String(new char[] {(char) getLongValue()}));
     }
 
     public IRubyObject downto(RubyNumeric to) {
@@ -115,11 +113,11 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject step(RubyNumeric to, RubyNumeric step) {
         RubyNumeric i = this;
         if (step.getLongValue() == 0) {
-            throw new ArgumentError(getRuntime(), "step cannot be 0");
+            throw getRuntime().newArgumentError("step cannot be 0");
         }
 
         String cmp = "<";
-        if (((RubyBoolean) step.callMethod("<", RubyFixnum.newFixnum(getRuntime(), 0))).isFalse()) {
+        if (((RubyBoolean) step.callMethod("<", getRuntime().newFixnum(0))).isFalse()) {
             cmp = ">";
         }
 

@@ -56,6 +56,6 @@ public class Mutex extends RubyObject {
     }
 
     public RubyBoolean locked_p() {
-        return RubyBoolean.newBoolean(getRuntime(), isLocked);
+        return getRuntime().newBoolean(isLocked);
     }
 }

@@ -31,7 +31,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
@@ -110,7 +109,7 @@ public class RubyMethod extends RubyObject {
         }
 
         if (args.length != method.getArity().getValue()) {
-        	throw new ArgumentError(getRuntime(), "");
+        	throw getRuntime().newArgumentError("");
         }
         
         getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
@@ -126,16 +125,16 @@ public class RubyMethod extends RubyObject {
      * @return the number of arguments of a method.
      */
     public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), method.getArity().getValue());
+        return getRuntime().newFixnum(method.getArity().getValue());
     }
 
     /** Create a Proc object.
      * 
      */
     public IRubyObject to_proc() {
-        return runtime.iterate(
+        return getRuntime().iterate(
             callbackFactory().getSingletonMethod(RubyMethod.class, "mproc"),
-            runtime.getNil(),
+            getRuntime().getNil(),
             callbackFactory().getBlockMethod(RubyMethod.class, "bmcall"),
             this);
     }

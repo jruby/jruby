@@ -30,9 +30,8 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.IndexError;
-import org.jruby.exceptions.TypeError;
+import java.util.Locale;
+
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,8 +41,6 @@ import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.Split;
-
-import java.util.Locale;
 
 /**
  *
@@ -255,7 +252,7 @@ public class RubyString extends RubyObject {
 	}
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, getValue().hashCode());
+        return getRuntime().newFixnum(getValue().hashCode());
     }
 
 	/** rb_obj_as_string
@@ -305,15 +302,8 @@ public class RubyString extends RubyObject {
 		return new RubyString(runtime, str);
 	}
 
-	/** rb_str_new
-	 *
-	 */
-	public static RubyString newString(Ruby runtime, String str, int len) {
-		return new RubyString(runtime, str.substring(0, len));
-	}
-
 	public static RubyString newString(Ruby runtime, byte[] bytes) {
-		return newString(runtime, bytesToString(bytes));
+		return runtime.newString(bytesToString(bytes));
 	}
 
 
@@ -385,7 +375,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public static RubyString newInstance(IRubyObject recv, IRubyObject[] args) {
-		RubyString newString = newString(recv.getRuntime(), "");
+		RubyString newString = recv.getRuntime().newString("");
 		newString.setMetaClass((RubyClass) recv);
 		newString.callInit(args);
 		return newString;
@@ -395,14 +385,14 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public RubyFixnum op_cmp(IRubyObject other) {
-		return RubyFixnum.newFixnum(getRuntime(), cmp(stringValue(other)));
+		return getRuntime().newFixnum(cmp(stringValue(other)));
 	}
 
 	public RubyFixnum casecmp(IRubyObject other) {
 		RubyString thisLCString = 
-			RubyString.newString(getRuntime(), getValue().toLowerCase());
+			getRuntime().newString(getValue().toLowerCase());
 		RubyString lcString = 
-			RubyString.newString(getRuntime(), 
+			getRuntime().newString(
 					stringValue(other).getValue().toLowerCase());
 
 		return thisLCString.op_cmp(lcString);
@@ -417,7 +407,7 @@ public class RubyString extends RubyObject {
 			return getRuntime().getNil();
 		}
 		/* use Java implementation */
-		return RubyBoolean.newBoolean(getRuntime(), 
+		return getRuntime().newBoolean(
 				getValue().equals(((RubyString) other).getValue()));
 	}
 	
@@ -562,7 +552,7 @@ public class RubyString extends RubyObject {
 		    return this;
 		}
 
-		return runtime.getNil();
+		return getRuntime().getNil();
 	}
 
 	/** rb_str_dump
@@ -618,7 +608,7 @@ public class RubyString extends RubyObject {
 
 		sb.append('\"');
 
-		return newString(getRuntime(), sb.toString());
+		return getRuntime().newString(sb.toString());
 	}
 
 	/** rb_str_plus
@@ -639,11 +629,11 @@ public class RubyString extends RubyObject {
         long len = otherInteger.getLongValue();
 
 		if (len < 0) {
-			throw new ArgumentError(getRuntime(), "negative argument");
+			throw getRuntime().newArgumentError("negative argument");
 		}
 
 		if (len > 0 && Long.MAX_VALUE / len < getValue().length()) {
-			throw new ArgumentError(getRuntime(), "argument too big");
+			throw getRuntime().newArgumentError("argument too big");
 		}
 		StringBuffer sb = new StringBuffer((int) (getValue().length() * len));
 
@@ -660,14 +650,14 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public RubyFixnum length() {
-		return RubyFixnum.newFixnum(getRuntime(), getValue().length());
+		return getRuntime().newFixnum(getValue().length());
 	}
 
 	/** rb_str_empty
 	 *
 	 */
 	public RubyBoolean empty() {
-		return RubyBoolean.newBoolean(getRuntime(), isEmpty());
+		return getRuntime().newBoolean(isEmpty());
 	}
 
     private boolean isEmpty() {
@@ -721,7 +711,7 @@ public class RubyString extends RubyObject {
 		} else if (args.length == 2) {
 			repl = args[1];
 		} else {
-			throw new ArgumentError(getRuntime(), "wrong number of arguments");
+			throw getRuntime().newArgumentError("wrong number of arguments");
 		}
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
@@ -767,7 +757,7 @@ public class RubyString extends RubyObject {
 		} else if (args.length == 2) {
 			repl = args[1];
 		} else {
-			throw new ArgumentError(getRuntime(), "wrong number of arguments");
+			throw getRuntime().newArgumentError("wrong number of arguments");
 		}
 		boolean taint = repl.isTaint();
 		RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
@@ -852,13 +842,13 @@ public class RubyString extends RubyObject {
 			char c = (char) ((RubyFixnum) args[0]).getLongValue();
 			pos = reverse ? getValue().lastIndexOf(c, pos) : getValue().indexOf(c, pos);
 		} else {
-			throw new ArgumentError(getRuntime(), "wrong type of argument");
+			throw getRuntime().newArgumentError("wrong type of argument");
 		}
 
 		if (pos == -1) {
 			return getRuntime().getNil();
 		}
-		return RubyFixnum.newFixnum(getRuntime(), pos);
+		return getRuntime().newFixnum(pos);
 	}
 
 	/* rb_str_substr */
@@ -902,7 +892,7 @@ public class RubyString extends RubyObject {
 	            idx += getValue().length();
 	        }
 	        return idx < 0 || idx >= getValue().length() ? getRuntime().getNil() :
-	        	RubyFixnum.newFixnum(getRuntime(), getValue().charAt(idx));
+	        	getRuntime().newFixnum(getValue().charAt(idx));
 	    } else if (args[0] instanceof RubyRegexp) {
 	    	return RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0 ?
 	            RubyRegexp.last_match(getRuntime().getBackref()) :
@@ -920,7 +910,7 @@ public class RubyString extends RubyObject {
 	        idx += getValue().length();
 	    }
 	    return idx < 0 || idx >= getValue().length() ? getRuntime().getNil() : 
-	    	RubyFixnum.newFixnum(getRuntime(), getValue().charAt(idx));
+	    	getRuntime().newFixnum(getValue().charAt(idx));
 	}
 
 
@@ -935,13 +925,13 @@ public class RubyString extends RubyObject {
 			int beg = RubyNumeric.fix2int(args[0]);
 			int len = RubyNumeric.fix2int(args[1]);
 			if (len < 0) {
-				throw new IndexError(getRuntime(), "negative length");
+				throw getRuntime().newIndexError("negative length");
 			}
 			if (beg < 0) {
 				beg += strLen;
 			}
 			if (beg < 0 || beg >= strLen) {
-				throw new IndexError(getRuntime(), "string index out of bounds");
+				throw getRuntime().newIndexError("string index out of bounds");
 			}
 			if (beg + len > strLen) {
 				len = strLen - beg;
@@ -955,7 +945,7 @@ public class RubyString extends RubyObject {
 				idx += getValue().length();
 			}
 			if (idx < 0 || idx >= getValue().length()) {
-				throw new IndexError(getRuntime(), "string index out of bounds");
+				throw getRuntime().newIndexError("string index out of bounds");
 			}
 			if (args[1] instanceof RubyFixnum) {
 				char c = (char) RubyNumeric.fix2int(args[1]);
@@ -982,7 +972,7 @@ public class RubyString extends RubyObject {
 			replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
 			return args[1];
 		}
-		throw new TypeError(getRuntime(), "wrong argument type");
+		throw getRuntime().newTypeError("wrong argument type");
 	}
 
 	/** rb_str_slice_bang
@@ -1013,9 +1003,9 @@ public class RubyString extends RubyObject {
 			for (int i = 0; i < args.length; i++) {
 				args[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
 			}
-			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(args));
+			return getRuntime().newString(new PrintfFormat(Locale.US, getValue()).sprintf(args));
 		}
-		return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
+		return getRuntime().newString(new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
 	}
 
 	/** rb_str_succ
@@ -1118,10 +1108,10 @@ public class RubyString extends RubyObject {
 	public RubyBoolean include(IRubyObject obj) {
 		if (obj instanceof RubyFixnum) {
 			char c = (char) RubyNumeric.fix2int(obj);
-			return RubyBoolean.newBoolean(getRuntime(), getValue().indexOf(c) != -1);
+			return getRuntime().newBoolean(getValue().indexOf(c) != -1);
 		}
 		String str = stringValue(obj).getValue();
-		return RubyBoolean.newBoolean(getRuntime(), getValue().indexOf(str) != -1);
+		return getRuntime().newBoolean(getValue().indexOf(str) != -1);
 	}
 
 	/** rb_str_to_i
@@ -1164,7 +1154,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public RubyArray split(IRubyObject[] args) {
-        return new Split(runtime, this.getValue(), args).results();
+        return new Split(getRuntime(), this.getValue(), args).results();
 	}
 
 	/** rb_str_scan
@@ -1174,7 +1164,7 @@ public class RubyString extends RubyObject {
 		RubyRegexp pat = RubyRegexp.regexpValue(arg);
 		int start = 0;
 		if (!getRuntime().isBlockGiven()) {
-			RubyArray ary = RubyArray.newArray(getRuntime());
+			RubyArray ary = getRuntime().newArray();
 			while (pat.search(this, start) != -1) {
 				RubyMatchData md = (RubyMatchData) getRuntime().getBackref();
 				if (md.getSize() == 1) {
@@ -1455,7 +1445,7 @@ public class RubyString extends RubyObject {
 				count++;
 			}
 		}
-		return RubyFixnum.newFixnum(getRuntime(), count);
+		return getRuntime().newFixnum(count);
 	}
 
 	private String getDelete(IRubyObject[] args) {
@@ -1663,7 +1653,7 @@ public class RubyString extends RubyObject {
 		byte[] lByteValue = toByteArray();
 		int lLength = lByteValue.length;
 		for (int i = 0; i < lLength; i++) {
-			runtime.yield(RubyFixnum.newFixnum(runtime, lByteValue[i]));
+			getRuntime().yield(getRuntime().newFixnum(lByteValue[i]));
 		}
 		return this;
 	}
@@ -1687,7 +1677,7 @@ public class RubyString extends RubyObject {
         for (int i = 0; i < characters.length; i++) {
             result += characters[i];
         }
-        return RubyFixnum.newFixnum(getRuntime(), result % (2 * bitSize - 1));
+        return getRuntime().newFixnum(result % (2 * bitSize - 1));
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
@@ -1696,7 +1686,7 @@ public class RubyString extends RubyObject {
 	}
 
 	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-		RubyString result = RubyString.newString(input.getRuntime(), input.unmarshalString());
+		RubyString result = input.getRuntime().newString(input.unmarshalString());
         input.registerLinkTarget(result);
         return result;
 	}

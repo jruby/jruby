@@ -31,10 +31,10 @@
  */
 package org.jruby.ast;
 
+import java.util.List;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
-
-import java.util.List;
 
 /**
  * Scope in the parse tree.

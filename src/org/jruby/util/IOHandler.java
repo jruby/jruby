@@ -26,15 +26,15 @@
  */
 package org.jruby.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import org.jruby.Ruby;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.SystemCallError;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  */

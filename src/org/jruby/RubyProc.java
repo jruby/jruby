@@ -31,7 +31,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.runtime.Block;
@@ -88,7 +87,7 @@ public class RubyProc extends RubyObject {
 
     public static RubyProc newProc(Ruby runtime, boolean isLambda) {
         if (!runtime.isBlockGiven() && !runtime.isFBlockGiven()) {
-            throw new ArgumentError(runtime, "tried to create Proc object without a block");
+            throw runtime.newArgumentError("tried to create Proc object without a block");
         }
 
         RubyProc newProc = new RubyProc(runtime, runtime.getClasses().getProcClass());
@@ -124,13 +123,13 @@ public class RubyProc extends RubyObject {
         			throw e;
 	        }
         	
-		  	throw new LocalJumpError(runtime, "unexpected return");
+		  	throw new LocalJumpError(getRuntime(), "unexpected return");
         } finally {
             context.setWrapper(oldWrapper);
         }
     }
 
     public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(runtime, block.arity().getValue());
+        return getRuntime().newFixnum(block.arity().getValue());
     }
 }

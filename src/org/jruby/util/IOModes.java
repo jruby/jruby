@@ -26,7 +26,6 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ErrnoError;
 
 /**
@@ -98,7 +97,7 @@ public class IOModes {
     	int modes = 0;
     	
         if (modesString.length() == 0) {
-            throw new ArgumentError(runtime, "illegal access mode");
+            throw runtime.newArgumentError("illegal access mode");
         }
 
         switch (modesString.charAt(0)) {
@@ -114,7 +113,7 @@ public class IOModes {
             modes |= TRUNC;
             break;
         default :
-            throw new ArgumentError(runtime, "illegal access mode " + modes);
+            throw runtime.newArgumentError("illegal access mode " + modes);
         }
 
         if (modesString.length() > 1) {
@@ -130,7 +129,7 @@ public class IOModes {
                 		modes = RDWR;
                 	}
                 } else {
-                    throw new ArgumentError(runtime, "illegal access mode " + modes);
+                    throw runtime.newArgumentError("illegal access mode " + modes);
                 }
             }
         }

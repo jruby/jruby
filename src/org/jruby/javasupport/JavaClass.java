@@ -22,6 +22,12 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -31,17 +37,9 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 public class JavaClass extends RubyObject {
     private final Class javaClass;
@@ -121,54 +119,54 @@ public class JavaClass extends RubyObject {
     }
 
     public RubyBoolean public_p() {
-        return RubyBoolean.newBoolean(runtime, Modifier.isPublic(javaClass.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isPublic(javaClass.getModifiers()));
     }
 
     public RubyBoolean final_p() {
-        return RubyBoolean.newBoolean(runtime, Modifier.isFinal(javaClass.getModifiers()));
+        return getRuntime().newBoolean(Modifier.isFinal(javaClass.getModifiers()));
     }
 
     public RubyBoolean interface_p() {
-        return RubyBoolean.newBoolean(runtime, javaClass.isInterface());
+        return getRuntime().newBoolean(javaClass.isInterface());
     }
 
     public RubyBoolean array_p() {
-        return RubyBoolean.newBoolean(runtime, javaClass.isArray());
+        return getRuntime().newBoolean(javaClass.isArray());
     }
 
     public RubyString name() {
-        return RubyString.newString(runtime, javaClass.getName());
+        return getRuntime().newString(javaClass.getName());
     }
 
     public IRubyObject superclass() {
         Class superclass = javaClass.getSuperclass();
         if (superclass == null) {
-            return runtime.getNil();
+            return getRuntime().getNil();
         }
-        return new JavaClass(runtime, superclass.getName());
+        return new JavaClass(getRuntime(), superclass.getName());
     }
 
     public RubyFixnum op_cmp(IRubyObject other) {
         if (! (other instanceof JavaClass)) {
-            throw new TypeError(getRuntime(), "<=> requires JavaClass (" + other.getType() + " given)");
+            throw getRuntime().newTypeError("<=> requires JavaClass (" + other.getType() + " given)");
         }
         JavaClass otherClass = (JavaClass) other;
         if (this.javaClass == otherClass.javaClass) {
-            return RubyFixnum.newFixnum(getRuntime(), 0);
+            return getRuntime().newFixnum(0);
         }
         if (otherClass.javaClass.isAssignableFrom(this.javaClass)) {
-            return RubyFixnum.newFixnum(getRuntime(), -1);
+            return getRuntime().newFixnum(-1);
         }
-        return RubyFixnum.newFixnum(getRuntime(), 1);
+        return getRuntime().newFixnum(1);
     }
 
     public RubyArray java_instance_methods() {
         Method[] methods = javaClass.getMethods();
-        RubyArray result = RubyArray.newArray(runtime, methods.length);
+        RubyArray result = getRuntime().newArray(methods.length);
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (! Modifier.isStatic(method.getModifiers())) {
-                result.append(JavaMethod.create(runtime, method));
+                result.append(JavaMethod.create(getRuntime(), method));
             }
         }
         return result;
@@ -176,11 +174,11 @@ public class JavaClass extends RubyObject {
 
     public RubyArray java_class_methods() {
         Method[] methods = javaClass.getMethods();
-        RubyArray result = RubyArray.newArray(runtime, methods.length);
+        RubyArray result = getRuntime().newArray(methods.length);
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (Modifier.isStatic(method.getModifiers())) {
-                result.append(JavaMethod.create(runtime, method));
+                result.append(JavaMethod.create(getRuntime(), method));
             }
         }
         return result;
@@ -188,7 +186,7 @@ public class JavaClass extends RubyObject {
 
     public JavaMethod java_method(IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(getRuntime(), args.length, 1);
+            throw getRuntime().newArgumentError(args.length, 1);
         }
         String methodName = args[0].asSymbol();
         Class[] argumentTypes = new Class[args.length - 1];
@@ -196,12 +194,12 @@ public class JavaClass extends RubyObject {
             JavaClass type = for_name(this, args[i]);
             argumentTypes[i - 1] = type.javaClass;
         }
-        return JavaMethod.create(runtime, javaClass, methodName, argumentTypes);
+        return JavaMethod.create(getRuntime(), javaClass, methodName, argumentTypes);
     }
 
     public RubyArray constructors() {
         Constructor[] constructors = javaClass.getConstructors();
-        RubyArray result = RubyArray.newArray(getRuntime(), constructors.length);
+        RubyArray result = getRuntime().newArray(constructors.length);
         for (int i = 0; i < constructors.length; i++) {
             result.append(new JavaConstructor(getRuntime(), constructors[i]));
         }
@@ -229,7 +227,7 @@ public class JavaClass extends RubyObject {
 
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (! (lengthArgument instanceof RubyInteger)) {
-            throw new TypeError(getRuntime(), lengthArgument, getRuntime().getClasses().getIntegerClass());
+            throw getRuntime().newTypeError(lengthArgument, getRuntime().getClasses().getIntegerClass());
         }
         int length = (int) ((RubyInteger) lengthArgument).getLongValue();
         return new JavaArray(getRuntime(), Array.newInstance(javaClass, length));
@@ -237,10 +235,10 @@ public class JavaClass extends RubyObject {
 
     public RubyArray fields() {
         Field[] fields = javaClass.getFields();
-        RubyArray result = RubyArray.newArray(getRuntime(), fields.length);
+        RubyArray result = getRuntime().newArray(fields.length);
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
-            result.append(RubyString.newString(getRuntime(), field.getName()));
+            result.append(getRuntime().newString(field.getName()));
         }
         return result;
     }
@@ -258,20 +256,20 @@ public class JavaClass extends RubyObject {
 
     public RubyArray interfaces() {
         Class[] interfaces = javaClass.getInterfaces();
-        RubyArray result = RubyArray.newArray(getRuntime(), interfaces.length);
+        RubyArray result = getRuntime().newArray(interfaces.length);
         for (int i = 0; i < interfaces.length; i++) {
-            result.append(RubyString.newString(getRuntime(), interfaces[i].getName()));
+            result.append(getRuntime().newString(interfaces[i].getName()));
         }
         return result;
     }
 
     public RubyBoolean primitive_p() {
-        return RubyBoolean.newBoolean(getRuntime(), isPrimitive());
+        return getRuntime().newBoolean(isPrimitive());
     }
 
     public RubyBoolean assignable_from_p(IRubyObject other) {
         if (! (other instanceof JavaClass)) {
-            throw new TypeError(getRuntime(), "assignable_from requires JavaClass (" + other.getType() + " given)");
+            throw getRuntime().newTypeError("assignable_from requires JavaClass (" + other.getType() + " given)");
         }
 
         Class otherClass = ((JavaClass) other).getValue();
@@ -307,7 +305,7 @@ public class JavaClass extends RubyObject {
 
     public JavaClass component_type() {
         if (! javaClass.isArray()) {
-            throw new TypeError(getRuntime(), "not a java array-class");
+            throw getRuntime().newTypeError("not a java array-class");
         }
         return new JavaClass(getRuntime(), javaClass.getComponentType());
     }

@@ -27,10 +27,10 @@
  */
 package org.jruby.ast;
 
+import java.io.Serializable;
+
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
-
-import java.io.Serializable;
 
 /**
  *

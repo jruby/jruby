@@ -47,10 +47,10 @@ public class RubyArgsFile extends RubyObject {
     }
     
     public void initArgsFile() {
-        extendObject(runtime.getModule("Enumerable"));
+        extendObject(getRuntime().getModule("Enumerable"));
         
-        runtime.defineReadonlyVariable("$<", this);
-        runtime.defineGlobalConstant("ARGF", this);
+        getRuntime().defineReadonlyVariable("$<", this);
+        getRuntime().defineGlobalConstant("ARGF", this);
         
         defineSingletonMethod("each", callbackFactory().getOptMethod(RubyArgsFile.class, "each_line"));
         defineSingletonMethod("each_line", callbackFactory().getOptMethod(RubyArgsFile.class, "each_line"));
@@ -63,7 +63,7 @@ public class RubyArgsFile extends RubyObject {
 //		defineSingletonMethod("to_a", callbackFactory().getOptSingletonMethod(RubyGlobal.class, "readlines"));
 		defineSingletonMethod("to_s", callbackFactory().getMethod(RubyArgsFile.class, "filename"));
 
-        runtime.defineReadonlyVariable("$FILENAME", RubyString.newString(runtime, "-"));
+        getRuntime().defineReadonlyVariable("$FILENAME", getRuntime().newString("-"));
 
         // This is ugly.  nextArgsFile both checks existence of another
         // file and the setup of any files.  On top of that it handles
@@ -75,12 +75,12 @@ public class RubyArgsFile extends RubyObject {
     }
 
     protected boolean nextArgsFile() {
-        RubyArray args = (RubyArray)runtime.getGlobalVariables().get("$*");
+        RubyArray args = (RubyArray)getRuntime().getGlobalVariables().get("$*");
 
         if (args.getLength() == 0) {
             if (currentFile == null) { 
-                currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
-                ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue("-");
+                currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
+                ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue("-");
                 currentLineNumber = 0;
                 return true;
             }
@@ -89,12 +89,12 @@ public class RubyArgsFile extends RubyObject {
         }
 
         String filename = ((RubyString) args.shift()).getValue();
-        ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(filename);
+        ((RubyString) getRuntime().getGlobalVariables().get("$FILENAME")).setValue(filename);
 
         if (filename.equals("-")) {
-            currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
+            currentFile = (RubyIO) getRuntime().getGlobalVariables().get("$stdin");
         } else {
-            currentFile = new RubyFile(runtime, filename); 
+            currentFile = new RubyFile(getRuntime(), filename); 
         }
 
         return true;
@@ -102,7 +102,7 @@ public class RubyArgsFile extends RubyObject {
     
     public RubyString internalGets(IRubyObject[] args) {
         if (currentFile == null && !nextArgsFile()) {
-            return RubyString.nilString(runtime);
+            return RubyString.nilString(getRuntime());
         }
         
         RubyString line = (RubyString)currentFile.callMethod("gets", args);
@@ -117,7 +117,7 @@ public class RubyArgsFile extends RubyObject {
         }
         
         currentLineNumber++;
-        runtime.getGlobalVariables().set("$.", RubyFixnum.newFixnum(runtime, currentLineNumber));
+        getRuntime().getGlobalVariables().set("$.", getRuntime().newFixnum(currentLineNumber));
         
         return line;
     }
@@ -139,6 +139,6 @@ public class RubyArgsFile extends RubyObject {
     }
     
 	public RubyString filename() {
-        return (RubyString)runtime.getGlobalVariables().get("$FILENAME");
+        return (RubyString)getRuntime().getGlobalVariables().get("$FILENAME");
     }
 }

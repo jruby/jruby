@@ -26,7 +26,7 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-                return RubyString.newString(runtime, "main");
+                return runtime.newString("main");
             }
 
             /**

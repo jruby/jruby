@@ -31,8 +31,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.ReadonlyGlobalVariable;
@@ -47,9 +45,9 @@ public class RubyGlobal {
     public static void createGlobals(Ruby runtime) {
 
         // Version information:
-        IRubyObject version = RubyString.newString(runtime, Constants.RUBY_VERSION).freeze();
-        IRubyObject release = RubyString.newString(runtime, Constants.COMPILE_DATE).freeze();
-        IRubyObject platform = RubyString.newString(runtime, Constants.PLATFORM).freeze();
+        IRubyObject version = runtime.newString(Constants.RUBY_VERSION).freeze();
+        IRubyObject release = runtime.newString(Constants.COMPILE_DATE).freeze();
+        IRubyObject platform = runtime.newString(Constants.PLATFORM).freeze();
 
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
@@ -59,7 +57,7 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$/", RubyString.newString(runtime, "\n")));
+        runtime.defineVariable(new StringGlobalVariable(runtime, "$/", runtime.newString("\n")));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", runtime.getNil()));
         runtime.defineVariable(new StringGlobalVariable(runtime, "$,", runtime.getNil()));
 
@@ -118,7 +116,7 @@ public class RubyGlobal {
 
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! value.isKindOf(runtime.getClass("Exception"))) {
-                throw new TypeError(runtime, "assigning non-exception to $!");
+                throw runtime.newTypeError("assigning non-exception to $!");
             }
             return super.set(value);
         }
@@ -132,7 +130,7 @@ public class RubyGlobal {
 
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
-                throw new TypeError(runtime, "value of " + name() + " must be a String");
+                throw runtime.newTypeError("value of " + name() + " must be a String");
             }
             return super.set(value);
         }
@@ -144,7 +142,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject get() {
-            return RubyFixnum.newFixnum(runtime, runtime.getSafeLevel());
+            return runtime.newFixnum(runtime.getSafeLevel());
         }
 
         public IRubyObject set(IRubyObject value) {
@@ -170,7 +168,7 @@ public class RubyGlobal {
 
         public IRubyObject set(IRubyObject value) {
             if (runtime.getGlobalVariables().get("$!").isNil()) {
-                throw new ArgumentError(runtime, "$! not set.");
+                throw runtime.newArgumentError("$! not set.");
             }
             runtime.getGlobalVariables().get("$!").callMethod("set_backtrace", value);
             return value;
@@ -221,7 +219,7 @@ public class RubyGlobal {
                 ((RubyIO) value).checkWriteable();
             }
             if (! value.respondsTo("write")) {
-                throw new TypeError(runtime, name() + " must have write method, " +
+                throw runtime.newTypeError(name() + " must have write method, " +
                                     value.getType().getName() + " given");
             }
             return super.set(value);
@@ -237,7 +235,7 @@ public class RubyGlobal {
          * @see org.jruby.runtime.GlobalVariable#get()
          */
         public IRubyObject get() {
-            return RubyArray.newArray(runtime, runtime.getLoadService().getLoadPath());
+            return runtime.newArray(runtime.getLoadService().getLoadPath());
         }
     }
 
@@ -250,7 +248,7 @@ public class RubyGlobal {
          * @see org.jruby.runtime.GlobalVariable#get()
          */
         public IRubyObject get() {
-            return RubyArray.newArray(runtime, runtime.getLoadService().getLoadedFeatures());
+            return runtime.newArray(runtime.getLoadService().getLoadedFeatures());
         }
     }
 }

@@ -30,6 +30,10 @@
 
 package org.jruby;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
@@ -37,15 +41,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 /**
  *
  * @author  jpetersen
  */
 public class RubyClass extends RubyModule {
+	
+	private final Ruby runtime;
 
     /**
      * @mri rb_boot_class
@@ -54,19 +56,30 @@ public class RubyClass extends RubyModule {
         super(superClass.getRuntime(), superClass.getRuntime().getClasses().getClassClass(), superClass, null, null);
 
         infectBy(superClass);
+        this.runtime = superClass.getRuntime();
     }
 
     protected RubyClass(Ruby runtime, RubyClass superClass) {
         super(runtime, null, superClass, null, null);
+        this.runtime = runtime;
     }
 
     protected RubyClass(Ruby runtime, RubyClass rubyClass, RubyClass superClass) {
         super(runtime, rubyClass, superClass, null, null);
+        this.runtime = runtime;
     }
     
     protected RubyClass(Ruby runtime, RubyClass rubyClass, RubyClass superClass, RubyModule parentClass, String name) {
         super(runtime, rubyClass, superClass, parentClass, name);
+        this.runtime = runtime;
     }
+    
+    /* (non-Javadoc)
+	 * @see org.jruby.RubyObject#getRuntime()
+	 */
+	public Ruby getRuntime() {
+		return runtime;
+	}
 
     public boolean isModule() {
         return false;
@@ -94,7 +107,7 @@ public class RubyClass extends RubyModule {
      */
     public void inheritedBy(RubyClass superType) {
         if (superType == null) {
-            superType = runtime.getClasses().getObjectClass();
+            superType = getRuntime().getClasses().getObjectClass();
         }
         superType.callMethod("inherited", this);
     }
@@ -165,8 +178,8 @@ public class RubyClass extends RubyModule {
      * @mri rb_class_new
      */
     protected RubyClass subclass() {
-        if (this == runtime.getClasses().getClassClass()) {
-            throw new TypeError(runtime, "can't make subclass of Class");
+        if (this == getRuntime().getClasses().getClassClass()) {
+            throw getRuntime().newTypeError("can't make subclass of Class");
         }
         return new RubyClass(this);
     }
@@ -176,7 +189,7 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject newInstance(IRubyObject[] args) {
         if (isSingleton()) {
-            throw new TypeError(getRuntime(), "can't create instance of virtual class");
+            throw getRuntime().newTypeError("can't create instance of virtual class");
         }
         IRubyObject obj = new RubyObject(getRuntime(), this);
         obj.callInit(args);
@@ -194,8 +207,7 @@ public class RubyClass extends RubyModule {
             if (args[0] instanceof RubyClass) {
                 superClass = (RubyClass) args[0];
             } else {
-                throw new TypeError(
-                    runtime,
+                throw runtime.newTypeError(
                     "wrong argument type " + superClass.getType().getName() + " (expected Class)");
             }
         }
@@ -231,7 +243,7 @@ public class RubyClass extends RubyModule {
      *
      */
     public static IRubyObject inherited(RubyClass recv) {
-        throw new TypeError(recv.getRuntime(), "can't make subclass of Class");
+        throw recv.getRuntime().newTypeError("can't make subclass of Class");
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
@@ -252,7 +264,7 @@ public class RubyClass extends RubyModule {
     public IRubyObject allocateObject() {
         IRubyObject newObject = callMethod("allocate");
         if (newObject.getType() != getRealClass()) {
-            throw new TypeError(runtime, "wrong instance allocation");
+            throw getRuntime().newTypeError("wrong instance allocation");
         }
         return newObject;
     }

@@ -31,7 +31,11 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.ArgumentError;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
@@ -40,11 +44,6 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Glob;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * .The Ruby built-in class Dir.
@@ -144,14 +143,14 @@ public class RubyDir extends RubyObject {
     public static RubyArray glob(IRubyObject recv, RubyString pat) {
         String pattern = pat.toString();
         String[] files = new Glob(pattern).getNames();
-        return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+        return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
     /**
      * @return all entries for this Dir
      */
     public RubyArray entries() {
-        return RubyArray.newArray(getRuntime(), JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
+        return getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
     }
     
     /**
@@ -159,7 +158,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyArray entries(IRubyObject recv, RubyString path) {
         if (".".equals(path.toString().trim())) {
-            path = new RubyString(recv.getRuntime(), System.getProperty("user.dir"));
+            path = recv.getRuntime().newString(System.getProperty("user.dir"));
         }
         
         File directory = new File(path.toString());
@@ -172,7 +171,7 @@ public class RubyDir extends RubyObject {
 		fileList.add(0,".");
 		fileList.add(1,"..");
         Object[] files = fileList.toArray();
-        return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
+        return recv.getRuntime().newArray(JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
     /** Changes the current directory to <code>path</code> */
@@ -190,7 +189,7 @@ public class RubyDir extends RubyObject {
         
         System.setProperty("user.dir", realPath);
         
-        return RubyFixnum.newFixnum(recv.getRuntime(), 0);
+        return recv.getRuntime().newFixnum(0);
     }
 
     /**
@@ -212,7 +211,7 @@ public class RubyDir extends RubyObject {
             throw new SystemCallError(recv.getRuntime(), "No such directory");
         }
         
-        return RubyFixnum.newFixnum(recv.getRuntime(), 0);
+        return recv.getRuntime().newFixnum(0);
     }
 
     /**
@@ -231,7 +230,7 @@ public class RubyDir extends RubyObject {
 
     /** Returns the current directory. */
     public static RubyString getwd(IRubyObject recv) {
-        return new RubyString(recv.getRuntime(), System.getProperty("user.dir"));
+        return recv.getRuntime().newString(System.getProperty("user.dir"));
     }
 
     /**
@@ -241,10 +240,10 @@ public class RubyDir extends RubyObject {
      */
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(recv.getRuntime(), args.length, 1);
+            throw recv.getRuntime().newArgumentError(args.length, 1);
         }
         if (args.length > 2) {
-            throw new ArgumentError(recv.getRuntime(), args.length, 2);
+            throw recv.getRuntime().newArgumentError(args.length, 2);
         }
 
         args[0].checkSafeString();
@@ -300,7 +299,7 @@ public class RubyDir extends RubyObject {
     public IRubyObject each() {
         String[] contents = snapshot;
         for (int i=0; i<contents.length; i++) {
-            getRuntime().yield(RubyString.newString(getRuntime(), contents[i]));
+            getRuntime().yield(getRuntime().newString(contents[i]));
         }
         return this;
     }
@@ -309,7 +308,7 @@ public class RubyDir extends RubyObject {
      * Returns the current position in the directory.
      */
     public RubyInteger tell() {
-        return RubyFixnum.newFixnum(getRuntime(), pos);
+        return getRuntime().newFixnum(pos);
     }
 
     /**
@@ -328,7 +327,7 @@ public class RubyDir extends RubyObject {
 	}
 
         if (pos >= snapshot.length) {
-            return RubyString.nilString(runtime);
+            return RubyString.nilString(getRuntime());
         }
         RubyString result = new RubyString(getRuntime(), snapshot[pos]);
         pos++;
@@ -338,7 +337,7 @@ public class RubyDir extends RubyObject {
     /** Moves position in this directory to the first entry. */
     public IRubyObject rewind() {
         pos = 0;
-        return RubyFixnum.newFixnum(getRuntime(), pos);
+        return getRuntime().newFixnum(pos);
     }
 
 // ----- Helper Methods --------------------------------------------------------

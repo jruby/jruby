@@ -24,6 +24,12 @@
  */
 package org.jruby.runtime;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Stack;
+
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -38,7 +44,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
@@ -46,12 +51,6 @@ import org.jruby.exceptions.RedoJump;
 import org.jruby.lexer.yacc.SourcePosition;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.ArrayStack;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Stack;
 
 /**
  * @author jpetersen
@@ -214,7 +213,7 @@ public class ThreadContext {
             if (blockVar instanceof ZeroArgNode) {
                 // Better not have arguments for a no-arg block.
                 if (yieldProc && arrayLength(value) != 0) { 
-                    throw new ArgumentError(runtime, "wrong # of arguments(" + 
+                    throw runtime.newArgumentError("wrong # of arguments(" + 
                             ((RubyArray)value).getLength() + "for 0)");
                 }
             } else if (blockVar instanceof MultipleAsgnNode) {
@@ -233,12 +232,12 @@ public class ThreadContext {
                         value = ((RubyArray)value).first(null);
                     } else {
                         // XXXEnebo - Should be warning not error.
-                        //throw new ArgumentError(runtime, "wrong # of arguments(" + 
+                        //throw runtime.newArgumentError("wrong # of arguments(" + 
                         //        length + "for 1)");
                     }
                 } else if (value == null) { 
                     // XXXEnebo - Should be warning not error.
-                    //throw new ArgumentError(runtime, "wrong # of arguments(0 for 1)");
+                    //throw runtime.newArgumentError("wrong # of arguments(0 for 1)");
                 }
 
                 new AssignmentVisitor(runtime, self).assign(blockVar, value, yieldProc); 
@@ -290,7 +289,7 @@ public class ThreadContext {
         }
 
         if (pcall && iter.hasNext()) {
-            throw new ArgumentError(runtime, "Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
         if (node.getArgsNode() != null) {
@@ -298,12 +297,12 @@ public class ThreadContext {
                 // no check for '*'
             } else if (varLen < valueLen) {
                 ArrayList newList = new ArrayList(value.getList().subList(varLen, valueLen));
-                new AssignmentVisitor(runtime, self).assign(node.getArgsNode(), RubyArray.newArray(runtime, newList), pcall);
+                new AssignmentVisitor(runtime, self).assign(node.getArgsNode(), runtime.newArray(newList), pcall);
             } else {
-                new AssignmentVisitor(runtime, self).assign(node.getArgsNode(), RubyArray.newArray(runtime, 0), pcall);
+                new AssignmentVisitor(runtime, self).assign(node.getArgsNode(), runtime.newArray(0), pcall);
             }
         } else if (pcall && valueLen < varLen) {
-            throw new ArgumentError(runtime, "Wrong # of arguments (" + valueLen + " for " + varLen + ")");
+            throw runtime.newArgumentError("Wrong # of arguments (" + valueLen + " for " + varLen + ")");
         }
 
         while (iter.hasNext()) {
@@ -315,17 +314,17 @@ public class ThreadContext {
 
     private IRubyObject sValueToMRHS(IRubyObject value, Node leftHandSide) {
         if (value == null) {
-            return RubyArray.newArray(runtime, 0);
+            return runtime.newArray(0);
         }
         
         if (leftHandSide == null) {
-            return RubyArray.newArray(runtime, value);
+            return runtime.newArray(value);
         }
         
         IRubyObject newValue = value.convertToType("Array", "to_ary", false);
 
         if (newValue.isNil()) {
-            return RubyArray.newArray(runtime, value);
+            return runtime.newArray(value);
         }
         
         return newValue;

@@ -23,7 +23,6 @@
  */
 package org.jruby;
 
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,8 +45,7 @@ public class RubyUnboundMethod extends RubyMethod {
         RubyModule originModule,
         String originName,
         ICallable method) {
-        Ruby runtime = implementationModule.getRuntime();
-        RubyUnboundMethod newMethod = new RubyUnboundMethod(runtime);
+        RubyUnboundMethod newMethod = new RubyUnboundMethod(implementationModule.getRuntime());
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
@@ -75,7 +73,7 @@ public class RubyUnboundMethod extends RubyMethod {
      * @see org.jruby.RubyMethod#call(IRubyObject[])
      */
     public IRubyObject call(IRubyObject[] args) {
-        throw new TypeError(runtime, "you cannot call unbound method; bind first");
+        throw getRuntime().newTypeError("you cannot call unbound method; bind first");
     }
 
     /**
@@ -89,13 +87,13 @@ public class RubyUnboundMethod extends RubyMethod {
         RubyClass receiverClass = receiver.getMetaClass();
         if (originModule != receiverClass) {
             if (originModule instanceof MetaClass) {
-                throw new TypeError(runtime, "singleton method called for a different object");
+                throw getRuntime().newTypeError("singleton method called for a different object");
             } else if (receiverClass instanceof MetaClass && receiverClass.getMethods().containsKey(originName)) {
-                throw new TypeError(runtime, "method `" + originName + "' overridden");
+                throw getRuntime().newTypeError("method `" + originName + "' overridden");
             } else if (
                 !(originModule.isModule() ? receiver.isKindOf(originModule) : receiver.getType() == originModule)) {
                 // FIX replace type() == ... with isInstanceOf(...)
-                throw new TypeError(runtime, "bind argument must be an instance of " + originModule.getName());
+                throw getRuntime().newTypeError("bind argument must be an instance of " + originModule.getName());
             }
         }
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, receiver);

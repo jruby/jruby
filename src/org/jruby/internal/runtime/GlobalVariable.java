@@ -22,11 +22,11 @@
  */
 package org.jruby.internal.runtime;
 
+import java.util.ArrayList;
+
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.runtime.IAccessor;
-
-import java.util.ArrayList;
 
 /**
  * 

@@ -22,13 +22,20 @@
  */
 package org.jruby.javasupport.bsf;
 
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+
+import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFManager;
 
 /** An example demonstrating the use of JRuby and BSF.
  * 

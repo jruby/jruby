@@ -34,8 +34,6 @@ package org.jruby.test;
 
 import junit.framework.TestCase;
 import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -61,10 +59,10 @@ public class TestObjectSpace extends TestCase {
     public void testObjectSpace() {
         ObjectSpace os = new ObjectSpace();
 
-        IRubyObject o1 = RubyFixnum.newFixnum(runtime, 10);
-        IRubyObject o2 = RubyFixnum.newFixnum(runtime, 20);
-        IRubyObject o3 = RubyFixnum.newFixnum(runtime, 30);
-        IRubyObject o4 = RubyString.newString(runtime, "hello");
+        IRubyObject o1 = runtime.newFixnum(10);
+        IRubyObject o2 = runtime.newFixnum(20);
+        IRubyObject o3 = runtime.newFixnum(30);
+        IRubyObject o4 = runtime.newString("hello");
 
         os.add(o1);
         os.add(o2);
