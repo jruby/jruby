@@ -1,0 +1,23 @@
+
+* Make sure tests run att 100%
+* Make sure samples run
+* Put the right version in build-config.xml
+* Tag the release in CVS
+* Make binary-release
+* Make source-release
+* Make sure examples run from the binary release
+
+* Make a Sourceforge-release
+
+* Update homepage
+
+* Send out announcement to
+    * ruby-talk
+    * announce@rubynet.org
+    * jruby-devel
+    * jruby-user
+
+* Update entries in
+    * RAA
+    * freshmeat.net
+    * Berlios
