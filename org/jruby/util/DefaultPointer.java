@@ -38,7 +38,8 @@ import java.util.*;
  * @version 
  */
 public class DefaultPointer extends AbstractList implements Pointer {
-    private List delegate;
+    private ArrayList delegate;
+    
     private int position;
     private boolean autoResize;
     private Object autoResizeObject;
@@ -56,22 +57,27 @@ public class DefaultPointer extends AbstractList implements Pointer {
     }
     
     public DefaultPointer(Object autoResizeObject, int size) {
-        this(new ArrayList(Collections.nCopies(size, autoResizeObject)), 0, true, autoResizeObject);
+        this(null, 0, true, autoResizeObject);
+        
+        this.delegate = new ArrayList(size);
+        for (int i = 0; i < size; i++) {
+            delegate.add(autoResizeObject);
+        }
     }
     
-    public DefaultPointer(List delegate) {
+    public DefaultPointer(ArrayList delegate) {
         this(delegate, 0, true, null);
     }
 
-    public DefaultPointer(List delegate, Object autoResizeObject) {
+    public DefaultPointer(ArrayList delegate, Object autoResizeObject) {
         this(delegate, 0, true, autoResizeObject);
     }
 
-    public DefaultPointer(List delegate, boolean autoResize) {
+    public DefaultPointer(ArrayList delegate, boolean autoResize) {
         this(delegate, 0, autoResize, null);
     }
 
-    protected DefaultPointer(List delegate, int position, boolean autoResize, Object autoResizeObject) {
+    protected DefaultPointer(ArrayList delegate, int position, boolean autoResize, Object autoResizeObject) {
         super();
         
         this.delegate = delegate;
@@ -86,10 +92,11 @@ public class DefaultPointer extends AbstractList implements Pointer {
         if (!autoResize) {
             return;
         } else if (index < 0) {
-            delegate.addAll(Collections.nCopies(-index, autoResizeObject));
+            delegate.addAll(0, Collections.nCopies(-index, autoResizeObject));
             
             position += -index;
         } else if (index >= delegate.size()) {
+            delegate.ensureCapacity(index);
             for (int i = delegate.size(); i <= index; i++) {
                 delegate.add(autoResizeObject);
             }

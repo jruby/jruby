@@ -60,20 +60,6 @@ public class RubyString extends RubyObject {
         return String.class;
     }
 
-    /**
-     * @deprecated
-     */
-    public String getString() {
-        return value;
-    }
-    
-    /**
-     * @deprecated
-     */
-    public void setString(String str) {
-        value = str;
-    }
-    
     public String getValue() {
         return this.value;
     }
@@ -83,7 +69,7 @@ public class RubyString extends RubyObject {
     }
     
     public String toString() {
-        return "\"" + getValue() + "\"";
+        return getValue();
     }
     
     public static boolean isDigit(char c) {

@@ -183,6 +183,9 @@ public class ScopeNode extends Node implements CallableNode {
             
             localVarsList = new RubyPointer(ruby.getNil(), getTable().getId(0).intValue() + 1);
             localVarsList.set(0, this);
+            // +++
+            // localVarsList.set(3, argsList, argsList.size());
+            // ---
             localVarsList.inc();
             
             ruby.getRubyScope().setLocalVars(localVarsList);

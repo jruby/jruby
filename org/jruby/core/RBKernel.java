@@ -139,9 +139,7 @@ public class RBKernel {
     
     public static RubyObject m_require(Ruby ruby, RubyObject recv, RubyString arg1) {
         if (arg1.getValue().endsWith(".rb")) {
-            
-            // ruby.getRuntime().load((RubyString)arg1, false);
-            
+            ruby.getRuntime().loadFile((RubyString)arg1, false);
         } else if (arg1.getValue().endsWith(".jar")) {
             File jarFile = new File(arg1.getValue());
             if (!jarFile.exists()) {

@@ -67,7 +67,7 @@ public class RubyArray extends RubyObject {
         this.tmpLock = tmpLock;
     }
     
-    public long length() {
+    public int length() {
         return list.size();
     }
     
@@ -91,6 +91,7 @@ public class RubyArray extends RubyObject {
      */
     public void store(long idx, RubyObject value) {
         modify();
+
         if (idx < 0) {
             idx += list.size();
             if (idx < 0) {
@@ -241,13 +242,16 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyArray m_push(RubyObject[] items) {
+        // Performance
+        int length = items.length;
+        
         if (items.length == 0) {
             throw new RubyArgumentException("wrong # of arguments(at least 1)");
         }
         
         modify();
         
-        for (int i = 0; i < items.length; i++) {
+        for (int i = 0; i < length; i++) {
             list.add(items[i]);
         }
         return this;
@@ -399,7 +403,10 @@ public class RubyArray extends RubyObject {
         // HACK +++
         StringBuffer sb = new StringBuffer(100);
         sb.append("[");
-        for (int i = 0; i < length(); i++)  {
+        
+        // Performance
+        int length = length();
+        for (int i = 0; i < length; i++)  {
             if (i > 0) {
                 sb.append(", ");
             }

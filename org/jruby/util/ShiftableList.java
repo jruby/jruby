@@ -37,6 +37,7 @@ import java.util.*;
  *
  * @author  jpetersen
  * @version 
+ * @deprecated
  */
 public class ShiftableList extends AbstractList {
     private List delegate;

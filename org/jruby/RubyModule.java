@@ -743,7 +743,7 @@ public class RubyModule extends RubyObject {
         getRuby().getRubyFrame().setLastFunc(id);
         getRuby().getRubyFrame().setLastClass(noSuper ? null : this);
         getRuby().getRubyFrame().setSelf(recv);
-        getRuby().getRubyFrame().setArgs(new ShiftableList(args));
+        getRuby().getRubyFrame().setArgs(new RubyPointer(args));
         
         RubyObject result = getRuby().getNil();
         

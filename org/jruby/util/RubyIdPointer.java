@@ -57,19 +57,19 @@ public class RubyIdPointer extends DefaultPointer {
         this(new ArrayList(Collections.nCopies(size, autoResizeObject)), 0, true, autoResizeObject);
     }
     
-    public RubyIdPointer(List delegate) {
+    public RubyIdPointer(ArrayList delegate) {
         this(delegate, 0, true, null);
     }
 
-    public RubyIdPointer(List delegate, Object autoResizeObject) {
+    public RubyIdPointer(ArrayList delegate, Object autoResizeObject) {
         this(delegate, 0, true, autoResizeObject);
     }
 
-    public RubyIdPointer(List delegate, boolean autoResize) {
+    public RubyIdPointer(ArrayList delegate, boolean autoResize) {
         this(delegate, 0, autoResize, null);
     }
 
-    protected RubyIdPointer(List delegate, int position, boolean autoResize, Object autoResizeObject) {
+    protected RubyIdPointer(ArrayList delegate, int position, boolean autoResize, Object autoResizeObject) {
         super(delegate, position, autoResize, autoResizeObject);
     }
 

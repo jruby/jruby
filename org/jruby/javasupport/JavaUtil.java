@@ -65,8 +65,7 @@ public class JavaUtil {
     public static Object convertRubyToJava(Ruby ruby, RubyObject rubyObject, Class javaClass) {
         if (rubyObject == ruby.getNil()) {
             return null;
-        }
-        if (javaClass.isArray()) {
+        } else if (javaClass.isArray()) {
             try {
                 Class arrayClass = javaClass.getComponentType();
                 int len = (int)((RubyArray)rubyObject).length();
@@ -79,29 +78,29 @@ public class JavaUtil {
             }
             catch (NegativeArraySizeException ex) {
             }
-        }
-        if (javaClass == Object.class) {
+        } else if (javaClass == Object.class) {
             javaClass = rubyObject.getJavaClass();
-        }
-        if (javaClass == Boolean.TYPE || javaClass == Boolean.class) {
+        } else if (javaClass == Boolean.TYPE || javaClass == Boolean.class) {
             return new Boolean(rubyObject.isTrue());
-        }
-        if (javaClass == Integer.TYPE || javaClass == Integer.class) {
+        } else if (javaClass == Integer.TYPE || javaClass == Integer.class) {
             return new Integer((int)((RubyFixnum)rubyObject).getLongValue());
-        }
-        if (javaClass == Long.TYPE || javaClass == Long.class) {
+        } else if (javaClass == Long.TYPE || javaClass == Long.class) {
             return new Long(((RubyFixnum)rubyObject).getLongValue());
-        }
-        if (javaClass == Float.TYPE || javaClass == Float.class) {
+        } else if (javaClass == Float.TYPE || javaClass == Float.class) {
             return new Float((float)((RubyFloat)rubyObject).getDoubleValue());
-        }
-        if (javaClass == Double.TYPE || javaClass == Double.class) {
+        } else if (javaClass == Double.TYPE || javaClass == Double.class) {
             return new Double(((RubyFloat)rubyObject).getDoubleValue());
+        } else if (javaClass == String.class) {
+            // If Ruby class is't the String class call to_s method
+            if (rubyObject instanceof RubyString) {
+                return ((RubyString)rubyObject).getValue();
+            } else {
+                return ((RubyString)rubyObject.funcall(ruby.intern("to_s"))).getValue();
+            }
+        } else if (rubyObject instanceof RubyJavaObject) {
+            return ((RubyJavaObject)rubyObject).getValue();
         }
-        if (javaClass == String.class) {
-            return ((RubyString)rubyObject).getValue();
-        }
-        return ((RubyJavaObject)rubyObject).getValue();
+        return rubyObject.toString();
     }
 
     public static RubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {

@@ -306,7 +306,9 @@ public class ParserHelper {
      *@return       Description of the Returned Value
      */
     public Node block_append(Node head, Node tail) {
-        if (tail == null || head == null) {
+        if (tail == null) {
+            return head;
+        } else if (head == null) {
             return tail;
         }
 

@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -77,6 +77,7 @@ public final class Ruby {
     //
     private ParserHelper parserHelper = null;
     private RubyParser rubyParser = null;
+    private RubyRuntime runtime = new RubyRuntime(this);
     
     private RubyObject rubyTopSelf;
     
@@ -950,6 +951,20 @@ public final class Ruby {
      */
     public void setWrapper(org.jruby.RubyModule wrapper) {
         this.wrapper = wrapper;
+    }
+    
+    /** Getter for property runtime.
+     * @return Value of property runtime.
+     */
+    public org.jruby.runtime.RubyRuntime getRuntime() {
+        return this.runtime;
+    }
+    
+    /** Setter for property runtime.
+     * @param runtime New value of property runtime.
+     */
+    public void setRuntime(org.jruby.runtime.RubyRuntime runtime) {
+        this.runtime = runtime;
     }
     
 }

@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
-
-<project basedir="." default="all" name="JRuby">
+<!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. --><project basedir="." default="all" name="JRuby">
 
     <!--<property name="build.compiler" value="jikes"/>-->
     <property name="build.compiler" value="modern"/>
@@ -22,7 +20,8 @@
     <property name="javadoc.title" value="JRuby"/>
 
     <target name="check_for_optional_packages">
-        <available property="jdk1.4+" classname="java.lang.CharSequence" />
+        <available classname="java.lang.CharSequence" property="jdk1.4+"/>
+        <available file="lib/bsf.jar" property="bsf"/>
     </target>
 
     <target depends="check_for_optional_packages" name="compile">
@@ -30,38 +29,38 @@
         <mkdir dir="${build.dest}"/>
         <javac debug="true" deprecation="true" destdir="${build.dest}" srcdir="${src.dir}">
             <exclude name="**/JDKRegexpAdapter.java" unless="jdk1.4+"/>
-            <exclude name="org/jruby/bsf/**/*.java"/>
+            <exclude name="org/jruby/javasupport/bsf/**/*.java" unless="bsf"/>
+            <classpath>
+                <path path="lib/bsf.jar"/>
+            </classpath>
         </javac>
         <copy todir="${build.dest}">
             <fileset dir="${src.dir}">
                 <include name="**/*.properties"/>
             </fileset>
         </copy>
-        <jar basedir="${build.dest}"
-             compress="true" 
-             jarfile="${base.dir}/jruby.jar"
-             manifest="${base.dir}/jruby.mf"
-        />
+        <!-- Create jar in build dir -->
+        <jar basedir="${build.dest}" compress="true" jarfile="${build.dir}/jruby.jar" manifest="${base.dir}/jruby.mf"/>
     </target>
 
-    <target depends="compile," name="bin-gz">
+    <target depends="compile" name="bin-gz">
         <mkdir dir="${build.tars}"/>
         
         <copy todir="${build.tars}">
             <fileset dir="${base.dir}">
-                <include name="jruby.jar"/>
                 <include name="COPYING"/>
                 <include name="README"/>
                 <include name="test.rb"/>
                 <include name="samples/**/*"/>
             </fileset>
+            <fileset dir="${build.dir}">
+                <include name="jruby.jar"/>
+            </fileset>
         </copy>
         
         <tar basedir="${build.tars}" tarfile="${build.dir}/jruby.tar"/>
 
-        <gzip src="${build.dir}/jruby.tar" 
-              zipfile="${build.dir}/jruby-${version.file}.tar.gz"
-        />
+        <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
 
         <!--<delete dir="${build.tars}"/> 
         <delete file="${build.dir}/jruby.tar"/>
@@ -74,9 +73,7 @@
             <exclude name="**/*.class"/>
         </tar>
 
-        <gzip src="${build.dir}/jruby-src.tar"
-              zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"
-        />
+        <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
 
         <!-- <delete file="${build.dir}/jruby-src.tar"/> -->
     </target>
@@ -84,24 +81,8 @@
     <target name="javadocs">
         <mkdir dir="${build.docs}"/>
         <mkdir dir="${build.docs}/support"/>
-        <javadoc destdir="${build.docs}"
-                 doctitle="${javadoc.title}"
-                 packagenames="org.jruby.*"
-                 public="true"
-                 sourcepath="${src.dir}"
-                 use="true"
-                 version="true"
-                 windowtitle="${javadoc.title}"
-        />
-        <javadoc destdir="${build.docs}/support"
-                 doctitle="${javadoc.title}"
-                 packagenames="gnu.*"
-                 public="true"
-                 sourcepath="${src.dir}"
-                 use="true"
-                 version="true"
-                 windowtitle="${javadoc.title}"
-        />
+        <javadoc destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
+        <javadoc destdir="${build.docs}/support" doctitle="${javadoc.title}" packagenames="gnu.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
     </target>
 	
     <target depends="bin-gz,src-gz" description="Build everything." name="all">

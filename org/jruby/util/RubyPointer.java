@@ -57,7 +57,7 @@ public class RubyPointer extends DefaultPointer {
         this(new ArrayList(Collections.nCopies(size, autoResizeObject)), 0, true, autoResizeObject);
     }
     
-    public RubyPointer(List delegate) {
+    public RubyPointer(ArrayList delegate) {
         this(delegate, 0, true, null);
     }
     
@@ -65,15 +65,15 @@ public class RubyPointer extends DefaultPointer {
         this(args == null ? new ArrayList() : new ArrayList(Arrays.asList(args)), 0, true, null);
     }
 
-    public RubyPointer(List delegate, Object autoResizeObject) {
+    public RubyPointer(ArrayList delegate, Object autoResizeObject) {
         this(delegate, 0, true, autoResizeObject);
     }
 
-    public RubyPointer(List delegate, boolean autoResize) {
+    public RubyPointer(ArrayList delegate, boolean autoResize) {
         this(delegate, 0, autoResize, null);
     }
 
-    protected RubyPointer(List delegate, int position, boolean autoResize, Object autoResizeObject) {
+    protected RubyPointer(ArrayList delegate, int position, boolean autoResize, Object autoResizeObject) {
         super(delegate, position, autoResize, autoResizeObject);
     }
 
