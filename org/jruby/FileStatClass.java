@@ -28,6 +28,9 @@ import org.jruby.internal.runtime.builtin.definitions.FileStatDefinition;
 
 import java.io.File;
 
+/**
+ * Implements File::Stat
+ */
 public class FileStatClass extends RubyObject implements IndexCallable {
     private File file;
 

@@ -31,10 +31,8 @@ package org.jruby;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.oro.io.GlobFilenameFilter;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
@@ -180,11 +178,9 @@ public class RubyDir extends RubyObject {
     public static IRubyObject foreach(IRubyObject recv, RubyString path) {
         path.checkSafeString();
 
-        List contents = getContents(getDir(recv.getRuntime(), path.getValue()));
-        for (Iterator i=contents.iterator(); i.hasNext();) {
-            String name = (String) i.next();
-            recv.getRuntime().yield(new RubyString(recv.getRuntime(), name));
-        }
+        RubyDir dir = (RubyDir) newInstance(recv.getRuntime().getClasses().getDirClass(),
+                                            new IRubyObject[] { path });
+        dir.each();
         return recv.getRuntime().getNil();
     }
 
@@ -280,7 +276,7 @@ public class RubyDir extends RubyObject {
     /** Returns a Java <code>File</code> object for the specified path.  If
      * <code>path</code> is not a directory, throws <code>IOError</code>.
      *
-     * @param   The path for which to return the <code>File</code> object.
+     * @param   path path for which to return the <code>File</code> object.
      * @throws  IOError if <code>path</code> is not a directory.
      */
     protected static File getDir(Ruby ruby, String path) {

@@ -22,6 +22,12 @@ test_equal(['.', '..'], d.entries)
 
 test_equal(['.', '..', "file1", "file2"], Dir.new('./testDir_1').entries.sort)
 
+files = []
+Dir.foreach('./testDir_1') {|f|
+  files << f
+}
+test_equal(['.', '..', "file1", "file2"], files.sort)
+
 (1..2).each {|i|
   File.delete("./testDir_1/file" + i.to_s)
 }
