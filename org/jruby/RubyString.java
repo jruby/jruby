@@ -37,6 +37,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
+import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -137,7 +138,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 
     private static final int M_CONCAT = 50;
     private static final int M_INTERN = 51;
-
+    private static final int M_SUM = 201;
 
 	public static RubyClass createStringClass(Ruby ruby) {
 		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
@@ -237,8 +238,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-
-		//    rb_define_method(rb_cString, "sum", rb_str_sum, -1);
+		stringClass.defineMethod("sum", IndexedCallback.create(M_SUM, 0));
 
 		stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
 		stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
@@ -295,6 +295,8 @@ public class RubyString extends RubyObject implements IndexCallable {
             return concat(args[0]);
         case M_INTERN:
             return intern();
+        case M_SUM:
+            return sum();
         }
         Asserts.assertNotReached();
         return null;
@@ -1764,6 +1766,14 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return RubySymbol.newSymbol(getRuntime(), getValue());
 	}
 
+    public RubyInteger sum() {
+        int result = 0;
+        char[] characters = value.toCharArray();
+        for (int i = 0; i < characters.length; i++) {
+            result += characters[i];
+        }
+        return RubyFixnum.newFixnum(getRuntime(), result);
+    }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
 		output.write('"');
