@@ -45,6 +45,7 @@ public class RbKernel {
     public static RubyModule createKernelModule(Ruby ruby) {
         RubyModule kernelModule = ruby.defineModule("Kernel");
 
+        kernelModule.defineMethod("extend", getKernelMethod("m_extend"));
         kernelModule.defineMethod("puts", getKernelMethod("m_puts"));
         kernelModule.defineMethod("print", getKernelMethod("m_print"));
         kernelModule.defineMethod("p", getKernelMethod("m_p"));
@@ -105,6 +106,20 @@ public class RbKernel {
         String methodName,
         Class arg1) {
         return new ReflectionCallbackMethod(RubyObject.class, methodName, arg1);
+    }
+
+    public static RubyObject m_extend(
+        Ruby ruby,
+        RubyObject recv,
+        RubyObject args[]) {
+        if (args.length == 0) {
+                throw new RubyArgumentException(ruby, "wrong # of arguments");
+        }
+	// FIXME: Check_Type?
+        for(int i = 0; i < args.length; i++) {
+               args[i].funcall(ruby.intern("extend_object"),recv);  
+        }
+	return recv; 
     }
 
     public static RubyObject m_puts(
