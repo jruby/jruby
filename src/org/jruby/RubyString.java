@@ -479,7 +479,11 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString upcase_bang() {
-		setValue(getValue().toUpperCase());
+		String result = getValue().toUpperCase();
+        if (result.equals(getValue())) {
+            return nilString(getRuntime());
+        }
+        setValue(result);
 		return this;
 	}
 
@@ -494,7 +498,11 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString downcase_bang() {
-		setValue(getValue().toLowerCase());
+        String result = getValue().toLowerCase();
+        if (result.equals(getValue())) {
+            return nilString(getRuntime());
+        }
+		setValue(result);
 		return this;
 	}
 
@@ -1261,24 +1269,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return this;
 	}
 
-	private String getChomp(IRubyObject[] args) {
-		String sep = null;
-		if (argCount(args, 0, 1) == 1) {
-			sep = stringValue(args[0]).getValue();
-		}
-		int end = -1;
-		if (sep != null && getValue().endsWith(sep)) {
-			return getValue().substring(0, getValue().lastIndexOf(sep));
-		}
-		// $/ is coming up nil, so check for 'standard' line separators
-		if (getValue().endsWith("\r\n")) {
-			end = getValue().length() - 2;
-		} else if (getValue().endsWith("\n") || getValue().endsWith("\r")) {
-			end = getValue().length() - 1;
-		}
-		return end == -1 ? null : getValue().substring(0, end);
-	}
-
 	/** rb_str_chomp
 	 *
 	 */
@@ -1585,7 +1575,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		if (strLen == 0) {
 			return this;
 		}
-		String sep = null;
+		String sep = RubyRegexp.quote(getRuntime().getGlobalVariables().get("$/").asSymbol());
 		if (argCount(args, 0, 1) == 1) {
 			sep = RubyRegexp.quote(stringValue(args[0]).getValue());
 		}

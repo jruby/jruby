@@ -49,3 +49,13 @@ $/ = 'x'
 test_equal("hello", "hellox".chomp)
 test_equal("hello", "hello".chomp)
 $/ = old_separator
+
+test_equal("hello", "HELlo".downcase)
+s = "HELlo"
+test_equal("hello", s.downcase!)
+test_equal(nil, s.downcase!)
+
+test_equal("HELLO", "HELlo".upcase)
+s = "HeLLo"
+test_equal("HELLO", s.upcase!)
+test_equal(nil, s.upcase!)
