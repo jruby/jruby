@@ -23,6 +23,7 @@
 package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
@@ -57,6 +58,8 @@ public class RubyThread extends RubyObject {
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private RaiseException exitingException = null;
+
+    private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
 
     public static RubyClass createThreadClass(Ruby ruby) {
@@ -78,17 +81,17 @@ public class RubyThread extends RubyObject {
         threadClass.defineSingletonMethod(
             "fork",
             CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
-//        threadClass.defineSingletonMethod(
-//            "kill",
-//            CallbackFactory.getSingletonMethod(RubyThread.class, "kill", RubyThread.class));
+        //        threadClass.defineSingletonMethod(
+        //            "kill",
+        //            CallbackFactory.getSingletonMethod(RubyThread.class, "kill", RubyThread.class));
         threadClass.defineSingletonMethod("list", CallbackFactory.getSingletonMethod(RubyThread.class, "list"));
-//        threadClass.defineSingletonMethod("main", CallbackFactory.getSingletonMethod(RubyThread.class, "main"));
+        //        threadClass.defineSingletonMethod("main", CallbackFactory.getSingletonMethod(RubyThread.class, "main"));
         threadClass.defineSingletonMethod(
             "new",
             CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
         threadClass.defineSingletonMethod("pass", CallbackFactory.getSingletonMethod(RubyThread.class, "pass"));
         threadClass.defineSingletonMethod("start", CallbackFactory.getOptSingletonMethod(RubyThread.class, "start"));
-    //    threadClass.defineSingletonMethod("stop", CallbackFactory.getSingletonMethod(RubyThread.class, "stop"));
+        //    threadClass.defineSingletonMethod("stop", CallbackFactory.getSingletonMethod(RubyThread.class, "stop"));
 
         // instance methods
         threadClass.defineMethod("[]", CallbackFactory.getMethod(RubyThread.class, "aref", IRubyObject.class));
@@ -157,7 +160,7 @@ public class RubyThread extends RubyObject {
 
     private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         final Ruby runtime = recv.getRuntime();
-        if (! runtime.isBlockGiven()) {
+        if (!runtime.isBlockGiven()) {
             throw new ThreadError(runtime, "must be called with a block");
         }
         final RubyThread thread = new RubyThread(runtime, (RubyClass) recv);
@@ -172,7 +175,12 @@ public class RubyThread extends RubyObject {
 
         thread.jvmThread = new Thread(new Runnable() {
             public void run() {
-                thread.hasStarted = true;
+                    // Thread started
+    synchronized (thread.hasStartedLock) {
+                    thread.hasStarted = true;
+                    thread.hasStartedLock.notifyAll();
+                }
+
                 runtime.registerNewContext(thread);
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
@@ -242,7 +250,7 @@ public class RubyThread extends RubyObject {
 
     public IRubyObject aref(IRubyObject key) {
         String name = keyName(key);
-        if (! threadLocalVariables.containsKey(name)) {
+        if (!threadLocalVariables.containsKey(name)) {
             return getRuntime().getNil();
         }
         return (IRubyObject) threadLocalVariables.get(name);
@@ -280,23 +288,20 @@ public class RubyThread extends RubyObject {
     }
 
     public RubyThread join() {
+        if (jvmThread == Thread.currentThread()) {
+            throw new ThreadError(getRuntime(), "thread tried to join itself");
+        }
         try {
-            if (jvmThread == Thread.currentThread()) {
-                throw new ThreadError(getRuntime(), "thread tried to join itself");
-            }
             ensureStarted();
-
             jvmThread.join();
-            if (exitingException != null) {
-                throw exitingException;
-            }
-        } catch (InterruptedException e) {
-            // FIXME: output warning
+        } catch (InterruptedException iExcptn) {
+            Asserts.assertNotReached();
+        }
+        if (exitingException != null) {
+            throw exitingException;
         }
         return this;
     }
-
-
 
     public RubyBoolean has_key(IRubyObject key) {
         String name = keyName(key);
@@ -327,20 +332,20 @@ public class RubyThread extends RubyObject {
         }
     }
 
+    /**
+     * Method ensureStarted.
+     */
     private void ensureStarted() {
-        // Note: If this is required in too many places we can always
-        // wait when we start a thread instead. But i imagine that
-        // performance is more important there. -Anders
-
-        while (! hasStarted) {
-            // The JVM's join() may return directly if it is called
-            // on a not-yet started thread. We give the thread
-            // a chance to start before we proceed.
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                // FIXME: output warning
+        synchronized (hasStartedLock) {
+            if (!hasStarted) {
+                try {
+                    hasStartedLock.wait();
+                } catch (InterruptedException iExcptn) {
+                    Asserts.assertNotReached();
+                }
             }
         }
+
     }
+
 }

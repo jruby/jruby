@@ -34,6 +34,7 @@ v = nil
 t = Thread.new {
   v = Thread.current.status
 }
+t.join
 test_equal("run", v)
 
 def thread_foo()
