@@ -956,10 +956,13 @@ public final class Ruby {
         //	don't know what this is used for in MRI, it holds the handle of all loaded libs
         //		ruby_dln_librefs = rb_ary_new();
 
-        //in MRI the ruby installation path is determined from the place where the ruby lib is found
-        //of course we can't do that, let's just use the jruby.home property
+        // in MRI the ruby installation path is determined from the place where the ruby lib is found
+        // of course we can't do that, let's just use the jruby.home property
         String lRubyHome = System.getProperty("jruby.home");
-        String lRubyLib = System.getProperty("jruby.lib", lRubyHome + File.separatorChar + "lib");
+        String lRubyLib = System.getProperty("jruby.lib");
+        /*if (lRubyLib == null && lRubyHome != null && lRubyHome.length() != 0) {
+            lRubyLib = lRubyHome + File.separatorChar + "lib";
+        }*/
 
         for (int i = ioAdditionalDirectory.size() - 1; i >= 0; i--) {
             ioAdditionalDirectory.set(i, new RubyString(this, (String) ioAdditionalDirectory.get(i)));

@@ -2,9 +2,8 @@
  * RubyRuntime.java - No description
  * Created on 09. November 2001, 15:47
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,7 +26,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.runtime;
 
 import java.io.*;
@@ -38,7 +36,7 @@ import org.jruby.nodes.*;
 import org.jruby.util.*;
 
 /**
- *
+ * @version $Revision$
  * @author  jpetersen
  */
 public class RubyRuntime {
@@ -144,8 +142,8 @@ public class RubyRuntime {
             ruby.setInEval(ruby.getInEval() - 1);
 
             self.evalNode(ruby.getParserHelper().getEvalTree());
-        } catch (Exception excptn) {
-            excptn.printStackTrace(getErrorStream());
+        /*} catch (Exception excptn) {
+            excptn.printStackTrace(getErrorStream());*/
         } finally {
             ruby.getRubyFrame().setLastFunc(last_func);
 

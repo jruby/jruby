@@ -2,9 +2,8 @@
  * TestRuby.java - TestClass for the Ruby class
  * Created on 28. Nov 2001, 15:18
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
@@ -28,119 +27,113 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
+package org.jruby.test;
+
+import java.io.*;
+import java.util.*;
+
+import org.jruby.*;
+import org.jruby.regexp.*;
 
 /**
+ * Unit test for the ruby class.
+ * 
  * @author Benoit
  * @version $Revision$
  */
-
-
-package org.jruby.test;
-
-import junit.framework.TestCase;
-import org.jruby.Ruby;
-import org.jruby.runtime.RubyRuntime;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyArray;
-import org.jruby.regexp.GNURegexpAdapter;
-import java.util.ArrayList;
-import java.io.File;
-/**
- * Unit test for the ruby class.
- **/
 public class TestRuby extends TestRubyBase {
 
     public TestRuby(String name) {
-	super(name);
+        super(name);
     }
 
     public void setUp() {
-	ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+        ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
     }
 
     public void testInitLoad() {
-	ArrayList list = new ArrayList();
-	//check without a RubyHome and with one parameter
-	list.add("toto");
-	ruby.initLoad(list);
-	//check that the global vars are correctly valuated
-	RubyObject lCol = ruby.getGlobalVar("$:");
-	RubyObject lI = ruby.getGlobalVar("$-I");
-	RubyObject lLoad = ruby.getGlobalVar("$LOAD_PATH");
-	assertTrue(lCol == lI && lI == lLoad && lLoad != null);
-	RubyArray lLoadA = (RubyArray)lLoad;
-	//check that we have 2 non null element
-	assertTrue(((RubyFixnum)lLoadA.nitems()).getValue()== 2);
-	//check that it is what we expect, a RubyString of the correct type
-	assertTrue(new RubyString(ruby,"toto").equal(lLoadA.shift()));
-	assertTrue(new RubyString(ruby,".").equal(lLoadA.shift()));
-	//check the case when RubyHome is valuated
-	System.setProperty("jruby.home", "RubyHome");
-	//MRI result
-	/*
-C:\dev\jruby>ruby -e "puts $:"
-/cygdrive/d/ruby/lib/ruby/site_ruby/1.6
-/cygdrive/d/ruby/lib/ruby/site_ruby/1.6/i386-cygwin
-/cygdrive/d/ruby/lib/ruby/site_ruby
-/cygdrive/d/ruby/lib/ruby/1.6
-/cygdrive/d/ruby/lib/ruby/1.6/i386-cygwin
-.
-
-	 */
-	ruby.initLoad(new ArrayList());
-	String wanted;
-	if (File.separatorChar == '/') {
-	    wanted = "RubyHome/lib/ruby/site_ruby/1.6" 
-		+ "RubyHome/lib/ruby/site_ruby/1.6/JAVA"
-		+ "RubyHome/lib/ruby/site_ruby"
-		+ "RubyHome/lib/ruby/1.6"
-		+ "RubyHome/lib/ruby/1.6/JAVA"
-		+ ".\n";
-	} else {
-	    wanted = "RubyHome\\lib\\ruby\\site_ruby\\1.6" 
-		+ "RubyHome\\lib\\ruby\\site_ruby\\1.6\\JAVA"
-		+ "RubyHome\\lib\\ruby\\site_ruby"
-		+ "RubyHome\\lib\\ruby\\1.6"
-		+ "RubyHome\\lib\\ruby\\1.6\\JAVA"
-		+ ".";
-	}
-	assertEquals(wanted, eval("puts $:"));
+        ArrayList list = new ArrayList();
+        //check without a RubyHome and with one parameter
+        System.setProperty("jruby.home", "");
+        list.add("toto");
+        ruby.initLoad(list);
+        //check that the global vars are correctly valuated
+        RubyObject lCol = ruby.getGlobalVar("$:");
+        RubyObject lI = ruby.getGlobalVar("$-I");
+        RubyObject lLoad = ruby.getGlobalVar("$LOAD_PATH");
+        assertTrue(lCol == lI && lI == lLoad && lLoad != null);
+        RubyArray lLoadA = (RubyArray) lLoad;
+        //check that we have 2 non null element
+        assertTrue(((RubyFixnum) lLoadA.nitems()).getValue() == 2);
+        //check that it is what we expect, a RubyString of the correct type
+        assertTrue(new RubyString(ruby, "toto").equal(lLoadA.shift()));
+        assertTrue(new RubyString(ruby, ".").equal(lLoadA.shift()));
+        //check the case when RubyHome is valuated
+        System.setProperty("jruby.home", "RubyHome");
+        //MRI result
+        /*
+        C:\dev\jruby>ruby -e "puts $:"
+        /cygdrive/d/ruby/lib/ruby/site_ruby/1.6
+        /cygdrive/d/ruby/lib/ruby/site_ruby/1.6/i386-cygwin
+        /cygdrive/d/ruby/lib/ruby/site_ruby
+        /cygdrive/d/ruby/lib/ruby/1.6
+        /cygdrive/d/ruby/lib/ruby/1.6/i386-cygwin
+        .
+        
+         */
+        ruby.initLoad(new ArrayList());
+        String wanted;
+        if (File.separatorChar == '/') {
+            wanted =
+                "RubyHome/lib/ruby/site_ruby/1.6"
+                    + "RubyHome/lib/ruby/site_ruby/1.6/JAVA"
+                    + "RubyHome/lib/ruby/site_ruby"
+                    + "RubyHome/lib/ruby/1.6"
+                    + "RubyHome/lib/ruby/1.6/JAVA"
+                    + ".";
+        } else {
+            wanted =
+                "RubyHome\\lib\\ruby\\site_ruby\\1.6"
+                    + "RubyHome\\lib\\ruby\\site_ruby\\1.6\\JAVA"
+                    + "RubyHome\\lib\\ruby\\site_ruby"
+                    + "RubyHome\\lib\\ruby\\1.6"
+                    + "RubyHome\\lib\\ruby\\1.6\\JAVA"
+                    + ".";
+        }
+        assertEquals(wanted, eval("puts $:"));
     }
 
     public void testFindFile() {
-	ArrayList list = new ArrayList();
-	ruby.initLoad(list);
-	list.clear();
-	File testFile = new File("fib.rb");
-	try {
-	    ruby.findFile(testFile);
-	    fail("should have thrown an exception, the file fib.rb is not 					in the search path");
-	}
-	catch (Exception e) {
-	}
-	list.add("./samples");
-	//now we valuate the path 
-	ruby.initLoad(list);
-	assertEquals(new File("./samples/fib.rb"), ruby.findFile(testFile));
+        ArrayList list = new ArrayList();
+        ruby.initLoad(list);
+        list.clear();
+        File testFile = new File("fib.rb");
+        try {
+            ruby.findFile(testFile);
+            fail("should have thrown an exception, the file fib.rb is not 					in the search path");
+        } catch (Exception e) {
+        }
+        list.add("./samples");
+        //now we valuate the path 
+        ruby.initLoad(list);
+        assertEquals(new File("./samples/fib.rb"), ruby.findFile(testFile));
     }
 
-    public void testVarAndMet()	 {	
-	ArrayList list = new ArrayList();
-	ruby.initLoad(list);
-	eval("load './test/testVariableAndMethod.rb'");
-	assertEquals("Hello World", eval("puts($a)"));
-	assertEquals("dlroW olleH", eval("puts $b"));
-	assertEquals("Hello World", eval("puts $d.reverse, $c, $e.reverse"));
-	assertEquals("135 20 3", eval("puts $f, \" \", $g, \" \",  $h"));
+    public void testVarAndMet() {
+        ArrayList list = new ArrayList();
+        ruby.initLoad(list);
+        eval("load './test/testVariableAndMethod.rb'");
+        assertEquals("Hello World", eval("puts($a)"));
+        assertEquals("dlroW olleH", eval("puts $b"));
+        assertEquals("Hello World", eval("puts $d.reverse, $c, $e.reverse"));
+        assertEquals("135 20 3", eval("puts $f, \" \", $g, \" \",  $h"));
     }
 
     private void assertTrue(RubyObject iObj) {
-	assertTrue(iObj.isTrue());
+        assertTrue(iObj.isTrue());
     }
     public void tearDown() {
-	super.tearDown();
+        super.tearDown();
     }
 
 }
