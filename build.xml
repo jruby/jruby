@@ -107,13 +107,13 @@
 
   	<target name="compile" depends="copy.with.expansion"
 		description="Compile the source files for the project.">
-        <javac destdir="${jruby.classes.dir}" debug="true">
+        <javac destdir="${jruby.classes.dir}" debug="true" source="1.4">
            <classpath refid="build.classpath"/>
            <src path="${gen-src.dir}"/>
            <include name="**/Constants.java"/>
         </javac>
  
-        <javac destdir="${jruby.classes.dir}" debug="true">
+        <javac destdir="${jruby.classes.dir}" debug="true" source="1.4">
            <classpath refid="build.classpath"/>
            <src path="${src.dir}"/>
            <src path="${gen-src.dir}"/>
