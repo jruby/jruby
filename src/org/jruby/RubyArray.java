@@ -344,9 +344,17 @@ public class RubyArray extends RubyObject {
     	RubyArray newArray = getRuntime().newArray();
 
     	for (int i = 0; i < args.length; i++) {
-    		newArray.append(aref(new IRubyObject[] {args[i]}));
+    		IRubyObject o = aref(new IRubyObject[] {args[i]});
+    		if (args[i] instanceof RubyRange) {
+    			if (o instanceof RubyArray) {
+    				for (Iterator j = ((RubyArray) o).getList().iterator(); j.hasNext();) {
+    					newArray.append((IRubyObject) j.next());
+    				}
+    			}
+    		} else {
+    			newArray.append(o);    			
+    		}
     	}
-    	
     	return newArray;
     }
     
@@ -983,35 +991,55 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject fill(IRubyObject[] args) {
-        int argc = checkArgumentCount(args, 1, 3);
         int beg = 0;
         int len = getLength();
+        int argc;
+        IRubyObject filObj;
+        IRubyObject begObj;
+        IRubyObject lenObj;
+        Ruby runtime = getRuntime();
+        if (runtime.isBlockGiven()) {
+        	argc = checkArgumentCount(args, 0, 2);
+        	filObj = null;
+        	begObj = argc > 0 ? args[0] : null;
+        	lenObj = argc > 1 ? args[1] : null;
+        	argc++;
+        } else {
+        	argc = checkArgumentCount(args, 1, 3);
+        	filObj = args[0];
+        	begObj = argc > 1 ? args[1] : null;
+        	lenObj = argc > 2 ? args[2] : null;
+        }
         switch (argc) {
             case 1 :
                 break;
             case 2 :
-                if (args[1] instanceof RubyRange) {
-                    long[] begLen = ((RubyRange) args[1]).getBeginLength(len, false, true);
+                if (begObj instanceof RubyRange) {
+                    long[] begLen = ((RubyRange) begObj).getBeginLength(len, false, true);
                     beg = (int) begLen[0];
                     len = (int) begLen[1];
                     break;
                 }
                 /* fall through */
             default :
-                beg = args[1].isNil() ? beg : RubyNumeric.fix2int(args[1]);
+                beg = begObj.isNil() ? beg : RubyNumeric.fix2int(begObj);
                 if (beg < 0 && (beg += len) < 0) {
                     throw getRuntime().newIndexError("Negative array index");
                 }
                 len -= beg;
-                if (argc == 3 && !args[2].isNil()) {
-                    len = RubyNumeric.fix2int(args[2]);
+                if (argc == 3 && !lenObj.isNil()) {
+                    len = RubyNumeric.fix2int(lenObj);
                 }
         }
 
         modify();
         autoExpand(beg + len);
         for (int i = beg; i < beg + len; i++) {
-            list.set(i, args[0]);
+        	if (filObj == null) {
+        		list.set(i, runtime.yield(runtime.newFixnum(i)));
+        	} else {
+        		list.set(i, filObj);
+        	}
         }
         return this;
     }
