@@ -967,7 +967,7 @@ public class RubyString extends RubyObject {
         if (pfClass == null) {
             try {
                 Class c = Class.forName("org.jruby.util.PrintfFormat");
-                pfClass = RubyJavaObject.loadClass(getRuby(), c, null);
+                pfClass = (RubyClass)RubyJavaObject.loadClass(getRuby(), c, null);
             } catch (ClassNotFoundException ex) {
                 throw new RubyBugException("couldn't find PrintfFormat class");
             }

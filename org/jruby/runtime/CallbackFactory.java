@@ -34,6 +34,10 @@ public final class CallbackFactory {
     public static Callback getOptSingletonMethod(Class type, String method, Class arg1) {
         return new ReflectionCallbackMethod(type, method, new Class[] { arg1, RubyObject[].class }, true, true);
     }
+    
+    public static Callback getOptSingletonMethod(Class type, String method, Class[] args) {
+        return new ReflectionCallbackMethod(type, method, args, true, true);
+    }
 
     public static Callback getOptSingletonMethod(Class type, String method) {
         return new ReflectionCallbackMethod(type, method, true, true);
@@ -43,6 +47,10 @@ public final class CallbackFactory {
         return new ReflectionCallbackMethod(type, method, true);
     }
 
+    public static Callback getOptMethod(Class type, String method, Class arg1) {
+        return new ReflectionCallbackMethod(type, method, new Class[]{arg1, RubyObject[].class}, true);
+    }
+    
     public static Callback getFalseMethod() {
         return new Callback() {
             public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {

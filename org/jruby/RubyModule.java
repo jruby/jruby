@@ -662,7 +662,7 @@ public class RubyModule extends RubyObject {
         MethodNode methodNode = searchMethod(name);
 
         if (methodNode == null || methodNode.getBodyNode() == null) {
-            System.out.println("Cant find method \"" + name + "\" in class " + toName());
+            // System.out.println("Cant find method \"" + name + "\" in class " + toName());
 
             RubyMethodCacheEntry.saveEmptyEntry(getRuby(), this, name);
 
@@ -713,7 +713,12 @@ public class RubyModule extends RubyObject {
 
         if (ent != null) {
             if (ent.getMethod() == null) {
-                throw new RuntimeException("undefined method " + name + " for " + recv + ":" + recv.getRubyClass().toName());
+                RubyPointer newArgs = new RubyPointer();
+                newArgs.add(RubySymbol.newSymbol(getRuby(), name));
+                if (args != null) {
+                	newArgs.addAll(args);
+                }
+                return recv.funcall("method_missing", newArgs);
             }
 
             klass = ent.getOrigin();
@@ -731,7 +736,12 @@ public class RubyModule extends RubyObject {
                 if (scope == 3) {
                     throw new RubyNameException(getRuby(), "super: no superclass method '" + name + "'");
                 }
-                throw new RuntimeException("undefined method " + name + " for " + recv + ":" + recv.getRubyClass().toName());
+                RubyPointer newArgs = new RubyPointer();
+                newArgs.add(RubySymbol.newSymbol(getRuby(), name));
+                if (args != null) {
+                	newArgs.addAll(args);
+                }
+                return recv.funcall("method_missing", newArgs);
             }
         }
 

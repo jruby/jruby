@@ -251,6 +251,8 @@ public class RubyObject {
 
         kernelModule.defineAlias("===", "==");
         kernelModule.defineAlias("equal?", "==");
+        
+        kernelModule.getRuby().defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
     }
 
     protected int argCount(RubyObject[] args, int min, int max) {
@@ -936,5 +938,13 @@ public class RubyObject {
             args[i].funcall("extend_object", this);
         }
         return this;
+    }
+    
+	public RubyObject method_missing(RubyObject symbol, RubyObject[] args) {
+	    // +++
+	    // IMPLEMENT THIS METHOD
+	    // ---
+	    
+		throw new RubyNameException(getRuby(), "undefined method '" + symbol.toId() + "' for " + type().toName());
     }
 }

@@ -112,6 +112,7 @@ public class RubyClasses {
     private RubyClass ioClass;
     private RubyClass javaInterfaceClass;
     private RubyClass javaObjectClass;
+    private RubyClass javaIObjectClass;
     private RubyClass matchDataClass;
     private RubyClass methodClass;
     private RubyClass moduleClass;
@@ -248,6 +249,7 @@ public class RubyClasses {
         rangeClass = RubyRange.createRangeClass(ruby);
 
         javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
+        javaIObjectClass = RubyJavaIObject.createJavaInterfaceObjectClass(ruby);
         javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
 
         exceptionClass = RubyException.createExceptionClass(ruby);
@@ -531,6 +533,13 @@ public class RubyClasses {
      */
     public RubyClass getJavaObjectClass() {
         return javaObjectClass;
+    }
+
+    /** Returns the reference to the JavaInterface class.
+     * @return The JavaInterface class.
+     */
+    public RubyClass getJavaIObjectClass() {
+        return javaIObjectClass;
     }
 
     /** Returns the reference to the JavaInterface class.

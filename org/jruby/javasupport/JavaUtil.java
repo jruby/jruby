@@ -168,6 +168,6 @@ public class JavaUtil {
             }
             return RubyArray.create(ruby, null, items);
         }
-        return new RubyJavaObject(ruby, RubyJavaObject.loadClass(ruby, javaClass, null), object);
+        return new RubyJavaObject(ruby, (RubyClass)RubyJavaObject.loadClass(ruby, javaClass, null), object);
     }
 }

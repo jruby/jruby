@@ -109,15 +109,25 @@ public class RubyJavaObject extends RubyObject {
         classMap.put(javaClass, rubyClass);
     }
 
-    public static RubyClass loadClass(Ruby ruby, Class javaClass, String rubyName) {
+    public static RubyObject loadClass(Ruby ruby, Class javaClass, String rubyName) {
         RubyClass newRubyClass = getRubyClass(ruby, javaClass);
         if (newRubyClass != null) {
             return newRubyClass;
         }
+        
         if (rubyName == null) {
             String javaName = javaClass.getName();
             rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
         }
+        
+        // Interfaces
+        if (javaClass.isInterface()) {
+            RubyObject newInterface = new RubyObject(ruby, ruby.getClasses().getJavaInterfaceClass());
+            newInterface.setInstanceVar("interfaceName", RubyString.newString(ruby, rubyName));
+            ruby.defineGlobalConstant(rubyName, newInterface);
+            return newInterface;
+        }
+        
         Map methodMap = new HashMap();
         Map singletonMethodMap = new HashMap();
 
