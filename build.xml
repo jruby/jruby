@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. --><project basedir="." default="all" name="JRuby">
 
-    <property name="build.dir" value="/home/jpetersen/development/jruby-build"/>
-    <property name="bsf.jar" value="/home/jpetersen/development/bsf/lib/bsf.jar"/>
+    <property name="build.dir" value="jruby-build"/>
+    <property name="bsf.jar" value="lib/bsf.jar"/>
     
     <!--<property name="build.compiler" value="jikes"/-->
     <property name="build.compiler" value="modern"/>

@@ -72,7 +72,7 @@ public class RbModule {
         moduleClass.defineMethod("class_variables", getMethod("m_class_variables", false));
         moduleClass.definePrivateMethod("remove_class_variable", getMethod("m_remove_class_variable", RubyObject.class, false));
         
-        moduleClass.definePrivateMethod("append_features", getMethod("m_remove_append_features", RubyModule.class, false));
+        moduleClass.definePrivateMethod("append_features", getMethod("m_append_features", RubyModule.class, false));
         moduleClass.definePrivateMethod("extend_object", getMethod("m_extend_object", RubyObject.class, false));
         moduleClass.definePrivateMethod("include", getMethod("m_include", true));
         moduleClass.definePrivateMethod("public", getMethod("m_public", true));
