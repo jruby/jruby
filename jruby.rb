@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 #
+# Start script for JRuby interpreter.
+#
+# Uses a non-Java Ruby to start up JRuby.
 #
 
 class Classpath
