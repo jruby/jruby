@@ -110,27 +110,11 @@ public class Block implements StackElement {
     }
 
     /**
-     * Sets the dynamicVariables.
-     * @param dynamicVars The dynamicVariables to set
-     */
-    public void setDynamicVariables(Map dynamicVars) {
-        this.dynamicVariables = dynamicVars;
-    }
-
-    /**
      * Gets the frame.
      * @return Returns a RubyFrame
      */
     public Frame getFrame() {
         return frame;
-    }
-
-    /**
-     * Sets the frame.
-     * @param frame The frame to set
-     */
-    public void setFrame(Frame frame) {
-        this.frame = frame;
     }
 
     /**
@@ -158,43 +142,11 @@ public class Block implements StackElement {
     }
 
     /**
-     * Sets the klass.
-     * @param klass The klass to set
-     */
-    public void setKlass(RubyModule klass) {
-        this.klass = klass;
-    }
-
-    /**
      * Gets the method.
      * @return Returns a IMethod
      */
     public ICallable getMethod() {
         return method;
-    }
-
-    /**
-     * Sets the method.
-     * @param method The method to set
-     */
-    public void setMethod(ICallable method) {
-        this.method = method;
-    }
-
-    /**
-     * Gets the origThread.
-     * @return Returns a RubyObject
-     */
-    public RubyObject getOrigThread() {
-        return origThread;
-    }
-
-    /**
-     * Sets the origThread.
-     * @param origThread The origThread to set
-     */
-    public void setOrigThread(RubyObject origThread) {
-        this.origThread = origThread;
     }
 
     /**
@@ -206,14 +158,6 @@ public class Block implements StackElement {
     }
 
     /**
-     * Sets the scope.
-     * @param scope The scope to set
-     */
-    public void setScope(Scope scope) {
-        this.scope = scope;
-    }
-
-    /**
      * Gets the self.
      * @return Returns a RubyObject
      */
@@ -222,26 +166,10 @@ public class Block implements StackElement {
     }
 
     /**
-     * Sets the self.
-     * @param self The self to set
-     */
-    public void setSelf(RubyObject self) {
-        this.self = self;
-    }
-
-    /**
      * Gets the var.
      * @return Returns a INode
      */
     public INode getVar() {
         return var;
-    }
-
-    /**
-     * Sets the var.
-     * @param var The var to set
-     */
-    public void setVar(INode var) {
-        this.var = var;
     }
 }
