@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
 # Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+# Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
 # Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
 #
 # JRuby - http://jruby.sourceforge.net
@@ -278,41 +279,52 @@ END
 
     def setup_instance_methods(java_class, proxy_class)
       def proxy_class.create_instance_methods(java_class)
-        public_methods =
-          java_class.java_instance_methods.select {|m| m.public? }
-        grouped_methods = public_methods.group_by {|m| m.name }
-        grouped_methods.each do |name, methods|
-	  # Only one method by this name
-          if methods.length == 1
-            m = methods.first
-            return_type = m.return_type
-            define_method(m.name) do |*args|
-              args = JavaProxy.convert_arguments(args)
-              if m.arity != args.length
-                raise ArgumentError.new("wrong # of arguments(#{args.length} for #{m.arity})")
-              end
-              result = m.invoke(self.java_object, *args)
-              result = Java.java_to_primitive(result)
-              if result.kind_of?(JavaObject)
-                result = JavaUtilities.wrap(result, m.return_type)
-              end
-              result
+        java_class.java_instance_methods.select { |m| 
+          m.public? 
+        }.group_by { |m| 
+          m.name 
+        }.each { |name, methods|
+          # Define literal java method (e.g. getFoo())
+          define_method(name) do |*args|
+            args = convert_arguments(args)
+            m = JavaUtilities.matching_method(methods.find_all {|m|
+              m.arity == args.length}, args)
+            result = m.invoke(self.java_object, *args)
+            result = Java.java_to_primitive(result)
+            if result.kind_of?(JavaObject)
+              result = JavaUtilities.wrap(result, m.return_type)
             end
-          else
-            define_method(name) do |*args|
+            result
+	      end
+	      
+	      # Lets treat javabean properties like ruby attributes
+	      case name[0,4]
+	      when /get./
+	        define_method(name[3..-1].downcase!) do |*args|
               args = convert_arguments(args)
               m = JavaUtilities.matching_method(methods.find_all {|m|
-	            m.arity == args.length
-                  }, args)
+                m.arity == args.length}, args)
               result = m.invoke(self.java_object, *args)
               result = Java.java_to_primitive(result)
               if result.kind_of?(JavaObject)
                 result = JavaUtilities.wrap(result, m.return_type)
               end
               result
-            end
-          end
-        end
+	        end
+	      when /set./
+	      	define_method(name[3..-1].downcase!.concat('=')) do |*args|
+              args = convert_arguments(args)
+              m = JavaUtilities.matching_method(methods.find_all {|m|
+                m.arity == args.length}, args)
+              result = m.invoke(self.java_object, *args)
+              result = Java.java_to_primitive(result)
+              if result.kind_of?(JavaObject)
+                result = JavaUtilities.wrap(result, m.return_type)
+              end
+              result
+	        end
+	      end
+	    }
       end
       proxy_class.create_instance_methods(java_class)
     end

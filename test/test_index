@@ -41,6 +41,7 @@ testLoad.rb
 testKernel.rb
 testCase.rb
 testLine.rb
+testJavaProxy.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

@@ -65,9 +65,22 @@ if defined? Java
     test_equal(true, Boolean.valueOf("true"))
     test_equal(false, Boolean.valueOf(false))
 
+    include_package 'org.jruby.javasupport.test'
+
+    # Java bean convention properties as attributes
+    color = Color.new("green")
+
+    test_ok(color.color == "green")
+
+    color.color = "blue"
+
+    test_ok(color.color == "blue")
+    
+
     # Constants
     test_equal(9223372036854775807, Long::MAX_VALUE)
     test_ok(! defined? Character::Y_DATA)  # Known private field in Character
+    ConstantHolder  # class definition with "_" constant causes error
 
     # Using arrays
     list = ArrayList.new
