@@ -1,4 +1,5 @@
 .tmp
 release
-JRuby.ipr
-JRuby.iws
+jruby.ipr
+jruby.iws
+build
