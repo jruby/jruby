@@ -57,7 +57,7 @@ import org.jruby.util.collections.*;
  * @version $Revision$
  * @since   0.1
  * @fixme  a mechanism should be there to avoid creating several instances of the same
- * 		   value objects with the same value (this would apply to String and number specifically)
+ * 		   value objects with the same value (this would apply to Symbol and number specifically)
  */
 public final class Ruby {
 
@@ -444,80 +444,58 @@ public final class Ruby {
             self = actBlock.getSelf();
         }
 
-        IMethod method = actBlock.getMethod(); // actBlock.body;
+        if (value == null) {
+            value = RubyArray.newArray(this, 0);
+        }
 
-        if (actBlock.getVar() != null) {
+        IMethod method = actBlock.getMethod();
+
+        if (method == null) {
+            return getNil();
+        }
+
+        INode blockVar = actBlock.getVar(); // ... What exactly is a "var"? A variable?
+
+        if (blockVar != null) {
             // try {
-            if (actBlock.getVar() instanceof ZeroArgNode) {
-                if (acheck && value != null && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
-
+            if (blockVar instanceof ZeroArgNode) {
+                if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() != 0) {
                     throw new ArgumentError(this, "wrong # of arguments (" + ((RubyArray) value).getLength() + " for 0)");
                 }
             } else {
-                if (!(actBlock.getVar() instanceof MultipleAsgnNode)) {
-                    if (acheck && value != null && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
+                if (!(blockVar instanceof MultipleAsgnNode)) {
+                    if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
                         value = ((RubyArray) value).entry(0);
                     }
                 }
-                new AssignmentVisitor(this, self).assign(actBlock.getVar(), value, acheck);
+                new AssignmentVisitor(this, self).assign(blockVar, value, acheck);
             }
-            // } catch () {
-            //    goto pop_state;
-            // }
-
         } else {
-            if (acheck && value != null && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
-
+            if (acheck && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
                 value = ((RubyArray) value).entry(0);
             }
         }
 
         getIterStack().push(actBlock.getIter());
+
+        RubyObject[] args;
+        if (value instanceof RubyArray) {
+            args = ((RubyArray) value).toJavaArray();
+        } else {
+            args = new RubyObject[] { value };
+        }
+
         try {
             while (true) {
                 try {
-                    if (method == null) {
-                        return getNil();
-                    } else {
-                        if (value == null) {
-                            value = RubyArray.newArray(this, 0);
-                        }
-
-                        RubyObject[] args = { value };
-
-                        // XXX
-                        if (value instanceof RubyArray) {
-                            args = ((RubyArray) value).toJavaArray();
-                        }
-                        // XXX
-
-                        return method.execute(this, self, null, args, false);
-
-                        /*if (method instanceof ExecutableNode) {
-                        if (value == null) {
-                            value = RubyArray.newArray(this, 0);
-                        }
-                        // FIXME
-                        /*                        return ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
-                        } else {
-                        return node.eval(this, self);*/
-                    }
+                    return method.execute(this, self, null, args, false);
                 } catch (RedoJump rExcptn) {
                 }
             }
-            //break;
-
         } catch (NextJump nExcptn) {
             return getNil();
-            /*            } catch (BreakException bExcptn) {
-                            throw bExcptn;*/
         } catch (ReturnException rExcptn) {
-            // break;
             return rExcptn.getReturnValue();
-            /* catch (BreakException bExcptn) {
-                // +++
-                throw new ReturnException(getNil());
-                // ---*/
         } finally {
             getIterStack().pop();
             popClass();
