@@ -28,7 +28,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.Ruby;
-import org.jruby.UnboundMethod;
+import org.jruby.RubyUnboundMethod;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,13 +39,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class MethodMethod extends AbstractMethod {
-    private UnboundMethod method;
+    private RubyUnboundMethod method;
 
     /**
      * Constructor for MethodMethod.
      * @param visibility
      */
-    public MethodMethod(UnboundMethod method, Visibility visibility) {
+    public MethodMethod(RubyUnboundMethod method, Visibility visibility) {
         super(visibility);
         this.method = method;
     }

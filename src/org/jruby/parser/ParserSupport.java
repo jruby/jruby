@@ -183,7 +183,7 @@ public class ParserSupport {
             } else if (getLocalNames().isLocalRegistered(id)) {
                 return new LocalVarNode(position, getLocalNames().getLocalIndex(id));
             }
-            return new VCallNode(position, id); // Method call without arguments.
+            return new VCallNode(position, id); // RubyMethod call without arguments.
         } else if (IdUtil.isGlobal(id)) {
             return new GlobalVarNode(position, id);
         } else if (IdUtil.isInstanceVariable(id)) {
@@ -537,7 +537,7 @@ public class ParserSupport {
     }
 
     /**
-    *  Description of the Method
+    *  Description of the RubyMethod
     */
     public void initTopLocalVariables() {
         localNames.push();
@@ -553,7 +553,7 @@ public class ParserSupport {
     }
 
     /**
-     *  Description of the Method
+     *  Description of the RubyMethod
      */
     public void updateTopLocalVariables() {
         result.setLocalVariables(localNames.getNames().size() > 0 ? localNames.getNames() : null);

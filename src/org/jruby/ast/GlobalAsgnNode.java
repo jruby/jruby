@@ -51,7 +51,7 @@ public class GlobalAsgnNode extends AssignableNode implements INameNode {
     }
 
     /**
-     * Method used by visitors.
+     * RubyMethod used by visitors.
      * accepts the visitor 
      * @param iVisitor the visitor to accept
      **/

@@ -3,10 +3,12 @@
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Charles O Nutter <headius@headius.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -36,14 +38,16 @@ import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /** 
- * The RubyMethod class represents a Method object.
+ * The RubyMethod class represents a RubyMethod object.
  * 
  * You can get such a method by calling the "method" method of an object.
+ * 
+ * Note: This was renamed from Method.java
  * 
  * @author  jpetersen
  * @since 0.2.3
  */
-public class Method extends RubyObject {
+public class RubyMethod extends RubyObject {
     protected RubyModule implementationModule;
     protected String methodName;
     protected RubyModule originModule;
@@ -51,33 +55,33 @@ public class Method extends RubyObject {
     protected ICallable method;
     protected IRubyObject receiver;
 
-    protected Method(Ruby runtime, RubyClass rubyClass) {
+    protected RubyMethod(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 
-    /** Create the Method class and add it to the Ruby runtime.
+    /** Create the RubyMethod class and add it to the Ruby runtime.
      * 
      */
     public static RubyClass createMethodClass(Ruby runtime) {
-		RubyClass methodClass = runtime.defineClass("Method", runtime.getClasses().getObjectClass());
+		RubyClass methodClass = runtime.defineClass("RubyMethod", runtime.getClasses().getObjectClass());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory();
         
 		methodClass.defineMethod("arity", 
-				callbackFactory.getMethod(Method.class, "arity"));
+				callbackFactory.getMethod(RubyMethod.class, "arity"));
 		methodClass.defineMethod("to_proc", 
-				callbackFactory.getMethod(Method.class, "to_proc"));
+				callbackFactory.getMethod(RubyMethod.class, "to_proc"));
 		methodClass.defineMethod("unbind", 
-				callbackFactory.getMethod(Method.class, "unbind"));
+				callbackFactory.getMethod(RubyMethod.class, "unbind"));
 		methodClass.defineMethod("call", 
-				callbackFactory.getOptMethod(Method.class, "call"));
+				callbackFactory.getOptMethod(RubyMethod.class, "call"));
 		methodClass.defineMethod("[]", 
-				callbackFactory.getOptMethod(Method.class, "call"));
+				callbackFactory.getOptMethod(RubyMethod.class, "call"));
 
 		return methodClass;
     }
 
-    public static Method newMethod(
+    public static RubyMethod newMethod(
         RubyModule implementationModule,
         String methodName,
         RubyModule originModule,
@@ -85,7 +89,7 @@ public class Method extends RubyObject {
         ICallable method,
         IRubyObject receiver) {
         Ruby runtime = implementationModule.getRuntime();
-        Method newMethod = new Method(runtime, runtime.getClass("Method"));
+        RubyMethod newMethod = new RubyMethod(runtime, runtime.getClass("RubyMethod"));
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
@@ -130,9 +134,9 @@ public class Method extends RubyObject {
      */
     public IRubyObject to_proc() {
         return runtime.iterate(
-            callbackFactory().getSingletonMethod(Method.class, "mproc"),
+            callbackFactory().getSingletonMethod(RubyMethod.class, "mproc"),
             runtime.getNil(),
-            callbackFactory().getBlockMethod(Method.class, "bmcall"),
+            callbackFactory().getBlockMethod(RubyMethod.class, "bmcall"),
             this);
     }
 
@@ -159,14 +163,14 @@ public class Method extends RubyObject {
      */
     public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1, IRubyObject self) {
         if (blockArg instanceof RubyArray) {
-            return ((Method) arg1).call(((RubyArray) blockArg).toJavaArray());
+            return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray());
         }
-        return ((Method) arg1).call(new IRubyObject[] { blockArg });
+        return ((RubyMethod) arg1).call(new IRubyObject[] { blockArg });
     }
 
-    public UnboundMethod unbind() {
-        UnboundMethod unboundMethod =
-        	UnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
+    public RubyUnboundMethod unbind() {
+        RubyUnboundMethod unboundMethod =
+        	RubyUnboundMethod.newUnboundMethod(implementationModule, methodName, originModule, originName, method);
         unboundMethod.receiver = this;
         unboundMethod.infectBy(this);
         

@@ -32,7 +32,7 @@ package org.jruby.evaluator;
 import org.jruby.Builtins;
 import org.jruby.RubyKernel;
 import org.jruby.MetaClass;
-import org.jruby.Method;
+import org.jruby.RubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -260,8 +260,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             } finally {
                 threadContext.getIterStack().pop();
             }
-        } else if (block instanceof Method) {
-            block = ((Method)block).to_proc();
+        } else if (block instanceof RubyMethod) {
+            block = ((RubyMethod)block).to_proc();
         } else if (!(block instanceof RubyProc)) {
             throw new TypeError(runtime, "wrong argument type " + block.getMetaClass().getName() + " (expected Proc)");
         }

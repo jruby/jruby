@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>, Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -30,22 +30,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * 
+ * Note: This was renamed from UnboundMethod.java
+ * 
  * @author jpetersen
  * @version $Revision$
  */
-public class UnboundMethod extends Method {
-    protected UnboundMethod(Ruby runtime) {
-        super(runtime, runtime.getClass("UnboundMethod"));
+public class RubyUnboundMethod extends RubyMethod {
+    protected RubyUnboundMethod(Ruby runtime) {
+        super(runtime, runtime.getClass("RubyUnboundMethod"));
     }
 
-    public static UnboundMethod newUnboundMethod(
+    public static RubyUnboundMethod newUnboundMethod(
         RubyModule implementationModule,
         String methodName,
         RubyModule originModule,
         String originName,
         ICallable method) {
         Ruby runtime = implementationModule.getRuntime();
-        UnboundMethod newMethod = new UnboundMethod(runtime);
+        RubyUnboundMethod newMethod = new RubyUnboundMethod(runtime);
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
@@ -57,33 +59,33 @@ public class UnboundMethod extends Method {
     }
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass = runtime.defineClass("UnboundMethod", runtime.getClass("Method"));
+        RubyClass newClass = runtime.defineClass("RubyUnboundMethod", runtime.getClass("RubyMethod"));
 
         CallbackFactory callbackFactory = runtime.callbackFactory();
-        newClass.defineMethod("[]", callbackFactory.getOptMethod(UnboundMethod.class, "call"));
-        newClass.defineMethod("bind", callbackFactory.getMethod(UnboundMethod.class, "bind", IRubyObject.class));
-        newClass.defineMethod("call", callbackFactory.getOptMethod(UnboundMethod.class, "call"));
-        newClass.defineMethod("to_proc", callbackFactory.getMethod(UnboundMethod.class, "to_proc"));
-        newClass.defineMethod("unbind", callbackFactory.getMethod(UnboundMethod.class, "unbind"));
+        newClass.defineMethod("[]", callbackFactory.getOptMethod(RubyUnboundMethod.class, "call"));
+        newClass.defineMethod("bind", callbackFactory.getMethod(RubyUnboundMethod.class, "bind", IRubyObject.class));
+        newClass.defineMethod("call", callbackFactory.getOptMethod(RubyUnboundMethod.class, "call"));
+        newClass.defineMethod("to_proc", callbackFactory.getMethod(RubyUnboundMethod.class, "to_proc"));
+        newClass.defineMethod("unbind", callbackFactory.getMethod(RubyUnboundMethod.class, "unbind"));
 
         return newClass;
     }
 
     /**
-     * @see org.jruby.Method#call(IRubyObject[])
+     * @see org.jruby.RubyMethod#call(IRubyObject[])
      */
     public IRubyObject call(IRubyObject[] args) {
         throw new TypeError(runtime, "you cannot call unbound method; bind first");
     }
 
     /**
-     * @see org.jruby.Method#unbind()
+     * @see org.jruby.RubyMethod#unbind()
      */
-    public UnboundMethod unbind() {
+    public RubyUnboundMethod unbind() {
         return this;
     }
 
-    public Method bind(IRubyObject receiver) {
+    public RubyMethod bind(IRubyObject receiver) {
         RubyClass receiverClass = receiver.getMetaClass();
         if (originModule != receiverClass) {
             if (originModule instanceof MetaClass) {
@@ -96,6 +98,6 @@ public class UnboundMethod extends Method {
                 throw new TypeError(runtime, "bind argument must be an instance of " + originModule.getName());
             }
         }
-        return Method.newMethod(implementationModule, methodName, receiverClass, originName, method, receiver);
+        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, receiver);
     }
 }

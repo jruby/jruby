@@ -48,7 +48,7 @@ public class BlockNode extends ListNode {
     }
 
     /**
-     * Method used by visitors.
+     * RubyMethod used by visitors.
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/

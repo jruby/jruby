@@ -45,14 +45,14 @@ public interface IRubyObject {
     public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];
     
     /**
-     * Method getInstanceVar.
+     * RubyMethod getInstanceVar.
      * @param string
      * @return RubyObject
      */
     IRubyObject getInstanceVariable(String string);
 
     /**
-     * Method setInstanceVar.
+     * RubyMethod setInstanceVar.
      * @param string
      * @param rubyObject
      * @return RubyObject
@@ -60,14 +60,14 @@ public interface IRubyObject {
     IRubyObject setInstanceVariable(String string, IRubyObject rubyObject);
 
     /**
-     * Method funcall.
+     * RubyMethod funcall.
      * @param string
      * @return RubyObject
      */
     IRubyObject callMethod(String string);
 
     /**
-     * Method isNil.
+     * RubyMethod isNil.
      * @return boolean
      */
     boolean isNil();
@@ -75,19 +75,19 @@ public interface IRubyObject {
     boolean isTrue();
 
     /**
-     * Method isTaint.
+     * RubyMethod isTaint.
      * @return boolean
      */
     boolean isTaint();
 
     /**
-     * Method isFrozen.
+     * RubyMethod isFrozen.
      * @return boolean
      */
     boolean isFrozen();
 
     /**
-     * Method funcall.
+     * RubyMethod funcall.
      * @param string
      * @param arg
      * @return RubyObject
@@ -95,51 +95,51 @@ public interface IRubyObject {
     IRubyObject callMethod(String string, IRubyObject arg);
 
     /**
-     * Method getRubyClass.
+     * RubyMethod getRubyClass.
      */
     RubyClass getMetaClass();
 
     void setMetaClass(RubyClass metaClass);
 
     /**
-     * Method getSingletonClass.
+     * RubyMethod getSingletonClass.
      * @return RubyClass
      */
     RubyClass getSingletonClass();
 
     /**
-     * Method getType.
+     * RubyMethod getType.
      * @return RubyClass
      */
     RubyClass getType();
 
     /**
-     * Method isKindOf.
+     * RubyMethod isKindOf.
      * @param rubyClass
      * @return boolean
      */
     boolean isKindOf(RubyModule rubyClass);
 
     /**
-     * Method respondsTo.
+     * RubyMethod respondsTo.
      * @param string
      * @return boolean
      */
     boolean respondsTo(String string);
 
     /**
-     * Method getRuntime.
+     * RubyMethod getRuntime.
      */
     Ruby getRuntime();
 
     /**
-     * Method getJavaClass.
+     * RubyMethod getJavaClass.
      * @return Class
      */
     Class getJavaClass();
 
     /**
-     * Method callMethod.
+     * RubyMethod callMethod.
      * @param method
      * @param rubyArgs
      * @return IRubyObject
@@ -147,14 +147,14 @@ public interface IRubyObject {
     IRubyObject callMethod(String method, IRubyObject[] rubyArgs);
 
     /**
-     * Method eval.
+     * RubyMethod eval.
      * @param iNode
      * @return IRubyObject
      */
     IRubyObject eval(Node iNode);
 
     /**
-     * Method eval.
+     * RubyMethod eval.
      * @param iRubyObject
      * @param rubyObject
      * @param string
@@ -164,7 +164,7 @@ public interface IRubyObject {
     IRubyObject eval(IRubyObject iRubyObject, IRubyObject rubyObject, String string, int i);
 
     /**
-     * Method extendObject.
+     * RubyMethod extendObject.
      * @param rubyModule
      */
     void extendObject(RubyModule rubyModule);
@@ -177,7 +177,7 @@ public interface IRubyObject {
     String asSymbol();
 
     /**
-     * Method convertToType.
+     * RubyMethod convertToType.
      * @param string
      * @param string1
      * @param b
@@ -187,24 +187,24 @@ public interface IRubyObject {
     IRubyObject convertToString();
 
     /**
-     * Method setTaint.
+     * RubyMethod setTaint.
      * @param b
      */
     void setTaint(boolean b);
 
     /**
-     * Method checkSafeString.
+     * RubyMethod checkSafeString.
      */
     void checkSafeString();
 
     /**
-     * Method marshalTo.
+     * RubyMethod marshalTo.
      * @param marshalStream
      */
     void marshalTo(MarshalStream marshalStream) throws IOException;
 
     /**
-     * Method convertType.
+     * RubyMethod convertType.
      * @param type
      * @param string
      * @param string1
@@ -212,30 +212,30 @@ public interface IRubyObject {
     IRubyObject convertType(Class type, String string, String string1);
 
     /**
-     * Method dup.
+     * RubyMethod dup.
      */
     IRubyObject dup();
 
     /**
-     * Method setupClone.
+     * RubyMethod setupClone.
      * @param rubyString
      */
     void setupClone(IRubyObject rubyString);
 
     /**
-     * Method setFrozen.
+     * RubyMethod setFrozen.
      * @param b
      */
     void setFrozen(boolean b);
 
     /**
-     * Method inspect.
+     * RubyMethod inspect.
      * @return String
      */
     RubyString inspect();
 
     /**
-     * Method argCount.
+     * RubyMethod argCount.
      * @param args
      * @param i
      * @param i1
@@ -244,13 +244,13 @@ public interface IRubyObject {
     int checkArgumentCount(IRubyObject[] args, int i, int i1);
 
     /**
-     * Method rbClone.
+     * RubyMethod rbClone.
      * @return IRubyObject
      */
     IRubyObject rbClone();
 
     /**
-     * Method isInstanceVarDefined.
+     * RubyMethod isInstanceVarDefined.
      * @param string
      * @return boolean
      */
@@ -259,14 +259,14 @@ public interface IRubyObject {
     public void callInit(IRubyObject[] args);
 
     /**
-     * Method method_missing.
+     * RubyMethod method_missing.
      * @param args
      * @return IRubyObject
      */
     IRubyObject method_missing(IRubyObject[] args);
 
     /**
-     * Method defineSingletonMethod.
+     * RubyMethod defineSingletonMethod.
      * @param name
      * @param callback
      */

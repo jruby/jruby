@@ -32,7 +32,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
 
 /**
- * Method call without any arguments
+ * RubyMethod call without any arguments
  *
  * @author  jpetersen
  * @version $Revision$

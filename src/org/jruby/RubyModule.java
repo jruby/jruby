@@ -857,11 +857,11 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        Method method = null;
+        RubyMethod method = null;
         if (bound) {
-            method = Method.newMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod(), receiver);
+            method = RubyMethod.newMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod(), receiver);
         } else {
-            method = UnboundMethod.newUnboundMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod());
+            method = RubyUnboundMethod.newUnboundMethod(ent.getOrigin(), ent.getOriginalName(), this, name, ent.getMethod());
         }
         method.infectBy(this);
 
@@ -888,12 +888,12 @@ public class RubyModule extends RubyObject {
             newMethod = new ProcMethod((RubyProc)body, visibility);
         } else if (args[0].isKindOf(runtime.getClasses().getMethodClass())) {
             body = args[0];
-            newMethod = new MethodMethod(((Method)body).unbind(), visibility);
+            newMethod = new MethodMethod(((RubyMethod)body).unbind(), visibility);
         } else if (args[0].isKindOf(runtime.getClasses().getProcClass())) {
             body = args[0];
             newMethod = new ProcMethod((RubyProc)body, visibility);
         } else {
-            throw new TypeError(runtime, "wrong argument type " + args[0].getType().getName() + " (expected Proc/Method)");
+            throw new TypeError(runtime, "wrong argument type " + args[0].getType().getName() + " (expected Proc/RubyMethod)");
         }
 
         addMethod(name, newMethod);

@@ -69,7 +69,7 @@ import java.util.Map;
  * <li>IO</li>
  * <li>JavaObject</li>
  * <li>MatchData</li>
- * <li>Method</li>
+ * <li>RubyMethod</li>
  * <li>Module</li>
  * <li>NilClass</li>
  * <li>Numeric</li>
@@ -243,9 +243,9 @@ public class RubyClasses {
         threadGroupClass = RubyThreadGroup.createThreadGroupClass(runtime);
         threadClass = RubyThread.createThreadClass(runtime);
 
-        runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
+        runtime.getLoadService().addAutoload("RubyUnboundMethod", new IAutoloadMethod() {
             public IRubyObject load(Ruby runtime, String name) {
-                return UnboundMethod.defineUnboundMethodClass(runtime);
+                return RubyUnboundMethod.defineUnboundMethodClass(runtime);
             }
         });
     }
@@ -464,13 +464,13 @@ public class RubyClasses {
     }
 
     /**
-     * Returns the reference to the Method class.
+     * Returns the reference to the RubyMethod class.
      *
-     * @return The Method class.
+     * @return The RubyMethod class.
      */
     public RubyClass getMethodClass() {
         if (methodClass == null) {
-            methodClass = Method.createMethodClass(runtime);
+            methodClass = RubyMethod.createMethodClass(runtime);
         }
         return methodClass;
     }
@@ -752,7 +752,7 @@ public class RubyClasses {
 
     public RubyClass getUnboundMethodClass() {
         if (unboundMethodClass == null) {
-            unboundMethodClass = UnboundMethod.defineUnboundMethodClass(runtime);
+            unboundMethodClass = RubyUnboundMethod.defineUnboundMethodClass(runtime);
         }
         return unboundMethodClass;
     }
@@ -821,7 +821,7 @@ public class RubyClasses {
             return getMatchDataClass();
         } else if (name == "Math") {
             return getMathModule();
-        } else if (name == "Method") {
+        } else if (name == "RubyMethod") {
             return getMethodClass();
         } else if (name == "Numeric") {
             return getNumericClass();
@@ -847,7 +847,7 @@ public class RubyClasses {
             return getThreadGroupClass();
         } else if (name == "Time") {
             return getTimeClass();
-        } else if (name == "UnboundMethod") {
+        } else if (name == "RubyUnboundMethod") {
             return getUnboundMethodClass();
         }
         return null;
@@ -865,7 +865,7 @@ public class RubyClasses {
     }
 
     /**
-     * Description of the Method
+     * Description of the RubyMethod
      *
      * @param name Description of the Parameter
      * @param rbClass Description of the Parameter
@@ -875,7 +875,7 @@ public class RubyClasses {
     }
 
     /**
-     * Description of the Method
+     * Description of the RubyMethod
      *
      * @return Description of the Return Value
      */
