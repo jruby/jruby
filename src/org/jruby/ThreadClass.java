@@ -27,10 +27,7 @@
  */
 package org.jruby;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.jruby.exceptions.ArgumentError;
@@ -116,6 +113,8 @@ public class ThreadClass extends RubyObject {
                 callbackFactory.getMethod(ThreadClass.class, "wakeup"));
         threadClass.defineMethod("kill", 
                 callbackFactory.getMethod(ThreadClass.class, "kill"));
+        threadClass.defineMethod("exit",
+        		callbackFactory.getMethod(ThreadClass.class, "exit"));
         
         threadClass.defineSingletonMethod("current",
                 callbackFactory.getSingletonMethod(ThreadClass.class, "current"));
@@ -136,7 +135,9 @@ public class ThreadClass extends RubyObject {
         threadClass.defineSingletonMethod("stop", 
                 callbackFactory.getSingletonMethod(ThreadClass.class, "stop"));
         threadClass.defineSingletonMethod("kill", 
-                callbackFactory.getMethod(ThreadClass.class, "s_kill", ThreadClass.class));
+                callbackFactory.getSingletonMethod(ThreadClass.class, "s_kill", ThreadClass.class));
+        threadClass.defineSingletonMethod("exit", 
+                callbackFactory.getSingletonMethod(ThreadClass.class, "s_exit"));
 
         ThreadClass rubyThread = new ThreadClass(ruby, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
@@ -298,15 +299,9 @@ public class ThreadClass extends RubyObject {
     }
 
     public static RubyArray list(IRubyObject recv) {
-    	Ruby ruby = recv.getRuntime();
-        List list = new ArrayList();
+    	ThreadClass[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
-        Iterator iter = ruby.objectSpace.iterator(recv.getRuntime().getClasses().getThreadClass());
-        while (iter.hasNext()) {
-            list.add(iter.next());
-        }
-        
-        return RubyArray.newArray(recv.getRuntime(), list);
+        return RubyArray.newArray(recv.getRuntime(), activeThreads);
     }
 
     public IRubyObject aref(IRubyObject key) {
@@ -414,8 +409,21 @@ public class ThreadClass extends RubyObject {
     	return receiver.getRuntime().getNil();
     }
     
-    public static IRubyObject s_kill(ThreadClass rubyThread) {
+    public static IRubyObject s_kill(IRubyObject receiver, ThreadClass rubyThread) {
     	return rubyThread.kill();
+    }
+
+    public static IRubyObject s_exit(IRubyObject receiver) {
+    	ThreadClass rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
+    	Object stopLock = rubyThread.stopLock;
+    	
+		rubyThread.killed = true;
+		// decriticalize all if we're the critical thread
+		if (receiver.getRuntime().getThreadService().getCritical() && !rubyThread.criticalized) {
+			receiver.getRuntime().getThreadService().setCritical(false);
+		}
+		
+		throw new ThreadKill();
     }
 
     public RubyBoolean isStopped() {
@@ -460,7 +468,7 @@ public class ThreadClass extends RubyObject {
     	}
     	
     	// Abort any sleep()s
-    	// CON: Not sure whether this is appropriate...should use wait(timeout) instead of sleep to allow notify
+    	// CON: Sleep now waits on the same stoplock, so it will have been woken up by the notify above
     	//threadImpl.interrupt();
     	
     	return this;
@@ -495,6 +503,8 @@ public class ThreadClass extends RubyObject {
     public IRubyObject kill() {
     	// need to reexamine this
     	synchronized (this) {
+    		if (killed) return this;
+    		
     		killed = true;
     		synchronized (criticalLock) {
     			criticalLock.notify(); // in case waiting in critical (nice)
@@ -518,6 +528,10 @@ public class ThreadClass extends RubyObject {
     	}
 
     	return this;
+    }
+    
+    public IRubyObject exit() {
+    	return kill();
     }
     
     public void dieIfKilled() {
