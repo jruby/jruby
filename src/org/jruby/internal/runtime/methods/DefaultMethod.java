@@ -62,6 +62,8 @@ public final class DefaultMethod extends AbstractMethod {
 
         context.pushDynamicVars();
 
+        context.pushClass(namespace.getModule());
+
         try {
             if (argsNode != null) {
                 prepareArguments(ruby, receiver, args);
@@ -78,6 +80,7 @@ public final class DefaultMethod extends AbstractMethod {
         } catch (ReturnJump re) {
             return re.getReturnValue();
         } finally {
+            context.popClass();
             context.popDynamicVars();
             context.getScopeStack().pop();
             ruby.setNamespace(savedNamespace);
