@@ -34,6 +34,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 /**
  *
@@ -291,4 +292,9 @@ public class RubyFloat extends RubyNumeric {
 		}
 		output.dumpString(strValue);
 	}
+	
+    public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+        return RubyFloat.newFloat(input.getRuntime(),
+                                    Double.parseDouble(input.unmarshalString()));
+    }
 }
