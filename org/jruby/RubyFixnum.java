@@ -42,6 +42,10 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
     
+    public Class getJavaClass() {
+        return Long.TYPE;
+    }
+    
     /** Getter for property value.
      * @return Value of property value.
      */

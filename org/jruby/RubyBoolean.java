@@ -40,6 +40,10 @@ public class RubyBoolean extends RubyObject {
         this.value = value;
     }
 
+    public Class getJavaClass() {
+        return Boolean.TYPE;
+    }
+    
     public RubyModule getRubyClass() {
         if (value) {
             return getRuby().getTrueClass();

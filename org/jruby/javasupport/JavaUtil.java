@@ -28,6 +28,8 @@
 
 package org.jruby.javasupport;
 
+import java.lang.reflect.Array;
+
 import org.jruby.*;
 
 /**
@@ -40,26 +42,44 @@ public class JavaUtil {
         if (arg.isNil()) {
             return true;
         }
-        if (javaClass == Boolean.TYPE || javaClass == Boolean.class) {
-            return arg instanceof RubyBoolean;
+        if (javaClass.isArray()) {
+            if (!(arg instanceof RubyArray)) {
+                return false;
+            }
+            Class arrayClass = javaClass.getComponentType();
+            for (int i = 0; i < ((RubyArray)arg).length(); i++) {
+                if (!isCompatible(((RubyArray)arg).entry(i), arrayClass)) {
+                    return false;
+                }
+            }
+            return true;
         }
-        if (javaClass == Integer.TYPE || javaClass == Integer.class ||
-            javaClass == Long.TYPE || javaClass == Long.class) {
-            return arg instanceof RubyFixnum;
+        if (javaClass == Object.class) {
+            return arg.getJavaClass() != RubyObject.class;
         }
-        if (javaClass == Float.TYPE || javaClass == Float.class || 
-            javaClass == Double.TYPE || javaClass == Double.class) {
-            return arg instanceof RubyFloat;
-        }
-        if (javaClass == String.class) {
-            return arg instanceof RubyString;
-        }
-        return javaClass.isAssignableFrom(((RubyJavaObject)arg).getValue().getClass());
+        return javaClass.isAssignableFrom(arg.getJavaClass());
     }
     
     public static Object convertRubyToJava(Ruby ruby, RubyObject rubyObject, Class javaClass) {
         if (rubyObject == ruby.getNil()) {
             return null;
+        }
+        if (javaClass.isArray()) {
+            try {
+                Class arrayClass = javaClass.getComponentType();
+                int len = (int)((RubyArray)rubyObject).length();
+                Object javaObject = Array.newInstance(arrayClass, len);
+                for (int i = 0; i < len; i++) {
+                    Object item = convertRubyToJava(ruby, ((RubyArray)rubyObject).entry(i), arrayClass);
+                    Array.set(javaObject, i, item);
+                }
+                return javaObject;
+            }
+            catch (NegativeArraySizeException ex) {
+            }
+        }
+        if (javaClass == Object.class) {
+            javaClass = rubyObject.getJavaClass();
         }
         if (javaClass == Boolean.TYPE || javaClass == Boolean.class) {
             return new Boolean(rubyObject.isTrue());
@@ -99,6 +119,15 @@ public class JavaUtil {
         }
         if (javaClass == String.class) {
             return RubyString.m_newString(ruby, object.toString());
+        }
+        if (javaClass.isArray()) {
+            Class arrayClass = javaClass.getComponentType();
+            int len = Array.getLength(object);
+            RubyObject[] items = new RubyObject[len];
+            for (int i = 0; i < len; i++) {
+                items[i] = convertJavaToRuby(ruby, Array.get(object, i), arrayClass);
+            }
+            return RubyArray.m_create(ruby, items);
         }
         return new RubyJavaObject(ruby, RubyJavaObject.getRubyClass(ruby, javaClass), object);
     }

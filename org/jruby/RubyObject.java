@@ -61,6 +61,9 @@ public class RubyObject implements VALUE {
         this.rubyClass = rubyClass;
     }
     
+    public Class getJavaClass() {
+        return RubyObject.class;
+    }
     
     /** Getter for property frozen.
      * @return Value of property frozen.

@@ -33,7 +33,7 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
-    private String string;
+    private String value;
     
     public RubyString(Ruby ruby) {
         this(ruby, null);
@@ -47,13 +47,31 @@ public class RubyString extends RubyObject {
         super(ruby, rubyClass);
         this.string = string;
     }
+    
+    public Class getJavaString() {
+        return String.class;
+    }
 
+    /**
+     * @deprecated
+     */
     public String getString() {
-        return this.string;
+        return value;
     }
     
-    public void setString(String string) {
-        this.string = string;
+    /**
+     * @deprecated
+     */
+    public void setString(String str) {
+        value = str;
+    }
+    
+    public String getValue() {
+        return this.value;
+    }
+    
+    public void setValue(String newValue) {
+        value = newValue;
     }
     
     public String toString() {

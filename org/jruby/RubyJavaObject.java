@@ -55,6 +55,10 @@ public class RubyJavaObject extends RubyObject {
         this.value = value;
     }
     
+    public Class getJavaClass() {
+        return value.getClass();
+    }
+    
     /** Getter for property value.
      * @return Value of property value.
      */

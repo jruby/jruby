@@ -42,6 +42,10 @@ public class RubyFloat extends RubyNumeric {
         this.value = value;
     }
 
+    public Class getJavaClass() {
+        return Double.TYPE;
+    }
+    
     /** Getter for property value.
      * @return Value of property value.
      */
