@@ -77,9 +77,10 @@
                	classpathref="build.classpath"/>
     	<available property="gnuregexp.present"
                	classname="gnu.regexp.RE"
-	       	classpathref="build.classpath"/>
+	       		classpathref="build.classpath"/>
         <available property="cglib.present"
-                classname="net.sf.cglib.reflect.FastClass"/>
+                classname="net.sf.cglib.reflect.FastClass"
+				classpathref="build.classpath"/>
   	</target>
 
 	<target name="compile.tasks" depends="prepare"
