@@ -78,10 +78,6 @@ public class RubyModule extends RubyObject {
     // The methods.
     private RubyMap methods = new RubyHashMap();
 
-    public RubyModule(Ruby ruby) {
-        this(ruby, null);
-    }
-
     public RubyModule(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, null);
     }
@@ -102,16 +98,12 @@ public class RubyModule extends RubyObject {
     /** Setter for property superClass.
      * @param superClass New value of property superClass.
      */
-    public void setSuperClass(RubyClass superClass) {
+    private void setSuperClass(RubyClass superClass) {
         this.superClass = superClass;
     }
 
     public RubyMap getMethods() {
         return this.methods;
-    }
-
-    public void setMethods(RubyMap methods) {
-        this.methods = methods;
     }
 
     public boolean isModule() {
@@ -269,7 +261,7 @@ public class RubyModule extends RubyObject {
     /** findclasspath
      *
      */
-    public String findClassPath() {
+    private String findClassPath() {
         FindClassPathResult arg;
         String path = null;
         String name = null;
@@ -514,7 +506,7 @@ public class RubyModule extends RubyObject {
     /** mod_av_set
      *
      */
-    protected void setAv(String name, IRubyObject value, boolean constant) {
+    private void setAv(String name, IRubyObject value, boolean constant) {
         String dest = constant ? "constant" : "class variable";
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
@@ -554,21 +546,9 @@ public class RubyModule extends RubyObject {
         addMethod(name, new CallbackMethod(method, noex));
     }
 
-    public void defineProtectedMethod(String name, Callback method) {
-        addMethod(name, new CallbackMethod(method, Visibility.PROTECTED));
-    }
-
     public void definePrivateMethod(String name, Callback method) {
         addMethod(name, new CallbackMethod(method, Visibility.PRIVATE));
     }
-
-    /*public void undefMethod(RubyId id) {
-        if (isFrozen()) {
-            throw new RubyFrozenException();
-        }
-     
-        getMethods().remove(id);
-    }*/
 
     public void undefMethod(String name) {
         addMethod(name, UndefinedMethod.getInstance());
@@ -643,15 +623,6 @@ public class RubyModule extends RubyObject {
      */
     public void defineAlias(String newName, String oldName) {
         aliasMethod(newName, oldName);
-    }
-
-    /** rb_define_attr
-     *
-     */
-    public void defineAttribute(String name, boolean read, boolean write) {
-        // +++ jpetersen
-        addAttribute(name, read, write, true);
-        // --- 
     }
 
     /** rb_const_defined
@@ -914,27 +885,6 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /** rb_define_module_under
-     *
-     */
-    public RubyModule defineModuleUnder(String name) {
-        if (isConstantDefinedAt(name)) {
-            IRubyObject module = getConstant(name);
-            if (!(module instanceof RubyModule)) {
-                throw new TypeError(runtime, toName() + "::" + module.getInternalClass().toName() + " is not a module.");
-            } else {
-                return (RubyModule) module;
-            }
-        } else {
-            RubyModule newModule = getRuntime().defineModule(name);
-
-            setConstant(name, newModule);
-            newModule.setClassPath(this, name);
-
-            return newModule;
-        }
-    }
-
     /** rb_class2name
      *
      */
@@ -996,18 +946,7 @@ public class RubyModule extends RubyObject {
         throw new NameError(getRuntime(), "class variable " + name.toId() + " not defined for " + toName());
     }
 
-    /** rb_define_class_variable
-     *
-     */
-    public void defineClassVariable(String name, IRubyObject value) {
-        if (!IdUtil.isClassVariable(name)) {
-            throw new NameError(getRuntime(), "wrong class variable name " + name);
-        }
-
-        declareClassVar(name, value);
-    }
-
-    public void addAttribute(String name, boolean read, boolean write, boolean ex) {
+    private void addAttribute(String name, boolean read, boolean write, boolean ex) {
         Visibility attributeScope = Visibility.PUBLIC;
 
         if (ex) {
