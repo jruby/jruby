@@ -32,7 +32,7 @@ import org.jruby.runtime.CallbackFactory;
 public class Mutex extends RubyObject {
     private boolean isLocked = false;
 
-    private Mutex(Ruby runtime) {
+    public Mutex(Ruby runtime) {
         super(runtime, runtime.getClass("Mutex"));
     }
 
