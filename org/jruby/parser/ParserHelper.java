@@ -794,7 +794,7 @@ public class ParserHelper {
         }
     }
 
-    private Node range_op(Node node, int logop) {
+    /*private Node range_op(Node node, int logop) {
         int type; // enum node_type
 
         if (logop != 0) {
@@ -815,53 +815,54 @@ public class ParserHelper {
             return call_op(node, Token.tEQ, 1, nf.newGVar("$."));
         }
         return node;
-    }
+    }*/
 
-    private Node cond0(Node node, int logop) {
+    private Node cond0(Node node /*, int logop*/) {
         int type = node.getType(); // enum node_type
 
         assign_in_cond(node);
+        
+        // DOT => FLIP
+        boolean exclusive = true;
         switch (type) {
-            case Constants.NODE_DSTR :
+            /*case Constants.NODE_DSTR :
             case Constants.NODE_STR :
                 if (logop != 0) {
                     break;
                 }
                 rb_warn("string literal in condition");
-                break;
+                break;*/
             case Constants.NODE_DREGX :
             case Constants.NODE_DREGX_ONCE :
-                warning_unless_e_option("regex literal in condition");
+                // warning_unless_e_option("regex literal in condition");
                 getLocalIndex("_");
                 getLocalIndex("~");
                 return nf.newMatch2(node, nf.newGVar("$_"));
             case Constants.NODE_DOT2 :
+            	exclusive = false;
             case Constants.NODE_DOT3 :
-                node.setBeginNode(range_op(node.getBeginNode(), logop));
-                node.setEndNode(range_op(node.getEndNode(), logop));
+            	Node flipNode = new FlipNode(cond2(node.getBeginNode()/*, logop*/), cond2(node.getEndNode()/*, logop*/), exclusive);
+            	
+            	flipNode.setCount(registerLocal(null));
 
-                ((DotNode) node).setFlip(true);
-
-                node.setCount(registerLocal(null));
-                warning_unless_e_option("range literal in condition");
-                break;
+                // warning_unless_e_option("range literal in condition");
+                return flipNode;
             case Constants.NODE_LIT :
                 if (node.getLiteral() instanceof RubyRegexp) {
-                    warning_unless_e_option("regex literal in condition");
-                    // +++
-                    // node.nd_set_type(Constants.NODE_MATCH);
-
-                    throw new RuntimeException("[BUG] node.nd_set_type(Constants.NODE_MATCH)");
-
-                    // local_cnt("_");
-                    // local_cnt("~");
-                    // ---
+                    getLocalIndex("_");
+                    getLocalIndex("~");
+                    return nf.newMatch(node);
+                } else if (node.getLiteral() instanceof RubyString) {
+                    getLocalIndex("_");
+                    getLocalIndex("~");
+                    return nf.newMatch(nf.newLit(RubyRegexp.newRegexp(ruby, (RubyString)node.getLiteral(), 0)));
                 }
+            default:
+            	return node;
         }
-        return node;
     }
 
-    private Node cond1(Node node, int logop) {
+    /*private Node cond1(Node node, int logop) {
         if (node == null) {
             return null;
         }
@@ -870,10 +871,34 @@ public class ParserHelper {
             return node;
         }
         return cond0(node, logop);
-    }
+    }*/
 
     public Node cond(Node node) {
-        return cond1(node, 0);
+        // return cond1(node, 0);
+        
+        if (node == null) {
+            return null;
+        }
+
+        if (node.getType() == Constants.NODE_NEWLINE) {
+            node.setNextNode(cond0(node.getNextNode()/*, logop*/));
+            return node;
+        }
+
+        return cond0(node/*, logop*/);
+    }
+    
+    private Node cond2(Node node) {
+        node = cond(node);
+        int type = node.getType();
+        
+        if (type == Constants.NODE_NEWLINE) {
+            node = node.getNextNode();
+        }
+        if (type == Constants.NODE_LIT && node.getLiteral() instanceof RubyFixnum) {
+            return call_op(node, Token.tEQ, 1, nf.newGVar("$."));
+        }
+        return node;
     }
 
     public Node logop(int type, Node left, Node right) {
@@ -881,9 +906,9 @@ public class ParserHelper {
 
         switch (type) {
             case Constants.NODE_AND :
-                return new AndNode(cond1(left, 1), cond1(right, 1));
+                return new AndNode(cond(left), cond(right));
             case Constants.NODE_OR :
-                return new OrNode(cond1(left, 1), cond1(right, 1));
+                return new OrNode(cond(left), cond(right));
             default :
                 throw new RuntimeException("[BUG] ParserHelper#logop: Nodetype=" + type);
         }
@@ -964,12 +989,13 @@ public class ParserHelper {
      * Register the local variable name 'name' in the table 
      * of registered variable names. 
      * Returns the index of the added local variable name in the table.
-     * cf local_append in MRI
+     * 
+     * MRI: cf local_append
      *@param name The name of the local variable.
      *@return The index of the local variable name in the table.
      */
     private int registerLocal(String name) {
-        name = name.intern();
+        name = name != null ? name.intern() : null;
         
         if (lvtbl.tbl == null) {
             lvtbl.tbl = new ArrayList();
@@ -995,7 +1021,8 @@ public class ParserHelper {
      * If name is not registered yet, register the variable name.
      * 
      * If name == null returns the count of registered variable names.
-     * cf local_cnt in MRI
+     * 
+     * MRI: cf local_cnt
      *@param name The name of the local variable
      *@return The index in the table of registered variable names.
      */
@@ -1020,7 +1047,7 @@ public class ParserHelper {
      * Returns true if there was already an assignment to a local
      * variable named id, false otherwise.
      * 
-     * cf local_id in MRI
+     * MRI: cf local_id
      * @param id The name of the local variable.
      * @return true if there was already an assignment to a local
      * variable named id.

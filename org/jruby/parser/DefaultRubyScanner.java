@@ -163,7 +163,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         int end = 0;
         while (end < s.length()) {
             if (s.charAt(end++) == '\n') {
-				ph.incrementLine();
+                ph.incrementLine();
                 break;
             }
         }
@@ -607,9 +607,14 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 RubyObject ss = RubyString.newString(ruby, tok(), toklen());
                 ph.list_append(list, nf.newStr(ss));
             }
-            new RuntimeException("Want to change " + list.getClass().getName() + "to DRegxNode").printStackTrace();
+            // new RuntimeException("Want to change " + list.getClass().getName() + "to DRegxNode").printStackTrace();
             // list.nd_set_type(once ? NODE.NODE_DREGX_ONCE : NODE.NODE_DREGX);
-            list.setCFlag(options | kcode);
+            if (once) {
+                list = new DRegxOnceNode(list.getLiteral(), options | kcode);
+            } else {
+                list = new DRegxNode(list.getLiteral(), options | kcode);
+            }
+            // list.setCFlag(options | kcode);
             yyVal = list;
             return Token.tDREGEXP;
         } else {
@@ -704,8 +709,10 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             }
             yyVal = list;
             if (func == '`') {
-                new RuntimeException("[BUG] want to change " + list.getClass().getName() + " to DXStrNode").printStackTrace();
+                // new RuntimeException("[BUG] want to change " + list.getClass().getName() + " to DXStrNode").printStackTrace();
                 // list.nd_set_type(Constants.NODE_DXSTR);
+                list = new DXStrNode(list.getLiteral());
+                yyVal = list;
                 return Token.tDXSTRING;
             } else {
                 return Token.tDSTRING;
@@ -949,8 +956,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         }
                         ph.list_append((Node) yyVal, nf.newStr(RubyString.newString(ruby, "\n")));
 
-                        ((StrNodeConvertable)yyVal).convertToStrNode();
-                        
+                        ((StrNodeConvertable) yyVal).convertToStrNode();
+
                         yyVal = nf.newList((Node) yyVal);
                         ((Node) yyVal).setNextNode(((Node) yyVal).getHeadNode().getNextNode());
                         ph.list_concat(list, (Node) yyVal);

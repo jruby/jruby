@@ -1468,9 +1468,11 @@ string		: tSTRING
 			    } else {
 			        $$ = $1;
 			    }
-			    $2.setHeadNode(nf.newStr($2.getLiteral()));
-                new RuntimeException("[BUG] Want to change " + $2.getClass().getName() + " to ArrayNode.").printStackTrace();
+			    // $2.setHeadNode(nf.newStr($2.getLiteral()));
 			    // $2.nd_set_type(Constants.NODE_ARRAY);
+			    //+++ 
+			    $<>2 = nf.newArray(nf.newStr($2.getLiteral()));
+			    //---
 			    ph.list_concat($<Node>$, $2);
 		    }
 
