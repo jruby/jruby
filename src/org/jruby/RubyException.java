@@ -3,10 +3,13 @@
  * Created on 18. Oktober 2001, 23:31
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2002 Anders Bengtsson, Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Anders Bengtsson <ndrsbngtssn@yahoo.se> 
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -60,15 +63,7 @@ public class RubyException extends RubyObject implements IndexCallable {
     }
 
     public static RubyClass createExceptionClass(Ruby ruby) {
-        RubyClass exceptionClass = new ExceptionDefinition(ruby).getType();
-        exceptionClass.defineSingletonMethod("exception",
-                                             CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
-        exceptionClass.defineMethod("exception",
-                                    CallbackFactory.getOptMethod(RubyException.class, "exception"));
-        exceptionClass.defineMethod("set_backtrace",
-                                    CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyArray.class));
-
-        return exceptionClass;
+        return new ExceptionDefinition(ruby).getType();
     }
 
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
@@ -99,9 +94,9 @@ public class RubyException extends RubyObject implements IndexCallable {
         return backtrace;
     }
 
-    public RubyArray set_backtrace(RubyArray newBacktrace) {
-        backtrace = newBacktrace;
-        return newBacktrace;
+    public RubyArray set_backtrace(IRubyObject obj) {
+        backtrace = RubyArray.arrayValue(obj);
+        return backtrace;
     }
 
     public RubyException exception(IRubyObject[] args) {
@@ -155,12 +150,16 @@ public class RubyException extends RubyObject implements IndexCallable {
         switch (index) {
         case ExceptionDefinition.INITIALIZE :
             return initialize(args);
+        case ExceptionDefinition.EXCEPTION :
+            return initialize(args);
         case ExceptionDefinition.TO_S :
             return to_s();
         case ExceptionDefinition.INSPECT :
             return inspect();
         case ExceptionDefinition.BACKTRACE :
             return backtrace();
+        case ExceptionDefinition.SET_BACKTRACE :
+            return set_backtrace(args[0]);
         default :
             return super.callIndexed(index, args);
         }
