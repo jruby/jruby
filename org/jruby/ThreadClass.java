@@ -240,8 +240,8 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         if (isCurrent()) {
             throw new ThreadError(getRuntime(), "thread tried to join itself");
         }
+        ensureStarted();
         try {
-            ensureStarted();
             jvmThread.join();
         } catch (InterruptedException iExcptn) {
             Asserts.assertNotReached();

@@ -238,7 +238,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-		stringClass.defineMethod("sum", IndexedCallback.create(M_SUM, 0));
+		stringClass.defineMethod("sum", IndexedCallback.createOptional(M_SUM));
 
 		stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
 		stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
@@ -296,7 +296,7 @@ public class RubyString extends RubyObject implements IndexCallable {
         case M_INTERN:
             return intern();
         case M_SUM:
-            return sum();
+            return sum(args);
         }
         Asserts.assertNotReached();
         return null;
@@ -1766,13 +1766,22 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return RubySymbol.newSymbol(getRuntime(), getValue());
 	}
 
-    public RubyInteger sum() {
+    public RubyInteger sum(IRubyObject[] args) {
+        long bitSize = 16;
+        if (args.length > 0) {
+            RubyInteger sizeArgument =
+                (RubyInteger) args[0].convertType(RubyInteger.class,
+                                                  "Integer",
+                                                  "to_int");
+            bitSize = sizeArgument.getLongValue();
+        }
+
         int result = 0;
         char[] characters = value.toCharArray();
         for (int i = 0; i < characters.length; i++) {
             result += characters[i];
         }
-        return RubyFixnum.newFixnum(getRuntime(), result);
+        return RubyFixnum.newFixnum(getRuntime(), result % (2 * bitSize - 1));
     }
 
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
