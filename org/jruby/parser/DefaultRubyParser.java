@@ -40,7 +40,6 @@ import org.jruby.util.*;
 public class DefaultRubyParser implements RubyParser {
     private Ruby ruby;
     private ParserHelper ph;
-    private RubyScanner rs;
     private NodeFactory nf;
     
     private long cond_stack;

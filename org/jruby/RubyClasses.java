@@ -217,13 +217,6 @@ public class RubyClasses {
         RbClass.initClassClass(classClass);
         RbModule.initModuleClass(moduleClass);
         
-        /*rubyTopSelf = objectClass.m_new((RubyObject[])null);
-        rubyTopSelf.defineSingletonMethod("to_s", new RubyCallbackMethod() {
-            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                return RubyString.m_newString(ruby, "main");
-            }
-        });*/
-        
         symbolClass = RbSymbol.createSymbolClass(ruby);
         
         nilClass = RbNilClass.createNilClass(ruby);

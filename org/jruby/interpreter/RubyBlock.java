@@ -44,7 +44,7 @@ public class RubyBlock {
     public NODE var;
     public NODE body;
     public RubyObject self;
-    public Frame frame;
+    public RubyFrame frame;
     public RubyScope scope;
     // private BLOCKTAG tag;
     public RubyModule klass;
@@ -61,7 +61,7 @@ public class RubyBlock {
         this.ruby = ruby;
     }
     
-    protected RubyBlock(NODE var, NODE body, RubyObject self, Frame frame, RubyScope scope, 
+    protected RubyBlock(NODE var, NODE body, RubyObject self, RubyFrame frame, RubyScope scope, 
                         RubyModule klass, int iter, int vmode, int flags, RubyVarmap dynamicVars,
                         VALUE origThread, RubyBlock prev, Ruby ruby) {
         this(ruby);
@@ -88,7 +88,7 @@ public class RubyBlock {
         var = v;
         body = b;
         self = newSelf;
-        frame = ruby.getInterpreter().getRubyFrame();
+        frame = ruby.getRubyFrame();
         klass = ruby.getRubyClass();
         frame.setFile(ruby.getSourceFile());
         frame.setLine(ruby.getSourceLine());

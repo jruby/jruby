@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
-   <fileobject name="SearchMethodResult.java">
-      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e95c4c6a5578"/>
-      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
-      <attr name="JavaHeaderDescription" stringvalue="No description"/>
-   </fileobject>
    <fileobject name="RubyGlobalEntry.java">
       <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8fb9ffc9b78"/>
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
-      <attr name="class_dependency_org.jruby.util.RubyGlobalEntrySetter" stringvalue="UndefMethods;ValueMethods"/>
       <attr name="class_dependency_org.jruby.original.global_entry" stringvalue="RubyGlobalEntry"/>
+      <attr name="class_dependency_org.jruby.util.RubyGlobalEntrySetter" stringvalue="UndefMethods;ValueMethods"/>
       <attr name="class_dependency_org.jruby.util.RubyGlobalEntryGetter" stringvalue="UndefMethods;ValueMethods"/>
       <attr name="class_dependency_org.jruby.util.RubyGlobalEntryMarker" stringvalue="UndefMethods;ValueMethods"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="SearchMethodResult.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e95c4c6a5578"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
    </fileobject>
    <fileobject name="RubyGlobalEntryGetter.java">
@@ -26,8 +26,8 @@
       <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
       <attr name="class_dependency_org.jruby.util.RubyMap" stringvalue="RubyHashMap"/>
       <attr name="class_dependency_org.jruby.collection.RubyMap" stringvalue="RubyHashMap"/>
-      <attr name="class_dependency_java.util.HashMap" stringvalue="RubyHashMap"/>
       <attr name="JavaHeaderDescription" stringvalue="No description"/>
+      <attr name="class_dependency_java.util.HashMap" stringvalue="RubyHashMap"/>
    </fileobject>
    <fileobject name="RubyStack.java">
       <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e9006e4b6d78"/>

@@ -1,5 +1,5 @@
 /*
- * Frame.java - No description
+ * RubyFrame.java - No description
  * Created on 10. September 2001, 17:54
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
@@ -8,19 +8,21 @@
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or any later version.
+ * This file is part of JRuby
  * 
- * This program is distributed in the hope that it will be useful,
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  * 
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
 
@@ -37,7 +39,7 @@ import org.jruby.util.*;
  * @author  jpetersen
  * @version 
  */
-public class Frame {
+public class RubyFrame {
     public static final int FRAME_ALLOCA = 0;
     public static final int FRAME_MALLOC = 1;
     
@@ -45,9 +47,9 @@ public class Frame {
     private List args               = null;
     private RubyId lastFunc         = null;
     private RubyModule lastClass    = null;
-    private VALUE cbase             = null;
-    private Frame prev              = null;
-    private Frame tmp               = null;
+    private Object cbase            = null;
+    private RubyFrame prev          = null;
+    private RubyFrame tmp           = null;
     private String file             = null;
     private int line                = 0;
     private int iter                = 0;
@@ -55,12 +57,13 @@ public class Frame {
     
     private Ruby ruby = null;
 
-    public Frame(Ruby ruby) {
+    public RubyFrame(Ruby ruby) {
         this.ruby = ruby;
     }
     
-    public Frame(Ruby ruby, RubyObject self, List args, RubyId lastFunc, RubyModule lastClass,
-                 VALUE cbase, Frame prev, Frame tmp, String file, int line, int iter, int flags) {
+    public RubyFrame(Ruby ruby, RubyObject self, List args, RubyId lastFunc, 
+                     RubyModule lastClass, Object cbase, RubyFrame prev,
+                     RubyFrame tmp, String file, int line, int iter, int flags) {
         this(ruby);
         
         this.self = self;
@@ -93,28 +96,28 @@ public class Frame {
     /** Getter for property cbase.
      * @return Value of property cbase.
      */
-    public VALUE getCbase() {
+    public Object getCbase() {
         return cbase;
     }
     
     /** Setter for property cbase.
      * @param cbase New value of property cbase.
      */
-    public void setCbase(VALUE cbase) {
+    public void setCbase(Object cbase) {
         this.cbase = cbase;
     }
     
     /** Getter for property file.
      * @return Value of property file.
      */
-    public java.lang.String getFile() {
+    public String getFile() {
         return file;
     }
     
     /** Setter for property file.
      * @param file New value of property file.
      */
-    public void setFile(java.lang.String file) {
+    public void setFile(String file) {
         this.file = file;
     }
     
@@ -191,14 +194,14 @@ public class Frame {
     /** Getter for property prev.
      * @return Value of property prev.
      */
-    public org.jruby.interpreter.Frame getPrev() {
+    public RubyFrame getPrev() {
         return prev;
     }
     
     /** Setter for property prev.
      * @param prev New value of property prev.
      */
-    public void setPrev(org.jruby.interpreter.Frame prev) {
+    public void setPrev(RubyFrame prev) {
         this.prev = prev;
     }
     
@@ -219,14 +222,14 @@ public class Frame {
     /** Getter for property tmp.
      * @return Value of property tmp.
      */
-    public org.jruby.interpreter.Frame getTmp() {
+    public RubyFrame getTmp() {
         return tmp;
     }
     
     /** Setter for property tmp.
      * @param tmp New value of property tmp.
      */
-    public void setTmp(org.jruby.interpreter.Frame tmp) {
+    public void setTmp(RubyFrame tmp) {
         this.tmp = tmp;
     }
     
@@ -234,13 +237,13 @@ public class Frame {
      *
      */
     public void push() {
-        Frame oldFrame = new Frame(ruby, self, args, lastFunc, lastClass, cbase, prev,
+        RubyFrame oldFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, cbase, prev,
                                    tmp, file, line, iter, flags);
         
         prev    = oldFrame;
         tmp     = null;
-        // file    = null
-        // line    =
+        file    = ruby.getSourceFile();
+        line    = ruby.getSourceLine();
         iter    = ruby.getInterpreter().getRubyIter().getIter();
         args    = null;
         flags   = FRAME_ALLOCA;
@@ -263,7 +266,7 @@ public class Frame {
         
         prev = prev.prev;
         
-        // ruby_file = file;
-        // ruby_line = line;
+        ruby.setSourceFile(file);
+        ruby.setSourceLine(line);
     }
 }

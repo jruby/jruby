@@ -30,6 +30,7 @@ package org.jruby;
 
 import java.io.*;
 
+import org.jruby.javasupport.*;
 import org.jruby.parser.*;
 
 /**
@@ -70,13 +71,16 @@ public class Main {
                         System.err.println(" -e must be followed by an expression to evaluate");
                         printUsage();
                     } else {
-                        runInterpreter(args[i], "command line " + i);
+                        runInterpreter(args[i], "command line " + i, new String[0]);
                     }
                 } else if (args[i].equals("-b")) {
                     // Benchmark
                     now = System.currentTimeMillis();
                 } else {
-                    runInterpreterOnFile(args[i]);
+                    String[] argv = new String[lenArg - i - 1];
+                    System.arraycopy(args, i + 1, argv, 0, argv.length);
+                    runInterpreterOnFile(args[i], argv);
+                    break;
                 }
             }
         }
@@ -103,12 +107,15 @@ public class Main {
      * @param iFileName
      * the name of the File from which the string comes.
      */
-    protected static void runInterpreter(String iString2Eval, String iFileName) {
+    protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
         // Initialize Runtime
         Ruby ruby = new Ruby();
+        ruby.init();
 
         // Parse and interpret file
         RubyString rs = RubyString.m_newString(ruby, iString2Eval);
+        
+        ruby.defineGlobalConstant("ARGV", JavaUtil.convertJavaToRuby(ruby, args, String[].class));
         
         // New Version
         // 
@@ -119,7 +126,7 @@ public class Main {
         
         // Initialize Parser
         parse p = new parse(ruby);
-        ruby.getInterpreter().eval(ruby.getClasses().getObjectClass(), p.rb_compile_string(iFileName, rs, 0));
+        ruby.getInterpreter().eval(ruby.getRubyTopSelf(), p.rb_compile_string(iFileName, rs, 0));
     }
 
     /**
@@ -128,7 +135,7 @@ public class Main {
      * @param fileName
      * the name of the file to interpret
      */
-    protected static void runInterpreterOnFile(String fileName) {
+    protected static void runInterpreterOnFile(String fileName, String[] args) {
         File rubyFile = new File(fileName);
         if (!rubyFile.canRead()) {
             System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");
@@ -141,7 +148,7 @@ public class Main {
                     sb.append(line).append('\n');
                 }
                 br.close();
-                runInterpreter(sb.toString(), fileName);
+                runInterpreter(sb.toString(), fileName, args);
                 
             } catch (IOException ioExcptn) {
                 System.out.println("Cannot read Rubyfile: \"" + fileName + "\"");

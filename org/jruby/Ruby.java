@@ -34,6 +34,7 @@ import java.io.*;
 
 import org.jruby.core.*;
 import org.jruby.interpreter.*;
+import org.jruby.interpreter.nodes.*;
 import org.jruby.original.*;
 import org.jruby.parser.*;
 import org.jruby.util.*;
@@ -79,8 +80,15 @@ public final class Ruby implements token {
     // Eval
     
     private RubyScope rubyScope = new RubyScope();
+    private RubyScope topScope = null;
     private RubyVarmap dynamicVars = null;
     private RubyModule rubyClass = null;
+    
+    private RubyFrame rubyFrame;
+    private RubyFrame topFrame;
+    
+    private NODE rubyCRef;
+    private NODE topCRef;
     
     private String sourceFile;
     private int sourceLine;
@@ -90,6 +98,9 @@ public final class Ruby implements token {
     private boolean verbose;
     
     public op_tbl[] op_tbl;
+    
+    // init
+    private boolean initialized = false;
     
     /** Create and initialize a new jruby Runtime.
      */    
@@ -103,11 +114,6 @@ public final class Ruby implements token {
         nilObject = new RubyNil(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
-        
-        classes = new RubyClasses(this);
-        classes.initCoreClasses();
-        
-        createFixnumCache();
     }
     
     public RubyClasses getClasses() {
@@ -418,17 +424,72 @@ public final class Ruby implements token {
         }
     }
     
+    private void callInits() {
+        classes = new RubyClasses(this);
+        classes.initCoreClasses();
+        
+        rubyTopSelf = new RubyObject(this, classes.getObjectClass());
+        /*rubyTopSelf.defineSingletonMethod("to_s", new RubyCallbackMethod() {
+            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                return RubyString.m_newString(ruby, "main");
+            }
+        });*/
+        
+        createFixnumCache();
+    }
+    
+    /** ruby_init
+     *
+     */
+    public void init() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+        
+        getInterpreter().setRubyIter(new Iter()); // ruby_iter = &iter;
+        rubyFrame = topFrame = new RubyFrame(this);
+        
+        // rb_origenviron = environ;
+        
+        // Init_stack(0);
+        // Init_heap();
+        rubyScope.push(); // PUSH_SCOPE();
+        rubyScope.setLocalVars(null);
+        rubyScope.setLocalTbl(null);
+        topScope = rubyScope;
+    
+        getInterpreter().setActMethodScope(Scope.SCOPE_PRIVATE);
+
+        try {
+            callInits();
+            
+            rubyClass = getClasses().getObjectClass();
+            rubyFrame.setSelf(rubyTopSelf);
+            topCRef = new NODE(NODE.NODE_CREF, getClasses().getObjectClass(), null, null);
+            rubyCRef = topCRef;
+            rubyFrame.setCbase(rubyCRef);
+            // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
+            // ruby_prog_init();
+        } catch (Exception excptn) {
+            // error_print();
+        }
+        
+        rubyScope.pop();
+        rubyScope = topScope;
+    }
+    
     /** Getter for property rubyScope.
      * @return Value of property rubyScope.
      */
-    public org.jruby.interpreter.RubyScope getRubyScope() {
+    public RubyScope getRubyScope() {
         return rubyScope;
     }
     
     /** Setter for property rubyScope.
      * @param rubyScope New value of property rubyScope.
      */
-    public void setRubyScope(org.jruby.interpreter.RubyScope rubyScope) {
+    public void setRubyScope(RubyScope rubyScope) {
         this.rubyScope = rubyScope;
     }
     
@@ -539,6 +600,62 @@ public final class Ruby implements token {
      */
     public void setInEval(int inEval) {
         this.inEval = inEval;
+    }
+    
+    /** Getter for property rubyFrame.
+     * @return Value of property rubyFrame.
+     */
+    public org.jruby.interpreter.RubyFrame getRubyFrame() {
+        return rubyFrame;
+    }
+    
+    /** Setter for property rubyFrame.
+     * @param rubyFrame New value of property rubyFrame.
+     */
+    public void setRubyFrame(org.jruby.interpreter.RubyFrame rubyFrame) {
+        this.rubyFrame = rubyFrame;
+    }
+    
+    /** Getter for property topFrame.
+     * @return Value of property topFrame.
+     */
+    public org.jruby.interpreter.RubyFrame getTopFrame() {
+        return topFrame;
+    }
+    
+    /** Setter for property topFrame.
+     * @param topFrame New value of property topFrame.
+     */
+    public void setTopFrame(org.jruby.interpreter.RubyFrame topFrame) {
+        this.topFrame = topFrame;
+    }
+    
+    /** Getter for property rubyCRef.
+     * @return Value of property rubyCRef.
+     */
+    public org.jruby.original.NODE getRubyCRef() {
+        return rubyCRef;
+    }
+    
+    /** Setter for property rubyCRef.
+     * @param rubyCRef New value of property rubyCRef.
+     */
+    public void setRubyCRef(org.jruby.original.NODE rubyCRef) {
+        this.rubyCRef = rubyCRef;
+    }
+    
+    /** Getter for property topCRef.
+     * @return Value of property topCRef.
+     */
+    public org.jruby.original.NODE getTopCRef() {
+        return topCRef;
+    }
+    
+    /** Setter for property topCRef.
+     * @param topCRef New value of property topCRef.
+     */
+    public void setTopCRef(org.jruby.original.NODE topCRef) {
+        this.topCRef = topCRef;
     }
     
 }

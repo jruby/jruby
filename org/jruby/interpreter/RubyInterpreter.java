@@ -42,12 +42,6 @@ import org.jruby.util.*;
 public class RubyInterpreter implements node_type, Scope {
     private Ruby ruby;
     
-    private Frame rubyFrame;
-    private Frame topFrame;
-    
-    // public RubyVarmap ruby_dyna_vars = new RubyVarmap();
-    
-    // private RubyVarmap dynamicVars = null;
     private Iter rubyIter = new Iter(); // HACK 
     
     // C
@@ -63,80 +57,24 @@ public class RubyInterpreter implements node_type, Scope {
     public RubyInterpreter(Ruby ruby) {
         this.ruby = ruby;
         
-        ruby.setRubyClass(ruby.getClasses().getObjectClass());
-        ruby_cbase = null;
+        // ruby.setRubyClass(ruby.getClasses().getObjectClass());
+        // ruby_cbase = null;
         rubyBlock = new RubyBlock(ruby);
-    }
-    
-    public Frame getRubyFrame() {
-        if (rubyFrame == null) {
-            rubyFrame = new Frame(ruby);
-        }
-        return rubyFrame;
     }
     
     /** Getter for property ruby.
      * @return Value of property ruby.
      */
-    public org.jruby.Ruby getRuby() {
+    public Ruby getRuby() {
         return ruby;
     }
     
     /** Setter for property ruby.
      * @param ruby New value of property ruby.
      */
-    public void setRuby(org.jruby.Ruby ruby) {
+    public void setRuby(Ruby ruby) {
         this.ruby = ruby;
     }
-    
-    private boolean initialized = false;
-    
-    /** ruby_init
-     *
-     */
-    public void init() {
-        int state;
-
-        if (initialized) {
-            return;
-        }
-        initialized = true;
-
-        topFrame = getRubyFrame();
-        rubyIter = new Iter();
-
-        // rb_origenviron = environ;
-
-        // Init_stack(0);
-        // Init_heap();
-            
-        getRuby().getRubyScope().push();// PUSH_SCOPE();
-        getRuby().getRubyScope().setLocalVars(null);
-        getRuby().getRubyScope().setLocalVars(null);
-        // top_scope = getRuby().ruby_scope;
-            
-        /* default visibility is private at toplevel */
-        // SET_SCOPE(SCOPE_PRIVATE);
-
-        // PUSH_TAG( PROT_NONE );
-        // if ((state = EXEC_TAG()) == 0) {
-            // rb_call_inits();
-            ruby.setRubyClass(getRuby().getClasses().getObjectClass());
-            // ruby_frame.self = ruby_top_self;
-            top_cref = new NODE(NODE_CREF, getRuby().getClasses().getObjectClass(), null, null);
-            ruby_cref = top_cref;
-            getRubyFrame().setCbase((VALUE)ruby_cref);
-            // rb_define_global_const( "TOPLEVEL_BINDING", rb_f_binding( ruby_top_self ) );
-            // ruby_prog_init();
-        // }
-        // POP_TAG();
-        // if (state != 0) {
-            // error_print();
-        // }
-        getRuby().getRubyScope().pop();// POP_SCOPE();
-        // ruby_scope = top_scope;
-    }
-
     
     /** rb_eval
      *
@@ -618,11 +556,11 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_ZSUPER:
                     //                TMP_PROTECT;
                     
-                    if (getRubyFrame().getLastClass() == null) {
-                        throw new RubyNameException("superclass method '" + rubyFrame.getLastFunc().toName() + "' disabled");
+                    if (ruby.getRubyFrame().getLastClass() == null) {
+                        throw new RubyNameException("superclass method '" + ruby.getRubyFrame().getLastFunc().toName() + "' disabled");
                     }
                     if (node.nd_type() == NODE_ZSUPER) {
-                        List argsList = getRubyFrame().getArgs();
+                        List argsList = ruby.getRubyFrame().getArgs();
                         args = (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]);
                     } else {
                         tmpBlock = beginCallargs();
@@ -631,7 +569,8 @@ public class RubyInterpreter implements node_type, Scope {
                     }
  
                     rubyIter.push(rubyIter.getIter() != Iter.ITER_NOT ? Iter.ITER_PRE : Iter.ITER_NOT);
-                    result = getRubyFrame().getLastClass().getSuperClass().call(rubyFrame.getSelf(), rubyFrame.getLastFunc(), args, 3);
+                    result = ruby.getRubyFrame().getLastClass().getSuperClass().call(
+                             ruby.getRubyFrame().getSelf(), ruby.getRubyFrame().getLastFunc(), args, 3);
                     rubyIter.pop();
                     
                     return result;
@@ -639,16 +578,16 @@ public class RubyInterpreter implements node_type, Scope {
                 case NODE_SCOPE:
                     NODE saved_cref = null;
                     
-                    Frame frame = getRubyFrame();
-                    frame.setTmp(getRubyFrame());
-                    rubyFrame = frame;
+                    RubyFrame frame = ruby.getRubyFrame();
+                    frame.setTmp(ruby.getRubyFrame());
+                    ruby.setRubyFrame(frame);
                     
                     ruby.getRubyScope().push();
                     
                     if (node.nd_rval() != null) {
-                        saved_cref = ruby_cref;
-                        ruby_cref = (NODE)node.nd_rval();
-                        getRubyFrame().setCbase(node.nd_rval());
+                        saved_cref = ruby.getRubyCRef();
+                        ruby.setRubyCRef((NODE)node.nd_rval());
+                        ruby.getRubyFrame().setCbase(node.nd_rval());
                     }
                     
                     if (node.nd_tbl() != null) {
@@ -656,20 +595,20 @@ public class RubyInterpreter implements node_type, Scope {
                         ShiftableList vars = new ShiftableList(new ArrayList(tmp));
                         vars.set(0, (VALUE)node);
                         vars.shift(1);
-                        getRuby().getRubyScope().setLocalVars(vars);
-                        getRuby().getRubyScope().setLocalTbl(node.nd_tbl());
+                        ruby.getRubyScope().setLocalVars(vars);
+                        ruby.getRubyScope().setLocalTbl(node.nd_tbl());
                     } else {
-                        getRuby().getRubyScope().setLocalVars(null);
-                        getRuby().getRubyScope().setLocalTbl(null);
+                        ruby.getRubyScope().setLocalVars(null);
+                        ruby.getRubyScope().setLocalTbl(null);
                     }
                     
                     result = eval(self, node.nd_next());
                     
                     ruby.getRubyScope().pop();
-                    rubyFrame = frame.getTmp();
+                    ruby.setRubyFrame(frame.getTmp());
                     
                     if (saved_cref != null) {
-                        ruby_cref = saved_cref;
+                        ruby.setRubyCRef(saved_cref);
                     }
                     
                     return result;
@@ -825,7 +764,7 @@ public class RubyInterpreter implements node_type, Scope {
                     return self.getInstanceVar((RubyId)node.nd_vid());
                     
                 case NODE_CONST:
-                    return getConstant((NODE)getRubyFrame().getCbase(), (RubyId)node.nd_vid(), self);
+                    return getConstant((NODE)ruby.getRubyFrame().getCbase(), (RubyId)node.nd_vid(), self);
                     
                 case NODE_CVAR:     /* normal method */
                     if (ruby_cbase == null) {
@@ -981,10 +920,10 @@ public class RubyInterpreter implements node_type, Scope {
                     return (RubyObject)node.nd_lit();
                     
                 case NODE_ATTRSET:
-                    if (getRubyFrame().getArgs().size() != 1) {
-                        throw new RubyArgumentException("wrong # of arguments(" + rubyFrame.getArgs().size() + "for 1)");
+                    if (ruby.getRubyFrame().getArgs().size() != 1) {
+                        throw new RubyArgumentException("wrong # of arguments(" + ruby.getRubyFrame().getArgs().size() + "for 1)");
                     }
-                    return self.setInstanceVar((RubyId)node.nd_vid(), (RubyObject)rubyFrame.getArgs().get(0));
+                    return self.setInstanceVar((RubyId)node.nd_vid(), (RubyObject)ruby.getRubyFrame().getArgs().get(0));
                     
                 case NODE_DEFN:
                     if (node.nd_defn() != null) {
@@ -1027,7 +966,7 @@ public class RubyInterpreter implements node_type, Scope {
                             noex |= NOEX_UNDEF;
                         }
                         
-                        NODE defn = node.nd_defn().copyNodeScope(ruby_cref);
+                        NODE defn = node.nd_defn().copyNodeScope(ruby.getRubyCRef());
                         ruby.getRubyClass().addMethod((RubyId)node.nd_mid(), defn, noex);
                         // rb_clear_cache_by_id(node.nd_mid());
                         if (actMethodScope == SCOPE_MODFUNC) {
@@ -1046,7 +985,7 @@ public class RubyInterpreter implements node_type, Scope {
                     if (node.nd_defn() != null) {
                         recv = eval(self, node.nd_recv());
                         
-                        if (getRuby().getSecurityLevel() >= 4 && !recv.isTaint()) {
+                        if (ruby.getSecurityLevel() >= 4 && !recv.isTaint()) {
                             throw new RubySecurityException("Insecure; can't define singleton method");
                         }
                         /*if (FIXNUM_P(recv) || SYMBOL_P(recv)) {
@@ -1061,15 +1000,15 @@ public class RubyInterpreter implements node_type, Scope {
                         
                         NODE body = (NODE)rubyClass.getMethods().get((RubyId)node.nd_mid());
                         if (body != null) {
-                            if (getRuby().getSecurityLevel() >= 4) {
+                            if (ruby.getSecurityLevel() >= 4) {
                                 throw new RubySecurityException("redefining method prohibited");
                             }
                             /*if (RTEST(ruby_verbose)) {
                                 rb_warning("redefine %s", rb_id2name(node.nd_mid()));
                             }*/
                         }
-                        NODE defn = node.nd_defn().copyNodeScope(ruby_cref);
-                        defn.nd_rval(ruby_cref);
+                        NODE defn = node.nd_defn().copyNodeScope(ruby.getRubyCRef());
+                        defn.nd_rval(ruby.getRubyCRef());
                         rubyClass.addMethod((RubyId)node.nd_mid(), defn, NOEX_PUBLIC | (body != null ? body.nd_noex() & NOEX_UNDEF : 0));
                         // rb_clear_cache_by_id(node.nd_mid());
                         recv.funcall(getRuby().intern("singleton_method_added"), ((RubyId)node.nd_mid()).toSymbol());
@@ -1250,16 +1189,13 @@ public class RubyInterpreter implements node_type, Scope {
     private void popClass() {
         ruby.setRubyClass((RubyModule)classStack.pop());
     }
-
-    public NODE ruby_cref = null;
-    private NODE top_cref;
     
     private void PUSH_CREF(Object c) {
-        ruby_cref = new NODE(NODE_CREF, c, null, ruby_cref);
+        ruby.setRubyCRef(new NODE(NODE.NODE_CREF, c, null, ruby.getRubyCRef()));
     }
     
     private void  POP_CREF() {
-        ruby_cref = ruby_cref.nd_next();
+        ruby.setRubyCRef(ruby.getRubyCRef().nd_next());
     }
 
     
@@ -1295,13 +1231,13 @@ public class RubyInterpreter implements node_type, Scope {
         
         // TMP_PROTECT;
 
-        Frame frame = getRubyFrame();
-        frame.setTmp(getRubyFrame());
-        rubyFrame = frame;
+        RubyFrame frame = ruby.getRubyFrame();
+        frame.setTmp(ruby.getRubyFrame());
+        ruby.setRubyFrame(frame);
 
         pushClass();
         ruby.setRubyClass(module);
-        getRuby().getRubyScope().push();
+        ruby.getRubyScope().push();
         RubyVarmap.push(ruby);
 
         if (node.nd_tbl() != null) {
@@ -1309,14 +1245,14 @@ public class RubyInterpreter implements node_type, Scope {
             ShiftableList vars = new ShiftableList(new ArrayList(tmp));
             vars.set(0, (VALUE)node);
             vars.shift(1);
-            getRuby().getRubyScope().setLocalTbl(node.nd_tbl());
+            ruby.getRubyScope().setLocalTbl(node.nd_tbl());
         } else {
-            getRuby().getRubyScope().setLocalVars(null);
-            getRuby().getRubyScope().setLocalTbl(null);
+            ruby.getRubyScope().setLocalVars(null);
+            ruby.getRubyScope().setLocalTbl(null);
         }
 
         PUSH_CREF(module);
-        getRubyFrame().setCbase((VALUE)ruby_cref);
+        ruby.getRubyFrame().setCbase(ruby.getRubyCRef());
         // PUSH_TAG(PROT_NONE);
         
         RubyObject result = null;
@@ -1332,10 +1268,10 @@ public class RubyInterpreter implements node_type, Scope {
         // POP_TAG();
         POP_CREF();
         RubyVarmap.pop(ruby);
-        getRuby().getRubyScope().pop();
+        ruby.getRubyScope().pop();
         popClass();
 
-        rubyFrame = frame.getTmp();
+        ruby.setRubyFrame(frame.getTmp());
 //        if (trace_func) {
 //            call_trace_func("end", file, line, 0, ruby_frame->last_func, ruby_frame->last_class );
 //        }
@@ -1511,11 +1447,11 @@ public class RubyInterpreter implements node_type, Scope {
     }
     
     public boolean isBlockGiven() {
-        return getRubyFrame().getIter() != Iter.ITER_NOT;
+        return ruby.getRubyFrame().getIter() != Iter.ITER_NOT;
     }
 
     public boolean isFBlockGiven() {
-        return (getRubyFrame().getPrev() != null) && (getRubyFrame().getPrev().getIter() != Iter.ITER_NOT);
+        return (ruby.getRubyFrame().getPrev() != null) && (ruby.getRubyFrame().getPrev().getIter() != Iter.ITER_NOT);
     }
 
     public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
@@ -1529,12 +1465,12 @@ public class RubyInterpreter implements node_type, Scope {
         pushClass();
         RubyBlock block = rubyBlock.getTmp();
         
-        Frame frame = block.frame;
-        frame.setPrev(getRubyFrame());
-        rubyFrame = frame;
+        RubyFrame frame = block.frame;
+        frame.setPrev(ruby.getRubyFrame());
+        ruby.setRubyFrame(frame);
         
-        VALUE old_cref = ruby_cref;
-        ruby_cref = (NODE)getRubyFrame().getCbase();
+        NODE oldCRef = ruby.getRubyCRef();
+        ruby.setRubyCRef((NODE)ruby.getRubyFrame().getCbase());
         
         RubyScope oldScope = ruby.getRubyScope();
         ruby.setRubyScope(block.scope);
@@ -1617,9 +1553,9 @@ public class RubyInterpreter implements node_type, Scope {
         RubyVarmap.pop(ruby);
         
         rubyBlock.setTmp(block);
-        rubyFrame = getRubyFrame().getPrev();
+        ruby.setRubyFrame(ruby.getRubyFrame().getPrev());
         
-        ruby_cref = (NODE)old_cref;
+        ruby.setRubyCRef(oldCRef);
         
         // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
         //    scope_dup(old_scope);
@@ -1704,14 +1640,14 @@ public class RubyInterpreter implements node_type, Scope {
     /** Getter for property rubyBlock.
      * @return Value of property rubyBlock.
      */
-    public org.jruby.interpreter.RubyBlock getRubyBlock() {
+    public RubyBlock getRubyBlock() {
         return rubyBlock;
     }
     
     /** Setter for property rubyBlock.
      * @param rubyBlock New value of property rubyBlock.
      */
-    public void setRubyBlock(org.jruby.interpreter.RubyBlock rubyBlock) {
+    public void setRubyBlock(RubyBlock rubyBlock) {
         this.rubyBlock = rubyBlock;
     }
     

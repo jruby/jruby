@@ -732,16 +732,16 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         // ...
         RubyInterpreter interpreter = getRuby().getInterpreter();
         
-        interpreter.getRubyFrame().push();
+        getRuby().getRubyFrame().push();
         
         // HACK +++
         interpreter.getRubyIter().push(Iter.ITER_NOT);
         // HACK ---
         
-        interpreter.getRubyFrame().setLastFunc(id);
-        interpreter.getRubyFrame().setLastClass(noSuper ? null : this);
-        interpreter.getRubyFrame().setSelf(recv);
-        interpreter.getRubyFrame().setArgs(new ShiftableList(args));
+        getRuby().getRubyFrame().setLastFunc(id);
+        getRuby().getRubyFrame().setLastClass(noSuper ? null : this);
+        getRuby().getRubyFrame().setSelf(recv);
+        getRuby().getRubyFrame().setArgs(new ShiftableList(args));
         
         RubyObject result = null;
         
@@ -778,9 +778,9 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 getRuby().getRubyScope().push();
                 
                 if (body.nd_rval() != null) {
-                    savedCref = interpreter.ruby_cref;
-                    interpreter.ruby_cref = (NODE)body.nd_rval();
-                    interpreter.getRubyFrame().setCbase(body.nd_rval());
+                    savedCref = getRuby().getRubyCRef();
+                    getRuby().setRubyCRef((NODE)body.nd_rval());
+                    getRuby().getRubyFrame().setCbase(body.nd_rval());
                 }
                 if (body.nd_tbl() != null) {
                     // ? +++
@@ -837,7 +837,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                                 throw new RubyArgumentException("wrong # of arguments(" + args.length + " for " + opt + ")");
                             }
                             
-                            interpreter.getRubyFrame().setArgs(localVarsList != null ? localVarsList.getList(2) : null);
+                            getRuby().getRubyFrame().setArgs(localVarsList != null ? localVarsList.getList(2) : null);
                         }
 
                         if (localVarsList != null) {
@@ -880,7 +880,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
                 RubyVarmap.pop(getRuby());
                 
                 getRuby().getRubyScope().pop();
-                interpreter.ruby_cref = savedCref;
+                getRuby().setRubyCRef(savedCref);
                 
                 break;
             }
@@ -889,7 +889,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             }
         }
         
-        interpreter.getRubyFrame().pop();
+        getRuby().getRubyFrame().pop();
         interpreter.getRubyIter().pop();
         
         return result ;
