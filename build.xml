@@ -33,7 +33,7 @@
   </patternset>
 
   <patternset id="rubyclass.src.pattern">
-    <!-- We keep old ObjectDefinition until bug XXX is fixed -->
+    <!-- We keep old ObjectDefinition until bug 640052 is fixed -->
     <exclude name="**/Object.xml"/>
     <include name="**/*.xml"/>
   </patternset>
@@ -224,5 +224,23 @@
       <delete file="${test.dir}/test.jar" quiet="true"/>
       <delete file="${lib.dir}/jruby.jar" quiet="true"/>
   </target>
+
+
+  <target name="create-doxygen-docs" description="creates documentation with doxygen">
+        <taskdef name="doxygen" classname="org.doxygen.tools.DoxygenTask"
+            classpath="./lib/doxygen_ant.jar" />
+            
+        <mkdir dir="${docs.dir}" />            
+        <doxygen outputDirectory="${docs.dir}" 
+                input="${src.dir}" 
+                recursive="yes"
+                generateLatex="false"
+                projectName="Ant - Doxygen Test Docs" 
+                projectNumber = "1.0" 
+                generateTreeview  = "yes"
+                sourceBrowser="yes"
+                referencedByRelation="yes"
+         />      
+   </target>
 
 </project>
