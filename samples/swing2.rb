@@ -12,7 +12,7 @@ button = JButton.new "Klick Me!"
 
 # Add an action to the button
 button.addActionListener actionPerformed { |evt| 
-  JOptionPane.showMessageDialog NIL, 
+  JOptionPane.showMessageDialog nil, 
   "<html>Hello from JRuby.<br>The button was: <i>#{evt.actionCommand}</i>"
 
 }
