@@ -1494,15 +1494,17 @@ public class RubyModule extends RubyObject {
                     ary.append(RubyString.newString(getRuntime(), id));
                 }
             }
-
             if (!includeSuper) {
                 break;
             }
         }
 
+        // What on earth is the above code doing when it inserts nil:s in front of
+        // some values in the array!? Very naughty! -- Anders
+
         Iterator iter = ary.getList().iterator();
         while (iter.hasNext()) {
-            if (getRuntime().getNil() == iter.next()) {
+            if (((IRubyObject) iter.next()).isNil()) {
                 iter.remove();
                 iter.next();
             }
