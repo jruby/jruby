@@ -3,7 +3,6 @@ package org.jruby.runtime.load;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
