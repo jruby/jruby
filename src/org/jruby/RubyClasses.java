@@ -695,7 +695,7 @@ public class RubyClasses {
      */
     public RubyClass getJavaObjectClass() {
         if (javaObjectClass == null) {
-            javaObjectClass = RubyJavaObject.createJavaObjectClass(runtime);
+            javaObjectClass = JavaObject.createJavaObjectClass(runtime);
         }
         return javaObjectClass;
     }

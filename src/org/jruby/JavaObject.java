@@ -1,31 +1,31 @@
 /*
- * RubyJavaObject.java - No description
+ * JavaObject.java - No description
  * Created on 21. September 2001, 14:43
- * 
+ *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 
 package org.jruby;
@@ -39,10 +39,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyJavaObject extends RubyObject implements IndexCallable {
+public class JavaObject extends RubyObject implements IndexCallable {
     private Object value;
 
-    public RubyJavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
+    public JavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
         super(ruby, rubyClass);
         this.value = value;
     }
@@ -94,8 +94,8 @@ public class RubyJavaObject extends RubyObject implements IndexCallable {
     }
 
     public RubyBoolean equal(IRubyObject other) {
-        if (other instanceof RubyJavaObject) {
-            return (getValue() != null && getValue().equals(((RubyJavaObject) other).getValue()))
+        if (other instanceof JavaObject) {
+            return (getValue() != null && getValue().equals(((JavaObject) other).getValue()))
                 ? getRuntime().getTrue()
                 : getRuntime().getFalse();
         }

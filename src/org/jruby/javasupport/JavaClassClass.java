@@ -30,7 +30,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyJavaObject;
+import org.jruby.JavaObject;
 import org.jruby.RubyInteger;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
@@ -230,12 +230,12 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return new JavaClassClass(getRuntime(), Array.newInstance(javaClass, 0).getClass());
     }
 
-    public RubyJavaObject new_array(IRubyObject lengthArgument) {
+    public JavaObject new_array(IRubyObject lengthArgument) {
         if (! (lengthArgument instanceof RubyInteger)) {
             throw new TypeError(getRuntime(), lengthArgument, getRuntime().getClasses().getIntegerClass());
         }
         int length = (int) ((RubyInteger) lengthArgument).getLongValue();
-        return new RubyJavaObject(getRuntime(),
+        return new JavaObject(getRuntime(),
                                   getRuntime().getClasses().getJavaObjectClass(),
                                   Array.newInstance(javaClass, length));
     }

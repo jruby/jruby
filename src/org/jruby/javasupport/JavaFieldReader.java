@@ -29,7 +29,7 @@ package org.jruby.javasupport;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Callback;
-import org.jruby.RubyJavaObject;
+import org.jruby.JavaObject;
 import org.jruby.exceptions.SecurityError;
 
 import java.lang.reflect.Field;
@@ -55,7 +55,7 @@ public class JavaFieldReader implements Callback {
      */
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
         try {
-			return JavaUtil.convertJavaToRuby(recv.getRuntime(), field.get(((RubyJavaObject)recv).getValue()));
+			return JavaUtil.convertJavaToRuby(recv.getRuntime(), field.get(((JavaObject)recv).getValue()));
         } catch (IllegalAccessException iaExcptn) {
             throw new SecurityError(recv.getRuntime(), iaExcptn.getMessage());
         }

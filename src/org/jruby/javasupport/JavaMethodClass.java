@@ -27,7 +27,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
-import org.jruby.RubyJavaObject;
+import org.jruby.JavaObject;
 import org.jruby.util.Asserts;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
@@ -115,10 +115,10 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
             throw new ArgumentError(getRuntime(), args.length, 1 + getArity());
         }
         IRubyObject invokee = args[0];
-        if (! (invokee instanceof RubyJavaObject)) {
+        if (! (invokee instanceof JavaObject)) {
             throw new TypeError(getRuntime(), "invokee not a java object");
         }
-        Object javaInvokee = ((RubyJavaObject) invokee).getValue();
+        Object javaInvokee = ((JavaObject) invokee).getValue();
         Object[] arguments = new Object[args.length - 1];
         System.arraycopy(args, 1, arguments, 0, arguments.length);
         convertArguments(arguments);
@@ -158,7 +158,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return new RubyJavaObject(runtime, proxyClass, result);
+            return new JavaObject(runtime, proxyClass, result);
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {

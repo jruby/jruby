@@ -24,7 +24,7 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyJavaObject;
+import org.jruby.JavaObject;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
@@ -80,7 +80,7 @@ public class JavaConstructorClass extends JavaCallable implements IndexCallable 
         }
         try {
             Object result = constructor.newInstance(constructorArguments);
-            return new RubyJavaObject(getRuntime(), returnType, result);
+            return new JavaObject(getRuntime(), returnType, result);
 
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect() +

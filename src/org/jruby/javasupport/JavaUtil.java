@@ -37,7 +37,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.RubyJavaObject;
+import org.jruby.JavaObject;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -111,8 +111,8 @@ public class JavaUtil {
             return null;
         }
 
-        if (rubyObject instanceof RubyJavaObject) {
-            return ((RubyJavaObject) rubyObject).getValue();
+        if (rubyObject instanceof JavaObject) {
+            return ((JavaObject) rubyObject).getValue();
         } else if (javaClass == Object.class || javaClass == null) {
             /* The Java method doesn't care what class it is, but we need to
                know what to convert it to, so we use the object's own class.
@@ -193,7 +193,7 @@ public class JavaUtil {
         } else if (javaClass == String.class) {
             return ((RubyString) rubyObject.callMethod("to_s")).getValue();
         } else {
-            return ((RubyJavaObject) rubyObject).getValue();
+            return ((JavaObject) rubyObject).getValue();
         }
     }
 
@@ -268,14 +268,14 @@ public class JavaUtil {
                 ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
             while (iter.hasNext()) {
                 IRubyObject rubyObject = (IRubyObject) iter.next();
-                if (rubyObject instanceof RubyJavaObject) {
-                    if (((RubyJavaObject) rubyObject).getValue() == object) {
+                if (rubyObject instanceof JavaObject) {
+                    if (((JavaObject) rubyObject).getValue() == object) {
                         return rubyObject;
                     }
                 }
             }
             RubyClass rubyClass = (RubyClass) ruby.getJavaSupport().loadClass(javaClass, null);
-            return new RubyJavaObject(ruby, rubyClass, object);
+            return new JavaObject(ruby, rubyClass, object);
         }
     }
 
@@ -365,8 +365,8 @@ public class JavaUtil {
 
     public static Object convertArgument(Object argument, Class parameterType) {
         Object result = argument;
-        if (result instanceof RubyJavaObject) {
-            result = ((RubyJavaObject) result).getValue();
+        if (result instanceof JavaObject) {
+            result = ((JavaObject) result).getValue();
         }
         // FIXME: do convertions for all numeric types
         if (parameterType.equals(Integer.class) || parameterType.equals(Integer.TYPE)) {

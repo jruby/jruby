@@ -51,12 +51,12 @@ public class RubyJava {
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
         Ruby runtime = recv.getRuntime();
         Object javaObject = JavaUtil.convertRubyToJava(runtime, object);
-        return new RubyJavaObject(runtime, runtime.getClasses().getJavaObjectClass(), javaObject);
+        return new JavaObject(runtime, runtime.getClasses().getJavaObjectClass(), javaObject);
     }
 
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object) {
-        if (object instanceof RubyJavaObject) {
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((RubyJavaObject) object).getValue());
+        if (object instanceof JavaObject) {
+            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
         } else {
             return object;
         }
