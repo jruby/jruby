@@ -106,7 +106,9 @@ public final class Ruby {
     
     // Java support
     private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
-    
+ 
+ 	// plugable Regexp engine	
+	private Class regexpAdapterClass = GNURegexpAdapter.class;
     /** Create and initialize a new jruby Runtime.
      */    
     public Ruby() {
@@ -118,7 +120,17 @@ public final class Ruby {
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
     }
-    
+   
+	public Class getRegexpAdapterClass()
+	{
+		return regexpAdapterClass;
+	}
+
+	public void setRegexpAdapterClass(Class iRegexpAdapterClass)
+	{
+		regexpAdapterClass = iRegexpAdapterClass;
+	}
+	
     public RubyClasses getClasses() {
         return classes;
     }
