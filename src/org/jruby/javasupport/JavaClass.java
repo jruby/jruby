@@ -46,7 +46,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Array;
 
 public class JavaClass extends RubyObject implements IndexCallable {
-    private Class javaClass;
+    private final Class javaClass;
 
     private JavaClass(Ruby runtime, String name) {
         this(runtime, runtime.getJavaSupport().loadJavaClass(name));

@@ -18,7 +18,6 @@ public class Java {
         javaModule.defineModuleFunction("define_exception_handler", CallbackFactory.getOptSingletonMethod(Java.class, "define_exception_handler"));
         javaModule.defineModuleFunction("primitive_to_java", CallbackFactory.getSingletonMethod(Java.class, "primitive_to_java", IRubyObject.class));
         javaModule.defineModuleFunction("java_to_primitive", CallbackFactory.getSingletonMethod(Java.class, "java_to_primitive", IRubyObject.class));
-        javaModule.defineModuleFunction("type_of", CallbackFactory.getSingletonMethod(Java.class, "type_of", IRubyObject.class));
         javaModule.defineModuleFunction("new_proxy_instance", CallbackFactory.getOptSingletonMethod(Java.class, "new_proxy_instance"));
 
         JavaClass.createJavaClassClass(runtime, javaModule);
@@ -54,13 +53,6 @@ public class Java {
         } else {
             return object;
         }
-    }
-
-    public static IRubyObject type_of(IRubyObject recv, IRubyObject object) {
-        if (! (object instanceof JavaObject)) {
-            return recv.getRuntime().getNil();
-        }
-        return ((JavaObject) object).java_type();
     }
 
     public static IRubyObject new_proxy_instance(final IRubyObject recv, IRubyObject[] args) {

@@ -21,6 +21,8 @@
 # the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307 USA
 
+# $Revision$
+
 module JavaProxy
   attr :java_class, true
   attr :java_object, true
@@ -122,7 +124,7 @@ module JavaUtilities
               args = JavaProxy.convert_arguments(args)
               result = m.invoke(self.java_object, *args)
               result = Java.java_to_primitive(result)
-              if Java.type_of(result)
+              if result.kind_of?(JavaObject)
                 result = JavaUtilities.wrap(result, m.return_type)
               end
               result
@@ -137,7 +139,7 @@ module JavaUtilities
                   return_type = m.return_type
                   args = convert_arguments(args)
                   result = Java.java_to_primitive(m.invoke(self.java_object, *args))
-                  if Java.type_of(result)
+                  if result.kind_of?(JavaObject)
                     result = JavaUtilities.wrap(result, m.return_type)
                   end
                   result
@@ -167,7 +169,7 @@ module JavaUtilities
                                "method = methods.first;" +
                                "return_type = method.return_type;" +
                                "result = Java.java_to_primitive(method.invoke_static(*args));" +
-                               "if Java.type_of(result);" +
+                               "if result.kind_of?(JavaObject);" +
                                "  result = JavaUtilities.wrap(result, method.return_type);" +
                                "end;" +
                                "result;" +
