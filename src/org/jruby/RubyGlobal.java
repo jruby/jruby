@@ -3,12 +3,13 @@
  * Created on 12.01.2002, 17:33:23
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Copyright (C) 2004 Thomas E Enebo
+ * Copyright (C) 2004 Thomas E Enebo, Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -80,6 +81,7 @@ public class RubyGlobal {
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr));
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$>", stdout));
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$defout", stdout));
+        runtime.defineVariable(new OutputGlobalVariable(runtime, "$deferr", stderr));
 
         runtime.defineGlobalConstant("STDIN", stdin);
         runtime.defineGlobalConstant("STDOUT", stdout);
