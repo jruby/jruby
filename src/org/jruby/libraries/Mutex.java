@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -26,12 +27,9 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.callback.IndexedCallback;
-import org.jruby.runtime.builtin.IRubyObject;
 
-public class Mutex extends RubyObject implements IndexCallable {
+public class Mutex extends RubyObject {
     private boolean isLocked = false;
 
     private Mutex(Ruby runtime) {
