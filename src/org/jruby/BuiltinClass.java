@@ -78,6 +78,10 @@ public abstract class BuiltinClass extends RubyClass {
     public abstract RubyClass newSubClass(String name, RubyModule parentModule);
     
     protected abstract IRubyObject allocateObject();
+    
+    public void defineMethod(String name, Arity arity) {
+    	defineMethod(name, arity, name);
+    }
 
     public void defineMethod(String name, Arity arity, String java_name) {
         assert name != null;
@@ -86,6 +90,10 @@ public abstract class BuiltinClass extends RubyClass {
         assert builtinClass != null;
 
         defineMethod(name, new ReflectionCallback(builtinClass, java_name, arity));
+    }
+
+    public void defineSingletonMethod(String name, Arity arity) {
+    	defineSingletonMethod(name, arity, name);
     }
 
     public void defineSingletonMethod(String name, Arity arity, String java_name) {
