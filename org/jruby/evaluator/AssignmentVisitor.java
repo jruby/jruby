@@ -49,6 +49,7 @@ import org.jruby.ast.util.ListNodeUtil;
 import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.common.IErrors;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -96,11 +97,11 @@ public class AssignmentVisitor extends AbstractVisitor {
         IRubyObject receiver = evaluator.eval(iVisited.getReceiverNode());
 
         if (iVisited.getArgsNode() == null) { // attribute set.
-            receiver.getInternalClass().call(receiver, iVisited.getName(), new IRubyObject[] {value}, 0);
+            receiver.getInternalClass().call(receiver, iVisited.getName(), new IRubyObject[] {value}, CallType.NORMAL);
         } else { // element set
             RubyArray args = (RubyArray) evaluator.eval(iVisited.getArgsNode());
             args.append(value);
-            receiver.getInternalClass().call(receiver, iVisited.getName(), args.toJavaArray(), 0);
+            receiver.getInternalClass().call(receiver, iVisited.getName(), args.toJavaArray(), CallType.NORMAL);
         }
     }
 

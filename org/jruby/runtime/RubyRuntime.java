@@ -80,7 +80,7 @@ public class RubyRuntime {
 						ruby.getCurrentFrame().getSelf(),
 						ruby.getCurrentFrame().getLastFunc(),
 						args,
-						3);
+						CallType.SUPER);
 		} finally {
 			ruby.getIterStack().pop();
 		}
@@ -92,7 +92,7 @@ public class RubyRuntime {
 	 *
 	 */
 	public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-		IRubyObject self = ruby.getRubyTopSelf();
+		IRubyObject self = ruby.getTopSelf();
 		Namespace savedNamespace = ruby.getNamespace();
 
 		ruby.pushDynamicVars();
@@ -108,7 +108,7 @@ public class RubyRuntime {
 			/* load in anonymous module as toplevel */
 			ruby.setWrapper(RubyModule.newModule(ruby));
 			ruby.pushClass(ruby.getWrapper());
-			self = ruby.getRubyTopSelf().rbClone();
+			self = ruby.getTopSelf().rbClone();
 			self.extendObject(ruby.getRubyClass());
 			ruby.setNamespace(new Namespace(ruby.getWrapper(), ruby.getNamespace()));
 		}

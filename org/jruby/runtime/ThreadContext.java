@@ -114,7 +114,7 @@ public class ThreadContext {
     }
 
     public IRubyObject eval(Ruby ruby1, INode node) {
-        return EvaluateVisitor.createVisitor(ruby.getRubyTopSelf()).eval(node);
+        return EvaluateVisitor.createVisitor(ruby.getTopSelf()).eval(node);
     }
 
     public ScopeStack getScopeStack() {

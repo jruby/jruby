@@ -76,7 +76,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args.toArray());
 
-        Object result = JavaUtil.convertRubyToJava(ruby, ruby.getRubyTopSelf().callMethod("__jruby_bsf_anonymous", rubyArgs));
+        Object result = JavaUtil.convertRubyToJava(ruby, ruby.getTopSelf().callMethod("__jruby_bsf_anonymous", rubyArgs));
 
         ruby.setSourceFile(oldFile);
         ruby.setSourceLine(oldLine);
@@ -122,7 +122,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object call(Object recv, String method, Object[] args) throws BSFException {
         try {
-            IRubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(ruby, recv) : ruby.getRubyTopSelf();
+            IRubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(ruby, recv) : ruby.getTopSelf();
 
             IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args);
 

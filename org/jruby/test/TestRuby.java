@@ -66,78 +66,8 @@ public class TestRuby extends TestRubyBase {
     private String oldHomeProperty;
     private String oldLibProperty;
 
-    public void testInitLoad() throws Exception {
-        ArrayList list = new ArrayList();
-        //check without a RubyHome and with one parameter
-        System.setProperty("jruby.home", "");
-        System.setProperty("jruby.lib", "");
-        list.add("toto");
-        ruby.initLoad(list);
-        //check that the global vars are correctly valuated
-        IRubyObject lCol = ruby.getGlobalVar("$:");
-        IRubyObject lI = ruby.getGlobalVar("$-I");
-        IRubyObject lLoad = ruby.getGlobalVar("$LOAD_PATH");
-        assertTrue(lCol == lI && lI == lLoad && lLoad != null);
-        RubyArray lLoadA = (RubyArray) lLoad;
-        //check that we have 2 non null element
-        assertEquals(2, RubyNumeric.num2long(lLoadA.nitems()));
-        //check that it is what we expect, a RubyString of the correct type
-        assertTrue(new RubyString(ruby, "toto").equal(lLoadA.shift()));
-        assertTrue(new RubyString(ruby, ".").equal(lLoadA.shift()));
-        //check the case when RubyHome is valuated
-        System.setProperty("jruby.home", "RubyHome");
-        //MRI result
-        /*
-        C:\dev\jruby>ruby -e "puts $:"
-        /cygdrive/d/ruby/lib/ruby/site_ruby/1.6
-        /cygdrive/d/ruby/lib/ruby/site_ruby/1.6/i386-cygwin
-        /cygdrive/d/ruby/lib/ruby/site_ruby
-        /cygdrive/d/ruby/lib/ruby/1.6
-        /cygdrive/d/ruby/lib/ruby/1.6/i386-cygwin
-        .
-        
-         */
-        ruby.initLoad(new ArrayList());
-        String wanted;
-        if (File.separatorChar == '/') {
-            wanted =
-                "RubyHome/lib/ruby/site_ruby/1.6"
-                    + "RubyHome/lib/ruby/site_ruby/1.6/java"
-                    + "RubyHome/lib/ruby/site_ruby"
-                    + "RubyHome/lib/ruby/1.6"
-                    + "RubyHome/lib/ruby/1.6/java"
-                    + ".";
-        } else {
-            wanted =
-                "RubyHome\\lib\\ruby\\site_ruby\\1.6"
-                    + "RubyHome\\lib\\ruby\\site_ruby\\1.6\\java"
-                    + "RubyHome\\lib\\ruby\\site_ruby"
-                    + "RubyHome\\lib\\ruby\\1.6"
-                    + "RubyHome\\lib\\ruby\\1.6\\java"
-                    + ".";
-        }
-        assertEquals(wanted, eval("puts $:"));
-    }
-
-    public void testFindFile() {
-        ArrayList list = new ArrayList();
-        ruby.initLoad(list);
-        list.clear();
-        File testFile = new File("fib.rb");
-        try {
-            ruby.findFile(ruby, testFile);
-            fail("should have thrown an exception, the file fib.rb is not 					in the search path");
-        } catch (Exception e) {
-        }
-        list.add("./samples");
-        //now we valuate the path 
-        ruby.initLoad(list);
-        assertEquals(new File("./samples/fib.rb"), ruby.findFile(ruby, testFile));
-    }
-
     public void testVarAndMet() throws Exception {
-        ArrayList list = new ArrayList();
-        ruby.initLoad(list);
+        ruby.getLoadService().init(ruby, new ArrayList());
         eval("load './test/testVariableAndMethod.rb'");
         assertEquals("Hello World", eval("puts($a)"));
         assertEquals("dlroW olleH", eval("puts $b"));

@@ -156,6 +156,7 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
@@ -405,7 +406,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
-        result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, 0);
+        result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
 
     /**
@@ -823,7 +824,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         IRubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
-        result = self.getInternalClass().call(self, iVisited.getName(), args, 1);
+        result = self.getInternalClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
     }
 
     /**
@@ -885,7 +886,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                     ruby.setSourceFile(file);
                     ruby.setSourceLine(line);
-                    result = recv.getInternalClass().call(recv, "each", null, 0);
+                    result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
 
                     return;
                 } catch (RetryException rExcptn) {
@@ -1045,9 +1046,9 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new TypeError(ruby, "no outer class/module");
         }
 
-        if ((ruby.getRubyClass() == ruby.getClasses().getObjectClass()) && ruby.isAutoloadDefined(iVisited.getName())) {
+        //if ((ruby.getRubyClass() == ruby.getClasses().getObjectClass()) && ruby.isAutoloadDefined(iVisited.getName())) {
             // getRuby().rb_autoload_load(node.nd_cname());
-        }
+        //}
 
         RubyModule module = null;
 
@@ -1211,7 +1212,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
     public void visitOptNNode(OptNNode iVisited) {
-        while (RubyKernel.gets(ruby.getRubyTopSelf(), new IRubyObject[0]).isTrue()) {
+        while (RubyKernel.gets(ruby.getTopSelf(), new IRubyObject[0]).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
                     eval(iVisited.getBodyNode());
@@ -1406,7 +1407,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         ruby.getIterStack().push(ruby.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            result = ruby.getCurrentFrame().getLastClass().getSuperClass().call(ruby.getCurrentFrame().getSelf(), ruby.getCurrentFrame().getLastFunc(), args, 3);
+            result = ruby.getCurrentFrame().getLastClass().getSuperClass().call(ruby.getCurrentFrame().getSelf(), ruby.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
         } finally {
             ruby.getIterStack().pop();
         }
@@ -1464,7 +1465,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
-        result = self.getInternalClass().call(self, iVisited.getMethodName(), null, 2);
+        result = self.getInternalClass().call(self, iVisited.getMethodName(), null, CallType.VARIABLE);
     }
 
     /**
@@ -1533,7 +1534,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         ruby.getIterStack().push(ruby.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            result = ruby.getCurrentFrame().getLastClass().getSuperClass().call(ruby.getCurrentFrame().getSelf(), ruby.getCurrentFrame().getLastFunc(), args, 3);
+            result = ruby.getCurrentFrame().getLastClass().getSuperClass().call(ruby.getCurrentFrame().getSelf(), ruby.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
         } finally {
             ruby.getIterStack().pop();
         }

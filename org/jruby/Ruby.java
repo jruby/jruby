@@ -72,6 +72,8 @@ import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.ILoadService;
+import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -132,7 +134,7 @@ public final class Ruby {
 
     private final RubyRuntime runtime = new RubyRuntime(this);
 
-    private IRubyObject rubyTopSelf;
+    private IRubyObject topSelf;
 
     private Scope topScope = null;
 
@@ -161,6 +163,7 @@ public final class Ruby {
     private Parser parser = new Parser(this);
 
     private LastCallStatus lastCallStatus = new LastCallStatus();
+    private ILoadService loadService = LoadServiceFactory.createLoadService();
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -333,18 +336,18 @@ public final class Ruby {
         getClasses().getObjectClass().defineConstant(name, value);
     }
 
-    /** top_const_get
+    /** 
+     * @mri top_const_get
      *
      */
-    public IRubyObject getTopConstant(String id) {
-        return getClasses().getClass(id);
-    }
+    public IRubyObject getTopConstant(String name) {
+        IRubyObject constant = getClasses().getClass(name);
+        
+        if (constant == null) {
+            constant = getLoadService().autoload(name);
+        }
 
-    /**
-     *
-     */
-    public boolean isAutoloadDefined(String name) {
-        return false;
+        return constant;
     }
 
     public boolean isClassDefined(String name) {
@@ -409,8 +412,8 @@ public final class Ruby {
     /** Getter for property rubyTopSelf.
      * @return Value of property rubyTopSelf.
      */
-    public IRubyObject getRubyTopSelf() {
-        return rubyTopSelf;
+    public IRubyObject getTopSelf() {
+        return topSelf;
     }
 
     /** rb_iterate
@@ -418,7 +421,7 @@ public final class Ruby {
      */
     public IRubyObject iterate(Callback iterateMethod, IRubyObject data1, Callback blockMethod, IRubyObject data2) {
         getIterStack().push(Iter.ITER_PRE);
-        getBlockStack().push(null, new IterateMethod(blockMethod, data2), getRubyTopSelf());
+        getBlockStack().push(null, new IterateMethod(blockMethod, data2), getTopSelf());
 
         try {
             while (true) {
@@ -459,10 +462,10 @@ public final class Ruby {
             exceptions = new RubyExceptions(this);
             exceptions.initDefaultExceptionClasses();
 
-            rubyTopSelf = getFactory().newObject(classes.getObjectClass());
+            topSelf = TopSelfFactory.createTopSelf(this);
 
             classStack.push(getClasses().getObjectClass());
-            getCurrentFrame().setSelf(rubyTopSelf);
+            getCurrentFrame().setSelf(topSelf);
             topNamespace = new Namespace(getClasses().getObjectClass());
             namespace = topNamespace;
             getCurrentFrame().setNamespace(namespace);
@@ -694,91 +697,6 @@ public final class Ruby {
         globalMap.put(name, new ReadonlyGlobalVariable(this, name, value));
     }
 
-    /**
-     * Init the LOAD_PATH variable.
-     * MRI: eval.c:void Init_load()
-     * 		from programming ruby
-     *
-     *   An array of strings, where each string specifies a directory to be searched
-     *   for Ruby scripts and binary extensions used by the load and require
-     *   The initial value is the value of the arguments passed via the -I command-line
-     *	 option, followed by an installation-defined standard library location, followed
-     *   by the current directory (``.''). This variable may be set from within a program to alter
-     *   the default search path; typically, programs use $: &lt;&lt; dir to append dir to the path.
-     *   Warning: the ioAdditionalDirectory list will be modified by this process!
-     *   @param ioAdditionalDirectory the directory specified on the command line
-     */
-    public void initLoad(List ioAdditionalDirectory) {
-        //	don't know what this is used for in MRI, it holds the handle of all loaded libs
-        //		ruby_dln_librefs = rb_ary_new();
-
-        // in MRI the ruby installation path is determined from the place where the ruby lib is found
-        // of course we can't do that, let's just use the jruby.home property
-        String lRubyHome = System.getProperty("jruby.home");
-        String lRubyLib = System.getProperty("jruby.lib");
-        /*if (lRubyLib == null && lRubyHome != null && lRubyHome.length() != 0) {
-            lRubyLib = lRubyHome + File.separatorChar + "lib";
-        }*/
-
-        for (int i = ioAdditionalDirectory.size() - 1; i >= 0; i--) {
-            ioAdditionalDirectory.set(i, new RubyString(this, (String) ioAdditionalDirectory.get(i)));
-        }
-
-        if (lRubyLib != null && lRubyLib.length() != 0) {
-            ioAdditionalDirectory.add(new RubyString(this, lRubyLib));
-        }
-
-        if (lRubyHome != null && lRubyHome.length() != 0) {
-            //FIXME: use the version number in some other way than hardcoded here
-            String lRuby = lRubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
-            String lSiteRuby = lRuby + "site_ruby";
-            String lSiteRubyVersion = lSiteRuby + File.separatorChar + Constants.RUBY_MAJOR_VERSION;
-            String lArch = File.separatorChar + "java";
-            String lRubyVersion = lRuby + Constants.RUBY_MAJOR_VERSION;
-
-            ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
-            ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
-            ioAdditionalDirectory.add(new RubyString(this, lSiteRuby));
-            ioAdditionalDirectory.add(new RubyString(this, lRubyVersion));
-            ioAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
-        }
-
-        //FIXME: safe level pb here
-        ioAdditionalDirectory.add(new RubyString(this, "."));
-
-        RubyArray loadPath = (RubyArray) getGlobalVar("$:");
-        loadPath.getList().addAll(ioAdditionalDirectory);
-    }
-
-    /**
-     * this method uses the appropriate lookup strategy to find a file.
-     * It is used by Kernel#require.
-     * NOTE: this is only public for unit testing reasons.
-     * 		 it should have package (default) protection
-     *  (matz Ruby: rb_find_file)
-     *  @param ruby the ruby interpreter
-     *  @param i2find the file to find, this is a path name
-     *  @return the correct file
-     */
-    public File findFile(Ruby ruby, File i2find) {
-        RubyArray lLoadPath = (RubyArray) getGlobalVar("$:");
-        int lPathNb = lLoadPath.getLength();
-        String l2Find = i2find.getPath();
-        for (int i = 0; i < lPathNb; i++) {
-            String lCurPath = ((RubyString) lLoadPath.entry(i)).getValue();
-            File lCurFile = new File(lCurPath, l2Find);
-            if (lCurFile.exists()) {
-                i2find = lCurFile;
-                break;
-            }
-        }
-        if (i2find.exists()) {
-            return i2find;
-        } else {
-            throw new LoadError(ruby, "No such file to load -- " + i2find.getPath());
-        }
-    }
-
     public INode parse(Reader content, String file) {
         return parser.parse(file, content);
     }
@@ -856,6 +774,14 @@ public final class Ruby {
      */
     public LastCallStatus getLastCallStatus() {
         return lastCallStatus;
+    }
+
+    /**
+     * Returns the loadService.
+     * @return ILoadService
+     */
+    public ILoadService getLoadService() {
+        return loadService;
     }
 
 }

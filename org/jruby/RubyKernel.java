@@ -393,40 +393,20 @@ public class RubyKernel {
      * we allow requiring either .rb files or jars.
      * @param ruby the ruby interpreter to use.
      * @param recv ruby object used to call require (any object will do and it won't be used anyway).
-     * @param i2Load the name of the file to require
+     * @param file the name of the file to require
      **/
-    public static IRubyObject require(IRubyObject recv, RubyString i2Load) {
-        //this is inefficient but it will do for now
-        RubyArray lFeatures = (RubyArray) recv.getRuntime().getGlobalVar("$\"");
-        if (lFeatures.index(i2Load).isNil()) {
-            load(recv, i2Load);
-            lFeatures.append(i2Load);
+    public static IRubyObject require(IRubyObject recv, RubyString file) {
+        if (recv.getRuntime().getLoadService().require(file.toString())) {
             return recv.getRuntime().getTrue();
         }
         return recv.getRuntime().getFalse();
     }
 
-    public static IRubyObject load(IRubyObject recv, RubyString i2Load) {
-        if (i2Load.getValue().endsWith(".jar")) {
-            File jarFile = recv.getRuntime().findFile(recv.getRuntime(), new File(i2Load.getValue()));
-            if (!jarFile.exists()) {
-                recv.getRuntime().getRuntime().getErrorStream().println(
-                    "[Error] Jarfile + \"" + jarFile.getAbsolutePath() + "\"not found.");
-            } else {
-                /*try {
-                  ClassLoader javaClassLoader = new URLClassLoader(new URL[] { jarFile.toURL()}, ruby.getJavaClassLoader());
-                  ruby.setJavaClassLoader(javaClassLoader);
-                  } catch (MalformedURLException murlExcptn) {
-                  }*/
-            }
-        } else {
-            if (!i2Load.getValue().endsWith(".rb")) {
-                i2Load = RubyString.newString(recv.getRuntime(), i2Load.getValue() + ".rb");
-            }
-            File rbFile = recv.getRuntime().findFile(recv.getRuntime(), new File(i2Load.getValue()));
-            recv.getRuntime().getRuntime().loadFile(rbFile, false);
+    public static IRubyObject load(IRubyObject recv, RubyString file) {
+        if (recv.getRuntime().getLoadService().load(file.toString())) {
+            return recv.getRuntime().getTrue();
         }
-        return recv.getRuntime().getTrue();
+        return recv.getRuntime().getFalse();
     }
 
     public static IRubyObject eval(IRubyObject recv, RubyString src, IRubyObject[] args) {

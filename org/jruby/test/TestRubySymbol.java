@@ -46,8 +46,8 @@ public class TestRubySymbol extends TestCase {
     }
 
     public void setUp() {
-	ruby = Ruby.getDefaultInstance(null);
-	ruby.initLoad(new ArrayList());
+        ruby = Ruby.getDefaultInstance(null);
+        ruby.getLoadService().init(ruby, new ArrayList());
     }
 
     public void testSymbolTable() throws Exception {

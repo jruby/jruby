@@ -46,6 +46,7 @@ import org.jruby.internal.runtime.methods.CallbackMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.Constants;
@@ -672,7 +673,7 @@ public class RubyModule extends RubyObject {
             return true;
         }
 
-        return getRuntime().isAutoloadDefined(name);
+        return runtime.getLoadService().isAutoloadDefined(name);
     }
 
     /**
@@ -747,7 +748,7 @@ public class RubyModule extends RubyObject {
     /** rb_call
      *
      */
-    public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, int scope) {
+    public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, CallType callType) {
         if (args == null) {
             args = new IRubyObject[0];
         }
@@ -759,9 +760,9 @@ public class RubyModule extends RubyObject {
         }
 
         if (ent == null || ent.getMethod().isUndefined()) {
-            if (scope == 3) {
+            if (callType.isSuper()) {
                 throw new NameError(runtime, "super: no superclass method '" + name + "'");
-            } else if (scope == 2) {
+            } else if (callType.isVariable()) {
                 runtime.getLastCallStatus().setVariable();
             } else {
                 runtime.getLastCallStatus().setNormal();
@@ -774,7 +775,7 @@ public class RubyModule extends RubyObject {
         ICallable method = ent.getMethod();
 
         if (!name.equals("method_missing")) {
-            if (method.getVisibility().isPrivate() && scope == 0) {
+            if (method.getVisibility().isPrivate() && callType.isNormal()) {
                 runtime.getLastCallStatus().setPrivate();
                 return callMethodMissing(recv, name, args);
             } else if (method.getVisibility().isProtected()) {
@@ -788,8 +789,6 @@ public class RubyModule extends RubyObject {
                 }
             }
         }
-
-        // ...
 
         return klass.call0(recv, name, args, method, false);
     }

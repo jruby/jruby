@@ -31,6 +31,9 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.TopSelfFactory;
+import org.jruby.runtime.Callback;
+import org.jruby.runtime.ICallable;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.RubyMap;
 
@@ -267,4 +270,11 @@ public interface IRubyObject {
      * @return IRubyObject
      */
     IRubyObject method_missing(IRubyObject[] args);
+
+    /**
+     * Method defineSingletonMethod.
+     * @param string
+     * @param object
+     */
+    void defineSingletonMethod(String name, Callback callback);
 }

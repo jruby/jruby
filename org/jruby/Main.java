@@ -262,12 +262,12 @@ public class Main {
         ruby.defineReadonlyVariable("$-l", (sDoLine ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$*", lArgv);
         ruby.defineVariable(new RubyGlobal.StringGlobalVariable(ruby, "$0", RubyString.newString(ruby, iFileName)));
-        ruby.initLoad(sLoadDirectories);
+        ruby.getLoadService().init(ruby, sLoadDirectories);
         //require additional libraries
         int lNbRequire = sRequireFirst.size();
         try {
 			for (int i = 0; i < lNbRequire; i++)
-				RubyKernel.require(ruby.getRubyTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
+				RubyKernel.require(ruby.getTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
             INode lScript = ruby.parse(iReader2Eval, iFileName);
 

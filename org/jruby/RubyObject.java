@@ -1,31 +1,31 @@
 /*
  * RubyObject.java - No description
  * Created on 04. Juli 2001, 22:53
- *
+ * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
- *
+ * 
  * JRuby - http://jruby.sourceforge.net
- *
+ * 
  * This file is part of JRuby
- *
+ * 
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ * 
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
+ * 
  */
 package org.jruby;
 
@@ -38,14 +38,20 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
+
+
 import org.jruby.exceptions.RubyFrozenException;
 import org.jruby.exceptions.RubySecurityException;
 import org.jruby.exceptions.TypeError;
+
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.CallbackFactory;
+
+import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -337,7 +343,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject callMethod(String name, IRubyObject[] args) {
-        return getInternalClass().call(this, name, args, 1);
+        return getInternalClass().call(this, name, args, CallType.FUNCTIONAL);
     }
 
     public IRubyObject callMethod(String name) {
@@ -348,7 +354,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject funcall3(String name, IRubyObject[] args) {
-        return getInternalClass().call(this, name, args, 0);
+        return getInternalClass().call(this, name, args, CallType.NORMAL);
     }
 
     /** rb_funcall
@@ -925,12 +931,12 @@ public class RubyObject implements Cloneable, IRubyObject {
             new PrintfFormat(format).sprintf(
                 new Object[] { name, description, noClass ? "" : ":", noClass ? "" : getType().toName()});
 
-        runtime.getFrameStack().push(runtime.getFrameStack().getPrevious());
-
+        Frame current = runtime.getCurrentFrame();
+        // runtime.getFrameStack().pop();
         try {
             throw new NameError(getRuntime(), msg);
         } finally {
-            runtime.getFrameStack().pop();
+            // runtime.getFrameStack().push(current);
         }
     }
 
@@ -966,7 +972,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
         runtime.getIterStack().push(runtime.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            return getInternalClass().call(this, name, newArgs, 1);
+            return getInternalClass().call(this, name, newArgs, CallType.FUNCTIONAL);
         } finally {
             getRuntime().getIterStack().pop();
         }

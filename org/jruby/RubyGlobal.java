@@ -83,13 +83,12 @@ public class RubyGlobal {
         ruby.defineGlobalConstant("STDOUT", stdout);
         ruby.defineGlobalConstant("STDERR", stderr);
 
-        ruby.defineReadonlyVariable("$\"", RubyArray.newArray(ruby));
+        ruby.defineVariable(new LoadedFeatures(ruby, "$\""));
         ruby.defineReadonlyVariable("$*", RubyArray.newArray(ruby));
 
-        RubyArray loadPath = RubyArray.newArray(ruby);
-        ruby.defineReadonlyVariable("$:", loadPath);
-        ruby.defineReadonlyVariable("$-I", loadPath);
-        ruby.defineReadonlyVariable("$LOAD_PATH", loadPath);
+        ruby.defineVariable(new LoadPath(ruby, "$:"));
+        ruby.defineVariable(new LoadPath(ruby, "$-I"));
+        ruby.defineVariable(new LoadPath(ruby, "$LOAD_PATH"));
 
         // ARGF, $< object
         RubyArgsFile argsFile = new RubyArgsFile(ruby);
@@ -223,6 +222,32 @@ public class RubyGlobal {
                                     value.getType().toName() + " given");
             }
             return super.set(value);
+        }
+    }
+    
+    private static class LoadPath extends ReadonlyGlobalVariable {
+        public LoadPath(Ruby runtime, String name) {
+            super(runtime, name, null);
+        }
+        
+        /**
+         * @see org.jruby.runtime.GlobalVariable#get()
+         */
+        public IRubyObject get() {
+            return RubyArray.newArray(ruby, ruby.getLoadService().getLoadPath());
+        }
+    }
+
+    private static class LoadedFeatures extends ReadonlyGlobalVariable {
+        public LoadedFeatures(Ruby runtime, String name) {
+            super(runtime, name, null);
+        }
+        
+        /**
+         * @see org.jruby.runtime.GlobalVariable#get()
+         */
+        public IRubyObject get() {
+            return RubyArray.newArray(ruby, ruby.getLoadService().getLoadedFeatures());
         }
     }
 }
