@@ -115,14 +115,11 @@ public interface Token {
     int tOP_ASGN    = 341;
     int tASSOC      = 342;
     int tLPAREN     = 343;
-    int tLPAREN_ARG = 344;
-    int tRPAREN     = 345;
-    int tLBRACK     = 346;
-    int tLBRACE     = 347;
-    int tLBRACE_ARG = 348;
-    int tSTAR       = 349;
-    int tAMPER      = 350;
-    int tSYMBEG     = 351;
-    int LAST_TOKEN  = 352;
+    int tLBRACK     = 344;
+    int tLBRACE     = 345;
+    int tSTAR       = 346;
+    int tAMPER      = 347;
+    int tSYMBEG     = 348;
+    int LAST_TOKEN  = 349;
     int yyErrorCode = 256;
 }

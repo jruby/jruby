@@ -40,7 +40,6 @@ import org.jruby.util.*;
 public class DefaultRubyParser implements RubyParser {
     private Ruby ruby;
     private ParserHelper ph;
-    private RubyScanner rs;
     private NodeFactory nf;
     
     private long cond_stack;
@@ -1598,7 +1597,7 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    }
 		| f_arg ',' f_optarg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs($1, $3, NODE.MINUS_ONE), $4);
+			    $$ = ph.block_append(nf.newArgs($1, $3, new Integer(-1)), $4);
 		    }
 		| f_arg ',' f_rest_arg opt_f_block_arg
 		    {
@@ -1606,7 +1605,7 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    }
 		| f_arg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs($1, null, NODE.MINUS_ONE), $2);
+			    $$ = ph.block_append(nf.newArgs($1, null, new Integer(-1)), $2);
 		    }
 		| f_optarg ',' f_rest_arg opt_f_block_arg
 		    {
@@ -1614,7 +1613,7 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    }
 		| f_optarg opt_f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, $1, NODE.MINUS_ONE), $2);
+			    $$ = ph.block_append(nf.newArgs(null, $1, new Integer(-1)), $2);
 		    }
 		| f_rest_arg opt_f_block_arg
 		    {
@@ -1622,11 +1621,11 @@ f_args		: f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg
 		    }
 		| f_block_arg
 		    {
-			    $$ = ph.block_append(nf.newArgs(null, null, NODE.MINUS_ONE), $1);
+			    $$ = ph.block_append(nf.newArgs(null, null, new Integer(-1)), $1);
 		    }
 		| /* none */
 		    {
-			    $$ = nf.newArgs(null, null, NODE.MINUS_ONE);
+			    $$ = nf.newArgs(null, null, new Integer(-1));
 		    }
 
 f_norm_arg	: tCONSTANT
@@ -1905,28 +1904,10 @@ none		: /* none */
         return yycompile(f, line);
     }
 
-    /**
-     *  Compiles the given Java String "s"
-     *
-     *@param  f     Description of Parameter
-     *@param  s     Description of Parameter
-     *@param  len   Description of Parameter
-     *@param  line  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public NODE compileJavaString(String f, String s, int len, int line) {
         return compileString(f, RubyString.m_newString(ruby, s, len), line);
     }
 
-
-    /**
-     *  Compiles the given file "file"
-     *
-     *@param  f      Description of Parameter
-     *@param  file   Description of Parameter
-     *@param  start  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     public NODE compileFile(String f, RubyObject file, int start) {
         lex_file_io = true;
         lex_input = file;
@@ -1966,7 +1947,6 @@ none		: /* none */
         return RubyString.m_newString(ruby, s, end);
     }
 
-
     /**
      *  Returns in next line either from file or from a string.
      *
@@ -1986,12 +1966,6 @@ none		: /* none */
         return line;
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  s  Description of Parameter
-     */
     private void init_for_scanner(String s) {
         lex_file_io = false;
         lex_gets_ptr = 0;
@@ -2003,7 +1977,6 @@ none		: /* none */
         ph.setHeredocEnd(0);
         ph.setRubyInCompile(true);
     }
-
 
     /**
      *  Returns the next character from input
@@ -2048,7 +2021,6 @@ none		: /* none */
         return c;
     }
 
-
     /**
      *  Puts back the given character so that nextc() will answer it next time
      *  it'll be called.
@@ -2062,7 +2034,6 @@ none		: /* none */
         lex_p--;
     }
 
-
     /**
      *  Returns true if the given character is the current one in the input
      *  stream
@@ -2074,56 +2045,24 @@ none		: /* none */
         return lex_p != lex_pend && c == lex_curline.charAt(lex_p);
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private String tok() {
         return tokenbuf.toString();
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private int toklen() {
         return tokenbuf.length();
     }
 
-
-    /**
-     *  Description of the Method
-     */
     private void tokfix() { }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private char toklast() {
         return tokenbuf.charAt(toklen() - 1);
     }
 
-
-    /**
-     *  Description of the Method
-     */
     private void newtok() {
         tokenbuf = new StringBuffer(60);
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  c  Description of Parameter
-     */
     private void tokadd(int c) {
         tokenbuf.append((char) c);
     }
@@ -2131,11 +2070,6 @@ none		: /* none */
 
     // yylex helpers...................
 
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private int read_escape() {
         int c;
 
@@ -2246,13 +2180,6 @@ none		: /* none */
         }
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  term  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     private int tokadd_escape(int term) {
         /*
          *  FIX 1.6.5
@@ -2395,14 +2322,6 @@ none		: /* none */
         return 0;
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  term   Description of Parameter
-     *@param  paren  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private int parse_regx(int term, int paren) {
         int c;
         char kcode = 0;
@@ -2521,15 +2440,6 @@ none		: /* none */
         //return 0;
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  func   Description of Parameter
-     *@param  term   Description of Parameter
-     *@param  paren  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private int parse_string(int func, int term, int paren) {
         int c;
         NODE list = null;
@@ -2623,14 +2533,6 @@ none		: /* none */
         }
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  term   Description of Parameter
-     *@param  paren  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private int parse_qstring(int term, int paren) {
         int strstart;
         int c;
@@ -2688,14 +2590,6 @@ none		: /* none */
         return Token.tSTRING;
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  term   Description of Parameter
-     *@param  paren  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private int parse_quotedwords(int term, int paren) {
         NODE qwords = null;
         int strstart;
@@ -2794,18 +2688,9 @@ none		: /* none */
         return Token.tDSTRING;
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  term    Description of Parameter
-     *@param  indent  Description of Parameter
-     *@return         Description of the Returned Value
-     */
     private int here_document(int term, int indent) {
         throw new Error("not supported yet");
     }
-
 
     /*
      *  private int here_document(int term, int indent) {
@@ -2933,21 +2818,14 @@ none		: /* none */
      *  return 0;
      *  }
      */
-    /**
-     *  Description of the Method
-     */
+
     private void arg_ambiguous() {
         ph.rb_warning("ambiguous first argument; make sure");
     }
 
 
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private boolean IS_ARG() {
-        return ph.getLexState() == LexState.EXPR_ARG || ph.getLexState() == LexState.EXPR_CMDARG;
+        return ph.getLexState() == LexState.EXPR_ARG;
     }
 
 
@@ -2958,12 +2836,12 @@ none		: /* none */
      */
     private int yylex() {
         int c;
-        boolean space_seen = false;
-        boolean cmd_state;
+        int space_seen = 0;
+        // boolean cmd_state;
         kwtable kw;
 
-        cmd_state = ph.isCommandStart();
-        ph.setCommandStart(false);
+        // cmd_state = ph.isCommandStart();
+        // ph.setCommandStart(false);
         retry :
         for (; ; ) {
             switch (c = nextc()) {
@@ -2978,7 +2856,7 @@ none		: /* none */
                 case '\f':
                 case '\r':
                 case '\013': // '\v'
-                    space_seen = true;
+                    space_seen++;
                     continue retry;
                 case '#': // it's a comment
                     while ((c = nextc()) != '\n') {
@@ -2996,7 +2874,7 @@ none		: /* none */
                         default:
                             break;
                     }
-                    ph.setCommandStart(true);
+                    // ph.setCommandStart(true);
                     ph.setLexState(LexState.EXPR_BEG);
                     return '\n';
                 case '*':
@@ -3015,7 +2893,7 @@ none		: /* none */
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
-                    if (IS_ARG() && space_seen && !ISSPACE(c)) {
+                    if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
                         ph.rb_warning("`*' interpreted as argument prefix");
                         c = Token.tSTAR;
                     } else if (ph.getLexState() == LexState.EXPR_BEG || 
@@ -3081,7 +2959,7 @@ none		: /* none */
                             ph.getLexState() != LexState.EXPR_END &&
                             ph.getLexState() != LexState.EXPR_ENDARG &&
                             ph.getLexState() != LexState.EXPR_CLASS &&
-                            (!IS_ARG() || space_seen)) {
+                            (!IS_ARG() || space_seen != 0)) {
                         int c2 = nextc();
                         int indent = 0;
                         if (c2 == '-') {
@@ -3139,7 +3017,7 @@ none		: /* none */
                 case '\'':
                     return parse_qstring(c, 0);
                 case '?':
-                    if (ph.getLexState() == LexState.EXPR_END || ph.getLexState() == LexState.EXPR_ENDARG) {
+                    if (ph.getLexState() == LexState.EXPR_END) {
                         ph.setLexState(LexState.EXPR_BEG);
                         return '?';
                     }
@@ -3175,7 +3053,7 @@ none		: /* none */
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
-                    if (IS_ARG() && space_seen && !ISSPACE(c)) {
+                    if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
                         ph.rb_warning("`&' interpeted as argument prefix");
                         c = Token.tAMPER;
                     } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
@@ -3216,7 +3094,7 @@ none		: /* none */
                         return Token.tOP_ASGN;
                     }
                     if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID ||
-                            (IS_ARG() && space_seen && !ISSPACE(c))) {
+                            (IS_ARG() && space_seen != 0 && !ISSPACE(c))) {
                         if (IS_ARG()) {
                             arg_ambiguous();
                         }
@@ -3246,7 +3124,7 @@ none		: /* none */
                         return Token.tOP_ASGN;
                     }
                     if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID ||
-                            (IS_ARG() && space_seen && !ISSPACE(c))) {
+                            (IS_ARG() && space_seen != 0 && !ISSPACE(c))) {
                         if (IS_ARG()) {
                             arg_ambiguous();
                         }
@@ -3304,7 +3182,7 @@ none		: /* none */
                     c = nextc();
                     if (c == ':') {
                         if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID ||
-                                (IS_ARG() && space_seen)) {
+                                (IS_ARG() && space_seen != 0)) {
                             ph.setLexState(LexState.EXPR_BEG);
                             return Token.tCOLON3;
                         }
@@ -3312,7 +3190,7 @@ none		: /* none */
                         return Token.tCOLON2;
                     }
                     pushback(c);
-                    if (ph.getLexState() == LexState.EXPR_END || ph.getLexState() == LexState.EXPR_ENDARG || ISSPACE(c)) {
+                    if (ph.getLexState() == LexState.EXPR_END || ISSPACE(c)) {
                         ph.setLexState(LexState.EXPR_BEG);
                         return ':';
                     }
@@ -3328,7 +3206,7 @@ none		: /* none */
                         return Token.tOP_ASGN;
                     }
                     pushback(c);
-                    if (IS_ARG() && space_seen) {
+                    if (IS_ARG() && space_seen != 0) {
                         if (!ISSPACE(c)) {
                             arg_ambiguous();
                             return parse_regx('/', '/');
@@ -3364,13 +3242,8 @@ none		: /* none */
                     // ph.setCommandStart(true);
                     if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
                         c = Token.tLPAREN;
-                    } else if (space_seen) {
-                        if (ph.getLexState() == LexState.EXPR_CMDARG) {
-                            c = Token.tLPAREN_ARG;
-                        } else if (ph.getLexState() == LexState.EXPR_ARG) {
-                            ph.rb_warning(tok() + " (...) interpreted as method call");
-                            c = Token.tLPAREN_ARG;
-                        }
+                    } else if (ph.getLexState() == LexState.EXPR_ARG && space_seen != 0) {
+                        ph.rb_warning(tok() + " (...) interpreted as method call");
                     }
                     ph.setLexState(LexState.EXPR_BEG);
                     return c;
@@ -3387,28 +3260,24 @@ none		: /* none */
                         return '[';
                     } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
                         c = Token.tLBRACK;
-                    } else if (IS_ARG() && space_seen) {
+                    } else if (IS_ARG() && space_seen != 0) {
                         c = Token.tLBRACK;
                     }
                     ph.setLexState(LexState.EXPR_BEG);
                     return c;
                 case '{':
-                    if (!IS_ARG()) {
-                        if (space_seen && ph.getLexState() == LexState.EXPR_ENDARG) {
-                            c = Token.tLBRACE_ARG;
-                        }
-                        if (ph.getLexState() != LexState.EXPR_END && ph.getLexState() != LexState.EXPR_ENDARG) {
-                            c = Token.tLBRACE;
-                        }
+                    if (ph.getLexState() != LexState.EXPR_END &&
+                        ph.getLexState() != LexState.EXPR_ARG) {
+                        
+                        c = Token.tLBRACE;
                     }
                     ph.setLexState(LexState.EXPR_BEG);
                     return c;
                 case '\\':
                     c = nextc();
                     if (c == '\n') {
-                        space_seen = true;
-                        continue retry;
-                        //  skip \\n
+                        space_seen = 1;
+                        continue retry; // skip \\n
                     }
                     pushback(c);
                     return '\\';
@@ -3463,7 +3332,7 @@ none		: /* none */
                             yyVal = ph.newId('%');
                             return Token.tOP_ASGN;
                         }
-                        if (IS_ARG() && space_seen && !ISSPACE(c)) {
+                        if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
                             pushback(c);
                             continue quotation;
                         }
@@ -3517,14 +3386,12 @@ none		: /* none */
                             tokadd(c);
                             tokfix();
                             yyVal = ruby.intern(tok());
-                            /*
-                             *  xxx shouldn't check if valid option variable
-                             */
+                            /* xxx shouldn't check if valid option variable */
                             return Token.tGVAR;
-                        case '&': // $&: last match
-                        case '`': // $`: string before last match
-                        case '\'':// $': string after last match
-                        case '+': // $+: string matches last paren.
+                        case '&':   // $&: last match
+                        case '`':   // $`: string before last match
+                        case '\'':  // $': string after last match
+                        case '+':   // $+: string matches last paren.
                             yyVal = nf.newBackRef(c);
                             return Token.tBACK_REF;
                         case '1':
@@ -3635,7 +3502,7 @@ none		: /* none */
                                 if (COND_P()) {
                                     return Token.kDO_COND;
                                 }
-                                if (CMDARG_P() && state != LexState.EXPR_CMDARG) {
+                                if (CMDARG_P()) {
                                     return Token.kDO_BLOCK;
                                 }
                                 return Token.kDO;
@@ -3671,21 +3538,15 @@ none		: /* none */
                     }
                     if (ph.getLexState() == LexState.EXPR_BEG ||
                         ph.getLexState() == LexState.EXPR_DOT ||
-                        ph.getLexState() == LexState.EXPR_ARG ||
-                        ph.getLexState() == LexState.EXPR_CMDARG) {
-                        if (cmd_state) {
-                            ph.setLexState(LexState.EXPR_CMDARG);
-                        } else {
+                        ph.getLexState() == LexState.EXPR_ARG) {
                             ph.setLexState(LexState.EXPR_ARG);
-                        }
                     } else {
                         ph.setLexState(LexState.EXPR_END);
                     }
             }
             tokfix();
             
-            yyVal = /*  last_id = */ ruby.intern(tok());
-            //XXX really overwrite last_id?
+            yyVal = ruby.intern(tok());
             return result;
         }
     }
@@ -4223,9 +4084,9 @@ none		: /* none */
         ph.setRubyDebugLines(null); // remove debug info
         ph.setCompileForEval(0);
         ph.setRubyInCompile(false);
+        cond_nest = 0;
         cond_stack = 0;             // reset stuff for next compile
         cmdarg_stack = 0;           // reset stuff for next compile
-        ph.setCommandStart(true);   // reset stuff for next compile
         ph.setClassNest(0);
         ph.setInSingle(0);
         ph.setInDef(0);
