@@ -247,8 +247,17 @@ public class RubyIO extends RubyObject {
 
         return RubyString.nilString(getRuby());
     }
-
-
+    
+    public void initIO(RubyInputStream inStream, OutputStream outStream, String path) {
+        readable = inStream != null;
+        writeable = outStream != null;
+        
+        this.inStream = inStream;
+        this.outStream = outStream;
+        
+        this.path = path;
+    }
+    
     // IO class methods.
 
     /** rb_io_s_new

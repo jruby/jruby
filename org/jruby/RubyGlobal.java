@@ -45,7 +45,10 @@ public class RubyGlobal {
 
         ruby.defineHookedVariable("$/", RubyString.newString(ruby, "\n"), null, stringSetter);
         ruby.defineVirtualVariable("$_", lastlineAccessor, lastlineAccessor);
-
+        
+        RubyArgsFile argsFile = new RubyArgsFile(ruby);
+        argsFile.initArgsFile();
+        
         ruby.defineVirtualVariable("$SAFE", safeAccessor, safeAccessor);
     }
 

@@ -43,7 +43,7 @@ import org.jruby.util.*;
  */
 public class RubyObject {
     // A reference to the JRuby runtime.
-    private transient Ruby ruby;
+    protected transient Ruby ruby;
 
     // The class of this object
     private RubyClass rubyClass;

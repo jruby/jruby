@@ -2,9 +2,8 @@
  * Main.java - No description
  * Created on 18. September 2001, 21:48
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -39,6 +38,7 @@ import java.util.ArrayList;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.regexp.*;
 import org.jruby.runtime.RubyGlobalEntry;
 import org.jruby.nodes.Node;
 import org.jruby.nodes.DumpVisitor;
@@ -165,68 +165,6 @@ public class Main {
                     sFileName = args[lIter.idxArg++]; //consume the file name
                 break; //the rests are args for the script
             }
-            /*
-               if (args[lIter.idxArg].equals("-h") || args[lIter.idxArg].equals("-help"))
-               {
-               printUsage();
-               } else if (args[lIter.idxArg].startsWith("-I"))
-               {
-               sLoadDirectories.add(args[lIter.idxArg].substring(2));
-               } else if (args[lIter.idxArg].startsWith("-r"))
-               {
-               sRequireFirst.add(args[lIter.idxArg].substring(2));
-               } else if (args[lIter.idxArg].equals("-e"))
-               {
-               if (lIter.idxArg++ >= lenArg)
-               {
-               System.err.println("invalid argument " + lIter.idxArg);
-               System.err.println(" -e must be followed by an expression to evaluate");
-               printUsage();
-               } else
-               {
-               lBuf.append(args[lIter.idxArg]);
-               }
-               } else if (args[lIter.idxArg].equals("-b"))
-               {
-            // Benchmark
-            sBenchmarkMode = true;
-            //FIXME remove if really not used Benoit
-            //				 else if (args[lIter.idxArg].equals("-bugs")) 
-            //					printBugs = true;
-            } else if (args[lIter.idxArg].equals("-rx"))
-            {
-            if (++lIter.idxArg >= lenArg)
-            {
-            System.err.println("invalid argument " + lIter.idxArg);
-            System.err.println(" -rx must be followed by an expression to evaluate");
-            printUsage();
-            } else
-            {
-            try
-            {
-            sRegexpAdapter = Class.forName(args[lIter.idxArg]);
-            } catch (Exception e)
-            {
-            System.err.println("invalid argument " + lIter.idxArg);
-            System.err.println("failed to load RegexpAdapter: " + args[lIter.idxArg]);
-            System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
-            }
-            }
-            } else if (args[lIter.idxArg].equals("-c"))
-            {
-            sCheckOnly = true;
-            }
-            else if (args[lIter.idxArg].equals("-y"))
-            {
-            sYyDebug = true;
-            }
-            else
-            {
-            if (lBuf.length() == 0)		//only get a filename if there were no -e
-            sFileName = args[lIter.idxArg++];	//consume the file name
-            break;						//the rests are args for the script
-            }
-             */
         }
         sScript = lBuf.toString();
         String[] lRet = new String[lenArg - lIter.idxArg];
@@ -298,18 +236,7 @@ public class Main {
      */
     protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
         // Initialize Runtime
-        Ruby ruby = new Ruby();
-        //FIXME: remove if really not used Benoit
-        //		ruby.getRuntime().setPrintBugs(printBugs);
-        if (sRegexpAdapter == null) {
-            try {
-                sRegexpAdapter = Class.forName("org.jruby.regexp.GNURegexpAdapter");
-            } catch (Exception e) {
-                throw new RuntimeException("Class GNURegexpAdapter not found");
-            }
-        }
-        ruby.setRegexpAdapterClass(sRegexpAdapter);
-        ruby.init();
+        Ruby ruby = Ruby.getDefaultInstance(sRegexpAdapter != null ? sRegexpAdapter : GNURegexpAdapter.class);
 
         // Parse and interpret file
         RubyString rs = RubyString.newString(ruby, iString2Eval);
