@@ -23,6 +23,7 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -44,6 +45,8 @@ public class JavaMethod extends JavaCallable {
             javaModule.defineClassUnder("JavaMethod", runtime.getClasses().getObjectClass());
         CallbackFactory callbackFactory = runtime.callbackFactory();
 
+        JavaCallable.registerRubyMethods(runtime, result);
+        
         result.defineMethod("name", 
                 callbackFactory.getMethod(JavaMethod.class, "name"));
         result.defineMethod("arity", 
@@ -69,7 +72,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     public JavaMethod(Ruby runtime, Method method) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaMethod"));
+        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaMethod"), method);
         this.method = method;
     }
 
@@ -80,6 +83,15 @@ public class JavaMethod extends JavaCallable {
     public static JavaMethod create(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
         try {
             Method method = javaClass.getMethod(methodName, argumentTypes);
+            return create(runtime, method);
+        } catch (NoSuchMethodException e) {
+            throw new NameError(runtime, "undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
+        }
+    }
+
+    public static JavaMethod createDeclared(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
+        try {
+            Method method = javaClass.getDeclaredMethod(methodName, argumentTypes);
             return create(runtime, method);
         } catch (NoSuchMethodException e) {
             throw new NameError(runtime, "undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");
@@ -177,5 +189,13 @@ public class JavaMethod extends JavaCallable {
 
     private boolean isStatic() {
         return Modifier.isStatic(method.getModifiers());
+    }
+
+    protected int getModifiers() {
+        return method.getModifiers();
+    }
+
+    protected AccessibleObject accesibleObject() {
+        return method;
     }
 }

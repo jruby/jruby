@@ -53,6 +53,8 @@ module JavaProxy
     arguments.collect {|v|
       if v.kind_of?(JavaProxy)
         v = v.java_object
+      elsif v.respond_to?('java_class') && v.java_class != nil 
+        v = v.java_class
       end
       Java.primitive_to_java(v)
     }

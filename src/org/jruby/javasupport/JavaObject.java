@@ -33,6 +33,7 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
@@ -81,7 +82,15 @@ public class JavaObject extends RubyObject {
     public static RubyClass createJavaObjectClass(Ruby runtime) {
         RubyClass result = 
             runtime.defineClass("JavaObject", runtime.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = runtime.callbackFactory();
+        registerRubyMethods(runtime, result);
+
+        result.getMetaClass().undefineMethod("new");
+
+        return result;
+    }
+
+	protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
+		CallbackFactory callbackFactory = runtime.callbackFactory();
 
         result.defineMethod("to_s", 
             callbackFactory.getMethod(JavaObject.class, "to_s"));
@@ -97,19 +106,17 @@ public class JavaObject extends RubyObject {
             callbackFactory.getMethod(JavaObject.class, "java_type"));
         result.defineMethod("java_class", 
             callbackFactory.getMethod(JavaObject.class, "java_class"));
+        result.defineMethod("java_proxy?", 
+                callbackFactory.getMethod(JavaObject.class, "is_java_proxy"));
         result.defineMethod("length", 
             callbackFactory.getMethod(JavaObject.class, "length"));
         result.defineMethod("[]", 
             callbackFactory.getMethod(JavaObject.class, "aref", IRubyObject.class));
         result.defineMethod("[]=", 
             callbackFactory.getMethod(JavaObject.class, "aset", IRubyObject.class, IRubyObject.class));
+	}
 
-        result.getMetaClass().undefineMethod("new");
-
-        return result;
-    }
-
-    public RubyFixnum hash() {
+	public RubyFixnum hash() {
         return getRuntime().newFixnum(value == null ? 0 : value.hashCode());
     }
 
@@ -168,5 +175,9 @@ public class JavaObject extends RubyObject {
 
     public IRubyObject aset(IRubyObject index, IRubyObject value) {
         throw getRuntime().newTypeError("not a java array");
+    }
+    
+    public IRubyObject is_java_proxy() {
+        return RubyBoolean.createTrueClass(getRuntime());
     }
 }

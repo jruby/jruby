@@ -28,6 +28,7 @@
  */
 package org.jruby.util;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -41,9 +42,24 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  **/
 public class TestHelper {
-
+	private String privateField = "pfValue";
     public String localVariable1;
 
+    private TestHelper(String x) {
+        privateField = x;
+    }
+    
+    private String privateMethod() {
+        return privateField;
+    }
+    
+    private static String staticPrivateMethod() {
+        return "staticPM";
+    }
+    
+    public static String acceptConstructor(Constructor c) {
+        return c.toString();
+    }
     /**
      * used to test Java Arrays in Ruby.
      *  while we don't yet have a way to create them this can be used to test basic
@@ -119,6 +135,10 @@ public class TestHelper {
             e = (InvocationTargetException) e.getCause();
         }
         return e.getCause();
+    }
+    
+    public static String getClassName(Class klass) {
+    	return klass.getName();
     }
 
     private static class Loader extends ClassLoader {

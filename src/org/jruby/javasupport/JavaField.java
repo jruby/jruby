@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -22,6 +23,7 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
@@ -29,20 +31,20 @@ import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class JavaField extends RubyObject {
-    private final Field field;
+public class JavaField extends JavaAccessibleObject {
+    private Field field;
 
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaField", 
             runtime.getClasses().getObjectClass());
         CallbackFactory callbackFactory = runtime.callbackFactory();
 
+        JavaAccessibleObject.registerRubyMethods(runtime, result);
         result.defineMethod("value_type", 
             callbackFactory.getMethod(JavaField.class, "value_type"));
         result.defineMethod("public?", 
@@ -136,5 +138,9 @@ public class JavaField extends RubyObject {
 
     public RubyString name() {
         return getRuntime().newString(field.getName());
+    }
+    
+    protected AccessibleObject accesibleObject() {
+        return field;
     }
 }

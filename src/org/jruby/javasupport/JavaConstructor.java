@@ -23,6 +23,7 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -34,13 +35,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
 public class JavaConstructor extends JavaCallable {
-    private final Constructor constructor;
+    private Constructor constructor;
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result =
                 javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
         CallbackFactory callbackFactory = runtime.callbackFactory();
-        
+
+        JavaCallable.registerRubyMethods(runtime, result, JavaConstructor.class);
         result.defineMethod("arity", 
                 callbackFactory.getMethod(JavaConstructor.class, "arity"));
         result.defineMethod("inspect", 
@@ -49,12 +51,12 @@ public class JavaConstructor extends JavaCallable {
                 callbackFactory.getMethod(JavaConstructor.class, "argument_types"));
         result.defineMethod("new_instance", 
                 callbackFactory.getOptMethod(JavaConstructor.class, "new_instance"));
-        
+
         return result;
     }
 
     public JavaConstructor(Ruby runtime, Constructor constructor) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaConstructor"));
+        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaConstructor"), constructor);
         this.constructor = constructor;
     }
 
@@ -89,11 +91,20 @@ public class JavaConstructor extends JavaCallable {
         }
     }
 
+
     protected String nameOnInspection() {
         return getType().toString();
     }
 
     protected Class[] parameterTypes() {
         return constructor.getParameterTypes();
+    }
+
+    protected int getModifiers() {
+        return constructor.getModifiers();
+    }
+
+    protected AccessibleObject accesibleObject() {
+        return constructor;
     }
 }

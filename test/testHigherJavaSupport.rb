@@ -6,7 +6,11 @@ if defined? Java
   require 'java'
 
   module TestJavaSupport
+    include_package "org.jruby.util"
     include_package "java.util"
+
+    # call Java passing Class
+    test_equal("java.util.ArrayList", TestHelper.getClassName(ArrayList))
 
     # Java class loading
     test_exception(NameError) { System }
@@ -142,6 +146,7 @@ if defined? Java
     test_equal(0, l.foo)
     l.add(100)
     test_equal(1, l.foo)
+    
   end
 
 

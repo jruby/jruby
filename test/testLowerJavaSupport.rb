@@ -1,4 +1,5 @@
 require 'test/minirunit'
+require 'java'
 test_check "Low-level Java Support"
 
 if defined? Java
@@ -61,6 +62,7 @@ if defined? Java
   test_ok(string_class_methods.detect {|m| m.name == "valueOf" })
   test_ok(string_class_methods.all? {|m| m.static? })
 
+
   # Instance variables
   rectangle_class = Java::JavaClass.for_name("java.awt.Rectangle")
   test_ok(rectangle_class.fields.include?("x"))
@@ -71,6 +73,7 @@ if defined? Java
   test_ok(field.public?)
   test_ok(! field.static?)
   test_ok(! field.final?)
+  
   integer_ten = Java.primitive_to_java(10)
   integer_two = Java.primitive_to_java(2)
   constructor = rectangle_class.constructor(:int, :int, :int, :int)
@@ -88,6 +91,48 @@ if defined? Java
   test_exception(TypeError) {
     field.set_value(rectangle, Java.primitive_to_java("hello"))
   }
+
+  # private fields
+  TestHelper = JavaUtilities.new_proxy_class('org.jruby.util.TestHelper')
+  test_ok(TestHelper.java_class.declared_fields.find {|field| field == 'privateField' })
+  privateField = TestHelper.java_class.declared_field('privateField')
+  test_equal('privateField', privateField.name)
+  test_ok(! privateField.public?)
+  test_ok(! privateField.accessible?)
+  privateField.accessible = true
+  test_ok( privateField.accessible?)
+
+  #private constructors
+  cons = TestHelper.java_class.declared_constructors() 
+  test_ok(1,cons.length)
+  test_ok(['java.lang.String'], cons[0].argument_types)
+  test_ok(! cons[0].public?)
+  test_ok(! cons[0].accessible?)
+  cons[0].accessible = true
+  test_ok(cons[0].accessible?)
+
+  con = TestHelper.java_class.declared_constructor('java.lang.String')
+  test_ok(cons[0],con)
+
+  #private instance methods
+  test_ok(TestHelper.java_class.declared_instance_methods.find {|method| method.name == 'privateMethod'})
+  privateMethod = TestHelper.java_class.declared_method('privateMethod')
+  test_equal('privateMethod', privateMethod.name)
+  test_ok( !privateMethod.accessible?)
+  privateMethod.accessible = true
+  test_ok( privateMethod.accessible?)
+
+  helper = cons[0].new_instance(Java::primitive_to_java("X"))
+  test_equal('X', Java::java_to_primitive(privateMethod.invoke(helper)), "call private method")
+
+  #private static methods
+  test_ok(TestHelper.java_class.declared_class_methods.find {|method| method.name == 'staticPrivateMethod'})
+  privateMethod = TestHelper.java_class.declared_method('staticPrivateMethod')
+  test_equal('staticPrivateMethod', privateMethod.name)
+  test_ok( !privateMethod.accessible?)   
+  privateMethod.accessible = true
+  test_ok( privateMethod.accessible?)
+  test_equal("staticPM", Java::java_to_primitive(privateMethod.invoke_static()))
 
   # Class variables
   integer_class = Java::JavaClass.for_name("java.lang.Integer")

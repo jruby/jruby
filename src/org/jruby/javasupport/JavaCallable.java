@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -22,16 +23,19 @@
  */
 package org.jruby.javasupport;
 
+import java.lang.reflect.Modifier;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.CallbackFactory;
 
-public abstract class JavaCallable extends RubyObject {
+public abstract class JavaCallable extends JavaAccessibleObject {
 
-    public JavaCallable(Ruby runtime, RubyClass rubyClass) {
+    public JavaCallable(Ruby runtime, RubyClass rubyClass, Object javaObject) {
         super(runtime, rubyClass);
     }
 
@@ -63,11 +67,24 @@ public abstract class JavaCallable extends RubyObject {
     }
 
     protected abstract int getArity();
-
     protected abstract Class[] parameterTypes();
+    protected abstract int getModifiers();
 
     /**
      * @return the name used in the head of the string returned from inspect()
      */
     protected abstract String nameOnInspection();
+
+    public RubyBoolean public_p() {
+        return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
+    }
+
+
+    public static void registerRubyMethods(Ruby runtime, RubyClass result, Class klass) {
+        registerRubyMethods(runtime, result);
+        
+        CallbackFactory callbackFactory = runtime.callbackFactory();
+
+        result.defineMethod("public?",  callbackFactory.getMethod(klass, "public_p"));
+    }
 }
