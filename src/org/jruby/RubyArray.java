@@ -123,7 +123,7 @@ public class RubyArray extends RubyObject {
         arrayClass.defineMethod("hash", callbackFactory.getMethod("hash"));
         arrayClass.defineMethod("[]", callbackFactory.getOptMethod("aref"));
         arrayClass.defineMethod("[]=", callbackFactory.getOptMethod("aset"));
-        arrayClass.defineMethod("at", callbackFactory.getMethod("at", RubyNumeric.class));
+        arrayClass.defineMethod("at", callbackFactory.getMethod("at", IRubyObject.class));
         arrayClass.defineMethod("fetch", callbackFactory.getOptMethod("fetch", RubyNumeric.class));
         arrayClass.defineMethod("first", callbackFactory.getOptMethod("first"));
         arrayClass.defineMethod("insert", callbackFactory.getOptMethod("insert", RubyNumeric.class));
@@ -601,11 +601,11 @@ public class RubyArray extends RubyObject {
         int argc = checkArgumentCount(args, 0, 2);
         RubyArray arrayInitializer = null;
         long len = 0;
-        if (argc != 0) {
-        	if (args[0] instanceof RubyNumeric) {
-        		len = RubyNumeric.fix2long(args[0]);
-        	} else if (args[0] instanceof RubyArray) {
+        if (argc > 0) {
+        	if (args[0] instanceof RubyArray) {
         		arrayInitializer = (RubyArray)args[0];
+        	} else {
+        		len = convertToLong(args[0]);
         	}
         }
 
@@ -697,11 +697,18 @@ public class RubyArray extends RubyObject {
     /** rb_ary_at
      *
      */
-    public IRubyObject at(RubyNumeric pos) {
-        return entry(pos.getLongValue());
+    public IRubyObject at(IRubyObject pos) {
+        return entry(convertToLong(pos));
     }
 
-    /** rb_ary_concat
+	private long convertToLong(IRubyObject pos) {
+		if (pos instanceof RubyNumeric) {
+			return ((RubyNumeric) pos).getLongValue();
+		}
+		throw getRuntime().newTypeError("cannot convert " + pos.getType().getBaseName() + " to Integer");
+	}
+
+	/** rb_ary_concat
      *
      */
     public RubyArray concat(IRubyObject obj) {
@@ -1050,7 +1057,9 @@ public class RubyArray extends RubyObject {
      */
     public IRubyObject rbClone() {
         RubyArray result = getRuntime().newArray(new ArrayList(list));
+        result.setTaint(isTaint());
         result.initCopy(this);
+        result.setFrozen(isFrozen());
         return result;
     }
 
