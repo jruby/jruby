@@ -50,58 +50,41 @@ public class AliasMethod extends AbstractMethod {
     }
 
     /**
-     * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
      * @fixme name or oldName ?
      */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return oldMethod.call(ruby, receiver, name, args, noSuper);
     }
 
-    /**
-     * Gets the oldMethod.
-     * @return Returns a IMethod
-     */
     public ICallable getOldMethod() {
         return oldMethod;
     }
 
-    /**
-     * Sets the oldMethod.
-     * @param oldMethod The oldMethod to set
-     */
     public void setOldMethod(ICallable oldMethod) {
         this.oldMethod = oldMethod;
     }
 
-    /**
-     * Gets the oldName.
-     * @return Returns a String
-     */
     public String getOldName() {
         return oldName;
     }
 
-    /**
-     * Sets the oldName.
-     * @param oldName The oldName to set
-     */
     public void setOldName(String oldName) {
         this.oldName = oldName;
     }
-    /**
-     * Gets the origin.
-     * @return Returns a RubyModule
-     */
+
     public RubyModule getOrigin() {
         return origin;
     }
 
-    /**
-     * Sets the origin.
-     * @param origin The origin to set
-     */
     public void setOrigin(RubyModule origin) {
         this.origin = origin;
     }
 
+    public void initializeCacheEntry(CacheEntry cacheEntry) {
+        cacheEntry.setVisibility(getVisibility());
+        cacheEntry.setOrigin(getOrigin());
+        cacheEntry.setOriginalName(getOldName());
+        cacheEntry.setMethod(getOldMethod());
+        cacheEntry.setRecvClass(getOrigin());
+    }
 }

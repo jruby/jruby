@@ -28,6 +28,7 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.CacheEntry;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -47,4 +48,6 @@ public interface ICallable {
     IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 
     Arity getArity();
+
+    void initializeCacheEntry(CacheEntry cacheEntry);
 }

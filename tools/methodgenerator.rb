@@ -280,25 +280,14 @@ end
 
 class MethodGenerator
 
-  def initialize(input)
+  def initialize(input, package=nil)
     parser = Parser.new(input)
     @class_description = parser.read_input
-  end
-
-  def implementation
-    @class_description.implementation
+    @class_description.package = package
   end
 
   def generate(output)
     @class_description.generate_java(output)
-  end
-
-  def constant_name
-    @class_description.constant_name
-  end
-
-  def package=(package)
-    @class_description.package = package
   end
 end
 
@@ -412,9 +401,14 @@ end
 
 
 if $0 == __FILE__
-  generator = MethodGenerator.new(STDIN)
-  unless ARGV.empty?
-    generator.package = ARGV[0]
+  input = open(ARGV[0])
+  output = open(ARGV[1], 'w')
+
+  if ARGV.length > 2
+    package = ARGV[2]
+  else
+    package = nil
   end
-  generator.generate(STDOUT)
+  generator = MethodGenerator.new(input, package)
+  generator.generate(output)
 end

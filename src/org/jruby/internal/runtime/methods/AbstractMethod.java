@@ -41,4 +41,11 @@ public abstract class AbstractMethod implements ICallable {
     public Arity getArity() {
         return Arity.optional();
     }
+
+    public void initializeCacheEntry(CacheEntry cacheEntry) {
+        cacheEntry.setVisibility(getVisibility());
+        cacheEntry.setOrigin(getImplementationClass());
+        cacheEntry.setMethod(this);
+        cacheEntry.setRecvClass(getImplementationClass());
+    }
 }

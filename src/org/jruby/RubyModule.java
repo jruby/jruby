@@ -650,9 +650,6 @@ public class RubyModule extends RubyObject {
         return entry.getVisibility();
     }
 
-    /** rb_get_method_body
-     *
-     */
     protected CacheEntry getMethodBody(String name) {
         name = name.intern();
 
@@ -664,24 +661,8 @@ public class RubyModule extends RubyObject {
             return undefinedEntry;
         }
 
-        CacheEntry result = new CacheEntry(this, method.getVisibility());
-
-        if (method instanceof AliasMethod) {
-            result.setName(name);
-            result.setOrigin(((AliasMethod) method).getOrigin());
-            result.setOriginalName(((AliasMethod) method).getOldName());
-            result.setMethod(((AliasMethod) method).getOldMethod());
-
-            result.setRecvClass(((AliasMethod) method).getOrigin());
-        } else {
-            result.setName(name);
-            result.setOrigin(method.getImplementationClass());
-            result.setOriginalName(name);
-            result.setMethod(method);
-
-            result.setRecvClass(method.getImplementationClass());
-        }
-
+        CacheEntry result = new CacheEntry(name, this);
+        method.initializeCacheEntry(result);
         getRuntime().getMethodCache().saveEntry(this, name, result);
         return result;
     }

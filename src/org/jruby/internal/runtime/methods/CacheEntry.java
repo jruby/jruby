@@ -44,27 +44,21 @@ public class CacheEntry {
     private ICallable method;
     private Visibility visibility;
 
-    public CacheEntry(String name, String originalName, RubyModule recvClass, RubyModule origin, ICallable method, Visibility visibility) {
+    private CacheEntry(String name, String originalName, RubyModule recvClass, RubyModule origin, ICallable method, Visibility visibility) {
         this.name = name;
         this.originalName = originalName;
-
         this.recvClass = recvClass;
         this.origin = origin;
-
         this.method = method;
         this.visibility = visibility;
     }
 
-    private CacheEntry(String name, RubyModule recvClass) {
-        this(name, name, recvClass, recvClass, UndefinedMethod.getInstance(), Visibility.PUBLIC);
-    }
-
-    public CacheEntry(RubyModule recvClass, Visibility visibility) {
-        this(null, null, recvClass, null, null, visibility);
+    public CacheEntry(String name, RubyModule recvClass) {
+        this(name, name, recvClass, null, null, null);
     }
 
     public static CacheEntry createUndefined(String name, RubyModule recvClass) {
-        return new CacheEntry(name, recvClass);
+        return new CacheEntry(name, name, recvClass, recvClass, UndefinedMethod.getInstance(), Visibility.PUBLIC);
     }
 
     /** Getter for property recvClass.
