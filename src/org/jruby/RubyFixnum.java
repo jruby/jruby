@@ -30,18 +30,17 @@
  */
 package org.jruby;
 
+import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.IndexCallable;
-import org.jruby.internal.runtime.builtin.definitions.FixnumDefinition;
 
 /** Implementation of the Fixnum class.
  *
  * @author jpetersen
  * @version $Revision$
  */
-public class RubyFixnum extends RubyInteger implements IndexCallable {
+public class RubyFixnum extends RubyInteger {
     private long value;
     private static final int BIT_SIZE = 64;
     public static final long MAX = (1L<<(BIT_SIZE - 2)) - 1;
@@ -57,72 +56,45 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         this.value = value;
     }
 
-    public static RubyClass createFixnumClass(Ruby runtime) {
-        return new FixnumDefinition(runtime).getType();
-    }
+    public static RubyClass createFixnumClass(Ruby ruby) {
+        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-        case FixnumDefinition.AREF:
-            return aref(args[0]);
-        case FixnumDefinition.TO_F:
-            return to_f();
-        case FixnumDefinition.TO_I:
-            return to_i();
-        case FixnumDefinition.TO_S:
-            return to_s();
-        case FixnumDefinition.OP_LSHIFT:
-            return op_lshift(args[0]);
-        case FixnumDefinition.OP_RSHIFT:
-            return op_rshift(args[0]);
-        case FixnumDefinition.OP_PLUS:
-            return op_plus(args[0]);
-        case FixnumDefinition.OP_MINUS:
-            return op_minus(args[0]);
-        case FixnumDefinition.OP_MUL:
-            return op_mul(args[0]);
-        case FixnumDefinition.OP_DIV:
-            return op_div(args[0]);
-        case FixnumDefinition.OP_MOD:
-            return op_mod(args[0]);
-        case FixnumDefinition.OP_POW:
-            return op_pow(args[0]);
-        case FixnumDefinition.VERYEQUAL:
-            return veryEqual(args[0]);
-        case FixnumDefinition.EQUAL:
-            return equal(args[0]);
-        case FixnumDefinition.OP_CMP:
-            return op_cmp(args[0]);
-        case FixnumDefinition.OP_GT:
-            return op_gt(args[0]);
-        case FixnumDefinition.OP_GE:
-            return op_ge(args[0]);
-        case FixnumDefinition.OP_LT:
-            return op_lt(args[0]);
-        case FixnumDefinition.OP_LE:
-            return op_le(args[0]);
-        case FixnumDefinition.OP_AND:
-            return op_and(args[0]);
-        case FixnumDefinition.OP_OR:
-            return op_or(args[0]);
-        case FixnumDefinition.OP_XOR:
-            return op_xor(args[0]);
-        case FixnumDefinition.SIZE:
-            return size();
-        case FixnumDefinition.HASH:
-            return hash();
-        case FixnumDefinition.ID2NAME:
-            return id2name();
-        case FixnumDefinition.INVERT:
-            return invert();
-        case FixnumDefinition.ID:
-            return id();
-        case FixnumDefinition.TAINT:
-            return taint();
-        case FixnumDefinition.FREEZE:
-            return freeze();
-        }
-        return super.callIndexed(index, args);
+        fixnumClass.defineMethod("to_f", callbackFactory.getMethod(RubyFixnum.class, "to_f"));
+        fixnumClass.defineMethod("to_i", callbackFactory.getMethod(RubyFixnum.class, "to_i"));
+        fixnumClass.defineMethod("to_s", callbackFactory.getMethod(RubyFixnum.class, "to_s"));
+        fixnumClass.defineMethod("to_str", callbackFactory.getMethod(RubyFixnum.class, "to_s"));
+        fixnumClass.defineMethod("taint", callbackFactory.getMethod(RubyFixnum.class, "taint"));
+        fixnumClass.defineMethod("freeze", callbackFactory.getMethod(RubyFixnum.class, "freeze"));
+        fixnumClass.defineMethod("<<", callbackFactory.getMethod(RubyFixnum.class, "op_lshift", IRubyObject.class));
+        fixnumClass.defineMethod(">>", callbackFactory.getMethod(RubyFixnum.class, "op_rshift", IRubyObject.class));
+        fixnumClass.defineMethod("+", callbackFactory.getMethod(RubyFixnum.class, "op_plus", IRubyObject.class));
+        fixnumClass.defineMethod("-", callbackFactory.getMethod(RubyFixnum.class, "op_minus", IRubyObject.class));
+        fixnumClass.defineMethod("*", callbackFactory.getMethod(RubyFixnum.class, "op_mul", IRubyObject.class));
+        fixnumClass.defineMethod("/", callbackFactory.getMethod(RubyFixnum.class, "op_div", IRubyObject.class));
+        fixnumClass.defineMethod("%", callbackFactory.getMethod(RubyFixnum.class, "op_mod", IRubyObject.class));
+        fixnumClass.defineMethod("**", callbackFactory.getMethod(RubyFixnum.class, "op_pow", IRubyObject.class));
+        fixnumClass.defineMethod("==", callbackFactory.getMethod(RubyFixnum.class, "equal", IRubyObject.class));
+        fixnumClass.defineMethod("eql?", callbackFactory.getMethod(RubyFixnum.class, "veryEqual", IRubyObject.class));
+        fixnumClass.defineMethod("equal?", callbackFactory.getMethod(RubyFixnum.class, "veryEqual", IRubyObject.class));
+        fixnumClass.defineMethod("<=>", callbackFactory.getMethod(RubyFixnum.class, "op_cmp", IRubyObject.class));
+        fixnumClass.defineMethod(">", callbackFactory.getMethod(RubyFixnum.class, "op_gt", IRubyObject.class));
+        fixnumClass.defineMethod(">=", callbackFactory.getMethod(RubyFixnum.class, "op_ge", IRubyObject.class));
+        fixnumClass.defineMethod("<", callbackFactory.getMethod(RubyFixnum.class, "op_lt", IRubyObject.class));
+        fixnumClass.defineMethod("<=", callbackFactory.getMethod(RubyFixnum.class, "op_le", IRubyObject.class));
+        fixnumClass.defineMethod("&", callbackFactory.getMethod(RubyFixnum.class, "op_and", IRubyObject.class));
+        fixnumClass.defineMethod("|", callbackFactory.getMethod(RubyFixnum.class, "op_or", IRubyObject.class));
+        fixnumClass.defineMethod("^", callbackFactory.getMethod(RubyFixnum.class, "op_xor", IRubyObject.class));
+        fixnumClass.defineMethod("size", callbackFactory.getMethod(RubyFixnum.class, "size"));
+        fixnumClass.defineMethod("[]", callbackFactory.getMethod(RubyFixnum.class, "aref", IRubyObject.class));
+        fixnumClass.defineMethod("hash", callbackFactory.getMethod(RubyFixnum.class, "hash"));
+        fixnumClass.defineMethod("id2name", callbackFactory.getMethod(RubyFixnum.class, "id2name"));
+        fixnumClass.defineMethod("~", callbackFactory.getMethod(RubyFixnum.class, "invert"));
+        fixnumClass.defineMethod("id", callbackFactory.getMethod(RubyFixnum.class, "id"));
+
+        fixnumClass.defineSingletonMethod("induced_from", callbackFactory.getSingletonMethod(RubyFixnum.class, "induced_from", IRubyObject.class));
+
+        return fixnumClass;
     }
 
     public Class getJavaClass() {
