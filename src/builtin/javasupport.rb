@@ -44,16 +44,18 @@ module JavaUtilities
 
       # FIXME: take types into consideration, like the old javasupport,
       #        and do the searching long before call-time.
-      def proxy_class.new(*args)
-        arity = args.length
-        constructor = @java_class.constructors.detect {|c| c.arity == arity }
-        if constructor.nil?
-          raise NameError.new("wrong # of arguments for constructor")
+      unless java_class.interface?
+        def proxy_class.new(*args)
+          arity = args.length
+          constructor = @java_class.constructors.detect {|c| c.arity == arity }
+          if constructor.nil?
+            raise NameError.new("wrong # of arguments for constructor")
+          end
+          args = JavaProxy.convert_arguments(args)
+          result = constructor.new_instance(self, *args)
+          result.java_class = @java_class
+          result
         end
-        args = JavaProxy.convert_arguments(args)
-        result = constructor.new_instance(self, *args)
-        result.java_class = @java_class
-        result
       end
 
       def proxy_class.create_instance_methods(java_class)
