@@ -113,6 +113,13 @@ public class RubyClass extends RubyModule implements IndexCallable {
         }
         superType.callMethod("inherited", this);
     }
+    
+    public RubyClass defineSubclass(String name) {
+        RubyClass subclass = subclass();
+        subclass.setName(name);
+        subclass.makeMetaClass(getMetaClass());
+        return subclass;
+    }
 
     /** rb_singleton_class_clone
      *

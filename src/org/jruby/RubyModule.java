@@ -1779,4 +1779,8 @@ public class RubyModule extends RubyObject {
             }
         }
     }
+    public void setName(String name) {
+        this.classId = name;
+    }
+
 }

@@ -485,7 +485,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
     public void visitClassNode(ClassNode iVisited) {
-        if (runtime.getRubyClass() == null) {
+        if (runtime.getRubyClass().isNil()) {
             throw new TypeError(runtime, "no outer class/module");
         }
 

@@ -115,7 +115,7 @@ public class JRubyEngine extends BSFEngineImpl {
         if (result instanceof JavaObject) {
             runtime.getLoadService().require("java");
             result =
-                runtime.getClass("JavaUtilities").callMethod(
+                runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
                     "wrap",
                     new IRubyObject[] { result, RubyString.newString(runtime, value.getClass().getName())});
         }
@@ -136,14 +136,13 @@ public class JRubyEngine extends BSFEngineImpl {
 
         runtime = Ruby.getDefaultInstance();
 
-        int size = declaredBeans.size();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0, size = declaredBeans.size(); i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
             runtime.getGlobalVariables().define(
                 GlobalVariable.variableName(bean.name),
                 new BeanGlobalVariable(runtime, bean));
         }
-
+        
         // ruby.defineGlobalFunction("declareBean", method);
     }
 
@@ -193,7 +192,7 @@ public class JRubyEngine extends BSFEngineImpl {
             if (result instanceof JavaObject) {
                 runtime.getLoadService().require("java");
                 result =
-                    runtime.getClass("JavaUtilities").callMethod(
+                    runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
                         "wrap",
                         new IRubyObject[] { result, RubyString.newString(runtime, bean.type.getName())});
             }

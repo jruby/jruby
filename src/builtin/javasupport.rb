@@ -52,9 +52,16 @@ module JavaUtilities
     end
 
     def create_proxy_class(constant, java_class, mod)
+      proxy_classes = JavaUtilities.proxy_classes
+      java_class_name = java_class.name
+      if proxy_classes.has_key?(java_class_name)
+	return mod.const_set(constant.to_s, proxy_classes[java_class_name])
+      end 
       mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(mod.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
+
+      proxy_classes[java_class_name] = proxy_class
       setup_proxy_class(java_class, proxy_class)
     end
 

@@ -306,13 +306,9 @@ public final class Ruby {
         }
 
         RubyClass newClass = RubyClass.newClass(this, superClass, name);
-
         newClass.makeMetaClass(superClass.getMetaClass());
-
         newClass.inheritedBy(superClass);
-
         classes.putClass(name, newClass);
-
         return newClass;
     }
 
