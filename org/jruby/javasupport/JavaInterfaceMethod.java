@@ -5,7 +5,10 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.runtime.*;
-
+/**
+ * @author jpetersen
+ * @version $Revision$
+ **/
 public class JavaInterfaceMethod implements Callback {
     private String methodName;
 

@@ -546,10 +546,25 @@ public class RubyGlobal {
     public static RubyObject backquote(Ruby ruby, RubyObject recv, RubyString aString) {
         // XXX use other methods
         try {
-            Process aProcess = Runtime.getRuntime().exec(new String[] { System.getProperty("jruby.shell"), "-c", aString.toString()});
+			String lShellProp = System.getProperty("jruby.shell");
+			Process aProcess;
+			if (lShellProp != null)
+	            aProcess = Runtime.getRuntime().exec(new String[] { System.getProperty("jruby.shell"), "-c", aString.toString()});
+			else
+	            aProcess = Runtime.getRuntime().exec(aString.toString());
 
-            final BufferedInputStream bin = new BufferedInputStream(aProcess.getInputStream());
             final StringBuffer sb = new StringBuffer();
+			//Benoit why not simply:
+			//it works at least on windows, why use the thread for something which is not going to be asynchrone (we do the wait immediately)
+//            final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));
+//			String line;
+//			while ((line = reader.readLine()) != null) 
+//			{
+//				sb.append(line).append('\n');
+//			}
+//
+			
+			final BufferedInputStream bin = new BufferedInputStream(aProcess.getInputStream());
 
             new Thread(new Runnable() {
                 /**

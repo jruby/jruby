@@ -40,6 +40,7 @@ import org.jruby.exceptions.RubyRegexpException;
 /**
  * Regexp adapter for Jakarta ORO.
  * @author Takashi Okamoto <tora@debian.org>
+ * @version $Revision$
  */
 public class ORORegexpAdapter extends IRegexpAdapter {
 

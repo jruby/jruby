@@ -286,7 +286,10 @@ public class RubyArray extends RubyObject {
     }
 
     /** rb_ary_replace
-     *
+     *	@todo change the algorythm to make it efficient
+	 *			there should be no need to do any deletion or addition
+	 *			when the replacing object is an array of the same length
+	 *			and in any case we should minimize them, they are costly
      */
     public void replace(long beg, long len, RubyObject repl) {
         int length = getLength();
@@ -309,7 +312,7 @@ public class RubyArray extends RubyObject {
         autoExpand(beg);
         if (repl instanceof RubyArray) {
             List repList = ((RubyArray) repl).getList();
-            list.ensureCapacity(length + repList.size());
+            list.ensureCapacity(getLength() + repList.size());
             list.addAll((int) beg, new ArrayList(repList));
         } else if (!repl.isNil()) {
             list.add((int) beg, repl);
