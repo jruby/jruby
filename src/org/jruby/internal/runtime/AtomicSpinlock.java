@@ -33,6 +33,8 @@ public class AtomicSpinlock {
 	private volatile int counter;
 	
 	public AtomicSpinlock() {
+	    // FIXME is this correct?
+	    counter = 0;
 	}
 	
 	public AtomicSpinlock(int start) {

@@ -42,8 +42,6 @@ public class RubyNativeThread extends Thread {
     private RubyProc proc;
     private IRubyObject[] arguments;
     private RubyThread rubyThread;
-    private boolean criticalized;
-    private AtomicSpinlock spinlock;
     
 	protected RubyNativeThread(RubyThread rubyThread, IRubyObject[] args) {
 		super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());

@@ -39,10 +39,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class BreakJump extends JumpException {
     private IRubyObject breakValue;
     
-    /** Creates new BreakException */
-    public BreakJump() {
-    }
-
     public BreakJump(IRubyObject breakValue) {
         this.breakValue = breakValue;
     }

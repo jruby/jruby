@@ -378,7 +378,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getValueNode() != null) {
             throw new BreakJump(eval(iVisited.getValueNode()));
         }
-        throw new BreakJump();
+        throw new BreakJump(runtime.getNil());
     }
 
     /**

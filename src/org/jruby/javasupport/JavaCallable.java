@@ -35,7 +35,7 @@ import org.jruby.runtime.CallbackFactory;
 
 public abstract class JavaCallable extends JavaAccessibleObject {
 
-    public JavaCallable(Ruby runtime, RubyClass rubyClass, Object javaObject) {
+    public JavaCallable(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
     }
 

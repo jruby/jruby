@@ -104,7 +104,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            ((RubyArgsFile) runtime.getGlobalVariables().get("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
+            ((RubyArgsFile) runtime.getGlobalVariables().get("$<")).setCurrentLineNumber(RubyNumeric.fix2int(value));
             return super.set(value);
         }
     }
@@ -146,7 +146,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            int level = RubyFixnum.fix2int(value);
+            int level = RubyNumeric.fix2int(value);
             if (level < runtime.getSafeLevel()) {
                 throw new SecurityException("tried to downgrade level from " + runtime.getSafeLevel() + " to " + level);
             }

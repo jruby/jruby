@@ -42,52 +42,7 @@ public class RubyExceptions implements IErrno {
 
     private Ruby runtime = null;
     private RubyModule errnoModule;
-   
- private RubyClass _ENOTEMPTY   ;
- private RubyClass _ERANGE      ;
- private RubyClass _ESPIPE      ;
- private RubyClass _ENFILE      ;
- private RubyClass _EXDEV       ;
- private RubyClass _ENOMEM      ;
- private RubyClass _E2BIG       ;
- private RubyClass _ENOENT      ;
- private RubyClass _ENOSYS      ;
- private RubyClass _EDOM        ;
- private RubyClass _ENOSPC      ;
- private RubyClass _EINVAL      ;
- private RubyClass _EEXIST      ;
- private RubyClass _EAGAIN      ;
- private RubyClass _ENXIO       ;
- private RubyClass _EILSEQ      ;
- private RubyClass _ENOLCK      ;
- private RubyClass _EPIPE       ;
- private RubyClass _EFBIG       ;
- private RubyClass _EISDIR      ;
- private RubyClass _EBUSY       ;
- private RubyClass _ECHILD      ;
- private RubyClass _EIO         ;
- private RubyClass _EPERM       ;
- private RubyClass _EDEADLOCK       ;
- private RubyClass _ENAMETOOLONG;
- private RubyClass _EMLINK      ;
- private RubyClass _ENOTTY      ;
- private RubyClass _ENOTDIR     ;
- private RubyClass _EFAULT      ;
- private RubyClass _EBADF       ;
- private RubyClass _EINTR       ;
- private RubyClass _EWOULDBLOCK ;
- private RubyClass _EDEADLK     ;
- private RubyClass _EROFS       ;
- private RubyClass _EMFILE      ;
- private RubyClass _ENODEV      ;
- private RubyClass _EACCES      ;
- private RubyClass _ENOEXEC     ;
- private RubyClass _ESRCH       ;
 
-
-
-
-    
     public RubyExceptions(Ruby runtime) {
         this.runtime = runtime;
     }
@@ -128,46 +83,46 @@ public class RubyExceptions implements IErrno {
 
         errnoModule = runtime.defineModule("Errno");
 
-        _ENOTEMPTY = setSysErr(ENOTEMPTY, "ENOTEMPTY");   
-        _ERANGE = setSysErr(ERANGE, "ERANGE");      
-        _ESPIPE = setSysErr(ESPIPE, "ESPIPE");      
-        _ENFILE = setSysErr(ENFILE, "ENFILE");      
-        _EXDEV = setSysErr(EXDEV, "EXDEV");       
-        _ENOMEM = setSysErr(ENOMEM, "ENOMEM");      
-        _E2BIG = setSysErr(E2BIG, "E2BIG");       
-        _ENOENT = setSysErr(ENOENT, "ENOENT");      
-        _ENOSYS = setSysErr(ENOSYS, "ENOSYS");      
-        _EDOM = setSysErr(EDOM, "EDOM");        
-        _ENOSPC = setSysErr(ENOSPC, "ENOSPC");      
-        _EINVAL = setSysErr(EINVAL, "EINVAL");      
-        _EEXIST = setSysErr(EEXIST, "EEXIST");      
-        _EAGAIN = setSysErr(EAGAIN, "EAGAIN");      
-        _ENXIO = setSysErr(ENXIO, "ENXIO");       
-        _EILSEQ = setSysErr(EILSEQ, "EILSEQ");      
-        _ENOLCK = setSysErr(ENOLCK, "ENOLCK");      
-        _EPIPE = setSysErr(EPIPE, "EPIPE");       
-        _EFBIG = setSysErr(EFBIG, "EFBIG");       
-        _EISDIR = setSysErr(EISDIR, "EISDIR");      
-        _EBUSY = setSysErr(EBUSY, "EBUSY");       
-        _ECHILD = setSysErr(ECHILD, "ECHILD");      
-        _EIO = setSysErr(EIO, "EIO");         
-        _EPERM = setSysErr(EPERM, "EPERM");       
-        _EDEADLOCK = setSysErr(EDEADLOCK, "EDEADLOCK");   
-        _ENAMETOOLONG = setSysErr(ENAMETOOLONG, "ENAMETOOLONG");
-        _EMLINK = setSysErr(EMLINK, "EMLINK");      
-        _ENOTTY = setSysErr(ENOTTY, "ENOTTY");      
-        _ENOTDIR = setSysErr(ENOTDIR, "ENOTDIR");     
-        _EFAULT = setSysErr(EFAULT, "EFAULT");      
-        _EBADF = setSysErr(EBADF, "EBADF");       
-        _EINTR = setSysErr(EINTR, "EINTR");       
-        _EWOULDBLOCK = setSysErr(EWOULDBLOCK, "EWOULDBLOCK"); 
-        _EDEADLK = setSysErr(EDEADLK, "EDEADLK");     
-        _EROFS = setSysErr(EROFS, "EROFS");       
-        _EMFILE = setSysErr(EMFILE, "EMFILE");      
-        _ENODEV = setSysErr(ENODEV, "ENODEV");      
-        _EACCES = setSysErr(EACCES, "EACCES");      
-        _ENOEXEC = setSysErr(ENOEXEC, "ENOEXEC");             
-        _ESRCH = setSysErr(ESRCH, "ESRCH");       
+        setSysErr(ENOTEMPTY, "ENOTEMPTY");   
+        setSysErr(ERANGE, "ERANGE");      
+        setSysErr(ESPIPE, "ESPIPE");      
+        setSysErr(ENFILE, "ENFILE");      
+        setSysErr(EXDEV, "EXDEV");       
+        setSysErr(ENOMEM, "ENOMEM");      
+        setSysErr(E2BIG, "E2BIG");       
+        setSysErr(ENOENT, "ENOENT");      
+        setSysErr(ENOSYS, "ENOSYS");      
+        setSysErr(EDOM, "EDOM");        
+        setSysErr(ENOSPC, "ENOSPC");      
+        setSysErr(EINVAL, "EINVAL");      
+        setSysErr(EEXIST, "EEXIST");      
+        setSysErr(EAGAIN, "EAGAIN");      
+        setSysErr(ENXIO, "ENXIO");       
+        setSysErr(EILSEQ, "EILSEQ");      
+        setSysErr(ENOLCK, "ENOLCK");      
+        setSysErr(EPIPE, "EPIPE");       
+        setSysErr(EFBIG, "EFBIG");       
+        setSysErr(EISDIR, "EISDIR");      
+        setSysErr(EBUSY, "EBUSY");       
+        setSysErr(ECHILD, "ECHILD");      
+        setSysErr(EIO, "EIO");         
+        setSysErr(EPERM, "EPERM");       
+        setSysErr(EDEADLOCK, "EDEADLOCK");   
+        setSysErr(ENAMETOOLONG, "ENAMETOOLONG");
+        setSysErr(EMLINK, "EMLINK");      
+        setSysErr(ENOTTY, "ENOTTY");      
+        setSysErr(ENOTDIR, "ENOTDIR");     
+        setSysErr(EFAULT, "EFAULT");      
+        setSysErr(EBADF, "EBADF");       
+        setSysErr(EINTR, "EINTR");       
+        setSysErr(EWOULDBLOCK, "EWOULDBLOCK"); 
+        setSysErr(EDEADLK, "EDEADLK");     
+        setSysErr(EROFS, "EROFS");       
+        setSysErr(EMFILE, "EMFILE");      
+        setSysErr(ENODEV, "ENODEV");      
+        setSysErr(EACCES, "EACCES");      
+        setSysErr(ENOEXEC, "ENOEXEC");             
+        setSysErr(ESRCH, "ESRCH");       
     } 
     
     /**

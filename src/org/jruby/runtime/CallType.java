@@ -2,11 +2,7 @@ package org.jruby.runtime;
 
 import org.jruby.exceptions.NameError;
 
-/**
- * 
- * @author jpetersen
- * @version $Revision$
- */
+// FIXME replace with enum in Java 5.0
 public final class CallType {
     // Call with explicit receiver
     public static final CallType NORMAL = new CallType();
@@ -18,6 +14,7 @@ public final class CallType {
     public static final CallType VARIABLE = new CallType();
 
     private CallType() {
+        // nobody should create a CallType
     }
 
     public boolean isNormal() {

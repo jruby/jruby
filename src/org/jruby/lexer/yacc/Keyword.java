@@ -49,7 +49,7 @@ public class Keyword implements Token {
         this.state = state;
     }
 
-    private static final int TOTAL_KEYWORDS = 40;
+//    private static final int TOTAL_KEYWORDS = 40;
     private static final int MIN_WORD_LENGTH = 2;
     private static final int MAX_WORD_LENGTH = 8;
     private static final int MIN_HASH_VALUE = 6;

@@ -36,9 +36,6 @@ import java.util.EmptyStackException;
 public abstract class AbstractStack {
     protected StackElement top = null;
     
-    public AbstractStack() {
-    }
-
     public StackElement getTop() {
         return top;
     }

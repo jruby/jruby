@@ -32,4 +32,5 @@ package org.jruby.ast.types;
  * @version $Revision$
  */
 public interface ILiteralNode {
+    // only a marker interface
 }

@@ -36,8 +36,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 
 import org.ablaf.ast.IAstEncoder;
-import org.ablaf.internal.ast.XmlAstMarshal;
-import org.jruby.ast.util.AstPersistenceDelegates;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.common.NullWarnings;
 import org.jruby.lexer.yacc.LexerSource;
@@ -83,12 +81,5 @@ public class ASTSerializer {
         reader.close();
         
         encoder.writeNode(result.getAST());
-    }
-
-    public static void main(String[] args) throws IOException {
-        XmlAstMarshal marshal = new XmlAstMarshal(AstPersistenceDelegates.get());
-        IAstEncoder encoder = marshal.openEncoder(new BufferedOutputStream(System.out));
-        serialize(new File(args[0]), encoder);
-        encoder.close();
     }
 }

@@ -55,7 +55,7 @@ public class JavaConstructor extends JavaCallable {
     }
 
     public JavaConstructor(Ruby runtime, Constructor constructor) {
-        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaConstructor"), constructor);
+        super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaConstructor"));
         this.constructor = constructor;
     }
 

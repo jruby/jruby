@@ -37,10 +37,6 @@ import org.jruby.util.collections.AbstractStack;
  * @version $Revision$
  */
 public class BlockStack extends AbstractStack {
-
-    public BlockStack() {
-    }
-
     public void push(Node varNode, ICallable method, IRubyObject self) {
         push(Block.createBlock(varNode, method, self));
     }

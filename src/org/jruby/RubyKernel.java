@@ -555,7 +555,7 @@ public class RubyKernel {
         RubyString src = (RubyString) args[0];
         IRubyObject scope = args.length > 1 ? args[1] : runtime.getNil();
         String file = args.length > 2 ? args[2].toString() : "(eval)";
-        int line = args.length > 3 ? RubyFixnum.fix2int(args[3]) : 1;
+        int line = args.length > 3 ? RubyNumeric.fix2int(args[3]) : 1;
 
         src.checkSafeString();
 
@@ -571,7 +571,7 @@ public class RubyKernel {
     }
 
     public static IRubyObject caller(IRubyObject recv, IRubyObject[] args) {
-        int level = args.length > 0 ? RubyFixnum.fix2int(args[0]) : 1;
+        int level = args.length > 0 ? RubyNumeric.fix2int(args[0]) : 1;
 
         if (level < 0) {
             throw recv.getRuntime().newArgumentError("negative level(" + level + ')');

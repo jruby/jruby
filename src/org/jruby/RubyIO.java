@@ -420,7 +420,7 @@ public class RubyIO extends RubyObject {
      * 
      */
     public IRubyObject initialize(RubyFixnum descriptor, IRubyObject[] args) {
-        int fileno = RubyFixnum.fix2int(descriptor);
+        int fileno = RubyNumeric.fix2int(descriptor);
         String mode = null;
         
         if (args.length > 0) {
@@ -506,7 +506,7 @@ public class RubyIO extends RubyObject {
      * @param newLineNumber The new line number.
      */
     public RubyFixnum lineno_set(RubyFixnum newLineNumber) {
-        lineNumber = RubyFixnum.fix2int(newLineNumber);
+        lineNumber = RubyNumeric.fix2int(newLineNumber);
 
         return newLineNumber;
     }
@@ -566,9 +566,9 @@ public class RubyIO extends RubyObject {
                         "Cannot convert String to Integer");
             }
         } else if (object.isKindOf(getRuntime().getClasses().getFixnumClass())){
-            c = RubyFixnum.fix2int(object);
+            c = RubyNumeric.fix2int(object);
         } else { // What case will this work for?
-            c = RubyFixnum.fix2int(object.callMethod("to_i"));
+            c = RubyNumeric.fix2int(object.callMethod("to_i"));
         }
 
         try {
@@ -741,13 +741,13 @@ public class RubyIO extends RubyObject {
     }
     
     public IRubyObject sysread(RubyFixnum number) {
-        String buf = handler.sysread(RubyFixnum.fix2int(number));
+        String buf = handler.sysread(RubyNumeric.fix2int(number));
         
         return getRuntime().newString(buf);
     }
     
     public IRubyObject read(IRubyObject[] args) {
-        String buf = args.length > 0 ? handler.read(RubyFixnum.fix2int(args[0])) : handler.getsEntireStream();
+        String buf = args.length > 0 ? handler.read(RubyNumeric.fix2int(args[0])) : handler.getsEntireStream();
 
         return buf == null ? getRuntime().getNil() : getRuntime().newString(buf);
     }

@@ -39,8 +39,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyThreadGroup extends RubyObject {
-    private static boolean globalAbortOnException; // move to runtime object
-
     private Map rubyThreadList = new HashMap();
     private boolean enclosed = false;
 
