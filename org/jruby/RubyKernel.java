@@ -76,7 +76,6 @@ public class RubyKernel {
         kernelModule.defineMethod("local_variables", CallbackFactory.getSingletonMethod(RubyKernel.class, "local_variables"));
         kernelModule.defineMethod("block_given?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
         kernelModule.defineMethod("iterator?", CallbackFactory.getSingletonMethod(RubyKernel.class, "block_given"));
-        kernelModule.defineMethod("lambda", CallbackFactory.getSingletonMethod(RubyKernel.class, "lambda"));
         kernelModule.defineMethod("proc", CallbackFactory.getSingletonMethod(RubyKernel.class, "proc"));
         kernelModule.defineMethod("loop", CallbackFactory.getSingletonMethod(RubyKernel.class, "loop"));
         kernelModule.defineMethod("eval", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "eval", RubyString.class));
@@ -89,6 +88,8 @@ public class RubyKernel {
         kernelModule.defineMethod("exit", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "exit"));
         kernelModule.defineMethod("srand", CallbackFactory.getSingletonMethod(RubyKernel.class, "srand", RubyObject.class));
         kernelModule.defineMethod("rand", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rand"));
+
+        kernelModule.defineAlias("lambda", "proc");
 
         return kernelModule;
     }
@@ -464,12 +465,8 @@ public class RubyKernel {
         return trace_func;
     }
 
-    public static RubyObject lambda(Ruby ruby, RubyObject recv) {
+    public static RubyProc proc(Ruby ruby, RubyObject recv) {
         return RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
-    }
-
-    public static RubyObject proc(Ruby ruby, RubyObject recv) {
-        return lambda(ruby, recv);
     }
 
     public static RubyObject loop(Ruby ruby, RubyObject recv) {

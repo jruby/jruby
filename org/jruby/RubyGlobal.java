@@ -65,14 +65,14 @@ public class RubyGlobal {
         ruby.defineHookedVariable("$,", ruby.getNil(), null, stringSetter);
 
         ruby.defineHookedVariable("$.", RubyFixnum.one(ruby), null, new LineNumberSetter());
-        ruby.defineVirtualVariable("$_", lastlineAccessor, lastlineAccessor);
+        ruby.defineHookedVariable("$_", null, lastlineAccessor, lastlineAccessor);
 
         ruby.defineHookedVariable("$!", ruby.getNil(), null, new ErrorInfoSetter());
 
-        ruby.defineVirtualVariable("$SAFE", safeAccessor, safeAccessor);
+        ruby.defineHookedVariable("$SAFE", null, safeAccessor, safeAccessor);
 
         BacktraceAccessor btAccessor = new BacktraceAccessor();
-        ruby.defineVirtualVariable("$@", btAccessor, btAccessor);
+        ruby.defineHookedVariable("$@", null, btAccessor, btAccessor);
 
         RubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), System.in);
         RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), System.out);

@@ -873,13 +873,6 @@ public final class Ruby {
         defineHookedVariable(name, value, null, RubyGlobalEntry.readonlySetter);
     }
 
-    public void defineVirtualVariable(String name, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
-        getter = getter != null ? getter : RubyGlobalEntry.valueMethods;
-        setter = setter != null ? setter : RubyGlobalEntry.readonlySetter;
-
-        defineHookedVariable(name, null, getter, setter);
-    }
-
     /** rb_global_entry
      *
      */

@@ -222,45 +222,45 @@ public class RubyObject implements Cloneable {
         return respond_to(RubySymbol.newSymbol(getRuby(), methodName)).isTrue();
     }
 
-    public static void createObjectClass(RubyModule kernelModule) {
-        kernelModule.defineMethod("==", CallbackFactory.getMethod(RubyObject.class, "equal", RubyObject.class));
-        kernelModule.defineMethod("=~", CallbackFactory.getFalseMethod());
-        kernelModule.defineMethod("clone", CallbackFactory.getMethod(RubyObject.class, "rbClone"));
-        kernelModule.defineMethod("dup", CallbackFactory.getMethod(RubyObject.class, "dup"));
-        kernelModule.defineMethod("eql?", CallbackFactory.getMethod(RubyObject.class, "equal", RubyObject.class));
-        kernelModule.defineMethod("respond_to?", CallbackFactory.getMethod(RubyObject.class, "respond_to", RubyObject.class));
-        kernelModule.defineMethod("extend", CallbackFactory.getOptMethod(RubyObject.class, "extend"));
-        kernelModule.defineMethod("freeze", CallbackFactory.getMethod(RubyObject.class, "freeze"));
-        kernelModule.defineMethod("frozen?", CallbackFactory.getMethod(RubyObject.class, "frozen"));
-        kernelModule.defineMethod("id", CallbackFactory.getMethod(RubyObject.class, "id"));
-        kernelModule.defineMethod("hash", CallbackFactory.getMethod(RubyObject.class, "id"));
-        kernelModule.defineMethod("__id__", CallbackFactory.getMethod(RubyObject.class, "id"));
-        kernelModule.defineMethod("inspect", CallbackFactory.getMethod(RubyObject.class, "inspect"));
-        kernelModule.defineMethod("instance_eval", CallbackFactory.getOptMethod(RubyObject.class, "instance_eval"));
-        kernelModule.defineMethod("instance_of?", CallbackFactory.getMethod(RubyObject.class, "instance_of", RubyModule.class));
-        kernelModule.defineMethod("instance_variables", CallbackFactory.getMethod(RubyObject.class, "instance_variables"));
-        kernelModule.defineMethod("is_a?", CallbackFactory.getMethod(RubyObject.class, "kind_of", RubyModule.class));
-        kernelModule.defineMethod("kind_of?", CallbackFactory.getMethod(RubyObject.class, "kind_of", RubyModule.class));
-        kernelModule.defineMethod("method", CallbackFactory.getMethod(RubyObject.class, "method", RubyObject.class));
-        kernelModule.defineMethod("methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
-        kernelModule.defineMethod("nil?", CallbackFactory.getFalseMethod());
-        kernelModule.defineMethod("private_methods", CallbackFactory.getMethod(RubyObject.class, "private_methods"));
-        kernelModule.defineMethod("protected_methods", CallbackFactory.getMethod(RubyObject.class, "protected_methods"));
-        kernelModule.defineMethod("public_methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
-        kernelModule.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyObject.class));
-        kernelModule.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyObject.class));
-        kernelModule.defineMethod("taint", CallbackFactory.getMethod(RubyObject.class, "taint"));
-        kernelModule.defineMethod("tainted?", CallbackFactory.getMethod(RubyObject.class, "tainted"));
-        kernelModule.defineMethod("to_a", CallbackFactory.getMethod(RubyObject.class, "to_a"));
-        kernelModule.defineMethod("to_s", CallbackFactory.getMethod(RubyObject.class, "to_s"));
-        kernelModule.defineMethod("type", CallbackFactory.getMethod(RubyObject.class, "type"));
-        kernelModule.defineMethod("untaint", CallbackFactory.getMethod(RubyObject.class, "untaint"));
+    public static void createObjectClass(RubyModule objectClass) {
+        objectClass.defineMethod("==", CallbackFactory.getMethod(RubyObject.class, "equal", RubyObject.class));
+        objectClass.defineMethod("=~", CallbackFactory.getFalseMethod());
+        objectClass.defineMethod("clone", CallbackFactory.getMethod(RubyObject.class, "rbClone"));
+        objectClass.defineMethod("dup", CallbackFactory.getMethod(RubyObject.class, "dup"));
+        objectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyObject.class, "equal", RubyObject.class));
+        objectClass.defineMethod("respond_to?", CallbackFactory.getMethod(RubyObject.class, "respond_to", RubyObject.class));
+        objectClass.defineMethod("extend", CallbackFactory.getOptMethod(RubyObject.class, "extend"));
+        objectClass.defineMethod("freeze", CallbackFactory.getMethod(RubyObject.class, "freeze"));
+        objectClass.defineMethod("frozen?", CallbackFactory.getMethod(RubyObject.class, "frozen"));
+        objectClass.defineMethod("id", CallbackFactory.getMethod(RubyObject.class, "id"));
+        objectClass.defineMethod("hash", CallbackFactory.getMethod(RubyObject.class, "id"));
+        objectClass.defineMethod("__id__", CallbackFactory.getMethod(RubyObject.class, "id"));
+        objectClass.defineMethod("inspect", CallbackFactory.getMethod(RubyObject.class, "inspect"));
+        objectClass.defineMethod("instance_eval", CallbackFactory.getOptMethod(RubyObject.class, "instance_eval"));
+        objectClass.defineMethod("instance_of?", CallbackFactory.getMethod(RubyObject.class, "instance_of", RubyModule.class));
+        objectClass.defineMethod("instance_variables", CallbackFactory.getMethod(RubyObject.class, "instance_variables"));
+        objectClass.defineMethod("is_a?", CallbackFactory.getMethod(RubyObject.class, "kind_of", RubyModule.class));
+        objectClass.defineMethod("kind_of?", CallbackFactory.getMethod(RubyObject.class, "kind_of", RubyModule.class));
+        objectClass.defineMethod("method", CallbackFactory.getMethod(RubyObject.class, "method", RubyObject.class));
+        objectClass.defineMethod("methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
+        objectClass.defineMethod("nil?", CallbackFactory.getFalseMethod());
+        objectClass.defineMethod("private_methods", CallbackFactory.getMethod(RubyObject.class, "private_methods"));
+        objectClass.defineMethod("protected_methods", CallbackFactory.getMethod(RubyObject.class, "protected_methods"));
+        objectClass.defineMethod("public_methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
+        objectClass.defineMethod("send", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyObject.class));
+        objectClass.defineMethod("__send__", CallbackFactory.getOptMethod(RubyObject.class, "send", RubyObject.class));
+        objectClass.defineMethod("taint", CallbackFactory.getMethod(RubyObject.class, "taint"));
+        objectClass.defineMethod("tainted?", CallbackFactory.getMethod(RubyObject.class, "tainted"));
+        objectClass.defineMethod("to_a", CallbackFactory.getMethod(RubyObject.class, "to_a"));
+        objectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyObject.class, "to_s"));
+        objectClass.defineMethod("type", CallbackFactory.getMethod(RubyObject.class, "type"));
+        objectClass.defineMethod("untaint", CallbackFactory.getMethod(RubyObject.class, "untaint"));
 
-        kernelModule.defineAlias("===", "==");
-        kernelModule.defineAlias("class", "type");
-        kernelModule.defineAlias("equal?", "==");
+        objectClass.defineAlias("===", "==");
+        objectClass.defineAlias("class", "type");
+        objectClass.defineAlias("equal?", "==");
 
-        Ruby ruby = kernelModule.getRuby();
+        Ruby ruby = objectClass.getRuby();
 
         ruby.defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
     }

@@ -150,7 +150,7 @@ public class JRubyEngine extends BSFEngineImpl {
         for (int i = 0; i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
             BeanAccessor accessor = new BeanAccessor(bean);
-            ruby.defineVirtualVariable(bean.name, accessor, accessor);
+            ruby.defineHookedVariable(bean.name, null, accessor, accessor);
         }
 
         // ruby.defineGlobalFunction("declareBean", method);
@@ -158,7 +158,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
         BeanAccessor accessor = new BeanAccessor(bean);
-        ruby.defineVirtualVariable(bean.name, accessor, accessor);
+        ruby.defineHookedVariable(bean.name, null, accessor, accessor);
     }
 
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
