@@ -321,18 +321,18 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(value);
                     break;
                 case FORMAT_WEEK_YEAR_M:
-                    value = calendar.get(Calendar.WEEK_OF_YEAR);
-                    if (value < 10) {
-                        toAppendTo.append('0');
-                    }
-                    toAppendTo.append(value);
-                    break;
+                	// GregorianCalendar uses Sunday by default; switch to Monday and back
+                	calendar.setFirstDayOfWeek(Calendar.MONDAY);
+                	// intentional fall-through
                 case FORMAT_WEEK_YEAR_S:
-                    value = calendar.get(Calendar.WEEK_OF_YEAR);
+                	// Ruby uses zero-based weeks
+                    value = calendar.get(Calendar.WEEK_OF_YEAR) - 1;
                     if (value < 10) {
                         toAppendTo.append('0');
                     }
                     toAppendTo.append(value);
+                    // to clear MONDAY from above
+                    calendar.setFirstDayOfWeek(Calendar.SUNDAY);
                     break;
                 case FORMAT_DAY_WEEK:
                     value = calendar.get(Calendar.DAY_OF_WEEK) - 1;
