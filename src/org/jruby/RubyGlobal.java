@@ -129,7 +129,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            if (! (value instanceof RubyString)) {
+            if (!value.isNil() && ! (value instanceof RubyString)) {
                 throw new TypeError(ruby, "value of " + name() + " must be a String");
             }
             return super.set(value);
