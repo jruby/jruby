@@ -30,6 +30,7 @@
 
 package org.jruby.javasupport;
 
+import java.lang.ref.*;
 import java.lang.reflect.Array;
 
 import java.util.*;
@@ -274,6 +275,16 @@ public class JavaUtil {
             }
             return RubyHash.create(ruby, null, items);
         } else {
+            // Look if a RubyObject exists which already represents object.
+            Iterator iter = ruby.objectSpace.iterator();
+            while (iter.hasNext()) {
+                RubyObject rubyObject = (RubyObject)((Reference)iter.next()).get();
+                if (rubyObject instanceof RubyJavaObject) {
+                    if (((RubyJavaObject)rubyObject).getValue() == object) {
+                        return rubyObject;
+                    }
+                }
+            }
             return new RubyJavaObject(ruby, (RubyClass)ruby.getJavaSupport().loadClass(javaClass, null), object);
         }
     }
