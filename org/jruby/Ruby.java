@@ -88,8 +88,8 @@ import org.jruby.util.collections.IStack;
  * @since   0.1
  */
 public final class Ruby {
+    private ThreadContext mainContext = new ThreadContext(Ruby.this);
     private ThreadLocal threadContext = new ThreadLocal() {
-        private ThreadContext mainContext = new ThreadContext(Ruby.this);
 
         /**
          * @see java.lang.ThreadLocal#initialValue()
@@ -711,8 +711,12 @@ public final class Ruby {
     public ThreadContext getCurrentContext() {
         return (ThreadContext)threadContext.get();
     }
+
+    public ThreadContext getMainContext() {
+        return mainContext;
+    }
     
-    public void registerNewContext(RubyThread thread) {
+    public void registerNewContext(ThreadClass thread) {
         threadContext.set(new ThreadContext(this));
         getCurrentContext().setCurrentThread(thread);
     }

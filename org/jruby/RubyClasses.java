@@ -229,6 +229,8 @@ public class RubyClasses {
 
         falseClass = RubyBoolean.createFalseClass(ruby);
         trueClass = RubyBoolean.createTrueClass(ruby);
+        
+        threadClass = ThreadClass.createThreadClass(ruby);
     }
 
     /**
@@ -588,9 +590,6 @@ public class RubyClasses {
      * @return The Thread class.
      */
     public RubyClass getThreadClass() {
-        if (threadClass == null) {
-            threadClass = RubyThread.createThreadClass(ruby);
-        }
         return threadClass;
     }
 
@@ -806,8 +805,6 @@ public class RubyClasses {
             return getStructClass();
         } else if (name == "Symbol") {
             return getSymbolClass();
-        } else if (name == "Thread") {
-            return getThreadClass();
         } else if (name == "ThreadGroup") {
             return getThreadGroupClass();
         } else if (name == "Time") {

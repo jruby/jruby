@@ -50,7 +50,7 @@ public class ThreadContext {
     private BlockStack blockStack;
     private RubyStack dynamicVarsStack;
 
-    private RubyThread currentThread;
+    private ThreadClass currentThread;
 
     private ScopeStack scopeStack;
     private FrameStack frameStack;
@@ -93,11 +93,11 @@ public class ThreadContext {
      * Returns the currentThread.
      * @return RubyThread
      */
-    public RubyThread getCurrentThread() {
+    public ThreadClass getCurrentThread() {
         return currentThread;
     }
 
-    public void setCurrentThread(RubyThread thread) {
+    public void setCurrentThread(ThreadClass thread) {
         this.currentThread = thread;
     }
 
@@ -252,9 +252,6 @@ public class ThreadContext {
     }
 
     public void pollThreadEvents() {
-        if (getCurrentThread() == null) {
-            return;
-        }
         getCurrentThread().pollThreadEvents();
     }
 }

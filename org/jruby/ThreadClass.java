@@ -23,20 +23,21 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
-import org.jruby.runtime.CallbackFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadError;
+import org.jruby.internal.runtime.builtin.definitions.ThreadDefinition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
+import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.ThreadError;
-import org.jruby.exceptions.RaiseException;
-
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -50,84 +51,24 @@ import java.util.HashMap;
  * @author Jason Voegele (jason@jvoegele.com)
  * @version $Revision$
  */
-public class RubyThread extends RubyObject {
-
-    private static boolean globalAbortOnException;
-    private static RubyThread mainThread;
+public class ThreadClass extends RubyObject implements IndexCallable {
+    private static boolean globalAbortOnException; // remove it.
 
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private RaiseException exitingException = null;
     private IRubyObject receivedException = null;
-
+    
     private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
 
-    public static RubyClass createThreadClass(Ruby ruby) {
-        RubyClass threadClass = ruby.defineClass("Thread", ruby.getClasses().getObjectClass());
-
-        // class methods
-        threadClass.defineSingletonMethod(
-            "abort_on_exception",
-            CallbackFactory.getSingletonMethod(RubyThread.class, "abort_on_exception", RubyString.class));
-        threadClass.defineSingletonMethod(
-            "abort_on_exception=",
-            CallbackFactory.getSingletonMethod(RubyThread.class, "abort_on_exception_set", RubyBoolean.class));
-//        threadClass.defineSingletonMethod("critical", CallbackFactory.getSingletonMethod(RubyThread.class, "critical"));
-//        threadClass.defineSingletonMethod(
-//            "critical=",
-//            CallbackFactory.getSingletonMethod(RubyThread.class, "critical_set", RubyBoolean.class));
-        threadClass.defineSingletonMethod("current", CallbackFactory.getSingletonMethod(RubyThread.class, "current"));
-        threadClass.defineSingletonMethod("exit", CallbackFactory.getSingletonMethod(RubyThread.class, "exit"));
-        threadClass.defineSingletonMethod(
-            "fork",
-            CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
-        //        threadClass.defineSingletonMethod(
-        //            "kill",
-        //            CallbackFactory.getSingletonMethod(RubyThread.class, "kill", RubyThread.class));
-        threadClass.defineSingletonMethod("list", CallbackFactory.getSingletonMethod(RubyThread.class, "list"));
-        //        threadClass.defineSingletonMethod("main", CallbackFactory.getSingletonMethod(RubyThread.class, "main"));
-        threadClass.defineSingletonMethod(
-            "new",
-            CallbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
-        threadClass.defineSingletonMethod("pass", CallbackFactory.getSingletonMethod(RubyThread.class, "pass"));
-        threadClass.defineSingletonMethod("start", CallbackFactory.getOptSingletonMethod(RubyThread.class, "start"));
-        //    threadClass.defineSingletonMethod("stop", CallbackFactory.getSingletonMethod(RubyThread.class, "stop"));
-
-        // instance methods
-        threadClass.defineMethod("[]", CallbackFactory.getMethod(RubyThread.class, "aref", IRubyObject.class));
-        threadClass.defineMethod(
-            "[]=",
-            CallbackFactory.getMethod(RubyThread.class, "aset", IRubyObject.class, IRubyObject.class));
-        threadClass.defineMethod(
-            "abort_on_exception",
-            CallbackFactory.getMethod(RubyThread.class, "abort_on_exception"));
-        threadClass.defineMethod(
-            "abort_on_exception=",
-            CallbackFactory.getMethod(RubyThread.class, "abort_on_exception_set", RubyBoolean.class));
-        threadClass.defineMethod("alive?", CallbackFactory.getMethod(RubyThread.class, "is_alive"));
-        threadClass.defineMethod("exit", CallbackFactory.getMethod(RubyThread.class, "exit"));
-        threadClass.defineMethod("join", CallbackFactory.getMethod(RubyThread.class, "join"));
-        threadClass.defineMethod("key?", CallbackFactory.getMethod(RubyThread.class, "has_key", IRubyObject.class));
-        threadClass.defineMethod("kill", CallbackFactory.getMethod(RubyThread.class, "exit"));
-        threadClass.defineMethod("priority", CallbackFactory.getMethod(RubyThread.class, "priority"));
-        threadClass.defineMethod(
-            "priority=",
-            CallbackFactory.getMethod(RubyThread.class, "priority_set", RubyFixnum.class));
-        threadClass.defineMethod("raise", CallbackFactory.getMethod(RubyThread.class, "raise", IRubyObject.class));
-        threadClass.defineMethod("run", CallbackFactory.getMethod(RubyThread.class, "run"));
-        threadClass.defineMethod("safe_level", CallbackFactory.getMethod(RubyThread.class, "safe_level"));
-        threadClass.defineMethod("status", CallbackFactory.getMethod(RubyThread.class, "status"));
-        threadClass.defineMethod("stop?", CallbackFactory.getMethod(RubyThread.class, "is_stopped"));
-        threadClass.defineMethod("value", CallbackFactory.getMethod(RubyThread.class, "value"));
-        threadClass.defineMethod("wakeup", CallbackFactory.getMethod(RubyThread.class, "wakeup"));
-
-        Ruby runtime = threadClass.getRuntime();
-        RubyThread currentThread = new RubyThread(runtime, threadClass);
+    public static RubyClass createThreadClass(Ruby runtime) {
+        RubyClass threadClass = new ThreadDefinition(runtime).getType();
+        
+        ThreadClass currentThread = new ThreadClass(runtime, threadClass);
         currentThread.jvmThread = Thread.currentThread();
-        runtime.getCurrentContext().setCurrentThread(currentThread);
-        mainThread = currentThread;
+        runtime.getMainContext().setCurrentThread(currentThread);
 
         return threadClass;
     }
@@ -157,16 +98,16 @@ public class RubyThread extends RubyObject {
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
-    public static RubyThread start(IRubyObject recv, IRubyObject[] args) {
+    public static ThreadClass start(IRubyObject recv, IRubyObject[] args) {
         return startThread(recv, args, false);
     }
 
-    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
+    private static ThreadClass startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         final Ruby runtime = recv.getRuntime();
         if (!runtime.isBlockGiven()) {
             throw new ThreadError(runtime, "must be called with a block");
         }
-        final RubyThread thread = new RubyThread(runtime, (RubyClass) recv);
+        final ThreadClass thread = new ThreadClass(runtime, (RubyClass) recv);
         if (callInit) {
             thread.callInit(args);
         }
@@ -214,11 +155,11 @@ public class RubyThread extends RubyObject {
         }
     }
 
-    protected RubyThread(Ruby ruby) {
+    protected ThreadClass(Ruby ruby) {
         this(ruby, ruby.getClasses().getThreadClass());
     }
 
-    protected RubyThread(Ruby ruby, RubyClass type) {
+    protected ThreadClass(Ruby ruby, RubyClass type) {
         super(ruby, type);
     }
 
@@ -232,12 +173,12 @@ public class RubyThread extends RubyObject {
         return globalAbortOnException ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
-    public static RubyBoolean abort_on_exception_set(IRubyObject recv, RubyBoolean val) {
+    public static IRubyObject abort_on_exception_set(IRubyObject recv, IRubyObject val) {
         globalAbortOnException = val.isTrue();
         return val;
     }
 
-    public static RubyThread current(IRubyObject recv) {
+    public static ThreadClass current(IRubyObject recv) {
         return recv.getRuntime().getCurrentContext().getCurrentThread();
     }
 
@@ -285,7 +226,7 @@ public class RubyThread extends RubyObject {
         return abortOnException ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    public RubyBoolean abort_on_exception_set(RubyBoolean val) {
+    public IRubyObject abort_on_exception_set(IRubyObject val) {
         abortOnException = val.isTrue();
         return val;
     }
@@ -294,7 +235,7 @@ public class RubyThread extends RubyObject {
         return jvmThread.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    public RubyThread join() {
+    public ThreadClass join() {
         if (jvmThread == Thread.currentThread()) {
             throw new ThreadError(getRuntime(), "thread tried to join itself");
         }
@@ -319,13 +260,16 @@ public class RubyThread extends RubyObject {
         return RubyFixnum.newFixnum(getRuntime(), jvmThread.getPriority());
     }
 
-    public RubyFixnum priority_set(RubyFixnum priority) {
-        jvmThread.setPriority((int) priority.getLongValue());
+    public IRubyObject priority_set(IRubyObject priority) {
+        jvmThread.setPriority(RubyNumeric.fix2int(priority));
         return priority;
     }
 
-    public void raise(IRubyObject exc) {
+    public IRubyObject raise(IRubyObject exc) {
         receivedException = exc;
+
+        // FIXME
+        return this;
     }
 
     public IRubyObject status() {
@@ -366,7 +310,7 @@ public class RubyThread extends RubyObject {
         if (abortOnException()) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
-            mainThread().raise(RubyException.newException(getRuntime(), getRuntime().getExceptions().getSystemExit(),""));
+            runtime.getMainContext().getCurrentThread().raise(RubyException.newException(getRuntime(), getRuntime().getExceptions().getSystemExit(), ""));
         } else {
             exitingException = exception;
         }
@@ -376,7 +320,41 @@ public class RubyThread extends RubyObject {
         return (globalAbortOnException || abortOnException);
     }
 
-    private static RubyThread mainThread() {
-        return mainThread;
+    public static ThreadClass mainThread(IRubyObject receiver) {
+        return receiver.getRuntime().getMainContext().getCurrentThread();
     }
+
+    /**
+     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
+     */
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+            case ThreadDefinition.ABORT_ON_EXCEPTION :
+                return abort_on_exception();
+            case ThreadDefinition.ABORT_ON_EXCEPTION_SET :
+                return abort_on_exception_set(args[0]);
+            case ThreadDefinition.AREF :
+                return aref(args[0]);
+            case ThreadDefinition.ASET :
+                return aset(args[0], args[1]);
+            case ThreadDefinition.IS_KEY :
+                return has_key(args[0]);
+            case ThreadDefinition.IS_ALIVE :
+                return is_alive();
+            case ThreadDefinition.JOIN :
+                return join();
+            case ThreadDefinition.PRIORITY :
+                return priority();
+            case ThreadDefinition.PRIORITY_SET :
+                return priority_set(args[0]);
+            case ThreadDefinition.RAISE :
+                return raise(args[0]);
+            case ThreadDefinition.STATUS :
+                return status();
+        }
+        // return super.callIndexed(index, args);
+        Asserts.assertNotReached();
+        return null;
+    }
+
 }
