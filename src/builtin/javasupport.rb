@@ -41,10 +41,11 @@ class Module
   #
 
   def include_package(package_name)
-    unless defined? @included_packages
-      @included_packages = []
+    if defined? @included_packages
+      @included_packages << package_name      
+      return
     end
-    @included_packages << package_name      
+    @included_packages = [package_name]
     def self.const_missing(constant)
       java_class = find_java_class(constant)
       if java_class.nil?
@@ -72,7 +73,6 @@ class Module
         class_name = package + '.' + constant.to_s
         return Java::JavaClass.for_name(class_name)
       rescue NameError
-        return nil
       end
     }
   end
