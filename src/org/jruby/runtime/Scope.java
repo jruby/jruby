@@ -1,30 +1,30 @@
 /*
  * Scope.java - No description
  * Created on 20.01.2002, 15:28:30
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.runtime;
 
@@ -34,14 +34,13 @@ import java.util.List;
 import java.util.Arrays;
 
 import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.StackElement;
 
 /**
  * A Scope in the Ruby Stack of scopes.
  * This is used to maintain a stack of scopes through a linked list.
- * Each scope holds a list of local values and a list of local names 
+ * Each scope holds a list of local values and a list of local names
  * Each scope also hold a pointer to the previous scope, a new empty scope
  * can be pushed on top of the stack using the push method, the top scope
  * can be popped of the top of the stack using the pop method.
@@ -55,21 +54,21 @@ public class Scope implements StackElement {
     private static final String[] SPECIAL_VARIABLE_NAMES =
             new String[] { "_", "~" };
 
-	private Ruby ruby;
+    private IRubyObject rubyNil;
 
     private IRubyObject superObject = null;
-    
+
     private List localNames = null;
 	private List localValues = null;
-    
+
     private Visibility visibility = Visibility.PUBLIC; // Constants.SCOPE_PRIVATE; ? // Same as default for top level...just in case
 
     private Scope next = null;
 
     public Scope(Ruby ruby) {
-		this.ruby = ruby;
+        this.rubyNil = ruby.getNil();
     }
-    
+
     public StackElement getNext() {
         return next;
     }
@@ -109,7 +108,7 @@ public class Scope implements StackElement {
             this.localValues = null;
         } else {
             this.localNames = localNames;
-            this.localValues = new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil()));
+            this.localValues = new ArrayList(Collections.nCopies(localNames.size(), rubyNil));
         }
     }
 
@@ -119,7 +118,7 @@ public class Scope implements StackElement {
             this.localValues = new ArrayList(localNames.size());
         }
         this.localNames.addAll(localNames);
-        this.localValues.addAll(Collections.nCopies(localNames.size(), ruby.getNil()));
+        this.localValues.addAll(Collections.nCopies(localNames.size(), rubyNil));
     }
 
     public List getLocalValues() {
@@ -136,7 +135,7 @@ public class Scope implements StackElement {
 	public IRubyObject getValue(int count) {
 	    return (IRubyObject)localValues.get(count);
 	}
-	
+
 	public void setValue(int count, IRubyObject value) {
 	    localValues.set(count, value);
 	}
@@ -157,7 +156,7 @@ public class Scope implements StackElement {
         if (hasLocalVariables()) {
             return getValue(LASTLINE_INDEX);
         }
-        return RubyString.nilString(ruby);
+        return rubyNil;
     }
 
     public void setLastLine(IRubyObject value) {
@@ -171,7 +170,7 @@ public class Scope implements StackElement {
         if (hasLocalVariables()) {
             return getValue(BACKREF_INDEX);
         }
-        return ruby.getNil();
+        return rubyNil;
     }
 
     public void setBackref(IRubyObject match) {
