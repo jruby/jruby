@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Array</name>
+  <superclass>Object</superclass>
+  <implementation>org.jruby.RubyArray</implementation>
+
+  <!--
+        arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
+  -->
+
+  <instance-methods>
+
+<!--
+    <method name="initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
+-->
+
+    <method name="inspect"/>
+    <method name="to_s"/>
+
+<!--
+    <method name="to_a", CallbackFactory.getSelfMethod(0));
+    <method name="to_ary", CallbackFactory.getSelfMethod(0));
+-->
+
+    <method name="frozen?">
+      <java>frozen</java>
+    </method>
+    <method name="==">
+      <arity>1</arity>
+      <java>equal</java>
+    </method>
+    <method name="eql?">
+      <arity>1</arity>
+      <java>eql</java>
+    </method>
+    <method-alias name="===" original="=="/>
+    <method name="hash"/>
+    <method name="[]">
+      <arity optional="true">0</arity>
+      <java>aref</java>
+    </method>
+    <method name="[]=">
+      <arity optional="true">0</arity>
+      <java>aset</java>
+    </method>
+
+<!--
+    <method name="at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
+-->
+
+    <method name="first"/>
+    <method name="last"/>
+    <method name="concat">
+      <arity>1</arity>
+    </method>
+    <method name="<<">
+      <arity>1</arity>
+      <java>append</java>
+    </method>
+    <method name="push">
+      <arity optional="true">1</arity>
+    </method>
+    <method name="pop"/>
+    <method name="shift"/>
+    <method name="unshift">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="each"/>
+    <method name="each_index"/>
+    <method name="reverse_each"/>
+    <method name="length"/>
+    <method-alias name="size" original="length"/>
+    <method name="empty?">
+      <java>empty_p</java>
+    </method>
+    <method name="index">
+      <arity>1</arity>
+    </method>
+    <method name="rindex">
+      <arity>1</arity>
+    </method>
+    <method name="indices">
+      <arity optional="true">0</arity>
+    </method>
+    <method-alias name="indexes" original="indices"/>
+    <method name="clone">
+      <java>rbClone</java>
+    </method>
+    <method name="join">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="reverse"/>
+    <method name="reverse!">
+      <java>reverse_bang</java>
+    </method>
+    <method name="sort"/>
+    <method name="sort!">
+      <java>sort_bang</java>
+    </method>
+    <method name="collect"/>
+    <method name="collect!">
+      <java>collect_bang</java>
+    </method>
+    <method-alias name="map!" original="collect!"/>
+    <method-alias name="filter" original="collect!"/>
+    <method name="delete">
+      <arity>1</arity>
+    </method>
+    <method name="delete_at">
+      <arity>1</arity>
+    </method>
+    <method name="delete_if"/>
+    <method name="reject!">
+      <java>reject_bang</java>
+    </method>
+    <method name="replace">
+      <arity>1</arity>
+    </method>
+    <method name="clear"/>
+    <method name="fill">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="include?">
+      <arity>1</arity>
+      <java>include_p</java>
+    </method>
+    <method name="<=>">
+      <arity>1</arity>
+      <java>op_cmp</java>
+    </method>
+    <method-alias name="slice" original="[]"/>
+
+<!--
+    <method name="slice!", CallbackFactory.getOptMethod(RubyArray.class, "slice_bang"));
+
+    <method name="assoc", CallbackFactory.getMethod(RubyArray.class, "assoc", IRubyObject.class));
+    <method name="rassoc", CallbackFactory.getMethod(RubyArray.class, "rassoc", IRubyObject.class));
+
+    <method name="+", CallbackFactory.getMethod(RubyArray.class, "op_plus", IRubyObject.class));
+    <method name="*", CallbackFactory.getMethod(RubyArray.class, "op_times", IRubyObject.class));
+
+    <method name="-", CallbackFactory.getMethod(RubyArray.class, "op_diff", IRubyObject.class));
+    <method name="&", CallbackFactory.getMethod(RubyArray.class, "op_and", IRubyObject.class));
+    <method name="|", CallbackFactory.getMethod(RubyArray.class, "op_or", IRubyObject.class));
+
+    <method name="uniq", CallbackFactory.getMethod(RubyArray.class, "uniq"));
+    <method name="uniq!", CallbackFactory.getMethod(RubyArray.class, "uniq_bang"));
+    <method name="compact", CallbackFactory.getMethod(RubyArray.class, "compact"));
+    <method name="compact!", CallbackFactory.getMethod(RubyArray.class, "compact_bang"));
+    <method name="flatten", CallbackFactory.getMethod(RubyArray.class, "flatten"));
+    <method name="flatten!", CallbackFactory.getMethod(RubyArray.class, "flatten_bang"));
+    <method name="nitems", CallbackFactory.getMethod(RubyArray.class, "nitems"));
+    <method name="pack", CallbackFactory.getMethod(RubyArray.class, "pack", RubyString.class));
+
+-->
+
+  </instance-methods>
+
+  <class-methods>
+    <method name="new">
+      <arity optional="true">0</arity>
+      <java>newInstance</java>
+    </method>
+    <method name="[]">
+      <arity optional="true">0</arity>
+      <java>create</java>
+    </method>
+  </class-methods>
+
+</module>

@@ -45,12 +45,12 @@ import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
 import org.jruby.util.collections.IdentitySet;
+import org.jruby.internal.runtime.builtin.definitions.ArrayDefinition;
 
 /**
  *
@@ -112,104 +112,16 @@ public class RubyArray extends RubyObject implements IndexCallable {
         return false;
     }
 
-    private static final int M_INSPECT = 1;
-    private static final int M_TO_S = 2;
-    private static final int M_FROZEN = 3;
-    private static final int M_EQUAL = 4;
-    private static final int M_AREF = 10;
-    private static final int M_ASET = 11;
-    private static final int M_EQL = 12;
-    private static final int M_HASH = 13;
-    private static final int M_FIRST = 14;
-    private static final int M_LAST = 15;
-    private static final int M_CONCAT = 16;
-    private static final int M_APPEND = 20;
-    private static final int M_PUSH = 21;
-    private static final int M_POP = 22;
-    private static final int M_SHIFT = 23;
-    private static final int M_UNSHIFT = 24;
-    private static final int M_EACH = 25;
-    private static final int M_EACH_INDEX = 26;
-    private static final int M_REVERSE_EACH = 30;
-    private static final int M_LENGTH = 31;
-    private static final int M_EMPTY_P = 32;
-    private static final int M_INDEX = 33;
-    private static final int M_RINDEX = 34;
-    private static final int M_CLONE = 40;
-    private static final int M_JOIN = 41;
-    private static final int M_INDICES = 42;
-    private static final int M_REVERSE = 50;
-    private static final int M_REVERSE_BANG = 51;
-    private static final int M_SORT = 52;
-    private static final int M_SORT_BANG = 53;
-    private static final int M_COLLECT = 54;
-    private static final int M_COLLECT_BANG = 60;
-    private static final int M_DELETE = 61;
-    private static final int M_DELETE_AT = 62;
-    private static final int M_DELETE_IF = 63;
-    private static final int M_REJECT_BANG = 64;
-    private static final int M_REPLACE = 70;
-    private static final int M_CLEAR = 71;
-    private static final int M_INCLUDE_P = 72;
-
     public static RubyClass createArrayClass(Ruby ruby) {
-        RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
+        RubyClass arrayClass = new ArrayDefinition(ruby).getType();
 
         arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
 
-        arrayClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyArray.class, "newInstance"));
-        arrayClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
         arrayClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
 
-        arrayClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
-        arrayClass.defineMethod("to_s", IndexedCallback.create(M_TO_S, 0));
         arrayClass.defineMethod("to_a", CallbackFactory.getSelfMethod(0));
         arrayClass.defineMethod("to_ary", CallbackFactory.getSelfMethod(0));
-        arrayClass.defineMethod("frozen?", IndexedCallback.create(M_FROZEN, 0));
-        arrayClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
-        arrayClass.defineMethod("eql?", IndexedCallback.create(M_EQL, 1));
-        arrayClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
-        arrayClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
-        arrayClass.defineMethod("[]", IndexedCallback.createOptional(M_AREF));
-        arrayClass.defineMethod("[]=", IndexedCallback.createOptional(M_ASET));
         arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
-        arrayClass.defineMethod("first", IndexedCallback.create(M_FIRST, 0));
-        arrayClass.defineMethod("last", IndexedCallback.create(M_LAST, 0));
-        arrayClass.defineMethod("concat", IndexedCallback.create(M_CONCAT, 1));
-        arrayClass.defineMethod("<<", IndexedCallback.create(M_APPEND, 1));
-        arrayClass.defineMethod("push", IndexedCallback.createOptional(M_PUSH, 1));
-        arrayClass.defineMethod("pop", IndexedCallback.create(M_POP, 0));
-        arrayClass.defineMethod("shift", IndexedCallback.create(M_SHIFT, 0));
-        arrayClass.defineMethod("unshift", IndexedCallback.createOptional(M_UNSHIFT));
-        arrayClass.defineMethod("each", IndexedCallback.create(M_EACH, 0));
-        arrayClass.defineMethod("each_index", IndexedCallback.create(M_EACH_INDEX, 0));
-        arrayClass.defineMethod("reverse_each", IndexedCallback.create(M_REVERSE_EACH, 0));
-        arrayClass.defineMethod("length", IndexedCallback.create(M_LENGTH, 0));
-        arrayClass.defineMethod("size", IndexedCallback.create(M_LENGTH, 0));
-        arrayClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY_P, 0));
-        arrayClass.defineMethod("index", IndexedCallback.create(M_INDEX, 1));
-        arrayClass.defineMethod("rindex", IndexedCallback.create(M_RINDEX, 1));
-        arrayClass.defineMethod("indexes", IndexedCallback.createOptional(M_INDICES));
-        arrayClass.defineMethod("indices", IndexedCallback.createOptional(M_INDICES));
-        arrayClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
-        arrayClass.defineMethod("join", IndexedCallback.createOptional(M_JOIN));
-        arrayClass.defineMethod("reverse", IndexedCallback.create(M_REVERSE, 0));
-        arrayClass.defineMethod("reverse!", IndexedCallback.create(M_REVERSE_BANG, 0));
-        arrayClass.defineMethod("sort", IndexedCallback.create(M_SORT, 0));
-        arrayClass.defineMethod("sort!", IndexedCallback.create(M_SORT_BANG, 0));
-        arrayClass.defineMethod("collect", IndexedCallback.create(M_COLLECT, 0));
-        arrayClass.defineMethod("collect!", IndexedCallback.create(M_COLLECT_BANG, 0));
-        arrayClass.defineMethod("map!", IndexedCallback.create(M_COLLECT_BANG, 0));
-        arrayClass.defineMethod("filter", IndexedCallback.create(M_COLLECT_BANG, 0));
-        arrayClass.defineMethod("delete", IndexedCallback.create(M_DELETE, 1));
-        arrayClass.defineMethod("delete_at", IndexedCallback.create(M_DELETE_AT, 1));
-        arrayClass.defineMethod("delete_if", IndexedCallback.create(M_DELETE_IF, 0));
-        arrayClass.defineMethod("reject!", IndexedCallback.create(M_REJECT_BANG, 0));
-        arrayClass.defineMethod("replace", IndexedCallback.create(M_REPLACE, 1));
-        arrayClass.defineMethod("clear", IndexedCallback.create(M_CLEAR, 0));
-        arrayClass.defineMethod("fill", CallbackFactory.getOptMethod(RubyArray.class, "fill"));
-        arrayClass.defineMethod("include?", IndexedCallback.create(M_INCLUDE_P, 1));
-        arrayClass.defineMethod("<=>", CallbackFactory.getMethod(RubyArray.class, "op_cmp", IRubyObject.class));
 
         arrayClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
         arrayClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyArray.class, "slice_bang"));
@@ -238,84 +150,88 @@ public class RubyArray extends RubyObject implements IndexCallable {
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-            case M_INSPECT :
+            case ArrayDefinition.INSPECT :
                 return inspect();
-            case M_TO_S :
+            case ArrayDefinition.TO_S :
                 return to_s();
-            case M_FROZEN :
+            case ArrayDefinition.FROZEN :
                 return frozen();
-            case M_EQUAL :
+            case ArrayDefinition.EQUAL :
                 return equal(args[0]);
-            case M_EQL :
+            case ArrayDefinition.EQL :
                 return eql(args[0]);
-            case M_HASH :
+            case ArrayDefinition.HASH :
                 return hash();
-            case M_AREF :
+            case ArrayDefinition.AREF :
                 return aref(args);
-            case M_ASET :
+            case ArrayDefinition.ASET :
                 return aset(args);
-            case M_FIRST :
+            case ArrayDefinition.FIRST :
                 return first();
-            case M_LAST :
+            case ArrayDefinition.LAST :
                 return last();
-            case M_CONCAT :
+            case ArrayDefinition.CONCAT :
                 return concat(args[0]);
-            case M_APPEND :
+            case ArrayDefinition.APPEND :
                 return append(args[0]);
-            case M_PUSH :
+            case ArrayDefinition.PUSH :
                 return push(args);
-            case M_POP :
+            case ArrayDefinition.POP :
                 return pop();
-            case M_SHIFT :
+            case ArrayDefinition.SHIFT :
                 return shift();
-            case M_UNSHIFT :
+            case ArrayDefinition.UNSHIFT :
                 return unshift(args);
-            case M_EACH :
+            case ArrayDefinition.EACH :
                 return each();
-            case M_EACH_INDEX :
+            case ArrayDefinition.EACH_INDEX :
                 return each_index();
-            case M_REVERSE_EACH :
+            case ArrayDefinition.REVERSE_EACH :
                 return reverse_each();
-            case M_LENGTH :
+            case ArrayDefinition.LENGTH :
                 return length();
-            case M_EMPTY_P :
+            case ArrayDefinition.EMPTY_P :
                 return empty_p();
-            case M_INDEX :
+            case ArrayDefinition.INDEX :
                 return index(args[0]);
-            case M_RINDEX :
+            case ArrayDefinition.RINDEX :
                 return rindex(args[0]);
-            case M_INDICES :
+            case ArrayDefinition.INDICES :
                 return indices(args);
-            case M_CLONE :
+            case ArrayDefinition.RBCLONE :
                 return rbClone();
-            case M_JOIN :
+            case ArrayDefinition.JOIN :
                 return join(args);
-            case M_REVERSE :
+            case ArrayDefinition.REVERSE :
                 return reverse();
-            case M_REVERSE_BANG :
+            case ArrayDefinition.REVERSE_BANG :
                 return reverse_bang();
-            case M_SORT :
+            case ArrayDefinition.SORT :
                 return sort();
-            case M_SORT_BANG :
+            case ArrayDefinition.SORT_BANG :
                 return sort_bang();
-            case M_COLLECT :
+            case ArrayDefinition.COLLECT :
                 return collect();
-            case M_COLLECT_BANG :
+            case ArrayDefinition.COLLECT_BANG :
                 return collect_bang();
-            case M_DELETE :
+            case ArrayDefinition.DELETE :
                 return delete(args[0]);
-            case M_DELETE_AT :
+            case ArrayDefinition.DELETE_AT :
                 return delete_at(args[0]);
-            case M_DELETE_IF :
+            case ArrayDefinition.DELETE_IF :
                 return delete_if();
-            case M_REJECT_BANG :
+            case ArrayDefinition.REJECT_BANG :
                 return reject_bang();
-            case M_REPLACE :
+            case ArrayDefinition.REPLACE :
                 return replace(args[0]);
-            case M_CLEAR :
+            case ArrayDefinition.CLEAR :
                 return clear();
-            case M_INCLUDE_P :
+            case ArrayDefinition.INCLUDE_P :
                 return include_p(args[0]);
+            case ArrayDefinition.OP_CMP :
+                return op_cmp(args[0]);
+            case ArrayDefinition.FILL :
+                return fill(args);
         }
         return super.callIndexed(index, args);
     }
