@@ -1,62 +1,78 @@
 require 'minirunit'
 test_check "Test Marshal:"
 
-MARSHAL_HEADER = "\004\005"
+if defined? Java
+  MARSHAL_HEADER = "\004\005"
+else
+  MARSHAL_HEADER = Marshal.dump(nil).chop
+end
 
-test_equal(MARSHAL_HEADER + "0", Marshal.dump(nil))
-test_equal(MARSHAL_HEADER + "T", Marshal.dump(true))
-test_equal(MARSHAL_HEADER + "F", Marshal.dump(false))
-test_equal(MARSHAL_HEADER + "i\000", Marshal.dump(0))
-test_equal(MARSHAL_HEADER + "i\006", Marshal.dump(1))
-test_equal(MARSHAL_HEADER + "iú", Marshal.dump(-1))
-test_equal(MARSHAL_HEADER + "i\002Ð\a", Marshal.dump(2000))
-test_equal(MARSHAL_HEADER + "iþ0ø", Marshal.dump(-2000))
-test_equal(MARSHAL_HEADER + "i\004\000Ê\232;", Marshal.dump(1000000000))
-test_equal(MARSHAL_HEADER + ":\017somesymbol", Marshal.dump(:somesymbol))
-test_equal(MARSHAL_HEADER + "f\n2.002", Marshal.dump(2.002))
-test_equal(MARSHAL_HEADER + "f\013-2.002", Marshal.dump(-2.002))
-test_equal(MARSHAL_HEADER + "\"\nhello", Marshal.dump("hello"))
-test_equal(MARSHAL_HEADER + "[\010i\006i\ai\010", Marshal.dump([1,2,3]))
-test_equal(MARSHAL_HEADER + "{\006i\006i\a", Marshal.dump({1=>2}))
-test_equal(MARSHAL_HEADER + "c\013Object", Marshal.dump(Object))
-test_equal(MARSHAL_HEADER + "m\017Enumerable", Marshal.dump(Enumerable))
-test_equal(MARSHAL_HEADER + "/\013regexp\000", Marshal.dump(/regexp/))
-test_equal(MARSHAL_HEADER + "l+\n\000\000\000\000\000\000\000\000@\000", Marshal.dump(2 ** 70))
-#test_equal(MARSHAL_HEADER + "l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
-#           Marshal.dump(14323534664547457526224437612747))
-test_equal(MARSHAL_HEADER + "l+\n\001\000\001@\000\000\000\000@\000",
-           Marshal.dump(1 + (2 ** 16) + (2 ** 30) + (2 ** 70)))
-test_equal(MARSHAL_HEADER + "l+\n6\361\3100_/\205\177Iq",
-           Marshal.dump(534983213684351312654646))
-test_equal(MARSHAL_HEADER + "l-\n6\361\3100_/\205\177Iq",
-           Marshal.dump(-534983213684351312654646))
-test_equal(MARSHAL_HEADER + "l+\n\331\347\365%\200\342a\220\336\220",
-           Marshal.dump(684126354563246654351321))
-#test_equal(MARSHAL_HEADER + "l+\vIZ\210*,u\006\025\304\016\207\001",
-#           Marshal.dump(472759725676945786624563785))
+def test_marshal(expected, marshalee)
+  test_equal(MARSHAL_HEADER + expected, Marshal.dump(marshalee))
+end
+
+test_marshal("0", nil)
+test_marshal("T", true)
+test_marshal("F", false)
+test_marshal("i\000", 0)
+test_marshal("i\006", 1)
+test_marshal("iú", -1)
+test_marshal("i\002Ð\a", 2000)
+test_marshal("iþ0ø", -2000)
+test_marshal("i\004\000Ê\232;", 1000000000)
+test_marshal(":\017somesymbol", :somesymbol)
+test_marshal("f\n2.002", 2.002)
+test_marshal("f\013-2.002", -2.002)
+test_marshal("\"\nhello", "hello")
+test_marshal("[\010i\006i\ai\010", [1,2,3])
+test_marshal("{\006i\006i\a", {1=>2})
+test_marshal("c\013Object", Object)
+test_marshal("m\017Enumerable", Enumerable)
+test_marshal("/\013regexp\000", /regexp/)
+test_marshal("l+\n\000\000\000\000\000\000\000\000@\000", 2 ** 70)
+#test_marshal("l+\f\313\220\263z\e\330p\260\200-\326\311\264\000",
+#             14323534664547457526224437612747)
+test_marshal("l+\n\001\000\001@\000\000\000\000@\000",
+             1 + (2 ** 16) + (2 ** 30) + (2 ** 70))
+test_marshal("l+\n6\361\3100_/\205\177Iq",
+             534983213684351312654646)
+test_marshal("l-\n6\361\3100_/\205\177Iq",
+             -534983213684351312654646)
+test_marshal("l+\n\331\347\365%\200\342a\220\336\220",
+             684126354563246654351321)
+#test_marshal("l+\vIZ\210*,u\006\025\304\016\207\001",
+#            472759725676945786624563785)
+
+test_marshal("c\023Struct::Froboz",
+             Struct.new("Froboz", :x, :y))
+test_marshal("S:\023Struct::Froboz\a:\006xi\n:\006yi\f",
+             Struct::Froboz.new(5, 7))
+# Can't dump anonymous class
+test_exception(ArgumentError) { Marshal.dump(Struct.new(:x, :y).new(5, 7)) }
+
 
 # FIXME: Bignum marshaling is broken.
 
-# FIXME: IVAR, struct, MODULE_OLD, 'U', ...
+# FIXME: IVAR, MODULE_OLD, 'U', ...
 
-test_equal(MARSHAL_HEADER + "o:\013Object\000", Marshal.dump(Object.new))
+test_marshal("o:\013Object\000", Object.new)
 class MarshalTestClass
   def initialize
     @foo = "bar"
   end
 end
-test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar",
-	   Marshal.dump(MarshalTestClass.new))
+test_marshal("o:\025MarshalTestClass\006:\t@foo\"\010bar",
+             MarshalTestClass.new)
 o = Object.new
-test_equal(MARSHAL_HEADER + "[\to:\013Object\000@\006@\006@\006",
-	   Marshal.dump([o, o, o, o]))
+test_marshal("[\to:\013Object\000@\006@\006@\006",
+             [o, o, o, o])
 class MarshalTestClass
   def initialize
     @foo = self
   end
 end
-test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo@\000",
-	   Marshal.dump(MarshalTestClass.new))
+test_marshal("o:\025MarshalTestClass\006:\t@foo@\000",
+             MarshalTestClass.new)
 
 class UserMarshaled
   attr :foo
@@ -76,7 +92,7 @@ class UserMarshaled
   end
 end
 um = UserMarshaled.new(123)
-test_equal(MARSHAL_HEADER + "u:\022UserMarshaled\010321", Marshal.dump(um))
+test_marshal("u:\022UserMarshaled\010321", um)
 test_equal(um, Marshal.load(Marshal.dump(um)))
 
 

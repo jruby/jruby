@@ -34,6 +34,7 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.marshal.*;
 
 /**
  * @version $Revision$
@@ -180,8 +181,9 @@ public class RubyStruct extends RubyObject {
 
         // define access methods.
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            newStruct.defineMethod(args[i].toId(), CallbackFactory.getMethod(RubyStruct.class, "get"));
-            newStruct.defineMethod(args[i].toId() + "=", CallbackFactory.getMethod(RubyStruct.class, "set", RubyObject.class));
+            String memberName = args[i].toId();
+            newStruct.defineMethod(memberName, CallbackFactory.getMethod(RubyStruct.class, "get"));
+            newStruct.defineMethod(memberName + "=", CallbackFactory.getMethod(RubyStruct.class, "set", RubyObject.class));
         }
 
         return newStruct;
@@ -389,5 +391,24 @@ public class RubyStruct extends RubyObject {
 
         modify();
         return values[idx] = value;
+    }
+
+    public void marshalTo(MarshalStream output) throws java.io.IOException {
+        output.write('S');
+
+        String className = getRubyClass().getClassname().toId();
+        if (className == null) {
+            throw new ArgumentError(ruby, "can't dump anonymous class");
+        }
+        output.dumpObject(RubySymbol.newSymbol(ruby, className));
+
+        List members = ((RubyArray) getInstanceVariable(classOf(), "__member__")).getList();
+        output.dumpInt(members.size());
+
+        for (int i = 0; i < members.size(); i++) {
+            RubySymbol name = (RubySymbol) members.get(i);
+            output.dumpObject(name);
+            output.dumpObject(values[i]);
+        }
     }
 }
