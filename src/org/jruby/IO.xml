@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+
+<module type="class">
+    <name>IO</name>
+    <superclass>Object</superclass>
+    <implementation>org.jruby.RubyIO</implementation>
+    <includes>Enumerable</includes>
+
+    <class-methods>
+        <method name="new">
+            <arity optional="true">0</arity>
+            <java>newInstance</java>
+        </method>
+<!--
+        <method name="foreach">
+            <arity optional="true">1</arity>
+        </method>
+-->
+        <method name="print">
+            <arity optional="true">0</arity>
+        </method>
+        <method name="printf">
+            <arity optional="true">0</arity>
+        </method>
+        <method name="puts">
+            <arity optional="true">0</arity>
+        </method>
+<!--
+        <method name="readlines">
+            <arity optional="true">0</arity>
+        </method>
+-->
+    </class-methods>
+
+    <instance-methods>
+        <method name="initialize">
+            <arity optional="true">0</arity>
+        </method>
+        <method name="write">
+            <arity>1</arity>
+        </method>
+        <method name="&lt;&lt;">
+            <arity>1</arity>
+            <java>addString</java>
+        </method>
+        <method name="each_line">
+            <arity optional="true">0</arity>
+        </method>
+        <method-alias name="each" original="each_line"/>
+        <method name="each_byte"/>
+        <method name="getc"/>
+        <method name="readchar"/>
+        <method name="gets">
+            <arity optional="true">0</arity>
+        </method>
+        <method name="readline">
+            <arity optional="true">0</arity>
+        </method>
+        <method name="lineno"/>
+
+<!--
+        <method name="lineno=", CallbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
+-->
+
+        <method name="sync"/>
+
+<!--
+        <method name="sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
+-->
+
+        <method name="close"/>
+        <method name="eof?">
+            <java>eof</java>
+        </method>
+        <method name="flush"/>
+        <method name="readlines">
+            <arity optional="true">0</arity>
+        </method>
+    </instance-methods>
+</module>

@@ -27,14 +27,18 @@ public class RubyFile extends RubyIO {
 
     public static RubyClass createFileClass(Ruby ruby) {
         RubyClass fileClass = ruby.defineClass("File", ruby.getClass("IO"));
-		
 
-        fileClass.defineConstant("SEPARATOR", RubyString.newString(ruby, java.io.File.separator));
-        fileClass.defineConstant("Separator", RubyString.newString(ruby, java.io.File.separator)); //maybe this should be an alias
-        fileClass.defineConstant("ALT_SEPARATOR", RubyString.newString(ruby, (java.io.File.separatorChar == '/'? "\\" : "/")));
-        fileClass.defineConstant("PATH_SEPARATOR", RubyString.newString(ruby, java.io.File.pathSeparator));
+        RubyString separator = RubyString.newString(ruby, separator());
+        separator.freeze();
+        fileClass.defineConstant("SEPARATOR", separator);
+        fileClass.defineConstant("Separator", separator);
+        RubyString altSeparator = RubyString.newString(ruby, (File.separatorChar == '/'? "\\" : "/"));
+        altSeparator.freeze();
+        fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
+        RubyString pathSeparator = RubyString.newString(ruby, File.pathSeparator);
+        pathSeparator.freeze();
+        fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
 
-		
         fileClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
         fileClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyFile.class, "open"));
         fileClass.defineSingletonMethod("chmod", CallbackFactory.getOptSingletonMethod(RubyFile.class, "chmod", RubyInteger.class));
@@ -51,16 +55,17 @@ public class RubyFile extends RubyIO {
 
 		fileClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyFile.class, "initialize"));
 
+        // Works around a strange-ish implementation that uses a static method on the superclass.
+        // It broke when moved to indexed callbacks, so added this line:
+        fileClass.defineMethod("print", CallbackFactory.getOptSingletonMethod(RubyIO.class, "print"));
+
         return fileClass;
     }
     
     protected void openInternal(String path, String mode) {
         this.path = path;
-        
         setMode(mode);
-        
         File file = new File(path);
-        
         try {
             if (isReadable()) {
         		this.inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
@@ -68,13 +73,13 @@ public class RubyFile extends RubyIO {
             if (isWriteable()) {
         		this.outStream = new BufferedOutputStream(new FileOutputStream(file.getAbsolutePath(), append));
             }
-        } catch (IOException ioExcptn) {
-            throw new IOError(getRuntime(), ioExcptn.getMessage());
+        } catch (IOException e) {
+            throw IOError.fromException(runtime, e);
         }
     }
 
 	private static String separator() {
-		return "/";
+		return java.io.File.separator;
 	}
 
 	/*
@@ -83,41 +88,35 @@ public class RubyFile extends RubyIO {
 	
 	public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
 	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
-	    
 	    file.callInit(args);
-	    
 	    return file;
 	}
 	
 	public IRubyObject initialize(IRubyObject[] args) {
 	    if (args.length == 0) {
-	        throw new ArgumentError(getRuntime(), "");
+	        throw new ArgumentError(getRuntime(), 0, 1);
 	    }
 	    
 	    args[0].checkSafeString();
 	    path = args[0].toString();
 	    
 	    String mode = "r";
-	    
 	    if (args.length > 1 && args[1] instanceof RubyString) {
 	        mode = ((RubyString)args[1]).getValue();
 	    }
-	    
 	    closeStreams();
-	    
 	    openInternal(path, mode);
 	    
 	    if (getRuntime().isBlockGiven()) {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
 	    }
-	    
 	    return this;
 	}
 	
 	public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
 	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
 	    if (args.length == 0) {
-	        throw new ArgumentError(recv.getRuntime(), "");
+	        throw new ArgumentError(recv.getRuntime(), 0, 1);
 	    }
 	    args[0].checkSafeString();
 	    file.path = args[0].toString();
@@ -156,7 +155,6 @@ public class RubyFile extends RubyIO {
 	            return recv.getRuntime().getFalse();
 	        }
 	    }
-	    
 	    return RubyFixnum.newFixnum(recv.getRuntime(), args.length);
 	}
 
