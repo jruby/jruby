@@ -49,10 +49,6 @@ public class LinkedObject {
         this.data = data;
     }
 
-	public Object data() {
-		return data;
-	}
-
     /**
      * @see Object#equals(Object)
      */
