@@ -1,13 +1,12 @@
 require "java"
 
-module JavaIO
-  include_package "java.io"
-end
+include_class "java.io.FileReader"
+include_class "java.io.BufferedReader"
 
 filename = "./samples/java2.rb"
 
-fr = JavaIO::FileReader.new filename
-br = JavaIO::BufferedReader.new fr
+fr = FileReader.new filename
+br = BufferedReader.new fr
 
 s = br.readLine
 

@@ -1,13 +1,12 @@
 require 'java'
 
-module Swing
-  include_package "javax.swing"
-end
+include_class "javax.swing.JFrame"
+include_class "javax.swing.JLabel"
 
-frame = Swing::JFrame.new("Hello Swing")
-label = Swing::JLabel.new("Hello World")
+frame = JFrame.new("Hello Swing")
+label = JLabel.new("Hello World")
 
 frame.getContentPane().add(label)
-frame.setDefaultCloseOperation(Swing::JFrame::EXIT_ON_CLOSE)
+frame.setDefaultCloseOperation(JFrame::EXIT_ON_CLOSE)
 frame.pack()
 frame.setVisible(true)
