@@ -36,6 +36,7 @@ import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.parser.*;
+import org.jruby.runtime.Constants;
 
 /**
  * Class used to launch the interpreter.
@@ -150,7 +151,7 @@ public class Main {
                             sDoLine = true;
                             break;
                         case 'v' :
-                            System.out.println("ruby " + Ruby.RUBY_MAJOR_VERSION + " () [java]");
+                            System.out.println("ruby " + Constants.RUBY_MAJOR_VERSION + " () [java]");
                             warning = true;
                             break;
                         case 'w' :
@@ -194,7 +195,7 @@ public class Main {
         String[] argv = processArgs(args);
         if (version) {
             System.out.print("ruby ");
-            System.out.print(Ruby.RUBY_VERSION);
+            System.out.print(Constants.RUBY_VERSION);
             System.out.print(" (");
             System.out.print("$Date$");
             System.out.print(") [");

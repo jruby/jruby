@@ -1,12 +1,5 @@
 /*
- * MarshalStream.java
- * Created on 20 Mar 2002
- * 
- * Copyright (C) 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Anders Bengtsson
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -30,10 +23,20 @@
 
 package org.jruby.runtime.marshal;
 
-import java.io.*;
-import java.util.*;
-import org.jruby.*;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.Constants;
 
 /**
  * Marshals objects into Ruby's binary marshal format.
@@ -41,25 +44,22 @@ import org.jruby.exceptions.ArgumentError;
  * @author Anders
  * $Revision$
  */
-
 public class MarshalStream extends FilterOutputStream {
-
-    private static final int MARSHAL_MAJOR = 4;
-    private static final int MARSHAL_MINOR = 5;
-
     private final Ruby ruby;
     private final int depthLimit;
     private int depth = 0;
     private Map dumpedObjects = new HashMap();
     private Map dumpedSymbols = new HashMap();
 
-    public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
+    public MarshalStream(Ruby ruby, OutputStream out, int depthLimit)
+        throws IOException {
         super(out);
+
         this.ruby = ruby;
         this.depthLimit = (depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE);
 
-        out.write(MARSHAL_MAJOR);
-        out.write(MARSHAL_MINOR);
+        out.write(Constants.MARSHAL_MAJOR);
+        out.write(Constants.MARSHAL_MINOR);
     }
 
     public void dumpObject(RubyObject value) throws IOException {
@@ -84,7 +84,11 @@ public class MarshalStream extends FilterOutputStream {
         writeAndRegister(dumpedSymbols, ';', value);
     }
 
-    private void writeAndRegister(Map registry, char linkSymbol, RubyObject value) throws IOException {
+    private void writeAndRegister(
+        Map registry,
+        char linkSymbol,
+        RubyObject value)
+        throws IOException {
         if (registry.containsKey(value)) {
             out.write(linkSymbol);
             dumpInt(((Integer) registry.get(value)).intValue());
@@ -100,7 +104,10 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userMarshal(RubyObject value) throws IOException {
         out.write('u');
-        dumpObject(RubySymbol.newSymbol(ruby, value.getInternalClass().getClassname()));
+        dumpObject(
+            RubySymbol.newSymbol(
+                ruby,
+                value.getInternalClass().getClassname()));
 
         RubyInteger depth = RubyFixnum.newFixnum(ruby, depthLimit);
         RubyString marshaled = (RubyString) value.callMethod("_dump", depth);
@@ -113,27 +120,27 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public void dumpInt(int value) throws IOException {
-		if (value == 0) {
-			out.write(0);
-		} else if (0 < value && value < 123) {
-			out.write(value + 5);
-		} else if (-124 < value && value < 0) {
-			out.write((value - 5) & 0xff);
-		} else {
-			int[] buf = new int[4];
-			int i;
-			for (i = 0; i < buf.length; i++) {
-				buf[i] = value & 0xff;
-				value = value >> 8;
-				if (value == 0 || value == -1) {
-					break;
-				}
-			}
-			int len = i + 1;
-			out.write(value < 0 ? -len : len);
-			for (i = 0; i < len; i++) {
-				out.write(buf[i]);
-			}
-		}
+        if (value == 0) {
+            out.write(0);
+        } else if (0 < value && value < 123) {
+            out.write(value + 5);
+        } else if (-124 < value && value < 0) {
+            out.write((value - 5) & 0xff);
+        } else {
+            int[] buf = new int[4];
+            int i;
+            for (i = 0; i < buf.length; i++) {
+                buf[i] = value & 0xff;
+                value = value >> 8;
+                if (value == 0 || value == -1) {
+                    break;
+                }
+            }
+            int len = i + 1;
+            out.write(value < 0 ? -len : len);
+            for (i = 0; i < len; i++) {
+                out.write(buf[i]);
+            }
+        }
     }
 }

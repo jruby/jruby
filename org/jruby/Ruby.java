@@ -97,9 +97,6 @@ import org.jruby.runtime.regexp.IRegexpAdapter;
  */
 public final class Ruby {
 
-    public static final String RUBY_MAJOR_VERSION = "1.6";
-    public static final String RUBY_VERSION = "1.6.7";
-
     private RubyMethodCache methodCache;
 
     public int stackTraces = 0;
@@ -329,6 +326,8 @@ public final class Ruby {
 
         return newModule;
     }
+
+
 
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
@@ -898,9 +897,9 @@ public final class Ruby {
             //FIXME: use the version number in some other way than hardcoded here
             String lRuby = lRubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
             String lSiteRuby = lRuby + "site_ruby";
-            String lSiteRubyVersion = lSiteRuby + File.separatorChar + RUBY_MAJOR_VERSION;
+            String lSiteRubyVersion = lSiteRuby + File.separatorChar + Constants.RUBY_MAJOR_VERSION;
             String lArch = File.separatorChar + "java";
-            String lRubyVersion = lRuby + RUBY_MAJOR_VERSION;
+            String lRubyVersion = lRuby + Constants.RUBY_MAJOR_VERSION;
 
             ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
             ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));

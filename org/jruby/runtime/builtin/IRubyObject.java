@@ -40,6 +40,14 @@ import org.jruby.RubyString;
 public interface IRubyObject {
     /** SHOULD REMOVED */
     RubyObject toRubyObject();
+
+    /**
+     * Method getInstanceVar.
+     * @param string
+     * @return RubyObject
+     */
+    RubyObject getInstanceVariable(String string);
+
     /**
      * Method setInstanceVar.
      * @param string
@@ -64,6 +72,18 @@ public interface IRubyObject {
     boolean isTrue();
 
     /**
+     * Method isTaint.
+     * @return boolean
+     */
+    boolean isTaint();
+
+    /**
+     * Method isFrozen.
+     * @return boolean
+     */
+    boolean isFrozen();
+
+    /**
      * Method funcall.
      * @param string
      * @param arg
@@ -77,25 +97,6 @@ public interface IRubyObject {
     RubyClass getInternalClass();
 
     /**
-     * Method getInstanceVar.
-     * @param string
-     * @return RubyObject
-     */
-    RubyObject getInstanceVariable(String string);
-
-    /**
-     * Method isTaint.
-     * @return boolean
-     */
-    boolean isTaint();
-
-    /**
-     * Method isFrozen.
-     * @return boolean
-     */
-    boolean isFrozen();
-
-    /**
      * Method getSingletonClass.
      * @return RubyClass
      */
@@ -106,5 +107,4 @@ public interface IRubyObject {
      * @return RubyClass
      */
     RubyClass getType();
-
 }

@@ -37,10 +37,12 @@ import org.jruby.exceptions.RubyRegexpException;
  * Regexp adapter base class.
  * This abstract class is used to decouple ruby from the actual regexp engine
  */
-public abstract class IRegexpAdapter
-{
+public abstract class IRegexpAdapter {
     private static final String[] REGEXP_ADAPTER =
-        { "org.jruby.runtime.regexp.JDKRegexpAdapter", "org.jruby.runtime.regexp.GNURegexpAdapter", "org.jruby.runtime.regexp.ORORegexpAdapter" };
+        {
+            "org.jruby.runtime.regexp.JDKRegexpAdapter",
+            "org.jruby.runtime.regexp.GNURegexpAdapter",
+            "org.jruby.runtime.regexp.ORORegexpAdapter" };
 
     public static Class getAdapterClass() {
         for (int i = 0; i < REGEXP_ADAPTER.length; i++) {
@@ -56,33 +58,34 @@ public abstract class IRegexpAdapter
     /**
      * Compile the regex.
      */
-    public abstract void compile(Ruby ruby, String pattern) throws RubyRegexpException;
+    public abstract void compile(Ruby ruby, String pattern)
+        throws RubyRegexpException;
 
     /**
      * Set whether matches should be case-insensitive or not
      */
-    public abstract void setCasefold(boolean set) ;
+    public abstract void setCasefold(boolean set);
 
     /**
      * Get whether matches are case-insensitive or not
      */
-    public abstract boolean getCasefold() ;
+    public abstract boolean getCasefold();
 
     /**
      * Set whether patterns can contain comments and extra whitespace
      */
-    public abstract void setExtended(boolean set) ;
+    public abstract void setExtended(boolean set);
 
     /**
      * Set whether the dot metacharacter should match newlines
      */
-    public abstract void setMultiline(boolean set) ;
+    public abstract void setMultiline(boolean set);
 
     /**
      * Does the given argument match the pattern?
      */
-    public abstract RubyObject search(Ruby ruby, String target, int startPos) ;
-    
+    public abstract RubyObject search(Ruby ruby, String target, int startPos);
+
     /**
      * Removes whitespace and comments from regexp, for those libs 
      * (like gnu.regexp) that don't support extended syntax.
@@ -107,11 +110,17 @@ public abstract class IRegexpAdapter
                 sbuf.append(c);
                 inClass = false;
             } else if (c == '#') {
-                if (pos > 2 && re.charAt(pos-2) == '(' && re.charAt(pos-1) == '?') {
+                if (pos > 2
+                    && re.charAt(pos - 2) == '('
+                    && re.charAt(pos - 1) == '?') {
                     sbuf.append(c);
                 } else {
                     pos++;
-                    for (; pos < len && re.charAt(pos) != '\n' && re.charAt(pos) != '\r'; pos++);
+                    for (;
+                        pos < len
+                            && re.charAt(pos) != '\n'
+                            && re.charAt(pos) != '\r';
+                        pos++);
                 }
             } else if (inClass || !Character.isWhitespace(c)) {
                 sbuf.append(c);

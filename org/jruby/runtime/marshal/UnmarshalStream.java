@@ -1,12 +1,6 @@
 /*
- * UnmarshalStream.java
- * Created on 29 Mar 2002
- * 
- * Copyright (C) 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Anders Bengtsson
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -30,11 +24,25 @@
 
 package org.jruby.runtime.marshal;
 
-import java.io.*;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
-import org.jruby.*;
-import org.jruby.exceptions.NotImplementedError;
-import org.jruby.util.*;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBignum;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.RubyStruct;
+import org.jruby.RubySymbol;
+import org.jruby.util.Asserts;
+import org.jruby.util.RubyHashMap;
+import org.jruby.util.RubyMap;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marsal format.
@@ -42,13 +50,12 @@ import org.jruby.util.*;
  * @author Anders
  * $Revision$
  */
-
 public class UnmarshalStream extends FilterInputStream {
-
-    private final Ruby ruby;
+    protected final Ruby ruby;
 
     public UnmarshalStream(Ruby ruby, InputStream in) throws IOException {
         super(in);
+
         this.ruby = ruby;
         in.read(); // Major
         in.read(); // Minor
@@ -57,36 +64,37 @@ public class UnmarshalStream extends FilterInputStream {
     public RubyObject unmarshalObject() throws IOException {
         int type = readUnsignedByte();
         switch (type) {
-        case '0':
-            return RubyObject.nilObject(ruby);
-        case 'T':
-            return RubyBoolean.newBoolean(ruby, true);
-        case 'F':
-            return RubyBoolean.newBoolean(ruby, false);
-        case '"':
-            return RubyString.unmarshalFrom(this);
-        case 'i':
-            return RubyFixnum.unmarshalFrom(this);
-        case ':':
-            return RubySymbol.unmarshalFrom(this);
-        case '[':
-            return RubyArray.unmarshalFrom(this);
-        case '{':
-            return RubyHash.unmarshalFrom(this);
-        case 'c':
-            return RubyClass.unmarshalFrom(this);
-        case 'm':
-            return RubyModule.unmarshalFrom(this);
-        case 'l':
-            return RubyBignum.unmarshalFrom(this);
-        case 'S':
-            return RubyStruct.unmarshalFrom(this);
-        case 'o':
-            return defaultObjectUnmarshal();
-        case 'u':
-            return userUnmarshal();
-        default:
-            throw new NotImplementedError(); // FIXME
+            case '0' :
+                return RubyObject.nilObject(ruby);
+            case 'T' :
+                return RubyBoolean.newBoolean(ruby, true);
+            case 'F' :
+                return RubyBoolean.newBoolean(ruby, false);
+            case '"' :
+                return RubyString.unmarshalFrom(this);
+            case 'i' :
+                return RubyFixnum.unmarshalFrom(this);
+            case ':' :
+                return RubySymbol.unmarshalFrom(this);
+            case '[' :
+                return RubyArray.unmarshalFrom(this);
+            case '{' :
+                return RubyHash.unmarshalFrom(this);
+            case 'c' :
+                return RubyClass.unmarshalFrom(this);
+            case 'm' :
+                return RubyModule.unmarshalFrom(this);
+            case 'l' :
+                return RubyBignum.unmarshalFrom(this);
+            case 'S' :
+                return RubyStruct.unmarshalFrom(this);
+            case 'o' :
+                return defaultObjectUnmarshal();
+            case 'u' :
+                return userUnmarshal();
+            default :
+                Asserts.assertNotReached();
+                return null;
         }
     }
 
@@ -170,6 +178,8 @@ public class UnmarshalStream extends FilterInputStream {
         String className = ((RubySymbol) unmarshalObject()).toId();
         String marshaled = unmarshalString();
         RubyModule classInstance = ruby.getRubyModule(className);
-        return classInstance.callMethod("_load", RubyString.newString(ruby, marshaled));
+        return classInstance.callMethod(
+            "_load",
+            RubyString.newString(ruby, marshaled));
     }
 }

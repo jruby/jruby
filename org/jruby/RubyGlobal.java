@@ -42,7 +42,7 @@ public class RubyGlobal {
     public static void createGlobals(Ruby ruby) {
 
         // Version information:
-        RubyObject version = RubyString.newString(ruby, Ruby.RUBY_VERSION).freeze();
+        RubyObject version = RubyString.newString(ruby, Constants.RUBY_VERSION).freeze();
         RubyObject release = RubyString.newString(ruby, "$Date$").freeze(); // XXX
         RubyObject platform = RubyString.newString(ruby, "java").freeze();
 
