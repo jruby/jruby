@@ -31,6 +31,7 @@ import java.util.*;
 
 import org.jruby.*;
 import org.jruby.core.*;
+import org.jruby.util.*;
 
 public class NODE implements node_type, VALUE, Scope {
 
@@ -67,10 +68,10 @@ public class NODE implements node_type, VALUE, Scope {
 
     public NODE nd_stts() { return (NODE)u1; }
 
-    public global_entry nd_entry() { return (global_entry)u3; }
+    public RubyGlobalEntry nd_entry() { return (RubyGlobalEntry)u3; }
     public RubyId nd_vid() { return (RubyId)u1; }
     public RubyId nd_cflag() { return (RubyId)u2; }
-    public void nd_cflag(ID id) { u2 = id; }
+    public void nd_cflag(RubyId id) { u2 = id; }
     //VALUE nd_cval() { return (VALUE)u3; }
 
     public int nd_cnt() { return u3 == null ? 0 : ((Integer)u3).intValue(); }
@@ -86,7 +87,7 @@ public class NODE implements node_type, VALUE, Scope {
     public NODE nd_value() { return (NODE)u2; }
     public void nd_value(NODE n) { u2 = n; }
     public RubyId nd_aid() { return (RubyId)u3; }
-    public void nd_aid(ID id) { u3 = id; }
+    public void nd_aid(RubyId id) { u3 = id; }
 
     public RubyObject nd_lit() { return (RubyObject)u1; }
     public void nd_lit(RubyObject v) { u1 = v; }

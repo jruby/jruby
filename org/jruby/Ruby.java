@@ -44,7 +44,7 @@ import org.jruby.util.*;
  *
  * @author  jpetersen
  */
-public final class Ruby implements token {
+public final class Ruby {
     public static final int FIXNUM_CACHE_SIZE = 0xff;
     public static final boolean AUTOMATIC_BIGNUM_CAST = true;
     
@@ -73,8 +73,6 @@ public final class Ruby implements token {
     private ParserHelper parserHelper = null;
     private RubyParser rubyParser = null;
     
-    private RubyOriginalMethods originalMethods;
-    
     private RubyObject rubyTopSelf;
     
     // Eval
@@ -97,7 +95,11 @@ public final class Ruby implements token {
     
     private boolean verbose;
     
-    public op_tbl[] op_tbl;
+    // ID
+    private Map symbolTable = new HashMap(200);
+    private Map symbolReverseTable = new HashMap(200);
+    private RubyOperatorEntry[] operatorTable = null;
+    private int lastId = Token.LAST_TOKEN;
     
     // init
     private boolean initialized = false;
@@ -105,9 +107,7 @@ public final class Ruby implements token {
     /** Create and initialize a new jruby Runtime.
      */    
     public Ruby() {
-        initOperatorTable();
-        
-        originalMethods = new RubyOriginalMethods(this);
+        RubyOperatorEntry.initOperatorTable(this);
         
         globalMap = new RubyHashMap();
         
@@ -258,16 +258,12 @@ public final class Ruby implements token {
     /**
      *
      */
-    public boolean isAutoloadDefined(ID id) {
+    public boolean isAutoloadDefined(RubyId id) {
         return false;
     }
     
-    public RubyOriginalMethods getOriginalMethods() {
-        return this.originalMethods;
-    }
-    
     public RubyId intern(String name) {
-        return (RubyId)ID.rb_intern(name, this);
+        return RubyId.intern(this, name);
     }
     
     public boolean isClassDefined(RubyId id) {
@@ -280,8 +276,8 @@ public final class Ruby implements token {
     
     // Compatibility
     
-    public ID createId(int value) {
-        return new RubyId(this, value);
+    public RubyId createId(int value) {
+        return RubyId.newId(this, value);
     }
     
     public RubyInterpreter getInterpreter() {
@@ -289,63 +285,6 @@ public final class Ruby implements token {
             rubyInterpreter = new RubyInterpreter(this);
         }
         return rubyInterpreter;
-    }
-    
-    // --
-    
-    public static class op_tbl {
-        public RubyId token;
-        public String name;
-
-        private op_tbl(Ruby ruby, int token, String name) {
-            this.token = new RubyId(ruby, token);
-            this.name = name;
-        }
-    }
-
-    private void initOperatorTable() {
-        op_tbl = new op_tbl[] {
-            new op_tbl(this, tDOT2,	".."),
-            new op_tbl(this, tDOT3,	"..."),
-            new op_tbl(this, '+',	"+"),
-            new op_tbl(this, '-',	"-"),
-            new op_tbl(this, '+',	"+(binary)"),
-            new op_tbl(this, '-',	"-(binary)"),
-            new op_tbl(this, '*',	"*"),
-            new op_tbl(this, '/',	"/"),
-            new op_tbl(this, '%',	"%"),
-            new op_tbl(this, tPOW,	"**"),
-            new op_tbl(this, tUPLUS,	"+@"),
-            new op_tbl(this, tUMINUS,	"-@"),
-            new op_tbl(this, tUPLUS,	"+(unary)"),
-            new op_tbl(this, tUMINUS,	"-(unary)"),
-            new op_tbl(this, '|',	"|"),
-            new op_tbl(this, '^',	"^"),
-            new op_tbl(this, '&',	"&"),
-            new op_tbl(this, tCMP,	"<=>"),
-            new op_tbl(this, '>',	">"),
-            new op_tbl(this, tGEQ,	">="),
-            new op_tbl(this, '<',	"<"),
-            new op_tbl(this, tLEQ,	"<="),
-            new op_tbl(this, tEQ,	"=="),
-            new op_tbl(this, tEQQ,	"==="),
-            new op_tbl(this, tNEQ,      "!="),
-            new op_tbl(this, tMATCH,    "=~"),
-            new op_tbl(this, tNMATCH,   "!~"),
-            new op_tbl(this, '!',       "!"),
-            new op_tbl(this, '~',       "~"),
-            new op_tbl(this, '!',       "!(unary)"),
-            new op_tbl(this, '~',       "~(unary)"),
-            new op_tbl(this, '!',       "!@"),
-            new op_tbl(this, '~',       "~@"),
-            new op_tbl(this, tAREF,     "[]"),
-            new op_tbl(this, tASET,     "[]="),
-            new op_tbl(this, tLSHFT,    "<<"),
-            new op_tbl(this, tRSHFT,    ">>"),
-            new op_tbl(this, tCOLON2,   "::"),
-            new op_tbl(this, '`',       "`"),
-            new op_tbl(this, 0,         null),
-        };
     }
     
     /** Getter for property globalMap.
@@ -679,4 +618,59 @@ public final class Ruby implements token {
         getRubyScope().setLocalVars(1, match);
     }
     
+    /** Getter for property symbolTable.
+     * @return Value of property symbolTable.
+     */
+    public Map getSymbolTable() {
+        return symbolTable;
+    }
+    
+    /** Setter for property symbolTable.
+     * @param symbolTable New value of property symbolTable.
+     */
+    public void setSymbolTable(Map symbolTable) {
+        this.symbolTable = symbolTable;
+    }
+    
+    /** Getter for property symbolReverseTable.
+     * @return Value of property symbolReverseTable.
+     */
+    public Map getSymbolReverseTable() {
+        return symbolReverseTable;
+    }
+    
+    /** Setter for property symbolReverseTable.
+     * @param symbolReverseTable New value of property symbolReverseTable.
+     */
+    public void setSymbolReverseTable(Map symbolReverseTable) {
+        this.symbolReverseTable = symbolReverseTable;
+    }
+    
+    /** Getter for property operatorTable.
+     * @return Value of property operatorTable.
+     */
+    public RubyOperatorEntry[] getOperatorTable() {
+        return operatorTable;
+    }
+    
+    /** Setter for property operatorTable.
+     * @param operatorTable New value of property operatorTable.
+     */
+    public void setOperatorTable(RubyOperatorEntry[] operatorTable) {
+        this.operatorTable = operatorTable;
+    }
+    
+    /** Getter for property lastId.
+     * @return Value of property lastId.
+     */
+    public int getLastId() {
+        return lastId;
+    }
+    
+    /** Setter for property lastId.
+     * @param lastId New value of property lastId.
+     */
+    public void setLastId(int lastId) {
+        this.lastId = lastId;
+    }
 }

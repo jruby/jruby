@@ -80,7 +80,7 @@ public class ParserHelper {
     private local_vars lvtbl = new local_vars();
 
     public RubyId newId(int id) {
-        return new RubyId(ruby, id);
+        return RubyId.newId(ruby, id);
     }
     
     private void yyerror(String message) {
@@ -259,7 +259,7 @@ public class ParserHelper {
                 }
             }
         }
-        rb_bug("invalid id for gettable");
+        rb_bug("invalid id for gettable. id = " + id.intValue() + ", name= " + id.toName());
         return null;
     }
 
@@ -422,7 +422,7 @@ public class ParserHelper {
      *@param  arg1  Description of Parameter
      *@return       Description of the Returned Value
      */
-    public NODE call_op(NODE recv, ID id, int narg, NODE arg1) {
+    public NODE call_op(NODE recv, RubyId id, int narg, NODE arg1) {
         value_expr(recv);
         if (narg == 1) {
             value_expr(arg1);
@@ -541,10 +541,10 @@ public class ParserHelper {
      *@param  id    Description of Parameter
      *@return       Description of the Returned Value
      */
-    public NODE attrset(NODE recv, ID id) {
+    public NODE attrset(NODE recv, RubyId id) {
         value_expr(recv);
 
-        return nf.newCall(recv, id.rb_id_attrset(ruby), null);
+        return nf.newCall(recv, id.toAttrSetId(), null);
     }
 
 
@@ -1060,7 +1060,7 @@ public class ParserHelper {
      *@param  a  Description of Parameter
      *@return    Description of the Returned Value
      */
-    public NODE new_call(NODE r, ID m, NODE a) {
+    public NODE new_call(NODE r, RubyId m, NODE a) {
         if (a != null && a.nd_type() == NODE.NODE_BLOCK_PASS) {
             a.nd_iter(nf.newCall(r, m, a.nd_head()));
             return a;
@@ -1076,7 +1076,7 @@ public class ParserHelper {
      *@param  a  Description of Parameter
      *@return    Description of the Returned Value
      */
-    public NODE new_fcall(ID m, NODE a) {
+    public NODE new_fcall(RubyId m, NODE a) {
         if (a != null && a.nd_type() == NODE.NODE_BLOCK_PASS) {
             a.nd_iter(nf.newFCall(m, a.nd_head()));
             return a;
@@ -1137,7 +1137,7 @@ public class ParserHelper {
      *
      *@return    Description of the Returned Value
      */
-    public ID[] local_tbl() {
+    public RubyId[] local_tbl() {
         lvtbl.nofree = 1;
         return lvtbl.tbl;
     }
@@ -1203,14 +1203,7 @@ public class ParserHelper {
         return local_append(id);
     }
 
-
-    /**
-     *  Description of the Method
-     *
-     *@param  id  Description of Parameter
-     *@return     Description of the Returned Value
-     */
-    public boolean local_id(ID id) {
+    public boolean local_id(RubyId id) {
         int i;
         int max;
 
@@ -1254,7 +1247,7 @@ public class ParserHelper {
         int i;
 
         if (len > 0) {
-            i = ruby.getRubyScope().getLocalTbl() != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
+            i = ruby.getRubyScope().getLocalTbl() != null && ruby.getRubyScope().getLocalTbl(0) != null ? ruby.getRubyScope().getLocalTbl(0).intValue() : 0;
 
             if (i < len) {
                 if (i == 0 || (ruby.getRubyScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {

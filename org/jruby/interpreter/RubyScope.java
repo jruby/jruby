@@ -121,11 +121,6 @@ public class RubyScope {
         this.localTbl = localTbl;
     }
     
-    public void setLocalTbl(ID[] localTbl) {
-        this.localTbl = new RubyId[localTbl.length];
-        System.arraycopy(localTbl, 0, this.localTbl, 0, localTbl.length);
-    }
-    
     /** Indexed getter for property localVars.
      * @param index Index of the property.
      * @return Value of the property at <CODE>index</CODE>.
