@@ -55,10 +55,8 @@ module JavaProxy
 
   def JavaProxy.convert_arguments(arguments)
     arguments.collect {|v|
-      if v.kind_of?(JavaProxy)
-        v = v.java_object
-      elsif v.respond_to?('java_class') && v.java_class != nil 
-        v = v.java_class
+      if v.respond_to?('java_object')
+	    v = v.java_object
       end
       Java.primitive_to_java(v)
     }
@@ -71,121 +69,111 @@ end
 
 
 module JavaUtilities
-  class << self
+  @proxy_classes = {}
 
-    def valid_constant_name?(name)
-      return false if name.empty?
-      first_char = name[0..0]
-      return (first_char == first_char.upcase && 
-              first_char != first_char.downcase)
-    end
+  def JavaUtilities.valid_constant_name?(name)
+    return false if name.empty?
+    first_char = name[0..0]
+    return (first_char == first_char.upcase && 
+	    first_char != first_char.downcase)
+  end
 
-    def create_proxy_class(constant, java_class, mod)
-      proxy_classes = JavaUtilities.proxy_classes
-      java_class_name = java_class.name
-      if proxy_classes.has_key?(java_class_name)
-	return mod.const_set(constant.to_s, proxy_classes[java_class_name])
-      end 
-      mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
-      proxy_class = eval(mod.name + '::' + constant.to_s)
-      proxy_class.class_eval("@java_class = java_class")
+  def JavaUtilities.get_proxy_class(java_class)
+    java_class = Java::JavaClass.for_name(java_class) if java_class.kind_of?(String)
+    class_id = java_class.id
 
-      proxy_classes[java_class_name] = proxy_class
-      setup_proxy_class(java_class, proxy_class)
-    end
-
-    def wrap(java_object, return_type)
-      real_type = java_object.java_class
-
-      if real_type.public?
-        java_class = real_type
-      else
-        java_class = return_type
-      end
-
-      proxy_class = new_proxy_class(java_class)
-      proxy = proxy_class.new_proxy
-      proxy.java_class = java_class
-      proxy.java_object = java_object
-
-      unless real_type.public?
-        # If the instance is private, but implements public interfaces
-        # then we want the methods on those available.
-
-        interfaces = real_type.interfaces.collect 
-
-        public_interfaces =
-          interfaces.select {|interface| interface.public? }
-
-        interface_proxies = public_interfaces.collect {|interface|
-          new_proxy_class(interface)
-        }
-        interface_proxies.each {|interface_proxy|
-          proxy.extend(interface_proxy)
-        }
-      end
-
-      proxy
-    end
-
-    def proxy_classes
-      unless defined? @proxy_classes
-        @proxy_classes = {}
-      end
-      @proxy_classes
-    end
-    
-    def new_proxy_class(java_class)
-      java_class = Java::JavaClass.for_name(java_class) if java_class.kind_of?(String)
-
-      if JavaUtilities.proxy_classes.has_key?(java_class)
-        return JavaUtilities.proxy_classes[java_class]
-      end
-      create_proxy_class_from_java_class(java_class)
-    end
-    
-    def create_proxy_class_from_java_class(java_class)    
+    unless @proxy_classes[class_id]
       proxy_class = Class.new
-      proxy_class.class_eval { include(JavaProxy) }
+      proxy_class.class_eval(<<END)
+        include(JavaProxy)
+        @java_class = java_class
+        @java_object = java_class
+END
 
-      proxy_class.class_eval("@java_class = java_class")
-      JavaUtilities.proxy_classes[java_class] = proxy_class
+      @proxy_classes[class_id] = proxy_class
+
       setup_proxy_class(java_class, proxy_class)
     end
 
-    def setup_proxy_class(java_class, proxy_class)
-      class << proxy_class
-        alias_method(:new_proxy, :new)
-        attr_reader :java_class
+    @proxy_classes[class_id]
+  end
 
-        # Carry the Java class as an instance variable on the
-        # derived classes too, otherwise their constructors
-        # won't work.
-        def inherited(subclass)
-          java_class = @java_class
-          subclass.class_eval("@java_class = java_class")
-        end
-      end
-      if java_class.interface?
-     	create_interface_constructor(java_class, proxy_class)
-        create_array_type_accessor(java_class, proxy_class)
-      elsif java_class.array?
-        create_array_class_constructor(java_class, proxy_class)
-      else
-        create_class_constructor(java_class, proxy_class)
-        create_array_type_accessor(java_class, proxy_class)
-      end
-      if java_class.array?
-        setup_array_methods(java_class, proxy_class)
-      else
-        setup_instance_methods(java_class, proxy_class)
-	setup_attributes(java_class, proxy_class)
-        setup_class_methods(java_class, proxy_class)
-        setup_constants(java_class, proxy_class)
-        setup_inner_classes(java_class, proxy_class)
-      end
-      return proxy_class
+  def JavaUtilities.create_proxy_class(constant, java_class, mod)
+    mod.const_set(constant.to_s, get_proxy_class(java_class))
+  end
+
+  def JavaUtilities.wrap(java_object, return_type)
+    real_type = java_object.java_class
+
+    if real_type.public?
+      java_class = real_type
+    else
+      java_class = return_type
     end
+
+    proxy_class = get_proxy_class(java_class)
+    proxy = proxy_class.new_proxy
+    proxy.java_class = java_class
+    proxy.java_object = java_object
+
+    unless real_type.public?
+      # If the instance is private, but implements public interfaces
+      # then we want the methods on those available.
+
+      interfaces = real_type.interfaces.collect 
+
+      public_interfaces =
+	interfaces.select {|interface| interface.public? }
+
+      interface_proxies = public_interfaces.collect {|interface|
+	get_proxy_class(interface)
+      }
+      interface_proxies.each {|interface_proxy|
+	proxy.extend(interface_proxy)
+      }
+    end
+
+    proxy
+  end
+
+  def JavaUtilities.setup_proxy_class(java_class, proxy_class)
+    class << proxy_class
+      alias_method(:new_proxy, :new)
+      attr_reader :java_class
+      attr_reader :java_object
+
+      # Carry the Java class as an instance variable on the
+      # derived classes too, otherwise their constructors
+      # won't work.
+      def inherited(subclass)
+	java_class = @java_class
+	subclass.class_eval("@java_class = java_class")
+      end
+    end
+
+    if java_class.interface?
+      create_interface_constructor(java_class, proxy_class)
+      create_array_type_accessor(java_class, proxy_class)
+    elsif java_class.array?
+      create_array_class_constructor(java_class, proxy_class)
+    else
+      create_class_constructor(java_class, proxy_class)
+      create_array_type_accessor(java_class, proxy_class)
+    end
+
+    if java_class.array?
+      setup_array_methods(java_class, proxy_class)
+    else
+      setup_instance_methods(java_class, proxy_class)
+      setup_attributes(java_class, proxy_class)
+      setup_class_methods(java_class, proxy_class)
+      setup_constants(java_class, proxy_class)
+      setup_inner_classes(java_class, proxy_class)
+    end
+    return proxy_class
+  end
+
+  class << self
 
     def create_class_constructor(java_class, proxy_class)
       class << proxy_class
@@ -221,7 +209,7 @@ module JavaUtilities
     def create_array_type_accessor(java_class, proxy_class)
       class << proxy_class
         def []
-          JavaUtilities.new_proxy_class(java_class.array_class)
+          JavaUtilities.get_proxy_class(java_class.array_class)
         end
       end
     end
