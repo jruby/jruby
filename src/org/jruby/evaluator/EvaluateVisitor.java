@@ -455,59 +455,67 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitClassNode(ClassNode)
      */
     public void visitClassNode(ClassNode iVisited) {
-        RubyClass superClass = runtime.getClasses().getObjectClass();
+        RubyClass superClass =
+                getSuperClass(iVisited.getSuperNode());
+        RubyClass rubyClass =
+                getOrCreateClass(iVisited.getClassName(), superClass);
+        evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
+    }
 
-        if (iVisited.getSuperNode() != null) {
-            try {
-                superClass = (RubyClass) eval(iVisited.getSuperNode());
-            } catch (Exception excptn) {
-                if (iVisited.getSuperNode() instanceof INameNode) {
-                    String name = ((INameNode) iVisited.getSuperNode()).getName();
-                    throw new TypeError(runtime,
-                                        "undefined superclass '" + name + "'");
-                } else {
-                    throw new TypeError(runtime,
-                                        "undefined superclass");
-                }
-            }
-            if (superClass instanceof MetaClass) {
-                throw new TypeError(runtime, "can't make subclass of virtual class");
-            }
-        }
-
-        RubyClass rubyClass = null;
-
-        if (isConstantDefined(iVisited.getClassName())) {
-            IRubyObject type = getConstant(iVisited.getClassName());
+    private RubyClass getOrCreateClass(String className, RubyClass superClass) {
+        RubyClass rubyClass;
+        if (isConstantDefined(className)) {
+            IRubyObject type = getConstant(className);
 
             if (!(type instanceof RubyClass)) {
-                throw new TypeError(runtime, iVisited.getClassName() + " is not a class");
-            } else {
-                rubyClass = (RubyClass)type;
+                throw new TypeError(runtime, className + " is not a class");
             }
 
-            if (rubyClass.getSuperClass().getRealClass() != superClass) {
-                rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
+            rubyClass = (RubyClass) type;
 
-                rubyClass.setClassPath(threadContext.getRubyClass(), iVisited.getClassName());
-                setConstant(iVisited.getClassName(), rubyClass);
+            if (rubyClass.getSuperClass().getRealClass() != superClass) {
+                rubyClass = runtime.defineClass(className, superClass);
+                rubyClass.setClassPath(threadContext.getRubyClass(), className);
+                setConstant(className, rubyClass);
             } else {
                 if (runtime.getSafeLevel() >= 4) {
                     throw new SecurityError(runtime, "extending class prohibited");
                 }
             }
         } else {
-            rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
-            setConstant(iVisited.getClassName(), rubyClass);
-            rubyClass.setClassPath(threadContext.getRubyClass(), iVisited.getClassName());
+            rubyClass = runtime.defineClass(className, superClass);
+            setConstant(className, rubyClass);
+            rubyClass.setClassPath(threadContext.getRubyClass(), className);
         }
 
         if (threadContext.getWrapper() != null) {
             rubyClass.extendObject(threadContext.getWrapper());
             rubyClass.includeModule(threadContext.getWrapper());
         }
+        return rubyClass;
+    }
 
-        evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
+    private RubyClass getSuperClass(INode superNode) {
+        if (superNode == null) {
+            return runtime.getClasses().getObjectClass();
+        }
+        RubyClass result;
+        try {
+            result = (RubyClass) eval(superNode);
+        } catch (Exception e) {
+            if (superNode instanceof INameNode) {
+                String name = ((INameNode) superNode).getName();
+                throw new TypeError(runtime,
+                                    "undefined superclass '" + name + "'");
+            } else {
+                throw new TypeError(runtime,
+                                    "superclass undefined");
+            }
+        }
+        if (result instanceof MetaClass) {
+            throw new TypeError(runtime, "can't make subclass of virtual class");
+        }
+        return result;
     }
 
     /**
