@@ -350,7 +350,9 @@ END
                              <<END
             methods = @class_methods['#{name}']
             args = JavaProxy.convert_arguments(args)
-            m = JavaUtilities.matching_method(methods, args)
+            m = JavaUtilities.matching_method(methods.find_all {|m|
+	            m.arity == args.length
+                  }, args)
             result = m.invoke_static(*args)
             result = Java.java_to_primitive(result)
             if result.kind_of?(JavaObject)
