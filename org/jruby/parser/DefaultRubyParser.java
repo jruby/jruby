@@ -41,56 +41,15 @@ public class DefaultRubyParser implements RubyParser {
     private Ruby ruby;
     private ParserHelper ph;
     private NodeFactory nf;
-    
-    private long cond_stack;
-    private int cond_nest = 0;
+    private DefaultRubyScanner rs;
     
     public DefaultRubyParser(Ruby ruby) {
         this.ruby = ruby;
         this.ph = ruby.getParserHelper();
         this.nf = new NodeFactory(ruby);
+        this.rs = new DefaultRubyScanner(ruby);
     }
 
-    private void COND_PUSH() {
-        cond_nest++;
-        cond_stack = (cond_stack << 1) | 1;
-    }
-
-    private void COND_POP() {
-        cond_nest--;
-        cond_stack >>= 1;
-    }
-
-    private boolean COND_P() {
-        return (cond_nest > 0 && (cond_stack & 1) != 0);
-    }
-
-    private void COND_LEXPOP() {
-        boolean last = COND_P();
-        cond_stack >>= 1;
-        if (last) cond_stack |= 1;
-    }
-
-
-    private long cmdarg_stack;
-
-    void CMDARG_PUSH() {
-        cmdarg_stack = (cmdarg_stack << 1) | 1;
-    }
-
-    private void CMDARG_POP() {
-        cmdarg_stack >>= 1;
-    }
-
-    private void CMDARG_LEXPOP() {
-        boolean last = CMDARG_P();
-        cmdarg_stack >>= 1;
-        if (last) cmdarg_stack |= 1;
-    }
-
-    private boolean CMDARG_P() {
-        return (cmdarg_stack != 0 && (cmdarg_stack & 1) != 0);
-    }
 /*
 %union {
     NODE *node;
@@ -100,7 +59,7 @@ public class DefaultRubyParser implements RubyParser {
     struct RVarmap *vars;
 }
 */
-					// line 104 "-"
+					// line 63 "-"
 // %token constants
 
   public static final int kCLASS = 257;
@@ -390,7 +349,7 @@ public class DefaultRubyParser implements RubyParser {
         yyVal = yyDefault(yyV > yyTop ? null : yyVals[yyV]);
         switch (yyN) {
 case 1:
-					// line 223 "parse.y"
+					// line 182 "parse.y"
   {
                 yyVal = ruby.getDynamicVars();
 			    ph.setLexState(LexState.EXPR_BEG);
@@ -402,7 +361,7 @@ case 1:
             }
   break;
 case 2:
-					// line 233 "parse.y"
+					// line 192 "parse.y"
   {
                 if (((NODE)yyVals[0+yyTop]) != null && !ph.isCompileForEval()) {
                     /* last expression should not be void */
@@ -423,36 +382,36 @@ case 2:
 		    }
   break;
 case 3:
-					// line 253 "parse.y"
+					// line 212 "parse.y"
   {
 			    ph.void_stmts(((NODE)yyVals[-1+yyTop]));
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 5:
-					// line 260 "parse.y"
+					// line 219 "parse.y"
   {
 			    yyVal = ph.newline_node(((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 6:
-					// line 264 "parse.y"
+					// line 223 "parse.y"
   {
 			    yyVal = ph.block_append(((NODE)yyVals[-2+yyTop]), ph.newline_node(((NODE)yyVals[0+yyTop])));
 		    }
   break;
 case 7:
-					// line 268 "parse.y"
+					// line 227 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 8:
-					// line 272 "parse.y"
+					// line 231 "parse.y"
   {ph.setLexState(LexState.EXPR_FNAME);}
   break;
 case 9:
-					// line 273 "parse.y"
+					// line 232 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("alias within method");
@@ -460,7 +419,7 @@ case 9:
 		    }
   break;
 case 10:
-					// line 279 "parse.y"
+					// line 238 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("alias within method");
@@ -468,7 +427,7 @@ case 10:
 		    }
   break;
 case 11:
-					// line 285 "parse.y"
+					// line 244 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("alias within method");
@@ -477,14 +436,14 @@ case 11:
 		    }
   break;
 case 12:
-					// line 292 "parse.y"
+					// line 251 "parse.y"
   {
 		        yyerror("can't make alias for the number variables");
 		        yyVal = null; /*XXX 0*/
 		    }
   break;
 case 13:
-					// line 297 "parse.y"
+					// line 256 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("undef within method");
@@ -492,7 +451,7 @@ case 13:
 		    }
   break;
 case 14:
-					// line 303 "parse.y"
+					// line 262 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((NODE)yyVals[0+yyTop])), ((NODE)yyVals[-2+yyTop]), null);
@@ -500,7 +459,7 @@ case 14:
 		    }
   break;
 case 15:
-					// line 309 "parse.y"
+					// line 268 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newUnless(ph.cond(((NODE)yyVals[0+yyTop])), ((NODE)yyVals[-2+yyTop]), null);
@@ -508,7 +467,7 @@ case 15:
 		    }
   break;
 case 16:
-					// line 315 "parse.y"
+					// line 274 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    if (((NODE)yyVals[-2+yyTop]) != null && ((NODE)yyVals[-2+yyTop]).nd_type() == NODE.NODE_BEGIN) {
@@ -519,7 +478,7 @@ case 16:
 		    }
   break;
 case 17:
-					// line 324 "parse.y"
+					// line 283 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    if (((NODE)yyVals[-2+yyTop]) != null && ((NODE)yyVals[-2+yyTop]).nd_type() == NODE.NODE_BEGIN) {
@@ -530,13 +489,13 @@ case 17:
 		    }
   break;
 case 18:
-					// line 333 "parse.y"
+					// line 292 "parse.y"
   {
 			    yyVal = nf.newRescue(((NODE)yyVals[-2+yyTop]), nf.newResBody(null,((NODE)yyVals[0+yyTop]),null), null);
 		    }
   break;
 case 19:
-					// line 337 "parse.y"
+					// line 296 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle()) {
 			        yyerror("BEGIN in method");
@@ -545,7 +504,7 @@ case 19:
 		    }
   break;
 case 20:
-					// line 344 "parse.y"
+					// line 303 "parse.y"
   {
 			    ph.setEvalTreeBegin(ph.block_append(ph.getEvalTree(), nf.newPreExe(((NODE)yyVals[-1+yyTop]))));
 		        ph.local_pop();
@@ -553,7 +512,7 @@ case 20:
 		    }
   break;
 case 21:
-					// line 350 "parse.y"
+					// line 309 "parse.y"
   {
 			    if (ph.isCompileForEval() && (ph.isInDef() || ph.isInSingle())) {
 			        yyerror("END in method; use at_exit");
@@ -563,14 +522,14 @@ case 21:
 		    }
   break;
 case 22:
-					// line 358 "parse.y"
+					// line 317 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ph.node_assign(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 23:
-					// line 363 "parse.y"
+					// line 322 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    ((NODE)yyVals[-2+yyTop]).nd_value(((NODE)yyVals[0+yyTop]));
@@ -578,13 +537,13 @@ case 23:
 		    }
   break;
 case 24:
-					// line 369 "parse.y"
+					// line 328 "parse.y"
   {
 			    yyVal = ph.node_assign(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 26:
-					// line 375 "parse.y"
+					// line 334 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    ((NODE)yyVals[-2+yyTop]).nd_value(((NODE)yyVals[0+yyTop]));
@@ -592,7 +551,7 @@ case 26:
 		    }
   break;
 case 27:
-					// line 381 "parse.y"
+					// line 340 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -600,53 +559,53 @@ case 27:
 		    }
   break;
 case 29:
-					// line 388 "parse.y"
+					// line 347 "parse.y"
   {
 			    yyVal = ph.logop(NODE.NODE_AND, ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 30:
-					// line 392 "parse.y"
+					// line 351 "parse.y"
   {
 			    yyVal = ph.logop(NODE.NODE_OR, ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 31:
-					// line 396 "parse.y"
+					// line 355 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newNot(ph.cond(((NODE)yyVals[0+yyTop])));
 		    }
   break;
 case 32:
-					// line 401 "parse.y"
+					// line 360 "parse.y"
   {
 			    yyVal = nf.newNot(ph.cond(((NODE)yyVals[0+yyTop])));
 		    }
   break;
 case 37:
-					// line 411 "parse.y"
+					// line 370 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 38:
-					// line 416 "parse.y"
+					// line 375 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 39:
-					// line 422 "parse.y"
+					// line 381 "parse.y"
   {
 			    yyVal = ph.new_fcall(((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 40:
-					// line 427 "parse.y"
+					// line 386 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
@@ -654,7 +613,7 @@ case 40:
 		    }
   break;
 case 41:
-					// line 433 "parse.y"
+					// line 392 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
@@ -662,7 +621,7 @@ case 41:
 		    }
   break;
 case 42:
-					// line 439 "parse.y"
+					// line 398 "parse.y"
   {
 			    if (!ph.isCompileForEval() && ph.isInDef() && ph.isInSingle())
 			        yyerror("super called outside of method");
@@ -671,305 +630,305 @@ case 42:
 		    }
   break;
 case 43:
-					// line 446 "parse.y"
+					// line 405 "parse.y"
   {
 			    yyVal = nf.newYield(ph.ret_args(((NODE)yyVals[0+yyTop])));
 		        ph.fixpos(yyVal, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 45:
-					// line 453 "parse.y"
+					// line 412 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 47:
-					// line 459 "parse.y"
+					// line 418 "parse.y"
   {
 			    yyVal = nf.newMAsgn(nf.newList(((NODE)yyVals[-1+yyTop])), null);
 		    }
   break;
 case 48:
-					// line 464 "parse.y"
+					// line 423 "parse.y"
   {
 			    yyVal = nf.newMAsgn(((NODE)yyVals[0+yyTop]), null);
 		    }
   break;
 case 49:
-					// line 468 "parse.y"
+					// line 427 "parse.y"
   {
 			    yyVal = nf.newMAsgn(ph.list_append(((NODE)yyVals[-1+yyTop]),((NODE)yyVals[0+yyTop])), null);
 		    }
   break;
 case 50:
-					// line 472 "parse.y"
+					// line 431 "parse.y"
   {
 			    yyVal = nf.newMAsgn(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 51:
-					// line 476 "parse.y"
+					// line 435 "parse.y"
   {
 			    yyVal = nf.newMAsgn(((NODE)yyVals[-1+yyTop]), NODE.MINUS_ONE);
 		    }
   break;
 case 52:
-					// line 480 "parse.y"
+					// line 439 "parse.y"
   {
 			    yyVal = nf.newMAsgn(null, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 53:
-					// line 484 "parse.y"
+					// line 443 "parse.y"
   {
 			    yyVal = nf.newMAsgn(null, NODE.MINUS_ONE);
 		    }
   break;
 case 55:
-					// line 490 "parse.y"
+					// line 449 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 56:
-					// line 495 "parse.y"
+					// line 454 "parse.y"
   {
 			    yyVal = nf.newList(((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 57:
-					// line 499 "parse.y"
+					// line 458 "parse.y"
   {
 			    yyVal = ph.list_append(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 58:
-					// line 504 "parse.y"
+					// line 463 "parse.y"
   {
 			    yyVal = ph.assignable(((RubyId)yyVals[0+yyTop]), null);
 		    }
   break;
 case 59:
-					// line 508 "parse.y"
+					// line 467 "parse.y"
   {
 			    yyVal = ph.aryset(((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 60:
-					// line 512 "parse.y"
+					// line 471 "parse.y"
   {
 			    yyVal = ph.attrset(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 61:
-					// line 516 "parse.y"
+					// line 475 "parse.y"
   {
 			    yyVal = ph.attrset(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 62:
-					// line 520 "parse.y"
+					// line 479 "parse.y"
   {
 			    yyVal = ph.attrset(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 63:
-					// line 524 "parse.y"
+					// line 483 "parse.y"
   {
 		        ph.rb_backref_error(((NODE)yyVals[0+yyTop]));
 			    yyVal = null; /*XXX 0;*/
 		    }
   break;
 case 64:
-					// line 530 "parse.y"
+					// line 489 "parse.y"
   {
 			    yyVal = ph.assignable(((RubyId)yyVals[0+yyTop]), null);
 		    }
   break;
 case 65:
-					// line 534 "parse.y"
+					// line 493 "parse.y"
   {
 			    yyVal = ph.aryset(((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 66:
-					// line 538 "parse.y"
+					// line 497 "parse.y"
   {
 			    yyVal = ph.attrset(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 67:
-					// line 542 "parse.y"
+					// line 501 "parse.y"
   {
 			    yyVal = ph.attrset(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 68:
-					// line 546 "parse.y"
+					// line 505 "parse.y"
   {
 			    yyVal = ph.attrset(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 69:
-					// line 550 "parse.y"
+					// line 509 "parse.y"
   {
 		        ph.rb_backref_error(((NODE)yyVals[0+yyTop]));
 			    yyVal = null; /*XXX 0;*/
 		    }
   break;
 case 70:
-					// line 556 "parse.y"
+					// line 515 "parse.y"
   {
 			    yyerror("class/module name must be CONSTANT");
 		    }
   break;
 case 75:
-					// line 565 "parse.y"
+					// line 524 "parse.y"
   {
 			    ph.setLexState(LexState.EXPR_END);
                 yyVal = ((RubyId)yyVals[0+yyTop]);
 		    }
   break;
 case 76:
-					// line 570 "parse.y"
+					// line 529 "parse.y"
   {
 			    ph.setLexState(LexState.EXPR_END);
 			    yyVal = ((RubyId)yyVals[0+yyTop]);
 		    }
   break;
 case 79:
-					// line 579 "parse.y"
+					// line 538 "parse.y"
   {
 			    yyVal = nf.newUndef(((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 80:
-					// line 582 "parse.y"
+					// line 541 "parse.y"
   {ph.setLexState(LexState.EXPR_FNAME);}
   break;
 case 81:
-					// line 583 "parse.y"
+					// line 542 "parse.y"
   {
 			    yyVal = ph.block_append(((NODE)yyVals[-3+yyTop]), nf.newUndef(((RubyId)yyVals[0+yyTop])));
 		    }
   break;
 case 82:
-					// line 587 "parse.y"
+					// line 546 "parse.y"
   { yyVal = new Integer('|'); }
   break;
 case 83:
-					// line 588 "parse.y"
+					// line 547 "parse.y"
   { yyVal = new Integer('^'); }
   break;
 case 84:
-					// line 589 "parse.y"
+					// line 548 "parse.y"
   { yyVal = new Integer('&'); }
   break;
 case 85:
-					// line 590 "parse.y"
+					// line 549 "parse.y"
   { yyVal = new Integer(tCMP); }
   break;
 case 86:
-					// line 591 "parse.y"
+					// line 550 "parse.y"
   { yyVal = new Integer(tEQ); }
   break;
 case 87:
-					// line 592 "parse.y"
+					// line 551 "parse.y"
   { yyVal = new Integer(tEQQ); }
   break;
 case 88:
-					// line 593 "parse.y"
+					// line 552 "parse.y"
   { yyVal = new Integer(tMATCH); }
   break;
 case 89:
-					// line 594 "parse.y"
+					// line 553 "parse.y"
   { yyVal = new Integer('>'); }
   break;
 case 90:
-					// line 595 "parse.y"
+					// line 554 "parse.y"
   { yyVal = new Integer(tGEQ); }
   break;
 case 91:
-					// line 596 "parse.y"
+					// line 555 "parse.y"
   { yyVal = new Integer('<'); }
   break;
 case 92:
-					// line 597 "parse.y"
+					// line 556 "parse.y"
   { yyVal = new Integer(tLEQ); }
   break;
 case 93:
-					// line 598 "parse.y"
+					// line 557 "parse.y"
   { yyVal = new Integer(tLSHFT); }
   break;
 case 94:
-					// line 599 "parse.y"
+					// line 558 "parse.y"
   { yyVal = new Integer(tRSHFT); }
   break;
 case 95:
-					// line 600 "parse.y"
+					// line 559 "parse.y"
   { yyVal = new Integer('+'); }
   break;
 case 96:
-					// line 601 "parse.y"
+					// line 560 "parse.y"
   { yyVal = new Integer('-'); }
   break;
 case 97:
-					// line 602 "parse.y"
+					// line 561 "parse.y"
   { yyVal = new Integer('*'); }
   break;
 case 98:
-					// line 603 "parse.y"
+					// line 562 "parse.y"
   { yyVal = new Integer('*'); }
   break;
 case 99:
-					// line 604 "parse.y"
+					// line 563 "parse.y"
   { yyVal = new Integer('/'); }
   break;
 case 100:
-					// line 605 "parse.y"
+					// line 564 "parse.y"
   { yyVal = new Integer('%'); }
   break;
 case 101:
-					// line 606 "parse.y"
+					// line 565 "parse.y"
   { yyVal = new Integer(tPOW); }
   break;
 case 102:
-					// line 607 "parse.y"
+					// line 566 "parse.y"
   { yyVal = new Integer('~'); }
   break;
 case 103:
-					// line 608 "parse.y"
+					// line 567 "parse.y"
   { yyVal = new Integer(tUPLUS); }
   break;
 case 104:
-					// line 609 "parse.y"
+					// line 568 "parse.y"
   { yyVal = new Integer(tUMINUS); }
   break;
 case 105:
-					// line 610 "parse.y"
+					// line 569 "parse.y"
   { yyVal = new Integer(tAREF); }
   break;
 case 106:
-					// line 611 "parse.y"
+					// line 570 "parse.y"
   { yyVal = new Integer(tASET); }
   break;
 case 107:
-					// line 612 "parse.y"
+					// line 571 "parse.y"
   { yyVal = new Integer('`'); }
   break;
 case 149:
-					// line 623 "parse.y"
+					// line 582 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ph.node_assign(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 150:
-					// line 627 "parse.y"
+					// line 586 "parse.y"
   {yyVal = ph.assignable(((RubyId)yyVals[-1+yyTop]), null);}
   break;
 case 151:
-					// line 628 "parse.y"
+					// line 587 "parse.y"
   {
 			    if (((Integer)yyVals[-2+yyTop]).intValue() == tOROP) {
 			        ((NODE)yyVals[-1+yyTop]).nd_value(((NODE)yyVals[0+yyTop]));
@@ -990,7 +949,7 @@ case 151:
 		    }
   break;
 case 152:
-					// line 647 "parse.y"
+					// line 606 "parse.y"
   {
 			    NODE args = nf.newList(((NODE)yyVals[0+yyTop]));
 
@@ -1006,7 +965,7 @@ case 152:
 		    }
   break;
 case 153:
-					// line 661 "parse.y"
+					// line 620 "parse.y"
   {
                 if (((Integer)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
 			        yyVals[-1+yyTop] = new Integer(0);
@@ -1018,7 +977,7 @@ case 153:
 		    }
   break;
 case 154:
-					// line 671 "parse.y"
+					// line 630 "parse.y"
   {
                 if (((Integer)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
 			        yyVals[-1+yyTop] = new Integer(0);
@@ -1030,7 +989,7 @@ case 154:
 		    }
   break;
 case 155:
-					// line 681 "parse.y"
+					// line 640 "parse.y"
   {
 			    if (((Integer)yyVals[-1+yyTop]).intValue() == Token.tOROP) {
 			        yyVals[-1+yyTop] = new Integer(0);
@@ -1042,56 +1001,56 @@ case 155:
 		    }
   break;
 case 156:
-					// line 691 "parse.y"
+					// line 650 "parse.y"
   {
 		        ph.rb_backref_error(((NODE)yyVals[-2+yyTop]));
 			    yyVal = null; /*XXX 0*/
 		    }
   break;
 case 157:
-					// line 696 "parse.y"
+					// line 655 "parse.y"
   {
 			    yyVal = nf.newDot2(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 158:
-					// line 700 "parse.y"
+					// line 659 "parse.y"
   {
 			    yyVal = nf.newDot3(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 159:
-					// line 704 "parse.y"
+					// line 663 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '+', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 160:
-					// line 708 "parse.y"
+					// line 667 "parse.y"
   {
 		        yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '-', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 161:
-					// line 712 "parse.y"
+					// line 671 "parse.y"
   {
 		        yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '*', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 162:
-					// line 716 "parse.y"
+					// line 675 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '/', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 163:
-					// line 720 "parse.y"
+					// line 679 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '%', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 164:
-					// line 724 "parse.y"
+					// line 683 "parse.y"
   {
 			    boolean need_negate = false;
 
@@ -1112,7 +1071,7 @@ case 164:
 		    }
   break;
 case 165:
-					// line 743 "parse.y"
+					// line 702 "parse.y"
   {
 			    if (((NODE)yyVals[0+yyTop]) != null && ((NODE)yyVals[0+yyTop]).nd_type() == NODE.NODE_LIT) {
 			        yyVal = ((NODE)yyVals[0+yyTop]);
@@ -1122,7 +1081,7 @@ case 165:
 		    }
   break;
 case 166:
-					// line 751 "parse.y"
+					// line 710 "parse.y"
   {
 			    if (((NODE)yyVals[0+yyTop]) != null && ((NODE)yyVals[0+yyTop]).nd_type() == NODE.NODE_LIT && ((NODE)yyVals[0+yyTop]).nd_lit() instanceof RubyFixnum) {
 			        long i = ((RubyFixnum)((NODE)yyVals[0+yyTop]).nd_lit()).getValue();
@@ -1135,133 +1094,133 @@ case 166:
 		    }
   break;
 case 167:
-					// line 762 "parse.y"
+					// line 721 "parse.y"
   {
 		        yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '|', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 168:
-					// line 766 "parse.y"
+					// line 725 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '^', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 169:
-					// line 770 "parse.y"
+					// line 729 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '&', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 170:
-					// line 774 "parse.y"
+					// line 733 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tCMP, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 171:
-					// line 778 "parse.y"
+					// line 737 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '>', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 172:
-					// line 782 "parse.y"
+					// line 741 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tGEQ, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 173:
-					// line 786 "parse.y"
+					// line 745 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), '<', 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 174:
-					// line 790 "parse.y"
+					// line 749 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tLEQ, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 175:
-					// line 794 "parse.y"
+					// line 753 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tEQ, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 176:
-					// line 798 "parse.y"
+					// line 757 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tEQQ, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 177:
-					// line 802 "parse.y"
+					// line 761 "parse.y"
   {
 			    yyVal = nf.newNot(ph.call_op(((NODE)yyVals[-2+yyTop]), tEQ, 1, ((NODE)yyVals[0+yyTop])));
 		    }
   break;
 case 178:
-					// line 806 "parse.y"
+					// line 765 "parse.y"
   {
 			    yyVal = ph.match_gen(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 179:
-					// line 810 "parse.y"
+					// line 769 "parse.y"
   {
 			    yyVal = nf.newNot(ph.match_gen(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop])));
 		    }
   break;
 case 180:
-					// line 814 "parse.y"
+					// line 773 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newNot(ph.cond(((NODE)yyVals[0+yyTop])));
 		    }
   break;
 case 181:
-					// line 819 "parse.y"
+					// line 778 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[0+yyTop]), '~', 0, null);
 		    }
   break;
 case 182:
-					// line 823 "parse.y"
+					// line 782 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tLSHFT, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 183:
-					// line 827 "parse.y"
+					// line 786 "parse.y"
   {
 			    yyVal = ph.call_op(((NODE)yyVals[-2+yyTop]), tRSHFT, 1, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 184:
-					// line 831 "parse.y"
+					// line 790 "parse.y"
   {
 			    yyVal = ph.logop(NODE.NODE_AND, ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 185:
-					// line 835 "parse.y"
+					// line 794 "parse.y"
   {
 			    yyVal = ph.logop(NODE.NODE_OR, ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 186:
-					// line 838 "parse.y"
+					// line 797 "parse.y"
   { ph.setInDefined(true);}
   break;
 case 187:
-					// line 839 "parse.y"
+					// line 798 "parse.y"
   {
 		        ph.setInDefined(false);
 			    yyVal = nf.newDefined(((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 188:
-					// line 844 "parse.y"
+					// line 803 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-4+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((NODE)yyVals[-4+yyTop])), ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
@@ -1269,93 +1228,93 @@ case 188:
 		    }
   break;
 case 189:
-					// line 850 "parse.y"
+					// line 809 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 191:
-					// line 856 "parse.y"
+					// line 815 "parse.y"
   {
 			yyVal = nf.newList(((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 192:
-					// line 860 "parse.y"
+					// line 819 "parse.y"
   {
 			yyVal = ph.list_append(((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]));
             }
   break;
 case 193:
-					// line 864 "parse.y"
+					// line 823 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 194:
-					// line 868 "parse.y"
+					// line 827 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(((NODE)yyVals[-4+yyTop]), ((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 195:
-					// line 873 "parse.y"
+					// line 832 "parse.y"
   {
 			    yyVal = nf.newList(nf.newHash(((NODE)yyVals[-1+yyTop])));
 		    }
   break;
 case 196:
-					// line 877 "parse.y"
+					// line 836 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = nf.newRestArgs(((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 197:
-					// line 883 "parse.y"
+					// line 842 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 198:
-					// line 887 "parse.y"
+					// line 846 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-2+yyTop]);
 		    }
   break;
 case 199:
-					// line 891 "parse.y"
+					// line 850 "parse.y"
   {
 			    yyVal = nf.newList(((NODE)yyVals[-2+yyTop]));
 		    }
   break;
 case 200:
-					// line 895 "parse.y"
+					// line 854 "parse.y"
   {
 			    yyVal = ph.list_append(((NODE)yyVals[-4+yyTop]), ((NODE)yyVals[-2+yyTop]));
 		    }
   break;
 case 203:
-					// line 903 "parse.y"
+					// line 862 "parse.y"
   {
 			    yyVal = nf.newList(((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 204:
-					// line 907 "parse.y"
+					// line 866 "parse.y"
   {
 			yyVal = ph.list_append(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 205:
-					// line 911 "parse.y"
+					// line 870 "parse.y"
   {
 			    yyVal = ph.arg_blk_pass(((NODE)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 206:
-					// line 915 "parse.y"
+					// line 874 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(((NODE)yyVals[-4+yyTop]), ((NODE)yyVals[-1+yyTop]));
@@ -1363,14 +1322,14 @@ case 206:
 		    }
   break;
 case 207:
-					// line 921 "parse.y"
+					// line 880 "parse.y"
   {
 			    yyVal = nf.newList(nf.newHash(((NODE)yyVals[-1+yyTop])));
 			    yyVal = ph.arg_blk_pass(((NODE)yyVal), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 208:
-					// line 926 "parse.y"
+					// line 885 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(nf.newList(nf.newHash(((NODE)yyVals[-4+yyTop]))), ((NODE)yyVals[-1+yyTop]));
@@ -1378,14 +1337,14 @@ case 208:
 		    }
   break;
 case 209:
-					// line 932 "parse.y"
+					// line 891 "parse.y"
   {
 			    yyVal = ph.list_append(((NODE)yyVals[-3+yyTop]), nf.newHash(((NODE)yyVals[-1+yyTop])));
 			    yyVal = ph.arg_blk_pass(((NODE)yyVal), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 210:
-					// line 937 "parse.y"
+					// line 896 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_concat(ph.list_append(((NODE)yyVals[-6+yyTop]), nf.newHash(((NODE)yyVals[-4+yyTop]))), ((NODE)yyVals[-1+yyTop]));
@@ -1393,80 +1352,80 @@ case 210:
 		    }
   break;
 case 211:
-					// line 943 "parse.y"
+					// line 902 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = ph.arg_blk_pass(nf.newRestArgs(((NODE)yyVals[-1+yyTop])), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 213:
-					// line 949 "parse.y"
-  {CMDARG_PUSH();}
+					// line 908 "parse.y"
+  { rs.CMDARG_PUSH(); }
   break;
 case 214:
-					// line 950 "parse.y"
+					// line 909 "parse.y"
   {
-			    CMDARG_POP();
+			    rs.CMDARG_POP();
 		        yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 215:
-					// line 956 "parse.y"
+					// line 915 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newBlockPass(((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 216:
-					// line 962 "parse.y"
+					// line 921 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 218:
-					// line 968 "parse.y"
+					// line 927 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newList(((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 219:
-					// line 973 "parse.y"
+					// line 932 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ph.list_append(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 220:
-					// line 979 "parse.y"
+					// line 938 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 222:
-					// line 986 "parse.y"
+					// line 945 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ph.list_append(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 223:
-					// line 991 "parse.y"
+					// line 950 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ph.arg_concat(((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 224:
-					// line 996 "parse.y"
+					// line 955 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 225:
-					// line 1002 "parse.y"
+					// line 961 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 			    if (((NODE)yyVals[0+yyTop]) != null) {
@@ -1479,25 +1438,25 @@ case 225:
 		    }
   break;
 case 226:
-					// line 1014 "parse.y"
+					// line 973 "parse.y"
   {
 			    yyVal = nf.newLit(((VALUE)yyVals[0+yyTop]));
 		    }
   break;
 case 228:
-					// line 1019 "parse.y"
+					// line 978 "parse.y"
   {
 			    yyVal = nf.newXStr(((VALUE)yyVals[0+yyTop]));
 		    }
   break;
 case 233:
-					// line 1027 "parse.y"
+					// line 986 "parse.y"
   {
 			    yyVal = nf.newVCall(((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 234:
-					// line 1036 "parse.y"
+					// line 995 "parse.y"
   {
 			    if (((NODE)yyVals[-3+yyTop]) == null && ((NODE)yyVals[-2+yyTop]) == null && ((NODE)yyVals[-1+yyTop]) == null)
 			        yyVal = nf.newBegin(((NODE)yyVals[-4+yyTop]));
@@ -1514,33 +1473,33 @@ case 234:
 		    }
   break;
 case 235:
-					// line 1051 "parse.y"
+					// line 1010 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 236:
-					// line 1055 "parse.y"
+					// line 1014 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-2+yyTop]));
 			    yyVal = nf.newColon2(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 237:
-					// line 1060 "parse.y"
+					// line 1019 "parse.y"
   {
 			    yyVal = nf.newColon3(((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 238:
-					// line 1064 "parse.y"
+					// line 1023 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = nf.newCall(((NODE)yyVals[-3+yyTop]), ph.newId(tAREF), ((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 239:
-					// line 1069 "parse.y"
+					// line 1028 "parse.y"
   {
 		        if (((NODE)yyVals[-1+yyTop]) == null) {
 			        yyVal = nf.newZArray(); /* zero length array*/
@@ -1550,13 +1509,13 @@ case 239:
 		    }
   break;
 case 240:
-					// line 1077 "parse.y"
+					// line 1036 "parse.y"
   {
 			    yyVal = nf.newHash(((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 241:
-					// line 1081 "parse.y"
+					// line 1040 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -1565,7 +1524,7 @@ case 241:
 		    }
   break;
 case 242:
-					// line 1088 "parse.y"
+					// line 1047 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -1573,7 +1532,7 @@ case 242:
 		    }
   break;
 case 243:
-					// line 1094 "parse.y"
+					// line 1053 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle())
 			        yyerror("return appeared outside of method");
@@ -1581,44 +1540,44 @@ case 243:
 		    }
   break;
 case 244:
-					// line 1100 "parse.y"
+					// line 1059 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-1+yyTop]));
 			    yyVal = nf.newYield(((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 245:
-					// line 1105 "parse.y"
+					// line 1064 "parse.y"
   {
 			    yyVal = nf.newYield(null);
 		    }
   break;
 case 246:
-					// line 1109 "parse.y"
+					// line 1068 "parse.y"
   {
 			    yyVal = nf.newYield(null);
 		    }
   break;
 case 247:
-					// line 1112 "parse.y"
+					// line 1071 "parse.y"
   {ph.setInDefined(true);}
   break;
 case 248:
-					// line 1113 "parse.y"
+					// line 1072 "parse.y"
   {
 		        ph.setInDefined(false);
 			    yyVal = nf.newDefined(((NODE)yyVals[-1+yyTop]));
 		    }
   break;
 case 249:
-					// line 1118 "parse.y"
+					// line 1077 "parse.y"
   {
 			    ((NODE)yyVals[0+yyTop]).nd_iter(nf.newFCall(((RubyId)yyVals[-1+yyTop]), null));
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 251:
-					// line 1124 "parse.y"
+					// line 1083 "parse.y"
   {
 			    if (((NODE)yyVals[-1+yyTop]) != null && ((NODE)yyVals[-1+yyTop]).nd_type() == NODE.NODE_BLOCK_PASS) {
 			        ph.rb_compile_error("both block arg and actual block given");
@@ -1629,7 +1588,7 @@ case 251:
 		    }
   break;
 case 252:
-					// line 1136 "parse.y"
+					// line 1095 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-4+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((NODE)yyVals[-4+yyTop])), ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[-1+yyTop]));
@@ -1637,7 +1596,7 @@ case 252:
 		    }
   break;
 case 253:
-					// line 1145 "parse.y"
+					// line 1104 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-4+yyTop]));
 			    yyVal = nf.newUnless(ph.cond(((NODE)yyVals[-4+yyTop])), ((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[-1+yyTop]));
@@ -1645,15 +1604,15 @@ case 253:
 		    }
   break;
 case 254:
-					// line 1150 "parse.y"
-  {COND_PUSH();}
+					// line 1109 "parse.y"
+  { rs.COND_PUSH(); }
   break;
 case 255:
-					// line 1150 "parse.y"
-  {COND_POP();}
+					// line 1109 "parse.y"
+  { rs.COND_POP(); }
   break;
 case 256:
-					// line 1153 "parse.y"
+					// line 1112 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-4+yyTop]));
 			    yyVal = nf.newWhile(ph.cond(((NODE)yyVals[-4+yyTop])), ((NODE)yyVals[-1+yyTop]), 1);
@@ -1661,15 +1620,15 @@ case 256:
 		    }
   break;
 case 257:
-					// line 1158 "parse.y"
-  {COND_PUSH();}
+					// line 1117 "parse.y"
+  { rs.COND_PUSH(); }
   break;
 case 258:
-					// line 1158 "parse.y"
-  {COND_POP();}
+					// line 1117 "parse.y"
+  { rs.COND_POP(); }
   break;
 case 259:
-					// line 1161 "parse.y"
+					// line 1120 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-4+yyTop]));
 			    yyVal = nf.newUntil(ph.cond(((NODE)yyVals[-4+yyTop])), ((NODE)yyVals[-1+yyTop]), 1);
@@ -1677,7 +1636,7 @@ case 259:
 		    }
   break;
 case 260:
-					// line 1169 "parse.y"
+					// line 1128 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = nf.newCase(((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]));
@@ -1685,21 +1644,21 @@ case 260:
 		    }
   break;
 case 261:
-					// line 1175 "parse.y"
+					// line 1134 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 262:
-					// line 1178 "parse.y"
-  {COND_PUSH();}
+					// line 1137 "parse.y"
+  { rs.COND_PUSH(); }
   break;
 case 263:
-					// line 1178 "parse.y"
-  {COND_POP();}
+					// line 1137 "parse.y"
+  { rs.COND_POP(); }
   break;
 case 264:
-					// line 1181 "parse.y"
+					// line 1140 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-4+yyTop]));
 			    yyVal = nf.newFor(((NODE)yyVals[-7+yyTop]), ((NODE)yyVals[-4+yyTop]), ((NODE)yyVals[-1+yyTop]));
@@ -1707,7 +1666,7 @@ case 264:
 		    }
   break;
 case 265:
-					// line 1187 "parse.y"
+					// line 1146 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("class definition in method body");
@@ -1717,7 +1676,7 @@ case 265:
 		    }
   break;
 case 266:
-					// line 1196 "parse.y"
+					// line 1155 "parse.y"
   {
 		        yyVal = nf.newClass(((RubyId)yyVals[-4+yyTop]), ((NODE)yyVals[-1+yyTop]), ((NODE)yyVals[-3+yyTop]));
 		        ((NODE)yyVal).nd_set_line(((Integer)yyVals[-2+yyTop]).intValue());
@@ -1726,14 +1685,14 @@ case 266:
 		    }
   break;
 case 267:
-					// line 1203 "parse.y"
+					// line 1162 "parse.y"
   {
 			    yyVal = new Integer(ph.getInDef());
 		        ph.setInDef(0);
 		    }
   break;
 case 268:
-					// line 1208 "parse.y"
+					// line 1167 "parse.y"
   {
 		        yyVal = new Integer(ph.getInSingle());
 		        ph.setInSingle(0);
@@ -1742,7 +1701,7 @@ case 268:
 		    }
   break;
 case 269:
-					// line 1216 "parse.y"
+					// line 1175 "parse.y"
   {
 		        yyVal = nf.newSClass(((NODE)yyVals[-5+yyTop]), ((NODE)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((NODE)yyVals[-5+yyTop]));
@@ -1753,7 +1712,7 @@ case 269:
 		    }
   break;
 case 270:
-					// line 1225 "parse.y"
+					// line 1184 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("module definition in method body");
@@ -1763,7 +1722,7 @@ case 270:
 		    }
   break;
 case 271:
-					// line 1234 "parse.y"
+					// line 1193 "parse.y"
   {
 		        yyVal = nf.newModule(((RubyId)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]));
 		        ((NODE)yyVal).nd_set_line(((Integer)yyVals[-2+yyTop]).intValue());
@@ -1772,7 +1731,7 @@ case 271:
 		    }
   break;
 case 272:
-					// line 1241 "parse.y"
+					// line 1200 "parse.y"
   {
 			    if (ph.isInDef() || ph.isInSingle())
 			        yyerror("nested method definition");
@@ -1783,7 +1742,7 @@ case 272:
 		    }
   break;
 case 273:
-					// line 1255 "parse.y"
+					// line 1214 "parse.y"
   {
 		        if (((NODE)yyVals[-3+yyTop]) != null)
                     yyVals[-4+yyTop] = nf.newRescue(((NODE)yyVals[-4+yyTop]), ((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-2+yyTop]));
@@ -1805,11 +1764,11 @@ case 273:
 		    }
   break;
 case 274:
-					// line 1274 "parse.y"
+					// line 1233 "parse.y"
   {ph.setLexState(LexState.EXPR_FNAME);}
   break;
 case 275:
-					// line 1275 "parse.y"
+					// line 1234 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
                 ph.setInSingle(ph.getInSingle() + 1);
@@ -1818,7 +1777,7 @@ case 275:
 		    }
   break;
 case 276:
-					// line 1287 "parse.y"
+					// line 1246 "parse.y"
   {
 		        if (((NODE)yyVals[-3+yyTop]) != null)
                     yyVals[-4+yyTop] = nf.newRescue(((NODE)yyVals[-4+yyTop]), ((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-2+yyTop]));
@@ -1835,31 +1794,31 @@ case 276:
 		    }
   break;
 case 277:
-					// line 1302 "parse.y"
+					// line 1261 "parse.y"
   {
 			    yyVal = nf.newBreak();
 		    }
   break;
 case 278:
-					// line 1306 "parse.y"
+					// line 1265 "parse.y"
   {
 			    yyVal = nf.newNext();
 		    }
   break;
 case 279:
-					// line 1310 "parse.y"
+					// line 1269 "parse.y"
   {
 			    yyVal = nf.newRedo();
 		    }
   break;
 case 280:
-					// line 1314 "parse.y"
+					// line 1273 "parse.y"
   {
 			    yyVal = nf.newRetry();
 		    }
   break;
 case 287:
-					// line 1329 "parse.y"
+					// line 1288 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = nf.newIf(ph.cond(((NODE)yyVals[-3+yyTop])), ((NODE)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
@@ -1867,37 +1826,37 @@ case 287:
 		    }
   break;
 case 289:
-					// line 1337 "parse.y"
+					// line 1296 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 293:
-					// line 1346 "parse.y"
+					// line 1305 "parse.y"
   {
 		        yyVal = new Integer(1); /*XXX (NODE*)1;*/
 		    }
   break;
 case 294:
-					// line 1350 "parse.y"
+					// line 1309 "parse.y"
   {
 		        yyVal = new Integer(1); /*XXX (NODE*)1;*/
 		    }
   break;
 case 295:
-					// line 1354 "parse.y"
+					// line 1313 "parse.y"
   {
 			yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 296:
-					// line 1359 "parse.y"
+					// line 1318 "parse.y"
   {
 		        yyVal = ph.dyna_push();
 		    }
   break;
 case 297:
-					// line 1365 "parse.y"
+					// line 1324 "parse.y"
   {
 			    yyVal = nf.newIter(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((NODE)yyVals[-2+yyTop])!=null?((NODE)yyVals[-2+yyTop]):((NODE)yyVals[-1+yyTop]));
@@ -1905,7 +1864,7 @@ case 297:
 		    }
   break;
 case 298:
-					// line 1372 "parse.y"
+					// line 1331 "parse.y"
   {
 			    if (((NODE)yyVals[-1+yyTop]) != null && ((NODE)yyVals[-1+yyTop]).nd_type() == NODE.NODE_BLOCK_PASS) {
 			        ph.rb_compile_error("both block arg and actual block given");
@@ -1916,28 +1875,28 @@ case 298:
 		    }
   break;
 case 299:
-					// line 1381 "parse.y"
+					// line 1340 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 300:
-					// line 1386 "parse.y"
+					// line 1345 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 301:
-					// line 1392 "parse.y"
+					// line 1351 "parse.y"
   {
 			    yyVal = ph.new_fcall(((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		        ph.fixpos(yyVal, ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 302:
-					// line 1397 "parse.y"
+					// line 1356 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
@@ -1945,7 +1904,7 @@ case 302:
 		    }
   break;
 case 303:
-					// line 1403 "parse.y"
+					// line 1362 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-3+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
@@ -1953,14 +1912,14 @@ case 303:
 		    }
   break;
 case 304:
-					// line 1409 "parse.y"
+					// line 1368 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[-2+yyTop]));
 			    yyVal = ph.new_call(((NODE)yyVals[-2+yyTop]), ((RubyId)yyVals[0+yyTop]), null);
 		    }
   break;
 case 305:
-					// line 1414 "parse.y"
+					// line 1373 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle() && !ph.isInDefined())
 			        yyerror("super called outside of method");
@@ -1968,7 +1927,7 @@ case 305:
 		    }
   break;
 case 306:
-					// line 1420 "parse.y"
+					// line 1379 "parse.y"
   {
 			    if (!ph.isCompileForEval() && !ph.isInDef() && !ph.isInSingle() && !ph.isInDefined())
 			        yyerror("super called outside of method");
@@ -1976,13 +1935,13 @@ case 306:
 		    }
   break;
 case 307:
-					// line 1427 "parse.y"
+					// line 1386 "parse.y"
   {
 		        yyVal = ph.dyna_push();
 		    }
   break;
 case 308:
-					// line 1432 "parse.y"
+					// line 1391 "parse.y"
   {
 			    yyVal = nf.newIter(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((NODE)yyVals[-1+yyTop]));
@@ -1990,13 +1949,13 @@ case 308:
 		    }
   break;
 case 309:
-					// line 1438 "parse.y"
+					// line 1397 "parse.y"
   {
 		        yyVal = ph.dyna_push();
 		    }
   break;
 case 310:
-					// line 1443 "parse.y"
+					// line 1402 "parse.y"
   {
 			    yyVal = nf.newIter(((NODE)yyVals[-2+yyTop]), null, ((NODE)yyVals[-1+yyTop]));
 		        ph.fixpos(yyVal, ((NODE)yyVals[-1+yyTop]));
@@ -2004,33 +1963,33 @@ case 310:
 		    }
   break;
 case 311:
-					// line 1452 "parse.y"
+					// line 1411 "parse.y"
   {
 			    yyVal = nf.newWhen(((NODE)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 313:
-					// line 1458 "parse.y"
+					// line 1417 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = ph.list_append(((NODE)yyVals[-3+yyTop]), nf.newWhen(((NODE)yyVals[0+yyTop]), null, null));
 		    }
   break;
 case 314:
-					// line 1463 "parse.y"
+					// line 1422 "parse.y"
   {
 			    ph.value_expr(((NODE)yyVals[0+yyTop]));
 			    yyVal = nf.newList(nf.newWhen(((NODE)yyVals[0+yyTop]), null, null));
 		    }
   break;
 case 319:
-					// line 1475 "parse.y"
+					// line 1434 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 321:
-					// line 1483 "parse.y"
+					// line 1442 "parse.y"
   {
 		        if (((NODE)yyVals[-3+yyTop]) != null) {
 		            yyVals[-3+yyTop] = ph.node_assign(((NODE)yyVals[-3+yyTop]), nf.newGVar(ruby.intern("$!")));
@@ -2041,7 +2000,7 @@ case 321:
 		    }
   break;
 case 324:
-					// line 1495 "parse.y"
+					// line 1454 "parse.y"
   {
 			    if (((NODE)yyVals[0+yyTop]) != null)
 			        yyVal = ((NODE)yyVals[0+yyTop]);
@@ -2051,19 +2010,19 @@ case 324:
 		    }
   break;
 case 326:
-					// line 1505 "parse.y"
+					// line 1464 "parse.y"
   {
 			    yyVal = ((RubyId)yyVals[0+yyTop]).toSymbol();
 		    }
   break;
 case 328:
-					// line 1511 "parse.y"
+					// line 1470 "parse.y"
   {
 			    yyVal = nf.newStr(((VALUE)yyVals[0+yyTop]));
 		    }
   break;
 case 330:
-					// line 1516 "parse.y"
+					// line 1475 "parse.y"
   {
 		        if (((NODE)yyVals[-1+yyTop]).nd_type() == NODE.NODE_DSTR) {
 			        ph.list_append(((NODE)yyVals[-1+yyTop]), nf.newStr(((VALUE)yyVals[0+yyTop])));
@@ -2074,7 +2033,7 @@ case 330:
 		    }
   break;
 case 331:
-					// line 1525 "parse.y"
+					// line 1484 "parse.y"
   {
 		        if (((NODE)yyVals[-1+yyTop]).nd_type() == NODE.NODE_STR) {
 			        yyVal = nf.newDStr(((NODE)yyVals[-1+yyTop]).nd_lit());
@@ -2087,157 +2046,157 @@ case 331:
 		    }
   break;
 case 332:
-					// line 1537 "parse.y"
+					// line 1496 "parse.y"
   {
 		        ph.setLexState(LexState.EXPR_END);
 			    yyVal = ((RubyId)yyVals[0+yyTop]);
 		    }
   break;
 case 344:
-					// line 1555 "parse.y"
+					// line 1514 "parse.y"
   {yyVal = ph.newId(kNIL);}
   break;
 case 345:
-					// line 1556 "parse.y"
+					// line 1515 "parse.y"
   {yyVal = ph.newId(kSELF);}
   break;
 case 346:
-					// line 1557 "parse.y"
+					// line 1516 "parse.y"
   {yyVal = ph.newId(kTRUE);}
   break;
 case 347:
-					// line 1558 "parse.y"
+					// line 1517 "parse.y"
   {yyVal = ph.newId(kFALSE);}
   break;
 case 348:
-					// line 1559 "parse.y"
+					// line 1518 "parse.y"
   {yyVal = ph.newId(k__FILE__);}
   break;
 case 349:
-					// line 1560 "parse.y"
+					// line 1519 "parse.y"
   {yyVal = ph.newId(k__LINE__);}
   break;
 case 350:
-					// line 1563 "parse.y"
+					// line 1522 "parse.y"
   {
 			    yyVal = ph.gettable(((RubyId)yyVals[0+yyTop]));
 		    }
   break;
 case 353:
-					// line 1571 "parse.y"
+					// line 1530 "parse.y"
   {
 			    yyVal = null;
 		    }
   break;
 case 354:
-					// line 1575 "parse.y"
+					// line 1534 "parse.y"
   {
 			    ph.setLexState(LexState.EXPR_BEG);
 		    }
   break;
 case 355:
-					// line 1579 "parse.y"
+					// line 1538 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 356:
-					// line 1582 "parse.y"
+					// line 1541 "parse.y"
   {yyerrok(); yyVal = null;}
   break;
 case 357:
-					// line 1585 "parse.y"
+					// line 1544 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-2+yyTop]);
 			    ph.setLexState(LexState.EXPR_BEG);
 		    }
   break;
 case 358:
-					// line 1590 "parse.y"
+					// line 1549 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 359:
-					// line 1595 "parse.y"
+					// line 1554 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-5+yyTop]), ((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop])), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 360:
-					// line 1599 "parse.y"
+					// line 1558 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), ((NODE)yyVals[-1+yyTop]), new Integer(-1)), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 361:
-					// line 1603 "parse.y"
+					// line 1562 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-3+yyTop]), null, ((RubyId)yyVals[-1+yyTop])), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 362:
-					// line 1607 "parse.y"
+					// line 1566 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(((Integer)yyVals[-1+yyTop]), null, new Integer(-1)), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 363:
-					// line 1611 "parse.y"
+					// line 1570 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, ((NODE)yyVals[-3+yyTop]), ((RubyId)yyVals[-1+yyTop])), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 364:
-					// line 1615 "parse.y"
+					// line 1574 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, ((NODE)yyVals[-1+yyTop]), new Integer(-1)), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 365:
-					// line 1619 "parse.y"
+					// line 1578 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, null, ((RubyId)yyVals[-1+yyTop])), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 366:
-					// line 1623 "parse.y"
+					// line 1582 "parse.y"
   {
 			    yyVal = ph.block_append(nf.newArgs(null, null, new Integer(-1)), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 367:
-					// line 1627 "parse.y"
+					// line 1586 "parse.y"
   {
 			    yyVal = nf.newArgs(null, null, new Integer(-1));
 		    }
   break;
 case 368:
-					// line 1632 "parse.y"
+					// line 1591 "parse.y"
   {
 			    yyerror("formal argument cannot be a constant");
 		    }
   break;
 case 369:
-					// line 1636 "parse.y"
+					// line 1595 "parse.y"
   {
                 yyerror("formal argument cannot be an instance variable");
 		    }
   break;
 case 370:
-					// line 1640 "parse.y"
+					// line 1599 "parse.y"
   {
                 yyerror("formal argument cannot be a global variable");
 		    }
   break;
 case 371:
-					// line 1644 "parse.y"
+					// line 1603 "parse.y"
   {
                 yyerror("formal argument cannot be a class variable");
 		    }
   break;
 case 372:
-					// line 1648 "parse.y"
+					// line 1607 "parse.y"
   {
 			    if (!((RubyId)yyVals[0+yyTop]).is_local_id())
 			        yyerror("formal argument must be local variable");
@@ -2248,13 +2207,13 @@ case 372:
 		    }
   break;
 case 374:
-					// line 1659 "parse.y"
+					// line 1618 "parse.y"
   {
 			    yyVal = new Integer(((Integer)yyVal).intValue() + 1);
 		    }
   break;
 case 375:
-					// line 1664 "parse.y"
+					// line 1623 "parse.y"
   {
 			    if (!((RubyId)yyVals[-2+yyTop]).is_local_id())
 			        yyerror("formal argument must be local variable");
@@ -2264,20 +2223,20 @@ case 375:
 		    }
   break;
 case 376:
-					// line 1673 "parse.y"
+					// line 1632 "parse.y"
   {
 			    yyVal = nf.newBlock(((NODE)yyVals[0+yyTop]));
 			    ((NODE)yyVal).nd_end(((NODE)yyVal));
 		    }
   break;
 case 377:
-					// line 1678 "parse.y"
+					// line 1637 "parse.y"
   {
 			    yyVal = ph.block_append(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 378:
-					// line 1683 "parse.y"
+					// line 1642 "parse.y"
   {
 			    if (!((RubyId)yyVals[0+yyTop]).is_local_id())
 			        yyerror("rest argument must be local variable");
@@ -2287,13 +2246,13 @@ case 378:
 		    }
   break;
 case 379:
-					// line 1691 "parse.y"
+					// line 1650 "parse.y"
   {
 			    yyVal = new Integer(-2);
 		    }
   break;
 case 380:
-					// line 1696 "parse.y"
+					// line 1655 "parse.y"
   {
 			    if (!((RubyId)yyVals[0+yyTop]).is_local_id())
 			        yyerror("block argument must be local variable");
@@ -2303,13 +2262,13 @@ case 380:
 		    }
   break;
 case 381:
-					// line 1705 "parse.y"
+					// line 1664 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[0+yyTop]);
 		    }
   break;
 case 383:
-					// line 1711 "parse.y"
+					// line 1670 "parse.y"
   {
 			    if (((NODE)yyVals[0+yyTop]).nd_type() == NODE.NODE_SELF) {
 			        yyVal = nf.newSelf();
@@ -2319,11 +2278,11 @@ case 383:
 		    }
   break;
 case 384:
-					// line 1718 "parse.y"
+					// line 1677 "parse.y"
   {ph.setLexState(LexState.EXPR_BEG);}
   break;
 case 385:
-					// line 1719 "parse.y"
+					// line 1678 "parse.y"
   {
 			    switch (((NODE)yyVals[-2+yyTop]).nd_type()) {
 			        case NODE.NODE_STR:
@@ -2342,13 +2301,13 @@ case 385:
 		    }
   break;
 case 387:
-					// line 1738 "parse.y"
+					// line 1697 "parse.y"
   {
 			    yyVal = ((NODE)yyVals[-1+yyTop]);
 		    }
   break;
 case 388:
-					// line 1742 "parse.y"
+					// line 1701 "parse.y"
   {
 			    if (((NODE)yyVals[-1+yyTop]).nd_alen()%2 != 0) {
 			        yyerror("odd number list for Hash");
@@ -2357,32 +2316,32 @@ case 388:
 		    }
   break;
 case 390:
-					// line 1751 "parse.y"
+					// line 1710 "parse.y"
   {
 			    yyVal = ph.list_concat(((NODE)yyVals[-2+yyTop]), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 391:
-					// line 1756 "parse.y"
+					// line 1715 "parse.y"
   {
 			    yyVal = ph.list_append(nf.newList(((NODE)yyVals[-2+yyTop])), ((NODE)yyVals[0+yyTop]));
 		    }
   break;
 case 411:
-					// line 1786 "parse.y"
+					// line 1745 "parse.y"
   {yyerrok();}
   break;
 case 414:
-					// line 1790 "parse.y"
+					// line 1749 "parse.y"
   {yyerrok();}
   break;
 case 415:
-					// line 1793 "parse.y"
+					// line 1752 "parse.y"
   {
 		        yyVal = null; /*XXX 0;*/
 		    }
   break;
-					// line 2410 "-"
+					// line 2369 "-"
         }
         yyTop -= YyLenClass.yyLen[yyN];
         yyState = yyStates[yyTop];
@@ -2829,40 +2788,19 @@ case 415:
   } /* End of class YyNameClass */
 
 
-					// line 1797 "parse.y"
-
+					// line 1756 "parse.y"
 
     // XXX +++
     // Helper Methods
     
     void yyerrok() {}
     
-    private kwtable rb_reserved_word(String w, int len) {
-        return kwtable.rb_reserved_word(w, len);
-    }
-        
-    private RubyFixnum rb_cstr2inum(String s, int radix) {
-        //XXX no support for _ or leading and trailing spaces
-        return RubyFixnum.m_newFixnum(ruby, Integer.parseInt(s, radix));
-    }
-    
-    private RubyRegexp rb_reg_new(String s, int len, int options) {
-        return RubyRegexp.m_newRegexp(ruby, RubyString.m_newString(ruby, s, len), options);
-    }
+    // XXX ---
     
     // -----------------------------------------------------------------------
     // scanner stuff
     // -----------------------------------------------------------------------
 
-    //XXX yyInput implementation
-    private int token = 0;
-    //XXX yyInput END
-
-    private String lex_curline; // current line
-    //private int lex_pbeg;     //XXX not needed
-    private int lex_p;          // pointer in current line
-    private int lex_pend;       // pointer to end of line
-    
     /*
      *  int yyerror(String msg) {
      *  char *p, *pe, *buf;
@@ -2899,40 +2837,12 @@ case 415:
      *  }
      */
     
-    // beginning of the next line
-    private int lex_gets_ptr;
-    private RubyObject lex_input;    // non-nil if File
-    private RubyObject lex_lastline;
-
-    /**
-     *  true, if scanner source is a file and false, if lex_get_str() shall be
-     *  used.
-     */
-    private boolean lex_file_io;
-
-    // deal with tokens..................
-
-    private StringBuffer tokenbuf;
-
-    private Object yyVal;
-
-    public boolean advance() throws java.io.IOException {
-        return (token = yylex()) != 0;
-    }
-
-    public int token() {
-        return token;
-    }
-
-    public Object value() {
-        return yyVal;
-    }
-
     public NODE compileString(String f, RubyObject s, int line) {
-        lex_file_io = false;
-        lex_gets_ptr = 0;
-        lex_input = s;
-        lex_p = lex_pend = 0;
+        rs.setLexFileIo(false);
+        rs.setLexGetsPtr(0);
+        rs.setLexInput(s);
+        rs.setLexP(0);
+        rs.setLexPEnd(0);
         ruby.setSourceLine(line - 1);
 
         ph.setCompileForEval(ruby.getInEval());
@@ -2945,2126 +2855,27 @@ case 415:
     }
 
     public NODE compileFile(String f, RubyObject file, int start) {
-        lex_file_io = true;
-        lex_input = file;
-        lex_p = lex_pend = 0;
+        rs.setLexFileIo(true);
+        rs.setLexInput(file);
+        rs.setLexP(0);
+        rs.setLexPEnd(0);
         ruby.setSourceLine(start - 1);
 
         return yycompile(f, start);
     }
-
-    /**
-     *  Returns true if "c" is a valid identifier character (letter, digit or
-     *  underscore)
-     *
-     *@param  ch  Description of Parameter
-     *@return     Description of the Returned Value
-     */
-    private boolean is_identchar(int ch) {
-        return Character.isLetterOrDigit((char) ch) || ch == '_';
-    }
-
-    /* gc protect */
-    private RubyObject lex_gets_str(RubyObject _s) {
-        String s = ((RubyString)_s).getValue();
-        if (lex_gets_ptr != 0) {
-            if (s.length() == lex_gets_ptr) {
-                return ruby.getNil();
-            }
-            s = s.substring(lex_gets_ptr);
-        }
-        int end = 0;
-        while (end < s.length()) {
-            if (s.charAt(end++) == '\n') {
-                break;
-            }
-        }
-        lex_gets_ptr += end;
-        return RubyString.m_newString(ruby, s, end);
-    }
-
-    /**
-     *  Returns in next line either from file or from a string.
-     *
-     *@return    Description of the Returned Value
-     */
-    private RubyObject lex_getline() {
-        RubyObject line;
-        if (lex_file_io) {
-            // uses rb_io_gets(lex_input)
-            throw new Error();
-        } else {
-            line = lex_gets_str(lex_input);
-        }
-        if (ph.getRubyDebugLines() != null && !line.isNil()) {
-            ph.getRubyDebugLines().m_push(line);
-        }
-        return line;
-    }
-
+    
     private void init_for_scanner(String s) {
-        lex_file_io = false;
-        lex_gets_ptr = 0;
-        lex_input = RubyString.m_newString(ruby, s);
-        lex_p = lex_pend = 0;
+        rs.setLexFileIo(false);
+        rs.setLexGetsPtr(0);
+        rs.setLexInput(RubyString.m_newString(ruby, s));
+        rs.setLexP(0);
+        rs.setLexPEnd(0);
         ruby.setSourceLine(0);
         ph.setCompileForEval(ruby.getInEval());
         ph.setRubyEndSeen(false); // is there an __end__{} statement?
         ph.setHeredocEnd(0);
         ph.setRubyInCompile(true);
     }
-
-    /**
-     *  Returns the next character from input
-     *
-     *@return    Description of the Returned Value
-     */
-    private int nextc() {
-        int c;
-
-        if (lex_p == lex_pend) {
-            if (lex_input != null) {
-                RubyObject v = lex_getline();
-
-                if (v.isNil()) {
-                    return -1;
-                }
-                if (ph.getHeredocEnd() > 0) {
-                    ruby.setSourceLine(ph.getHeredocEnd());
-                    ph.setHeredocEnd(0);
-                }
-                ruby.setSourceLine(ruby.getSourceLine() + 1);
-                lex_curline = ((RubyString)v).getValue();
-                lex_p = 0;
-                lex_pend = lex_curline.length();
-                if (lex_curline.startsWith("__END__") && (lex_pend == 7 || lex_curline.charAt(7) == '\n' || lex_curline.charAt(7) == '\r')) {
-                    ph.setRubyEndSeen(true);
-                    lex_lastline = null;
-                    return -1;
-                }
-                lex_lastline = v;
-            } else {
-                lex_lastline = null;
-                return -1;
-            }
-        }
-        c = lex_curline.charAt(lex_p++);
-        if (c == '\r' && lex_p <= lex_pend && lex_curline.charAt(lex_p) == '\n') {
-            lex_p++;
-            c = '\n';
-        }
-
-        return c;
-    }
-
-    /**
-     *  Puts back the given character so that nextc() will answer it next time
-     *  it'll be called.
-     *
-     *@param  c  Description of Parameter
-     */
-    private void pushback(int c) {
-        if (c == -1) {
-            return;
-        }
-        lex_p--;
-    }
-
-    /**
-     *  Returns true if the given character is the current one in the input
-     *  stream
-     *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
-     */
-    private boolean peek(int c) {
-        return lex_p != lex_pend && c == lex_curline.charAt(lex_p);
-    }
-
-    private String tok() {
-        return tokenbuf.toString();
-    }
-
-    private int toklen() {
-        return tokenbuf.length();
-    }
-
-    private void tokfix() { }
-
-    private char toklast() {
-        return tokenbuf.charAt(toklen() - 1);
-    }
-
-    private void newtok() {
-        tokenbuf = new StringBuffer(60);
-    }
-
-    private void tokadd(int c) {
-        tokenbuf.append((char) c);
-    }
-
-
-    // yylex helpers...................
-
-    private int read_escape() {
-        int c;
-
-        switch (c = nextc()) {
-            case '\\': // Backslash
-                return c;
-            case 'n':  // newline
-                return '\n';
-            case 't':  // horizontal tab
-                return '\t';
-            case 'r':  // carriage-return
-                return '\r';
-            case 'f':  // form-feed
-                return '\f';
-            case 'v':  // vertical tab
-                return '\013';
-            case 'a':  // alarm(bell)
-                return '\007';
-            case 'e':  // escape
-                return '\033';
-            case '0':
-            case '1':
-            case '2':
-            case '3': // octal constant
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            {
-                int cc = 0;
-
-                pushback(c);
-                for (int i = 0; i < 3; i++) {
-                    c = nextc();
-                    if (c == -1) {
-                        // goto eof
-                        yyerror("Invalid escape character syntax");
-                        return '\0';
-                    }
-                    if (c < '0' || '7' < c) {
-                        pushback(c);
-                        break;
-                    }
-                    cc = cc * 8 + c - '0';
-                }
-                c = cc;
-            }
-                return c;
-            case 'x':
-            {
-                /*
-                 *  hex constant
-                 */
-                int[] numlen = new int[1];
-                c = (int) scan_hex(lex_curline, lex_p, 2, numlen);
-                lex_p += numlen[0];
-            }
-                return c;
-            case 'b':
-                /*
-                 *  backspace
-                 */
-                return '\010';
-            case 's':
-                /*
-                 *  space
-                 */
-                return ' ';
-            case 'M':
-                if ((c = nextc()) != '-') {
-                    yyerror("Invalid escape character syntax");
-                    pushback(c);
-                    return '\0';
-                }
-                if ((c = nextc()) == '\\') {
-                    return read_escape() | 0x80;
-                } else if (c == -1) {
-                    // goto eof
-                    yyerror("Invalid escape character syntax");
-                    return '\0';
-                } else {
-                    return ((c & 0xff) | 0x80);
-                }
-
-            case 'C':
-                if ((c = nextc()) != '-') {
-                    yyerror("Invalid escape character syntax");
-                    pushback(c);
-                    return '\0';
-                }
-            case 'c':
-                if ((c = nextc()) == '\\') {
-                    c = read_escape();
-                } else if (c == '?') {
-                    return 0177;
-                } else if (c == -1) {
-                    // goto eof
-                    yyerror("Invalid escape character syntax");
-                    return '\0';
-                }
-                return c & 0x9f;
-            case -1:
-                // eof:
-                yyerror("Invalid escape character syntax");
-                return '\0';
-            default:
-                return c;
-        }
-    }
-
-    private int tokadd_escape(int term) {
-        /*
-         *  FIX 1.6.5
-         */
-        int c;
-
-        switch (c = nextc()) {
-            case '\n':
-                return 0;
-            /*
-             *  just ignore
-             */
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            /*
-             *  octal constant
-             */
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            {
-                int i;
-
-                tokadd('\\');
-                tokadd(c);
-                for (i = 0; i < 2; i++) {
-                    c = nextc();
-                    if (c == -1) {
-                        // goto eof;
-                        yyerror("Invalid escape character syntax");
-                        return -1;
-                        // goto eof; end
-                    }
-
-                    if (c < '0' || '7' < c) {
-                        pushback(c);
-                        break;
-                    }
-                    tokadd(c);
-                }
-            }
-                return 0;
-            case 'x':
-            {
-                /*
-                 *  hex constant
-                 */
-                tokadd('\\');
-                tokadd(c);
-
-                int[] numlen = new int[1];
-                scan_hex(lex_curline, lex_p, 2, numlen);
-                while (numlen[0]-- != 0) {
-                    tokadd(nextc());
-                }
-            }
-                return 0;
-            case 'M':
-                if ((c = nextc()) != '-') {
-                    yyerror("Invalid escape character syntax");
-                    pushback(c);
-                    return 0;
-                }
-                tokadd('\\');
-                tokadd('M');
-                tokadd('-');
-                //goto escaped;
-                if ((c = nextc()) == '\\') {
-                    return tokadd_escape(term);
-                    /*
-                     *  FIX 1.6.5
-                     */
-                } else if (c == -1) {
-                    // goto eof;
-                    yyerror("Invalid escape character syntax");
-                    return -1;
-                    // goto eof; end
-                }
-                tokadd(c);
-                return 0;
-            case 'C':
-                if ((c = nextc()) != '-') {
-                    yyerror("Invalid escape character syntax");
-                    pushback(c);
-                    return 0;
-                }
-                tokadd('\\');
-                tokadd('C');
-                tokadd('-');
-                //goto escaped;
-                if ((c = nextc()) == '\\') {
-                    return tokadd_escape(term);
-                    /*
-                     *  FIX 1.6.5
-                     */
-                } else if (c == -1) {
-                    // goto eof;
-                    yyerror("Invalid escape character syntax");
-                    return -1;
-                    // goto eof; end
-                }
-                tokadd(c);
-                return 0;
-            case 'c':
-                tokadd('\\');
-                tokadd('c');
-                //escaped:
-                if ((c = nextc()) == '\\') {
-                    return tokadd_escape(term);
-                    /*
-                     *  FIX 1.6.5
-                     */
-                } else if (c == -1) {
-                    // goto eof;
-                    yyerror("Invalid escape character syntax");
-                    return -1;
-                    // goto eof; end
-                }
-                tokadd(c);
-                return 0;
-            case -1:
-                // eof:
-                yyerror("Invalid escape character syntax");
-                return -1;
-            default:
-                if (c != term) {
-                    /*
-                     *  FIX 1.6.5
-                     */
-                    tokadd('\\');
-                }
-                /*
-                 *  FIX 1.6.5
-                 */
-                tokadd(c);
-        }
-        return 0;
-    }
-
-    private int parse_regx(int term, int paren) {
-        int c;
-        char kcode = 0;
-        boolean once = false;
-        int nest = 0;
-        int options = 0;
-        int re_start = ruby.getSourceLine();
-        NODE list = null;
-
-        newtok();
-        regx_end :
-        while ((c = nextc()) != -1) {
-            if (c == term && nest == 0) {
-                break regx_end;
-            }
-
-            switch (c) {
-                case '#':
-                    list = str_extend(list, term);
-                    if (list == NODE.MINUS_ONE) {
-                        return 0;
-                    }
-                    continue;
-                case '\\':
-                    if (tokadd_escape(term) < 0) {
-                        /*
-                         *  FIX 1.6.5
-                         */
-                        return 0;
-                    }
-                    continue;
-                case -1:
-                    //goto unterminated;
-                    ruby.setSourceLine(re_start);
-                    ph.rb_compile_error("unterminated regexp meets end of file");
-                    return 0;
-                default:
-                    if (paren != 0) {
-                        if (c == paren) {
-                            nest++;
-                        }
-                        if (c == term) {
-                            nest--;
-                        }
-                    }
-                    /*
-                     *  if (ismbchar(c)) {
-                     *  int i, len = mbclen(c)-1;
-                     *  for (i = 0; i < len; i++) {
-                     *  tokadd(c);
-                     *  c = nextc();
-                     *  }
-                     *  }
-                     */
-                    break;
-            }
-            tokadd(c);
-        }
-
-        end_options :
-        for (; ; ) {
-            switch (c = nextc()) {
-                case 'i':
-                    options |= ReOptions.RE_OPTION_IGNORECASE;
-                    break;
-                case 'x':
-                    options |= ReOptions.RE_OPTION_EXTENDED;
-                    break;
-                case 'p': // /p is obsolete
-                    ph.rb_warn("/p option is obsolete; use /m\n\tnote: /m does not change ^, $ behavior");
-                    options |= ReOptions.RE_OPTION_POSIXLINE;
-                    break;
-                case 'm':
-                    options |= ReOptions.RE_OPTION_MULTILINE;
-                    break;
-                case 'o':
-                    once = true;
-                    break;
-                case 'n':
-                    kcode = 16;
-                    break;
-                case 'e':
-                    kcode = 32;
-                    break;
-                case 's':
-                    kcode = 48;
-                    break;
-                case 'u':
-                    kcode = 64;
-                    break;
-                default:
-                    pushback(c);
-                    break end_options;
-            }
-        }
-
-        tokfix();
-        ph.setLexState(LexState.EXPR_END);
-        if (list != null) {
-            list.nd_set_line(re_start);
-            if (toklen() > 0) {
-                RubyObject ss = RubyString.m_newString(ruby, tok(), toklen());
-                ph.list_append(list, nf.newStr(ss));
-            }
-            list.nd_set_type(once ? NODE.NODE_DREGX_ONCE : NODE.NODE_DREGX);
-            list.nd_cflag(ph.newId(options | kcode));
-            yyVal = (NODE)list;
-            return Token.tDREGEXP;
-        } else {
-            yyVal = rb_reg_new(tok(), toklen(), options | kcode);
-            return Token.tREGEXP;
-        }
-        //unterminated:
-        //ruby_sourceline = re_start;
-        //rb_compile_error("unterminated regexp meets end of file");
-        //return 0;
-    }
-
-    private int parse_string(int func, int term, int paren) {
-        int c;
-        NODE list = null;
-        int strstart;
-        int nest = 0;
-
-        if (func == '\'') {
-            return parse_qstring(term, paren);
-        }
-        if (func == 0) {
-            // read 1 line for heredoc
-            // -1 for chomp
-            yyVal = RubyString.m_newString(ruby, lex_curline, lex_pend - 1);
-            lex_p = lex_pend;
-            return Token.tSTRING;
-        }
-        strstart = ruby.getSourceLine();
-        newtok();
-        while ((c = nextc()) != term || nest > 0) {
-            if (c == -1) {
-                //unterm_str:
-                ruby.setSourceLine(strstart);
-                ph.rb_compile_error("unterminated string meets end of file");
-                return 0;
-            }
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  tokadd(c);
-             *  c = nextc();
-             *  }
-             *  }
-             *  else
-             */
-                    if (c == '#') {
-                list = str_extend(list, term);
-                if (list == NODE.MINUS_ONE) {
-                    //goto unterm_str;
-                    ruby.setSourceLine(strstart);
-                    ph.rb_compile_error("unterminated string meets end of file");
-                    return 0;
-                }
-                continue;
-            } else if (c == '\\') {
-                c = nextc();
-                if (c == '\n') {
-                    continue;
-                }
-                if (c == term) {
-                    tokadd(c);
-                } else {
-                    pushback(c);
-                    if (func != '"') {
-                        tokadd('\\');
-                    }
-                    tokadd(read_escape());
-                }
-                continue;
-            }
-            if (paren != 0) {
-                if (c == paren) {
-                    nest++;
-                }
-                if (c == term && nest-- == 0) {
-                    break;
-                }
-            }
-            tokadd(c);
-        }
-
-        tokfix();
-        ph.setLexState(LexState.EXPR_END);
-
-        if (list != null) {
-            list.nd_set_line(strstart);
-            if (toklen() > 0) {
-                RubyObject ss = RubyString.m_newString(ruby, tok(), toklen());
-                ph.list_append(list, nf.newStr(ss));
-            }
-            yyVal = (NODE) list;
-            if (func == '`') {
-                list.nd_set_type(NODE.NODE_DXSTR);
-                return Token.tDXSTRING;
-            } else {
-                return Token.tDSTRING;
-            }
-        } else {
-            yyVal = RubyString.m_newString(ruby, tok(), toklen());
-            return (func == '`') ? Token.tXSTRING : Token.tSTRING;
-        }
-    }
-
-    private int parse_qstring(int term, int paren) {
-        int strstart;
-        int c;
-        int nest = 0;
-
-        strstart = ruby.getSourceLine();
-        newtok();
-        while ((c = nextc()) != term || nest > 0) {
-            if (c == -1) {
-                ruby.setSourceLine(strstart);
-                ph.rb_compile_error("unterminated string meets end of file");
-                return 0;
-            }
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  tokadd(c);
-             *  c = nextc();
-             *  }
-             *  }
-             *  else
-             */
-                    if (c == '\\') {
-                c = nextc();
-                switch (c) {
-                    case '\n':
-                        continue;
-                    case '\\':
-                        c = '\\';
-                        break;
-                    default:
-                        // fall through
-                        if (c == term || (paren != 0 && c == paren)) {
-                            tokadd(c);
-                            continue;
-                        }
-                        tokadd('\\');
-                }
-            }
-            if (paren != 0) {
-                if (c == paren) {
-                    nest++;
-                }
-                if (c == term && nest-- == 0) {
-                    break;
-                }
-            }
-            tokadd(c);
-        }
-
-        tokfix();
-        yyVal = RubyString.m_newString(ruby, tok(), toklen());
-        ph.setLexState(LexState.EXPR_END);
-        return Token.tSTRING;
-    }
-
-    private int parse_quotedwords(int term, int paren) {
-        NODE qwords = null;
-        int strstart;
-        int c;
-        int nest = 0;
-
-        strstart = ruby.getSourceLine();
-        newtok();
-
-        c = nextc();
-        while (ISSPACE(c)) {
-            c = nextc();
-        }
-        /*
-         *  skip preceding spaces
-         */
-        pushback(c);
-        while ((c = nextc()) != term || nest > 0) {
-            if (c == -1) {
-                ruby.setSourceLine(strstart);
-                ph.rb_compile_error("unterminated string meets end of file");
-                return 0;
-            }
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  tokadd(c);
-             *  c = nextc();
-             *  }
-             *  }
-             *  else
-             */
-                    if (c == '\\') {
-                c = nextc();
-                switch (c) {
-                    case '\n':
-                        continue;
-                    case '\\':
-                        c = '\\';
-                        break;
-                    default:
-                        if (c == term || (paren != 0 && c == paren)) {
-                            tokadd(c);
-                            continue;
-                        }
-                        if (!ISSPACE(c)) {
-                            tokadd('\\');
-                        }
-                        break;
-                }
-            } else if (ISSPACE(c)) {
-                NODE str;
-
-                tokfix();
-                str = nf.newStr(RubyString.m_newString(ruby, tok(), toklen()));
-                newtok();
-                if (qwords == null) {
-                    qwords = nf.newList(str);
-                } else {
-                    ph.list_append(qwords, str);
-                }
-                c = nextc();
-                while (ISSPACE(c)) {
-                    c = nextc();
-                }
-                // skip continuous spaces
-                pushback(c);
-                continue;
-            }
-            if (paren != 0) {
-                if (c == paren) {
-                    nest++;
-                }
-                if (c == term && nest-- == 0) {
-                    break;
-                }
-            }
-            tokadd(c);
-        }
-
-        tokfix();
-        if (toklen() > 0) {
-            NODE str = nf.newStr(RubyString.m_newString(ruby, tok(), toklen()));
-            if (qwords == null) {
-                qwords = nf.newList(str);
-            } else {
-                ph.list_append(qwords, str);
-            }
-        }
-        if (qwords == null) {
-            qwords = nf.newZArray();
-        }
-        yyVal = (NODE) qwords;
-        ph.setLexState(LexState.EXPR_END);
-        return Token.tDSTRING;
-    }
-
-    private int here_document(int term, int indent) {
-        throw new Error("not supported yet");
-    }
-
-    /*
-     *  private int here_document(int term, int indent) {
-     *  int c;
-     *  /char *eos, *p;
-     *  int len;
-     *  VALUE str;
-     *  VALUE line = 0;
-     *  VALUE lastline_save;
-     *  int offset_save;
-     *  NODE *list = 0;
-     *  int linesave = ruby_sourceline;
-     *  newtok();
-     *  switch (term) {
-     *  case '\'':
-     *  case '"':
-     *  case '`':
-     *  while ((c = nextc()) != term) {
-     *  tokadd(c);
-     *  }
-     *  if (term == '\'') term = 0;
-     *  break;
-     *  default:
-     *  c = term;
-     *  term = '"';
-     *  if (!is_identchar(c)) {
-     *  rb_warn("use of bare << to mean <<\"\" is deprecated");
-     *  break;
-     *  }
-     *  while (is_identchar(c)) {
-     *  tokadd(c);
-     *  c = nextc();
-     *  }
-     *  pushback(c);
-     *  break;
-     *  }
-     *  tokfix();
-     *  lastline_save = lex_lastline;
-     *  offset_save = lex_p - lex_pbeg;
-     *  eos = strdup(tok());
-     *  len = strlen(eos);
-     *  str = rb_str_new(0,0);
-     *  for (;;) {
-     *  lex_lastline = line = lex_getline();
-     *  if (NIL_P(line)) {
-     *  /error:
-     *  ruby_sourceline = linesave;
-     *  rb_compile_error("can't find string \"%s\" anywhere before EOF", eos);
-     *  free(eos);
-     *  return 0;
-     *  }
-     *  ruby_sourceline++;
-     *  p = RSTRING(line).ptr;
-     *  if (indent) {
-     *  while (*p && (*p == ' ' || *p == '\t')) {
-     *  p++;
-     *  }
-     *  }
-     *  if (strncmp(eos, p, len) == 0) {
-     *  if (p[len] == '\n' || p[len] == '\r')
-     *  break;
-     *  if (len == RSTRING(line).len)
-     *  break;
-     *  }
-     *  lex_pbeg = lex_p = RSTRING(line).ptr;
-     *  lex_pend = lex_p + RSTRING(line).len;
-     *  retry:for(;;) {
-     *  switch (parse_string(term, '\n', '\n')) {
-     *  case tSTRING:
-     *  case tXSTRING:
-     *  rb_str_cat2((VALUE)yyVal, "\n");
-     *  if (!list) {
-     *  rb_str_append(str, (VALUE)yyVal);
-     *  }
-     *  else {
-     *  list_append(list, NEW_STR((VALUE)yyVal));
-     *  }
-     *  break;
-     *  case tDSTRING:
-     *  if (!list) list = NEW_DSTR(str);
-     *  / fall through
-     *  case tDXSTRING:
-     *  if (!list) list = NEW_DXSTR(str);
-     *  list_append((NODE)yyVal, NEW_STR(rb_str_new2("\n")));
-     *  nd_set_type((NODE)yyVal, NODE_STR);
-     *  yyVal = (NODE)NEW_LIST((NODE)yyVal);
-     *  ((NODE)yyVal).nd_next(((NODE)yyVal).nd_head().nd_next());
-     *  list_concat(list, (NODE)yyVal);
-     *  break;
-     *  case 0:
-     *  ruby_sourceline = linesave;
-     *  rb_compile_error("can't find string \"%s\" anywhere before EOF", eos);
-     *  free(eos);
-     *  return 0;
-     *  }
-     *  if (lex_p != lex_pend) {
-     *  continue retry;
-     *  }
-     *  break retry;}
-     *  }
-     *  free(eos);
-     *  lex_lastline = lastline_save;
-     *  lex_pbeg = RSTRING(lex_lastline).ptr;
-     *  lex_pend = lex_pbeg + RSTRING(lex_lastline).len;
-     *  lex_p = lex_pbeg + offset_save;
-     *  lex_state = EXPR_END;
-     *  heredoc_end = ruby_sourceline;
-     *  ruby_sourceline = linesave;
-     *  if (list) {
-     *  nd_set_line(list, linesave+1);
-     *  yyVal = (NODE)list;
-     *  }
-     *  switch (term) {
-     *  case '\0':
-     *  case '\'':
-     *  case '"':
-     *  if (list) return tDSTRING;
-     *  yyVal = (VALUE)str;
-     *  return tSTRING;
-     *  case '`':
-     *  if (list) return tDXSTRING;
-     *  yyVal = (VALUE)str;
-     *  return tXSTRING;
-     *  }
-     *  return 0;
-     *  }
-     */
-
-    private void arg_ambiguous() {
-        ph.rb_warning("ambiguous first argument; make sure");
-    }
-
-
-    private boolean IS_ARG() {
-        return ph.getLexState() == LexState.EXPR_ARG;
-    }
-
-
-    /**
-     *  Returns the next token. Also sets yyVal is needed.
-     *
-     *@return    Description of the Returned Value
-     */
-    private int yylex() {
-        int c;
-        int space_seen = 0;
-        // boolean cmd_state;
-        kwtable kw;
-
-        // cmd_state = ph.isCommandStart();
-        // ph.setCommandStart(false);
-        retry :
-        for (; ; ) {
-            switch (c = nextc()) {
-                case '\0': // NUL
-                case '\004': // ^D
-                case '\032': // ^Z
-                case -1: //end of script.
-                    return 0;
-                // white spaces
-                case ' ':
-                case '\t':
-                case '\f':
-                case '\r':
-                case '\013': // '\v'
-                    space_seen++;
-                    continue retry;
-                case '#': // it's a comment
-                    while ((c = nextc()) != '\n') {
-                        if (c == -1) {
-                            return 0;
-                        }
-                    }
-                    // fall through
-                case '\n':
-                    switch (ph.getLexState()) {
-                        case LexState.EXPR_BEG:
-                        case LexState.EXPR_FNAME:
-                        case LexState.EXPR_DOT:
-                            continue retry;
-                        default:
-                            break;
-                    }
-                    // ph.setCommandStart(true);
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return '\n';
-                case '*':
-                    if ((c = nextc()) == '*') {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        if (nextc() == '=') {
-                            yyVal = ph.newId(Token.tPOW);
-                            return Token.tOP_ASGN;
-                        }
-                        pushback(c);
-                        return Token.tPOW;
-                    }
-                    if (c == '=') {
-                        yyVal = ph.newId('*');
-                        ph.setLexState(LexState.EXPR_BEG);
-                        return Token.tOP_ASGN;
-                    }
-                    pushback(c);
-                    if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
-                        ph.rb_warning("`*' interpreted as argument prefix");
-                        c = Token.tSTAR;
-                    } else if (ph.getLexState() == LexState.EXPR_BEG || 
-                               ph.getLexState() == LexState.EXPR_MID) {
-                        c = Token.tSTAR;
-                    } else {
-                        c = '*';
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return c;
-                case '!':
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if ((c = nextc()) == '=') {
-                        return Token.tNEQ;
-                    }
-                    if (c == '~') {
-                        return Token.tNMATCH;
-                    }
-                    pushback(c);
-                    return '!';
-                case '=':
-                    if (lex_p == 1) {
-                        // skip embedded rd document
-                        if (lex_curline.startsWith("=begin") && (lex_pend == 6 || ISSPACE(lex_curline.charAt(6)))) {
-                            for (; ; ) {
-                                lex_p = lex_pend;
-                                c = nextc();
-                                if (c == -1) {
-                                    ph.rb_compile_error("embedded document meets end of file");
-                                    return 0;
-                                }
-                                if (c != '=') {
-                                    continue;
-                                }
-                                if (lex_curline.substring(lex_p, lex_p + 3).equals("end") &&
-                                        (lex_p + 3 == lex_pend || ISSPACE(lex_curline.charAt(lex_p + 3)))) {
-                                    break;
-                                }
-                            }
-                            lex_p = lex_pend;
-                            continue retry;
-                        }
-                    }
-
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if ((c = nextc()) == '=') {
-                        if ((c = nextc()) == '=') {
-                            return Token.tEQQ;
-                        }
-                        pushback(c);
-                        return Token.tEQ;
-                    }
-                    if (c == '~') {
-                        return Token.tMATCH;
-                    } else if (c == '>') {
-                        return Token.tASSOC;
-                    }
-                    pushback(c);
-                    return '=';
-                case '<':
-                    c = nextc();
-                    if (c == '<' && 
-                            ph.getLexState() != LexState.EXPR_END &&
-                            ph.getLexState() != LexState.EXPR_ENDARG &&
-                            ph.getLexState() != LexState.EXPR_CLASS &&
-                            (!IS_ARG() || space_seen != 0)) {
-                        int c2 = nextc();
-                        int indent = 0;
-                        if (c2 == '-') {
-                            indent = 1;
-                            c2 = nextc();
-                        }
-                        if (!ISSPACE(c2) && ("\"'`".indexOf(c2) != -1 || is_identchar(c2))) {
-                            return here_document(c2, indent);
-                        }
-                        pushback(c2);
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if (c == '=') {
-                        if ((c = nextc()) == '>') {
-                            return Token.tCMP;
-                        }
-                        pushback(c);
-                        return Token.tLEQ;
-                    }
-                    if (c == '<') {
-                        if (nextc() == '=') {
-                            yyVal = ph.newId(Token.tLSHFT);
-                            return Token.tOP_ASGN;
-                        }
-                        pushback(c);
-                        return Token.tLSHFT;
-                    }
-                    pushback(c);
-                    return '<';
-                case '>':
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if ((c = nextc()) == '=') {
-                        return Token.tGEQ;
-                    }
-                    if (c == '>') {
-                        if ((c = nextc()) == '=') {
-                            yyVal = ph.newId(Token.tRSHFT);
-                            return Token.tOP_ASGN;
-                        }
-                        pushback(c);
-                        return Token.tRSHFT;
-                    }
-                    pushback(c);
-                    return '>';
-                case '"':
-                    return parse_string(c, c, c);
-                case '`':
-                    if (ph.getLexState() == LexState.EXPR_FNAME) {
-                        return c;
-                    }
-                    if (ph.getLexState() == LexState.EXPR_DOT) {
-                        return c;
-                    }
-                    return parse_string(c, c, c);
-                case '\'':
-                    return parse_qstring(c, 0);
-                case '?':
-                    if (ph.getLexState() == LexState.EXPR_END) {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        return '?';
-                    }
-                    c = nextc();
-                    if (c == -1) { /* FIX 1.6.5 */
-                        ph.rb_compile_error("incomplete character syntax");
-                        return 0;
-                    }
-                    if (IS_ARG() && ISSPACE(c)) {
-                        pushback(c);
-                        ph.setLexState(LexState.EXPR_BEG);
-                        return '?';
-                    }
-                    if (c == '\\') {
-                        c = read_escape();
-                    }
-                    c &= 0xff;
-                    yyVal = RubyFixnum.m_newFixnum(ruby, c);
-                    ph.setLexState(LexState.EXPR_END);
-                    return Token.tINTEGER;
-                case '&':
-                    if ((c = nextc()) == '&') {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        if ((c = nextc()) == '=') {
-                            yyVal = ph.newId(Token.tANDOP);
-                            return Token.tOP_ASGN;
-                        }
-                        pushback(c);
-                        return Token.tANDOP;
-                    } else if (c == '=') {
-                        yyVal = ph.newId('&');
-                        ph.setLexState(LexState.EXPR_BEG);
-                        return Token.tOP_ASGN;
-                    }
-                    pushback(c);
-                    if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
-                        ph.rb_warning("`&' interpeted as argument prefix");
-                        c = Token.tAMPER;
-                    } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                        c = Token.tAMPER;
-                    } else {
-                        c = '&';
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return c;
-                case '|':
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if ((c = nextc()) == '|') {
-                        if ((c = nextc()) == '=') {
-                            yyVal = ph.newId(Token.tOROP);
-                            return Token.tOP_ASGN;
-                        }
-                        pushback(c);
-                        return Token.tOROP;
-                    } else if (c == '=') {
-                        yyVal = ph.newId('|');
-                        return Token.tOP_ASGN;
-                    }
-                    pushback(c);
-                    return '|';
-                case '+':
-                    c = nextc();
-                    if (ph.getLexState() == LexState.EXPR_FNAME || 
-                        ph.getLexState() == LexState.EXPR_DOT) {
-                        if (c == '@') {
-                            return Token.tUPLUS;
-                        }
-                        pushback(c);
-                        return '+';
-                    }
-                    if (c == '=') {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        yyVal = ph.newId('+');
-                        return Token.tOP_ASGN;
-                    }
-                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID ||
-                            (IS_ARG() && space_seen != 0 && !ISSPACE(c))) {
-                        if (IS_ARG()) {
-                            arg_ambiguous();
-                        }
-                        ph.setLexState(LexState.EXPR_BEG);
-                        pushback(c);
-                        if (Character.isDigit((char) c)) {
-                            c = '+';
-                            return start_num(c);
-                        }
-                        return Token.tUPLUS;
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    pushback(c);
-                    return '+';
-                case '-':
-                    c = nextc();
-                    if (ph.getLexState() == LexState.EXPR_FNAME || ph.getLexState() == LexState.EXPR_DOT) {
-                        if (c == '@') {
-                            return Token.tUMINUS;
-                        }
-                        pushback(c);
-                        return '-';
-                    }
-                    if (c == '=') {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        yyVal = ph.newId('-');
-                        return Token.tOP_ASGN;
-                    }
-                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID ||
-                            (IS_ARG() && space_seen != 0 && !ISSPACE(c))) {
-                        if (IS_ARG()) {
-                            arg_ambiguous();
-                        }
-                        ph.setLexState(LexState.EXPR_BEG);
-                        pushback(c);
-                        if (Character.isDigit((char) c)) {
-                            c = '-';
-                            return start_num(c);
-                        }
-                        return Token.tUMINUS;
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    pushback(c);
-                    return '-';
-                case '.':
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if ((c = nextc()) == '.') {
-                        if ((c = nextc()) == '.') {
-                            return Token.tDOT3;
-                        }
-                        pushback(c);
-                        return Token.tDOT2;
-                    }
-                    pushback(c);
-                    if (!Character.isDigit((char) c)) {
-                        ph.setLexState(LexState.EXPR_DOT);
-                        return '.';
-                    }
-                    c = '.';
-                // fall through
-
-                //start_num:
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    return start_num(c);
-                case ']':
-                case '}':
-                    ph.setLexState(LexState.EXPR_END);
-                    return c;
-                case ')':
-                    if (cond_nest > 0) {
-	                    cond_stack >>= 1;
-	                }
-                    ph.setLexState(LexState.EXPR_END);
-                    return c;
-                case ':':
-                    c = nextc();
-                    if (c == ':') {
-                        if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID ||
-                                (IS_ARG() && space_seen != 0)) {
-                            ph.setLexState(LexState.EXPR_BEG);
-                            return Token.tCOLON3;
-                        }
-                        ph.setLexState(LexState.EXPR_DOT);
-                        return Token.tCOLON2;
-                    }
-                    pushback(c);
-                    if (ph.getLexState() == LexState.EXPR_END || ISSPACE(c)) {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        return ':';
-                    }
-                    ph.setLexState(LexState.EXPR_FNAME);
-                    return Token.tSYMBEG;
-                case '/':
-                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                        return parse_regx('/', '/');
-                    }
-                    if ((c = nextc()) == '=') {
-                        ph.setLexState(LexState.EXPR_BEG);
-                        yyVal = ph.newId('/');
-                        return Token.tOP_ASGN;
-                    }
-                    pushback(c);
-                    if (IS_ARG() && space_seen != 0) {
-                        if (!ISSPACE(c)) {
-                            arg_ambiguous();
-                            return parse_regx('/', '/');
-                        }
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return '/';
-                case '^':
-                    ph.setLexState(LexState.EXPR_BEG);
-                    if ((c = nextc()) == '=') {
-                        yyVal = ph.newId('^');
-                        return Token.tOP_ASGN;
-                    }
-                    pushback(c);
-                    return '^';
-                case ',':
-                case ';':
-                    // ph.setCommandStart(true);
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return c;
-                case '~':
-                    if (ph.getLexState() == LexState.EXPR_FNAME || ph.getLexState() == LexState.EXPR_DOT) {
-                        if ((c = nextc()) != '@') {
-                            pushback(c);
-                        }
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return '~';
-                case '(':
-                    if (cond_nest > 0) {
-	                    cond_stack = (cond_stack << 1 ) | 0;
-	                }
-                    // ph.setCommandStart(true);
-                    if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                        c = Token.tLPAREN;
-                    } else if (ph.getLexState() == LexState.EXPR_ARG && space_seen != 0) {
-                        ph.rb_warning(tok() + " (...) interpreted as method call");
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return c;
-                case '[':
-                    if (ph.getLexState() == LexState.EXPR_FNAME || ph.getLexState() == LexState.EXPR_DOT) {
-                        if ((c = nextc()) == ']') {
-                            if ((c = nextc()) == '=') {
-                                return Token.tASET;
-                            }
-                            pushback(c);
-                            return Token.tAREF;
-                        }
-                        pushback(c);
-                        return '[';
-                    } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                        c = Token.tLBRACK;
-                    } else if (IS_ARG() && space_seen != 0) {
-                        c = Token.tLBRACK;
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return c;
-                case '{':
-                    if (ph.getLexState() != LexState.EXPR_END &&
-                        ph.getLexState() != LexState.EXPR_ARG) {
-                        
-                        c = Token.tLBRACE;
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    return c;
-                case '\\':
-                    c = nextc();
-                    if (c == '\n') {
-                        space_seen = 1;
-                        continue retry; // skip \\n
-                    }
-                    pushback(c);
-                    return '\\';
-                case '%':
-                    quotation :
-                    for (; ; ) {
-                        if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                            int term;
-                            int paren;
-
-                            c = nextc();
-                            if (!Character.isLetterOrDigit((char) c)) {
-                                term = c;
-                                c = 'Q';
-                            } else {
-                                term = nextc();
-                            }
-                            if (c == -1 || term == -1) {
-                                ph.rb_compile_error("unterminated quoted string meets end of file");
-                                return 0;
-                            }
-                            paren = term;
-                            if (term == '(') {
-                                term = ')';
-                            } else if (term == '[') {
-                                term = ']';
-                            } else if (term == '{') {
-                                term = '}';
-                            } else if (term == '<') {
-                                term = '>';
-                            } else {
-                                paren = 0;
-                            }
-
-                            switch (c) {
-                                case 'Q':
-                                    return parse_string('"', term, paren);
-                                case 'q':
-                                    return parse_qstring(term, paren);
-                                case 'w':
-                                    return parse_quotedwords(term, paren);
-                                case 'x':
-                                    return parse_string('`', term, paren);
-                                case 'r':
-                                    return parse_regx(term, paren);
-                                default:
-                                    yyerror("unknown type of %string");
-                                    return 0;
-                            }
-                        }
-                        if ((c = nextc()) == '=') {
-                            yyVal = ph.newId('%');
-                            return Token.tOP_ASGN;
-                        }
-                        if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
-                            pushback(c);
-                            continue quotation;
-                        }
-                        break quotation;
-                    }
-                    ph.setLexState(LexState.EXPR_BEG);
-                    pushback(c);
-                    return '%';
-                case '$':
-                    ph.setLexState(LexState.EXPR_END);
-                    newtok();
-                    c = nextc();
-                    switch (c) {
-                        case '_': // $_: last read line string
-                            c = nextc();
-                            if (is_identchar(c)) {
-                                tokadd('$');
-                                tokadd('_');
-                                break;
-                            }
-                            pushback(c);
-                            c = '_';
-                        // fall through
-                        case '~': // $~: match-data
-                            ph.local_cnt(c);
-                        // fall through
-                        case '*': // $*: argv
-                        case '$': // $$: pid
-                        case '?': // $?: last status
-                        case '!': // $!: error string
-                        case '@': // $@: error position
-                        case '/': // $/: input record separator
-                        case '\\':// $\: output record separator
-                        case ';': // $;: field separator
-                        case ',': // $,: output field separator
-                        case '.': // $.: last read line number
-                        case '=': // $=: ignorecase
-                        case ':': // $:: load path
-                        case '<': // $<: reading filename
-                        case '>': // $>: default output handle
-                        case '\"':// $": already loaded files
-                            tokadd('$');
-                            tokadd(c);
-                            tokfix();
-                            yyVal = ruby.intern(tok());
-                            return Token.tGVAR;
-                        case '-':
-                            tokadd('$');
-                            tokadd(c);
-                            c = nextc();
-                            tokadd(c);
-                            tokfix();
-                            yyVal = ruby.intern(tok());
-                            /* xxx shouldn't check if valid option variable */
-                            return Token.tGVAR;
-                        case '&':   // $&: last match
-                        case '`':   // $`: string before last match
-                        case '\'':  // $': string after last match
-                        case '+':   // $+: string matches last paren.
-                            yyVal = nf.newBackRef(c);
-                            return Token.tBACK_REF;
-                        case '1':
-                        case '2':
-                        case '3':
-                        case '4':
-                        case '5':
-                        case '6':
-                        case '7':
-                        case '8':
-                        case '9':
-                            tokadd('$');
-                            while (Character.isDigit((char) c)) {
-                                tokadd(c);
-                                c = nextc();
-                            }
-                            if (is_identchar(c)) {
-                                break;
-                            }
-                            pushback(c);
-                            tokfix();
-                            yyVal = nf.newNthRef(Integer.parseInt(tok().substring(1)));
-                            return Token.tNTH_REF;
-                        default:
-                            if (!is_identchar(c)) {
-                                pushback(c);
-                                return '$';
-                            }
-                        case '0':
-                            tokadd('$');
-                    }
-                    break;
-                case '@':
-                    c = nextc();
-                    newtok();
-                    tokadd('@');
-                    if (c == '@') {
-                        tokadd('@');
-                        c = nextc();
-                    }
-                    if (Character.isDigit((char) c)) {
-                        ph.rb_compile_error("`@" + c + "' is not a valid instance variable name");
-                    }
-                    if (!is_identchar(c)) {
-                        pushback(c);
-                        return '@';
-                    }
-                    break;
-                default:
-                    if (!is_identchar(c) || Character.isDigit((char) c)) {
-                        ph.rb_compile_error("Invalid char `\\" + c + "' in expression");
-                        continue retry;
-                    }
-
-                    newtok();
-                    break;
-            }
-            break retry;
-        }
-
-        while (is_identchar(c)) {
-            tokadd(c);
-            /*
-             *  if (ismbchar(c)) {
-             *  int i, len = mbclen(c)-1;
-             *  for (i = 0; i < len; i++) {
-             *  c = nextc();
-             *  tokadd(c);
-             *  }
-             *  }
-             */
-            c = nextc();
-        }
-        if ((c == '!' || c == '?') && is_identchar(tok().charAt(0)) && !peek('=')) {
-            tokadd(c);
-        } else {
-            pushback(c);
-        }
-        tokfix();
-         {
-            int result = 0;
-
-            switch (tok().charAt(0)) {
-                case '$':
-                    ph.setLexState(LexState.EXPR_END);
-                    result = Token.tGVAR;
-                    break;
-                case '@':
-                    ph.setLexState(LexState.EXPR_END);
-                    if (tok().charAt(1) == '@') {
-                        result = Token.tCVAR;
-                    } else {
-                        result = Token.tIVAR;
-                    }
-                    break;
-                default:
-                    if (ph.getLexState() != LexState.EXPR_DOT) {
-                        // See if it is a reserved word.
-                        kw = rb_reserved_word(tok(), toklen());
-                        if (kw != null) {
-                            // enum lex_state
-                            int state = ph.getLexState();
-                            ph.setLexState(kw.state);
-                            if (state == LexState.EXPR_FNAME) {
-                                yyVal = ruby.intern(kw.name);
-                            }
-                            if (kw.id0 == Token.kDO) {
-                                if (COND_P()) {
-                                    return Token.kDO_COND;
-                                }
-                                if (CMDARG_P()) {
-                                    return Token.kDO_BLOCK;
-                                }
-                                return Token.kDO;
-                            }
-                            if (state == LexState.EXPR_BEG) {
-                                return kw.id0;
-                            } else {
-                                if (kw.id0 != kw.id1) {
-                                    ph.setLexState(LexState.EXPR_BEG);
-                                }
-                                return kw.id1;
-                            }
-                        }
-                    }
-
-                    if (toklast() == '!' || toklast() == '?') {
-                        result = Token.tFID;
-                    } else {
-                        if (ph.getLexState() == LexState.EXPR_FNAME) {
-                            if ((c = nextc()) == '=' && !peek('~') && !peek('>') &&
-                                    (!peek('=') || lex_p + 1 < lex_pend && lex_curline.charAt(lex_p + 1) == '>')) {
-                                result = Token.tIDENTIFIER;
-                                tokadd(c);
-                            } else {
-                                pushback(c);
-                            }
-                        }
-                        if (result == 0 && Character.isUpperCase(tok().charAt(0))) {
-                            result = Token.tCONSTANT;
-                        } else {
-                            result = Token.tIDENTIFIER;
-                        }
-                    }
-                    if (ph.getLexState() == LexState.EXPR_BEG ||
-                        ph.getLexState() == LexState.EXPR_DOT ||
-                        ph.getLexState() == LexState.EXPR_ARG) {
-                            ph.setLexState(LexState.EXPR_ARG);
-                    } else {
-                        ph.setLexState(LexState.EXPR_END);
-                    }
-            }
-            tokfix();
-            
-            yyVal = ruby.intern(tok());
-            return result;
-        }
-    }
-
-
-    /**
-     *  Description of the Method
-     *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
-     */
-    private int start_num(int c) {
-        boolean is_float;
-        boolean seen_point;
-        boolean seen_e;
-        boolean seen_uc;
-
-        is_float = seen_point = seen_e = seen_uc = false;
-        ph.setLexState(LexState.EXPR_END);
-        newtok();
-        if (c == '-' || c == '+') {
-            tokadd(c);
-            c = nextc();
-        }
-        if (c == '0') {
-            c = nextc();
-            if (c == 'x' || c == 'X') {
-                /*
-                 *  hexadecimal
-                 */
-                c = nextc();
-                do {
-                    if (c == '_') {
-                        seen_uc = true;
-                        continue;
-                    }
-                    if (!ISXDIGIT(c)) {
-                        break;
-                    }
-                    seen_uc = false;
-                    tokadd(c);
-                } while ((c = nextc()) != 0);
-                pushback(c);
-                tokfix();
-                if (toklen() == 0) {
-                    yyerror("hexadecimal number without hex-digits");
-                } else if (seen_uc) {
-                    return decode_num(c, is_float, seen_uc, true);
-                }
-                yyVal = rb_cstr2inum(tok(), 16);
-                return Token.tINTEGER;
-            }
-            if (c == 'b' || c == 'B') {
-                // binary
-                c = nextc();
-                do {
-                    if (c == '_') {
-                        seen_uc = true;
-                        continue;
-                    }
-                    if (c != '0' && c != '1') {
-                        break;
-                    }
-                    seen_uc = false;
-                    tokadd(c);
-                } while ((c = nextc()) != 0);
-                pushback(c);
-                tokfix();
-                if (toklen() == 0) {
-                    yyerror("numeric literal without digits");
-                } else if (seen_uc) {
-                    return decode_num(c, is_float, seen_uc, true);
-                }
-                yyVal = (VALUE) rb_cstr2inum(tok(), 2);
-                return Token.tINTEGER;
-            }
-            if (c >= '0' && c <= '7' || c == '_') {
-                // octal
-                do {
-                    if (c == '_') {
-                        seen_uc = true;
-                        continue;
-                    }
-                    if (c < '0' || c > '7') {
-                        break;
-                    }
-                    seen_uc = false;
-                    tokadd(c);
-                } while ((c = nextc()) != 0);
-                pushback(c);
-                tokfix();
-                if (seen_uc) {
-                    return decode_num(c, is_float, seen_uc, true);
-                }
-                yyVal = (VALUE) rb_cstr2inum(tok(), 8);
-                return Token.tINTEGER;
-            }
-            if (c > '7' && c <= '9') {
-                yyerror("Illegal octal digit");
-            } else if (c == '.') {
-                tokadd('0');
-            } else {
-                pushback(c);
-                yyVal = RubyFixnum.zero(ruby);
-                return Token.tINTEGER;
-            }
-        }
-
-        for (; ; ) {
-            switch (c) {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    seen_uc = false;
-                    tokadd(c);
-                    break;
-                case '.':
-                    if (seen_point || seen_e) {
-                        return decode_num(c, is_float, seen_uc);
-                    } else {
-                        int c0 = nextc();
-                        if (!Character.isDigit((char) c0)) {
-                            pushback(c0);
-                            return decode_num(c, is_float, seen_uc);
-                        }
-                        c = c0;
-                    }
-                    tokadd('.');
-                    tokadd(c);
-                    is_float = true;
-                    seen_point = true;
-                    seen_uc = false;
-                    break;
-                case 'e':
-                case 'E':
-                    if (seen_e) {
-                        return decode_num(c, is_float, seen_uc);
-                    }
-                    tokadd(c);
-                    seen_e = true;
-                    is_float = true;
-                    while ((c = nextc()) == '_') {
-                        seen_uc = true;
-                    }
-                    if (c == '-' || c == '+') {
-                        tokadd(c);
-                    } else {
-                        continue;
-                    }
-                    break;
-                case '_':
-                    /*
-                     *  `_' in number just ignored
-                     */
-                    seen_uc = true;
-                    break;
-                default:
-                    return decode_num(c, is_float, seen_uc);
-            }
-            c = nextc();
-        }
-    }
-
-
-    /**
-     *  Description of the Method
-     *
-     *@param  c         Description of Parameter
-     *@param  is_float  Description of Parameter
-     *@param  seen_uc   Description of Parameter
-     *@return           Description of the Returned Value
-     */
-    private int decode_num(int c, boolean is_float, boolean seen_uc) {
-        return decode_num(c, is_float, seen_uc, false);
-    }
-
-
-    /**
-     *  Description of the Method
-     *
-     *@param  c            Description of Parameter
-     *@param  is_float     Description of Parameter
-     *@param  seen_uc      Description of Parameter
-     *@param  trailing_uc  Description of Parameter
-     *@return              Description of the Returned Value
-     */
-    private int decode_num(int c, boolean is_float, boolean seen_uc, boolean trailing_uc) {
-        if (!trailing_uc) {
-            pushback(c);
-            tokfix();
-        }
-        if (seen_uc || trailing_uc) {
-            //trailing_uc:
-            yyerror("trailing `_' in number");
-        }
-        if (is_float) {
-            double d = 0.0;
-            try {
-                d = Double.parseDouble(tok());
-            } catch (NumberFormatException e) {
-                ph.rb_warn("Float " + tok() + " out of range");
-            }
-            yyVal = RubyFloat.m_newFloat(ruby, d);
-            return Token.tFLOAT;
-        }
-        yyVal = rb_cstr2inum(tok(), 10);
-        return Token.tINTEGER;
-    }
-
-
-    /**
-     *  Description of the Method
-     *
-     *@param  list  Description of Parameter
-     *@param  term  Description of Parameter
-     *@return       Description of the Returned Value
-     */
-    private NODE str_extend(NODE list, int term) {
-        int c;
-        int brace = -1;
-        VALUE ss;
-        NODE node;
-        int nest;
-
-        c = nextc();
-        switch (c) {
-            case '$':
-            case '@':
-            case '{':
-                break;
-            default:
-                tokadd('#');
-                pushback(c);
-                return list;
-        }
-
-        ss = RubyString.m_newString(ruby, tok(), toklen());
-        if (list == null) {
-            list = nf.newDStr(ss);
-        } else if (toklen() > 0) {
-            ph.list_append(list, nf.newStr(ss));
-        }
-        newtok();
-
-        fetch_id :
-        for (; ; ) {
-            switch (c) {
-                case '$':
-                    tokadd('$');
-                    c = nextc();
-                    if (c == -1) {
-                        return NODE.MINUS_ONE;
-                    }
-                    switch (c) {
-                        case '1':
-                        case '2':
-                        case '3':
-                        case '4':
-                        case '5':
-                        case '6':
-                        case '7':
-                        case '8':
-                        case '9':
-                            while (Character.isDigit((char) c)) {
-                                tokadd(c);
-                                c = nextc();
-                            }
-                            pushback(c);
-                            break fetch_id;
-                        case '&':
-                        case '+':
-                        case '_':
-                        case '~':
-                        case '*':
-                        case '$':
-                        case '?':
-                        case '!':
-                        case '@':
-                        case ',':
-                        case '.':
-                        case '=':
-                        case ':':
-                        case '<':
-                        case '>':
-                        case '\\':
-                            //refetch:
-                            tokadd(c);
-                            break fetch_id;
-                        default:
-                            if (c == term) {
-                                ph.list_append(list, nf.newStr(RubyString.m_newString(ruby, "#$")));
-                                pushback(c);
-                                newtok();
-                                return list;
-                            }
-                            switch (c) {
-                                case '\"':
-                                case '/':
-                                case '\'':
-                                case '`':
-                                    //goto refetch;
-                                    tokadd(c);
-                                    break fetch_id;
-                            }
-                            if (!is_identchar(c)) {
-                                yyerror("bad global variable in string");
-                                newtok();
-                                return list;
-                            }
-                    }
-
-                    while (is_identchar(c)) {
-                        tokadd(c);
-                        /*
-                         *  if (ismbchar(c)) {
-                         *  int i, len = mbclen(c)-1;
-                         *  for (i = 0; i < len; i++) {
-                         *  c = nextc();
-                         *  tokadd(c);
-                         *  }
-                         *  }
-                         */
-                        c = nextc();
-                    }
-                    pushback(c);
-                    break;
-                case '@':
-                    tokadd(c);
-                    c = nextc();
-                    if (c == '@') {
-                        tokadd(c);
-                        c = nextc();
-                    }
-                    while (is_identchar(c)) {
-                        tokadd(c);
-                        /*
-                         *  if (ismbchar(c)) {
-                         *  int i, len = mbclen(c)-1;
-                         *  for (i = 0; i < len; i++) {
-                         *  c = nextc();
-                         *  tokadd(c);
-                         *  }
-                         *  }
-                         */
-                        c = nextc();
-                    }
-                    pushback(c);
-                    break;
-                case '{':
-                    if (c == '{') {
-                        brace = '}';
-                    }
-                    nest = 0;
-                    do {
-                        loop_again :
-                        for (; ; ) {
-                            c = nextc();
-                            switch (c) {
-                                case -1:
-                                    if (nest > 0) {
-                                        yyerror("bad substitution in string");
-                                        newtok();
-                                        return list;
-                                    }
-                                    return NODE.MINUS_ONE;
-                                case '}':
-                                    if (c == brace) {
-                                        if (nest == 0) {
-                                            break;
-                                        }
-                                        nest--;
-                                    }
-                                    tokadd(c);
-                                    continue loop_again;
-                                case '\\':
-                                    c = nextc();
-                                    if (c == -1) {
-                                        return NODE.MINUS_ONE;
-                                    }
-                                    if (c == term) {
-                                        tokadd(c);
-                                    } else {
-                                        tokadd('\\');
-                                        tokadd(c);
-                                    }
-                                    break;
-                                case '{':
-                                    if (brace != -1) {
-                                        nest++;
-                                    }
-                                case '\"':
-                                case '/':
-                                case '`':
-                                    if (c == term) {
-                                        pushback(c);
-                                        ph.list_append(list, nf.newStr(RubyString.m_newString(ruby, "#")));
-                                        ph.rb_warning("bad substitution in string");
-                                        tokfix();
-                                        ph.list_append(list, nf.newStr(RubyString.m_newString(ruby, tok(), toklen())));
-                                        newtok();
-                                        return list;
-                                    }
-                                default:
-                                    tokadd(c);
-                                    break;
-                            }
-                            break loop_again;
-                        }
-                    } while (c != brace);
-            }
-            break;
-        }
-
-        //fetch_id:
-        tokfix();
-        node = nf.newEVStr(tok(), toklen());
-        ph.list_append(list, node);
-        newtok();
-
-        return list;
-    }
-    // yylex
-
-
-    // Helper functions....................
-
-    //XXX private helpers, can be inlined
-
-    /**
-     *  Returns true if "c" is a white space character.
-     *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
-     */
-    private boolean ISSPACE(int c) {
-        return Character.isWhitespace((char) c);
-    }
-
-
-    /**
-     *  Returns true if "c" is a hex-digit.
-     *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
-     */
-    private boolean ISXDIGIT(int c) {
-        return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
-    }
-
-
-    /**
-     *  Returns the value of a hex number with max "len" characters. Also
-     *  returns the number of characters read. Please note the "x"-hack.
-     *
-     *@param  s       Description of Parameter
-     *@param  start   Description of Parameter
-     *@param  len     Description of Parameter
-     *@param  retlen  Description of Parameter
-     *@return         Description of the Returned Value
-     */
-    private long scan_hex(String s, int start, int len, int[] retlen) {
-        String hexdigit = "0123456789abcdef0123456789ABCDEFx";
-        long retval = 0;
-        int tmp;
-        int st = start;
-
-        while (len-- != 0 && st < s.length() && (tmp = hexdigit.indexOf(s.charAt(st))) != -1) {
-            retval <<= 4;
-            retval |= tmp & 15;
-            st++;
-        }
-        retlen[0] = st - start;
-        return retval;
-    }
-
     
     /** This function compiles a given String into a NODE.
      *
@@ -5102,17 +2913,7 @@ case 415:
         ph.setRubyInCompile(true);
 
         try {
-            yyparse(new yyInput() {
-                public boolean advance() throws IOException {
-                    return DefaultRubyParser.this.advance();
-                }
-                public int token() { 
-                    return DefaultRubyParser.this.token();
-                }
-                public Object value() { 
-                    return DefaultRubyParser.this.value();
-                }
-            }, null);
+            yyparse(rs, null);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -5120,9 +2921,7 @@ case 415:
         ph.setRubyDebugLines(null); // remove debug info
         ph.setCompileForEval(0);
         ph.setRubyInCompile(false);
-        cond_nest = 0;
-        cond_stack = 0;             // reset stuff for next compile
-        cmdarg_stack = 0;           // reset stuff for next compile
+        rs.resetStacks();
         ph.setClassNest(0);
         ph.setInSingle(0);
         ph.setInDef(0);
@@ -5131,4 +2930,4 @@ case 415:
         return ph.getEvalTree();
     }
 }
-					// line 8922 "-"
+					// line 6721 "-"

@@ -117,16 +117,7 @@ public class Main {
         
         ruby.defineGlobalConstant("ARGV", JavaUtil.convertJavaToRuby(ruby, args, String[].class));
         
-        // only use to test new parser.
-        final boolean NEW_PARSER = true;
-        
-        if (NEW_PARSER) {  
-            ruby.getInterpreter().eval(ruby.getRubyTopSelf(), ruby.getRubyParser().compileString(iFileName, rs, 0));
-        } else {
-            // Initialize Parser
-            parse p = new parse(ruby);
-            ruby.getInterpreter().eval(ruby.getRubyTopSelf(), p.rb_compile_string(iFileName, rs, 0));
-        }
+        ruby.getInterpreter().eval(ruby.getRubyTopSelf(), ruby.getRubyParser().compileString(iFileName, rs, 0));
     }
 
     /**
