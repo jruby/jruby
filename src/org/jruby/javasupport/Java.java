@@ -23,6 +23,7 @@ public class Java {
         JavaClass.createJavaClassClass(runtime, javaModule);
         JavaMethod.createJavaMethodClass(runtime, javaModule);
         JavaConstructor.createJavaConstructorClass(runtime, javaModule);
+        JavaField.createJavaFieldClass(runtime, javaModule);
 
         return javaModule;
     }

@@ -74,6 +74,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int NEW_ARRAY = 18;
     private static final int GET_CONSTANT = 19;
     private static final int FIELDS = 20;
+    private static final int FIELD = 21;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -99,6 +100,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("new_array", IndexedCallback.create(NEW_ARRAY, 1));
         javaClassClass.defineMethod("get_constant", IndexedCallback.create(GET_CONSTANT, 1));
         javaClassClass.defineMethod("fields", IndexedCallback.create(FIELDS, 0));
+        javaClassClass.defineMethod("field", IndexedCallback.create(FIELD, 1));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -264,6 +266,19 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return result;
     }
 
+    public JavaField field(IRubyObject name) {
+        String stringName = name.asSymbol();
+
+        Field field;
+        try {
+            field = javaClass.getField(stringName);
+        } catch (NoSuchFieldException nsfe) {
+            throw new NameError(getRuntime(),
+                                "undefined field '" + stringName + "' for class '" + javaClass.getName() + "'");
+        }
+        return new JavaField(getRuntime(), field);
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -300,6 +315,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return get_constant(args[0]);
             case FIELDS :
                 return fields();
+            case FIELD :
+                return field(args[0]);
             default :
                 return super.callIndexed(index, args);
         }

@@ -61,6 +61,11 @@ if defined? Java
   rectangle_class = Java::JavaClass.for_name("java.awt.Rectangle")
   test_ok(rectangle_class.fields.include?("x"))
   test_ok(rectangle_class.fields.include?("y"))
+  field = rectangle_class.field(:x)
+  test_equal("int", field.value_type)
+  test_ok(field.public?)
+  test_ok(! field.static?)
+  # ... to be continued ...
 
   # Constants
   integer_class = Java::JavaClass.for_name("java.lang.Integer")
