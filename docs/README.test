@@ -40,11 +40,33 @@ or
 
 3) Using Rubicon:
 
-To use Rubicon for testing you must first install it. Get it from CVS with
+a) Before you can use rubicon, you must allow jruby to use ruby's modules.
+jruby does not distribute its own set, so you must borrow them.  Copy your 
+'ruby' distrubution directory (i.e. /usr/lib/ruby on most linuxes) to lib 
+in your CVS sandbox.
 
-        cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src login
-        cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src co rubicon
+b) Currently, jruby does not support the ruby Socket module.  When
+rubicon runs, it will try and load it.  To workaround this problem either:
+ i) Comment out the require 'socket' calls from rubicon test files
+ ii) Create a 'lib/site_ruby/1.8/socket.rb' file containing:
 
-Then follow Rubicon's README on how to install and run it.
+    module Socket
+    end
 
-You must first install RubyUnit in your original Ruby interpreter (1.6 required). Then copy the lib directory from that to your JRUBY_HOME directory. (If you built jruby from CVS it is the build directory). Now your JRuby should now be ready to run Rubicon.
+c) Install rubicon.  To get it from CVS:
+
+    cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src login
+    cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src co rubicon
+
+d) Run rubicon
+
+    make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby.sh 
+
+  to run all tests
+
+    {PATH_TO_JRUBY_HOME}/bin/jruby.sh builtin/TestFloat.rb
+
+  to test a single file (TestFloat in this case). 
+
+  Read rubicon documentation for more details (or if rubicon changes
+something since this document was published).
