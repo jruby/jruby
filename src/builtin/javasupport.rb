@@ -174,6 +174,11 @@ module JavaUtilities
           end
           value
         }
+        define_method(:[]=) {|index, value|
+          value = JavaProxy.convert_arguments([value]).first
+          java_object[index] = value
+          value
+        }
         define_method(:length) {| |
           java_object.length
         }

@@ -52,6 +52,9 @@ if defined? Java
     test_equal(10, array[0])
     test_equal(20, array[1])
     test_equal(2, array.length)
+    array[1] = 1234
+    test_equal(10, array[0])
+    test_equal(1234, array[1])
 
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",
