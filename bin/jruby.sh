@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
 #
@@ -59,10 +59,10 @@ fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 
-CP=""
-
-if [ -f "$JAVA_HOME/lib/tools.jar" ] ; then
-  CP="$JAVA_HOME/lib/tools.jar"
+if [ "$CLASSPATH" != "" ]; then
+  CP="$CLASSPATH"
+else
+  CP=""
 fi
 
 for i in $JRUBY_HOME/lib/*.jar; do
@@ -105,7 +105,6 @@ if [ "$1" = "EN_US" ]; then
   shift
 fi
 
-	
   $JAVA_HOME/bin/java $DEBUG -classpath "$CP" \
   -Djruby.base=$JRUBY_BASE \
   -Djruby.home=$JRUBY_HOME \
