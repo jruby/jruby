@@ -63,7 +63,15 @@ public class Parser {
         internalParser.init(config);
         ILexerSource lexerSource = LexerFactory.getInstance().getSource(file, content);
         IRubyParserResult result = (IRubyParserResult) internalParser.parse(lexerSource);
+        int newSize = 0;
         if (result.getLocalVariables() != null) {
+            newSize = result.getLocalVariables().size();
+        }
+        int oldSize = 0;
+        if (ruby.getScope().getLocalNames() != null) {
+            oldSize = ruby.getScope().getLocalNames().size();
+        }
+        if (newSize > oldSize) {
             ruby.getScope().setLocalNames(new ArrayList(result.getLocalVariables()));
         }
         return result.getAST();

@@ -39,3 +39,12 @@ y = "hello"
 f(10) {
   test_equal("hello", y)
 }
+
+class TestMethods_X
+  def hello
+    "yeah"
+  end
+end
+x = TestMethods_X.new
+test_equal("TestMethods_X", "#{x.class}")
+test_equal("yeah", "#{x.hello}")
