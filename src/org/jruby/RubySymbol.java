@@ -39,7 +39,6 @@ import java.lang.ref.WeakReference;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 
