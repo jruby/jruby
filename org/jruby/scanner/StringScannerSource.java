@@ -1,6 +1,6 @@
 /*
- * IScannerSource.java - No description
- * Created on 01.02.2002, 00:19:34
+ * StringScannerSource.java - No description
+ * Created on 01.02.2002, 13:17:56
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
@@ -24,42 +24,31 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-package org.jlf.scanner;
+package org.jruby.scanner;
 
-import org.jruby.scanner.*;
+public class StringScannerSource extends AbstractScannerSource {
+    private String sourceName;
+    private String sourceContent;
+    private int sourcePosition = 0;
+    private int sourceLen;
 
-/**
- *
- * @author  jpetersen
- * @version $Revision$
- */
-public interface IScannerSource {
-    /** Returns the next character.
-     * 
-     * @return char next character.
+	public StringScannerSource(String sourceName, String sourceContent) {
+	    this.sourceName = sourceName;
+	    this.sourceContent = sourceContent;
+	    this.sourceLen = sourceContent.length();
+	}
+
+    /**
+     * @see AbstractScannerSource#internalRead()
      */
-	public char read();
-	
-	/** Unread the last read character.
-     * 
+    protected char internalRead() {
+        return sourcePosition < sourceLen ? sourceContent.charAt(sourcePosition++) : (char)-1;
+    }
+
+    /**
+     * @see IScannerSource#getSource()
      */
-	public void unread();
-
-	/** Unread the last 'n' read character.
-     * 
-     */
-	public void unread(int n);
-
-	public boolean isNext(char c);
-	public boolean isEOL();
-
-	public int getLine();
-
-    /** Returns the column of the last read character.
-     * 
-     * @return int the column.
-     */
-	public int getColumn();
-
-	public String getSource();
+    public String getSource() {
+        return sourceName;
+    }
 }

@@ -31,7 +31,7 @@ package org.jruby.parser;
 
 import java.io.*;
 
-import org.jlf.scanner.*;
+import org.jruby.scanner.*;
 import org.jruby.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
