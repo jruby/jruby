@@ -141,6 +141,7 @@ public class RubyClasses {
     private RubyClass threadGroupClass;
     private RubyClass timeClass;
     private RubyClass trueClass;
+    private RubyClass unboundMethodClass;
 
     private RubyModule comparableModule;
     private RubyModule enumerableModule;
@@ -730,6 +731,13 @@ public class RubyClasses {
         return timeClass;
     }
 
+    public RubyClass getUnboundMethodClass() {
+        if (unboundMethodClass == null) {
+            unboundMethodClass = UnboundMethod.defineUnboundMethodClass(runtime);
+        }
+        return unboundMethodClass;
+    }
+
     /**
      * Returns a RubyMap with references to all named classes in
      * a ruby runtime..
@@ -820,6 +828,8 @@ public class RubyClasses {
             return getThreadGroupClass();
         } else if (name == "Time") {
             return getTimeClass();
+        } else if (name == "UnboundMethod") {
+            return getUnboundMethodClass();
         }
         return null;
     }

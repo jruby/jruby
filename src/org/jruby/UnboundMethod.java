@@ -39,7 +39,7 @@ public class UnboundMethod extends Method {
     private static final int UNBIND = 0x10053;
 
     protected UnboundMethod(Ruby runtime) {
-        super(runtime, runtime.getClass("UnboundMethod"));
+        super(runtime, runtime.getClasses().getUnboundMethodClass());
     }
 
     public static UnboundMethod newUnboundMethod(
