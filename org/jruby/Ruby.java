@@ -55,6 +55,8 @@ public final class Ruby {
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
 
     private RubyMethodCache methodCache;
+    
+    public int stackTraces = 0;
 
     /** rb_global_tbl
      *
@@ -316,12 +318,12 @@ public final class Ruby {
     /**
      *
      */
-    public boolean isAutoloadDefined(String id) {
+    public boolean isAutoloadDefined(String name) {
         return false;
     }
 
-    public boolean isClassDefined(String id) {
-        return false;
+    public boolean isClassDefined(String name) {
+        return classes.getClassMap().get(name) != null;
     }
 
     /* public RubyInterpreter getInterpreter() {
@@ -452,10 +454,10 @@ public final class Ruby {
         } catch (ReturnException rExcptn) {
             // break;
             return rExcptn.getReturnValue();
-        } catch (BreakException bExcptn) {
+        /* catch (BreakException bExcptn) {
             // +++
             throw new ReturnException(getNil());
-            // ---
+            // ---*/
         } finally {
             iter.pop();
             popClass();

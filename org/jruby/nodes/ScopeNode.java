@@ -272,9 +272,7 @@ public class ScopeNode extends Node implements CallableNode {
 
 			return recv.eval(callBody);
 		} catch (ReturnException rExcptn) {
-			// +++ jpetersen
-			return ((RubyArray) rExcptn.getReturnValue()).pop();
-			// ---
+			return rExcptn.getReturnValue();
 		} finally {
 			RubyVarmap.pop(ruby);
 

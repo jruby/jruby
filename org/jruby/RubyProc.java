@@ -55,6 +55,16 @@ public class RubyProc extends RubyObject {
 
         return procClass;
     }
+    
+    public RubyBlock getBlock() {
+        return block;
+    }
+
+    public RubyModule getWrapper() {
+        return wrapper;
+    }
+
+    // Proc class
 
     public static RubyProc newInstance(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
         RubyProc proc = newProc(ruby, ruby.getClasses().getProcClass());

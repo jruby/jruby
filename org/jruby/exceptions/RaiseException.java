@@ -109,10 +109,20 @@ public class RaiseException extends JumpException {
      * @param actException The actException to set
      */
     protected void setActException(RubyException actException) {
+        Ruby ruby = actException.getRuby();
+        
         this.actException = actException;
-
-        if (actException.funcall("backtrace").isNil() && actException.getRuby().getSourceFile() != null) {
-            actException.funcall("set_backtrace", createBacktrace(actException.getRuby(), -1));
+        
+        if (ruby.stackTraces > 5) {
+            return;
         }
+
+		ruby.stackTraces++;
+
+		if (actException.funcall("backtrace").isNil() && ruby.getSourceFile() != null) {
+            actException.funcall("set_backtrace", createBacktrace(ruby, -1));
+		}
+		
+		ruby.stackTraces--;
     }
 }

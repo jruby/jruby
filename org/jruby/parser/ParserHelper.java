@@ -917,7 +917,9 @@ public class ParserHelper {
 
     public Node ret_args(Node node) {
         if (node != null) {
-            if (node.getType() == Constants.NODE_BLOCK_PASS) {
+            if (node.getType() == Constants.NODE_ARRAY && node.getNextNode() == null) {
+                return node.getHeadNode();                
+            } else if (node.getType() == Constants.NODE_BLOCK_PASS) {
                 rb_compile_error("block argument should not be given");
             }
         }
