@@ -650,6 +650,15 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
     }
     
+    public IRubyObject display(IRubyObject args[]) {
+        IRubyObject port = args.length == 0
+            ? getRuntime().getGlobalVariables().get("$>") : args[0];
+        
+        port.callMethod("write", this);
+
+        return getRuntime().getNil();
+    }
+    
     /** rb_obj_dup
      *
      */
@@ -978,6 +987,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         module.defineMethod("inspect", callbackFactory.getMethod(RubyObject.class, "inspect"));
         module.defineMethod("=~", callbackFactory.getFalseMethod(1));
         module.defineMethod("clone", callbackFactory.getMethod(RubyObject.class, "rbClone"));
+        module.defineMethod("display", callbackFactory.getOptMethod(RubyObject.class, "display"));
         module.defineMethod("extend", callbackFactory.getOptMethod(RubyObject.class, "extend"));
         module.defineMethod("freeze", callbackFactory.getMethod(RubyObject.class, "freeze"));
         module.defineMethod("frozen?", callbackFactory.getMethod(RubyObject.class, "frozen"));
