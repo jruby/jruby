@@ -72,6 +72,11 @@ public class RubyFloat extends RubyNumeric {
         return (long)value;
     }
     
+    protected int compareValue(RubyNumeric other) {
+        double otherVal = other.getDoubleValue();
+        return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
+    }
+
     // Float methods (flo_*)
     
     /**
@@ -134,54 +139,37 @@ public class RubyFloat extends RubyNumeric {
     public RubyBoolean op_equal(RubyObject other) {
         if (!(other instanceof RubyNumeric)) {
             return getRuby().getFalse();
-        } else if (!(other instanceof RubyFloat)) {
-            return RubyBoolean.m_newBoolean(getRuby(),
-                getLongValue() == ((RubyNumeric) other).getLongValue());
         } else {
             return RubyBoolean.m_newBoolean(getRuby(),
-                getDoubleValue() == ((RubyFloat) other).getDoubleValue());
+                compareValue((RubyNumeric)other) == 0);
         }
     }
 
     public RubyNumeric op_cmp(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        if (getDoubleValue() == other.getDoubleValue()) {
-            return RubyFixnum.m_newFixnum(getRuby(), 0);
-        } else if (getDoubleValue() > other.getDoubleValue()) {
-            return RubyFixnum.m_newFixnum(getRuby(), 1);
-        } else {
-            return RubyFixnum.m_newFixnum(getRuby(), -1);
-        }
+        return RubyFixnum.m_newFixnum(getRuby(), compareValue(other));
     }
-    
+
     public RubyBoolean op_gt(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return (getDoubleValue() > other.getDoubleValue())
-            ? getRuby().getTrue()
-            : getRuby().getFalse();
+        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) > 0);
     }
-    
+
     public RubyBoolean op_ge(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return (getDoubleValue() >= other.getDoubleValue())
-            ? getRuby().getTrue()
-            : getRuby().getFalse();
+        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) >= 0);
     }
-    
+
     public RubyBoolean op_lt(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return (getDoubleValue() < other.getDoubleValue())
-            ? getRuby().getTrue()
-            : getRuby().getFalse();
+        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) < 0);
     }
-    
+
     public RubyBoolean op_le(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return (getDoubleValue() <= other.getDoubleValue())
-            ? getRuby().getTrue()
-            : getRuby().getFalse();
+        return RubyBoolean.m_newBoolean(getRuby(), compareValue(other) <= 0);
     }
-    
+
     public RubyString m_to_s() {
         return RubyString.m_newString(getRuby(), Double.toString(getValue()));
     }

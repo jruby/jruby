@@ -113,7 +113,7 @@ public abstract class RubyNumeric extends RubyObject {
      *          the result of the conversion, which will be zero if the 
      *          conversion failed.
      */
-    public static RubyObject str2inum(Ruby ruby, RubyString str, int base) {
+    public static RubyInteger str2inum(Ruby ruby, RubyString str, int base) {
         StringBuffer sbuf = new StringBuffer(str.getValue().trim());
         if (sbuf.length() == 0) {
             return RubyFixnum.zero(ruby);
@@ -182,7 +182,7 @@ public abstract class RubyNumeric extends RubyObject {
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyObject str2d(Ruby ruby, RubyString arg) {
+    public static RubyFloat str2fnum(Ruby ruby, RubyString arg) {
         String str = arg.getValue().trim();
         double d = 0.0;
         int pos = str.length();
@@ -237,7 +237,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric op_uminus() {
-        RubyNumeric[] coerce = getCoerce(RubyFixnum.m_newFixnum(getRuby(), 0));
+        RubyNumeric[] coerce = getCoerce(RubyFixnum.zero(getRuby()));
         
         return (RubyNumeric)coerce[1].funcall(getRuby().intern("-"), coerce[0]);
     }
@@ -271,7 +271,7 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyNumeric m_remainder(RubyNumeric other) {
         RubyNumeric mod = (RubyNumeric)funcall(getRuby().intern("%"), other);
         
-        final RubyNumeric zero = RubyFixnum.m_newFixnum(getRuby(), 0);
+        final RubyNumeric zero = RubyFixnum.zero(getRuby());
         
         if (funcall(getRuby().intern("<"), zero).isTrue() &&
             other.funcall(getRuby().intern(">"), zero).isTrue() ||
@@ -306,7 +306,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyNumeric m_abs() {
-        if (funcall(getRuby().intern("<"), RubyFixnum.m_newFixnum(getRuby(), 0)).isTrue()) {
+        if (funcall(getRuby().intern("<"), RubyFixnum.zero(getRuby())).isTrue()) {
             return (RubyNumeric)funcall(getRuby().intern("-@"));
         } else {
             return this;
@@ -324,7 +324,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean m_zero_p() {
-        return m_equal(RubyFixnum.m_newFixnum(getRuby(), 0));
+        return m_equal(RubyFixnum.zero(getRuby()));
     }
     
     /** num_nonzero_p
@@ -342,7 +342,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyNumeric m_floor() {
         // HACK +++
-        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        return RubyFixnum.zero(getRuby());
         // HACK ---
     }
     
@@ -351,7 +351,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyNumeric m_ceil() {
         // HACK +++
-        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        return RubyFixnum.zero(getRuby());
         // HACK ---
     }
     
@@ -360,7 +360,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyNumeric m_round() {
         // HACK +++
-        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        return RubyFixnum.zero(getRuby());
         // HACK ---
     }
     
@@ -369,7 +369,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyNumeric m_truncate() {
         // HACK +++
-        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        return RubyFixnum.zero(getRuby());
         // HACK ---
     }
 }

@@ -57,7 +57,8 @@ public class JavaUtil {
             return true;
         }
         if (javaClass == Object.class) {
-            return arg.getJavaClass() != RubyObject.class;
+//            return arg.getJavaClass() != RubyObject.class;
+            return true;
         }
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
@@ -92,9 +93,14 @@ public class JavaUtil {
             }
         }
         if (javaClass == Object.class) {
-            // the Java method doesn't care what class it is, but we need to 
-            // know what to convert it to, so we use the object's own class
+            /* The Java method doesn't care what class it is, but we need to 
+               know what to convert it to, so we use the object's own class.
+               If that doesn't help, we use String to force a call to the 
+               object's "to_s" method. */
             javaClass = rubyObject.getJavaClass();
+            if (javaClass == RubyObject.class) {
+                javaClass = String.class;
+            }
         }
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
@@ -123,7 +129,7 @@ public class JavaUtil {
             return new Character((char)((RubyFixnum)rubyObject).getLongValue());
         }
         if (javaClass == String.class) {
-            // If Ruby class is't the String class call to_s method
+            // If Ruby class isn't the String class call to_s method
             if (rubyObject instanceof RubyString) {
                 return ((RubyString)rubyObject).getValue();
             } else {

@@ -130,9 +130,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         return kwtable.rb_reserved_word(w, len);
     }
 
-    private RubyFixnum rb_cstr2inum(String s, int radix) {
-        //XXX no support for _ or leading and trailing spaces
-        return RubyFixnum.m_newFixnum(ruby, Integer.parseInt(s, radix));
+    private RubyInteger rb_cstr2inum(String s, int radix) {
+        return RubyNumeric.str2inum(ruby, RubyString.m_newString(ruby, s), radix);
     }
 
     private RubyRegexp rb_reg_new(String s, int len, int options) {
@@ -144,11 +143,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     }
 
     /**
-     *  Returns true if "c" is a valid identifier character (letter, digit or
+     *  Returns true if "ch" is a valid identifier character (letter, digit or
      *  underscore)
-     *
-     *@param  ch  Description of Parameter
-     *@return     Description of the Returned Value
      */
     private boolean is_identchar(int ch) {
         return Character.isLetterOrDigit((char) ch) || ch == '_';
@@ -174,9 +170,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     }
 
     /**
-     *  Returns in next line either from file or from a string.
-     *
-     *@return    Description of the Returned Value
+     *  Returns next line either from file or from a string.
      */
     private RubyObject lex_getline() {
         RubyObject line;
@@ -194,8 +188,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
     /**
      *  Returns the next character from input
-     *
-     *@return    Description of the Returned Value
      */
     private int nextc() {
         int c;
@@ -239,8 +231,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     /**
      *  Puts back the given character so that nextc() will answer it next time
      *  it'll be called.
-     *
-     *@param  c  Description of Parameter
      */
     private void pushback(int c) {
         if (c == -1) {
@@ -252,9 +242,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     /**
      *  Returns true if the given character is the current one in the input
      *  stream
-     *
-     *@param  c  Description of Parameter
-     *@return    Description of the Returned Value
      */
     private boolean peek(int c) {
         return lex_p != lex_pend && c == lex_curline.charAt(lex_p);

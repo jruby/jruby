@@ -40,22 +40,22 @@ import org.jruby.util.PrintfFormat;
 public class RubyString extends RubyObject {
 
     private static RubyModule pfClass;
-    
+
     private String value;
-    
+
     public RubyString(Ruby ruby) {
         this(ruby, null);
     }
-    
+
     public RubyString(Ruby ruby, String str) {
         this(ruby, ruby.getClasses().getStringClass(), str);
     }
-    
+
     public RubyString(Ruby ruby, RubyModule rubyClass, String str) {
         super(ruby, rubyClass);
         this.value = str;
     }
-    
+
     public Class getJavaClass() {
         return String.class;
     }
@@ -63,39 +63,39 @@ public class RubyString extends RubyObject {
     public String getValue() {
         return this.value;
     }
-    
+
     public void setValue(String newValue) {
         value = newValue;
     }
-    
+
     public String toString() {
         return getValue();
     }
-    
+
     public static boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
-    
+
     public static boolean isUpper(char c) {
         return c >= 'A' && c <= 'Z';
     }
-    
+
     public static boolean isLower(char c) {
         return c >= 'a' && c <= 'z';
     }
-    
+
     public static boolean isLetter(char c) {
         return isUpper(c) || isLower(c);
     }
-    
+
     public static boolean isAlnum(char c) {
         return isUpper(c) || isLower(c) || isDigit(c);
     }
-    
+
     public static boolean isPrint(char c) {
         return c >= 0x20 && c <= 0x7E;
     }
-    
+
     /** rb_obj_as_string
      *
      */
@@ -105,7 +105,7 @@ public class RubyString extends RubyObject {
         }
         return (RubyString)obj.funcall(ruby.intern("to_s"));
     }
-    
+
     /** rb_str_cmp
      *
      */
@@ -113,14 +113,14 @@ public class RubyString extends RubyObject {
         /* use Java implementatiom */
         return getValue().compareTo(other.getValue());
     }
-        
+
     /** rb_to_id
      *
      */
     public RubyId toId() {
         return getRuby().intern(getValue());
     }
-        
+
     /** Create a new String which uses the same Ruby runtime and the same
      *  class like this String.
      *
@@ -132,26 +132,26 @@ public class RubyString extends RubyObject {
         while (klass.isIncluded() || klass.isSingleton()) {
             klass = klass.getSuperClass();
         }
-        
+
         return new RubyString(getRuby(), klass, s);
     }
 
     // Methods of the String class (rb_str_*):
-    
+
     /** rb_str_new2
      *
      */
     public static RubyString m_newString(Ruby ruby, String str) {
         return new RubyString(ruby, str);
     }
-    
+
     /** rb_str_new
      *
      */
     public static RubyString m_newString(Ruby ruby, String str, int len) {
         return new RubyString(ruby, str.substring(0, len));
     }
-    
+
     /** rb_str_dup
      *
      */
@@ -160,18 +160,18 @@ public class RubyString extends RubyObject {
         newStr.infectObject(this);
         return newStr;
     }
-    
+
     /** rb_str_clone
      *
      */
     public RubyObject m_clone() {
         RubyObject newObject = m_dup();
-        
+
         newObject.setupClone(this);
-        
+
         return newObject;
     }
-    
+
     /** rb_str_cat
      *
      */
@@ -179,14 +179,14 @@ public class RubyString extends RubyObject {
         value = value + str;
         return this;
     }
-    
+
     /** rb_str_to_s
      *
      */
     public RubyString m_to_s() {
         return this;
     }
-    
+
     /** rb_str_replace_m
      *
      */
@@ -199,7 +199,7 @@ public class RubyString extends RubyObject {
         infectObject(str);
         return this;
     }
-    
+
     /** rb_str_reverse
      *
      */
@@ -208,10 +208,10 @@ public class RubyString extends RubyObject {
         for (int i = getValue().length() - 1; i >= 0; i--) {
             sb.append(getValue().charAt(i));
         }
-        
+
         return newString(sb.toString());
     }
-    
+
     /** rb_str_reverse_bang
      *
      */
@@ -223,19 +223,19 @@ public class RubyString extends RubyObject {
         setValue(sb.toString());
         return this;
     }
-    
+
     /** rb_str_s_new
      *
      */
     public static RubyString m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyString newString = m_newString(ruby, "");
         newString.setRubyClass((RubyModule)recv);
-        
+
         newString.callInit(args);
-        
+
         return newString;
     }
-    
+
     /** rb_str_cmp_m
      *
      */
@@ -280,7 +280,7 @@ public class RubyString extends RubyObject {
      */
     public RubyString m_capitalize() {
         final int length = getValue().length();
-        
+
         StringBuffer sb = new StringBuffer(length);
         if (length > 0) {
             sb.append(Character.toUpperCase(getValue().charAt(0)));
@@ -288,7 +288,7 @@ public class RubyString extends RubyObject {
         if (length > 1) {
             sb.append(getValue().toLowerCase().substring(1));
         }
-        
+
         return newString(sb.toString());
     }
 
@@ -297,7 +297,7 @@ public class RubyString extends RubyObject {
      */
     public RubyString m_capitalize_bang() {
         final int length = getValue().length();
-        
+
         StringBuffer sb = new StringBuffer(length);
         if (length > 0) {
             sb.append(Character.toUpperCase(getValue().charAt(0)));
@@ -305,9 +305,9 @@ public class RubyString extends RubyObject {
         if (length > 1) {
             sb.append(getValue().toLowerCase().substring(1));
         }
-        
+
         setValue(sb.toString());
-        
+
         return this;
     }
 
@@ -317,13 +317,13 @@ public class RubyString extends RubyObject {
     public RubyString m_upcase() {
         return newString(getValue().toUpperCase());
     }
-    
+
     /** rb_str_upcase_bang
      *
      */
     public RubyString m_upcase_bang() {
         setValue(getValue().toUpperCase());
-        
+
         return this;
     }
 
@@ -333,13 +333,13 @@ public class RubyString extends RubyObject {
     public RubyString m_downcase() {
         return newString(getValue().toLowerCase());
     }
-    
+
     /** rb_str_downcase_bang
      *
      */
     public RubyString m_downcase_bang() {
         setValue(getValue().toLowerCase());
-        
+
         return this;
     }
 
@@ -348,17 +348,17 @@ public class RubyString extends RubyObject {
      */
     public RubyString m_swapcase() {
         RubyString newString = newString(getValue());
-        
+
         return newString.m_swapcase_bang();
     }
-    
+
     /** rb_str_swapcase_bang
      *
      */
     public RubyString m_swapcase_bang() {
         char[] chars = getValue().toCharArray();
         StringBuffer sb = new StringBuffer(chars.length);
-        
+
         for (int i = 0; i < chars.length; i++) {
             if (!Character.isLetter(chars[i])) {
                 sb.append(chars[i]);
@@ -369,34 +369,34 @@ public class RubyString extends RubyObject {
             }
         }
         setValue(getValue().toLowerCase());
-        
+
         return this;
     }
-    
+
     /** rb_str_dump
      *
      */
     public RubyString m_dump() {
         return inspect(true);
     }
-    
+
     /** rb_str_inspect
      *
      */
     public RubyString m_inspect() {
         return inspect(false);
     }
-    
+
     private RubyString inspect(boolean dump) {
         final int length = getValue().length();
-        
+
         StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
-        
+
         sb.append('\"');
-        
+
         for (int i = 0; i < length; i++) {
             char c = getValue().charAt(i);
-            
+
             if (isAlnum(c)) {
                 sb.append(c);
             } else if (c == '\"' || c == '\\') {
@@ -423,9 +423,9 @@ public class RubyString extends RubyObject {
                 sb.append(new PrintfFormat("\\%.3o").sprintf(c));
             }
         }
-        
+
         sb.append('\"');
-        
+
         return m_newString(getRuby(), sb.toString());
     }
 
@@ -434,11 +434,11 @@ public class RubyString extends RubyObject {
      */
     public RubyString op_plus(RubyObject other) {
         RubyString str = stringValue(other);
-        
+
         RubyString newString = newString(getValue() + str.getValue());
-        
+
         newString.infectObject(str);
-        
+
         return newString;
     }
 
@@ -447,20 +447,20 @@ public class RubyString extends RubyObject {
      */
     public RubyString op_mul(RubyInteger other) {
         long len = other.getLongValue();
-        
+
         if (len < 0) {
             throw new RubyArgumentException(getRuby(), "negative argument");
         }
-        
+
         if (Long.MAX_VALUE / len < getValue().length()) {
             throw new RubyArgumentException(getRuby(), "argument too big");
         }
         StringBuffer sb = new StringBuffer((int)(getValue().length() * len));
-        
+
         for (int i = 0; i < len; i++) {
             sb.append(getValue());
         }
-        
+
         RubyString newString = newString(sb.toString());
         newString.setTaint(isTaint());
         return newString;
@@ -625,7 +625,7 @@ public class RubyString extends RubyObject {
     public RubyObject m_index(RubyObject[] args) {
         return index(args, false);
     }
-    
+
     /** rb_str_rindex_m
      *
      */
@@ -666,13 +666,13 @@ public class RubyString extends RubyObject {
         else {
             throw new RubyArgumentException(getRuby(), "wrong type of argument");
         }
-        
+
         if (pos == -1) {
             return getRuby().getNil();
         }
         return RubyFixnum.m_newFixnum(getRuby(), pos);
     }
-    
+
     /* rb_str_substr */
     private RubyObject substr(int beg, int len) {
         int strLen = getValue().length();
@@ -701,7 +701,7 @@ public class RubyString extends RubyObject {
         infectObject(repl);
         return this;
     }
-    
+
     /** rb_str_aref, rb_str_aref_m
      *
      */
@@ -749,7 +749,7 @@ public class RubyString extends RubyObject {
         }
         return new RubyFixnum(getRuby(), getValue().charAt(idx));
     }
-    
+
     /** rb_str_aset, rb_str_aset_m
      *
      */
@@ -809,7 +809,7 @@ public class RubyString extends RubyObject {
         }
         throw new RubyTypeException(getRuby(), "wrong argument type");
     }
-    
+
     /** rb_str_slice_bang
      *
      */
@@ -825,7 +825,7 @@ public class RubyString extends RubyObject {
         m_aset(newArgs);
         return result;
     }
-    
+
     /** rb_str_format
      *
      */
@@ -841,7 +841,7 @@ public class RubyString extends RubyObject {
         RubyObject pfObject = pfClass.funcall(getRuby().intern("new"), this);
         return pfObject.funcall(getRuby().intern("sprintf"), arg);
     }
-    
+
     /** rb_str_succ
      *
      */
@@ -907,14 +907,14 @@ public class RubyString extends RubyObject {
             return newStr;
         }
     }
-    
+
     /** rb_str_upto_m
      *
      */
     public RubyObject m_upto(RubyObject str) {
         return upto(str, false);
     }
-    
+
     /* rb_str_upto */
     RubyObject upto(RubyObject str, boolean excl) {
         RubyString current = this;
@@ -934,7 +934,7 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
-    
+
     /** rb_str_include
      *
      */
@@ -946,14 +946,14 @@ public class RubyString extends RubyObject {
         String str = stringValue(obj).getValue();
         return getValue().indexOf(str) == -1 ? getRuby().getFalse() : getRuby().getTrue();
     }
-    
+
     /** rb_str_to_i
      *
      */
     public RubyObject m_to_i() {
         return RubyNumeric.str2inum(getRuby(), this, 10);
     }
-    
+
     /** rb_str_oct
      *
      */
@@ -968,21 +968,21 @@ public class RubyString extends RubyObject {
         }
         return RubyNumeric.str2inum(getRuby(), this, base);
     }
-    
+
     /** rb_str_hex
      *
      */
     public RubyObject m_hex() {
         return RubyNumeric.str2inum(getRuby(), this, 16);
     }
-    
+
     /** rb_str_to_f
      *
      */
     public RubyObject m_to_f() {
-        return RubyNumeric.str2d(getRuby(), this);
+        return RubyNumeric.str2fnum(getRuby(), this);
     }
-    
+
     /** rb_str_split
      *
      */
@@ -1048,7 +1048,7 @@ public class RubyString extends RubyObject {
         }
         return result;
     }
-    
+
     /** rb_str_scan
      *
      */
@@ -1088,7 +1088,7 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
-    
+
     /** rb_str_ljust
      *
      */
@@ -1100,7 +1100,7 @@ public class RubyString extends RubyObject {
         Object[] args = new Object[] { getValue(), new Integer(-len) };
         return newString(new PrintfFormat("%*2$s").sprintf(args));
     }
-    
+
     /** rb_str_rjust
      *
      */
@@ -1112,7 +1112,7 @@ public class RubyString extends RubyObject {
         Object[] args = new Object[] { getValue(), new Integer(len) };
         return newString(new PrintfFormat("%*2$s").sprintf(args));
     }
-    
+
     /** rb_str_center
      *
      */
@@ -1136,7 +1136,7 @@ public class RubyString extends RubyObject {
         }
         return newString(sbuf.toString());
     }
-    
+
     private String chop() {
         if (getValue().length() == 0) {
             return null;
@@ -1149,7 +1149,7 @@ public class RubyString extends RubyObject {
         }
         return getValue().substring(0, end);
     }
-    
+
     /** rb_str_chop
      *
      */
@@ -1160,7 +1160,7 @@ public class RubyString extends RubyObject {
         }
         return newString(newStr);
     }
-    
+
     /** rb_str_chop_bang
      *
      */
@@ -1193,7 +1193,7 @@ public class RubyString extends RubyObject {
         }
         return end == -1 ? null : getValue().substring(0, end);
     }
-    
+
     /** rb_str_chomp
      *
      */
@@ -1204,7 +1204,7 @@ public class RubyString extends RubyObject {
         }
         return newString(newStr);
     }
-    
+
     /** rb_str_chomp_bang
      *
      */
@@ -1216,7 +1216,7 @@ public class RubyString extends RubyObject {
         setValue(newStr);
         return this;
     }
-    
+
     /** rb_str_strip
      *
      */
@@ -1226,7 +1226,7 @@ public class RubyString extends RubyObject {
         }
         return newString(getValue().trim());
     }
-    
+
     /** rb_str_strip_bang
      *
      */
@@ -1241,7 +1241,7 @@ public class RubyString extends RubyObject {
         setValue(newStr);
         return this;
     }
-    
+
     private String expandTemplate(String spec, boolean invertOK) {
         int len = spec.length();
         if (len <= 1) {
@@ -1266,7 +1266,7 @@ public class RubyString extends RubyObject {
         }
         return sbuf.toString();
     }
-    
+
     private String setupTable(String[] specs) {
         int[] table = new int[256];
         int numSets = 0;
@@ -1288,7 +1288,7 @@ public class RubyString extends RubyObject {
         }
         return sbuf.toString();
     }
-    
+
     /** rb_str_count
      *
      */
@@ -1308,7 +1308,7 @@ public class RubyString extends RubyObject {
         }
         return RubyFixnum.m_newFixnum(getRuby(), count);
     }
-    
+
     private String delete(RubyObject[] args) {
         int argc = argCount(args, 1, -1);
         String[] specs = new String[argc];
@@ -1328,7 +1328,7 @@ public class RubyString extends RubyObject {
         }
         return sbuf.toString();
     }
-    
+
     /** rb_str_delete
      *
      */
@@ -1337,7 +1337,7 @@ public class RubyString extends RubyObject {
         newStr.infectObject(this);
         return newStr;
     }
-    
+
     /** rb_str_delete_bang
      *
      */
@@ -1349,7 +1349,7 @@ public class RubyString extends RubyObject {
         setValue(newStr);
         return this;
     }
-    
+
     private String squeeze(RubyObject[] args) {
         int argc = args.length;
         String[] specs = null;
@@ -1379,7 +1379,7 @@ public class RubyString extends RubyObject {
         }
         return sbuf.toString();
     }
-    
+
     /** rb_str_squeeze
      *
      */
@@ -1388,7 +1388,7 @@ public class RubyString extends RubyObject {
         newStr.infectObject(this);
         return newStr;
     }
-    
+
     /** rb_str_squeeze_bang
      *
      */
@@ -1400,7 +1400,7 @@ public class RubyString extends RubyObject {
         setValue(newStr);
         return this;
     }
-    
+
     private String tr(RubyObject[] args, boolean squeeze) {
         if (args.length != 2) {
             throw new RubyArgumentException(getRuby(), "wrong number of arguments");
@@ -1445,7 +1445,7 @@ public class RubyString extends RubyObject {
         }
         return sbuf.toString();
     }
-    
+
     /** rb_str_tr
      *
      */
@@ -1454,7 +1454,7 @@ public class RubyString extends RubyObject {
         newStr.infectObject(this);
         return newStr;
     }
-    
+
     /** rb_str_tr_bang
      *
      */
@@ -1466,7 +1466,7 @@ public class RubyString extends RubyObject {
         setValue(newStr);
         return this;
     }
-    
+
     /** rb_str_tr_s
      *
      */
@@ -1475,7 +1475,7 @@ public class RubyString extends RubyObject {
         newStr.infectObject(this);
         return newStr;
     }
-    
+
     /** rb_str_tr_s_bang
      *
      */
@@ -1487,7 +1487,7 @@ public class RubyString extends RubyObject {
         setValue(newStr);
         return this;
     }
-    
+
     /** rb_str_each_line
      *
      */
@@ -1518,7 +1518,7 @@ public class RubyString extends RubyObject {
         }
         return this;
     }
-    
+
     /** rb_str_intern
      *
      */

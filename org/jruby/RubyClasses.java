@@ -232,6 +232,7 @@ public class RubyClasses {
         numericClass = RbNumeric.createNumericClass(ruby);
         integerClass = RbInteger.createIntegerClass(ruby);
         fixnumClass = RbFixnum.createFixnum(ruby);
+        bignumClass = RbBignum.createBignum(ruby);
         floatClass = RbFloat.createFloat(ruby);
 
         stringClass = RbString.createStringClass(ruby);
