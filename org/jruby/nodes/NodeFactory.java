@@ -71,7 +71,7 @@ public class NodeFactory {
 	 * @return newly built node 
 	 **/
 	public Node newDefn(String mid, Node args, Node body, int noex) {
-		return setFileNLine(new DefnNode(p, mid, newRFunc(a, d)));
+		return setFileNLine(new DefnNode(noex, mid, newRFunc(args, body)));
 	}
 
 	public Node newDefs(Node recvNode, String mid, Node a, Node d) {
