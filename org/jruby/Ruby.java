@@ -143,7 +143,6 @@ public final class Ruby {
     private RubyRuntime runtime = new RubyRuntime(this);
 
     private RubyObject rubyTopSelf;
-    private EvaluateVisitor rubyTopSelfEvaluateVisitor;
 
     // Eval
     private ScopeStack scope = new ScopeStack(this);
@@ -242,7 +241,7 @@ public final class Ruby {
     }
 
     public IRubyObject eval(INode node) {
-        return getRubyTopSelfEvaluateVisitor().eval(node);
+        return EvaluateVisitor.createVisitor(rubyTopSelf).eval(node);
     }
 
     public Class getRegexpAdapterClass() {
@@ -550,11 +549,6 @@ public final class Ruby {
         return rubyTopSelf;
     }
 
-    // For use by EvaluateVisitor only.
-    public EvaluateVisitor getRubyTopSelfEvaluateVisitor() {
-        return rubyTopSelfEvaluateVisitor;
-    }
-
     /** rb_iterate
      *
      */
@@ -613,7 +607,6 @@ public final class Ruby {
             exceptions.initDefaultExceptionClasses();
 
             rubyTopSelf = new RubyObject(this, classes.getObjectClass());
-            rubyTopSelfEvaluateVisitor = new EvaluateVisitor(this, rubyTopSelf);
 
             rubyClass = getClasses().getObjectClass();
             getCurrentFrame().setSelf(rubyTopSelf);
