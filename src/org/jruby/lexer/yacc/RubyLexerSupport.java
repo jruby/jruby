@@ -63,7 +63,7 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
      */
     public ISourcePosition getPosition() {
         if (bufferPos <= 0) {
-            return DefaultLexerPosition.getInstance(source.getSourceName(), line + 1, 0);
+            return DefaultLexerPosition.getInstance(source.getSourceName(), line + 1);
         } else {
             return DefaultLexerPosition.getInstance(startPosition.getFile(), startPosition.getLine(), startPosition.getColumn() + bufferPos);
         }
