@@ -53,6 +53,12 @@ public class JavaObject extends RubyObject implements IndexCallable {
         this.value = value;
     }
 
+    public JavaObject(Ruby ruby, Object value) {
+        super(ruby, ruby.getClasses().getJavaObjectClass());
+
+        this.value = value;
+    }
+
     public Class getJavaClass() {
         return value.getClass();
     }
@@ -75,6 +81,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
     private static final int EQUAL = 2;
     private static final int HASH = 3;
     private static final int JAVA_TYPE = 4;
+    private static final int JAVA_CLASS = 5;
 
     public static RubyClass createJavaObjectClass(Ruby ruby) {
         RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
@@ -84,6 +91,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
         javaObjectClass.defineMethod("==", IndexedCallback.create(EQUAL, 1));
 		javaObjectClass.defineMethod("hash", IndexedCallback.create(HASH, 0));
         javaObjectClass.defineMethod("java_type", IndexedCallback.create(JAVA_TYPE, 0));
+        javaObjectClass.defineMethod("java_class", IndexedCallback.create(JAVA_CLASS, 0));
 
         javaObjectClass.getInternalClass().undefMethod("new");
 
@@ -112,6 +120,10 @@ public class JavaObject extends RubyObject implements IndexCallable {
         return RubyString.newString(getRuntime(), getJavaClass().getName());
     }
 
+    public IRubyObject java_class() {
+        return new JavaClass(runtime, getJavaClass());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case TO_S :
@@ -122,6 +134,8 @@ public class JavaObject extends RubyObject implements IndexCallable {
                 return hash();
             case JAVA_TYPE :
                 return java_type();
+            case JAVA_CLASS :
+                return java_class();
             default :
                 return super.callIndexed(index, args);
         }

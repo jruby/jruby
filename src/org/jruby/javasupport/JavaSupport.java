@@ -161,4 +161,8 @@ public class JavaSupport {
         }
         return null;
     }
+    public ClassLoader getJavaClassLoader() {
+        return javaClassLoader;
+    }
+
 }

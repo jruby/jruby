@@ -45,14 +45,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Array;
 
-public class JavaClassClass extends RubyObject implements IndexCallable {
+public class JavaClass extends RubyObject implements IndexCallable {
     private Class javaClass;
 
-    private JavaClassClass(Ruby runtime, String name) {
+    private JavaClass(Ruby runtime, String name) {
         this(runtime, runtime.getJavaSupport().loadJavaClass(name));
     }
 
-    private JavaClassClass(Ruby runtime, Class javaClass) {
+    public JavaClass(Ruby runtime, Class javaClass) {
         super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaClass"));
         this.javaClass = javaClass;
     }
@@ -78,7 +78,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass());
         javaClassClass.includeModule(runtime.getClasses().getComparableModule());
 
-        javaClassClass.defineSingletonMethod("for_name", CallbackFactory.getSingletonMethod(JavaClassClass.class, "for_name", IRubyObject.class));
+        javaClassClass.defineSingletonMethod("for_name", CallbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));
         javaClassClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
         javaClassClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
         javaClassClass.defineMethod("interface?", IndexedCallback.create(INTERFACE_P, 0));
@@ -101,8 +101,8 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return javaClassClass;
     }
 
-    public static JavaClassClass for_name(IRubyObject recv, IRubyObject name) {
-        return new JavaClassClass(recv.getRuntime(), name.asSymbol());
+    public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
+        return new JavaClass(recv.getRuntime(), name.asSymbol());
     }
 
     public RubyBoolean public_p() {
@@ -130,14 +130,14 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         if (superclass == null) {
             return runtime.getNil();
         }
-        return new JavaClassClass(runtime, superclass.getName());
+        return new JavaClass(runtime, superclass.getName());
     }
 
     public RubyFixnum op_cmp(IRubyObject other) {
-        if (! (other instanceof JavaClassClass)) {
+        if (! (other instanceof JavaClass)) {
             throw new TypeError(getRuntime(), "<=> requires JavaClass (" + other.getType() + " given)");
         }
-        JavaClassClass otherClass = (JavaClassClass) other;
+        JavaClass otherClass = (JavaClass) other;
         if (this.javaClass == otherClass.javaClass) {
             return RubyFixnum.newFixnum(getRuntime(), 0);
         }
@@ -153,7 +153,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (! Modifier.isStatic(method.getModifiers())) {
-                result.append(JavaMethodClass.create(runtime, method));
+                result.append(JavaMethod.create(runtime, method));
             }
         }
         return result;
@@ -165,7 +165,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (Modifier.isStatic(method.getModifiers())) {
-                result.append(JavaMethodClass.create(runtime, method));
+                result.append(JavaMethod.create(runtime, method));
             }
         }
         return result;
@@ -188,29 +188,29 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         return Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers);
     }
 
-    public JavaMethodClass java_method(IRubyObject[] args) {
+    public JavaMethod java_method(IRubyObject[] args) {
         if (args.length < 1) {
             throw new ArgumentError(getRuntime(), args.length, 1);
         }
         String methodName = args[0].asSymbol();
         Class[] argumentTypes = new Class[args.length - 1];
         for (int i = 1; i < args.length; i++) {
-            JavaClassClass type = for_name(this, args[i]);
+            JavaClass type = for_name(this, args[i]);
             argumentTypes[i - 1] = type.javaClass;
         }
-        return JavaMethodClass.create(runtime, javaClass, methodName, argumentTypes);
+        return JavaMethod.create(runtime, javaClass, methodName, argumentTypes);
     }
 
     public RubyArray constructors() {
         Constructor[] constructors = javaClass.getConstructors();
         RubyArray result = RubyArray.newArray(getRuntime(), constructors.length);
         for (int i = 0; i < constructors.length; i++) {
-            result.append(new JavaConstructorClass(getRuntime(), constructors[i]));
+            result.append(new JavaConstructor(getRuntime(), constructors[i]));
         }
         return result;
     }
 
-    public JavaConstructorClass constructor(IRubyObject[] args) {
+    public JavaConstructor constructor(IRubyObject[] args) {
         Class[] parameterTypes = new Class[args.length];
         for (int i = 0; i < args.length; i++) {
             String name = args[i].asSymbol();
@@ -222,11 +222,11 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         } catch (NoSuchMethodException nsme) {
             throw new NameError(getRuntime(), "no matching java constructor");
         }
-        return new JavaConstructorClass(getRuntime(), constructor);
+        return new JavaConstructor(getRuntime(), constructor);
     }
 
-    public JavaClassClass array_class() {
-        return new JavaClassClass(getRuntime(), Array.newInstance(javaClass, 0).getClass());
+    public JavaClass array_class() {
+        return new JavaClass(getRuntime(), Array.newInstance(javaClass, 0).getClass());
     }
 
     public JavaObject new_array(IRubyObject lengthArgument) {
@@ -273,4 +273,9 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
                 return super.callIndexed(index, args);
         }
     }
+    // WARNING overrides RubyObject#getJavaClass !!!!
+    public Class getJavaClass() {
+        return javaClass;
+    }
+
 }

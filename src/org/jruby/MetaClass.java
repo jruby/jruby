@@ -22,37 +22,23 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
-public class ObjectClass {
-    private IRubyObject object;
+public class MetaClass extends RubyClass implements IMetaClass {
+    public RubyClass type;
 
-    private IMetaClass metaClass;
-    private RubyClass type;
-
-    public ObjectClass(IRubyObject object) {
-        Asserts.notNull(object);
-
-        this.object = object;
-    }
-
-    public IMetaClass getMetaClass() {
-        if (metaClass == null) {
-            // create a new metaclass.
-            metaClass = (IMetaClass)((RubyObject)object).makeMetaClass(type);
-        }
-
-        return metaClass;
-    }
-
-    public RubyClass getType() {
-        return type;
-    }
-
-    public void setType(RubyClass type) {
+    public MetaClass(Ruby runtime, RubyClass type) {
+        super(runtime, runtime.getClasses().getClassClass(), type);
         Asserts.notNull(type);
 
         this.type = type;
     }
+
+    public MetaClass(Ruby runtime, RubyClass type, RubyClass superClass) {
+        super(runtime, type, superClass);
+    }
+    public boolean isSingleton() {
+        return true;
+    }
+
 }

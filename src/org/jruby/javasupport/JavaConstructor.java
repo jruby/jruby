@@ -35,7 +35,7 @@ import org.jruby.util.Asserts;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class JavaConstructorClass extends JavaCallable implements IndexCallable {
+public class JavaConstructor extends JavaCallable implements IndexCallable {
     private final Constructor constructor;
 
     private static final int ARITY = 1;
@@ -55,7 +55,7 @@ public class JavaConstructorClass extends JavaCallable implements IndexCallable 
         return javaConstructorClass;
     }
 
-    public JavaConstructorClass(Ruby runtime, Constructor constructor) {
+    public JavaConstructor(Ruby runtime, Constructor constructor) {
         super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaConstructor"));
         this.constructor = constructor;
     }

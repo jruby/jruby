@@ -48,8 +48,6 @@ import org.jruby.runtime.ICallable;
  */
 public class RubyClass extends RubyModule {
 
-    private boolean isSingleton = false;
-
     private RubyClass(Ruby ruby) {
         this(ruby, null, null);
     }
@@ -58,7 +56,7 @@ public class RubyClass extends RubyModule {
         this(ruby, null, superClass);
     }
 
-    private RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
+    protected RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
         super(ruby, rubyClass, superClass);
     }
 
@@ -90,10 +88,6 @@ public class RubyClass extends RubyModule {
 
     public boolean isClass() {
         return true;
-    }
-
-    public void setSingleton(boolean singleton) {
-        this.isSingleton = singleton;
     }
 
     public static void createClassClass(RubyClass classClass) {
@@ -129,7 +123,7 @@ public class RubyClass extends RubyModule {
             return this;
         }
 
-        RubyClass clone = newClass(getRuntime(), getInternalClass(), getSuperClass());
+        MetaClass clone = new MetaClass(getRuntime(), getInternalClass(), getSuperClass());
         clone.setupClone(this);
         clone.setInstanceVariables(new HashMap(getInstanceVariables()));
 
@@ -146,13 +140,11 @@ public class RubyClass extends RubyModule {
 
         // st_foreach(RCLASS(klass)->m_tbl, clone_method, clone->m_tbl);
 
-        clone.setSingleton(true);
-
         return clone;
     }
 
     public boolean isSingleton() {
-        return this.isSingleton;
+        return false;
     }
 
     public RubyClass getInternalClass() {
@@ -184,8 +176,7 @@ public class RubyClass extends RubyModule {
      *  @mri rb_class_boot
      */
     public RubyClass newSingletonClass() {
-        RubyClass newClass = RubyClass.newClass(getRuntime(), this);
-        newClass.setSingleton(true);
+        MetaClass newClass = new MetaClass(getRuntime(), this);
         newClass.infectBy(this);
         return newClass;
     }

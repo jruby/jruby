@@ -118,4 +118,27 @@ if defined? Java
   test_ok(string_array_class.constructors.empty?)
   test_ok(array[3].nil?)
   test_exception(ArgumentError) { array[10] }
+
+  # java.lang.reflect.Proxy
+  al = "java.awt.event.ActionListener"
+  ae = "java.awt.event.ActionEvent"
+  action_listener_class = Java::JavaClass.for_name(al)
+  action_listener_instance = Java.new_proxy_instance(action_listener_class) do
+    |proxy, method, event|
+
+    test_ok(action_listener_instance.java_class == proxy.java_class)
+    test_ok(method.instance_of? Java::JavaMethod)
+    test_equal("actionPerformed", method.name())
+
+    $callback_invoked = true
+  end
+  test_ok(action_listener_instance.instance_of? JavaObject)
+  instance_class = action_listener_instance.java_class
+  proxy_class = Java::JavaClass.for_name("java.lang.reflect.Proxy")
+  test_ok(instance_class < action_listener_class)
+  test_ok(action_listener_instance.java_class < proxy_class)
+  action_performed = action_listener_class.java_method(:actionPerformed, ae)
+  $callback_invoked = false
+  action_performed.invoke(action_listener_instance, Java.primitive_to_java(nil))
+  test_ok($callback_invoked)
 end

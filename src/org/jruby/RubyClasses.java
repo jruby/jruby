@@ -43,6 +43,7 @@ import org.jruby.exceptions.IOError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.javasupport.*;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
 
@@ -717,7 +718,7 @@ public class RubyClasses {
      */
     public RubyModule getJavaModule() {
         if (javaModule == null) {
-            javaModule = RubyJava.createJavaModule(runtime);
+            javaModule = Java.createJavaModule(runtime);
         }
         return javaModule;
     }

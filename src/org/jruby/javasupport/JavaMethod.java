@@ -39,7 +39,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
 
-public class JavaMethodClass extends JavaCallable implements IndexCallable {
+public class JavaMethod extends JavaCallable implements IndexCallable {
     private final Method method;
     private RubyClass proxyClass = getRuntime().getClasses().getJavaObjectClass();
 
@@ -75,16 +75,16 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         return javaMethodClass;
     }
 
-    public JavaMethodClass(Ruby runtime, Method method) {
+    public JavaMethod(Ruby runtime, Method method) {
         super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaMethod"));
         this.method = method;
     }
 
-    public static JavaMethodClass create(Ruby runtime, Method method) {
-        return new JavaMethodClass(runtime, method);
+    public static JavaMethod create(Ruby runtime, Method method) {
+        return new JavaMethod(runtime, method);
     }
 
-    public static JavaMethodClass create(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
+    public static JavaMethod create(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
         try {
             Method method = javaClass.getMethod(methodName, argumentTypes);
             return create(runtime, method);

@@ -305,6 +305,11 @@ public class JavaUtil {
     }
 
     public static Object convertArgument(Object argument, Class parameterType) {
+        // convert void return type to null
+        if (parameterType.equals(Void.TYPE)) {
+            return null;
+        }
+
         Object result = argument;
         if (result instanceof JavaObject) {
             result = ((JavaObject) result).getValue();
