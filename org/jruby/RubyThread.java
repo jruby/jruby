@@ -1,24 +1,24 @@
 /*
- * Copyright (C) 2002 Jason Voegele
+ *  Copyright (C) 2002 Jason Voegele
  *
- * JRuby - http://jruby.sourceforge.net
- * 
- * This file is part of JRuby
- * 
- * JRuby is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- * 
- * JRuby is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with JRuby; if not, write to
- * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
- * Boston, MA  02111-1307 USA
+ *  JRuby - http://jruby.sourceforge.net
+ *
+ *  This file is part of JRuby
+ *
+ *  JRuby is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License as
+ *  published by the Free Software Foundation; either version 2 of the
+ *  License, or (at your option) any later version.
+ *
+ *  JRuby is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public
+ *  License along with JRuby; if not, write to
+ *  the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ *  Boston, MA  02111-1307 USA
  */
 package org.jruby;
 
@@ -36,18 +36,33 @@ import org.jruby.exceptions.*;
  * <code>aSymbol</code> refers to a symbol, which is either a quoted string or a
  * <code>Symbol</code> (such as <code>:name</code>).
  *
- * @author  Jason Voegele (jason@jvoegele.com)
+ * @author Jason Voegele (jason@jvoegele.com)
  * @version $Revision$
  */
-public class RubyThread extends RubyObject {
+public class RubyThread extends RubyObject
+{
     // The JVM thread mapped to this Ruby thread instance
+    /**
+     * Description of the Field
+     */
     protected Thread jvmThread;
+    /**
+     * Description of the Field
+     */
     protected Map locals;
 
+    /**
+     * Description of the Field
+     */
     protected static boolean static_abort_on_exception;
+    /**
+     * Description of the Field
+     */
     protected static boolean critical;
+    /**
+     * Description of the Field
+     */
     protected boolean abort_on_exception;
-
 
     // maps Java threads to Ruby threads
     private static Map threads;
@@ -56,10 +71,17 @@ public class RubyThread extends RubyObject {
         // Put the main thread in the map under the key "main"
     }
 
-    public static RubyClass createThreadClass(Ruby ruby) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public static RubyClass createThreadClass(Ruby ruby)
+    {
         RubyClass threadClass = ruby.defineClass(
             "Thread", ruby.getClasses().getObjectClass()
-        );
+            );
 
         // class methods
         threadClass.defineSingletonMethod("abort_on_exception", CallbackFactory.getSingletonMethod(RubyThread.class, "abort_on_exception", RubyString.class));
@@ -107,7 +129,7 @@ public class RubyThread extends RubyObject {
      * <p>
      * Creates a new thread to execute the instructions given in block, and
      * begins running it. Any arguments passed to Thread.new are passed into the
-     * block. 
+     * block.
      * <pre>
      * x = Thread.new { sleep .1; print "x"; print "y"; print "z" }
      * a = Thread.new { print "a"; print "b"; sleep .2; print "c" }
@@ -115,8 +137,14 @@ public class RubyThread extends RubyObject {
      * a.join # main thread exits...
      * </pre>
      * <i>produces:</i> abxyzc
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @param args Description of the Parameter
+     * @return Description of the Return Value
      */
-    public static RubyObject newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static RubyObject newInstance(Ruby ruby, RubyObject recv, RubyObject[] args)
+    {
         return startThread(ruby, recv, args, true);
     }
 
@@ -124,17 +152,55 @@ public class RubyThread extends RubyObject {
      * Basically the same as Thread.new . However, if class Thread is
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @param args Description of the Parameter
+     * @return Description of the Return Value
      */
-    public static RubyThread start(Ruby ruby, RubyObject recv, RubyObject[] args) {
+    public static RubyThread start(Ruby ruby, RubyObject recv, RubyObject[] args)
+    {
         return startThread(ruby, recv, args, false);
     }
 
-    protected static RubyThread startThread(Ruby ruby, RubyObject recv, RubyObject[] args, boolean callInit) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @param args Description of the Parameter
+     * @param callInit Description of the Parameter
+     * @return Description of the Return Value
+     */
+    protected static RubyThread startThread(final Ruby ruby, RubyObject recv, final RubyObject[] args, boolean callInit)
+    {
+        if (!ruby.isBlockGiven()) {
+            System.out.println("No block given to thread!");
+        }
+        else {
+            System.out.println("The block was passed to the thread constructor");
+        }
         RubyThread result = new RubyThread(ruby, (RubyClass) recv);
-        if (callInit)
+        if (callInit) {
             result.callInit(args);
+        }
 
-        result.jvmThread = new Thread(result.new RubyThreadRunner(ruby, args));
+        //result.jvmThread = new Thread(result.new RubyThreadRunner(ruby, args));
+        result.jvmThread = new Thread(
+            new Runnable()
+            {
+                public void run()
+                {
+                    if (ruby.isBlockGiven()) {
+                        System.out.println("THE BLOCK HAS PROPOGATED!");
+
+                        ruby.yield(RubyArray.newArray(ruby, new ArrayList(Arrays.asList(args))));
+                    }
+                    else {
+                        System.out.println("The block did not propogate");
+                    }
+                }
+            });
         result.threads.put(result.jvmThread, result);
         result.locals = new HashMap();
 
@@ -142,11 +208,24 @@ public class RubyThread extends RubyObject {
         return result;
     }
 
-    protected RubyThread(Ruby ruby) {
+    /**
+     *Constructor for the RubyThread object
+     *
+     * @param ruby Description of the Parameter
+     */
+    protected RubyThread(Ruby ruby)
+    {
         this(ruby, ruby.getClasses().getThreadClass());
     }
 
-    protected RubyThread(Ruby ruby, RubyClass type) {
+    /**
+     *Constructor for the RubyThread object
+     *
+     * @param ruby Description of the Parameter
+     * @param type Description of the Parameter
+     */
+    protected RubyThread(Ruby ruby, RubyClass type)
+    {
         super(ruby, type);
     }
 
@@ -155,36 +234,90 @@ public class RubyThread extends RubyObject {
      * default is false. When set to true, will cause all threads to abort (the
      * process will exit(0)) if an exception is raised in any thread. See also
      * Thread.abort_on_exception= .
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @return Description of the Return Value
      */
-    public static RubyBoolean abort_on_exception(Ruby ruby, RubyObject recv) {
+    public static RubyBoolean abort_on_exception(Ruby ruby, RubyObject recv)
+    {
         return static_abort_on_exception ? ruby.getTrue() : ruby.getFalse();
     }
 
-    public static RubyBoolean abort_on_exception_set(Ruby ruby, RubyObject recv, RubyBoolean val) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @param val Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public static RubyBoolean abort_on_exception_set(Ruby ruby, RubyObject recv, RubyBoolean val)
+    {
         static_abort_on_exception = val.isTrue();
         return val;
     }
 
-    public static RubyBoolean critical(Ruby ruby, RubyObject recv) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public static RubyBoolean critical(Ruby ruby, RubyObject recv)
+    {
         // TODO: Probably should just throw NotImplementedError
         return critical ? ruby.getTrue() : ruby.getFalse();
     }
 
-    public static RubyBoolean critical_set(Ruby ruby, RubyObject recv, RubyBoolean val) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @param val Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public static RubyBoolean critical_set(Ruby ruby, RubyObject recv, RubyBoolean val)
+    {
         // TODO: Probably should just throw NotImplementedError
         critical = val.isTrue();
         return val;
     }
 
-    public static RubyThread current(Ruby ruby, RubyObject recv) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public static RubyThread current(Ruby ruby, RubyObject recv)
+    {
         return (RubyThread) threads.get(Thread.currentThread());
     }
 
-    public static RubyArray list(Ruby ruby, RubyObject recv) {
+    /**
+     * Description of the Method
+     *
+     * @param ruby Description of the Parameter
+     * @param recv Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public static RubyArray list(Ruby ruby, RubyObject recv)
+    {
         return new RubyArray(ruby, new ArrayList(threads.values()));
     }
 
-    public RubyObject aref(RubyObject key) {
+    /**
+     * Description of the Method
+     *
+     * @param key Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public RubyObject aref(RubyObject key)
+    {
         if (!(key instanceof RubySymbol) || !(key instanceof RubyString)) {
             throw new ArgumentError(getRuby(), key.inspect() + " is not a symbol");
         }
@@ -196,7 +329,15 @@ public class RubyThread extends RubyObject {
         return result;
     }
 
-    public RubyObject aset(RubyObject key, RubyObject val) {
+    /**
+     * Description of the Method
+     *
+     * @param key Description of the Parameter
+     * @param val Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public RubyObject aset(RubyObject key, RubyObject val)
+    {
         if (!(key instanceof RubySymbol) || !(key instanceof RubyString)) {
             throw new ArgumentError(getRuby(), key.inspect() + " is not a symbol");
         }
@@ -205,20 +346,45 @@ public class RubyThread extends RubyObject {
         return val;
     }
 
-    public RubyBoolean abort_on_exception() {
+    /**
+     * Description of the Method
+     *
+     * @return Description of the Return Value
+     */
+    public RubyBoolean abort_on_exception()
+    {
         return abort_on_exception ? getRuby().getTrue() : getRuby().getFalse();
     }
 
-    public RubyBoolean abort_on_exception_set(RubyBoolean val) {
+    /**
+     * Description of the Method
+     *
+     * @param val Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public RubyBoolean abort_on_exception_set(RubyBoolean val)
+    {
         abort_on_exception = val.isTrue();
         return val;
     }
 
-    public RubyBoolean is_alive() {
+    /**
+     * Description of the Method
+     *
+     * @return Description of the Return Value
+     */
+    public RubyBoolean is_alive()
+    {
         return jvmThread.isAlive() ? getRuby().getTrue() : getRuby().getFalse();
     }
 
-    public RubyThread join() {
+    /**
+     * Description of the Method
+     *
+     * @return Description of the Return Value
+     */
+    public RubyThread join()
+    {
         try {
             jvmThread.join();
         }
@@ -227,52 +393,105 @@ public class RubyThread extends RubyObject {
         return this;
     }
 
-    public RubyBoolean has_key(RubyObject key) {
+    /**
+     * Description of the Method
+     *
+     * @param key Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public RubyBoolean has_key(RubyObject key)
+    {
         return locals.containsKey(key) ? getRuby().getTrue() : getRuby().getFalse();
     }
 
-    public RubyFixnum priority() {
+    /**
+     * Description of the Method
+     *
+     * @return Description of the Return Value
+     */
+    public RubyFixnum priority()
+    {
         return RubyFixnum.newFixnum(getRuby(), jvmThread.getPriority());
     }
 
-    public RubyFixnum priority_set(RubyFixnum priority) {
-        jvmThread.setPriority((int)priority.getLongValue());
+    /**
+     * Description of the Method
+     *
+     * @param priority Description of the Parameter
+     * @return Description of the Return Value
+     */
+    public RubyFixnum priority_set(RubyFixnum priority)
+    {
+        jvmThread.setPriority((int) priority.getLongValue());
         return priority;
     }
 
-    public void raise(RubyException exc) {
+    /**
+     * Description of the Method
+     *
+     * @param exc Description of the Parameter
+     */
+    public void raise(RubyException exc)
+    {
         // TODO: How do we raise the exception from the target thread
         // (as opposed to the calling thread)?
         //throw exc;
     }
 
+    /**
+     * Description of the Class
+     *
+     * @author Jason Voegele (jason@jvoegele.com)
+     */
     protected class RubyThreadRunner implements Runnable
     {
         private RubyObject[] args;
         private Ruby ruby;
 
-        public RubyThreadRunner(Ruby ruby, RubyObject[] args) {
+        /**
+         *Constructor for the RubyThreadRunner object
+         *
+         * @param ruby Description of the Parameter
+         * @param args Description of the Parameter
+         */
+        public RubyThreadRunner(Ruby ruby, RubyObject[] args)
+        {
+            this.ruby = ruby;
             this.args = args;
         }
 
-        public void run() {
+        /**
+         * Main processing method for the RubyThreadRunner object
+         */
+        public void run()
+        {
             try {
+                if (ruby == null) {
+                    throw new RuntimeException("ruby is null!");
+                }
                 if (ruby.isBlockGiven()) {
+                    System.out.println("THE BLOCK HAS PROPOGATED!!!");
                     ruby.yield(RubyArray.newArray(ruby, new ArrayList(Arrays.asList(args))));
+                }
+                else {
+                    System.out.println("THE BLOCK HAS NOT PROPOGATED :(");
                 }
             }
             catch (Throwable t) {
                 // TODO: Should abort_on_exception behavior be implemented here
                 // or in the interpreter itself?
-                if (RubyThread.abort_on_exception(ruby, RubyThread.this).isTrue()) {
-                }
-                else if (RubyThread.this.abort_on_exception().isTrue()) {
-                }
-                else {
-                }
+                /*
+                 *  if (RubyThread.abort_on_exception(ruby, RubyThread.this).isTrue()) {
+                 *  }
+                 *  else if (RubyThread.this.abort_on_exception().isTrue()) {
+                 *  }
+                 *  else {
+                 *  }
+                 */
                 // TODO: Temporary (hack) solution
                 throw new RuntimeException(t.toString());
             }
         }
     }
 }
+
