@@ -28,18 +28,24 @@
 package org.jruby;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Date;
+import java.util.TimeZone;
+import java.util.GregorianCalendar;
 
-import org.jruby.exceptions.*;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyDateFormat;
+import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
+import org.jruby.internal.runtime.builtin.definitions.TimeDefinition;
 
 /** The Time class.
  * 
  * @author chadfowler, jpetersen
  */
-public class RubyTime extends RubyObject {
+public class RubyTime extends RubyObject implements IndexCallable {
     private Calendar cal;
     private long usec;
 
@@ -51,60 +57,7 @@ public class RubyTime extends RubyObject {
     }
 
     public static RubyClass createTimeClass(Ruby ruby) {
-        RubyClass timeClass = ruby.defineClass("Time", ruby.getClasses().getObjectClass());
-        timeClass.includeModule(ruby.getClasses().getComparableModule());
-
-        timeClass.defineSingletonMethod("at", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_at"));
-
-        timeClass.defineSingletonMethod("new", CallbackFactory.getSingletonMethod(RubyTime.class, "s_new"));
-        timeClass.defineSingletonMethod("now", CallbackFactory.getSingletonMethod(RubyTime.class, "s_new"));
-
-        timeClass.defineSingletonMethod("local", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_local"));
-        timeClass.defineSingletonMethod("mktime", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_local"));
-
-        timeClass.defineSingletonMethod("gm", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
-        timeClass.defineSingletonMethod("utc", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
-
-        timeClass.defineMethod("<=>", CallbackFactory.getMethod(RubyTime.class, "op_cmp", IRubyObject.class));
-        timeClass.defineMethod("-", CallbackFactory.getMethod(RubyTime.class, "op_minus", IRubyObject.class));
-        timeClass.defineMethod("+", CallbackFactory.getMethod(RubyTime.class, "op_plus", IRubyObject.class));
-
-        timeClass.defineMethod("sec", CallbackFactory.getMethod(RubyTime.class, "sec"));
-        timeClass.defineMethod("min", CallbackFactory.getMethod(RubyTime.class, "min"));
-        timeClass.defineMethod("hour", CallbackFactory.getMethod(RubyTime.class, "hour"));
-        timeClass.defineMethod("day", CallbackFactory.getMethod(RubyTime.class, "mday"));
-        timeClass.defineMethod("mday", CallbackFactory.getMethod(RubyTime.class, "mday"));
-        timeClass.defineMethod("mon", CallbackFactory.getMethod(RubyTime.class, "month"));
-        timeClass.defineMethod("month", CallbackFactory.getMethod(RubyTime.class, "month"));
-        timeClass.defineMethod("year", CallbackFactory.getMethod(RubyTime.class, "year"));
-        timeClass.defineMethod("wday", CallbackFactory.getMethod(RubyTime.class, "wday"));
-        timeClass.defineMethod("yday", CallbackFactory.getMethod(RubyTime.class, "yday"));
-        timeClass.defineMethod("isdst", CallbackFactory.getMethod(RubyTime.class, "isdst"));
-        timeClass.defineMethod("zone", CallbackFactory.getMethod(RubyTime.class, "zone"));
-        timeClass.defineMethod("to_a", CallbackFactory.getMethod(RubyTime.class, "to_a"));
-        
-        timeClass.defineMethod("to_f", CallbackFactory.getMethod(RubyTime.class, "to_f"));
-
-        timeClass.defineMethod("asctime", CallbackFactory.getMethod(RubyTime.class, "asctime"));
-        timeClass.defineMethod("ctime", CallbackFactory.getMethod(RubyTime.class, "asctime"));
-        timeClass.defineMethod("to_s", CallbackFactory.getMethod(RubyTime.class, "to_s"));
-        timeClass.defineMethod("inspect", CallbackFactory.getMethod(RubyTime.class, "to_s"));
-        timeClass.defineMethod("strftime", CallbackFactory.getMethod(RubyTime.class, "strftime", IRubyObject.class));
-
-        timeClass.defineMethod("tv_usec", CallbackFactory.getMethod(RubyTime.class, "usec"));
-        timeClass.defineMethod("usec", CallbackFactory.getMethod(RubyTime.class, "usec"));
-        timeClass.defineMethod("tv_sec", CallbackFactory.getMethod(RubyTime.class, "to_i"));
-        timeClass.defineMethod("to_i", CallbackFactory.getMethod(RubyTime.class, "to_i"));
-
-        timeClass.defineMethod("gmtime", CallbackFactory.getMethod(RubyTime.class, "gmtime"));
-        timeClass.defineMethod("utc", CallbackFactory.getMethod(RubyTime.class, "gmtime"));
-        timeClass.defineMethod("gmt?", CallbackFactory.getMethod(RubyTime.class, "gmt"));
-        timeClass.defineMethod("gmtime?", CallbackFactory.getMethod(RubyTime.class, "gmt"));
-        timeClass.defineMethod("utc?", CallbackFactory.getMethod(RubyTime.class, "gmt"));
-        timeClass.defineMethod("localtime", CallbackFactory.getMethod(RubyTime.class, "localtime"));
-		timeClass.defineMethod("hash", CallbackFactory.getMethod(RubyTime.class, "hash"));
-
-        return timeClass;
+        return new TimeDefinition(ruby).getType();
     }
 
     protected long getTimeInMillis() {
@@ -406,5 +359,60 @@ public class RubyTime extends RubyObject {
 
     public RubyFixnum hash() {
         return RubyFixnum.newFixnum(runtime, (int)(cal.get(Calendar.SECOND) ^ usec));
+    }
+
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+        case TimeDefinition.OP_CMP :
+            return op_cmp(args[0]);
+        case TimeDefinition.OP_MINUS :
+            return op_minus(args[0]);
+        case TimeDefinition.OP_PLUS :
+            return op_plus(args[0]);
+        case TimeDefinition.SEC :
+            return sec();
+        case TimeDefinition.MIN :
+            return min();
+        case TimeDefinition.HOUR :
+            return hour();
+        case TimeDefinition.MDAY :
+            return mday();
+        case TimeDefinition.MONTH :
+            return month();
+        case TimeDefinition.YEAR :
+            return year();
+        case TimeDefinition.WDAY :
+            return wday();
+        case TimeDefinition.YDAY :
+            return yday();
+        case TimeDefinition.ISDST :
+            return isdst();
+        case TimeDefinition.ZONE :
+            return zone();
+        case TimeDefinition.TO_A :
+            return to_a();
+        case TimeDefinition.TO_F :
+            return to_f();
+        case TimeDefinition.ASCTIME :
+            return asctime();
+        case TimeDefinition.TO_S :
+            return to_s();
+        case TimeDefinition.STRFTIME :
+            return strftime(args[0]);
+        case TimeDefinition.USEC :
+            return usec();
+        case TimeDefinition.TO_I :
+            return to_i();
+        case TimeDefinition.GMTIME :
+            return gmtime();
+        case TimeDefinition.GMT :
+            return gmt();
+        case TimeDefinition.LOCALTIME :
+            return localtime();
+        case TimeDefinition.HASH :
+            return hash();
+        default :
+            return super.callIndexed(index, args);
+        }
     }
 }
