@@ -390,18 +390,6 @@ class Module
     end
   end
 
-  ##
-  # Removes an imported Java package. No new Java classes will be loaded
-  # from the package, but any Java classes that have already been
-  # referenced will remain.
-  #
-
-  def remove_package(package_name)
-    if defined? @included_packages
-      @included_packages.delete(package_name)
-    end
-  end
-
   def get_java_class(name)
     begin
       return Java::JavaClass.for_name(name)

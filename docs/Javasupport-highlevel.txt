@@ -1,0 +1,30 @@
+
+Javasupport High-level API
+--------------------------
+$Id$
+
+
+Module:
+
+    instance methods:
+
+    include_package( aString )
+
+        Includes a Java package into this class/module. The Java
+        classes in the package will become available in this
+        class/module, unless a constant with the same name as a Java
+        class is already defined.
+
+        Example:
+
+            module MyModule
+              include_package "java.util"
+
+              # Create an instance of java.util.Random
+              random = Random.new
+
+              # Call a Java method
+              random.nextInt                  # -> some Fixnum
+              # Call another Java method
+              random.nextInt(10)              # -> some Fixnum (0..9)
+            end
