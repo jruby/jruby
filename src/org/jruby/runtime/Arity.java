@@ -86,12 +86,14 @@ public final class Arity {
     }
 
     public void checkArity(Ruby runtime, IRubyObject[] args) {
+    	int length = args == null ? 0 : args.length;
+    	
         if (isFixed()) {
-            if (args.length != required()) {
+            if (length != required()) {
                 throw runtime.newArgumentError("wrong number of arguments(" + args.length + " for " + required() + ")");
             }
         } else {
-            if (args.length < required()) {
+            if (length < required()) {
                 throw runtime.newArgumentError("wrong number of arguments(" + args.length + " for " + required() + ")");
             }
         }
