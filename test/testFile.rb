@@ -2,6 +2,40 @@ require 'test/minirunit'
 
 test_check "Test File"
 
+# dry tests which don't access the file system
+
+test_ok(File::SEPARATOR)
+test_ok(File::PATH_SEPARATOR)
+
+# basename
+test_equal("", File.basename(""))
+test_equal("a", File.basename("a"))
+test_equal("b", File.basename("a/b"))
+test_equal("c", File.basename("a/b/c"))
+
+test_equal("b", File.basename("a/b", ""))
+test_equal("b", File.basename("a/bc", "c"))
+test_equal("b", File.basename("a/b.c", ".c"))
+
+test_equal("a", File.basename("a/"))
+test_equal("b", File.basename("a/b/"))
+test_equal("/", File.basename("/"))
+
+# dirname
+test_equal(".", File.dirname(""))
+test_equal(".", File.dirname("."))
+test_equal(".", File.dirname(".."))
+test_equal(".", File.dirname("a"))
+test_equal(".", File.dirname("./a"))
+test_equal("./a", File.dirname("./a/b"))
+test_equal("/", File.dirname("/"))
+test_equal("/", File.dirname("/a"))
+test_equal("/a", File.dirname("/a/b"))
+test_equal("/a", File.dirname("/a/b/"))
+test_equal("/", File.dirname("/"))
+
+# expand_path
+
 # join
 [
   ["a", "b", "c", "d"],
@@ -9,17 +43,26 @@ test_check "Test File"
   [],	
   ["a", "b", "..", "c"]
 ].each do |a|
-  test_equal(a.join("/"), File.join(*a))
+  test_equal(a.join(File::SEPARATOR), File.join(*a))
 end
 
-# dirname
-test_equal("/", File.dirname(File.join("/tmp")))
-test_equal("/tmp", File.dirname(File.join("/tmp/")))
-test_equal("g/f/d/s/a", File.dirname(File.join(*["g", "f", "d", "s", "a", "b"])))
-test_equal("b", File.basename(File.join(*["g", "f", "d", "s", "a", "b"])))
-test_equal("/", File.dirname("/"))
-# test_equal(".", File.dirname("\\")) # ?
-test_equal(".", File.dirname("wahoo"))
+# split
+test_equal([".", ""], File.split(""))
+test_equal([".", "."], File.split("."))
+test_equal([".", ".."], File.split(".."))
+test_equal(["/", "/"], File.split("/"))
+test_equal([".", "a"], File.split("a"))
+test_equal([".", "a"], File.split("a/"))
+test_equal(["a", "b"], File.split("a/b"))
+test_equal(["a/b", "c"], File.split("a/b/c"))
+test_equal(["/", "a"], File.split("/a"))
+test_equal(["/", "a"], File.split("/a/"))
+test_equal(["/a", "b"], File.split("/a/b"))
+test_equal(["/a/b", "c"], File.split("/a/b/c"))
+#test_equal(["//", "a"], File.split("//a"))
+test_equal(["../a/..", "b"], File.split("../a/../b/"))
+
+# wet tests which do access the file system
 
 # IO#readlines, IO::readlines, open, close, delete, ...
 

@@ -74,7 +74,7 @@ public class RubyFile extends RubyIO {
         RubyClass fileClass = runtime.defineClass("File", 
                 runtime.getClasses().getIoClass());
 
-        RubyString separator = runtime.newString(separator());
+        RubyString separator = runtime.newString(File.separator);
         separator.freeze();
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
@@ -121,6 +121,7 @@ public class RubyFile extends RubyIO {
 		fileClass.defineSingletonMethod("join", callbackFactory.getOptSingletonMethod("join"));
 		fileClass.defineSingletonMethod("basename", callbackFactory.getOptSingletonMethod("basename"));
 		fileClass.defineSingletonMethod("truncate", callbackFactory.getSingletonMethod("truncate", RubyString.class, RubyFixnum.class));
+		fileClass.defineSingletonMethod("split", callbackFactory.getSingletonMethod("split", RubyString.class));
 		fileClass.defineSingletonMethod("stat", callbackFactory.getSingletonMethod("lstat", RubyString.class));
 		
 		fileClass.defineMethod("initialize", callbackFactory.getOptMethod("initialize"));
@@ -145,10 +146,6 @@ public class RubyFile extends RubyIO {
             throw IOError.fromException(getRuntime(), e);
         }
     }
-
-	private static String separator() {
-		return "/";
-	}
 
 	/*
 	 *  File class methods
@@ -293,50 +290,50 @@ public class RubyFile extends RubyIO {
         return recv.getRuntime().newString(extractedPath);
     }
     
-	public static RubyString dirname(IRubyObject recv, RubyString filename) {
+	public static IRubyObject dirname(IRubyObject recv, RubyString filename) {
 		String name = filename.toString();
-		
-		int index = name.lastIndexOf(separator());
-		boolean alt = false;
-				
+		if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+			name = name.substring(0, name.length() - 1);
+		}
+		//TODO deal with drive letters A: and UNC names 
+		int index = name.lastIndexOf('/');
 		if (index == -1) {
-			index = name.lastIndexOf(altSeparator());
-			
-			if (index == -1) {
-				return recv.getRuntime().newString("."); 
-			}
-			alt = true;
+			// XXX actually, only on windows...
+			index = name.lastIndexOf('\\');
 		}
-		
-		
+		if (index == -1) {
+			return recv.getRuntime().newString("."); 
+		}
 		if (index == 0) {
-			return recv.getRuntime().newString(alt ? altSeparator() : separator());
+			return recv.getRuntime().newString("/");
 		}
-		return recv.getRuntime().newString(name.substring(0, index));
+		return recv.getRuntime().newString(name.substring(0, index)).infectBy(filename);
 	}
 	
-	/**
-	 * @return alternate DOS separator
-	 */
-	private static String altSeparator()
-	{
-		return "\\";
-	}
-
-    public static RubyString basename(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject basename(IRubyObject recv, IRubyObject[] args) {
         if (args.length < 1 || args.length > 2) {
             throw recv.getRuntime().newArgumentError("This method expected 1 or 2 arguments."); // XXX
         }
-
 		String name = args[0].toString();
-		
-		name = new File(name).getName();
-		
-		if (args.length == 2 && name.endsWith(args[1].toString())) {
-		    name = name.substring(0, name.length() - args[1].toString().length());
+		if (name.length() > 1 && name.charAt(name.length() - 1) == '/') {
+			name = name.substring(0, name.length() - 1);
 		}
-
-		return recv.getRuntime().newString(name);
+		int index = name.lastIndexOf('/');
+		if (index == -1) {
+			// XXX actually only on windows...
+			index = name.lastIndexOf('\\');
+		}
+		if (!name.equals("/") && index != -1) {
+			name = name.substring(index + 1);
+		}
+		
+		if (args.length == 2) {
+			String ext = args[1].toString();
+			if (name.endsWith(ext)) {
+				name = name.substring(0, name.length() - ext.length());
+			}
+		}
+		return recv.getRuntime().newString(name).infectBy(args[0]);
 	}
     
     public IRubyObject truncate(RubyFixnum newLength) {
@@ -362,7 +359,13 @@ public class RubyFile extends RubyIO {
 
     public static RubyString join(IRubyObject recv, IRubyObject[] args) {
 		RubyArray argArray = recv.getRuntime().newArray(args);
-		return argArray.join(recv.getRuntime().newString(separator()));
+		return argArray.join(recv.getRuntime().newString(File.separator));
+    }
+    
+    public static RubyArray split(IRubyObject recv, RubyString filename) {
+    	return filename.getRuntime().newArray(
+    			dirname(recv, filename),
+    			basename(recv, new IRubyObject[]{ filename }));
     }
     
     public String toString() {
