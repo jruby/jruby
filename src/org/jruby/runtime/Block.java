@@ -121,6 +121,22 @@ public class Block implements StackElement {
         return method.getArity();
     }
 
+    public Namespace getNamespace() {
+        return frame.getNamespace();
+    }
+
+    public void setNamespace(Namespace namespace) {
+        frame.setNamespace(namespace);
+    }
+
+    public Visibility getVisibility() {
+        return scope.getVisibility();
+    }
+
+    public void setVisibility(Visibility visibility) {
+        scope.setVisibility(visibility);
+    }
+
     /**
      * @see StackElement#getNext()
      */

@@ -507,19 +507,21 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             public IRubyObject execute(IRubyObject self, IRubyObject[] args) {
                 ThreadContext context = runtime.getCurrentContext();
 
-                Block currentBlock = context.getBlockStack().getCurrent();
-                Namespace savedNamespace = currentBlock.getFrame().getNamespace();
-                Visibility savedVisibility = currentBlock.getScope().getVisibility();
+                Block block = context.getBlockStack().getCurrent();
+                Namespace savedNamespace = block.getNamespace();
+                Visibility savedVisibility = block.getVisibility();
 
-                currentBlock.getFrame().setNamespace(context.getCurrentFrame().getNamespace());
-                currentBlock.getScope().setVisibility(Visibility.PUBLIC);
+                // Modify the block's namespace so that we can reach surrounding local
+                // variables from within the block.
+                block.setNamespace(context.getCurrentFrame().getNamespace());
+                block.setVisibility(Visibility.PUBLIC);
                 try {
                     IRubyObject valueInYield = args[0];
                     IRubyObject selfInYield = args[0];
                     return context.yield(valueInYield, selfInYield, context.getRubyClass(), false);
                 } finally {
-                    currentBlock.getFrame().setNamespace(savedNamespace);
-                    currentBlock.getScope().setVisibility(savedVisibility);
+                    block.setNamespace(savedNamespace);
+                    block.setVisibility(savedVisibility);
                 }
             }
 

@@ -12,23 +12,28 @@ end
 
 test_equal("TestModule_Foo", TestModule_Foo.new.foo.type.name)
 
+testmodule_local_variable = 123
+
 TestModule_Foo.module_eval {||
   def abc(x)
     2 * x
   end
   XYZ = 10
   ABC = self
+  LOCAL1 = testmodule_local_variable
 }
 test_equal(4, TestModule_Foo.new.abc(2))
 test_equal(10, TestModule_Foo::XYZ)
 test_equal(TestModule_Foo, TestModule_Foo::ABC)
+test_equal(testmodule_local_variable, TestModule_Foo::LOCAL1)
 
 class TestModule2
 end
-TestModule2.module_eval("def abc(x); 3 * x; end; XYZ = 12; ABC = self")
+TestModule2.module_eval("def abc(x); 3 * x; end; XYZ = 12; ABC = self; LOCAL2 = testmodule_local_variable")
 test_equal(6, TestModule2.new.abc(2))
 test_equal(12, TestModule2::XYZ)
 test_equal(TestModule2, TestModule2::ABC)
+test_equal(testmodule_local_variable, TestModule2::LOCAL2)
 
 module A
   module B
