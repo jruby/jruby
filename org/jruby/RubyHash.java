@@ -74,16 +74,36 @@ public class RubyHash extends RubyObject {
         this.valueMap = valueMap;
     }
 
+	/**
+	 * gets an iterator on a copy of the keySet.
+	 * modifying the iterator will NOT modify the map.
+	 * @return the iterator
+	 **/
 	private Iterator keyIterator() {
 		return new ArrayList(valueMap.keySet()).iterator();
+	}
+
+	/**
+	 * gets an iterator on the keySet.
+	 * modifying the iterator WILL modify the map.
+	 * @return the iterator
+	 **/
+	private Iterator modifiableKeyIterator() {
+		return valueMap.keySet().iterator();
 	}
 
 	private Iterator valueIterator() {
 		return new ArrayList(valueMap.values()).iterator();
 	}
 
+	/**
+	 * gets an iterator on the entries.
+	 * modifying this iterator WILL modify the map.
+	 * @return the iterator
+	 */
 	private Iterator entryIterator() {
-		return new ArrayList(valueMap.entrySet()).iterator();
+		//return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
+		return valueMap.entrySet().iterator();
 	}
 
     public static RubyClass createHashClass(Ruby ruby) {
@@ -384,7 +404,7 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash delete_if() {
-		modify();
+//		modify();		//Benoit: not needed, it is done in the reject_bang method
 		reject_bang();
 		return this;
 	}
@@ -398,7 +418,7 @@ public class RubyHash extends RubyObject {
 	public RubyObject reject_bang() {
 		modify();
 		boolean isModified = false;
-		Iterator iter = keyIterator();
+		Iterator iter = modifiableKeyIterator();
 		while (iter.hasNext()) {
 			RubyObject key = (RubyObject) iter.next();
 			RubyObject value = (RubyObject) valueMap.get(key);
