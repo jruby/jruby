@@ -36,8 +36,109 @@ module JRuby
 
 
       class CreateMethod
-        def initialize(name)
-          @name = name
+        def initialize(name, arity)
+          @name, @arity = name, arity
+        end
+
+        def emit_jvm_bytecode(generator)
+          factory = generator.factory
+
+          # Create a callback
+          generator.append(factory.createNew("org.jruby.runtime.ReflectionCallbackMethod"))
+          # klass
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          generator.java_class_name))
+          arg_types = BCEL::Type[].new(1)
+          arg_types[0] = BCEL::Type::STRING
+          generator.appendInvoke("java.lang.Class",
+                                 "forName",
+                                 BCEL::ObjectType.new("java.lang.Class"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKESTATIC)
+          # methodName
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          @name))
+          # args
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          @arity))
+          generator.append(factory.createNewArray(BCEL::ObjectType.new("java.lang.Class"),
+                                                  1))
+          for i in 0...@arity
+            generator.append(BCEL::DUP.new)
+            generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                            i))
+            generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                            IRUBYOBJECT_TYPE.getClassName))
+            generator.appendInvoke("java.lang.Class",
+                                   "forName",
+                                   BCEL::ObjectType.new("java.lang.Class"),
+                                   arg_types,
+                                   BCEL::Constants::INVOKESTATIC)
+            generator.append(BCEL::AASTORE.new)
+          end
+
+          # isRestArgs
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          false))
+          # isStaticMethod
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          true))
+          # arity
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          @arity))
+          arg_types = BCEL::Type[].new(1)
+          arg_types[0] = BCEL::Type::INT
+          generator.appendInvoke("org.jruby.runtime.Arity",
+                                 "fixed",
+                                 BCEL::ObjectType.new("org.jruby.runtime.Arity"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKESTATIC)
+
+          generator.append(BCEL::DUP.new)
+
+          arg_types = BCEL::Type[].new(6)
+          arg_types[0] = BCEL::ObjectType.new("java.lang.Class")
+          arg_types[1] = BCEL::Type::STRING
+          arg_types[2] = BCEL::ArrayType.new("java.lang.Class", 1)
+          arg_types[3] = BCEL::Type::BOOLEAN
+          arg_types[4] = BCEL::Type::BOOLEAN
+          arg_types[5] = BCEL::ObjectType.new("org.jruby.runtime.Arity")
+
+          # Call constructor
+          generator.appendInvoke("org.jruby.runtime.ReflectionCallbackMethod",
+                                 "<init>",
+                                 BCEL::Type::VOID,
+                                 arg_types,
+                                 BCEL::Constants::INVOKESPECIAL)
+
+          # Register it to the runtime
+
+          # Get the current class
+          generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          generator.appendInvoke("org.jruby.Ruby",
+                                 "getRubyClass",
+                                 BCEL::ObjectType.new("org.jruby.RubyModule"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
+
+          # Stack: ..., callback, current_class
+          generator.append(BCEL::SWAP.new)
+          # Stack: ..., current_class, callback
+          generator.append(BCEL::PUSH.new(generator.getConstantPool,
+                                          @name))
+          # Stack: ..., current_class, callback, name
+          generator.append(BCEL::SWAP.new)
+          # Stack: ..., current_class, name, callback
+
+          # addMethod(name, callback)
+          arg_types = BCEL::Type[].new(2)
+          arg_types[0] = BCEL::Type::STRING
+          arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.ICallable")
+          generator.appendInvoke("org.jruby.RubyModule",
+                                 "addMethod",
+                                 BCEL::Type::VOID,
+                                 arg_types,
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 

@@ -50,6 +50,10 @@ module JRuby
           BCEL::InstructionFactory.new(method.getConstantPool)
       end
 
+      def java_class_name
+        @method.getClassName
+      end
+
       def append(instruction)
         if BCEL::BranchInstruction.java_class.assignable_from?(instruction.java_class)
           # Javasupport problem workaround
@@ -119,17 +123,24 @@ module JRuby
 
       def jvm_compile(classgen, name)
         methodgen = create_java_method(classgen, name)
-
         generator = JvmGenerator.new(methodgen)
         @bytecodes.each {|b|
           b.emit_jvm_bytecode(generator)
         }
-
-        # Methods end by returning the top of their operand stacks
         methodgen.getInstructionList.append(BCEL::ARETURN.new)
-
         methodgen.setMaxStack
         classgen.addMethod(methodgen.getMethod)
+
+        @methods.each {|name, bytecodes|
+          methodgen = create_java_method(classgen, name)
+          generator = JvmGenerator.new(methodgen)
+          bytecodes.each {|b|
+            b.emit_jvm_bytecode(generator)
+          }
+          methodgen.getInstructionList.append(BCEL::ARETURN.new)
+          methodgen.setMaxStack
+          classgen.addMethod(methodgen.getMethod)
+        }
       end
 
       def create_java_method(classgen, name)
@@ -265,7 +276,8 @@ module JRuby
         @bytecodes.new_method(node.getName) {
           emit_bytecodes(node.getBodyNode)
         }
-        @bytecodes << CreateMethod.new(node.getName)
+        @bytecodes << CreateMethod.new(node.getName,
+                                       node.getArgsNode.getArgsCount)
       end
 
       def visitScopeNode(node)

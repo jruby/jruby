@@ -54,7 +54,7 @@ interpreter we instead focus on getting to JVM byte codes.
 3. Ruby byte-code -> JVM byte-code
 ----------------------------------
 
-3.1 Calling compiled code
+3.1 Invoking compiled code
 -------------------------
 
 This is where it gets interesting. The big question is maybe not how
@@ -98,16 +98,10 @@ The compiled code doesn't run in a vacuum. It needs access to the Ruby
 runtime as much as interpreted code does. To make the code generation
 as easy as possible this environment must be very simple.
 
-Required variables:
+For this purpose the two variables 'runtime' and 'self' are passed to
+every Ruby-implementing Java method.
 
-* runtime
-* self
-
-[...]
-
-
-3.4 The compilation
--------------------
+3.4 Handling exceptions
+-----------------------
 
 [To be written]
-

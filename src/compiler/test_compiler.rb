@@ -82,7 +82,7 @@ def test_compiled(expected, source)
 
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
-#  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
+  classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
 
   result = JRubyUtil::TestHelper.loadAndCall(:dummy,
                                              classgen.getClassName,
