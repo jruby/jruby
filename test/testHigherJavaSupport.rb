@@ -184,4 +184,7 @@ if defined? Java
   test_ok([1, 2, 3], a.sort)
   test_ok([1], a.select {|e| e >= 1 })
   
+  # High-level java should only deal with proxies and not low-level JavaClass
+  test_ok(a.getClass().class != "Java::JavaClass")
+  
 end

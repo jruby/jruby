@@ -66,7 +66,7 @@ public class JavaClass extends JavaObject {
     }
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass result = javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass()); 
+        RubyClass result = javaModule.defineClassUnder("JavaClass", runtime.getClasses().getJavaObjectClass()); 
 
     	CallbackFactory callbackFactory = runtime.callbackFactory(JavaClass.class);
         
