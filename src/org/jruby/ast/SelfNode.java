@@ -36,6 +36,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class SelfNode extends AbstractNode {
+    static final long serialVersionUID = 7003057726029491707L;
+
 
     public SelfNode(ISourcePosition position) {
         super(position);

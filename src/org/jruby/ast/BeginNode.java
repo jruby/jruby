@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class BeginNode extends AbstractNode {
+    static final long serialVersionUID = 7295877486186461712L;
+
     private final INode bodyNode;
 
     public BeginNode(ISourcePosition position, INode bodyNode) {

@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class EnsureNode extends AbstractNode {
+    static final long serialVersionUID = -409805241533215981L;
+
     private final INode bodyNode;
     private final INode ensureNode;
 

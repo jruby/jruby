@@ -43,6 +43,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class DRegexpNode extends AbstractNode implements IListNode, ILiteralNode {
+    static final long serialVersionUID = 7307853378003210140L;
+
     private List list;
 
     private int options;

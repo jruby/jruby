@@ -48,6 +48,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ScopeNode extends AbstractNode {
+    static final long serialVersionUID = 3694868125861223886L;
+
     private final List localNames;
     private final INode bodyNode;
 

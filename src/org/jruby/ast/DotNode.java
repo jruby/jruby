@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class DotNode extends AbstractNode {
+    static final long serialVersionUID = 2763797850980107429L;
+
     private final INode beginNode;
     private final INode endNode;
     private final boolean exclusive;

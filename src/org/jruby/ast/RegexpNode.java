@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class RegexpNode extends AbstractNode implements ILiteralNode {
+    static final long serialVersionUID = -1566813018564622077L;
+
     private final String value;
     private final int options;
     

@@ -51,6 +51,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  */
 public class ArgsNode extends AbstractNode {
+    static final long serialVersionUID = 3709437716296564785L;
+
     private final int argsCount;
     private final IListNode optArgs;
     private final int restArg;

@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class AliasNode extends AbstractNode {
+    static final long serialVersionUID = -498707070925086399L;
+
     private final String oldName;
     private final String newName;
 

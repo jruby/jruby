@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class WhenNode extends AbstractNode {
+    static final long serialVersionUID = 9099987602002276708L;
+
     private final IListNode expressionNodes;
     private final INode bodyNode;
 

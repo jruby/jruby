@@ -42,6 +42,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public final class DStrNode extends AbstractNode implements IListNode, ILiteralNode {
+    static final long serialVersionUID = -1488812415812799395L;
+
     private List list;
 
     public DStrNode(ISourcePosition position) {

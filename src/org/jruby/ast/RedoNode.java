@@ -36,6 +36,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class RedoNode extends AbstractNode {
+    static final long serialVersionUID = -356433067591852187L;
+
     public RedoNode(ISourcePosition position) {
         super(position);
     }

@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class TrueNode extends AbstractNode {
+    static final long serialVersionUID = -8198252481133454778L;
+
 
     public TrueNode(ISourcePosition position) {
         super(position);

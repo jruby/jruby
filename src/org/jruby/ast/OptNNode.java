@@ -39,6 +39,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class OptNNode extends AbstractNode {
+    static final long serialVersionUID = -742216664550880045L;
+
     private final INode bodyNode;
 
     public OptNNode(ISourcePosition position, INode bodyNode) {

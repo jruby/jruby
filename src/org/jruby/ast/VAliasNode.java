@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class VAliasNode extends AbstractNode {
+    static final long serialVersionUID = 8647860367861922838L;
+
     private final String oldName;
     private final String newName;
 

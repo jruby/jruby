@@ -39,6 +39,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class HashNode extends AbstractNode {
+    static final long serialVersionUID = -7554050553303344025L;
+
     private final IListNode listNode;
     
     public HashNode(IListNode listNode) {

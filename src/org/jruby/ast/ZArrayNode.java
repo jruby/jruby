@@ -40,6 +40,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ZArrayNode extends AbstractNode implements ILiteralNode {
+    static final long serialVersionUID = -5004157166982016917L;
+
 
     public ZArrayNode(ISourcePosition position) {
         super(position);

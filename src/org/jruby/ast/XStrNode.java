@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class XStrNode extends AbstractNode implements ILiteralNode {
+    static final long serialVersionUID = 1371310021447439748L;
+
     private final String value;
 
     public XStrNode(ISourcePosition position, String value) {

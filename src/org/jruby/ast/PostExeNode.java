@@ -36,6 +36,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class PostExeNode extends AbstractNode {
+    static final long serialVersionUID = -2851659895226590014L;
+
     public PostExeNode(ISourcePosition position) {
         super(position);
     }

@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class RescueNode extends AbstractNode {
+    static final long serialVersionUID = -4757038578511808125L;
+
     private INode bodyNode;
     private IListNode rescueNodes;
     private INode elseNode;

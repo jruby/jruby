@@ -40,6 +40,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class FlipNode extends AbstractNode {
+    static final long serialVersionUID = -4735579451657299802L;
+
     private final INode beginNode;
     private final INode endNode;
     private final boolean exclusive;

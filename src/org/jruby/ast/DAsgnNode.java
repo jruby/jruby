@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class DAsgnNode extends AbstractNode implements IAssignableNode {
+    static final long serialVersionUID = 2396008643154044043L;
+
     private final String name;
     private INode valueNode;
 

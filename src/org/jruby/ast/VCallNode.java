@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class VCallNode extends AbstractNode {
+    static final long serialVersionUID = -7678578490000574578L;
+
     private final String methodName;
 
     public VCallNode(ISourcePosition position, String name) {

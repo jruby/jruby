@@ -39,6 +39,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class SuperNode extends AbstractNode {
+    static final long serialVersionUID = 5158689332796676417L;
+
     private final INode argsNode;
 
     public SuperNode(ISourcePosition position, INode argsNode) {

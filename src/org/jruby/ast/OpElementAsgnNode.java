@@ -44,6 +44,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class OpElementAsgnNode extends AbstractNode {
+    static final long serialVersionUID = 1509701560452403776L;
+
     private final INode receiverNode;
     private final String operatorName;
     private final INode argsNode;

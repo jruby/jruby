@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class IfNode extends AbstractNode {
+    static final long serialVersionUID = -163780144332979551L;
+
     private final INode condition;
     private final INode thenBody;
     private final INode elseBody;

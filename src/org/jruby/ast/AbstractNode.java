@@ -37,6 +37,8 @@ import org.ablaf.common.ISourcePosition;
  * @version $Revision$
  */
 public abstract class AbstractNode implements INode, Serializable {
+    static final long serialVersionUID = -5962822607672530224L;
+
     private final ISourcePosition position;
 
 	/**

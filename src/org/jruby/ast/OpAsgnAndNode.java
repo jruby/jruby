@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class OpAsgnAndNode extends AbstractNode {
+    static final long serialVersionUID = 7366271929271260664L;
+
     private final INode firstNode;
     private final INode secondNode;
 

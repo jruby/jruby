@@ -43,6 +43,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class SClassNode extends AbstractNode {
+    static final long serialVersionUID = -3706492163082062224L;
+
     private final INode receiverNode;
     private final ScopeNode bodyNode;
 

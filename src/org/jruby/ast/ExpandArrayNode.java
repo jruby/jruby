@@ -41,6 +41,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ExpandArrayNode extends AbstractNode {
+    static final long serialVersionUID = -4911951839602674675L;
+
     private final INode expandNode;
 
     public ExpandArrayNode(INode expandNode) {

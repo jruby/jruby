@@ -47,6 +47,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class WhileNode extends AbstractNode {
+    static final long serialVersionUID = -5355364190446060873L;
+
     private final INode conditionNode;
     private final INode bodyNode;
 

@@ -37,6 +37,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class Colon2Node extends AbstractNode {
+    static final long serialVersionUID = -3250593470034657352L;
+
     private INode leftNode;
     private String name;
 

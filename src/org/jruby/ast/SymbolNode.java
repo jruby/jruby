@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class SymbolNode extends AbstractNode implements ILiteralNode {
+    static final long serialVersionUID = 3168450881711346709L;
+
 	private final String name;
 
 	public SymbolNode(ISourcePosition position, String name) {

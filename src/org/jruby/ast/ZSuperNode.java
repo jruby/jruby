@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ZSuperNode extends AbstractNode {
+    static final long serialVersionUID = 6109129030317216863L;
+
     public ZSuperNode(ISourcePosition position) {
         super(position);
     }

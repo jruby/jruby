@@ -37,6 +37,8 @@ import org.ablaf.common.ISourcePosition;
  * @version $Revision$
  */
 public class FixnumNode extends AbstractNode implements ILiteralNode {
+    static final long serialVersionUID = 2236565825959274729L;
+
     private final long value;
 
     public FixnumNode(ISourcePosition position, long value) {

@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class AttrSetNode extends AbstractNode {
+    static final long serialVersionUID = 3891623889734854578L;
+
     private final String attributeName;
 
     public AttrSetNode(ISourcePosition position, String attributeName) {

@@ -48,6 +48,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class BackRefNode extends AbstractNode {
+    static final long serialVersionUID = 5321267679438359590L;
+
 	/**
 	 * the character which generated the backreference
 	 **/

@@ -41,6 +41,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class EvStrNode extends AbstractNode {
+    static final long serialVersionUID = 1681935012117120817L;
+
     private final String value;
     private INode evaluatedNode;
 

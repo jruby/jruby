@@ -41,6 +41,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class BlockArgNode extends AbstractNode {
+    static final long serialVersionUID = 8374824536805365398L;
+
     private final int count;
 
     public BlockArgNode(ISourcePosition position, int count) {

@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class GlobalVarNode extends AbstractNode {
+    static final long serialVersionUID = -8913633094119740033L;
+
     private final String name;
 
     public GlobalVarNode(ISourcePosition position, String name) {

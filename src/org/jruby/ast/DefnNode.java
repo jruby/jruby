@@ -39,6 +39,8 @@ import org.jruby.runtime.Visibility;
  * @version $Revision$
  */
 public class DefnNode extends AbstractNode {
+    static final long serialVersionUID = -7634791007500033454L;
+
     private String name;
     private INode argsNode;
     private ScopeNode bodyNode;

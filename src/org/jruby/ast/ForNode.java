@@ -41,6 +41,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ForNode extends AbstractNode {
+    static final long serialVersionUID = -8319863477790150586L;
+
     private final INode varNode;
     private final INode bodyNode;
     private final INode iterNode;

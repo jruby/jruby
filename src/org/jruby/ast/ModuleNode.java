@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ModuleNode extends AbstractNode {
+    static final long serialVersionUID = 4938115602547834310L;
+
     private final String name;
     private final ScopeNode bodyNode;
 

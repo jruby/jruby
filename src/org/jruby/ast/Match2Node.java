@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class Match2Node extends AbstractNode {
+    static final long serialVersionUID = -5637326290741724784L;
+
     private final INode receiverNode;
     private final INode valueNode;
 

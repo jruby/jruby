@@ -8,6 +8,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class StarNode extends AbstractNode {
+    static final long serialVersionUID = 8314131941892458677L;
+
 
     /**
      * Constructor for StartNode.

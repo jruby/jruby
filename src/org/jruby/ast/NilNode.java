@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class NilNode extends AbstractNode {
+    static final long serialVersionUID = -8702073984472296708L;
+
     public NilNode(ISourcePosition position) {
         super(position);
     }

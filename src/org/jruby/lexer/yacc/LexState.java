@@ -113,6 +113,10 @@ public final class LexState implements ILexerState {
     public boolean isExprClass() {
         return this == EXPR_CLASS;
     }
+    
+    public boolean isArgument () {
+        return this == EXPR_ARG || this == EXPR_CMDARG;
+    }
 
     public String toString() {
         return debug;

@@ -41,6 +41,8 @@ import org.ablaf.common.ISourcePosition;
  * @version $Revision$
  */
 public class BlockPassNode extends AbstractNode {
+    static final long serialVersionUID = 7201862349971094217L;
+
     private INode bodyNode;
     private INode iterNode;
 

@@ -13,6 +13,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ZeroArgNode extends AbstractNode {
+    static final long serialVersionUID = 6596791950608957025L;
+
 
     /**
      * Constructor for ZeroArgNode.

@@ -44,6 +44,8 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class BlockNode extends AbstractNode implements IListNode {
+    static final long serialVersionUID = 6070308619613804520L;
+
     private ArrayList list;
 
     public BlockNode(ISourcePosition position) {

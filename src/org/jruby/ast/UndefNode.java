@@ -36,6 +36,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class UndefNode extends AbstractNode {
+    static final long serialVersionUID = -8829084073375820727L;
+
     private final String name;
 
     public UndefNode(ISourcePosition position, String name) {

@@ -42,6 +42,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class DXStrNode extends AbstractNode implements IListNode, ILiteralNode {
+    static final long serialVersionUID = 7165988969190553667L;
+
     private List list;
 
     public DXStrNode(ISourcePosition position) {

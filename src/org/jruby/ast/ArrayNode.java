@@ -46,6 +46,8 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class ArrayNode extends AbstractNode implements IListNode, ILiteralNode {
+    static final long serialVersionUID = 6279246130032958596L;
+
     private ArrayList list;
 
    

@@ -38,6 +38,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class IterNode extends AbstractNode {
+    static final long serialVersionUID = -9181965000180892184L;
+
     private final INode varNode;
     private final INode bodyNode;
     private INode iterNode;

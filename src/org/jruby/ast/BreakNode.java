@@ -36,6 +36,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class BreakNode extends AbstractNode {
+    static final long serialVersionUID = 1491046888629861035L;
+
     public BreakNode(ISourcePosition position) {
         super(position);
     }

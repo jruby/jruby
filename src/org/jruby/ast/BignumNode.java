@@ -39,6 +39,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class BignumNode extends AbstractNode implements ILiteralNode {
+    static final long serialVersionUID = -8646636291868912747L;
+
     private final BigInteger value;
 
     public BignumNode(ISourcePosition position, BigInteger value) {

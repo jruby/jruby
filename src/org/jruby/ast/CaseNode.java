@@ -42,6 +42,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class CaseNode extends AbstractNode {
+    static final long serialVersionUID = -2824917272720800901L;
+
 	/**
 	 * the case expression.
 	 **/

@@ -581,7 +581,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     }
                     // fall through
                 case '\n' :
-                    if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot()) {
+                    if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot() || lexState.isExprClass()) {
                         continue;
                     }
                     lexState = LexState.EXPR_BEG;
@@ -635,6 +635,7 @@ public class RubyYaccLexer implements IYaccLexer {
 
         // then grab the position of the beginning of the token
         currentPos = support.getPosition();
+
         retry : for (;;) {
             switch (c = support.read()) {
                 case '*' :
@@ -653,8 +654,8 @@ public class RubyYaccLexer implements IYaccLexer {
                             return Token.tOP_ASGN;
                         }
                         support.unread();
-                        if (isArgState() && spaceSeen && !Character.isWhitespace(c)) {
-                            errorHandler.handleError(IErrors.WARNING, support.getPosition(), Messages.getString("star_interpreted_as_argument_prefix")); //$NON-NLS-1$
+                        if (lexState.isArgument() && spaceSeen && !Character.isWhitespace(c)) {
+                            errorHandler.handleError(IErrors.WARNING, support.getPosition(), "`*' interpreted as argument prefix");
                             c = (char) Token.tSTAR;
                         } else if (lexState.isExprBeg() || lexState.isExprMid()) {
                             c = (char) Token.tSTAR;
@@ -672,8 +673,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     lexState = LexState.EXPR_BEG;
                     if ((c = support.read()) == '=') {
                         return Token.tNEQ;
-                    }
-                    if (c == '~') {
+                    } else if (c == '~') {
                         return Token.tNMATCH;
                     }
                     support.unread();
@@ -702,9 +702,10 @@ public class RubyYaccLexer implements IYaccLexer {
                     c = support.read();
                     if (c == '<'
                         && !lexState.isExprEnd()
+                        && !lexState.isExprDot()
                         && !lexState.isExprEndArg()
                         && !lexState.isExprClass()
-                        && (!isArgState() || spaceSeen)) {
+                        && (!lexState.isArgument() || spaceSeen)) {
                         char c2 = support.read();
                         boolean indent = false;
                         if (c2 == '-') {
@@ -732,7 +733,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     if (c == '<') {
                         if (support.read() == '=') {
                             lexState = LexState.EXPR_BEG;
-                            yaccValue = "<<"; //$NON-NLS-1$
+                            yaccValue = "<<";
                             return Token.tOP_ASGN;
                         }
                         support.unread();
@@ -752,7 +753,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     if (c == '>') {
                         if ((c = support.read()) == '=') {
                             lexState = LexState.EXPR_BEG;
-                            yaccValue = ">>"; //$NON-NLS-1$
+                            yaccValue = ">>";
                             return Token.tOP_ASGN;
                         }
                         support.unread();
@@ -805,13 +806,13 @@ public class RubyYaccLexer implements IYaccLexer {
                     if ((c = support.read()) == '&') {
                         lexState = LexState.EXPR_BEG;
                         if ((c = support.read()) == '=') {
-                            yaccValue = "&&"; //$NON-NLS-1$
+                            yaccValue = "&&";
                             return Token.tOP_ASGN;
                         }
                         support.unread();
                         return Token.tANDOP;
                     } else if (c == '=') {
-                        yaccValue = "&"; //$NON-NLS-1$
+                        yaccValue = "&";
                         lexState = LexState.EXPR_BEG;
                         return Token.tOP_ASGN;
                     }

@@ -39,6 +39,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class MultipleAsgnNode extends AbstractNode implements IAssignableNode {
+    static final long serialVersionUID = 5016291105152162748L;
+
     private final IListNode headNode;
     private final INode argsNode;
     private INode valueNode;

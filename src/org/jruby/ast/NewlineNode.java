@@ -46,6 +46,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class NewlineNode extends AbstractNode {
+    static final long serialVersionUID = -6180129177863553832L;
+
     private final INode nextNode;
 
     public NewlineNode(ISourcePosition position, INode nextNode) {

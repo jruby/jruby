@@ -39,6 +39,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ClassVarAsgnNode extends AbstractNode implements IAssignableNode {
+    static final long serialVersionUID = -2960487069128667341L;
+
     private String name;
     private INode valueNode;
 

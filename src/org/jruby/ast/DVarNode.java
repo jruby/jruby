@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class DVarNode extends AbstractNode {
+    static final long serialVersionUID = -8479281167248673970L;
+
     private final String name;
 
     public DVarNode(ISourcePosition position, String name) {

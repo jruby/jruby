@@ -37,6 +37,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class NotNode extends AbstractNode {
+    static final long serialVersionUID = -9044821606260233871L;
+
     private final INode conditionNode;
 
     public NotNode(ISourcePosition position, INode conditionNode) {
