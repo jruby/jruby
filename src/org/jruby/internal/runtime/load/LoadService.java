@@ -54,6 +54,8 @@ import org.jruby.util.PreparsedScript;
  * @version $Revision$
  */
 public class LoadService implements ILoadService {
+    private static final String[] suffixes = { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };
+
     private final List loadPath = new ArrayList();
     private final List loadedFeatures = new ArrayList();
     private final Map builtinLibraries = new HashMap();
@@ -99,7 +101,6 @@ public class LoadService implements ILoadService {
     }
 
     public boolean load(String file) {
-        String[] suffixes = new String[] { ".ast.ser", "", ".rb.ast.ser", ".rb", ".jar" };
         Library library = null;
         for (int i = 0; i < suffixes.length; i++) {
             library = findLibrary(file + suffixes[i]);
@@ -110,7 +111,11 @@ public class LoadService implements ILoadService {
         if (library == null) {
             throw new LoadError(runtime, "No such file to load -- " + file);
         }
-        library.load(runtime);
+        try {
+        	library.load(runtime);
+        } catch (IOException e) {
+        	throw new LoadError(runtime, "IO error -- " + file);
+        }
         return true;
     }
 

@@ -45,24 +45,22 @@ public class PreparsedScript implements Library {
         this.loc = loc;
     }
 
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime) throws IOException {
         runtime.loadNode("preparsed", getNode(runtime), false);
     }
 
-    private Node getNode(Ruby runtime) {
-    	
-        InputStream in = null;
+    private Node getNode(Ruby runtime) throws IOException {
+        InputStream in;
         try {
-        	in = loc.openStream();
-        } catch (IOException ioe) {}
-        
-        if (in == null) {
+        	in = new BufferedInputStream(loc.openStream());
+        } catch (IOException e) {
             throw new IOError(runtime, "Resource not found: " + loc);
         }
-        in = new BufferedInputStream(in);
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
-        Node result = decoder.readNode();
-        decoder.close();
-        return result;
+        try {
+        	return decoder.readNode();
+        } finally {
+        	decoder.close();
+        }
     }
 }

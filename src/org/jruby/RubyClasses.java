@@ -32,6 +32,7 @@
  */
 package org.jruby;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -253,9 +254,13 @@ public class RubyClasses {
     }
 
     public void initBuiltinClasses() {
-        new BuiltinScript("FalseClass").load(runtime);
-        new BuiltinScript("TrueClass").load(runtime);
-        new BuiltinScript("Enumerable").load(runtime);
+    	try {
+	        new BuiltinScript("FalseClass").load(runtime);
+	        new BuiltinScript("TrueClass").load(runtime);
+	        new BuiltinScript("Enumerable").load(runtime);
+    	} catch (IOException e) {
+    		throw new Error("builtin scripts are missing", e);
+    	}
     }
 
     /**

@@ -26,6 +26,7 @@
 package org.jruby.util;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.ablaf.ast.IAstDecoder;
@@ -45,11 +46,11 @@ public class BuiltinScript implements Library {
         this.name = name;
     }
 
-    public void load(Ruby runtime) {
+    public void load(Ruby runtime) throws IOException {
         runtime.loadNode("jruby builtin", getNode(runtime), false);
     }
 
-    private Node getNode(Ruby runtime) {
+    private Node getNode(Ruby runtime) throws IOException {
         String resourceName = "/builtin/" + name + ".rb.ast.ser";
         InputStream in = getClass().getResourceAsStream(resourceName);
         if (in == null) {
@@ -57,8 +58,10 @@ public class BuiltinScript implements Library {
         }
         in = new BufferedInputStream(in);
         IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
-        Node result = decoder.readNode();
-        decoder.close();
-        return result;
+        try {
+        	return decoder.readNode();
+        } finally {
+        	decoder.close();
+        }
     }
 }

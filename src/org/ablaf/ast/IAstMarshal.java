@@ -22,6 +22,7 @@
  */
 package org.ablaf.ast;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -31,6 +32,6 @@ import java.io.OutputStream;
  * @version $Revision$
  */
 public interface IAstMarshal {
-    IAstEncoder openEncoder(OutputStream output);
-    IAstDecoder openDecoder(InputStream input);
+    IAstEncoder openEncoder(OutputStream output) throws IOException;
+    IAstDecoder openDecoder(InputStream input) throws IOException;
 }

@@ -23,6 +23,8 @@
  */
 package org.ablaf.ast;
 
+import java.io.IOException;
+
 import org.jruby.ast.Node;
 
 
@@ -32,7 +34,6 @@ import org.jruby.ast.Node;
  * @version $Revision$
  */
 public interface IAstDecoder {
-    Node readNode();
-
-    void close();
+    Node readNode() throws IOException;
+    void close() throws IOException;
 }

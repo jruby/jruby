@@ -55,11 +55,13 @@ public class ASTSerializer {
     }
     
     public static void serialize(File input, File outputFile) throws IOException {
-        OutputStream output = new FileOutputStream(outputFile);
-        output = new BufferedOutputStream(output);
+        OutputStream output = new BufferedOutputStream(new FileOutputStream(outputFile));
         IAstEncoder encoder = RubyAstMarshal.getInstance().openEncoder(output);
-        serialize(input, encoder);
-        encoder.close();
+        try {
+        	serialize(input, encoder);
+        } finally {
+        	encoder.close();
+        }
     }
     
     public static void serialize(File input, IAstEncoder encoder) throws IOException {

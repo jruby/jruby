@@ -43,74 +43,36 @@ public class SerializationAstMarshal implements IAstMarshal {
     /**
      * @see org.ablaf.ast.IAstMarshal#openEncoder(OutputStream)
      */
-    public IAstEncoder openEncoder(OutputStream output) {
-        try {
-            final ObjectOutputStream oout = new ObjectOutputStream(output);
-            return new IAstEncoder() {
-                /**
-                 * @see org.ablaf.ast.IAstEncoder#writeNode(Node)
-                 */
-                public void writeNode(Node node) {
-                    try {
-                        oout.writeObject(node);
-                    } catch (IOException e) {
-                        assert false : "IOException: " + e.getMessage();
-                    }
-                }
-            
-                /**
-                 * @see org.ablaf.ast.IAstEncoder#close()
-                 */
-                public void close() {
-                    try {
-                        oout.close();
-                    } catch (IOException e) {
-                        assert false : "IOException: " + e.getMessage();
-                    }
-                }
-            };
-        } catch (IOException e) {
-            assert false : "IOException: " + e.getMessage();
-            return null;
-        }
+    public IAstEncoder openEncoder(OutputStream output) throws IOException {
+        final ObjectOutputStream oout = new ObjectOutputStream(output);
+        return new IAstEncoder() {
+            public void writeNode(Node node) throws IOException {
+            	oout.writeObject(node);
+            }
+        
+            public void close() throws IOException {
+            	oout.close();
+            }
+        };
     }
 
     /**
      * @see org.ablaf.ast.IAstMarshal#openDecoder(InputStream)
      */
-    public IAstDecoder openDecoder(InputStream input) {
-        try {
-            final ObjectInputStream oin = new ObjectInputStream(input);
-            return new IAstDecoder() {
-                /**
-                 * @see org.ablaf.ast.IAstDecoder#readNode()
-                 */
-                public Node readNode() {
-                    try {
-                        return (Node)oin.readObject();
-                    } catch (IOException e) {
-                        assert false : "IOException: " + e.getMessage();
-                        return null;
-                    } catch (ClassNotFoundException e) {
-                        assert false : "ClassNotFoundException: " + e.getMessage();
-                        return null;
-                    }
-                }
-            
-                /**
-                 * @see org.ablaf.ast.IAstDecoder#close()
-                 */
-                public void close() {
-                    try {
-                        oin.close();
-                    } catch (IOException e) {
-                        assert false : "IOException: " + e.getMessage();
-                    }
-                }
-            };
-        } catch (IOException e) {
-            assert false : "IOException: " + e.getMessage();
-            return null;
-        }
+    public IAstDecoder openDecoder(InputStream input) throws IOException {
+    	final ObjectInputStream oin = new ObjectInputStream(input);
+    	return new IAstDecoder() {
+			public Node readNode() throws IOException {
+				try {
+					return (Node) oin.readObject();
+				} catch (ClassNotFoundException e) {
+					throw (IOException) new IOException("Missing AST class: " + e.getMessage()).initCause(e);
+				}
+			}
+
+			public void close() throws IOException {
+				oin.close();
+			}
+		};
     }
 }

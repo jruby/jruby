@@ -23,15 +23,18 @@
  */
 package org.ablaf.ast;
 
+import java.io.IOException;
+
 import org.jruby.ast.Node;
 
 /**
+ * An AST encoder can write nodes into some internal stream (not part of this API) and can be
+ * eventually closed (which should free the resources of that internal stream).
  * 
  * @author jpetersen
  * @version $Revision$
  */
 public interface IAstEncoder {
-    void writeNode(Node node);
-
-    void close();
+    void writeNode(Node node) throws IOException;
+    void close() throws IOException;
 }
