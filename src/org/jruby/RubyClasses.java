@@ -249,7 +249,7 @@ public class RubyClasses {
         threadGroupClass = RubyThreadGroup.createThreadGroupClass(runtime);
         threadClass = RubyThread.createThreadClass(runtime);
 
-        runtime.getLoadService().addAutoload("RubyUnboundMethod", new IAutoloadMethod() {
+        runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
             public IRubyObject load(Ruby runtime, String name) {
                 return RubyUnboundMethod.defineUnboundMethodClass(runtime);
             }
@@ -831,7 +831,7 @@ public class RubyClasses {
             return getMatchDataClass();
         } else if (name == "Math") {
             return getMathModule();
-        } else if (name == "RubyMethod") {
+        } else if (name == "Method") {
             return getMethodClass();
         } else if (name == "Numeric") {
             return getNumericClass();
@@ -857,7 +857,7 @@ public class RubyClasses {
             return getThreadGroupClass();
         } else if (name == "Time") {
             return getTimeClass();
-        } else if (name == "RubyUnboundMethod") {
+        } else if (name == "UnboundMethod") {
             return getUnboundMethodClass();
         }
         return null;

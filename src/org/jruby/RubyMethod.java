@@ -88,7 +88,7 @@ public class RubyMethod extends RubyObject {
         ICallable method,
         IRubyObject receiver) {
         Ruby runtime = implementationModule.getRuntime();
-        RubyMethod newMethod = new RubyMethod(runtime, runtime.getClass("RubyMethod"));
+        RubyMethod newMethod = new RubyMethod(runtime, runtime.getClasses().getMethodClass());
 
         newMethod.implementationModule = implementationModule;
         newMethod.methodName = methodName;
