@@ -30,6 +30,7 @@ import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * Class variable assignment node.
@@ -56,8 +57,8 @@ public class ClassVarAsgnNode extends AbstractNode implements IAssignableNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitClassVarAsgnNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitClassVarAsgnNode(this);
     }
 
     /**

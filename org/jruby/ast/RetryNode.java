@@ -28,6 +28,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a 'retry' statement.
  *
@@ -43,7 +44,7 @@ public class RetryNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitRetryNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitRetryNode(this);
     }
 }

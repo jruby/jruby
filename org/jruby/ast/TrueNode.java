@@ -28,6 +28,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *
@@ -44,7 +45,7 @@ public class TrueNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitTrueNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitTrueNode(this);
     }
 }

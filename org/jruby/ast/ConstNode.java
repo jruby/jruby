@@ -28,6 +28,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * The access to a Constant.
@@ -48,8 +49,8 @@ public class ConstNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitConstNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitConstNode(this);
     }
 
     /**

@@ -33,6 +33,7 @@ import org.ablaf.common.*;
 
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *
@@ -79,8 +80,8 @@ public class RescueBodyNode extends AbstractNode implements IListNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitRescueBodyNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitRescueBodyNode(this);
     }
 
     /**

@@ -28,6 +28,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * Access to a Dynamic variable.
@@ -48,8 +49,8 @@ public class DVarNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDVarNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDVarNode(this);
     }
 
     /**

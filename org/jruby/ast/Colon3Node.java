@@ -28,6 +28,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * Global scope node.
@@ -52,8 +53,8 @@ public class Colon3Node extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitColon3Node(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitColon3Node(this);
     }
 
     /**

@@ -35,6 +35,7 @@ import org.jruby.ast.types.*;
 import org.jruby.ast.util.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * Dynamic backquote string.
@@ -77,7 +78,7 @@ public class DXStrNode extends AbstractNode implements IListNode, ILiteralNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDXStrNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDXStrNode(this);
     }
 }

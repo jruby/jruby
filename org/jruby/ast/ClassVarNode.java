@@ -28,6 +28,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 //Benoit:
 //previous doc comment was:  normal method
 //I don't see what this has to do with normal, it looks like a class variable reference to me.
@@ -50,8 +51,8 @@ public class ClassVarNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitClassVarNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitClassVarNode(this);
     }
 
     /**

@@ -30,6 +30,7 @@ import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * assignment to dynamic variable
@@ -51,8 +52,8 @@ public class DAsgnNode extends AbstractNode implements IAssignableNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDAsgnNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDAsgnNode(this);
     }
     
     /**

@@ -30,6 +30,7 @@ import org.ablaf.common.*;
 
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents an integer literal.
  *
@@ -45,8 +46,8 @@ public class FixnumNode extends AbstractNode implements ILiteralNode {
         this.value = value;
     }
 
-    public void accept(NodeVisitor visitor) {
-        visitor.visitFixnumNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitFixnumNode(this);
     }
 
     /**

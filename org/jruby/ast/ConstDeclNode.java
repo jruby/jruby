@@ -30,6 +30,7 @@ import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * Declaration (and assignment) of a Constant.
@@ -58,8 +59,8 @@ public class ConstDeclNode extends AbstractNode implements IAssignableNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitConstDeclNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitConstDeclNode(this);
     }
 
     /**

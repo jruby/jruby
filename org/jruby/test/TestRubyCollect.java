@@ -48,8 +48,7 @@ public class TestRubyCollect extends TestRubyBase {
  } 
  
  public void setUp() { 
- ruby = Ruby.getDefaultInstance 
-(GNURegexpAdapter.class); 
+        ruby = Ruby.getDefaultInstance(null);
  } 
  
  public void tearDown() { 

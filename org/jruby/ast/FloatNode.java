@@ -30,6 +30,7 @@ import org.ablaf.common.*;
 
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a float literal.
  *
@@ -37,17 +38,17 @@ import org.jruby.ast.visitor.*;
  * @version $Revision$
  */
 public class FloatNode extends AbstractNode implements ILiteralNode {
-	private double value;
-	
-	public FloatNode(ISourcePosition position, double value) {
-	    super(position);
+    private double value;
+    
+    public FloatNode(ISourcePosition position, double value) {
+        super(position);
 
-	    this.value = value;
-	}
+        this.value = value;
+    }
 
-	public void accept(NodeVisitor visitor) {
-	    visitor.visitFloatNode(this);
-	}
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitFloatNode(this);
+    }
 
     /**
      * Gets the value.

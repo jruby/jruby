@@ -33,6 +33,7 @@ import org.jruby.exceptions.*;
 import org.jruby.ast.util.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * a For statement.
@@ -60,8 +61,8 @@ public class ForNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitForNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitForNode(this);
     }
 
     /**

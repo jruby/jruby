@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * an 'if' statement.
@@ -52,8 +53,8 @@ public class IfNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitIfNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitIfNode(this);
     }
 
     /**

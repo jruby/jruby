@@ -29,7 +29,7 @@ package org.jruby.ast;
 
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
-
+import org.ablaf.ast.visitor.INodeVisitor;
 /** An AliasNode represents an alias statement.
  * ast node for the 
  * <code>alias newName oldName</code>
@@ -51,8 +51,8 @@ public class AliasNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitAliasNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitAliasNode(this);
     }
 
     /**

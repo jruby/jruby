@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * A Case statement.
@@ -68,8 +69,8 @@ public class CaseNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitCaseNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitCaseNode(this);
     }
 
     /**

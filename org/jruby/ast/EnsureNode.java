@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *	an ensure statement.
@@ -53,8 +54,8 @@ public class EnsureNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitEnsureNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitEnsureNode(this);
     }
 
     /**

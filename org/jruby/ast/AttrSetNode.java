@@ -33,6 +33,7 @@ import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *
@@ -52,8 +53,8 @@ public class AttrSetNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitAttrSetNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitAttrSetNode(this);
     }
 
     /**

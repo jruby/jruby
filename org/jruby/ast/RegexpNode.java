@@ -30,6 +30,7 @@ import org.ablaf.common.*;
 
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a simple regular expression literal.
  *
@@ -47,8 +48,8 @@ public class RegexpNode extends AbstractNode implements ILiteralNode {
         this.options = options;
     }
 
-    public void accept(NodeVisitor visitor) {
-        visitor.visitRegexpNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitRegexpNode(this);
     }
 
     /**

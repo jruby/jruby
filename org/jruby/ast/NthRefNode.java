@@ -30,6 +30,7 @@ import org.ablaf.common.*;
 import org.jruby.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a $number variable.
  *
@@ -49,8 +50,8 @@ public class NthRefNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitNthRefNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitNthRefNode(this);
     }
 
     /**

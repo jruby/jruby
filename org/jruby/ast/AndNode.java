@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** An AndNode represents a && operator.
  *
@@ -46,8 +47,8 @@ public class AndNode extends AbstractNode {
         this.secondNode = secondNode;
     }
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitAndNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitAndNode(this);
     }
 
     /**

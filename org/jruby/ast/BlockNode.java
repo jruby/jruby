@@ -33,6 +33,7 @@ import org.ablaf.common.*;
 
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * A structuring node (linked list of other nodes).
@@ -78,8 +79,8 @@ public class BlockNode extends AbstractNode implements IListNode {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitBlockNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitBlockNode(this);
     }
 
     /**

@@ -30,6 +30,7 @@ import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * Represents an assignment to a global variable.
@@ -53,8 +54,8 @@ public class GlobalAsgnNode extends AbstractNode implements IAssignableNode {
      * accepts the visitor 
      * @param iVisitor the visitor to accept
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitGlobalAsgnNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitGlobalAsgnNode(this);
     }
     /**
      * Gets the name.

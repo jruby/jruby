@@ -33,6 +33,7 @@ import org.ablaf.common.*;
 
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *	Dynamic regexp node.
@@ -85,8 +86,8 @@ public class DRegexpNode extends AbstractNode implements IListNode, ILiteralNode
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDRegxNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDRegxNode(this);
     }
 
     /**

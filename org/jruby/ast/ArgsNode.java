@@ -31,6 +31,7 @@ import org.jruby.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * arguments for a function.
@@ -80,8 +81,8 @@ public class ArgsNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitArgsNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitArgsNode(this);
     }
 
     /**

@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a '::' constant access or method call.
  *
@@ -50,8 +51,8 @@ public class Colon2Node extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitColon2Node(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitColon2Node(this);
     }
 
     /**

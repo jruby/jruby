@@ -30,20 +30,17 @@
  */
 package org.jruby.test;
 
-import junit.framework.*;
-import java.util.Date;
+import java.util.*;
 
-import org.jruby.Ruby;
-import org.jruby.RubyTime;
-import org.jruby.RubyClass;
-import org.jruby.RubyObject;
-import org.jruby.RubyFixnum;
+import junit.framework.*;
+
+import org.jruby.*;
 
 /**
-* @author chadfowler
-*/
+ * 
+ * @author chadfowler
+ */
 public class TestRubyTime extends TestCase {
-
     private Ruby ruby;
     private RubyClass rubyTime;
     private RubyTime nineTeenSeventy;
@@ -53,8 +50,8 @@ public class TestRubyTime extends TestCase {
     }
 
     public void setUp() {
-        ruby = new Ruby();
-        ruby.init();
+        ruby = Ruby.getDefaultInstance(null);
+
         rubyTime = ruby.getClasses().getTimeClass();
         RubyObject[] args = new RubyObject[1];
         args[0] = new RubyFixnum(ruby, 18000000);

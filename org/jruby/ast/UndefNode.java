@@ -31,6 +31,7 @@ import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents an undef statement.
  *
@@ -50,8 +51,8 @@ public class UndefNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitUndefNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitUndefNode(this);
     }
 
     /**

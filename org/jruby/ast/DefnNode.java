@@ -33,6 +33,7 @@ import org.jruby.exceptions.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * method definition node.
@@ -55,8 +56,8 @@ public class DefnNode extends AbstractNode {
         this.noex = noex;
     }
 
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDefnNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDefnNode(this);
     }
 
     /**

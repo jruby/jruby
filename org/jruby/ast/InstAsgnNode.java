@@ -30,6 +30,7 @@ import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents an instance variable assignment.
  *
@@ -40,23 +41,23 @@ public class InstAsgnNode extends AbstractNode implements IAssignableNode {
     private String name;
     private INode valueNode;
 
-	/**
-	 * Construtor.
-	 * @param iName the name of the instance variable
-	 * @param iValueNode the value of the variable
-	 **/
+    /**
+     * Construtor.
+     * @param iName the name of the instance variable
+     * @param iValueNode the value of the variable
+     **/
     public InstAsgnNode(ISourcePosition position, String iName, INode iValueNode) {
         super(position);
-		name = iName;
-		valueNode = iValueNode;
+        name = iName;
+        valueNode = iValueNode;
     }
 
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitInstAsgnNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitInstAsgnNode(this);
     }
 
     /**

@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Begin/End block.
  *  A Begin ... End block without rescue.
@@ -49,8 +50,8 @@ public class BeginNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitBeginNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitBeginNode(this);
     }
 
     /**

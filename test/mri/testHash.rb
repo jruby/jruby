@@ -28,7 +28,7 @@ test_ok($z == "2:4:6")
 test_ok($x == $y)
 
 $y.shift
-test_ok($y.length == 2)
+test_equal(2, $y.length)
 
 $z = [1,2]
 $y[$z] = 256

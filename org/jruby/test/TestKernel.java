@@ -56,7 +56,7 @@ public class TestKernel extends TestRubyBase {
     }
 
     public void setUp() {
-	ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+	ruby = Ruby.getDefaultInstance(null);
 	ruby.initLoad(new ArrayList());
     }
 
@@ -73,6 +73,11 @@ public class TestKernel extends TestRubyBase {
 	assertEquals("incorrectly reloaded the file test/loadTest", "", eval("require 'test/loadTest'"));
 
 	assertEquals("incorrect value for $\" variable", "test/loadTest", eval("print $\""));
+    }
+
+    public void testPrintf() {
+	assertEquals("hello", eval("printf(\"%s\", \"hello\")"));
+	assertEquals("", eval("printf(\"%s\", nil)"));
     }
 
     private void assertTrue(RubyObject iObj) {

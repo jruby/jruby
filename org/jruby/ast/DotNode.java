@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents a range literal.
  *
@@ -52,8 +53,8 @@ public class DotNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDotNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDotNode(this);
     }
 
     /**

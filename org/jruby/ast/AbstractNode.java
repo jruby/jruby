@@ -31,6 +31,7 @@ import org.ablaf.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  *
@@ -51,12 +52,6 @@ public abstract class AbstractNode implements INode {
         return position;
     }
 
-    /**
-     * @see INode#accept(INodeVisitor)
-     */
-    public void accept(INodeVisitor visitor) {
-        accept((NodeVisitor)visitor);
-    }
-    
-    public abstract void accept(NodeVisitor visitor);
+ 
+	
 }

@@ -31,6 +31,7 @@ import org.ablaf.common.*;
 import org.jruby.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * A new (logical) source code line.
@@ -60,8 +61,8 @@ public class NewlineNode extends AbstractNode {
      * accepts the visitor
      * @param iVisitor the visitor to accept
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitNewlineNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitNewlineNode(this);
     }
 
     /**

@@ -29,6 +29,7 @@ package org.jruby.ast;
 import org.ablaf.ast.*;
 import org.ablaf.common.*;
 import org.jruby.ast.visitor.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /** Represents an expanded argument (*expr).
  * this can be used in a method call, in an array reference or in 
@@ -59,8 +60,8 @@ public class ExpandArrayNode extends AbstractNode {
     /**
      * @see AbstractNode#accept(NodeVisitor)
      */
-    public void accept(NodeVisitor visitor) {
-        visitor.visitExpandArrayNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitExpandArrayNode(this);
     }
 
     /**

@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * A class statement.
@@ -60,8 +61,8 @@ public class ClassNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitClassNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitClassNode(this);
     }
     /**
      * Gets the bodyNode.

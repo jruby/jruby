@@ -33,6 +33,7 @@ import org.jruby.exceptions.*;
 import org.jruby.ast.types.*;
 import org.jruby.ast.visitor.*;
 import org.jruby.runtime.*;
+import org.ablaf.ast.visitor.INodeVisitor;
 
 /**
  * a defined statement.
@@ -52,8 +53,8 @@ public class DefinedNode extends AbstractNode {
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
-    public void accept(NodeVisitor iVisitor) {
-        iVisitor.visitDefinedNode(this);
+    public void accept(INodeVisitor iVisitor) {
+        ((NodeVisitor)iVisitor).visitDefinedNode(this);
     }
 
     /**
