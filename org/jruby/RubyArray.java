@@ -35,6 +35,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.FrozenError;
@@ -47,7 +51,6 @@ import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
 import org.jruby.util.collections.IdentitySet;
 
@@ -1281,25 +1284,17 @@ public class RubyArray extends RubyObject implements IndexCallable {
     }
 
     private ArrayList uniq(List oldList) {
-        int oldLength = oldList.size();
-        ArrayList newList = new ArrayList(oldLength);
+        ArrayList newList = new ArrayList(oldList.size());
+        Set passed = new HashSet(oldList.size());
 
-        for (int i = 0; i < oldLength; i++) {
-            IRubyObject obj = (IRubyObject) oldList.get(i);
-
-            boolean found = false;
-            int newLength = newList.size();
-            for (int j = 0; j < newLength; j++) {
-                if (obj.callMethod("==", (IRubyObject) newList.get(j)).isTrue()) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                newList.add(obj);
+        Iterator iter = oldList.iterator();
+        while (iter.hasNext()) {
+            Object item = iter.next();
+            if (! passed.contains(item)) {
+                passed.add(item);
+                newList.add(item);
             }
         }
-
         newList.trimToSize();
         return newList;
     }

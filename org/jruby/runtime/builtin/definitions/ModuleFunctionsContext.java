@@ -13,10 +13,6 @@ public class ModuleFunctionsContext {
     private final IStaticCallable callable;
     private final RubyModule module;
 
-    /**
-     * Constructor for SingletonMethodContext.
-     * @param runtime
-     */
     public ModuleFunctionsContext(RubyModule singleton, IStaticCallable callable) {
         this.callable = callable;
         this.module = singleton;

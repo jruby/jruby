@@ -34,6 +34,8 @@ arr2.reverse!
 test_equal([1,2,3], arr)
 test_equal([3,2,1], arr2)
 
+test_equal([1,2,3], [1,2,3,1,2,3,1,1,1,2,3,2,1].uniq)
+
 test_equal([1,2,3,4], [[[1], 2], [3, [4]]].flatten)
 test_equal(nil, [].flatten!)
 

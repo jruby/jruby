@@ -2,11 +2,10 @@ package org.jruby.runtime.builtin.definitions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.runtime.IStaticCallable;
 
 /**
- * 
+ *
  * @author jpetersen
  * @version $Revision$
  */
