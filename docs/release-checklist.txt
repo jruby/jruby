@@ -17,3 +17,4 @@ Steps 6 and 7 should be run on both linux and windows
 11. Update entries in
  a. RAA
  b. freshmeat.net
+ c. http://www.rubygarden.org/ruby?JRuby
