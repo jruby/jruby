@@ -104,7 +104,17 @@ public class RubyArray extends RubyObject implements IndexCallable {
     private static final int M_REVERSE_EACH = 22;
     private static final int M_LENGTH = 23;
     private static final int M_EMPTY_P = 24;
+    private static final int M_INDEX = 25;
+    private static final int M_RINDEX = 26;
 
+    private static final int M_REVERSE = 30;
+    private static final int M_REVERSE_BANG = 31;
+    private static final int M_SORT = 32;
+    private static final int M_SORT_BANG = 33;
+    private static final int M_COLLECT = 34;
+    private static final int M_COLLECT_BANG = 35;
+
+    private static final int M_CLONE = 50;
 
 	public static RubyClass createArrayClass(Ruby ruby) {
 		RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
@@ -146,22 +156,21 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("length", IndexedCallback.create(M_LENGTH, 0));
 		arrayClass.defineMethod("size", IndexedCallback.create(M_LENGTH, 0));
 		arrayClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY_P, 0));
-		arrayClass.defineMethod("index", CallbackFactory.getMethod(RubyArray.class, "index", RubyObject.class));
-		arrayClass.defineMethod("rindex", CallbackFactory.getMethod(RubyArray.class, "rindex", RubyObject.class));
+		arrayClass.defineMethod("index", IndexedCallback.create(M_INDEX, 1));
+		arrayClass.defineMethod("rindex", IndexedCallback.create(M_RINDEX, 1));
 		arrayClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
 		arrayClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
-		arrayClass.defineMethod("clone", CallbackFactory.getMethod(RubyArray.class, "rbClone"));
+		arrayClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
 		arrayClass.defineMethod("join", CallbackFactory.getOptMethod(RubyArray.class, "join"));
-		arrayClass.defineMethod("reverse", CallbackFactory.getMethod(RubyArray.class, "reverse"));
-		arrayClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyArray.class, "reverse_bang"));
+		arrayClass.defineMethod("reverse", IndexedCallback.create(M_REVERSE, 0));
+		arrayClass.defineMethod("reverse!", IndexedCallback.create(M_REVERSE_BANG, 0));
+		arrayClass.defineMethod("sort", IndexedCallback.create(M_SORT, 0));
+		arrayClass.defineMethod("sort!", IndexedCallback.create(M_SORT_BANG, 0));
 
-		arrayClass.defineMethod("sort", CallbackFactory.getMethod(RubyArray.class, "sort"));
-		arrayClass.defineMethod("sort!", CallbackFactory.getMethod(RubyArray.class, "sort_bang"));
-
-		arrayClass.defineMethod("collect", CallbackFactory.getMethod(RubyArray.class, "collect"));
-		arrayClass.defineMethod("collect!", CallbackFactory.getMethod(RubyArray.class, "collect_bang"));
-		arrayClass.defineMethod("map!", CallbackFactory.getMethod(RubyArray.class, "collect_bang"));
-		arrayClass.defineMethod("filter", CallbackFactory.getMethod(RubyArray.class, "collect_bang"));
+		arrayClass.defineMethod("collect", IndexedCallback.create(M_COLLECT, 0));
+		arrayClass.defineMethod("collect!", IndexedCallback.create(M_COLLECT_BANG, 0));
+		arrayClass.defineMethod("map!", IndexedCallback.create(M_COLLECT_BANG, 0));
+		arrayClass.defineMethod("filter", IndexedCallback.create(M_COLLECT_BANG, 0));
 		arrayClass.defineMethod("delete", CallbackFactory.getMethod(RubyArray.class, "delete", RubyObject.class));
 		arrayClass.defineMethod("delete_at", CallbackFactory.getMethod(RubyArray.class, "delete_at", RubyObject.class));
 		arrayClass.defineMethod("delete_if", CallbackFactory.getMethod(RubyArray.class, "delete_if"));
@@ -231,6 +240,24 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return length();
         case M_EMPTY_P:
             return empty_p();
+        case M_INDEX:
+            return index(args[0]);
+        case M_RINDEX:
+            return rindex(args[0]);
+        case M_REVERSE:
+            return reverse();
+        case M_REVERSE_BANG:
+            return reverse_bang();
+        case M_SORT:
+            return sort();
+        case M_SORT_BANG:
+            return sort_bang();
+        case M_COLLECT:
+            return collect();
+        case M_COLLECT_BANG:
+            return collect_bang();
+        case M_CLONE:
+            return rbClone();
         }
         Asserts.assertNotReached();
         return null;

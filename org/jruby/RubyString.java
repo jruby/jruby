@@ -118,6 +118,13 @@ public class RubyString extends RubyObject implements IndexCallable {
     private static final int M_UPTO = 13;
     private static final int M_REPLACE = 16;
 
+    private static final int M_TO_I = 20;
+    private static final int M_TO_F = 21;
+    private static final int M_INSPECT = 22;
+
+    private static final int M_CONCAT = 50;
+    private static final int M_INTERN = 51;
+
 
 	public static RubyClass createStringClass(Ruby ruby) {
 		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
@@ -154,12 +161,12 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("rindex", CallbackFactory.getOptMethod(RubyString.class, "rindex"));
 		stringClass.defineMethod("replace", IndexedCallback.create(M_REPLACE, 1));
 
-		stringClass.defineMethod("to_i", CallbackFactory.getMethod(RubyString.class, "to_i"));
-		stringClass.defineMethod("to_f", CallbackFactory.getMethod(RubyString.class, "to_f"));
+		stringClass.defineMethod("to_i", IndexedCallback.create(M_TO_I, 0));
+		stringClass.defineMethod("to_f", IndexedCallback.create(M_TO_F, 0));
 
 		stringClass.defineMethod("to_s", CallbackFactory.getSelfMethod(0));
 		stringClass.defineMethod("to_str", CallbackFactory.getSelfMethod(0));
-		stringClass.defineMethod("inspect", CallbackFactory.getMethod(RubyString.class, "inspect"));
+		stringClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
 		stringClass.defineMethod("dump", CallbackFactory.getMethod(RubyString.class, "dump"));
 
 		stringClass.defineMethod("upcase", CallbackFactory.getMethod(RubyString.class, "upcase"));
@@ -177,10 +184,10 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("split", CallbackFactory.getOptMethod(RubyString.class, "split"));
 		stringClass.defineMethod("reverse", CallbackFactory.getMethod(RubyString.class, "reverse"));
 		stringClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyString.class, "reverse_bang"));
-		stringClass.defineMethod("concat", CallbackFactory.getMethod(RubyString.class, "concat", RubyObject.class));
-		stringClass.defineMethod("<<", CallbackFactory.getMethod(RubyString.class, "concat", RubyObject.class));
+		stringClass.defineMethod("concat", IndexedCallback.create(M_CONCAT, 1));
+		stringClass.defineMethod("<<", IndexedCallback.create(M_CONCAT, 1));
 		//    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
-		stringClass.defineMethod("intern", CallbackFactory.getMethod(RubyString.class, "intern"));
+		stringClass.defineMethod("intern", IndexedCallback.create(M_INTERN, 0));
 
 		stringClass.defineMethod("include?", CallbackFactory.getMethod(RubyString.class, "include", RubyObject.class));
 
@@ -260,6 +267,16 @@ public class RubyString extends RubyObject implements IndexCallable {
             return upto(args[0]);
         case M_REPLACE:
             return replace(args[0]);
+        case M_TO_I:
+            return to_i();
+        case M_TO_F:
+            return to_f();
+        case M_INSPECT:
+            return inspect();
+        case M_CONCAT:
+            return concat(args[0]);
+        case M_INTERN:
+            return intern();
         }
         Asserts.assertNotReached();
         return null;
