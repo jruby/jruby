@@ -192,6 +192,7 @@ public class RubyString extends RubyObject {
         //    rb_define_hooked_variable("$;", &rb_fs, 0, rb_str_setter);
         //    rb_define_hooked_variable("$-F", &rb_fs, 0, rb_str_setter);
 
+		stringClass.defineMethod("unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
         return stringClass;
     }
 
@@ -1672,4 +1673,323 @@ public class RubyString extends RubyObject {
     public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         return RubyString.newString(input.getRuby(), input.unmarshalString());
     }
+
+/**
+ *    Decodes <i>str</i> (which may contain binary data) according to the format
+ *       string, returning an array of each value extracted. 
+ * 	  The format string consists of a sequence of single-character directives.<br/>
+ * 	  Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
+ *       remaining elements.  <br/>
+ * 	  The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
+ * 	  Spaces are ignored in the format string. 
+ *           @see RubyArray#pack
+ *       <table border="2" width="500" bgcolor="#ffe0e0">
+ *           <tr>
+ *             <td>
+ * <P></P>
+ *         <b>Directives for <a href="ref_c_string.html#String.unpack">
+ *                   <code>String#unpack</code>
+ *                 </a>
+ *               </b>        <table class="codebox" cellspacing="0" border="0" cellpadding="3">
+ * <tr bgcolor="#ff9999">
+ *   <td valign="top">
+ *                     <b>Format</b>
+ *                   </td>
+ *   <td valign="top">
+ *                     <b>Function</b>
+ *                   </td>
+ *   <td valign="top">
+ *                     <b>Returns</b>
+ *                   </td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">A</td>
+ *   <td valign="top">String with trailing nulls and spaces removed.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">a</td>
+ *   <td valign="top">String.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">B</td>
+ *   <td valign="top">Extract bits from each character (msb first).</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">b</td>
+ *   <td valign="top">Extract bits from each character (lsb first).</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">C</td>
+ *   <td valign="top">Extract a character as an unsigned integer.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">c</td>
+ *   <td valign="top">Extract a character as an integer.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">d</td>
+ *   <td valign="top">Treat <em>sizeof(double)</em> characters as a native
+ *           double.</td>
+ *   <td valign="top">Float</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">E</td>
+ *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+ *           little-endian byte order.</td>
+ *   <td valign="top">Float</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">e</td>
+ *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+ *           little-endian byte order.</td>
+ *   <td valign="top">Float</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">f</td>
+ *   <td valign="top">Treat <em>sizeof(float)</em> characters as a native float.</td>
+ *   <td valign="top">Float</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">G</td>
+ *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+ *           network byte order.</td>
+ *   <td valign="top">Float</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">g</td>
+ *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+ *           network byte order.</td>
+ *   <td valign="top">Float</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">H</td>
+ *   <td valign="top">Extract hex nibbles from each character (most
+ *           significant first).</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">h</td>
+ *   <td valign="top">Extract hex nibbles from each character (least
+ *           significant first).</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">I</td>
+ *   <td valign="top">Treat <em>sizeof(int)</em>
+ *                     <sup>1</sup> successive
+ *           characters as an unsigned native integer.</td>
+ *   <td valign="top">Integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">i</td>
+ *   <td valign="top">Treat <em>sizeof(int)</em>
+ *                     <sup>1</sup> successive
+ *           characters as a signed native integer.</td>
+ *   <td valign="top">Integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">L</td>
+ *   <td valign="top">Treat four<sup>1</sup> successive
+ *           characters as an unsigned native
+ *           long integer.</td>
+ *   <td valign="top">Integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">l</td>
+ *   <td valign="top">Treat four<sup>1</sup> successive
+ *           characters as a signed native
+ *           long integer.</td>
+ *   <td valign="top">Integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">M</td>
+ *   <td valign="top">Extract a quoted-printable string.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">m</td>
+ *   <td valign="top">Extract a base64 encoded string.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">N</td>
+ *   <td valign="top">Treat four characters as an unsigned long in network
+ *           byte order.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">n</td>
+ *   <td valign="top">Treat two characters as an unsigned short in network
+ *           byte order.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">P</td>
+ *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer, and 
+ *           return <em>len</em> characters from the referenced location.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">p</td>
+ *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer to a 
+ *           null-terminated string.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">S</td>
+ *   <td valign="top">Treat two<sup>1</sup> successive characters as an unsigned
+ *           short in
+ *           native byte order.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">s</td>
+ *   <td valign="top">Treat two<sup>1</sup> successive
+ *           characters as a signed short in
+ *           native byte order.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">U</td>
+ *   <td valign="top">Extract UTF-8 characters as unsigned integers.</td>
+ *   <td valign="top">Integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">u</td>
+ *   <td valign="top">Extract a UU-encoded string.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">V</td>
+ *   <td valign="top">Treat four characters as an unsigned long in little-endian
+ *           byte order.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">v</td>
+ *   <td valign="top">Treat two characters as an unsigned short in little-endian
+ *           byte order.</td>
+ *   <td valign="top">Fixnum</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">X</td>
+ *   <td valign="top">Skip backward one character.</td>
+ *   <td valign="top">---</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">x</td>
+ *   <td valign="top">Skip forward one character.</td>
+ *   <td valign="top">---</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">Z</td>
+ *   <td valign="top">String with trailing nulls removed.</td>
+ *   <td valign="top">String</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">@</td>
+ *   <td valign="top">Skip to the offset given by the length argument.</td>
+ *   <td valign="top">---</td>
+ * </tr>
+ * <tr>
+ *                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
+ *                 </tr>
+ *               </table>
+ * <P></P>
+ *         <sup>1</sup>&nbsp;May be modified by appending ``_'' to the directive.
+ * <P></P>
+ *       </td>
+ *           </tr>
+ *         </table>
+ *
+**/	
+	public RubyArray unpack(RubyString iFmt)
+	{
+		char[] lFmt = iFmt.getValue().toCharArray();
+		int lFmtLength = lFmt.length;
+		RubyArray lResult = RubyArray.newArray(ruby);
+		int lValueLength = value.length();
+		int lCurValueIdx = 0;
+		for(int i = 0; i < lFmtLength;)
+		{
+			int lLength = 0;
+			boolean lStar = false;
+			char lType = lFmt[i++];
+			char lNext = i < lFmtLength ? lFmt[i]: 0 ;
+			if (lNext == '_' || lNext == '!')
+			{
+				if(RubyArray.sNatStr.indexOf(lType) != -1)
+				{
+					lNext  = ++i < lFmtLength ? lFmt[i]:0;
+				}
+				else
+					throw new ArgumentError(ruby, "'" + lNext +"' allowed only after types " + RubyArray.sNatStr);
+					
+			}
+			if (i > lFmtLength)
+				lLength = 1;
+			else if (lNext == '*')
+			{
+				lStar = true;
+				lLength = value.length();
+				lNext  = ++i < lFmtLength ? lFmt[i]:0;
+			}
+			else if (Character.isDigit(lNext))
+			{
+				int lEndIndex = i;
+				for (; lEndIndex < lFmtLength ; lEndIndex++)
+					if (!Character.isDigit(lFmt[lEndIndex]))
+						break;
+				lLength = Integer.parseInt(new String(lFmt, i, lEndIndex-i));		//an exception may occur here if an int can't hold this but ...
+				i = lEndIndex;
+				lNext = (i < lFmtLength)? lFmt[i] : 0;
+			}
+			else
+			{
+				lLength = lType == '@' ? 0 : 1;
+			}
+			switch (lType)
+			{
+				case '%':
+					throw new ArgumentError(ruby, "% is not supported");
+				case 'A':
+						if (lLength > lValueLength) lLength = lValueLength;
+						{
+							int end =  lLength;
+							for (int t = lCurValueIdx + lLength -1; lLength > 0; lLength--, t--)
+								if (value.charAt(t) != ' ' && value.charAt(t) != '\0') break;
+							lResult.push(newString(value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+							lCurValueIdx+=end;
+						}
+						
+						break;
+
+				case 'Z':
+						if (lLength > lValueLength) lLength = lValueLength;
+						{
+							int end =  lLength;
+							for (int t = lCurValueIdx + lLength -1; lLength > 0; lLength--, t--)
+								if (value.charAt(t) != '\0') break;
+							lResult.push(newString(value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+							lCurValueIdx+=end;
+						}
+						break;
+
+				case 'a':
+						if (lLength > lValueLength) lLength = lValueLength;
+
+							lResult.push(newString(value.substring(lCurValueIdx, lCurValueIdx + lLength)));
+							lCurValueIdx+=end;
+						break;
+			}
+		}
+		return lResult;
+	}
+	
 }

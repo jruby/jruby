@@ -40,4 +40,10 @@ or
 
 3) Using Rubicon:
 
+To use Rubicon for testing you must first install it, get it from CVS by using the CVSROOT :pserver:anonymous@cvs.ruby-lang.org:/src
+and getting module rubicon.  You'll then need to build a few small c programs, you should follow the rubicon instructions in the README
+which comes with it.
+Rubicon requires that your configuration for the jruby installation be correct, for this you should first copy other the lib directory
+from a compatible (1.6.7 for now but any 1.6 should work) version to your JRUBY_HOME directory (if you built jruby from CVS it is the build
+directory).  You should then run jruby mkconfig.rb.  You are then set to go in your rubicon directory and run the tests.
 [to be written]

@@ -1449,41 +1449,156 @@ public class RubyArray extends RubyObject {
 	 * pack_pack
 	 *
 	 * Template characters for Array#pack Directive  Meaning
-	 *
-	 * @ Moves to absolute position
-	 * A ASCII string (space padded, count is width)
-	 * a ASCII string (null padded, count is width)
-	 * B Bit string (descending bit order)
-	 * b Bit string (ascending bit order)
-	 * C Unsigned char
-	 * c Char
-	 * d Double-precision float, native format
-	 * E Double-precision float, little-endian byte order
-	 * e Single-precision float, little-endian byte order
-	 * f Single-precision float, native format
-	 * G Double-precision float, network (big-endian) byte order
-	 * g Single-precision float, network (big-endian) byte order
-	 * H Hex string (high nibble first)
-	 * h Hex string (low nibble first)
-	 * I Unsigned integer
-	 * i Integer
-	 * L Unsigned long
-	 * l Long
-	 * M Quoted printable, MIME encoding (see RFC2045)
-	 * m Base64 encoded string
-	 * N Long, network (big-endian) byte order
-	 * n Short, network (big-endian) byte-order
-	 * P Pointer to a structure (fixed-length string)
-	 * p Pointer to a null-terminated string
-	 * S Unsigned short
-	 * s Short
-	 * U UTF-8
-	 * u UU-encoded string
-	 * V Long, little-endian byte order
-	 * v Short, little-endian byte order
-	 * X Back up a byte
-	 * x Null byte
-	 * Z Same as ``A''
+ * 	         <table class="codebox" cellspacing="0" border="0" cellpadding="3">
+ * <tr bgcolor="#ff9999">
+ *   <td valign="top">
+ *                     <b>Directive</b>
+ *                   </td>
+ *   <td valign="top">
+ *                     <b>Meaning</b>
+ *                   </td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">@</td>
+ *   <td valign="top">Moves to absolute position</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">A</td>
+ *   <td valign="top">ASCII string (space padded, count is width)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">a</td>
+ *   <td valign="top">ASCII string (null padded, count is width)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">B</td>
+ *   <td valign="top">Bit string (descending bit order)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">b</td>
+ *   <td valign="top">Bit string (ascending bit order)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">C</td>
+ *   <td valign="top">Unsigned char</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">c</td>
+ *   <td valign="top">Char</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">d</td>
+ *   <td valign="top">Double-precision float, native format</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">E</td>
+ *   <td valign="top">Double-precision float, little-endian byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">e</td>
+ *   <td valign="top">Single-precision float, little-endian byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">f</td>
+ *   <td valign="top">Single-precision float, native format</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">G</td>
+ *   <td valign="top">Double-precision float, network (big-endian) byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">g</td>
+ *   <td valign="top">Single-precision float, network (big-endian) byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">H</td>
+ *   <td valign="top">Hex string (high nibble first)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">h</td>
+ *   <td valign="top">Hex string (low nibble first)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">I</td>
+ *   <td valign="top">Unsigned integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">i</td>
+ *   <td valign="top">Integer</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">L</td>
+ *   <td valign="top">Unsigned long</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">l</td>
+ *   <td valign="top">Long</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">M</td>
+ *   <td valign="top">Quoted printable, MIME encoding (see RFC2045)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">m</td>
+ *   <td valign="top">Base64 encoded string</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">N</td>
+ *   <td valign="top">Long, network (big-endian) byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">n</td>
+ *   <td valign="top">Short, network (big-endian) byte-order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">P</td>
+ *   <td valign="top">Pointer to a structure (fixed-length string)</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">p</td>
+ *   <td valign="top">Pointer to a null-terminated string</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">S</td>
+ *   <td valign="top">Unsigned short</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">s</td>
+ *   <td valign="top">Short</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">U</td>
+ *   <td valign="top">UTF-8</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">u</td>
+ *   <td valign="top">UU-encoded string</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">V</td>
+ *   <td valign="top">Long, little-endian byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">v</td>
+ *   <td valign="top">Short, little-endian byte order</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">X</td>
+ *   <td valign="top">Back up a byte</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">x</td>
+ *   <td valign="top">Null byte</td>
+ * </tr>
+ * <tr>
+ *   <td valign="top">Z</td>
+ *   <td valign="top">Same as ``A''</td>
+ * </tr>
+ * <tr>
+ *                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
+ *                 </tr>
+ *               </table>
+ * 	 
 	 *
 	 * Packs the contents of arr into a binary sequence according to the directives in
 	 * aTemplateString (see preceding table).
@@ -1502,7 +1617,6 @@ public class RubyArray extends RubyObject {
 	{
 		char[] lFmt = iFmt.getValue().toCharArray();
 		int lFmtLength = lFmt.length;
-		boolean lNativeInt = false;
 		int idx = 0;
 		int lLeftInArray = list.size();
 		StringBuffer lResult = new StringBuffer();
@@ -1515,35 +1629,35 @@ public class RubyArray extends RubyObject {
 			char lType = lFmt[i++];
 			if (Character.isWhitespace(lType))
 				continue;
-			if ( i < lFmtLength)
+			char lNext = i < lFmtLength ? lFmt[i] : 0;
+			if(lNext == '!' || lNext == '_')
 			{
-				char lNext = lFmt[i];
-				if(lNext == '!' || lNext == '_')
+				if (sNatStr.indexOf(lType) != -1)
 				{
-					if (sNatStr.indexOf(lType) != -1)
-					{
-						lNext = ++i < lFmtLength ? lFmt[i]:0;
-						lNativeInt = true;
-					}
-					else
-						throw new ArgumentError(ruby, "'" + lNext +"' allowed only after types " + sNatStr);
-				}
-				if (lNext == '*')
-				{
-					lLength = "@Xxu".indexOf(lType) == -1 ?  lLeftInArray : 0;
 					lNext = ++i < lFmtLength ? lFmt[i]:0;
-				} else if (Character.isDigit(lNext))
-				{
-					int lEndIndex = i;
-					for (; lEndIndex < lFmtLength ; lEndIndex++)
-						if (!Character.isDigit(lFmt[lEndIndex]))
-							break;
-					lLength = Integer.parseInt(new String(lFmt, i, lEndIndex-i));		//an exception may occur here if an int can't hold this but ...
-					i = lEndIndex;
-				}		//no else, the original value of length is correct
+				}
+				else
+					throw new ArgumentError(ruby, "'" + lNext +"' allowed only after types " + sNatStr);
 			}
+			if (lNext == '*')
+			{
+				lLength = "@Xxu".indexOf(lType) == -1 ?  lLeftInArray : 0;
+				lNext = ++i < lFmtLength ? lFmt[i]:0;
+			} else if (Character.isDigit(lNext))
+			{
+				int lEndIndex = i;
+				for (; lEndIndex < lFmtLength ; lEndIndex++)
+					if (!Character.isDigit(lFmt[lEndIndex]))
+						break;
+				lLength = Integer.parseInt(new String(lFmt, i, lEndIndex-i));		//an exception may occur here if an int can't hold this but ...
+				i = lEndIndex;
+				lNext = i  < lFmtLength ? lFmt[i] : 0;
+			}		//no else, the original value of length is correct
 			switch(lType)
 			{
+				case '%':
+					throw new ArgumentError(ruby, "% is not supported");
+
 				case 'A': case 'a': case 'Z':
 				case 'B': case 'b':
 				case 'H': case 'h':
