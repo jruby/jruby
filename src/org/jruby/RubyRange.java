@@ -85,6 +85,7 @@ public class RubyRange extends RubyObject {
         result.defineMethod("to_s", callbackFactory.getMethod("inspect"));
 
         result.defineMethod("to_a", callbackFactory.getMethod("to_a"));
+        result.defineMethod("include?", callbackFactory.getMethod("include_p", IRubyObject.class));
 
         return result;
     }
@@ -235,6 +236,9 @@ public class RubyRange extends RubyObject {
     }
 
     public RubyBoolean op_eqq(IRubyObject obj) {
+    	if (!(obj instanceof RubyNumeric)) {//FIXME should be anything that doesn't responds to <=??
+    		return getRuntime().getFalse();
+    	}
         if (begin instanceof RubyFixnum && obj instanceof RubyFixnum && end instanceof RubyFixnum) {
             long b = RubyNumeric.fix2long(begin);
             long o = RubyNumeric.fix2long(obj);
@@ -329,5 +333,14 @@ public class RubyRange extends RubyObject {
 	    }
 	    
 	    return array;
+    }
+    
+    // this could have been easily written in Ruby --sma
+    public RubyBoolean include_p(IRubyObject obj) {
+    	String compareMethod = isExclusive ? ">" : ">=";
+    	IRubyObject[] arg = new IRubyObject[]{ obj };
+    	IRubyObject f = obj.getRuntime().getFalse();
+    	return f.getRuntime().newBoolean(
+    			f != first().callMethod("<=", arg) && f != last().callMethod(compareMethod, arg));
     }
 }
