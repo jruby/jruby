@@ -838,8 +838,8 @@ public class RubyModule extends RubyObject {
     public IRubyObject newMethod(IRubyObject receiver, String name, boolean bound) {
         CacheEntry ent = getMethodBodyCached(name);
         if (! ent.isDefined()) {
-            // printUndef();
-            return getRuntime().getNil();
+            throw new NameError(getRuntime(), "undefined method `" + name + 
+                "' for class `" + this.getName() + "'");
         }
 
         while (ent.getMethod() instanceof EvaluateMethod
@@ -1220,20 +1220,15 @@ public class RubyModule extends RubyObject {
     private RubyArray instance_methods(IRubyObject[] args, final Visibility visibility) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
         RubyArray ary = RubyArray.newArray(getRuntime());
-        Map kernelMethods = getRuntime().getClasses().getKernelModule().getMethods();
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
-        	// kernel methods do not get printed out (but why?).
-        	if (p.getMethods() == kernelMethods) {
-        		continue;
-        	}
-
             for (Iterator iter = p.getMethods().entrySet().iterator();
             	iter.hasNext();) {
                 Map.Entry entry = (Map.Entry) iter.next();
                 ICallable method = (ICallable) entry.getValue();
 
-                if (method.getVisibility().is(visibility)) {
+                if (method.getVisibility().is(visibility) &&
+                    method.isUndefined() == false) {
                     RubyString name = RubyString.newString(getRuntime(), 
                     	(String) entry.getKey());
 
