@@ -37,13 +37,13 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
 import org.jruby.util.PrintfFormat;
+import org.jruby.util.Split;
 
 /**
  *
@@ -1215,66 +1215,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyArray split(IRubyObject[] args) {
-		int limit = 0;
-		RubyRegexp pat = null;
-		RubyString str = null;
-		int argc = argCount(args, 0, 2);
-		if (argc == 2) {
-			limit = RubyNumeric.fix2int(args[1]);
-			if (limit == 1) {
-				return RubyArray.newArray(getRuntime(), dup());
-			}
-		}
-		RubyArray result = RubyArray.newArray(getRuntime(), 0);
-		int pos = 0;
-		int beg = 0;
-		int hits = 0;
-		int len = getValue().length();
-		if (argc > 0) {
-			if (args[0] instanceof RubyRegexp) {
-				pat = RubyRegexp.regexpValue(args[0]);
-			} else {
-				str = stringValue(args[0]);
-				if (str.getValue().equals(" ")) {
-					pat = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0);
-				} else if (str.getValue().length() != 1) {
-					pat = RubyRegexp.newRegexp(str, 0);
-				}
-			}
-		} else {
-			pat = RubyRegexp.newRegexp(getRuntime(), "\\s+", 0);
-		}
-		if (pat != null) {
-			while ((beg = pat.search(this, pos)) > -1) {
-				hits++;
-				int end = ((RubyMatchData) getRuntime().getBackref()).matchEndPosition();
-				result.append(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
-				pos = (end == beg) ? beg + 1 : end;
-				if (hits + 1 == limit) {
-					break;
-				}
-			}
-		} else {
-			while ((beg = getValue().indexOf(str.getValue(), pos)) > -1) {
-				hits++;
-				result.append(substr(pos, beg - pos));
-				if (hits + 1 == limit) {
-					break;
-				}
-				pos = beg + 1;
-			}
-		}
-		if (hits == 0) {
-			result.append(dup());
-		} else if (pos <= len) {
-			result.append(substr(pos, len - pos));
-		}
-		if (limit == 0) {
-			while (((RubyString) result.entry(result.getLength() - 1)).empty().isTrue()) {
-				result.pop();
-			}
-		}
-		return result;
+        return new Split(runtime, this, args).results();
 	}
 
 	/** rb_str_scan
