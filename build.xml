@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Thanks to Benoit Cerrina <b.cerrina@wanadoo.fr> for this buildfile. -->
 <project basedir="." default="all" name="JRuby">
-    <property name="build.dir" value="build"/>
+	<property name="build.dir" value="build"/>
     <property name="lib.dir" value="lib"/>
     <property name="jar.file" value="${build.dir}/jruby.jar"/>
     
-    <!--<property name="build.compiler" value="jikes"/-->
-    <property name="build.compiler" value="modern"/>
+	<!--<property name="build.compiler" value="jikes"/>-->
+	<property name="build.compiler" value="modern"/>
     <!--<property name="build.compiler" value="classic"/>-->
 
     <property name="build.compiler.fulldepend" value="on"/>
@@ -63,7 +63,8 @@
             <exclude name="**/tars/**"/>
         </javac>
         <copy todir="${build.dest}">
-            <fileset dir="${src.dir}">
+			<fileset dir="${src.dir}">
+				<exclude name="${build.dest}"/>
                 <include name="**/*.properties"/>
             </fileset>
         </copy>
