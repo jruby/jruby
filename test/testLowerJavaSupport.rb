@@ -57,6 +57,11 @@ if defined? Java
   test_ok(string_class_methods.detect {|m| m.name == "valueOf" })
   test_ok(string_class_methods.all? {|m| m.static? })
 
+  # Instance variables
+  rectangle_class = Java::JavaClass.for_name("java.awt.Rectangle")
+  test_ok(rectangle_class.fields.include?("x"))
+  test_ok(rectangle_class.fields.include?("y"))
+
   # Constants
   integer_class = Java::JavaClass.for_name("java.lang.Integer")
   integer_constants = integer_class.constants

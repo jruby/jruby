@@ -73,6 +73,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int ARRAY_CLASS = 17;
     private static final int NEW_ARRAY = 18;
     private static final int GET_CONSTANT = 19;
+    private static final int FIELDS = 20;
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaClassClass =
@@ -97,6 +98,7 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("array_class", IndexedCallback.create(ARRAY_CLASS, 0));
         javaClassClass.defineMethod("new_array", IndexedCallback.create(NEW_ARRAY, 1));
         javaClassClass.defineMethod("get_constant", IndexedCallback.create(GET_CONSTANT, 1));
+        javaClassClass.defineMethod("fields", IndexedCallback.create(FIELDS, 0));
 
         javaClassClass.getInternalClass().undefMethod("new");
 
@@ -252,6 +254,16 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return new JavaObject(getRuntime(), result);
     }
 
+    public RubyArray fields() {
+        Field[] fields = javaClass.getFields();
+        RubyArray result = RubyArray.newArray(getRuntime(), fields.length);
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            result.append(RubyString.newString(getRuntime(), field.getName()));
+        }
+        return result;
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case PUBLIC_P :
@@ -286,6 +298,8 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return new_array(args[0]);
             case GET_CONSTANT :
                 return get_constant(args[0]);
+            case FIELDS :
+                return fields();
             default :
                 return super.callIndexed(index, args);
         }

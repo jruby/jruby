@@ -26,7 +26,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-package org.jruby.test;
+package org.jruby.util;
 
 /**
  * Helper class, used for testing calls to java from ruby code.
@@ -35,6 +35,9 @@ package org.jruby.test;
  * @version $Revision$
  **/
 public class TestHelper {
+
+    public String localVariable1;
+
     /**
      * used to test Java Arrays in Ruby.
      *  while we don't yet have a way to create them this can be used to test basic
