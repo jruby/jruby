@@ -60,18 +60,18 @@ public class RubyDir extends RubyObject {
 
         dirClass.includeModule(ruby.getRubyModule("Enumerable"));
 
+		dirClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyDir.class, "newInstance"));
         dirClass.defineSingletonMethod("glob", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
         dirClass.defineSingletonMethod("[]", CallbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
         // dirClass.defineAlias("[]", "glob");
         dirClass.defineSingletonMethod("chdir", CallbackFactory.getSingletonMethod(RubyDir.class, "chdir", RubyString.class));
         dirClass.defineSingletonMethod("chroot", CallbackFactory.getSingletonMethod(RubyDir.class, "chroot", RubyString.class));
         dirClass.defineSingletonMethod("delete", CallbackFactory.getSingletonMethod(RubyDir.class, "delete", RubyString.class));
-        dirClass.defineSingletonMethod("entries", CallbackFactory.getSingletonMethod(RubyDir.class, "entries", RubyString.class));
-        dirClass.defineSingletonMethod("foreach", CallbackFactory.getBlockMethod(RubyDir.class, "foreach"));
+        dirClass.defineSingletonMethod("foreach", CallbackFactory.getSingletonMethod(RubyDir.class, "foreach", RubyString.class));
         dirClass.defineSingletonMethod("getwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
         dirClass.defineSingletonMethod("pwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
         // dirClass.defineAlias("pwd", "getwd");
-        dirClass.defineSingletonMethod("mkdir", CallbackFactory.getOptSingletonMethod(RubyDir.class, "mkdir", RubyString.class));
+        dirClass.defineSingletonMethod("mkdir", CallbackFactory.getOptSingletonMethod(RubyDir.class, "mkdir"));
         dirClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyDir.class, "open", RubyString.class));
         dirClass.defineSingletonMethod("rmdir", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
         dirClass.defineSingletonMethod("unlink", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
@@ -80,13 +80,14 @@ public class RubyDir extends RubyObject {
         // dirClass.defineAlias("delete", "rmdir");
 
         dirClass.defineMethod("close", CallbackFactory.getMethod(RubyDir.class, "close"));
-        dirClass.defineMethod("each", CallbackFactory.getOptMethod(RubyDir.class, "each"));
+        dirClass.defineMethod("each", CallbackFactory.getMethod(RubyDir.class, "each"));
         dirClass.defineMethod("tell", CallbackFactory.getMethod(RubyDir.class, "tell"));
         dirClass.defineAlias("pos", "tell");
         dirClass.defineMethod("seek", CallbackFactory.getMethod(RubyDir.class, "seek", RubyInteger.class));
         dirClass.defineAlias("pos=", "seek");
         dirClass.defineMethod("read", CallbackFactory.getMethod(RubyDir.class, "read"));
         dirClass.defineMethod("rewind", CallbackFactory.getMethod(RubyDir.class, "rewind"));
+		dirClass.defineMethod("initialize", CallbackFactory.getMethod(RubyDir.class, "initialize", RubyString.class));
 
         return dirClass;
     }
@@ -104,20 +105,22 @@ public class RubyDir extends RubyObject {
      * <code>Dir</code> object returned, so a new <code>Dir</code> instance
      * must be created to reflect changes to the underlying file system.
      */
-    public RubyObject initialize(RubyObject[] args) {
-        if (args.length != 1) {
-            throw new ArgumentError(getRuby(), "wrong number of arguments(0 for 1)");
-        }
+    public RubyObject initialize(RubyString path) {
+        path.checkSafeString();
 
-        args[0].checkSafeString();
-        path = args[0].toString();
-
-        dir = new File(path);
+        dir = new File(path.getValue());
         if (!dir.isDirectory()) {
             path = null;
             dir = null;
-            throw new IOError(getRuby(), path + " is not a directory");
+            throw new IOError(getRuby(), path.getValue() + " is not a directory");
         }
+		List snapshotList = new ArrayList();
+		snapshotList.add(".");
+		snapshotList.add("..");
+		snapshotList.addAll(getContents(dir));
+		snapshot = (String[]) snapshotList.toArray(new String[0]);
+		pos = 0;
+
         return this;
     }
 
@@ -164,24 +167,14 @@ public class RubyDir extends RubyObject {
         return new RubyFixnum(ruby, 0);
     }
 
-    /** Returns an array of filenames in directory <code>path</code>. */
-    public static RubyArray entries(Ruby ruby, RubyObject recv, RubyString path) {
-        return new RubyArray(ruby, getContents(getDir(ruby, path.toString()), ruby));
-    }
-
     /**
      * Executes the block once for each file in the directory specified by
      * <code>path</code>.
      */
-    public static RubyObject foreach(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        if (args.length != 1) {
-            throw new ArgumentError(ruby, "wrong number of arguments(0 for 1)");
-        }
+    public static RubyObject foreach(Ruby ruby, RubyObject recv, RubyString path) {
+        path.checkSafeString();
 
-        args[0].checkSafeString();
-        String path = args[0].toString();
-
-        List contents = getContents(getDir(ruby, path));
+        List contents = getContents(getDir(ruby, path.getValue()));
         for (Iterator i=contents.iterator(); i.hasNext();) {
             String name = (String) i.next();
             ruby.yield(new RubyString(ruby, name));
@@ -201,13 +194,16 @@ public class RubyDir extends RubyObject {
      */
     public static RubyObject mkdir(Ruby ruby, RubyObject recv, RubyObject[] args) {
         if (args.length < 1) {
-            throw new ArgumentError(ruby, "wrong number of arguments(0 for 1)");
+            throw new ArgumentError(ruby, args.length, 1);
+        }
+        if (args.length > 2) {
+            throw new ArgumentError(ruby, args.length, 2);
         }
 
         args[0].checkSafeString();
         String path = args[0].toString();
 
-        File newDir = getDir(ruby, path);
+        File newDir = new File(path);
         if (newDir.exists()) {
             throw new IOError(ruby, path + " already exists");
         }

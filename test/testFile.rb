@@ -34,5 +34,3 @@ test_equal(["one", "two", "three"],
            IO.readlines("testFile_tmp").collect {|l| l.strip })
 
 File.delete("testFile_tmp")
-
-test_equal(Dir.pwd, Dir.getwd)

@@ -31,6 +31,7 @@ testStruct.rb
 testGC.rb
 ##testSocket.rb
 testJavaSupport.rb
+testDir.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

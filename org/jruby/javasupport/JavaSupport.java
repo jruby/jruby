@@ -10,10 +10,10 @@ public class JavaSupport {
     private Ruby ruby;
 
     private Map loadedJavaClasses = new HashMap();
-    private List importedPackages = new LinkedList();
+    private List importedPackages = new ArrayList();
     private Map renamedJavaClasses = new HashMap();
 
-    private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
+    private ClassLoader javaClassLoader = new ClassLoader() {};
 
     public JavaSupport(Ruby ruby) {
         this.ruby = ruby;

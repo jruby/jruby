@@ -115,7 +115,23 @@ public class ReflectionCallbackMethod implements Callback {
         } catch (IllegalAccessException iaExcptn) {
             throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
         } catch (IllegalArgumentException iaExcptn) {
-            throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
+            // If you find a case where it *isn't* an internal error that causes this
+            // exception then you may change this code back to use TypeError...
+            //throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
+
+            StringBuffer errorMessage = new StringBuffer();
+            errorMessage.append(iaExcptn.getMessage());
+            errorMessage.append(':');
+            errorMessage.append(" methodName=").append(methodName);
+            errorMessage.append(" recv=").append(recv.toString());
+            errorMessage.append(" klass=").append(klass.getName());
+            errorMessage.append(" methodArgs=[");
+            for (int i = 0; i < methodArgs.length; i++) {
+                errorMessage.append(methodArgs[i]);
+                errorMessage.append(' ');
+            }
+            errorMessage.append(']');
+            throw new RubyBugException(errorMessage.toString());
         }
     }
 

@@ -212,7 +212,7 @@ public class RubyStruct extends RubyObject {
         int size = RubyFixnum.fix2int(getInstanceVariable(getRubyClass(), "__size__"));
 
         if (args.length > size) {
-            throw new ArgumentError(ruby, "struct size differs");
+            throw new ArgumentError(ruby, "struct size differs (" + args.length +" for " + size + ")");
         }
 
         for (int i = 0; i < args.length; i++) {
