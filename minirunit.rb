@@ -22,7 +22,7 @@ module MiniRUnit
 
     def to_s
       sprintf("exception raised %s %d -- \n\tException: %s\n\t%s",
-              @what, @testnum, @boom.to_s, @boom.backtrace.join "\n\t")
+              @what, @testnum, @boom.to_s, @boom.backtrace.join("\n\t"))
     end
   end
 end

@@ -32,6 +32,7 @@ testGC.rb
 testJavaSupport.rb
 testDir.rb
 testVisibility.rb
+testModule.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 
