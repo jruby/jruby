@@ -723,7 +723,7 @@ public class Pack {
                         try {
                             lUtf8 = new String(toUnpack.getBytes("iso8859-1"), "UTF-8");
                         } catch (java.io.UnsupportedEncodingException e) {
-                            Asserts.assertNotReached("can't convert from UTF8");
+                            Asserts.notReached("can't convert from UTF8");
                         }
                         char[] c = lUtf8.toCharArray();
                         int lNbChar = c.length;
@@ -1315,7 +1315,7 @@ public class Pack {
                     try {
                         lResult.append(RubyString.bytesToString(s.getBytes("UTF-8")));
                     } catch (java.io.UnsupportedEncodingException e) {
-                        Asserts.assertNotReached("can't convert to UTF8");
+                        Asserts.notReached("can't convert to UTF8");
                     }
                     break;
             }

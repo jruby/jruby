@@ -112,8 +112,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
             case M_CLONE :
                 return rbClone();
         }
-        Asserts.assertNotReached();
-        return null;
+        return super.callIndexed(index, args);
     }
 
     public static RubySymbol getSymbol(Ruby ruby, long id) {

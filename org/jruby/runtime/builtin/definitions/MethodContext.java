@@ -30,4 +30,8 @@ public class MethodContext {
     public void createOptional(String name, int index, int required) {
         module.defineMethod(name, IndexedCallback.createOptional(index, required));
     }
+    
+    public void createAlias(String name, String definition) {
+        module.defineAlias(name, definition);
+    }
 }

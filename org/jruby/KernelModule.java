@@ -34,7 +34,7 @@ package org.jruby;
 import java.util.*;
 import java.io.*;
 
-import org.jruby.internal.runtime.builtin.definitions.Kernel;
+import org.jruby.internal.runtime.builtin.definitions.KernelDefinition;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.SystemExit;
@@ -52,7 +52,7 @@ import org.jruby.exceptions.NotImplementedError;
 public class KernelModule {
 
     public static RubyModule createKernelModule(Ruby runtime) {
-        return new Kernel(runtime).getModule();
+        return new KernelDefinition(runtime).getModule();
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {

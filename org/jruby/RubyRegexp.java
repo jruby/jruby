@@ -54,7 +54,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             matcher = (IRegexpAdapter) ruby.getRegexpAdapterClass().newInstance();
         } catch (Exception ex) {
             // can't happen if JRuby is invoked via Main class
-            Asserts.assertNotReached("Couldn't create regexp adapter");
+            Asserts.notReached("Couldn't create regexp adapter");
         }
     }
 

@@ -240,7 +240,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
     public void visitArgsNode(ArgsNode iVisited) {
-        Asserts.assertNotReached();
+        Asserts.notReached();
     }
 
     /**
@@ -304,7 +304,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockArgNode(BlockArgNode)
      */
     public void visitBlockArgNode(BlockArgNode iVisited) {
-        Asserts.assertNotReached();
+        Asserts.notReached();
         // XXX See org.jruby.internal.runtime.methods.DefaultMethod.
     }
 

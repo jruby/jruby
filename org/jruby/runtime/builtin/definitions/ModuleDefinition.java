@@ -27,6 +27,7 @@ public abstract class ModuleDefinition implements IStaticCallable {
         synchronized (this) {
             if (!defined) {
                 module = createModule(runtime);
+                defineMethods(new MethodContext(module));
                 defineModuleFunctions(new ModuleFunctionsContext(module, this));
                 defined = true;
             }
@@ -37,4 +38,5 @@ public abstract class ModuleDefinition implements IStaticCallable {
     protected abstract RubyModule createModule(Ruby runtime);
 
     protected abstract void defineModuleFunctions(ModuleFunctionsContext context);
+    protected abstract void defineMethods(MethodContext context);
 }

@@ -5,6 +5,7 @@ import org.jruby.KernelModule;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.definitions.MethodContext;
 import org.jruby.runtime.builtin.definitions.ModuleDefinition;
 import org.jruby.runtime.builtin.definitions.ModuleFunctionsContext;
 import org.jruby.util.Asserts;
@@ -14,48 +15,49 @@ import org.jruby.util.Asserts;
  * @author jpetersen
  * @version $Revision$
  */
-public class Kernel extends ModuleDefinition {
+public class KernelDefinition extends ModuleDefinition {
     private static final int KERNEL = 0x1000;
+    private static final int STATIC = KERNEL | 0x100;
 
-    private static final int AUTOLOAD = KERNEL | 0x01;
-    private static final int BACKQUOTE = KERNEL | 0x02;
-    private static final int BLOCK_GIVEN = KERNEL | 0x03;
-    private static final int CALLER = KERNEL | 0x04;
-    private static final int CATCH = KERNEL | 0x05;
-    private static final int CHOMP = KERNEL | 0x06;
-    private static final int CHOMP_BANG = KERNEL | 0x07;
-    private static final int CHOP = KERNEL | 0x08;
-    private static final int CHOP_BANG = KERNEL | 0x09;
-    private static final int EVAL = KERNEL | 0x0a;
-    private static final int EXIT = KERNEL | 0x0b;
-    private static final int GETS = KERNEL | 0x0c;
-    private static final int GLOBAL_VARIABLES = KERNEL | 0x0d;
-    private static final int GSUB = KERNEL | 0x0e;
-    private static final int GSUB_BANG = KERNEL | 0x0f;
-    private static final int LOAD = KERNEL | 0x10;
-    private static final int LOCAL_VARIABLES = KERNEL | 0x11;
-    private static final int LOOP = KERNEL | 0x12;
-    private static final int OPEN = KERNEL | 0x13;
-    private static final int P = KERNEL | 0x14;
-    private static final int PUTS = KERNEL | 0x15;
-    private static final int PRINT = KERNEL | 0x16;
-    private static final int PRINTF = KERNEL | 0x17;
-    private static final int PROC = KERNEL | 0x18;
-    private static final int RAISE = KERNEL | 0x19;
-    private static final int RAND = KERNEL | 0x1a;
-    private static final int READLINE = KERNEL | 0x1b;
-    private static final int READLINES = KERNEL | 0x1c;
-    private static final int REQUIRE = KERNEL | 0x1d;
-    private static final int SCAN = KERNEL | 0x1e;
-    private static final int SET_TRACE_FUNC = KERNEL | 0x1f;
-    private static final int SINGLETON_METHOD_ADDED = KERNEL | 0x20;
-    private static final int SLEEP = KERNEL | 0x21;
-    private static final int SPLIT = KERNEL | 0x22;
-    private static final int SPRINTF = KERNEL | 0x23;
-    private static final int SRAND = KERNEL | 0x24;
-    private static final int SUB = KERNEL | 0x25;
-    private static final int SUB_BANG = KERNEL | 0x26;
-    private static final int THROW = KERNEL | 0x27;
+    private static final int AUTOLOAD = STATIC | 0x01;
+    private static final int BACKQUOTE = STATIC | 0x02;
+    private static final int BLOCK_GIVEN = STATIC | 0x03;
+    private static final int CALLER = STATIC | 0x04;
+    private static final int CATCH = STATIC | 0x05;
+    private static final int CHOMP = STATIC | 0x06;
+    private static final int CHOMP_BANG = STATIC | 0x07;
+    private static final int CHOP = STATIC | 0x08;
+    private static final int CHOP_BANG = STATIC | 0x09;
+    private static final int EVAL = STATIC | 0x0a;
+    private static final int EXIT = STATIC | 0x0b;
+    private static final int GETS = STATIC | 0x0c;
+    private static final int GLOBAL_VARIABLES = STATIC | 0x0d;
+    private static final int GSUB = STATIC | 0x0e;
+    private static final int GSUB_BANG = STATIC | 0x0f;
+    private static final int LOAD = STATIC | 0x10;
+    private static final int LOCAL_VARIABLES = STATIC | 0x11;
+    private static final int LOOP = STATIC | 0x12;
+    private static final int OPEN = STATIC | 0x13;
+    private static final int P = STATIC | 0x14;
+    private static final int PUTS = STATIC | 0x15;
+    private static final int PRINT = STATIC | 0x16;
+    private static final int PRINTF = STATIC | 0x17;
+    private static final int PROC = STATIC | 0x18;
+    private static final int RAISE = STATIC | 0x19;
+    private static final int RAND = STATIC | 0x1a;
+    private static final int READLINE = STATIC | 0x1b;
+    private static final int READLINES = STATIC | 0x1c;
+    private static final int REQUIRE = STATIC | 0x1d;
+    private static final int SCAN = STATIC | 0x1e;
+    private static final int SET_TRACE_FUNC = STATIC | 0x1f;
+    private static final int SINGLETON_METHOD_ADDED = STATIC | 0x20;
+    private static final int SLEEP = STATIC | 0x21;
+    private static final int SPLIT = STATIC | 0x22;
+    private static final int SPRINTF = STATIC | 0x23;
+    private static final int SRAND = STATIC | 0x24;
+    private static final int SUB = STATIC | 0x25;
+    private static final int SUB_BANG = STATIC | 0x26;
+    private static final int THROW = STATIC | 0x27;
 
     // private static final int 
 
@@ -63,7 +65,7 @@ public class Kernel extends ModuleDefinition {
      * Constructor for Kernel.
      * @param runtime
      */
-    public Kernel(Ruby runtime) {
+    public KernelDefinition(Ruby runtime) {
         super(runtime);
     }
 
@@ -207,8 +209,14 @@ public class Kernel extends ModuleDefinition {
             case THROW :
                 return KernelModule.rbThrow(receiver, args);
             default :
-                Asserts.assertNotReached("'" + index + "' is not a valid index.");
+                Asserts.notReached("'" + index + "' is not a valid index.");
                 return null;
         }
     }
+    /**
+     * @see org.jruby.runtime.builtin.definitions.ModuleDefinition#defineMethods(MethodContext)
+     */
+    protected void defineMethods(MethodContext context) {
+    }
+
 }

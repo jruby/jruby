@@ -144,7 +144,7 @@ public class RubyBignum extends RubyInteger {
 
     static public BigInteger bigIntValue(RubyNumeric other) {
         if (other instanceof RubyFloat) {
-            Asserts.assertNotReached("argument must be an integer");
+            Asserts.notReached("argument must be an integer");
         }
         return (other instanceof RubyBignum) ? ((RubyBignum) other).getValue() : BigInteger.valueOf(other.getLongValue());
     }

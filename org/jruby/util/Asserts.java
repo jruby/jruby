@@ -51,7 +51,7 @@ public final class Asserts {
     /** If the assertion fails (i.e. the method is invoked), an error 
      * message is logged and the application is terminated.
      */    
-    public static void assertNotReached() {
+    public static void notReached() {
         if (ENABLE_ASSERTS) {
             throw new AssertError("assertNotReached failed.");
         }
@@ -60,7 +60,7 @@ public final class Asserts {
     /** If the assertion fails (i.e. the method is invoked), the
      * message is logged and the application is terminated.
      */
-    public static void assertNotReached(String message) {
+    public static void notReached(String message) {
         if (ENABLE_ASSERTS) {
             throw new AssertError(message);
         }

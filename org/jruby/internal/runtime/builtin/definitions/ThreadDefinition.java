@@ -15,16 +15,17 @@ import org.jruby.util.Asserts;
  * @version $Revision$
  */
 public class ThreadDefinition extends ClassDefinition {
-    private static final int THREAD = 0x2000;
-    private static final int SINGLETON = THREAD | 0x100;
-    private static final int S_ABORT_ON_EXCEPTION = SINGLETON | 0x01;
-    private static final int S_ABORT_ON_EXCEPTION_SET = SINGLETON | 0x02;
-    private static final int CURRENT = SINGLETON | 0x03;
-    private static final int S_EXIT = SINGLETON | 0x04;
-    private static final int LIST = SINGLETON | 0x05;
-    private static final int NEW = SINGLETON | 0x06;
-    private static final int PASS = SINGLETON | 0x07;
-    private static final int START = SINGLETON | 0x08;
+    private static final int THREAD = 0x1200;
+    private static final int STATIC = THREAD | 0x100;
+
+    private static final int S_ABORT_ON_EXCEPTION = STATIC | 0x01;
+    private static final int S_ABORT_ON_EXCEPTION_SET = STATIC | 0x02;
+    private static final int CURRENT = STATIC | 0x03;
+    private static final int S_EXIT = STATIC | 0x04;
+    private static final int LIST = STATIC | 0x05;
+    private static final int NEW = STATIC | 0x06;
+    private static final int PASS = STATIC | 0x07;
+    private static final int START = STATIC | 0x08;
     
     public static final int AREF = THREAD | 0x01;
     public static final int ASET = THREAD | 0x02;
@@ -113,7 +114,7 @@ public class ThreadDefinition extends ClassDefinition {
             case START :
                 return ThreadClass.start(receiver, args);
         }
-        Asserts.assertNotReached();
+        Asserts.notReached();
         return null;
     }
 }

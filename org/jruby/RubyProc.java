@@ -29,14 +29,13 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.IndexCallable;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.Iter;
-import org.jruby.util.Asserts;
-import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author  jpetersen
@@ -64,13 +63,12 @@ public class RubyProc extends RubyObject implements IndexCallable {
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-        case M_CALL:
-            return call(args);
-        case M_AREF:
-            return call(args);
+            case M_CALL :
+                return call(args);
+            case M_AREF :
+                return call(args);
         }
-        Asserts.assertNotReached();
-        return null;
+        return super.callIndexed(index, args);
     }
 
     public Block getBlock() {

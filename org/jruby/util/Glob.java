@@ -80,7 +80,7 @@ public class Glob {
     
     private Collection getMatchingFiles(final File parent, final String pattern, final boolean directory) {
         if (pattern.equals("**")) {
-            Asserts.assertNotReached("Not supported yet");
+            Asserts.notReached("Not supported yet");
         }
         return Arrays.asList(parent.listFiles(new FileFilter() {
             FilenameFilter filter = new GlobFilenameFilter(pattern);

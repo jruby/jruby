@@ -45,7 +45,7 @@ public class ASTWriter implements IASTWriter {
 
             writer.write("</ast>\n");
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
     }
 }

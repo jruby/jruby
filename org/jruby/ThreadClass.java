@@ -244,7 +244,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         try {
             jvmThread.join();
         } catch (InterruptedException iExcptn) {
-            Asserts.assertNotReached();
+            Asserts.notReached();
         }
         if (exitingException != null) {
             throw exitingException;
@@ -305,7 +305,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
                 try {
                     hasStartedLock.wait();
                 } catch (InterruptedException iExcptn) {
-                    Asserts.assertNotReached();
+                    Asserts.notReached();
                 }
             }
         }
@@ -360,9 +360,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
             case ThreadDefinition.STATUS :
                 return status();
         }
-        // return super.callIndexed(index, args);
-        Asserts.assertNotReached();
-        return null;
+        return super.callIndexed(index, args);
     }
 
 }

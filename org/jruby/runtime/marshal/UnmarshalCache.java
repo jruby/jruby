@@ -60,7 +60,7 @@ public class UnmarshalCache {
         } else if (type == ';') {
             return symbolByIndex(input.unmarshalInt());
         } else {
-            Asserts.assertNotReached();
+            Asserts.notReached();
             return null;
         }
     }

@@ -167,8 +167,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         case M_INVERT:
             return invert();
         }
-        Asserts.assertNotReached();
-        return null;
+        return super.callIndexed(index, args);
     }
 
     public Class getJavaClass() {

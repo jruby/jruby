@@ -95,7 +95,7 @@ public class JavaMethod implements Callback {
 
             return recv.getRuntime().getNil();
         } catch (Exception excptn) {
-            Asserts.assertNotReached();
+            Asserts.notReached();
             return null;
         }
     }

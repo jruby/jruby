@@ -96,7 +96,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		try {
 			return new String(bytes, encoding);
 		} catch (java.io.UnsupportedEncodingException e) {
-			Asserts.assertNotReached("unsupported encoding " + e);
+			Asserts.notReached("unsupported encoding " + e);
             return null;
 		}
 	}
@@ -105,7 +105,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		try {
 			return string.getBytes(encoding);
 		} catch (java.io.UnsupportedEncodingException e) {
-			Asserts.assertNotReached("unsupported encoding " + e);
+			Asserts.notReached("unsupported encoding " + e);
             return null;
 		}
 	}
@@ -298,8 +298,7 @@ public class RubyString extends RubyObject implements IndexCallable {
         case M_SUM:
             return sum(args);
         }
-        Asserts.assertNotReached();
-        return null;
+        return super.callIndexed(index, args);
     }
 
 	public static boolean isDigit(char c) {

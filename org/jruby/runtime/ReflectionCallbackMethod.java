@@ -142,7 +142,7 @@ public final class ReflectionCallbackMethod implements Callback {
                 message.append(' ');
             }
             message.append(']');
-            Asserts.assertNotReached(message.toString());
+            Asserts.notReached(message.toString());
         } catch (final IllegalArgumentException iaExcptn) {
             throw new RaiseException(recv.getRuntime(), "TypeError", iaExcptn.getMessage());
         }

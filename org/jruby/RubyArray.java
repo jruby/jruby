@@ -316,8 +316,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
             case M_INCLUDE_P :
                 return include_p(args[0]);
         }
-        Asserts.assertNotReached();
-        return null;
+        return super.callIndexed(index, args);
     }
 
     public RubyFixnum hash() {

@@ -142,7 +142,7 @@ public class ASTWriterVisitor implements NodeVisitor {
                 writer.write("\"");
             }
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
     }
 
@@ -162,7 +162,7 @@ public class ASTWriterVisitor implements NodeVisitor {
             writer.write(value);
             writer.write("\"");
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
     }
 
@@ -171,7 +171,7 @@ public class ASTWriterVisitor implements NodeVisitor {
             writer.write(">\n");
             indentLevel++;
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
 
     }
@@ -180,7 +180,7 @@ public class ASTWriterVisitor implements NodeVisitor {
         try {
             writer.write("/>\n");
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
 
     }
@@ -193,7 +193,7 @@ public class ASTWriterVisitor implements NodeVisitor {
             writer.write(name);
             writer.write(">\n");
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
 
     }
@@ -216,7 +216,7 @@ public class ASTWriterVisitor implements NodeVisitor {
             }
             writer.write(">\n");
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
     }
 
@@ -239,7 +239,7 @@ public class ASTWriterVisitor implements NodeVisitor {
             }
             writer.write(">\n");
         } catch (IOException ioExcptn) {
-            Asserts.assertNotReached(ioExcptn.getMessage());
+            Asserts.notReached(ioExcptn.getMessage());
         }
     }
 
