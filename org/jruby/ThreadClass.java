@@ -119,10 +119,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
 
         thread.jvmThread = new Thread(new Runnable() {
             public void run() {
-                synchronized (thread.hasStartedLock) {
-                    thread.hasStarted = true;
-                    thread.hasStartedLock.notifyAll();
-                }
+                thread.notifyStarted();
 
                 runtime.registerNewContext(thread);
                 ThreadContext context = runtime.getCurrentContext();
@@ -142,8 +139,17 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         return thread;
     }
 
+    private void notifyStarted() {
+        Asserts.assertExpression(isCurrent());
+        synchronized (hasStartedLock) {
+            hasStarted = true;
+            hasStartedLock.notifyAll();
+        }
+    }
+
+
     public void pollThreadEvents() {
-        Asserts.assertExpression(Thread.currentThread() == jvmThread);
+        Asserts.assertExpression(isCurrent());
         pollReceivedExceptions();
     }
 
@@ -154,11 +160,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         }
     }
 
-    protected ThreadClass(Ruby ruby) {
-        this(ruby, ruby.getClasses().getThreadClass());
-    }
-
-    protected ThreadClass(Ruby ruby, RubyClass type) {
+    private ThreadClass(Ruby ruby, RubyClass type) {
         super(ruby, type);
     }
 
@@ -235,7 +237,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     public ThreadClass join() {
-        if (jvmThread == Thread.currentThread()) {
+        if (isCurrent()) {
             throw new ThreadError(getRuntime(), "thread tried to join itself");
         }
         try {
@@ -280,6 +282,10 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         } else {
             return RubyBoolean.newBoolean(getRuntime(), false);
         }
+    }
+
+    private boolean isCurrent() {
+        return Thread.currentThread() == jvmThread;
     }
 
     private void ensureStarted() {
