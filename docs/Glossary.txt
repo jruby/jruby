@@ -4,6 +4,12 @@ JRuby Developer's Glossary
 $Revision$
 
 
+AST (Abstract Syntax Tree):
+
+    A data structure representation of Ruby code, which is output from the
+    parser. The current JRuby implementation does evaluation by running the
+    interpreter directly on an AST.
+
 Block:
 
     You know, the {}-things in the source. They are passed to methods via the
@@ -21,6 +27,10 @@ FrameStack:
 
     Where Frames are put. Used to create exception back-traces and to find the
     correct super-methods [among other things?].
+
+Interpret:
+
+    To run Ruby code by walking through an AST.
 
 Iter:
 
