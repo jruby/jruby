@@ -247,7 +247,7 @@ public class RubyIO extends RubyObject {
     public RubyString internalGets(IRubyObject[] args) {
         checkReadable();
 
-        IRubyObject sepVal = getRuntime().getGlobalVar("$/");
+        IRubyObject sepVal = getRuntime().getGlobalVariables().get("$/");
 
         if (args.length > 0) {
             sepVal = args[0];
@@ -267,7 +267,7 @@ public class RubyIO extends RubyObject {
                 lineNumber++;
 
                 // XXX
-                runtime.setGlobalVar("$.", RubyFixnum.newFixnum(runtime, lineNumber));
+                runtime.getGlobalVariables().set("$.", RubyFixnum.newFixnum(runtime, lineNumber));
                 // XXX
 
                 RubyString result = RubyString.newString(getRuntime(), newLine);
@@ -574,8 +574,8 @@ public class RubyIO extends RubyObject {
             args = new IRubyObject[] { recv.getRuntime().getLastline()};
         }
 
-        IRubyObject fs = recv.getRuntime().getGlobalVar("$,");
-        IRubyObject rs = recv.getRuntime().getGlobalVar("$\\");
+        IRubyObject fs = recv.getRuntime().getGlobalVariables().get("$,");
+        IRubyObject rs = recv.getRuntime().getGlobalVariables().get("$\\");
 
         for (int i = 0; i < args.length; i++) {
             if (i > 0 && !fs.isNil()) {

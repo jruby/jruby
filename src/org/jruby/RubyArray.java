@@ -850,7 +850,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public RubyString join(IRubyObject[] args) {
         int argc = argCount(args, 0, 1);
-        IRubyObject sep = (argc == 1) ? args[0] : getRuntime().getGlobalVar("$,");
+        IRubyObject sep = (argc == 1) ? args[0] : getRuntime().getGlobalVariables().get("$,");
         return join(sep.isNil() ? RubyString.newString(getRuntime(), "") : RubyString.stringValue(sep));
     }
 
@@ -858,7 +858,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      *
      */
     public RubyString to_s() {
-        IRubyObject sep = getRuntime().getGlobalVar("$,");
+        IRubyObject sep = getRuntime().getGlobalVariables().get("$,");
         return join(sep.isNil() ? RubyString.newString(getRuntime(), "") : RubyString.stringValue(sep));
     }
 

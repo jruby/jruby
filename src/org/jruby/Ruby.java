@@ -374,14 +374,6 @@ public final class Ruby {
         return classes.getClass(name) != null;
     }
 
-    public IRubyObject setGlobalVar(String name, IRubyObject value) {
-        return globalVariables.set(name, value);
-    }
-
-    public IRubyObject getGlobalVar(String name) {
-        return globalVariables.get(name);
-    }
-
     public IRubyObject yield(IRubyObject value) {
         return yield(value, null, null, false);
     }
@@ -774,15 +766,15 @@ public final class Ruby {
     }
 
     public PrintStream getErrorStream() {
-        return new PrintStream(((RubyIO) getGlobalVar("$stderr")).getOutStream());
+        return new PrintStream(((RubyIO) getGlobalVariables().get("$stderr")).getOutStream());
     }
 
     public InputStream getInputStream() {
-        return ((RubyIO) getGlobalVar("$stdin")).getInStream();
+        return ((RubyIO) getGlobalVariables().get("$stdin")).getInStream();
     }
 
     public PrintStream getOutputStream() {
-        return new PrintStream(((RubyIO) getGlobalVar("$stdout")).getOutStream());
+        return new PrintStream(((RubyIO) getGlobalVariables().get("$stdout")).getOutStream());
     }
 
     private static final int TRACE_HEAD = 8;

@@ -65,11 +65,11 @@ public class TestRubyBase extends TestCase {
         //            ruby.getRuntime().setErrorStream(out);
         RubyIO lStream = new RubyIO(ruby);
         lStream.initIO(null, out, null);
-        ruby.setGlobalVar("$stdout", lStream);
-        ruby.setGlobalVar("$>", lStream);
-        lStream = (RubyIO) ruby.getGlobalVar("$stderr");
+        ruby.getGlobalVariables().set("$stdout", lStream);
+        ruby.getGlobalVariables().set("$>", lStream);
+        lStream = (RubyIO) ruby.getGlobalVariables().get("$stderr");
         lStream.initIO(null, out, null);
-        ruby.setGlobalVar("$stderr", lStream);
+        ruby.getGlobalVariables().set("$stderr", lStream);
         
         ruby.loadScript("test", new StringReader(script), false);
         

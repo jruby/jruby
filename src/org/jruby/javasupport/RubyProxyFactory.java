@@ -68,7 +68,7 @@ public class RubyProxyFactory {
     }
 
     public RubyProxy getProxyForGlobal(String globalVar, Class javaInterface) {
-        IRubyObject obj = getRuby().getGlobalVar(globalVar);
+        IRubyObject obj = getRuby().getGlobalVariables().get(globalVar);
 
         if (obj != null && !obj.isNil())
             return getProxyForObject(obj, javaInterface);

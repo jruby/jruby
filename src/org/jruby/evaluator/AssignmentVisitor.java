@@ -140,7 +140,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        ruby.setGlobalVar(iVisited.getName(), value);
+        ruby.getGlobalVariables().set(iVisited.getName(), value);
     }
 
     /**

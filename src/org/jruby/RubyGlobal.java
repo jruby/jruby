@@ -35,6 +35,7 @@ import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.internal.runtime.ValueAccessor;
 
 /** This class initializes global variables and constants.
  * 
@@ -86,7 +87,9 @@ public class RubyGlobal {
         ruby.defineGlobalConstant("STDERR", stderr);
 
         ruby.defineVariable(new LoadedFeatures(ruby, "$\""));
-        ruby.defineReadonlyVariable("$*", RubyArray.newArray(ruby));
+
+        // FIXME: add an argv accessor
+        ruby.getGlobalVariables().defineReadonly("$*", new ValueAccessor(RubyArray.newArray(ruby)));
 
         ruby.defineVariable(new LoadPath(ruby, "$:"));
         ruby.defineVariable(new LoadPath(ruby, "$-I"));
@@ -105,7 +108,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            ((RubyArgsFile) ruby.getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
+            ((RubyArgsFile) ruby.getGlobalVariables().get("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
             return super.set(value);
         }
     }
@@ -163,15 +166,15 @@ public class RubyGlobal {
         }
 
         public IRubyObject get() {
-            IRubyObject errorInfo = ruby.getGlobalVar("$!");
+            IRubyObject errorInfo = ruby.getGlobalVariables().get("$!");
             return errorInfo.isNil() ? ruby.getNil() : errorInfo.callMethod("backtrace");
         }
 
         public IRubyObject set(IRubyObject value) {
-            if (ruby.getGlobalVar("$!").isNil()) {
+            if (ruby.getGlobalVariables().get("$!").isNil()) {
                 throw new ArgumentError(ruby, "$! not set.");
             }
-            ruby.getGlobalVar("$!").callMethod("set_backtrace", value);
+            ruby.getGlobalVariables().get("$!").callMethod("set_backtrace", value);
             return value;
         }
     }

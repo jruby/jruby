@@ -130,12 +130,12 @@ public class LoadService implements ILoadService {
                     entry = in.getNextJarEntry();
                 }
                 if (entry != null) {
-                    IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVar("$JAR_URL") : runtime.getNil();
+                    IRubyObject old = runtime.getGlobalVariables().isDefined("$JAR_URL") ? runtime.getGlobalVariables().get("$JAR_URL") : runtime.getNil();
                     try {
-                        runtime.setGlobalVar("$JAR_URL", RubyString.newString(runtime, "jar:" + jarFile + "!/"));
+                        runtime.getGlobalVariables().set("$JAR_URL", RubyString.newString(runtime, "jar:" + jarFile + "!/"));
                         runtime.loadScript("init", new InputStreamReader(in), false);
                     } finally {
-                        runtime.setGlobalVar("$JAR_URL", old);
+                        runtime.getGlobalVariables().set("$JAR_URL", old);
                     }
                 }
             }

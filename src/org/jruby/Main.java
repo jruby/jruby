@@ -41,6 +41,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThrowJump;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
 import org.jruby.util.CommandlineParser;
@@ -151,7 +152,7 @@ public class Main {
     }
 
     private static void defineGlobal(Ruby runtime, String name, boolean value) {
-        runtime.defineReadonlyVariable(name, (value ? runtime.getTrue() : runtime.getNil()));
+        runtime.getGlobalVariables().defineReadonly(name, new ValueAccessor(value ? runtime.getTrue() : runtime.getNil()));
     }
 
     private static Reader getScriptSource() {

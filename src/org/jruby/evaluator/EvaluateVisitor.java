@@ -848,14 +848,14 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
         eval(iVisited.getValueNode());
-        runtime.setGlobalVar(iVisited.getName(), result);
+        runtime.getGlobalVariables().set(iVisited.getName(), result);
     }
 
     /**
      * @see NodeVisitor#visitGlobalVarNode(GlobalVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        result = runtime.getGlobalVar(iVisited.getName());
+        result = runtime.getGlobalVariables().get(iVisited.getName());
     }
 
     /**
@@ -1203,7 +1203,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                 return;
             } catch (RaiseException raiseJump) {
-                runtime.setGlobalVar("$!", raiseJump.getException());
+                runtime.getGlobalVariables().set("$!", raiseJump.getException());
 
                 Iterator iter = iVisited.getRescueNodes().iterator();
                 while (iter.hasNext()) {
@@ -1213,7 +1213,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                             eval(rescueNode);
                             return;
                         } catch (RetryJump retryJump) {
-                            runtime.setGlobalVar("$!", runtime.getNil());
+                            runtime.getGlobalVariables().set("$!", runtime.getNil());
                             continue RescuedBlock;
                         }
                     }
@@ -1221,7 +1221,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
                 throw raiseJump;
             } finally {
-                runtime.setGlobalVar("$!", runtime.getNil());
+                runtime.getGlobalVariables().set("$!", runtime.getNil());
             }
         }
     }

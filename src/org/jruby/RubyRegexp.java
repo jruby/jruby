@@ -99,7 +99,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public void initialize(String pat, int opts) {
         pattern = pat;
         options = opts;
-        if ((options & RE_OPTION_IGNORECASE) > 0 || getRuntime().getGlobalVar("$=").isTrue()) {
+        if ((options & RE_OPTION_IGNORECASE) > 0 || getRuntime().getGlobalVariables().get("$=").isTrue()) {
             matcher.setCasefold(true);
         }
         if ((options & RE_OPTION_EXTENDED) > 0) {
@@ -125,7 +125,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     private void recompileIfNeeded() {
         checkInitialized();
-        boolean globalCF = getRuntime().getGlobalVar("$=").isTrue();
+        boolean globalCF = getRuntime().getGlobalVariables().get("$=").isTrue();
         if ((globalCF && !matcher.getCasefold())
             || (matcher.getCasefold() && !globalCF && (options & RE_OPTION_IGNORECASE) == 0)) {
             initialize(pattern, options);

@@ -70,27 +70,27 @@ public class RubyArgsFile extends RubyObject {
 		defineSingletonMethod("to_s", CallbackFactory.getMethod(RubyArgsFile.class, "filename"));
 
         runtime.defineReadonlyVariable("$FILENAME", RubyString.newString(runtime, "-"));
-        currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
+        currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
     }
 
     protected boolean nextArgsFile() {
-        RubyArray args = (RubyArray)runtime.getGlobalVar("$*");
+        RubyArray args = (RubyArray)runtime.getGlobalVariables().get("$*");
 
         if (args.getLength() == 0) {
-            if (currentFile == runtime.getGlobalVar("$stdin")) {
+            if (currentFile == runtime.getGlobalVariables().get("$stdin")) {
                 return true;
             }
-            currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
-            ((RubyString) runtime.getGlobalVar("$FILENAME")).setValue("-");
+            currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
+            ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue("-");
             currentLineNumber = 0;
             return false;
         }
 
         String filename = ((RubyString) args.shift()).getValue();
-        ((RubyString) runtime.getGlobalVar("$FILENAME")).setValue(filename);
+        ((RubyString) runtime.getGlobalVariables().get("$FILENAME")).setValue(filename);
 
         if (filename.equals("-")) {
-            currentFile = (RubyIO) runtime.getGlobalVar("$stdin");
+            currentFile = (RubyIO) runtime.getGlobalVariables().get("$stdin");
         } else {
             File file = new File(filename);
             try {
@@ -123,7 +123,7 @@ public class RubyArgsFile extends RubyObject {
         }
         
         currentLineNumber++;
-        runtime.setGlobalVar("$.", RubyFixnum.newFixnum(runtime, currentLineNumber));
+        runtime.getGlobalVariables().set("$.", RubyFixnum.newFixnum(runtime, currentLineNumber));
         
         return line;
     }
@@ -145,6 +145,6 @@ public class RubyArgsFile extends RubyObject {
     }
     
 	public RubyString filename() {
-        return (RubyString)runtime.getGlobalVar("$FILENAME");
+        return (RubyString)runtime.getGlobalVariables().get("$FILENAME");
     }
 }

@@ -81,7 +81,7 @@ public class KernelModule {
     }
 
     public static RubyString gets(IRubyObject recv, IRubyObject[] args) {
-        RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVar("$<");
+        RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<");
 
         RubyString line = argsFile.internalGets(args);
 
@@ -91,7 +91,7 @@ public class KernelModule {
     }
 
     public static IRubyObject p(IRubyObject recv, IRubyObject args[]) {
-        IRubyObject defout = recv.getRuntime().getGlobalVar("$>");
+        IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
@@ -103,7 +103,7 @@ public class KernelModule {
     }
 
     public static IRubyObject puts(IRubyObject recv, IRubyObject args[]) {
-        IRubyObject defout = recv.getRuntime().getGlobalVar("$>");
+        IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
         RubyIO.puts(defout, args);
 
@@ -111,7 +111,7 @@ public class KernelModule {
     }
 
     public static IRubyObject print(IRubyObject recv, IRubyObject args[]) {
-        IRubyObject defout = recv.getRuntime().getGlobalVar("$>");
+        IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
         RubyIO.print(defout, args);
 
@@ -120,7 +120,7 @@ public class KernelModule {
 
     public static IRubyObject printf(IRubyObject recv, IRubyObject args[]) {
         if (args.length != 0) {
-            IRubyObject defout = recv.getRuntime().getGlobalVar("$>");
+            IRubyObject defout = recv.getRuntime().getGlobalVariables().get("$>");
 
             if (!(args[0] instanceof RubyString)) {
                 defout = args[0];
@@ -147,7 +147,7 @@ public class KernelModule {
     }
 
     public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
-        RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVar("$<");
+        RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<");
 
         RubyArray lines = RubyArray.newArray(recv.getRuntime());
 
@@ -326,7 +326,7 @@ public class KernelModule {
         Ruby runtime = recv.getRuntime();
         switch (args.length) {
         case 0 :
-            IRubyObject defaultException = runtime.getGlobalVar("$!");
+            IRubyObject defaultException = runtime.getGlobalVariables().get("$!");
             if (defaultException.isNil()) {
                 throw new RaiseException(runtime, runtime.getExceptions().getRuntimeError(), "");
             }

@@ -179,13 +179,14 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    /** rb_singleton_class_new
+    /** 
      *
+     *  @mri rb_class_boot
      */
     public RubyClass newSingletonClass() {
         RubyClass newClass = RubyClass.newClass(getRuntime(), this);
         newClass.setSingleton(true);
-
+        newClass.infectBy(this);
         return newClass;
     }
 
