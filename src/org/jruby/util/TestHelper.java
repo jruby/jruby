@@ -28,6 +28,12 @@
  */
 package org.jruby.util;
 
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.Ruby;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Helper class, used for testing calls to java from ruby code.
  *
@@ -85,5 +91,27 @@ public class TestHelper {
         	else
         		return iObject.toString();
         }
+    }
+
+    public static IRubyObject loadAndCall(IRubyObject x, String name, byte[] javaClass, String methodName)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        Loader loader = new Loader();
+        Class c = loader.loadClass(name, javaClass);
+        Method method = c.getMethod(methodName, new Class[] { Ruby.class, IRubyObject.class });
+        return (IRubyObject) method.invoke(null, new Object[] { x.getRuntime(), null });
+    }
+
+    private static class Loader extends ClassLoader {
+
+        public Class loadClass(String name, byte[] javaClass) {
+            Class cl = defineClass(name,
+                                   javaClass,
+                                   0,
+                                   javaClass.length);
+            resolveClass(cl);
+            return cl;
+        }
+
     }
 }

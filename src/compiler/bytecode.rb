@@ -52,7 +52,7 @@ module JRuby
 
           list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
 
-          list.append(BCEL::ICONST.new(@value))
+          list.append(BCEL::PUSH.new(methodgen.getConstantPool, @value))
           list.append(BCEL::I2L.new())
 
           arg_types = BCEL::Type[].new(2)
@@ -83,8 +83,7 @@ module JRuby
         end
 
         def emit_jvm_bytecode(methodgen, factory)
-
-          args_array_variable =
+          args_array =
             methodgen.addLocalVariable("args_array",
                                        BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
                                        nil,
@@ -92,44 +91,30 @@ module JRuby
 
           list = methodgen.getInstructionList
 
-          # ..., receiver, arg1, arg2
 
-          list.append(BCEL::ICONST.new(@arity))
+          list.append(BCEL::PUSH.new(methodgen.getConstantPool,
+                                     @arity))
           list.append(factory.createNewArray(IRUBYOBJECT_TYPE, 1))
+          args_array.setStart(list.getEnd())
 
-          # ..., receiver, arg1, arg2, args_array
+          list.append(BCEL::InstructionFactory.createStore(args_array.getType,
+                                                           args_array.getIndex))
 
-          args_array_variable.setStart(list.getEnd())
-
-          list.append(BCEL::InstructionFactory.createStore(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                                           args_array_variable.getIndex))
-
+          # Take the method arguments from the stack
+          # and put them in the array.
           for i in 0...arity
-            list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                                            args_array_variable.getIndex))
-            # ..., receiver, arg1, ..., argN, args_array
+            list.append(BCEL::InstructionFactory.createLoad(args_array.getType,
+                                                            args_array.getIndex))
             list.append(BCEL::SWAP.new)
-            # ..., receiver, arg1, ..., args_array, argN
-            list.append(BCEL::ICONST.new(i))
-            # ..., receiver, arg1, ..., args_array, argN, index
+            list.append(BCEL::PUSH.new(methodgen.getConstantPool, i))
             list.append(BCEL::SWAP.new)
-            # ..., receiver, arg1, ..., args_array, index, argN
             list.append(BCEL::AASTORE.new())
-            # ..., receiver, arg1, ..., argN-1
           end
 
-          # ..., receiver
-          list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                                          args_array_variable.getIndex))
-          # ..., receiver, args_array
-
+          list.append(BCEL::InstructionFactory.createLoad(args_array.getType,
+                                                          args_array.getIndex))
           list.append(BCEL::PUSH.new(factory.getConstantPool, @name))
-
-          # ..., receiver, args_array, name
-
           list.append(BCEL::SWAP.new)
-
-          # ..., receiver, name, args_array
 
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = BCEL::Type::STRING
