@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2003 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.exceptions.ArgumentError;
@@ -580,6 +582,25 @@ public class Pack {
                             lResult.append(ruby.getNil());
                     }
                     break;
+                case 'd':
+                	{
+                		int lPadLength = 0;
+                		if (lLength > (lValueLength - lCurValueIdx) / 8) {
+                			if (lFmt[i - 1] != '*')
+                				lPadLength = lLength - (lValueLength - lCurValueIdx) / 8;
+                			lLength = (lValueLength - lCurValueIdx) / 8;
+                		}
+                		for (; lLength-- > 0;) {
+                			long l = retrieveLong(value, lCurValueIdx);
+                			lCurValueIdx += 8;
+                			double d = Double.longBitsToDouble(l);
+
+                			lResult.append(RubyFloat.newFloat(ruby, d));
+                		}
+                		for (; lPadLength-- > 0;)
+                			lResult.append(ruby.getNil());
+                	}
+                	break;
                 case 's' :
                     {
                         int lPadLength = 0;
@@ -632,15 +653,10 @@ public class Pack {
                             lLength = (lValueLength - lCurValueIdx) / 4;
                         }
                         for (; lLength-- > 0;) {
-                            int i1 = (value.charAt(lCurValueIdx++) & 0xff);
-                            int i2 = (value.charAt(lCurValueIdx++) & 0xff);
-                            int i3 = (value.charAt(lCurValueIdx++) & 0xff);
-                            int i4 = (value.charAt(lCurValueIdx++) & 0xff);
-                            i4 <<= 24;
-                            i4 |= (i3 << 16);
-                            i4 |= (i2 << 8);
-                            i4 |= i1;
-                            lResult.append(RubyFixnum.newFixnum(ruby, i4));
+                        	int ri = retrieveInt(value, lCurValueIdx);
+                        	lCurValueIdx += 4;
+                        	
+                            lResult.append(RubyFixnum.newFixnum(ruby, ri));
                         }
                         for (; lPadLength-- > 0;)
                             lResult.append(ruby.getNil());
@@ -744,7 +760,8 @@ public class Pack {
         return lResult;
     }
 
-    /**
+ 
+	/**
      * shrinks a stringbuffer.
      * shrinks a stringbuffer by a number of characters.
      * @param i2Shrink the stringbuffer
@@ -1184,7 +1201,22 @@ public class Pack {
                         lResult.append(c);
                     }
                     break;
-
+                case 'd':
+                	while (lLength-- > 0) {
+                		long d;
+                		if (lLeftInArray-- > 0)
+                			lFrom = (IRubyObject) list.get(idx++);
+                		else
+                			throw new ArgumentError(ruby, sTooFew);
+                		if (lFrom == ruby.getNil())
+                			d = 0;
+                		else {
+                			d = Double.doubleToLongBits(RubyNumeric.numericValue(lFrom).getDoubleValue());
+                		}
+                		appendInt(lResult, (int) (d & 0xffffffff));
+                		appendInt(lResult, (int) (d >>> 32));
+                	}
+                	break;
                 case 's' :
                 case 'v' :
                 case 'S' :
@@ -1228,21 +1260,14 @@ public class Pack {
                 case 'L' :
                 case 'V' :
                     while (lLength-- > 0) {
-                        int s;
                         if (lLeftInArray-- > 0)
                             lFrom = (IRubyObject) list.get(idx++);
                         else
                             throw new ArgumentError(ruby, sTooFew);
-                        if (lFrom == ruby.getNil())
-                            s = 0;
-                        else {
-                            s = (int) (RubyNumeric.num2long(lFrom));
-                        }
-                        lResult.append((char) (s & 0xff));
-                        lResult.append((char) ((s >> 8) & 0xff));
-                        lResult.append((char) ((s >> 16) & 0xff));
-                        lResult.append((char) ((s >> 24) & 0xff));
-
+                        
+                        int s = (lFrom == ruby.getNil() ? 
+							     0 : (int) (RubyNumeric.num2long(lFrom)));
+                        appendInt(lResult, s);
                     }
                     break;
                 case 'N' :
@@ -1330,4 +1355,45 @@ public class Pack {
         }
         return RubyString.newString(ruby, lResult.toString());
     }
+
+	/**
+	 * Append a packed integer representation onto end of a stringbuffer.
+	 *  
+	 * @param result to be appended to
+	 * @param s the integer to encode
+	 */
+	private static void appendInt(StringBuffer result, int s) {
+		result.append((char) (s & 0xff));
+		result.append((char) ((s >> 8) & 0xff));
+		result.append((char) ((s >> 16) & 0xff));
+		result.append((char) ((s >> 24) & 0xff));
+	}
+	
+	/**
+	 * Retrieve an encoded int starting at index in the string value.
+	 *  
+	 * @param value to get Into from
+	 * @param index where encoded int starts at
+	 * @return the decoded integer
+	 */
+	private static int retrieveInt(String value, int index) {
+		int i1 = (value.charAt(index) & 0xff);
+		int i2 = (value.charAt(index + 1) & 0xff);
+		int i3 = (value.charAt(index + 2) & 0xff);
+		int i4 = (value.charAt(index + 3) & 0xff);
+		
+		i4 <<= 24;
+		i4 |= (i3 << 16);
+		i4 |= (i2 << 8);
+		i4 |= i1;
+		
+		return i4;
+	}
+	
+	private static long retrieveLong(String value, int index) {
+		int c1 = retrieveInt(value, index);
+		int c2 = retrieveInt(value, index + 4);
+		
+		return  (c1 & 0xffffffffL) + ((long) c2 << 32);
+	}
 }
