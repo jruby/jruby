@@ -77,6 +77,12 @@ public class RubyThreadGroup extends RubyObject {
         	throw new TypeError(getRuntime(), "can't add to frozen ThreadGroup");
     	}
     	
+    	if (rubyThread.group() != getRuntime().getNil()) {
+    		RubyThreadGroup threadGroup = (RubyThreadGroup)rubyThread.group();
+    		threadGroup.rubyThreadList.remove(rubyThread);
+    	}
+    	
+    	rubyThread.setThreadGroup(this);
 		rubyThreadList.add(rubyThread);
 	
 		return this;
