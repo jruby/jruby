@@ -57,6 +57,7 @@ public class RubyThread extends RubyObject {
     private Map threadLocalVariables = new HashMap();
     private boolean abortOnException;
     private RaiseException exitingException = null;
+    private boolean hasStarted = false;
 
     public static RubyClass createThreadClass(Ruby ruby) {
         RubyClass threadClass = ruby.defineClass("Thread", ruby.getClasses().getObjectClass());
@@ -171,6 +172,7 @@ public class RubyThread extends RubyObject {
 
         thread.jvmThread = new Thread(new Runnable() {
             public void run() {
+                thread.hasStarted = true;
                 runtime.registerNewContext(thread);
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
@@ -278,16 +280,23 @@ public class RubyThread extends RubyObject {
     }
 
     public RubyThread join() {
-        if (jvmThread == Thread.currentThread()) {
-            throw new ThreadError(getRuntime(), "thread tried to join itself");
-        }
         try {
+            if (jvmThread == Thread.currentThread()) {
+                throw new ThreadError(getRuntime(), "thread tried to join itself");
+            }
+            while (! hasStarted) {
+                // The JVM's join() may return directly if it is called
+                // on a not-yet started thread. We give the thread
+                // a chance to start before we proceed.
+                Thread.sleep(10);
+            }
+
             jvmThread.join();
+            if (exitingException != null) {
+                throw exitingException;
+            }
         } catch (InterruptedException e) {
             // FIXME: output warning
-        }
-        if (exitingException != null) {
-            throw exitingException;
         }
         return this;
     }
