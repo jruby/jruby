@@ -391,7 +391,7 @@ public class RubyArray extends RubyObject {
 	}
     
     public final static RubyArray newArray(Ruby ruby, ArrayList list) {
-        return new RubyArray(ruby, list);
+        return new RubyArray(ruby, list, true);
     }
 
 	public static RubyArray newArray(Ruby ruby, RubyObject[] args) {
