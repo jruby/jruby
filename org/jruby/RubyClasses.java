@@ -259,8 +259,9 @@ public class RubyClasses {
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
 
-        
         structClass = RubyStruct.createStructClass(ruby);
+
+        gcModule = RubyGC.createGCModule(ruby);
     }
 
     /** Returns the reference to the Binding class.

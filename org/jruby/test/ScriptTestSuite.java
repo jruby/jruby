@@ -80,6 +80,7 @@ public class ScriptTestSuite extends TestSuite {
         suite.addTest(new ScriptTest(ruby, "testSymbol"));
         suite.addTest(new ScriptTest(ruby, "testRandom"));
         suite.addTest(new ScriptTest(ruby, "testStruct"));
+        suite.addTest(new ScriptTest(ruby, "testGC"));
 
         return suite;
     }

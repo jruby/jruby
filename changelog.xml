@@ -2,6 +2,7 @@
 
 <changelog>
 	<release version="0.5.1">
+        <change type="update" description="Added GC module." author="ndrs" date="27 May 2002"/>
 		<change type="bug" description="558664" author="jpetersen" date="21 Mai 2002 15:21:55 CEST"/>
 		<change type="bug" description="558662" author="jpetersen" date="21 Mai 2002 15:21:55 CEST"/>
 		<change type="bug" description="556807" author="jpetersen" date="21 Mai 2002 15:21:55 CEST"/>

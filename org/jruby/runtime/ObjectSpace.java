@@ -33,7 +33,7 @@
 package org.jruby.runtime;
 
 import java.util.*;
-import java.lang.ref.SoftReference;
+import java.lang.ref.*;
 import org.jruby.RubyObject;
 import org.jruby.RubyModule;
 
@@ -45,14 +45,23 @@ import org.jruby.RubyModule;
 public class ObjectSpace {
 
     private List objects = new LinkedList();
+    private ReferenceQueue deadReferences = new ReferenceQueue();
 
     public void add(RubyObject object) {
-        objects.add(new SoftReference(object));
+        objects.add(new SoftReference(object, deadReferences));
     }
 
     public Iterator iterator(RubyModule rubyClass) {
         return new ObjectSpaceIterator(rubyClass);
     }
+
+    public void cleanup() {
+        Reference reference;
+        while ((reference = deadReferences.poll()) != null) {
+            objects.remove(reference);
+        }
+    }
+
 
     private class ObjectSpaceIterator implements Iterator {
         private final RubyModule rubyClass;
@@ -67,6 +76,9 @@ public class ObjectSpace {
         }
 
         public Object next() {
+            if (! hasNext()) {
+                throw new NoSuchElementException();
+            }
             RubyObject result = next;
             prefetch();
             return result;

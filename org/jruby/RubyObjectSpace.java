@@ -29,8 +29,7 @@
  */
 package org.jruby;
 
-import java.lang.ref.*;
-import java.util.*;
+import java.util.Iterator;
 
 import org.jruby.runtime.*;
 
@@ -40,11 +39,10 @@ public class RubyObjectSpace {
      * 
      */
     public static RubyModule createObjectSpaceModule(Ruby ruby) {
-        Callback each_object = CallbackFactory.getOptSingletonMethod(RubyObjectSpace.class, "each_object");
-
         RubyModule objectSpaceModule = ruby.defineModule("ObjectSpace");
 
-        objectSpaceModule.defineModuleFunction("each_object", each_object);
+        objectSpaceModule.defineModuleFunction("each_object", CallbackFactory.getOptSingletonMethod(RubyObjectSpace.class, "each_object"));
+        objectSpaceModule.defineModuleFunction("garbage_collect", CallbackFactory.getSingletonMethod(RubyObjectSpace.class, "garbage_collect"));
 
         return objectSpaceModule;
     }
@@ -61,5 +59,9 @@ public class RubyObjectSpace {
             ruby.yield((RubyObject) iter.next());
         }
         return ruby.getNil();
+    }
+
+    public static RubyObject garbage_collect(Ruby ruby, RubyObject recv) {
+        return RubyGC.start(ruby, recv);
     }
 }
