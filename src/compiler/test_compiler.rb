@@ -71,7 +71,7 @@ end
 
 def test_compiled(expected, source)
   interfaces = JavaLang::JString[].new(0)
-  classgen = BCEL::ClassGen.new("CompiledRuby",
+  classgen = BCEL::ClassGen.new("jruby.CompiledRuby",
                                 "java.lang.Object",
                                 "cool generated code",
                                 BCEL::Constants::ACC_PUBLIC,
@@ -84,7 +84,7 @@ def test_compiled(expected, source)
 
   classgen.getJavaClass.dump("/tmp/CompiledRuby.class") # REMOVE ME
 
-  result = JRubyUtil::TestHelper.loadAndCall(:dummy,
+  result = JRubyUtil::TestHelper.loadAndCall(self,
                                              classgen.getClassName,
                                              classgen.getJavaClass.getBytes,
                                              "doStuff")
@@ -105,7 +105,9 @@ test_compiled([1..2, 1...3], "[1..2, 1...3]")
 test_compiled(:hello, ":hello")
 test_compiled(2, "unless true; 1; else; 2; end")
 
-test_compiled(nil, "def hello(x); x * 2; end")
-#test_compiled(6, "def hello(x); x * 2; end; hello(3)")
+#test_compiled(nil, "def hello(x); x * 2; end")
+#test_compiled(7, "def abc(); 7; end; abc()")
+
+test_compiled(6, "def hello(x); x * 2; end; hello(3)")
 
 test_print_report

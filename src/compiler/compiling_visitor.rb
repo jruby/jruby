@@ -96,6 +96,7 @@ module JRuby
         @bytecodes = []
         @labels = []
         @methods = {}
+        @method_arg_count = {}
       end
 
       def <<(bytecode)
@@ -106,11 +107,12 @@ module JRuby
         @bytecodes.each {|b| yield(b) }
       end
 
-      def new_method(name, &block)
+      def new_method(name, argument_count, &block)
         old_bytecodes = @bytecodes
         begin
           @bytecodes = []
           @methods[name] = @bytecodes
+          @method_arg_count[name] = argument_count
           block.call
         ensure
           @bytecodes = old_bytecodes
@@ -122,7 +124,7 @@ module JRuby
       end
 
       def jvm_compile(classgen, name)
-        methodgen = create_java_method(classgen, name)
+        methodgen = create_java_method(classgen, name, 0)
         generator = JvmGenerator.new(methodgen)
         @bytecodes.each {|b|
           b.emit_jvm_bytecode(generator)
@@ -132,7 +134,9 @@ module JRuby
         classgen.addMethod(methodgen.getMethod)
 
         @methods.each {|name, bytecodes|
-          methodgen = create_java_method(classgen, name)
+          methodgen = create_java_method(classgen,
+                                         name,
+                                         @method_arg_count[name])
           generator = JvmGenerator.new(methodgen)
           bytecodes.each {|b|
             b.emit_jvm_bytecode(generator)
@@ -143,14 +147,24 @@ module JRuby
         }
       end
 
-      def create_java_method(classgen, name)
-        arg_types = BCEL::Type[].new(2)
+      def create_java_method(classgen, name, argument_count)
+        arg_types = BCEL::Type[].new(2 + argument_count)
         arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
         arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
+        index = 2
+        argument_count.times {
+          arg_types[index] = BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
+          index += 1
+        }
 
-        arg_names = JavaLang::JString[].new(2)
+        arg_names = JavaLang::JString[].new(2 + argument_count)
         arg_names[0] = "runtime"
         arg_names[1] = "self"
+        index = 2
+        argument_count.times {
+          arg_names[index] = "arg_" + (index - 2).to_s
+          index += 1
+        }
 
         methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::ACC_STATIC,
                                         BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
@@ -206,12 +220,17 @@ module JRuby
 
       def visitFCallNode(node)
         @bytecodes << PushSelf.new
-        iter = node.getArgsNode.iterator
-        while iter.hasNext
-          emit_bytecodes(iter.next)
+        unless node.getArgsNode.nil?
+          iter = node.getArgsNode.iterator
+          while iter.hasNext
+            emit_bytecodes(iter.next)
+          end
+          arity = node.getArgsNode.size
+        else
+          arity = 0
         end
         @bytecodes << Call.new(node.getName,
-                               node.getArgsNode.size,
+                               arity,
                                :functional)
       end
 
@@ -273,7 +292,7 @@ module JRuby
       end
 
       def visitDefnNode(node)
-        @bytecodes.new_method(node.getName) {
+        @bytecodes.new_method(node.getName, node.getArgsNode.getArgsCount) {
           emit_bytecodes(node.getBodyNode)
         }
         @bytecodes << CreateMethod.new(node.getName,

@@ -1,6 +1,5 @@
 package org.jruby.runtime;
 
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 import org.jruby.util.Asserts;
@@ -27,7 +26,7 @@ public final class Visibility implements Serializable {
         this.restore = restore;
     }
     
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() {
         switch (restore) {
             case 0:
                 return PUBLIC;

@@ -46,17 +46,9 @@ module JRuby
           # klass
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           generator.java_class_name))
-          arg_types = BCEL::Type[].new(1)
-          arg_types[0] = BCEL::Type::STRING
-          generator.appendInvoke("java.lang.Class",
-                                 "forName",
-                                 BCEL::ObjectType.new("java.lang.Class"),
-                                 arg_types,
-                                 BCEL::Constants::INVOKESTATIC)
-
           klass =
-            generator.addLocalVariable("args_array",
-                                       BCEL::ObjectType.new("java.lang.Class"),
+            generator.addLocalVariable("klass",
+                                       BCEL::Type::STRING,
                                        nil,
                                        nil)
           klass.setStart(generator.getEnd)
@@ -73,91 +65,35 @@ module JRuby
           methodName.setStart(generator.getEnd)
           generator.append(BCEL::ASTORE.new(methodName.getIndex))
 
-          # args
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          @arity))
-          generator.append(factory.createNewArray(BCEL::ObjectType.new("java.lang.Class"),
-                                                  1))
-          for i in 0...@arity
-            generator.append(BCEL::DUP.new)
-            generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                            i))
-            generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                            IRUBYOBJECT_TYPE.getClassName))
-            generator.appendInvoke("java.lang.Class",
-                                   "forName",
-                                   BCEL::ObjectType.new("java.lang.Class"),
-                                   arg_types,
-                                   BCEL::Constants::INVOKESTATIC)
-            generator.append(BCEL::AASTORE.new)
-          end
-          args = generator.addLocalVariable("args",
-                                            BCEL::ArrayType.new("java.lang.Class", 1),
-                                            nil,
-                                            nil)
-          args.setStart(generator.getEnd)
-          generator.append(BCEL::ASTORE.new(args.getIndex))
-
-          # isRestArgs
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          false))
-          isRestArgs = generator.addLocalVariable("isRestArgs",
-                                                  BCEL::Type::BOOLEAN,
-                                                  nil,
-                                                  nil)
-          isRestArgs.setStart(generator.getEnd)
-          generator.append(BCEL::ISTORE.new(isRestArgs.getIndex))
-
-          # isStaticMethod
-          generator.append(BCEL::PUSH.new(generator.getConstantPool,
-                                          true))
-          isStaticMethod = generator.addLocalVariable("isStaticMethod",
-                                                      BCEL::Type::BOOLEAN,
-                                                      nil,
-                                                      nil)
-          isStaticMethod.setStart(generator.getEnd)
-          generator.append(BCEL::ISTORE.new(isStaticMethod.getIndex))
-
           # arity
           generator.append(BCEL::PUSH.new(generator.getConstantPool,
                                           @arity))
-          arg_types = BCEL::Type[].new(1)
-          arg_types[0] = BCEL::Type::INT
-          generator.appendInvoke("org.jruby.runtime.Arity",
-                                 "fixed",
-                                 BCEL::ObjectType.new("org.jruby.runtime.Arity"),
-                                 arg_types,
-                                 BCEL::Constants::INVOKESTATIC)
           arity = generator.addLocalVariable("arity",
-                                             BCEL::ObjectType.new("org.jruby.runtime.Arity"),
+                                             BCEL::Type::INT,
                                              nil,
                                              nil)
           arity.setStart(generator.getEnd)
-          generator.append(BCEL::ASTORE.new(arity.getIndex))
+          generator.append(BCEL::ISTORE.new(arity.getIndex))
 
           # Create a callback
-          generator.append(factory.createNew("org.jruby.runtime.ReflectionCallback"))
+          generator.append(factory.createNew("org.jruby.runtime.CompiledReflectionCallback"))
           generator.append(BCEL::DUP.new)
 
+          generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
           generator.append(BCEL::ALOAD.new(klass.getIndex))
           generator.append(BCEL::ALOAD.new(methodName.getIndex))
-          generator.append(BCEL::ALOAD.new(args.getIndex))
-          generator.append(BCEL::ILOAD.new(isRestArgs.getIndex))
-          generator.append(BCEL::ILOAD.new(isStaticMethod.getIndex))
-          generator.append(BCEL::ALOAD.new(arity.getIndex))
+          generator.append(BCEL::ILOAD.new(arity.getIndex))
 
           # Fixme: destroy local variables
 
-          arg_types = BCEL::Type[].new(6)
-          arg_types[0] = BCEL::ObjectType.new("java.lang.Class")
+          arg_types = BCEL::Type[].new(4)
+          arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
           arg_types[1] = BCEL::Type::STRING
-          arg_types[2] = BCEL::ArrayType.new("java.lang.Class", 1)
-          arg_types[3] = BCEL::Type::BOOLEAN
-          arg_types[4] = BCEL::Type::BOOLEAN
-          arg_types[5] = BCEL::ObjectType.new("org.jruby.runtime.Arity")
+          arg_types[2] = BCEL::Type::STRING
+          arg_types[3] = BCEL::Type::INT
 
           # Call constructor
-          generator.appendInvoke("org.jruby.runtime.ReflectionCallback",
+          generator.appendInvoke("org.jruby.runtime.CompiledReflectionCallback",
                                  "<init>",
                                  BCEL::Type::VOID,
                                  arg_types,
@@ -544,6 +480,7 @@ module JRuby
                                  BCEL::ObjectType.new("org.jruby.util.collections.StackElement"),
                                  BCEL::Type[].new(0),
                                  BCEL::Constants::INVOKEVIRTUAL)
+          generator.append(BCEL::POP.new)
           # getFrameStack.pop()
           push_frame_stack(generator)
           generator.appendInvoke("org.jruby.runtime.FrameStack",
@@ -551,6 +488,7 @@ module JRuby
                                  BCEL::ObjectType.new("java.lang.Object"),
                                  BCEL::Type[].new(0),
                                  BCEL::Constants::INVOKEVIRTUAL)
+          generator.append(BCEL::POP.new)
         end
       end
 
