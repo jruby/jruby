@@ -25,18 +25,19 @@
 
 # Test regexp substitutions
 
+puts "Test regexp substitutions:"
+puts
 rgx1 = /[a-z]+/
 str1 = "redrum".sub(rgx1, "<\\&>")
 puts str1
-
 str1.sub!(/\w+/) { |m| $` + m.upcase + $' }
 puts str1
 
 puts "ruby".upcase.gsub(/\d?/, '*')
-
 str3 = "regnad kcin".reverse
 str3.gsub!(/\w+/) { |m| m.capitalize }
 puts str3
+puts
 
 # Test string evaluation
 

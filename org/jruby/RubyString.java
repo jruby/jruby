@@ -75,7 +75,7 @@ public class RubyString extends RubyObject {
     }
     
     public String toString() {
-        return "\"" + getString() + "\"";
+        return "\"" + getValue() + "\"";
     }
     
     /**
@@ -84,22 +84,22 @@ public class RubyString extends RubyObject {
     public RubyObject slice(int beg, int len) {
         // ...
         
-        return m_newString(getRuby(), getString().substring(beg, beg + len));
+        return m_newString(getRuby(), getValue().substring(beg, beg + len));
     }
     
     /** rb_str_cmp
      *
      */
-    public int cmp(RubyObject other) {
+    public int cmp(RubyString other) {
         /* use Java implementatiom */
-        return getString().compareTo(((RubyString)other).getString());
+        return getValue().compareTo(other.getValue());
     }
         
     /** rb_to_id
      *
      */
     public RubyId toId() {
-        return getRuby().intern(getString());
+        return getRuby().intern(getValue());
     }
         
     /** Create a new String which uses the same Ruby runtime and the same
@@ -137,7 +137,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyObject m_dup() {
-        return newString(getString());
+        return newString(getValue());
     }
     
     /** rb_str_clone
@@ -170,11 +170,11 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_replace(RubyString other) {
-        if (this == other || getString() == other.getString()) {
+        if (this == other || getValue().equals(other.getValue())) {
             return this;
         }
         
-        setString(other.getString());
+        setString(other.getValue());
         
         // The other stuff isn't needed?
         
@@ -185,9 +185,9 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_reverse() {
-        StringBuffer sb = new StringBuffer(getString().length());
-        for (int i = getString().length() - 1; i >= 0; i--) {
-            sb.append(getString().charAt(i));
+        StringBuffer sb = new StringBuffer(getValue().length());
+        for (int i = getValue().length() - 1; i >= 0; i--) {
+            sb.append(getValue().charAt(i));
         }
         
         return newString(sb.toString());
@@ -225,11 +225,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyFixnum op_cmp(RubyObject other) {
-        if (!(other instanceof RubyString)) {
-            other = other.convertType(RubyString.class, "String", "to_str");
-        }
-        
-        return RubyFixnum.m_newFixnum(getRuby(), cmp(other));
+        return RubyFixnum.m_newFixnum(getRuby(), cmp(get_str(other)));
     }
 
     /** rb_str_equal
@@ -242,7 +238,7 @@ public class RubyString extends RubyObject {
             return getRuby().getFalse();
         }
         /* use Java implementation */
-        return getString().equals(((RubyString)other).getString()) ? getRuby().getTrue() : getRuby().getFalse();
+        return getValue().equals(((RubyString)other).getValue()) ? getRuby().getTrue() : getRuby().getFalse();
     }
 
     /** rb_str_match
@@ -268,14 +264,14 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_capitalize() {
-        final int length = getString().length();
+        final int length = getValue().length();
         
         StringBuffer sb = new StringBuffer(length);
         if (length > 0) {
-            sb.append(Character.toUpperCase(getString().charAt(0)));
+            sb.append(Character.toUpperCase(getValue().charAt(0)));
         }
         if (length > 1) {
-            sb.append(getString().toLowerCase().substring(1));
+            sb.append(getValue().toLowerCase().substring(1));
         }
         
         return newString(sb.toString());
@@ -285,14 +281,14 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_capitalize_bang() {
-        final int length = getString().length();
+        final int length = getValue().length();
         
         StringBuffer sb = new StringBuffer(length);
         if (length > 0) {
-            sb.append(Character.toUpperCase(getString().charAt(0)));
+            sb.append(Character.toUpperCase(getValue().charAt(0)));
         }
         if (length > 1) {
-            sb.append(getString().toLowerCase().substring(1));
+            sb.append(getValue().toLowerCase().substring(1));
         }
         
         setString(sb.toString());
@@ -304,14 +300,14 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_upcase() {
-        return newString(getString().toUpperCase());
+        return newString(getValue().toUpperCase());
     }
     
     /** rb_str_upcase_bang
      *
      */
     public RubyString m_upcase_bang() {
-        setString(getString().toUpperCase());
+        setString(getValue().toUpperCase());
         
         return this;
     }
@@ -320,14 +316,14 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_downcase() {
-        return newString(getString().toLowerCase());
+        return newString(getValue().toLowerCase());
     }
     
     /** rb_str_downcase_bang
      *
      */
     public RubyString m_downcase_bang() {
-        setString(getString().toLowerCase());
+        setString(getValue().toLowerCase());
         
         return this;
     }
@@ -336,7 +332,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_swapcase() {
-        RubyString newString = newString(getString());
+        RubyString newString = newString(getValue());
         
         return newString.m_swapcase_bang();
     }
@@ -345,7 +341,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_swapcase_bang() {
-        char[] chars = getString().toCharArray();
+        char[] chars = getValue().toCharArray();
         StringBuffer sb = new StringBuffer(chars.length);
         
         for (int i = 0; i < chars.length; i++) {
@@ -357,7 +353,7 @@ public class RubyString extends RubyObject {
                 sb.append(Character.toLowerCase(chars[i]));
             }
         }
-        setString(getString().toLowerCase());
+        setString(getValue().toLowerCase());
         
         return this;
     }
@@ -366,14 +362,14 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString m_inspect() {
-        final int length = getString().length();
+        final int length = getValue().length();
         
         StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
         
         sb.append('\"');
         
         for (int i = 0; i < length; i++) {
-            char c = getString().charAt(i);
+            char c = getValue().charAt(i);
             
             if (Character.isLetterOrDigit(c)) {
                 sb.append(c);
@@ -410,11 +406,9 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyString op_plus(RubyObject other) {
-        if (!(other instanceof RubyString)) {
-            other = other.convertType(RubyString.class, "String", "to_str");
-        }
+        RubyString str = get_str(other);
         
-        RubyString newString = newString(getString() + ((RubyString)other).getString());
+        RubyString newString = newString(getValue() + str.getValue());
         
         newString.setTaint(isTaint() || other.isTaint());
         
@@ -431,13 +425,13 @@ public class RubyString extends RubyObject {
             throw new RubyArgumentException("negative argument");
         }
         
-        if (Long.MAX_VALUE / len < getString().length()) {
+        if (Long.MAX_VALUE / len < getValue().length()) {
             throw new RubyArgumentException("argument too big");
         }
-        StringBuffer sb = new StringBuffer((int)(getString().length() * len));
+        StringBuffer sb = new StringBuffer((int)(getValue().length() * len));
         
         for (int i = 0; i < len; i++) {
-            sb.append(getString());
+            sb.append(getValue());
         }
         
         RubyString newString = newString(sb.toString());
@@ -449,30 +443,27 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyFixnum m_hash() {
-        return RubyFixnum.m_newFixnum(getRuby(), getString().hashCode());
+        return RubyFixnum.m_newFixnum(getRuby(), getValue().hashCode());
     }
 
     /** rb_str_length
      *
      */
     public RubyFixnum m_length() {
-        return new RubyFixnum(getRuby(), getString().length());
+        return new RubyFixnum(getRuby(), getValue().length());
     }
 
     /** rb_str_empty
      *
      */
     public RubyBoolean m_empty() {
-        return new RubyBoolean(getRuby(), getString().length() == 0);
+        return new RubyBoolean(getRuby(), getValue().length() == 0);
     }
 
     /** rb_str_append
      *
      */
     public RubyString m_append(RubyObject other) {
-        if (other instanceof RubyString) {
-            return m_cat(((RubyString)other).getValue());
-        }
         return m_cat(get_str(other).getValue());
     }
 
@@ -482,7 +473,7 @@ public class RubyString extends RubyObject {
     public RubyString m_concat(RubyObject other) {
         if ((other instanceof RubyFixnum) && ((RubyFixnum)other).getLongValue() < 256) {
             char c = (char)((RubyFixnum)other).getLongValue();
-            return m_cat("" + c /* Character.toString(c) Java 1.4 */);
+            return m_cat("" + c);
         }
         return m_append(other);
     }
@@ -604,5 +595,57 @@ public class RubyString extends RubyObject {
             return this;
         }
         return m_newString(getRuby(), sbuf.toString());
+    }
+
+    /** rb_str_index_m
+     *
+     */
+    public RubyObject m_index(RubyObject[] args) {
+        return index(args, false);
+    }
+    
+    /** rb_str_rindex_m
+     *
+     */
+    public RubyObject m_rindex(RubyObject[] args) {
+        return index(args, true);
+    }
+
+    private RubyObject index(RubyObject[] args, boolean reverse) {
+        int pos = 0;
+        if (count_args(args, 1, 2) == 2) {
+            // pos = RubyNumeric.fix2int(args[1]);
+            pos = (int)((RubyFixnum)args[1]).getLongValue();
+        }
+        if (pos < 0) {
+            pos += getValue().length();
+            if (pos < 0) {
+                return getRuby().getNil();
+            }
+        }
+        if (args[0] instanceof RubyRegexp) {
+            pos = ((RubyRegexp)args[0]).m_search(this, pos);
+            int dummy = pos;
+            while (reverse && dummy > -1) {
+                pos = dummy;
+                dummy = ((RubyRegexp)args[0]).m_search(this, pos + 1);
+            }
+        }
+        else if (args[0] instanceof RubyString) {
+            String sub = ((RubyString)args[0]).getValue();
+            pos = reverse ? getValue().lastIndexOf(sub) : getValue().indexOf(sub);
+        }
+        else if (args[0] instanceof RubyFixnum) {
+            char c = (char)((RubyFixnum)args[0]).getLongValue();
+            pos = reverse ? getValue().lastIndexOf(c) : getValue().indexOf(c);
+        }
+        else {
+            throw new RubyArgumentException("wrong type of argument");
+        }
+        
+        if (pos == -1) {
+            return getRuby().getNil();
+        }
+        return RubyFixnum.m_newFixnum(getRuby(), pos);
     }
 }

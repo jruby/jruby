@@ -351,7 +351,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         /**
          * Compile the regex.
          */
-        public void compile(String pattern) throws RubyRegexpException {
+        private void compile(String pattern) throws RubyRegexpException {
             try {
                 this.re = new RE(pattern, cflags);
             } catch (REException e) {
@@ -362,7 +362,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         /**
          * Set whether matches should be case-insensitive or not
          */
-        public void setCasefold(boolean set) {
+        private void setCasefold(boolean set) {
             if (set) {
                 cflags |= RE.REG_ICASE;
             } else {
@@ -373,14 +373,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         /**
          * Get whether matches are case-insensitive or not
          */
-        public boolean getCasefold() {
+        private boolean getCasefold() {
             return (cflags & RE.REG_ICASE) > 0;
         }
     
         /**
          * Set whether patterns can contain comments and extra whitespace
          */
-        public void setExtended(boolean set) {
+        private void setExtended(boolean set) {
             if (set) {
                 // XXX - we'll have to do handle this ourselves
                 throw new RubyRegexpException("Extended patterns are not supported");
@@ -390,7 +390,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         /**
          * Set whether the dot metacharacter should match newlines
          */
-        public void setMultiline(boolean set) {
+        private void setMultiline(boolean set) {
             if (set) {
                 cflags |= RE.REG_DOT_NEWLINE;
             } else {
@@ -401,7 +401,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         /**
          * Does the given argument match the pattern?
          */
-        public RubyObject search(Ruby ruby, String target, int startPos) {
+        private RubyObject search(Ruby ruby, String target, int startPos) {
             REMatch match = re.getMatch(target, startPos, eflags);
             if (match != null) {
                 int count = re.getNumSubs() + 1;
