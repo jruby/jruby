@@ -63,7 +63,7 @@ set _STARTJAVA="%JAVA_HOME%\bin\java"
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-set CP=%JRUBY_HOME%\lib\jruby.jar;%JRUBY_HOME%\lib\jakarta-oro-2.0.6.jar;%JAVA_HOME%\lib\tools.jar
+set CP=%JRUBY_HOME%\lib\jruby.jar
 
 if not "%CLASSPATH%" == "" goto gotCP
 set CLASSPATH=%CP%
@@ -72,15 +72,16 @@ goto doneCP
 set CLASSPATH=%CP%;%CLASSPATH%
 :doneCP
 
-echo Using JRUBY_BASE: %JRUBY_BASE%
-echo Using JRUBY_HOME: %JRUBY_HOME%
-echo Using CLASSPATH:  %CLASSPATH%
-echo Using JAVA_HOME:  %JAVA_HOME%
-echo Using Args:       %*
+rem echo Using JRUBY_BASE: %JRUBY_BASE%
+rem echo Using JRUBY_HOME: %JRUBY_HOME%
+rem echo Using CLASSPATH:  %CLASSPATH%
+rem echo Using JAVA_HOME:  %JAVA_HOME%
+rem echo Using Args:       %*
 
 rem ----- Execute The Requested Command ---------------------------------------
 
-%_STARTJAVA% -cp %CLASSPATH% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
+%_STARTJAVA% -ea -cp %CLASSPATH% -Djruby.base="%JRUBY_BASE%" -Djruby.home="%JRUBY_HOME%" -Djruby.lib=".\lib" -Djruby.shell="cmd.exe" -Djruby.script=jruby.bat org.jruby.Main %JRUBY_OPTS% %*
+set E=%ERRORLEVEL%
 
 rem ----- Restore Environment Variables ---------------------------------------
 
@@ -96,3 +97,4 @@ set _LIBJARS=
 set _RUNJAVA=
 set _STARTJAVA=
 :finish
+exit %E%
