@@ -14,3 +14,6 @@ test_float_equal(9.9, 3.0*3.3)
 test_float_equal(1.19047619 , 2.5 / 2.1)
 test_float_equal(39.0625, 2.5 ** 4)
 
+test_equal("1.1", 1.1.to_s)
+test_equal("1.0", 1.0.to_s)
+test_equal("-1.0", -1.0.to_s)
