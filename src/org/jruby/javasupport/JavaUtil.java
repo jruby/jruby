@@ -205,11 +205,10 @@ public class JavaUtil {
 
     public static Object convertArgument(Object argument, Class parameterType) {
         if (argument instanceof JavaObject) {
-            JavaObject javaArgument = (JavaObject) argument;
-            if (javaArgument.isJavaNull()) {
+            argument = ((JavaObject) argument).getValue();
+            if (argument == null) {
                 return null;
             }
-            argument = javaArgument.getValue();
         }
         Class type = primitiveToWrapper(parameterType);
         if (type == Void.class) {

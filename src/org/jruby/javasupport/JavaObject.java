@@ -59,12 +59,9 @@ public class JavaObject extends RubyObject implements IndexCallable {
     }
 
     public static synchronized JavaObject wrap(Ruby runtime, Object value) {
-        if (value == null) {
-            return new NullJavaObject(runtime);
-        }
         JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
         if (wrapper == null) {
-            if (value.getClass().isArray()) {
+            if (value != null && value.getClass().isArray()) {
                 wrapper = new JavaArray(runtime, value);
             } else {
                 wrapper = new JavaObject(runtime, value);
@@ -74,17 +71,10 @@ public class JavaObject extends RubyObject implements IndexCallable {
         return wrapper;
     }
 
-    public boolean isJavaNull() {
-        return false;
-    }
-
     public Class getJavaClass() {
         return value != null ? value.getClass() : Object.class;
     }
 
-    /** Getter for property value.
-     * @return Value of property value.
-     */
     public Object getValue() {
         return value;
     }
@@ -117,16 +107,31 @@ public class JavaObject extends RubyObject implements IndexCallable {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, value.hashCode());
+        int result;
+        if (value == null) {
+            result = 0;
+        } else {
+            result = value.hashCode();
+        }
+        return RubyFixnum.newFixnum(runtime, result);
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), getValue().toString());
+        String result;
+        if (getValue() == null) {
+            result = "null";
+        } else {
+            result = getValue().toString();
+        }
+        return RubyString.newString(getRuntime(), result);
     }
 
     public RubyBoolean equal(IRubyObject other) {
         if (other instanceof JavaObject) {
-            return (getValue() != null && getValue().equals(((JavaObject) other).getValue()))
+            if (getValue() == null && ((JavaObject) other).getValue() == null) {
+                return getRuntime().getTrue();
+            }
+            return (getValue().equals(((JavaObject) other).getValue()))
                 ? getRuntime().getTrue()
                 : getRuntime().getFalse();
         }
