@@ -263,8 +263,6 @@ public class RubyClasses {
         structClass = RubyStruct.createStructClass(ruby);
 
         gcModule = RubyGC.createGCModule(ruby);
-
-        RubyTCPSocket.createSocketClasses(ruby); // FIXME: dynamic loading instead
     }
 
     /** Returns the reference to the Binding class.
