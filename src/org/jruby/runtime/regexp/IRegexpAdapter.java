@@ -1,30 +1,29 @@
 /*
- * IRegexpAdapter.java - No description
- * Created on 05. November 2001, 21:48
- * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ * Copyright (C) 2001 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
- * JRuby is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * 
+ *
+ * JRuby is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License or
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with JRuby; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * GNU General Public License and GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public
+ * License and GNU Lesser General Public License along with JRuby; 
+ * if not, write to
+ * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ * Boston, MA  02111-1307 USA
  * 
  */
 package org.jruby.runtime.regexp;
@@ -44,11 +43,7 @@ public abstract class IRegexpAdapter {
             "org.jruby.runtime.regexp.GNURegexpAdapter",
             "org.jruby.runtime.regexp.ORORegexpAdapter" };
 
-    private static final String[] SHORT_NAMES =
-        {
-            "JDK",
-            "GNU",
-            "ORO"};
+    private static final String[] SHORT_NAMES = { "JDK", "GNU", "ORO" };
 
     public static Class getAdapter(String shortName) {
         if (shortName == null) {
@@ -77,8 +72,7 @@ public abstract class IRegexpAdapter {
     /**
      * Compile the regex.
      */
-    public abstract void compile(Ruby ruby, String pattern)
-        throws RegexpError;
+    public abstract void compile(Ruby ruby, String pattern) throws RegexpError;
 
     /**
      * Set whether matches should be case-insensitive or not
@@ -103,7 +97,7 @@ public abstract class IRegexpAdapter {
     /**
      * Does the given argument match the pattern?
      */
-    public abstract IRubyObject search(Ruby ruby, String target, int startPos);
+    public abstract IRubyObject search(Ruby runtime, String target, int startPos);
 
     /**
      * Removes whitespace and comments from regexp, for those libs 
@@ -129,17 +123,11 @@ public abstract class IRegexpAdapter {
                 sbuf.append(c);
                 inClass = false;
             } else if (c == '#') {
-                if (pos > 2
-                    && re.charAt(pos - 2) == '('
-                    && re.charAt(pos - 1) == '?') {
+                if (pos > 2 && re.charAt(pos - 2) == '(' && re.charAt(pos - 1) == '?') {
                     sbuf.append(c);
                 } else {
                     pos++;
-                    for (;
-                        pos < len
-                            && re.charAt(pos) != '\n'
-                            && re.charAt(pos) != '\r';
-                        pos++);
+                    for (; pos < len && re.charAt(pos) != '\n' && re.charAt(pos) != '\r'; pos++);
                 }
             } else if (inClass || !Character.isWhitespace(c)) {
                 sbuf.append(c);
@@ -149,4 +137,3 @@ public abstract class IRegexpAdapter {
         return sbuf.toString();
     }
 }
-
