@@ -26,20 +26,15 @@
 package org.jruby.util.collections;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
- *
- * @author  jpetersen
+ * Simple stack implementation API compatible to java.util.Stack but NOT synchronized. 
+ * @author  jpetersen, sma
  * @version $Revision$
  */
-public class ArrayStack /*implements Cloneable*/ {
-    private List elements;
-
-    public ArrayStack() {
-        this.elements = new ArrayList();
-    }
+public class ArrayStack {
+    private final List elements = new ArrayList();
     
     public void push(Object element) {
         elements.add(element);
@@ -53,21 +48,7 @@ public class ArrayStack /*implements Cloneable*/ {
         return elements.get(elements.size() - 1);
     }
 
-    public int depth() {
-        return elements.size();
-    }
-
-    public Object clone() {
-        ArrayStack clone = new ArrayStack();
-        clone.elements = new ArrayList(elements);
-        return clone;
-    }
-
-    public Iterator contents() {
-        ArrayList reverseElements = new ArrayList(elements.size());
-        for (int i = elements.size() - 1; i >= 0; i--) {
-            reverseElements.add(elements.get(i));
-        }
-        return reverseElements.iterator();
+    public boolean empty() {
+        return elements.isEmpty();
     }
 }

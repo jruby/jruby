@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Stack;
 
 import org.jruby.IncludedModuleWrapper;
 import org.jruby.Ruby;
@@ -66,7 +65,7 @@ public class ThreadContext {
     private ArrayStack classStack;
     private ScopeStack scopeStack;
     private FrameStack frameStack;
-    private Stack iterStack;
+    private ArrayStack iterStack;
 
     private RubyModule wrapper;
 
@@ -83,7 +82,7 @@ public class ThreadContext {
         this.classStack = new ArrayStack();
         this.scopeStack = new ScopeStack(runtime);
         this.frameStack = new FrameStack(this);
-        this.iterStack = new Stack();
+        this.iterStack = new ArrayStack();
 
         pushDynamicVars();
     }
@@ -128,7 +127,7 @@ public class ThreadContext {
         return frameStack;
     }
 
-    public Stack getIterStack() {
+    public ArrayStack getIterStack() {
         return iterStack;
     }
 
@@ -350,7 +349,7 @@ public class ThreadContext {
     }
 
     public RubyModule getRubyClass() {
-        if (classStack.depth() == 0) {
+        if (classStack.empty()) {
             return null;
         }
 

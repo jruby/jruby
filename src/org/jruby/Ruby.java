@@ -43,7 +43,6 @@ import java.io.StringReader;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
-import java.util.Stack;
 
 import org.jruby.ast.Node;
 import org.jruby.common.RubyWarnings;
@@ -81,6 +80,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
+import org.jruby.util.collections.ArrayStack;
 
 /**
  * The jruby runtime.
@@ -141,7 +141,7 @@ public final class Ruby {
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
-    private Stack atExitBlocks = new Stack();
+    private ArrayStack atExitBlocks = new ArrayStack();
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -455,7 +455,7 @@ public final class Ruby {
         return javaSupport;
     }
 
-    public Stack getIterStack() {
+    public ArrayStack getIterStack() {
         return getCurrentContext().getIterStack();
     }
 
@@ -863,7 +863,8 @@ public final class Ruby {
      * @return the element that was pushed onto stack
      */
     public IRubyObject pushExitBlock(RubyProc proc) {
-        return (IRubyObject) atExitBlocks.push(proc);
+    	atExitBlocks.push(proc);
+        return proc;
     }
     
     /**
@@ -875,7 +876,7 @@ public final class Ruby {
      * things that need to be cleaned up at shutdown.  
      */
     public void tearDown() {
-        while (!atExitBlocks.isEmpty()) {
+        while (!atExitBlocks.empty()) {
             RubyProc proc = (RubyProc) atExitBlocks.pop();
             
             proc.call(null);
