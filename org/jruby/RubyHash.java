@@ -126,8 +126,11 @@ public class RubyHash extends RubyObject {
         }
         return this;
     }
-
     public RubyString m_inspect() {
+		//FIXME this two strings should be built only once, at leas only once
+		//per instance no matter how many calls to inspect and maybe better once
+		//per ruby interpreter.
+		//Benoit
         final RubyString sep = RubyString.newString(getRuby(), ", ");
         final RubyString arrow = RubyString.newString(getRuby(), "=>");
         RubyString result = RubyString.newString(getRuby(), "{");
@@ -139,9 +142,10 @@ public class RubyHash extends RubyObject {
                 if (!firstEntry) {
                     str.m_append(sep);
                 }
-                str.m_append(((RubyObject) key).inspect());
+				RubyId lInspect = getRuby().intern("inspect");
+                str.m_append(((RubyObject)key).funcall(lInspect));
                 str.m_append(arrow);
-                str.m_append(((RubyObject) value).inspect());
+                str.m_append(((RubyObject) value).funcall(lInspect));
                 firstEntry = false;
                 return RubyMapMethod.CONTINUE;
             }

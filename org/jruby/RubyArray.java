@@ -604,14 +604,17 @@ public class RubyArray extends RubyObject {
         int length = getLength();
 
         // HACK +++
+	// FIXME: this String and the ", " should be instance variables or better
+	// instance variable of the interpreter to avoid creating them all the time.
+	// Benoit
         if (length == 0) {
             return RubyString.newString(getRuby(), "[]");
         }
         RubyString result = RubyString.newString(getRuby(), "[");
-
+	RubyString sep = RubyString.newString(getRuby(), ", ");
         for (int i = 0; i < length; i++) {
             if (i > 0) {
-                result.m_append(RubyString.newString(getRuby(), ", "));
+                result.m_append(sep);
             }
             result.m_append(entry(i).funcall(getRuby().intern("inspect")));
         }

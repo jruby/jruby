@@ -396,6 +396,7 @@ public class RubyString extends RubyObject {
     }
 
     private RubyString inspect(boolean dump) {
+	
         final int length = getValue().length();
 
         StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
