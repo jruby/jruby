@@ -20,10 +20,14 @@
  * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
  * Boston, MA  02111-1307 USA
  */
-package org.jruby;
+package org.jruby.libraries;
 
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.load.Library;
+import org.jruby.RubyHash;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
 
 import java.io.File;
 

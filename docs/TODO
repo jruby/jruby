@@ -14,7 +14,7 @@ Items marked '-' are done and will be available in the next release.
     * Javasupport docs
         - Overview
         - Low-level API docs
-        * High-level API docs
+        - High-level API docs
         * Convert docs to Docbook, or at least HTML
 
 * Internal class restructuring
