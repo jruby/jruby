@@ -33,7 +33,7 @@ import java.util.ArrayList;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ArrayStack {
+public class ArrayStack implements Cloneable {
     private List elements;
 
     public ArrayStack() {
@@ -50,5 +50,15 @@ public class ArrayStack {
     
     public Object peek() {
         return elements.get(elements.size() - 1);
+    }
+
+    public int depth() {
+        return elements.size();
+    }
+
+    public Object clone() {
+        ArrayStack clone = new ArrayStack();
+        clone.elements = new ArrayList(elements);
+        return clone;
     }
 }

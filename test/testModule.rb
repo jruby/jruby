@@ -11,3 +11,20 @@ end
 #test_equal(TestModule_Foo, TestModule_Foo.new.foo.type)
 
 test_equal("TestModule_Foo", TestModule_Foo.new.foo.type.name)
+
+module A
+  module B
+    module C
+      test_equal([A::B::C, A::B, A], Module.nesting)
+      $nest = Module.nesting
+    end
+    module D
+      test_equal([A::B::D, A::B, A], Module.nesting)
+    end
+    test_equal([A::B, A], Module.nesting)
+  end
+end
+test_equal([], Module.nesting)
+test_equal([A::B::C, A::B, A], $nest)
+
+test_print_report
