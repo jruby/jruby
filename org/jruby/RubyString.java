@@ -82,6 +82,30 @@ public class RubyString extends RubyObject {
         return "\"" + getValue() + "\"";
     }
     
+    public static boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+    
+    public static boolean isUpper(char c) {
+        return c >= 'A' && c <= 'Z';
+    }
+    
+    public static boolean isLower(char c) {
+        return c >= 'a' && c <= 'z';
+    }
+    
+    public static boolean isLetter(char c) {
+        return isUpper(c) || isLower(c);
+    }
+    
+    public static boolean isAlnum(char c) {
+        return isUpper(c) || isLower(c) || isDigit(c);
+    }
+    
+    public static boolean isPrint(char c) {
+        return c >= 0x20 && c <= 0x7E;
+    }
+    
     /** rb_str_cmp
      *
      */
@@ -349,10 +373,21 @@ public class RubyString extends RubyObject {
         return this;
     }
     
+    /** rb_str_dump
+     *
+     */
+    public RubyString m_dump() {
+        return inspect(true);
+    }
+    
     /** rb_str_inspect
      *
      */
     public RubyString m_inspect() {
+        return inspect(false);
+    }
+    
+    private RubyString inspect(boolean dump) {
         final int length = getValue().length();
         
         StringBuffer sb = new StringBuffer(length + 2 + (length / 100));
@@ -362,10 +397,14 @@ public class RubyString extends RubyObject {
         for (int i = 0; i < length; i++) {
             char c = getValue().charAt(i);
             
-            if (Character.isLetterOrDigit(c)) {
+            if (isAlnum(c)) {
                 sb.append(c);
-            } else if (c == '\"' || c == '\'' || c == '\\') {
+            } else if (c == '\"' || c == '\\') {
                 sb.append('\\').append(c);
+            } else if (dump && c == '#') {
+                sb.append('\\').append(c);
+            } else if (isPrint(c)) {
+                sb.append(c);
             } else if (c == '\n') {
                 sb.append('\\').append('n');
             } else if (c == '\r') {
@@ -380,8 +419,6 @@ public class RubyString extends RubyObject {
                 sb.append('\\').append('a');
             } else if (c == '\u001B') {
                 sb.append('\\').append('e');
-            } else if (isPrint(c)) {
-                sb.append(c);
             } else {
                 sb.append(new PrintfFormat("\\%.3o").sprintf(c));
             }
@@ -650,7 +687,7 @@ public class RubyString extends RubyObject {
     /* rb_str_substr */
     private RubyObject substr(int beg, int len) {
         int strLen = getValue().length();
-        if (len < 0 || beg >= strLen) {
+        if (len < 0 || beg > strLen) {
             return getRuby().getNil();
         }
         if (beg < 0) {
@@ -932,28 +969,66 @@ public class RubyString extends RubyObject {
         return RubyNumeric.str2d(getRuby(), this);
     }
     
-    public static boolean isDigit(char c) {
-        return c >= '0' && c <= '9';
+    public RubyArray m_split(RubyObject[] args) {
+        int limit = 0;
+        RubyRegexp pat = null;
+        RubyString str = null;
+        int argc = count_args(args, 0, 2);
+        if (argc == 2) {
+            limit = RubyNumeric.fix2int(args[1]);
+            if (limit == 1) {
+                return RubyArray.m_newArray(getRuby(), m_dup());
+            }
+        }
+        RubyArray result = RubyArray.m_create(getRuby(), new RubyObject[0]);
+        int pos = 0;
+        int beg = 0;
+        int hits = 0;
+        int len = getValue().length();
+        if (argc > 0) {
+            if (args[0] instanceof RubyRegexp) {
+                pat = get_pat(args[0]);
+            } else {
+                str = get_str(args[0]);
+                if (str.getValue().equals(" ")) {
+                    pat = RubyRegexp.m_newRegexp(getRuby(), "\\s+", 0);
+                } else if (str.getValue().length() != 1) {
+                    pat = RubyRegexp.m_newRegexp(getRuby(), str, 0);
+                }
+            }
+        } else {
+            pat = RubyRegexp.m_newRegexp(getRuby(), "\\s+", 0);
+        }
+        if (pat != null) {
+            while ((beg = pat.m_search(this, pos)) > -1) {
+                hits++;
+                int end = ((RubyMatchData)getRuby().getBackRef()).matchEndPosition();
+                result.push(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
+                pos = (end == beg) ? beg + 1 : end;
+                if (hits + 1 == limit) {
+                    break;
+                }
+            }
+        } else {
+            while ((beg = getValue().indexOf(str.getValue(), pos)) > -1) {
+                hits++;
+                result.push(substr(pos, beg - pos));
+                if (hits + 1 == limit) {
+                    break;
+                }
+                pos = beg + 1;
+            }
+        }
+        if (hits == 0) {
+            result.push(m_dup());
+        } else if (pos <= len) {
+            result.push(substr(pos, len - pos));
+        }
+        if (limit == 0) {
+            while (((RubyString)result.entry(result.length() - 1)).m_empty().isTrue()) {
+                result.m_pop();
+            }
+        }
+        return result;
     }
-    
-    public static boolean isUpper(char c) {
-        return c >= 'A' && c <= 'Z';
-    }
-    
-    public static boolean isLower(char c) {
-        return c >= 'a' && c <= 'z';
-    }
-    
-    public static boolean isLetter(char c) {
-        return isUpper(c) || isLower(c);
-    }
-    
-    public static boolean isAlnum(char c) {
-        return isUpper(c) || isLower(c) || isDigit(c);
-    }
-    
-    public static boolean isPrint(char c) {
-        return c >= 0x20 && c <= 0x7E;
-    }
-    
 }

@@ -79,7 +79,7 @@ public class RbString {
         stringClass.defineMethod("to_s", getMethod("m_to_s", false));
         stringClass.defineMethod("to_str", getMethod("m_to_s", false));
         stringClass.defineMethod("inspect", getMethod("m_inspect", false));
-//    rb_define_method(rb_cString, "dump", rb_str_dump, 0);
+        stringClass.defineMethod("dump", getMethod("m_dump", false));
 
         stringClass.defineMethod("upcase", getMethod("m_upcase", false));
         stringClass.defineMethod("downcase", getMethod("m_downcase", false));
@@ -93,7 +93,7 @@ public class RbString {
 
         stringClass.defineMethod("hex", getMethod("m_hex", false));
         stringClass.defineMethod("oct", getMethod("m_oct", false));
-//    rb_define_method(rb_cString, "split", rb_str_split_m, -1);
+        stringClass.defineMethod("split", getMethod("m_split", true));
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));
         stringClass.defineMethod("reverse!", getMethod("m_reverse_bang", false));
         stringClass.defineMethod("concat", getMethod("m_concat", RubyObject.class));
