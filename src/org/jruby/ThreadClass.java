@@ -27,6 +27,11 @@
  */
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadError;
@@ -37,11 +42,6 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -68,7 +68,8 @@ public class ThreadClass extends RubyObject {
     private ThreadService threadService;
     private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
-
+    private boolean isStopped = false;
+    
     public static RubyClass createThreadClass(Ruby ruby) {
         RubyClass threadClass = ruby.defineClass("Thread", 
                 ruby.getClasses().getObjectClass());
@@ -100,6 +101,12 @@ public class ThreadClass extends RubyObject {
         		callbackFactory.getMethod(ThreadClass.class, "run"));
         threadClass.defineMethod("status", 
                 callbackFactory.getMethod(ThreadClass.class, "status"));
+        threadClass.defineMethod("stop?", 
+                callbackFactory.getMethod(ThreadClass.class, "isStopped"));
+        threadClass.defineMethod("wakeup", 
+                callbackFactory.getMethod(ThreadClass.class, "wakeup"));
+        threadClass.defineMethod("kill", 
+                callbackFactory.getMethod(ThreadClass.class, "kill"));
         
         threadClass.defineSingletonMethod("current",
                 callbackFactory.getSingletonMethod(ThreadClass.class, "current"));
@@ -115,10 +122,19 @@ public class ThreadClass extends RubyObject {
                 callbackFactory.getOptSingletonMethod(ThreadClass.class, "start"));
         threadClass.defineSingletonMethod("critical=", 
                 callbackFactory.getSingletonMethod(ThreadClass.class, "critical_set", RubyBoolean.class));
+        threadClass.defineSingletonMethod("critical", 
+                callbackFactory.getSingletonMethod(ThreadClass.class, "critical"));
+        threadClass.defineSingletonMethod("stop", 
+                callbackFactory.getSingletonMethod(ThreadClass.class, "stop"));
 
         ThreadClass currentThread = new ThreadClass(ruby, threadClass);
+        // set hasStarted to true, otherwise Thread.main.status freezes
+        currentThread.hasStarted = true;
         currentThread.jvmThread = Thread.currentThread();
         ruby.getThreadService().setMainThread(currentThread);
+        
+        threadClass.defineSingletonMethod("main",
+        		callbackFactory.getSingletonMethod(ThreadClass.class, "main"));
         
         // set to default thread group
         currentThread.setThreadGroup((RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default"));
@@ -238,6 +254,10 @@ public class ThreadClass extends RubyObject {
         return recv.getRuntime().getCurrentContext().getThread();
     }
 
+    public static ThreadClass main(IRubyObject recv) {
+        return recv.getRuntime().getThreadService().getMainThread();
+    }
+
     public static IRubyObject pass(IRubyObject recv) {
         Thread.yield();
         return recv.getRuntime().getNil();
@@ -330,6 +350,40 @@ public class ThreadClass extends RubyObject {
     	return value;
     }
 
+    public static IRubyObject critical(IRubyObject receiver) {
+    	// Useless implementation to satisfy rubicon, always returns false
+    	return RubyBoolean.newBoolean(receiver.getRuntime(), false);
+    }
+
+    public static IRubyObject stop(IRubyObject receiver) {
+    	ThreadClass stopLock = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
+    	
+    	synchronized (stopLock) {
+    		try {
+    			stopLock.isStopped = true;
+    			stopLock.wait();
+    		} catch (InterruptedException ie) {
+    			// ignore, continue;
+    		}
+    		stopLock.isStopped = false;
+    	}
+    	
+    	return receiver.getRuntime().getNil();
+    }
+    
+    public RubyBoolean isStopped() {
+    	// not valid for "dead" state
+    	return RubyBoolean.newBoolean(getRuntime(), isStopped);
+    }
+    
+    public ThreadClass wakeup() {
+    	synchronized (this) {
+    		this.notifyAll();
+    	}
+    	
+    	return this;
+    }
+    
     public RubyFixnum priority() {
         return RubyFixnum.newFixnum(getRuntime(), jvmThread.getPriority());
     }
@@ -350,6 +404,14 @@ public class ThreadClass extends RubyObject {
     }
     
     public IRubyObject run() {
+    	// if stopped, unstop
+    	if (isStopped) {
+    		synchronized (this) {
+    			this.notifyAll();
+    			isStopped = false;
+    		}
+    	}
+    	
     	// Abort any sleep()s
     	jvmThread.interrupt();
     	
@@ -359,12 +421,21 @@ public class ThreadClass extends RubyObject {
     public IRubyObject status() {
         ensureStarted();
         if (jvmThread.isAlive()) {
+        	if (isStopped) {
+            	return RubyString.newString(getRuntime(), "sleep");
+            }
+        	
             return RubyString.newString(getRuntime(), "run");
         } else if (exitingException != null) {
             return getRuntime().getNil();
         } else {
             return RubyBoolean.newBoolean(getRuntime(), false);
         }
+    }
+
+    public IRubyObject kill() {
+    	// TODO: stubbed for now, will need to implement kill hooks into call stack
+    	return getRuntime().getNil();
     }
 
     private boolean isCurrent() {
