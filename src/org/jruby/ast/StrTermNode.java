@@ -29,9 +29,11 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.SourcePosition;
 
 public class StrTermNode extends Node {
-    int func;
-    int termParen;
-    int nest;
+	private static final long serialVersionUID = 6009335074727417445L;
+
+	private int func;
+    private final int termParen;
+    private int nest;
 
     /**
      * @param position
