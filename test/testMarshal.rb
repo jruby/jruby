@@ -100,6 +100,8 @@ um = UserMarshaled.new(123)
 test_marshal("u:\022UserMarshaled\010321", um)
 test_equal(um, Marshal.load(Marshal.dump(um)))
 
+test_marshal("[\a00", [nil, nil])
+test_marshal("[\aTT", [true, true])
 
 # Unmarshaling
 

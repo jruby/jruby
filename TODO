@@ -21,6 +21,6 @@
 
 * Marshalling
     * Reading links
-    * Special variables
+    - Don't link to special variables
     * Make bignum marshaling work for all bignum values
-    * Don't store fixnums bigger than 63 bits (MRI's limit)
+    - Don't store fixnums bigger than MRI's limit

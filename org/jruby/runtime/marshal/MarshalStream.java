@@ -34,6 +34,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.RubyBoolean;
+import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,14 +68,26 @@ public class MarshalStream extends FilterOutputStream {
         if (depth > depthLimit) {
             throw new ArgumentError(ruby, "exceed depth limit");
         }
-        if (value.isNil()) {
-            out.write('0');
+        if (! shouldBeRegistered(value)) {
+            writeDirectly(value);
         } else if (hasUserDefinedMarshaling(value)) {
             userMarshal(value);
         } else {
             writeAndRegister(value);
         }
         depth--;
+    }
+
+    private void writeDirectly(IRubyObject value) throws IOException {
+        if (value.isNil()) {
+            out.write('0');
+        } else {
+            value.marshalTo(this);
+        }
+    }
+
+    private boolean shouldBeRegistered(IRubyObject value) {
+        return (! value.isNil() && ! (value instanceof RubyBoolean));
     }
 
     private void writeAndRegister(IRubyObject value) throws IOException {
