@@ -34,8 +34,34 @@ module JRuby
       RUBY_TYPE =
         BCEL::ObjectType.new("org.jruby.Ruby")
 
+ 
+      class Instruction
 
-      class CreateMethod
+        def push_runtime(generator)
+          generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+        end
+
+        def push_scope_stack(generator)
+          push_runtime(generator)
+          generator.appendInvoke(RUBY_TYPE.getClassName,
+                                 "getScope",
+                                 BCEL::ObjectType.new("org.jruby.runtime.ScopeStack"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
+        end
+
+        def push_frame_stack(generator)
+          push_runtime(generator)
+          generator.appendInvoke(RUBY_TYPE.getClassName,
+                                 "getFrameStack",
+                                 BCEL::ObjectType.new("org.jruby.runtime.FrameStack"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
+        end
+      end
+
+
+      class CreateMethod < Instruction
         def initialize(name, arity)
           @name, @arity = name, arity
         end
@@ -60,7 +86,7 @@ module JRuby
         end
       end
 
-      class AssignLocal
+      class AssignLocal < Instruction
         attr_reader :index
 
         def initialize(index)
@@ -68,7 +94,7 @@ module JRuby
         end
       end
 
-      class PushFixnum
+      class PushFixnum < Instruction
         attr_reader :value
 
         def initialize(value)
@@ -91,14 +117,14 @@ module JRuby
         end
       end
 
-      class PushSelf
+      class PushSelf < Instruction
 
         def emit_jvm_bytecode(generator)
           generator.append(BCEL::ALOAD.new(SELF_INDEX))
         end
       end
 
-      class PushLocal
+      class PushLocal < Instruction
         def initialize(index)
           @index = index
         end
@@ -116,29 +142,7 @@ module JRuby
         end
       end
 
-      def push_runtime(generator)
-        generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
-      end
-
-      def push_scope_stack(generator)
-        push_runtime(generator)
-        generator.appendInvoke(RUBY_TYPE.getClassName,
-                               "getScope",
-                               BCEL::ObjectType.new("org.jruby.runtime.ScopeStack"),
-                               BCEL::Type[].new(0),
-                               BCEL::Constants::INVOKEVIRTUAL)
-      end
-
-      def push_frame_stack(generator)
-        push_runtime(generator)
-        generator.appendInvoke(RUBY_TYPE.getClassName,
-                               "getFrameStack",
-                               BCEL::ObjectType.new("org.jruby.runtime.FrameStack"),
-                               BCEL::Type[].new(0),
-                               BCEL::Constants::INVOKEVIRTUAL)
-      end
-
-      class Call
+      class Call < Instruction
         attr_reader :name
         attr_reader :arity
 
@@ -194,7 +198,7 @@ module JRuby
         end
       end
 
-      class PushString
+      class PushString < Instruction
         attr_reader :value
 
         def initialize(value)
@@ -216,7 +220,7 @@ module JRuby
         end
       end
 
-      class PushSymbol
+      class PushSymbol < Instruction
         def initialize(name)
           @name = name
         end
@@ -236,11 +240,11 @@ module JRuby
         end
       end
 
-      class Negate
+      class Negate  < Instruction
 
       end
 
-      class PushNil
+      class PushNil < Instruction
         def emit_jvm_bytecode(generator)
           push_runtime(generator)
           generator.appendInvoke(RUBY_TYPE.getClassName,
@@ -251,7 +255,7 @@ module JRuby
         end
       end
 
-      class PushBoolean
+      class PushBoolean < Instruction
         def initialize(value)
           @value = value
         end
@@ -271,7 +275,7 @@ module JRuby
         end
       end
 
-      class PushArray
+      class PushArray < Instruction
         def initialize(initial_size)
           @size = initial_size
         end
@@ -292,13 +296,13 @@ module JRuby
         end
       end
 
-      class PushConstant
+      class PushConstant < Instruction
         def initialize(name)
           @name = name
         end
       end
 
-      class IfFalse
+      class IfFalse < Instruction
         attr_writer :target
 
         def initialize(target)
@@ -318,7 +322,7 @@ module JRuby
         end
       end
 
-      class NewScope
+      class NewScope < Instruction
         def initialize(local_names)
           @local_names = local_names
         end
@@ -376,7 +380,7 @@ module JRuby
         end
       end
 
-      class RestoreScope
+      class RestoreScope < Instruction
         def emit_jvm_bytecode(generator)
           # getScopeStack.pop()
           push_scope_stack(generator)
@@ -397,7 +401,7 @@ module JRuby
         end
       end
 
-      class CreateRange
+      class CreateRange < Instruction
         def initialize(exclusive)
           @exclusive = exclusive
         end
@@ -429,7 +433,7 @@ module JRuby
         end
       end
 
-      class Goto
+      class Goto < Instruction
         attr_writer :target
 
         def initialize(target)
@@ -443,7 +447,7 @@ module JRuby
         end
       end
 
-      class Label
+      class Label < Instruction
         def initialize
           @handle = nil
           @listeners = []
