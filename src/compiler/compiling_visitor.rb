@@ -144,7 +144,11 @@ module JRuby
         label_else = Label.new
         @bytecodes << label_else
         iffalse.target = label_else
-        emit_bytecodes(node.getElseBody)
+        unless node.getElseBody.nil?
+          emit_bytecodes(node.getElseBody)
+        else
+          @bytecodes << PushNil.new
+        end
         label_end = Label.new
         @bytecodes << label_end
         goto_end.target = label_end

@@ -83,11 +83,16 @@ module JRuby
         end
 
         def emit_jvm_bytecode(methodgen, factory)
-          args_array =
-            methodgen.addLocalVariable("args_array",
-                                       BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
-                                       nil,
-                                       nil)
+          args_array = methodgen.getLocalVariables.detect {|lv|
+            lv.getName == "args_array"
+          }
+          if args_array.nil?
+            args_array =
+              methodgen.addLocalVariable("args_array",
+                                         BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
+                                         nil,
+                                         nil)
+          end
 
           list = methodgen.getInstructionList
 
@@ -152,6 +157,18 @@ module JRuby
 
       class Negate
 
+      end
+
+      class PushNil
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+          list.append(BCEL::ALOAD.new(RUNTIME_INDEX))
+          list.append(factory.createInvoke("org.jruby.Ruby",
+                                           "getNil",
+                                           IRUBYOBJECT_TYPE,
+                                           BCEL::Type[].new(0),
+                                           BCEL::Constants::INVOKEVIRTUAL))
+        end
       end
 
       class PushBoolean

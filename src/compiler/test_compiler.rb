@@ -93,6 +93,7 @@ def test_compiled(expected, source)
   classgen.addMethod(methodgen.getMethod)
   classgen.addEmptyConstructor(BCEL::Constants::ACC_PUBLIC)
 
+#  classgen.getJavaClass.dump("/tmp/CompiledRuby.class")
 
   result = JRubyUtil::TestHelper.loadAndCall(:dummy,
                                              classgen.getClassName,
@@ -105,10 +106,10 @@ test_compiled(3, "3")
 test_compiled("hello", '"hello"')
 test_compiled(true, "true")
 test_compiled(false, "false")
-test_compiled(3,
-              "if true; 1 + 2; else; 'hello'; end")
-test_compiled("hello",
-              "if false; 1 + 2; else; 'hello'; end")
+test_compiled(3, "if true; 1 + 2; else; 'hello'; end")
+test_compiled(nil, "if false; 1; end")
+test_compiled("hello", "if false; 1 + 2; else; 'hello'; end")
+test_compiled(1, "if true; if true; 1; else; 2; end; end")
 test_compiled(3, "[1,2,3,4][2]")
 
 test_print_report
