@@ -47,23 +47,8 @@ public class TestRuby extends TestRubyBase {
 
     public void setUp() {
         ruby = Ruby.getDefaultInstance();
-        oldHomeProperty = System.getProperty("jruby.home");
-        oldLibProperty = System.getProperty("jruby.lib");
     }
     
-    public void tearDown() {
-        super.tearDown();
-		if (oldHomeProperty != null) {
-	        System.setProperty("jruby.home", oldHomeProperty);
-		}
-		if (oldLibProperty != null) {
-	        System.setProperty("jruby.lib", oldLibProperty);
-		}
-    }
-
-    private String oldHomeProperty;
-    private String oldLibProperty;
-
     public void testVarAndMet() throws Exception {
         ruby.getLoadService().init(ruby, new ArrayList());
         eval("load './test/testVariableAndMethod.rb'");
