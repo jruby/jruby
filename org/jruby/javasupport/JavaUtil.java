@@ -47,6 +47,10 @@ public class JavaUtil {
             return true;
         }
 
+        if (javaClass.isInstance(arg)) {
+            // arg is already of the required jruby class (or subclass)
+            return true;
+        }
         if (javaClass == Object.class || javaClass == null) {
             // return arg.getJavaClass() != RubyObject.class;
             return true;
@@ -99,6 +103,11 @@ public class JavaUtil {
             if (javaClass == RubyObject.class) {
                 javaClass = String.class;
             }
+        }
+
+        if (javaClass.isInstance(rubyObject)) {
+            // rubyObject is already of the required jruby class (or subclass)
+            return rubyObject;
         }
 
         if (javaClass.isPrimitive()) {
@@ -221,6 +230,11 @@ public class JavaUtil {
         if (object == null) {
             return ruby.getNil();
         }
+        if (object instanceof RubyObject) {
+            // object already RubyObject or subclass
+            return (RubyObject) object;
+        }
+
         Class javaClass = object.getClass();
 
         if (javaClass.isPrimitive()) {
