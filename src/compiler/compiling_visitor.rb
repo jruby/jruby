@@ -44,8 +44,10 @@ module JRuby
       attr_reader :method
       attr_reader :factory
 
-      def initialize(method, factory)
-        @method, @factory = method, factory
+      def initialize(method)
+        @method = method
+        @factory =
+          BCEL::InstructionFactory.new(method.getConstantPool)
       end
 
       def append(instruction)
@@ -116,7 +118,21 @@ module JRuby
       end
 
       def jvm_compile(classgen, name)
+        methodgen = create_java_method(classgen, name)
 
+        generator = JvmGenerator.new(methodgen)
+        @bytecodes.each {|b|
+          b.emit_jvm_bytecode(generator)
+        }
+
+        # Methods end by returning the top of their operand stacks
+        methodgen.getInstructionList.append(BCEL::ARETURN.new)
+
+        methodgen.setMaxStack
+        classgen.addMethod(methodgen.getMethod)
+      end
+
+      def create_java_method(classgen, name)
         arg_types = BCEL::Type[].new(2)
         arg_types[0] = BCEL::ObjectType.new("org.jruby.Ruby")
         arg_types[1] = BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject")
@@ -125,29 +141,14 @@ module JRuby
         arg_names[0] = "runtime"
         arg_names[1] = "self"
 
-        instructions = BCEL::InstructionList.new
-
         methodgen = BCEL::MethodGen.new(BCEL::Constants::ACC_PUBLIC | BCEL::Constants::ACC_STATIC,
                                         BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"),
                                         arg_types,
                                         arg_names,
                                         name,
                                         classgen.getClassName,
-                                        instructions,
+                                        BCEL::InstructionList.new,
                                         classgen.getConstantPool)
-
-        factory = BCEL::InstructionFactory.new(methodgen.getConstantPool)
-        generator = JvmGenerator.new(methodgen, factory)
-        @bytecodes.each {|b|
-          b.emit_jvm_bytecode(generator)
-        }
-
-        # Add a return manually
-        instructions.append(BCEL::ARETURN.new)
-
-        methodgen.setMaxStack
-        classgen.addMethod(methodgen.getMethod)
-
       end
     end
 
