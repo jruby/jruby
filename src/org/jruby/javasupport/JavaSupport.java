@@ -14,7 +14,6 @@ import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.RubyProc;
 
@@ -30,35 +29,6 @@ public class JavaSupport {
 
     public JavaSupport(Ruby ruby) {
         this.ruby = ruby;
-    }
-
-    public RubyModule loadClass(Class javaClass, String rubyName) {
-        if (javaClass == Object.class) {
-            return ruby.getClasses().getJavaObjectClass();
-        }
-        if (loadedJavaClasses.containsKey(javaClass)) {
-            return (RubyModule) loadedJavaClasses.get(javaClass);
-        }
-
-        if (rubyName == null) {
-            String javaName = javaClass.getName();
-            rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
-        }
-        return createRubyClass(javaClass, rubyName);
-    }
-
-    private RubyClass createRubyClass(Class javaClass, String rubyName) {
-        Class javaSuperClass = javaClass.getSuperclass();
-        RubyClass superClass;
-        if (javaSuperClass != null) {
-            superClass = (RubyClass) loadClass(javaSuperClass, null);
-        } else {
-            superClass = ruby.getClasses().getObjectClass();
-        }
-        RubyClass rubyClass = ruby.defineClass(rubyName, superClass);
-
-        loadedJavaClasses.put(javaClass, rubyClass);
-        return rubyClass;
     }
 
     public Class loadJavaClass(String className) {

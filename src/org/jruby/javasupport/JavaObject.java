@@ -46,17 +46,15 @@ import org.jruby.RubyBoolean;
  * @version $Revision$
  */
 public class JavaObject extends RubyObject implements IndexCallable {
-    private Object value;
+    private final Object value;
 
-    public JavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
+    protected JavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
         super(ruby, rubyClass);
         this.value = value;
     }
 
     public JavaObject(Ruby ruby, Object value) {
-        super(ruby, ruby.getClasses().getJavaObjectClass());
-
-        this.value = value;
+        this(ruby, ruby.getClasses().getJavaObjectClass(), value);
     }
 
     public Class getJavaClass() {
@@ -68,13 +66,6 @@ public class JavaObject extends RubyObject implements IndexCallable {
      */
     public Object getValue() {
         return value;
-    }
-
-    /** Setter for property value.
-     * @param value New value of property value.
-     */
-    public void setValue(Object value) {
-        this.value = value;
     }
 
     private static final int TO_S = 1;
@@ -102,7 +93,6 @@ public class JavaObject extends RubyObject implements IndexCallable {
         return RubyFixnum.newFixnum(runtime, value.hashCode());
     }
 
-    // JavaObject methods
     public RubyString to_s() {
         return RubyString.newString(getRuntime(), getValue() != null ? getValue().toString() : "null");
     }
@@ -121,7 +111,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
     }
 
     public IRubyObject java_class() {
-        return new JavaClass(runtime, getJavaClass());
+        return new JavaClass(getRuntime(), getJavaClass());
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {

@@ -41,7 +41,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class JavaMethod extends JavaCallable implements IndexCallable {
     private final Method method;
-    private RubyClass proxyClass = getRuntime().getClasses().getJavaObjectClass();
 
     private static final int NAME = 1;
     private static final int ARITY = 2;
@@ -147,7 +146,7 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
-            return new JavaObject(runtime, proxyClass, result);
+            return new JavaObject(runtime, result);
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {

@@ -39,13 +39,11 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
-import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.common.IRubyErrorHandler;
 import org.jruby.common.RubyErrorHandler;
 import org.jruby.exceptions.BreakJump;

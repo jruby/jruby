@@ -45,7 +45,7 @@ public class Java {
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
         Ruby runtime = recv.getRuntime();
         Object javaObject = JavaUtil.convertRubyToJava(runtime, object);
-        return new JavaObject(runtime, runtime.getClasses().getJavaObjectClass(), javaObject);
+        return new JavaObject(runtime, javaObject);
     }
 
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object) {
@@ -76,7 +76,7 @@ public class Java {
             if (!(args[i] instanceof JavaClass) || !((JavaClass)args[i]).interface_p().isTrue()) {
                 throw new ArgumentError(recv.getRuntime(), "Java interface expected.");
             }
-            interfaces[i] = ((JavaClass)args[i]).getJavaClass();
+            interfaces[i] = args[i].getJavaClass();
         }
 
         return new JavaObject(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
