@@ -137,4 +137,10 @@ public class RubyFloat extends RubyNumeric {
     public RubyString m_to_s() {
         return RubyString.m_newString(getRuby(), Double.toString(getValue()));
     }
+    
+    public RubyInteger m_to_i() {
+        // HACK +++
+        return RubyFixnum.m_newFixnum(getRuby(), getLongValue());
+        // HACK ---
+    }
 }

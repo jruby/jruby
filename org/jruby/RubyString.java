@@ -149,8 +149,9 @@ public class RubyString extends RubyObject {
     /** rb_str_s_new
      *
      */
-    public static RubyString m_new(Ruby ruby, RubyObject[] args) {
+    public static RubyString m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
         RubyString newString = m_newString(ruby, "");
+        newString.setRubyClass((RubyModule)recv);
         
         newString.callInit(args);
         

@@ -34,247 +34,34 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  */
 public class RbFloat {
-    private static RubyCallbackMethod methodPlus = null;
-    private static RubyCallbackMethod methodMinus = null;
-    private static RubyCallbackMethod methodMul = null;
-    private static RubyCallbackMethod methodDiv = null;
-    private static RubyCallbackMethod methodMod = null;
-    private static RubyCallbackMethod methodPow = null;
-    
-/*    private static RubyCallbackMethod methodToI = null;
- */
-    private static RubyCallbackMethod methodToS = null;
-    
-//    private static RubyCallbackMethod methodEqual = null;
-    private static RubyCallbackMethod methodCmp = null;
-    private static RubyCallbackMethod methodGt = null;
-    private static RubyCallbackMethod methodGe = null;
-    private static RubyCallbackMethod methodLt = null;
-    private static RubyCallbackMethod methodLe = null;
-    
     public static RubyClass createFloat(Ruby ruby) {
         RubyClass floatClass = ruby.defineClass("Float", (RubyClass)ruby.getRubyClass("Numeric"));
         
-        // floatClass.defineMethod("to_i", getMethodToI());
-        floatClass.defineMethod("to_s", getMethodToS());
+        floatClass.defineMethod("to_i", getMethod("m_to_i"));
+        floatClass.defineMethod("to_s", getMethod("m_to_s"));
         
-        floatClass.defineMethod("+", getMethodPlus());
-        floatClass.defineMethod("-", getMethodMinus());
-        floatClass.defineMethod("*", getMethodMul());
-        floatClass.defineMethod("/", getMethodDiv());
-        floatClass.defineMethod("%", getMethodMod());
-        floatClass.defineMethod("**", getMethodPow());
+        floatClass.defineMethod("+", getMethod("op_plus", RubyNumeric.class));
+        floatClass.defineMethod("-", getMethod("op_minus", RubyNumeric.class));
+        floatClass.defineMethod("*", getMethod("op_mul", RubyNumeric.class));
+        floatClass.defineMethod("/", getMethod("op_div", RubyNumeric.class));
+        floatClass.defineMethod("%", getMethod("op_mod", RubyNumeric.class));
+        floatClass.defineMethod("**", getMethod("op_pow", RubyNumeric.class));
         
         // floatClass.defineMethod("==", getMethodEqual());
-        floatClass.defineMethod("<=>", getMethodCmp());
-        floatClass.defineMethod(">", getMethodGt());
-        floatClass.defineMethod(">=", getMethodGe());
-        floatClass.defineMethod("<", getMethodLt());
-        floatClass.defineMethod("<=", getMethodLe());
+        floatClass.defineMethod("<=>", getMethod("op_cmp", RubyNumeric.class));
+        floatClass.defineMethod(">", getMethod("op_gt", RubyNumeric.class));
+        floatClass.defineMethod(">=", getMethod("op_ge", RubyNumeric.class));
+        floatClass.defineMethod("<", getMethod("op_lt", RubyNumeric.class));
+        floatClass.defineMethod("<=", getMethod("op_le", RubyNumeric.class));
         
         return floatClass;
     }
     
-    /*public static RubyCallbackMethod getMethodToI() {
-        if (methodToI == null) {
-            methodToI = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    return recv;
-                }
-            };
-        }
-        
-        return methodToI;
+    private static RubyCallbackMethod getMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyFloat.class, methodName);
     }
-*/
-    public static RubyCallbackMethod getMethodToS() {
-        if (methodToS == null) {
-            methodToS = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    return ((RubyFloat)recv).m_to_s();
-                }
-            };
-        }
-        
-        return methodToS;
-    }
-
-    public static RubyCallbackMethod getMethodPlus() {
-        if (methodPlus == null) {
-            methodPlus = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    return ((RubyFloat)recv).op_plus((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodPlus;
-    }
-
-    public static RubyCallbackMethod getMethodMinus() {
-        if (methodMinus == null) {
-            methodMinus = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_minus((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodMinus;
-    }
-
-    public static RubyCallbackMethod getMethodMul() {
-        if (methodMul == null) {
-            methodMul = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_mul((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodMul;
-    }
-
-    public static RubyCallbackMethod getMethodDiv() {
-        if (methodDiv == null) {
-            methodDiv = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_div((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodDiv;
-    }
-
-    public static RubyCallbackMethod getMethodMod() {
-        if (methodMod == null) {
-            methodMod = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_mod((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodMod;
-    }
-
-    public static RubyCallbackMethod getMethodPow() {
-        if (methodPow == null) {
-            methodPow = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_pow((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodPow;
-    }
-
-/*    public static RubyCallbackMethod getMethodEqual() {
-        if (methodEqual == null) {
-            methodEqual = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFixnum)recv).op_equal((RubyFixnum)args[0]);
-                }
-            };
-        }
-        return methodEqual;
-    }
-*/
-    public static RubyCallbackMethod getMethodCmp() {
-        if (methodCmp == null) {
-            methodCmp = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_cmp((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodCmp;
-    }
-
-    public static RubyCallbackMethod getMethodGt() {
-        if (methodGt == null) {
-            methodGt = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_gt((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodGt;
-    }
-
-    public static RubyCallbackMethod getMethodGe() {
-        if (methodGe == null) {
-            methodGe = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_ge((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodGe;
-    }
-
-    public static RubyCallbackMethod getMethodLt() {
-        if (methodLt == null) {
-            methodLt = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_lt((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodLt;
-    }
-
-    public static RubyCallbackMethod getMethodLe() {
-        if (methodLe == null) {
-            methodLe = new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException("a Numeric excepted");
-                    }
-                    
-                    return ((RubyFloat)recv).op_le((RubyNumeric)args[0]);
-                }
-            };
-        }
-        return methodLe;
+    
+    private static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyFloat.class, methodName, arg1);
     }
 }

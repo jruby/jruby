@@ -64,7 +64,7 @@ public class RBKernel {
         return new ReflectionCallbackMethod(RubyObject.class, methodName);
     }
     
-    public static RubyObject m_puts(Ruby ruby, RubyModule rubyClass, RubyObject args[]) {
+    public static RubyObject m_puts(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
             System.out.println();
         } else {
@@ -77,7 +77,7 @@ public class RBKernel {
         return ruby.getNil();
     }
     
-    public static RubyObject m_print(Ruby ruby, RubyModule rubyClass, RubyObject args[]) {
+    public static RubyObject m_print(Ruby ruby, RubyObject recv, RubyObject args[]) {
         for (int i = 0; i < args.length; i++) {
             if (args[i] != null) {
                 System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getString());

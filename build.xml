@@ -19,6 +19,7 @@
             <exclude name="*.tar"/>
             <exclude name="*.tar.gz"/>
             <exclude name="test.rb"/>
+            <exclude name="java.rb"/>
             <exclude name="build.xml"/>
             <exclude name="COPYING"/>
             <exclude name="README"/>
@@ -28,6 +29,7 @@
             <include name="COPYING"/>
             <include name="README"/>
             <include name="test.rb"/>
+            <include name="java.rb"/>
         </tar>
         <gzip src="jruby.tar" zipfile="jruby-${version.file}.tar.gz"/>
         <delete file="jruby.tar"/>

@@ -97,7 +97,7 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
                     newArgs = new Class[args.length + 2];
                     System.arraycopy(args, 0, newArgs, 2, args.length);
                     newArgs[0] = Ruby.class;
-                    newArgs[1] = RubyModule.class;
+                    newArgs[1] = RubyObject.class;
                 }
                 method = klass.getMethod(methodName, newArgs);
             } catch (NoSuchMethodException nsmExcptn) {
@@ -196,6 +196,9 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         try {
             return (RubyObject)getMethod().invoke(staticMethod ? null : recv, methodArgs);
         } catch (Exception excptn) {
+            System.out.println(klass.getName());
+            System.out.println(methodName);
+            System.out.println(recv.getClass().getName());
             excptn.printStackTrace();
             return null;
         }

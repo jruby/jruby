@@ -1352,10 +1352,10 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** rb_module_s_new
      *
      */
-    public static RubyModule m_new(Ruby ruby, RubyModule rubyClass) {
+    public static RubyModule m_new(Ruby ruby, RubyObject recv) {
         RubyModule mod = RubyModule.m_newModule(ruby);
         
-        mod.setRubyClass(rubyClass);
+        mod.setRubyClass((RubyModule)recv);
         ruby.getModuleClass().callInit(null);
         
         return mod;
