@@ -46,6 +46,8 @@ public class RubyHash extends RubyObject {
     private RubyMap valueMap;
     private IRubyObject defaultValue;
 
+    private boolean isRehashing = false;
+
     public RubyHash(Ruby ruby) {
         this(ruby, ruby.getNil());
     }
@@ -95,16 +97,6 @@ public class RubyHash extends RubyObject {
 		return new ArrayList(valueMap.keySet()).iterator();
 	}
 
-	/**
-	 * gets an iterator on the keySet.
-	 * modifying the iterator WILL modify the map.
-	 * the iterator will be invalidated if the map is modified.
-	 * @return the iterator
-	 **/
-	private Iterator modifiableKeyIterator() {
-		return valueMap.keySet().iterator();
-	}
-
 	private Iterator valueIterator() {
 		return new ArrayList(valueMap.values()).iterator();
 	}
@@ -142,9 +134,7 @@ public class RubyHash extends RubyObject {
         hashClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyHash.class, "create"));
         hashClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyHash.class, "initialize"));
 		hashClass.defineMethod("clone", CallbackFactory.getMethod(RubyHash.class, "rbClone"));
-
-        //    rb_define_method(rb_cHash,"rehash", rb_hash_rehash, 0);
-
+        hashClass.defineMethod("rehash", CallbackFactory.getMethod(RubyHash.class, "rehash"));
         hashClass.defineMethod("to_hash", CallbackFactory.getMethod(RubyHash.class, "to_hash"));
         hashClass.defineMethod("to_a", CallbackFactory.getMethod(RubyHash.class, "to_a"));
         hashClass.defineMethod("to_s", CallbackFactory.getMethod(RubyHash.class, "to_s"));
@@ -303,6 +293,17 @@ public class RubyHash extends RubyObject {
 		return result;
 	}
 
+    public RubyHash rehash() {
+        modify();
+        try {
+            isRehashing = true;
+            valueMap = new RubyHashMap(valueMap);
+        } finally {
+            isRehashing = false;
+        }
+        return this;
+    }
+
     public RubyHash to_hash() {
         return this;
     }
@@ -356,15 +357,23 @@ public class RubyHash extends RubyObject {
     public RubyHash each() {
         Iterator iter = entryIterator();
         while (iter.hasNext()) {
+            checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
 			runtime.yield(RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue()));
         }
         return this;
     }
 
-	public RubyHash each_value() {
+    private void checkRehashing() {
+        if (isRehashing) {
+            throw new IndexError(getRuntime(), "rehash occured during iteration");
+        }
+    }
+
+    public RubyHash each_value() {
 		Iterator iter = valueIterator();
 		while (iter.hasNext()) {
+            checkRehashing();
 			IRubyObject value = (IRubyObject) iter.next();
 			runtime.yield(value);
 		}
@@ -372,9 +381,10 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash each_key() {
-		Iterator iter = keyIterator();		//the block may modify the hash so we need the iterator on a copy
+		Iterator iter = keyIterator();
 		while (iter.hasNext()) {
-			IRubyObject key = (IRubyObject) iter.next();
+			checkRehashing();
+            IRubyObject key = (IRubyObject) iter.next();
 			runtime.yield(key);
 		}
 		return this;
@@ -413,9 +423,9 @@ public class RubyHash extends RubyObject {
             return runtime.getFalse();
         }
 
-        // +++
-        Iterator iter = modifiableEntryIterator();		//Benoit: this is ok, nobody is modifying the map
+        Iterator iter = modifiableEntryIterator();
         while (iter.hasNext()) {
+            checkRehashing();
             Map.Entry entry = (Map.Entry) iter.next();
 
             Object value = ((RubyHash)other).valueMap.get(entry.getKey());
@@ -424,12 +434,11 @@ public class RubyHash extends RubyObject {
             }
         }
         return runtime.getTrue();
-        // ---
     }
 
     public RubyArray shift() {
 		modify();
-        Iterator iter = modifiableEntryIterator();		//we want to modify the map so we need this iterator
+        Iterator iter = modifiableEntryIterator();
         Map.Entry entry = (Map.Entry)iter.next();
         iter.remove();
 		return RubyArray.newArray(runtime, (IRubyObject)entry.getKey(), (IRubyObject)entry.getValue());
@@ -448,7 +457,6 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash delete_if() {
-//		modify();		//Benoit: not needed, it is done in the reject_bang method
 		reject_bang();
 		return this;
 	}
@@ -487,7 +495,7 @@ public class RubyHash extends RubyObject {
 
 	public RubyHash invert() {
 		RubyHash result = newHash(runtime);
-		Iterator iter = modifiableEntryIterator();		//this is ok since nobody will modify the map
+		Iterator iter = modifiableEntryIterator();
 		while (iter.hasNext()) {
 			Map.Entry entry = (Map.Entry) iter.next();
 			IRubyObject key = (IRubyObject) entry.getKey();
