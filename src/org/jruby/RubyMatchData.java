@@ -76,10 +76,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     public RubyArray subseq(long beg, long len) {
-        if (beg > getSize()) {
-            return RubyArray.nilArray(getRuntime());
-        }
-        if (beg < 0 || len < 0) {
+    	// Subsequence begins at a valid index and a positive length
+        if (beg < 0 || beg > getSize() || len < 0) {
             return RubyArray.nilArray(getRuntime());
         }
 
@@ -105,10 +103,13 @@ public class RubyMatchData extends RubyObject {
     }
 
     public IRubyObject group(long n) {
-        if (n < 0 || n >= getSize()) {
+    	// Request an invalid group OR group is an empty match
+        if (n < 0 || n >= getSize() || begin[(int) n] == -1) {
             return getRuntime().getNil();
         }
-        return RubyString.newString(getRuntime(), str.substring(begin[(int) n], end[(int) n]));
+
+        return RubyString.newString(getRuntime(), 
+        		str.substring(begin[(int) n], end[(int) n]));
     }
 
     public int matchStartPosition() {
