@@ -9,8 +9,9 @@ Items marked '-' are done and will be available in the next release.
 * Documentation
     * Write a short overview
     * Short users guide
-    * Embedding HOWTO
+    * Embedding/BSF doc
     * Embedding API docs (first determine what that API *is*)
+    * Javasupport API docs
 
 * Internal class restructuring
     * Move Ruby class creation and method init into classes separate from

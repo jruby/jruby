@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Methods"
 
 def testMethod

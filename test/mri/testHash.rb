@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 
 test_check "hash"
 $x = {1=>2, 2=>4, 3=>6}

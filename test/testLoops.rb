@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Loops:"
 i = 0
 j = 0

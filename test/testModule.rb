@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "module"
 
 # MRI 1.7-style self-replacement for define_method's blocks

@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Exception (2)"
 
 test_ok(ArgumentError < Exception)

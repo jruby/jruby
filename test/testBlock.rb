@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Blocks:"
 values = []
 5.times do |i|

@@ -65,7 +65,8 @@ end
 
 jruby_home = ENV['JRUBY_HOME']
 if jruby_home.nil?
-  jruby_home = File.dirname($0)
+  bin_dir = File.dirname($0)
+  jruby_home = File.dirname(bin_dir)
 end
 
 jruby_base = ENV['JRUBY_BASE']

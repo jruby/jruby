@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 
 test_check "Test here document:"
 aString = <<END_OF_STRING

@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Struct"
 
 s = Struct.new("MyStruct", :x, :y)

@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 #test backtrace
 if !(defined? $recurse)
 test_check "Test Exception:"

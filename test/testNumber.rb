@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Number"
 test_ok(25.eql? 25)
 test_ok(10000.eql? 10000)

@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Floating points:"
 
 # I had to choose a value for testing float equality

@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test hash:"
 
 h = {1=>2,3=>4,5=>6}

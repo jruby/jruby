@@ -34,18 +34,36 @@ end
 class Module
   private
 
-  def include_package(package)
-    unless defined? @included_packages
-      @included_packages = []
-    end
-    @included_packages << package
+  ##
+  # Includes a Java package into this class/module. The Java classes in the
+  # package will become available in this class/module, unless a constant
+  # with the same name as a Java class is already defined.
+  #
 
+  def include_package(package_name)
+    if defined? @included_packages
+      @included_packages << package_name      
+      return
+    end
+    @included_packages = []
     def self.const_missing(constant)
       java_class = find_java_class(constant)
       if java_class.nil?
         return super
       end
       load_java_class(constant, java_class)
+    end
+  end
+
+  ##
+  # Removes an imported Java package. No new Java classes will be loaded
+  # from the package, but any Java classes that have already been
+  # referenced will remain.
+  #
+
+  def remove_package(package_name)
+    if defined? @included_packages
+      @included_packages.delete(package_name)
     end
   end
 
@@ -111,12 +129,6 @@ class Module
     proxy_class.create_methods(java_class)
 
     return proxy_class
-  end
-
-  def remove_package(package)
-    if defined? @included_packages
-      @included_packages.delete(package)
-    end
   end
 end
 

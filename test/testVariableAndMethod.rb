@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Variables and method:"
 a = String.new("Hello World")
 b = a.reverse

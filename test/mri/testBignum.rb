@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 
 test_check "bignum"
 def fact(n)

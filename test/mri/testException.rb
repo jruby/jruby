@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 
 # exception handling
 test_check "exception";

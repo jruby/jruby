@@ -1,5 +1,5 @@
+require 'test/minirunit'
 
-require 'minirunit'
 test_check "Test pack/unpack:"
 test_equal(["cat", "wom", "x", "yy"], %w( cat wombat x yy).pack("A3A3A3A3").unpack("A3A3A3A3"))
 test_equal(["cat", "wom", "x", "yy"], %w( cat wombat x yy).pack("a3a3a3a3").unpack("Z3Z3Z3Z3"))

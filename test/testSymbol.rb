@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test Symbol:"
 
 # Should not be able to dup or clone a symbol

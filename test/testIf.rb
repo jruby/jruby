@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 test_check "Test ifs:"
 if (true)
   test_ok(true)

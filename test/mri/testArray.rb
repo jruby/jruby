@@ -1,4 +1,4 @@
-require 'minirunit'
+require 'test/minirunit'
 
 test_check "array"
 test_ok([1, 2] + [3, 4] == [1, 2, 3, 4])
