@@ -251,7 +251,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
      *
      */
     public RubyClass newIncludeClass(RubyModule superClass) {
-        RubyClass newClass = new RubyClass(getRuby(), getRuby().getClasses().getClassClass(), superClass);
+        RubyClass newClass = new RubyClass(getRuby(), superClass);
         newClass.setIncluded(true);
         
         newClass.setInstanceVariables(getInstanceVariables());
@@ -544,7 +544,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             /*rb_warn("undefining `%s' may cause serious problem",
                      rb_id2name( id ) );*/
         }
-        NODE body = searchMethod(id);
+        NODE body = searchMethod(id).getBody();
         if (body == null || body.nd_body() == null) {
             String s0 = " class";
             RubyModule c = this;
@@ -611,66 +611,117 @@ public class RubyModule extends RubyObject implements Scope, node_type {
     /** search_method
      *
      */
-    public NODE searchMethod(RubyId id) {
-        RubyModule rubyModule = getMethodOrigin(id);
-        
-        if (rubyModule != null) {
-            return (NODE)rubyModule.getMethods().get(id);
-        }
-        return null;
-    }
-    
-    /** search_method
-     *
-     */
-    public RubyModule getMethodOrigin(RubyId id) {
+    public SearchMethodResult searchMethod(RubyId id) {
         NODE body = (NODE)getMethods().get(id);
         if (body == null) {
             if (getSuperClass() != null) {
-                return getSuperClass().getMethodOrigin(id);
+                return getSuperClass().searchMethod(id);
             } else {
-                return null;
+                return new SearchMethodResult(null, null);
             }
+        } else {
+            return new SearchMethodResult((NODE)getMethods().get(id), this);
         }
-        return this;
     }
     
     /** rb_get_method_body
      *
      */
-    public NODE getMethodBody(RubyId id, int scope) {
-        NODE body = searchMethod(id);
+    public GetMethodBodyResult getMethodBody(RubyId id, int noex) {
+        GetMethodBodyResult result = new GetMethodBodyResult(this, id, noex);
         
-        // ??
-        if (body == null) {
+        SearchMethodResult smr = searchMethod(id);
+        NODE body = smr.getBody();
+        RubyModule origin = smr.getOrigin();
+        
+        if (body == null || body.nd_body() == null) {
             System.out.println("Cant find method \"" + id.toName() + "\" in class " + toName());
             
-            return null;
+            MethodCacheEntry.saveEmptyEntry(getRuby(), this, id);
+        
+            return result;
         }
         
-        // ??
-        
-        // ... cache
+        MethodCacheEntry ent = new MethodCacheEntry(this, body.nd_noex());
         
         body = body.nd_body();
         
         if (body.nd_type() == NODE_FBODY) {
+            ent.setMid(id);
+            ent.setOrigin((RubyModule)body.nd_orig());
+            ent.setMid0((RubyId)body.nd_mid());
+            ent.setMethod(body.nd_head());
+            
+            result.setKlass((RubyModule)body.nd_orig());
+            result.setId((RubyId)body.nd_mid());
             body = body.nd_head();
+        } else {
+            ent.setMid(id);
+            ent.setMid0(id);
+            ent.setOrigin(origin);
+            ent.setMethod(body);
+            
+            result.setKlass(origin);
         }
         
-        return body;
+        result.setNoex(ent.getNoex());
+        result.setBody(body);
+        return result;
     }
     
     /** rb_call
      *
      */
-    public RubyObject call(RubyObject recv, RubyId id, RubyObject[] args, int scope) {
+    public RubyObject call(RubyObject recv, RubyId mid, RubyObject[] args, int scope) {
+        MethodCacheEntry ent = MethodCacheEntry.getEntry(getRuby(), this, mid);
+        
+        RubyModule klass = this;
+        RubyId id = mid;
+        int noex;
+        NODE body; 
+        
+        if (ent != null) {
+            if (ent.getMethod() == null) {
+                throw new RuntimeException("Undefined");
+            }
+            
+            klass = ent.getOrigin();
+            id = ent.getMid0();
+            noex = ent.getNoex();
+            body = ent.getMethod();
+        } else {
+            GetMethodBodyResult gmbr = getMethodBody(id, 0);
+            klass = gmbr.getKlass();
+            id = gmbr.getId();
+            noex = gmbr.getNoex();
+            body = gmbr.getBody();
+            
+            if (body == null) {
+                if (scope == 3) {
+                    throw new RubyNameException("super: no superclass method '" + mid.toName() + "'");
+                }
+                throw new RuntimeException("Undefined");
+            }
+        }
+        
+        // if (mid != missing) {
+        //     /* receiver specified form for private method */
+        //     if ((noex & NOEX_PRIVATE) && scope == 0)
+        //         return rb_undefined(recv, mid, argc, argv, CSTAT_PRIV);
+
+        //     /* self must be kind of a specified form for private method */
+        //     if ((noex & NOEX_PROTECTED)) {
+        //         VALUE defined_class = klass;
+        //         while (TYPE(defined_class) == T_ICLASS)
+        //             defined_class = RBASIC(defined_class)->klass;
+        //         if (!rb_obj_is_kind_of(ruby_frame->self, defined_class))
+        //             return rb_undefined(recv, mid, argc, argv, CSTAT_PROT);
+        //     }
+        // }
         
         // ...
         
-        NODE body = getMethodBody(id, scope);
-        
-        return call0(recv, id, args, body, false);
+        return klass.call0(recv, id, args, body, false);
     }
     
     /** rb_call0
@@ -869,13 +920,15 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             getRuby().secure(4);
         }
         
-        NODE orig = searchMethod(oldId);
-        RubyModule origin = getMethodOrigin(oldId);
+        SearchMethodResult smr = searchMethod(oldId);
+        NODE orig = smr.getBody();
+        RubyModule origin = smr.getOrigin();
         
         if (orig == null || orig.nd_body() == null) {
             if (isModule()) {
-                orig = getRuby().getClasses().getObjectClass().searchMethod(oldId);
-                origin = getRuby().getClasses().getObjectClass().getMethodOrigin(oldId);
+                smr = getRuby().getClasses().getObjectClass().searchMethod(oldId);
+                orig = smr.getBody();
+                origin = smr.getOrigin();
             }
         }
         if (orig == null || orig.nd_body() == null) {
@@ -901,7 +954,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             return this;
         }
         
-        RubyModule clone = new RubyClass(getRuby(), null, getSuperClass());
+        RubyModule clone = new RubyClass(getRuby(), getSuperClass());
         clone.setupClone(this);
         clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
         
@@ -1160,12 +1213,14 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             getRuby().secure(4);
         }
 
-        NODE body = searchMethod(name);
-        RubyModule origin = getMethodOrigin(name);
+        SearchMethodResult smr = searchMethod(name);
+        NODE body = smr.getBody();
+        RubyModule origin = smr.getOrigin();
         
         if (body == null && isModule()) {
-            body = getRuby().getClasses().getObjectClass().searchMethod(name);
-            origin = getRuby().getClasses().getObjectClass().getMethodOrigin(name);
+            smr = getRuby().getClasses().getObjectClass().searchMethod(name);
+            body = smr.getBody();
+            origin = smr.getOrigin();
         }
         
         if (body == null) {
@@ -1737,7 +1792,7 @@ public class RubyModule extends RubyObject implements Scope, node_type {
             
             for (int i = 0; i < args.length; i++) {
                 RubyId id = args[i].toId();
-                NODE body = searchMethod(id);
+                NODE body = searchMethod(id).getBody();
                 if (body == null || body.nd_body() == null) {
                     throw new RubyBugException("undefined method '" + id.toName() + "'; can't happen");
                 }
@@ -1748,5 +1803,74 @@ public class RubyModule extends RubyObject implements Scope, node_type {
         }
         
         return this;
+    }
+}
+
+class GetMethodBodyResult {
+    private NODE body;
+    private RubyModule klass;
+    private RubyId id;
+    private int noex;
+
+    public GetMethodBodyResult(RubyModule klass, RubyId id, int noex) {
+        this.klass = klass;
+        this.id = id;
+        this.noex = noex;
+    }
+
+    /** Getter for property id.
+     * @return Value of property id.
+     */
+    public RubyId getId() {
+        return id;
+    }
+    
+    /** Setter for property id.
+     * @param id New value of property id.
+     */
+    public void setId(RubyId id) {
+        this.id = id;
+    }
+    
+    /** Getter for property klass.
+     * @return Value of property klass.
+     */
+    public RubyModule getKlass() {
+        return klass;
+    }
+    
+    /** Setter for property klass.
+     * @param klass New value of property klass.
+     */
+    public void setKlass(RubyModule klass) {
+        this.klass = klass;
+    }
+    
+    /** Getter for property node.
+     * @return Value of property node.
+     */
+    public NODE getBody() {
+        return body;
+    }
+    
+    /** Setter for property node.
+     * @param node New value of property node.
+     */
+    public void setBody(NODE body) {
+        this.body = body;
+    }
+    
+    /** Getter for property scope.
+     * @return Value of property scope.
+     */
+    public int getNoex() {
+        return noex;
+    }
+    
+    /** Setter for property scope.
+     * @param scope New value of property scope.
+     */
+    public void setNoex(int noex) {
+        this.noex = noex;
     }
 }

@@ -40,12 +40,8 @@ public class RubyClass extends RubyModule {
         this(ruby, null);
     }
 
-    public RubyClass(Ruby ruby, RubyModule rubyClass) {
-        this(ruby, rubyClass, null);
-    }
-    
-    public RubyClass(Ruby ruby, RubyModule rubyClass, RubyModule superClass) {
-        super(ruby, rubyClass, superClass);
+    public RubyClass(Ruby ruby, RubyModule superClass) {
+        super(ruby, null, superClass);
     }
 
     public boolean isModule() {
@@ -56,13 +52,21 @@ public class RubyClass extends RubyModule {
         return !isIncluded();
     }
     
+    public RubyModule getRubyClass() {
+        if (super.getRubyClass() == null) {
+            return getRuby().getClasses().getClassClass();
+        } else {
+            return super.getRubyClass();
+        }
+    }
+    
     // Methods of the Class class (rb_class_*):
     
     /** rb_class_s_new
      *
      */
     public static RubyClass m_newClass(Ruby ruby, RubyClass superClass) {
-        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass);
+        return new RubyClass(ruby, superClass);
     }
     
     /** rb_class_new_instance

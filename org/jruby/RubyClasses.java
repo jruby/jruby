@@ -146,8 +146,6 @@ public class RubyClasses {
         this.ruby = ruby;
      
         classMap = new RubyHashMap();
-        
-        initCoreClasses();
     }
     
     /** rb_define_boot?
@@ -163,8 +161,34 @@ public class RubyClasses {
 
     /** This method defines the core classes and modules in
      * the Ruby runtime.
+     *
+     * Ruby's Class Hierarchy Chart
+     *
+     * <pre>
+     *
+     *                           +------------------+
+     *                           |                  |
+     *             Object---->(Object)              |
+     *              ^  ^        ^  ^                |
+     *              |  |        |  |                |
+     *              |  |  +-----+  +---------+      |
+     *              |  |  |                  |      |
+     *              |  +-----------+         |      |
+     *              |     |        |         |      |
+     *       +------+     |     Module--->(Module)  |
+     *       |            |        ^         ^      |
+     *  OtherClass-->(OtherClass)  |         |      |
+     *                             |         |      |
+     *                           Class---->(Class)  |
+     *                             ^                |
+     *                             |                |
+     *                             +----------------+
+     *
+     * </pre>
+     *
+     *   + All metaclasses are instances of the class `Class'.
      */
-    private void initCoreClasses() {
+    public void initCoreClasses() {
         RubyClass metaClass;
         
         objectClass = defineBootClass("Object", null);
@@ -189,31 +213,6 @@ public class RubyClasses {
         objectClass.definePrivateMethod("initialize", DefaultCallbackMethods.getMethodNil());
         classClass.definePrivateMethod("inherited", DefaultCallbackMethods.getMethodNil());
 
-        /*
-         *
-         * Ruby's Class Hierarchy Chart
-         *
-         *                           +------------------+
-         *                           |                  |
-         *             Object---->(Object)              |
-         *              ^  ^        ^  ^                |
-         *              |  |        |  |                |
-         *              |  |  +-----+  +---------+      |
-         *              |  |  |                  |      |
-         *              |  +-----------+         |      |
-         *              |     |        |         |      |
-         *       +------+     |     Module--->(Module)  |
-         *       |            |        ^         ^      |
-         *  OtherClass-->(OtherClass)  |         |      |
-         *                             |         |      |
-         *                           Class---->(Class)  |
-         *                             ^                |
-         *                             |                |
-         *                             +----------------+
-         *
-         *   + All metaclasses are instances of the class `Class'.
-         */
-        
         RbObject.initObjectClass(objectClass);
         RbClass.initClassClass(classClass);
         RbModule.initModuleClass(moduleClass);

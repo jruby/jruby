@@ -48,6 +48,8 @@ public final class Ruby implements token {
     
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_SIZE];
     
+    private HashMap methodCache = new HashMap();
+    
     /** rb_global_tbl
      *
      */
@@ -92,6 +94,7 @@ public final class Ruby implements token {
         falseObject = new RubyBoolean(this, false);
         
         classes = new RubyClasses(this);
+        classes.initCoreClasses();
         
         createFixnumCache();
     }
@@ -418,4 +421,10 @@ public final class Ruby implements token {
         this.rubyScope = rubyScope;
     }
     
+    /** Getter for property methodCache.
+     * @return Value of property methodCache.
+     */
+    public HashMap getMethodCache() {
+        return methodCache;
+    }
 }

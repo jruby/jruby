@@ -1001,8 +1001,9 @@ public class RubyInterpreter implements node_type, Scope {
                         //}
                         // ruby_class.setFrozen(true);
                         
-                        NODE body = ruby_class.searchMethod((RubyId)node.nd_mid());
-                        RubyObject origin = ruby_class.getMethodOrigin((RubyId)node.nd_mid());
+                        SearchMethodResult smr = ruby_class.searchMethod((RubyId)node.nd_mid());
+                        NODE body = smr.getBody();
+                        RubyObject origin = smr.getOrigin();
                         
                         if (body != null){
                             // if (ruby_verbose.isTrue() && ruby_class == origin && body.nd_cnt() == 0) {

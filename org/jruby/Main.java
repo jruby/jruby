@@ -54,6 +54,9 @@ public class Main {
         System.out.println("----------------------------------------------------");
         System.out.println();
         
+        // Benchmark
+        long now = -1;
+        
         if (args.length == 0) {
             printUsage();
         } else {
@@ -69,10 +72,17 @@ public class Main {
                     } else {
                         runInterpreter(args[i], "command line " + i);
                     }
+                } else if (args[i].equals("-b")) {
+                    // Benchmark
+                    now = System.currentTimeMillis();
                 } else {
-                    runInterpreterOnFile(args[0]);
+                    runInterpreterOnFile(args[i]);
                 }
             }
+        }
+        // Benchmark
+        if (now != -1) {
+            System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
     }
     
