@@ -115,6 +115,11 @@ public class RubyThread extends RubyObject {
         threadClass.defineMethod("stop?", CallbackFactory.getMethod(RubyThread.class, "is_stopped"));
         threadClass.defineMethod("value", CallbackFactory.getMethod(RubyThread.class, "value"));
         threadClass.defineMethod("wakeup", CallbackFactory.getMethod(RubyThread.class, "wakeup"));
+        
+        Ruby runtime = threadClass.getRuntime();
+        RubyThread currentThread = new RubyThread(runtime, threadClass);
+        currentThread.jvmThread = Thread.currentThread();
+        runtime.getCurrentContext().setCurrentThread(currentThread);
 
         return threadClass;
     }
