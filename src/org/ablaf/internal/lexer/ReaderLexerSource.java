@@ -60,7 +60,7 @@ import java.io.*;
  * @version $Revision$
  */
 public class ReaderLexerSource extends AbstractLexerSource {
-    private Reader reader;
+    private final Reader reader;
 
     /**
      * Constructor for ReaderLexerSource.
@@ -69,7 +69,6 @@ public class ReaderLexerSource extends AbstractLexerSource {
      */
     public ReaderLexerSource(String sourceName, Reader reader) {
         super(sourceName);
-        
         this.reader = reader;
     }
 
@@ -79,7 +78,7 @@ public class ReaderLexerSource extends AbstractLexerSource {
     protected char internalRead() {
         try {
         	int c = reader.read();
-        	return c != -1 ? (char)c : 0;
+        	return c != -1 ? (char) c : (char) 0;
         } catch (IOException ioExcptn) {
             return 0;
         }

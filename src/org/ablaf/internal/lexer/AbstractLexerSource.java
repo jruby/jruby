@@ -52,7 +52,7 @@
  */
 package org.ablaf.internal.lexer;
 
-import org.ablaf.lexer.*;
+import org.ablaf.lexer.ILexerSource;
 
 /** An abstract implementation of an ILexerSource.
  *
@@ -71,7 +71,7 @@ public abstract class AbstractLexerSource implements ILexerSource {
     protected abstract char internalRead();
 
     /**
-     * @see IScannerSource#read()
+     * @see ILexerSource#read()
      */
     public char read() {
         synchronized (buffer) {
@@ -90,7 +90,7 @@ public abstract class AbstractLexerSource implements ILexerSource {
     }
 
     /**
-     * @see IScannerSource#unread()
+     * @see ILexerSource#unread()
      */
     public char unread() {
         synchronized (buffer) {
@@ -103,7 +103,7 @@ public abstract class AbstractLexerSource implements ILexerSource {
     }
     
     /**
-     * @see IScannerSource#getOffset()
+     * @see ILexerSource#getOffset()
      */
     public int getOffset() {
     	return offset;

@@ -58,8 +58,6 @@ package org.ablaf.lexer;
  * 
  * @author  jpetersen
  * @version $Revision$
- * @see ILexicalSupport
- * @see StringLexerSource
  */
 public interface ILexerSource {
     /** Returns the next char.

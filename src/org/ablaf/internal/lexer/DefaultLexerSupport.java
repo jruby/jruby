@@ -129,12 +129,11 @@ public class DefaultLexerSupport implements ILexerSupport {
     }
 
     /**
-     * @see ILexerSupport#readHex(int, int)
+     * @see ILexerSupport#readHex(int)
 	 * @fixme should throw exception when finding the null char
      */
     public String readHex(int maxLen) {
         StringBuffer buffer = new StringBuffer(maxLen);
-
         for (int i = 0; i < maxLen; i++) {
             char c = read();
             if (isHex(c)) {
@@ -145,17 +144,15 @@ public class DefaultLexerSupport implements ILexerSupport {
                 unread();
             }
         }
-
         return buffer.toString();
     }
 
     /**
 	 * @fixme should throw exception when finding the null char
-     * @see ILexerSupport#readOct(int, int)
+     * @see ILexerSupport#readOct(int)
      */
     public String readOct(int maxLen) {
         StringBuffer buffer = new StringBuffer(maxLen);
-
         for (int i = 0; i < maxLen; i++) {
             char c = read();
             if (isOct(c)) {
@@ -166,7 +163,6 @@ public class DefaultLexerSupport implements ILexerSupport {
                 unread();
             }
         }
-
         return buffer.toString();
     }
 
@@ -192,7 +188,6 @@ public class DefaultLexerSupport implements ILexerSupport {
         if (line > 0) {
             col -= lineOffset[line - 1];
         }
-        
         return DefaultLexerPosition.getInstance(source.getSourceName(), line + 1, col);
     }
 
@@ -251,7 +246,7 @@ public class DefaultLexerSupport implements ILexerSupport {
 	 * 
 	 */
     private static final boolean isHex(char c) {
-        return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
+        return Character.isDigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
 
 	/** Returns 'true' if c is an octal number.
