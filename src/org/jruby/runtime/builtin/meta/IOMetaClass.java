@@ -41,6 +41,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.ThreadError;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
@@ -171,7 +172,14 @@ public class IOMetaClass extends BuiltinClass {
     	IRubyObject cmdObj = args[0].convertToString();
     	cmdObj.checkSafeString();
     	String command = cmdObj.toString();
-    	//TODO check mode (only r works)
+
+    	// only r works so throw error if anything else specified.
+        if (args.length >= 2) {
+            String mode = args[1].convertToString().toString();
+            if (!mode.equals("r")) {
+                throw new NotImplementedError(runtime, "only 'r' currently supported");
+            }
+        }
     	
     	try {
     		//TODO Unify with runInShell()
