@@ -43,7 +43,6 @@ import org.jruby.marshal.*;
  * @version $Revision$
  */
 public class RubyMarshal {
-	public static final String sEncoding = "iso8859-1";
 
     public static RubyModule createMarshalModule(Ruby ruby) {
         RubyModule marshalModule = ruby.defineModule("Marshal");
@@ -81,7 +80,7 @@ public class RubyMarshal {
             } else {
                 ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
                 dumpToStream(objectToDump, stringOutput, depthLimit);
-                return RubyString.newString(ruby, stringOutput.toString(sEncoding));
+                return RubyString.newString(ruby, stringOutput.toByteArray());
             }
 
         } catch (IOException ioe) {
@@ -106,8 +105,8 @@ public class RubyMarshal {
             if (in instanceof RubyIO) {
                 throw new NotImplementedError();
             } else if (in.respondsTo("to_str")) {
-                String inString = ((RubyString) in.funcall("to_str")).getValue();
-                rawInput = new ByteArrayInputStream(inString.getBytes(sEncoding));
+                RubyString inString = (RubyString) in.funcall("to_str");
+                rawInput = new ByteArrayInputStream(inString.toByteArray());
             } else {
                 throw new TypeError(ruby, "instance of IO needed");
             }

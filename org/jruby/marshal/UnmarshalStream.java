@@ -114,7 +114,7 @@ public class UnmarshalStream extends FilterInputStream {
         if (bytesRead != length) {
             throw new IOException("Unexpected end of stream");
         }
-        return new String(buffer, RubyMarshal.sEncoding);
+        return RubyString.bytesToString(buffer);
     }
 
     public int unmarshalInt() throws IOException {

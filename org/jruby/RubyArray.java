@@ -1924,8 +1924,8 @@ public class RubyArray extends RubyObject {
 					}
 					String s = new String(c);
 					try
-					{
-						lResult.append(new String(s.getBytes("UTF-8"), RubyMarshal.sEncoding));
+                    {
+                        lResult.append(RubyString.bytesToString(s.getBytes("UTF-8")));
 					} catch (java.io.UnsupportedEncodingException e)
 					{
 						throw new RubyBugException( "can't convert to UTF8");

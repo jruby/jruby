@@ -324,7 +324,7 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public RubyFixnum size() {
-        return newFixnum(64);
+        return newFixnum(4);
     }
 
     public RubyFixnum aref(RubyInteger pos) {

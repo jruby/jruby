@@ -41,7 +41,10 @@ import org.jruby.marshal.*;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
-	private static RubyModule pfClass;
+
+    private static final String encoding = "iso8859-1";
+
+    private static RubyModule pfClass;
 
 	private String value;
 
@@ -81,6 +84,26 @@ public class RubyString extends RubyObject {
 	public String toString() {
 		return getValue();
 	}
+
+    public static String bytesToString(byte[] bytes) {
+        try {
+            return new String(bytes, encoding);
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RubyBugException("unsupported encoding " + e);
+        }
+    }
+
+    public static byte[] stringToBytes(String string) {
+        try {
+            return string.getBytes(encoding);
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RubyBugException("unsupported encoding " + e);
+        }
+    }
+
+    public byte[] toByteArray() {
+        return stringToBytes(value);
+    }
 
 	public static RubyClass createStringClass(Ruby ruby) {
 		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
@@ -275,6 +298,11 @@ public class RubyString extends RubyObject {
 	public static RubyString newString(Ruby ruby, String str, int len) {
 		return new RubyString(ruby, str.substring(0, len));
 	}
+
+    public static RubyString newString(Ruby ruby, byte[] bytes) {
+        return newString(ruby, bytesToString(bytes));
+    }
+
 
 	/** rb_str_dup
 	 *
@@ -1643,19 +1671,13 @@ public class RubyString extends RubyObject {
 	 * rb_str_each_byte
 	 */
 	public RubyString each_byte() {
-		try
-		{
-			byte[] lByteValue = value.getBytes(RubyMarshal.sEncoding);
-			int lLength = lByteValue.length;
-			for (int i = 0; i < lLength; i++)
-				ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
-
-		} catch(java.io.UnsupportedEncodingException e)
-		{
-			throw new RubyBugException("unsupported encoding " + RubyMarshal.sEncoding);
-		}
-		return this;
-	}
+        byte[] lByteValue = toByteArray();
+        int lLength = lByteValue.length;
+        for (int i = 0; i < lLength; i++) {
+            ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+        }
+        return this;
+    }
 
 	/** rb_str_intern
 	 *

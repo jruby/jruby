@@ -54,12 +54,12 @@ public class MarshalStream extends FilterOutputStream {
     private Map dumpedSymbols = new HashMap();
 
     public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
-		super(out);
+        super(out);
         this.ruby = ruby;
         this.depthLimit = (depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE);
 
-		out.write(MARSHAL_MAJOR);
-		out.write(MARSHAL_MINOR);
+        out.write(MARSHAL_MAJOR);
+        out.write(MARSHAL_MINOR);
     }
 
     public void dumpObject(RubyObject value) throws IOException {
@@ -109,7 +109,7 @@ public class MarshalStream extends FilterOutputStream {
 
     public void dumpString(String value) throws IOException {
         dumpInt(value.length());
-        out.write(value.getBytes(RubyMarshal.sEncoding));
+        out.write(RubyString.stringToBytes(value));
     }
 
     public void dumpInt(int value) throws IOException {
