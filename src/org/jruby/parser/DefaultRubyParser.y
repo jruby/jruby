@@ -402,7 +402,7 @@ stmt          : kALIAS fitem {
                     }
                     support.getLocalNames().push();
                 } '{' compstmt '}' {
-                    support.getResult().setBeginNodes(support.appendToBlock(support.getResult().getBeginNodes(), new ScopeNode(support.getLocalNames().getNames(), $4)));
+                    support.getResult().addBeginNode(new ScopeNode(support.getLocalNames().getNames(), $4));
                     support.getLocalNames().pop();
                     $$ = null; //XXX 0;
                 }
@@ -410,7 +410,8 @@ stmt          : kALIAS fitem {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("END in method; use at_exit");
                     }
-                    $$ = new IterNode(getPosition(), null, new PostExeNode(getPosition()), $3);
+                    support.getResult().addEndNode(new IterNode(getPosition(), null, new PostExeNode(getPosition()), $3));
+                    $$ = null;
                 }
               | lhs '=' command_call {
                     support.checkExpression($3);

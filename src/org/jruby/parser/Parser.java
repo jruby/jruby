@@ -77,6 +77,7 @@ public class Parser {
         if (hasNewLocalVariables(result)) {
             expandLocalVariables(result.getLocalVariables());
         }
+        result.addAppendBeginAndEndNodes();
         return result.getAST();
     }
 

@@ -583,7 +583,7 @@ case 20:
 case 21:
 					// line 403 "DefaultRubyParser.y"
   {
-                    support.getResult().setBeginNodes(support.appendToBlock(support.getResult().getBeginNodes(), new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop]))));
+                    support.getResult().addBeginNode(new ScopeNode(support.getLocalNames().getNames(), ((Node)yyVals[-1+yyTop])));
                     support.getLocalNames().pop();
                     yyVal = null; /*XXX 0;*/
                 }
@@ -594,7 +594,8 @@ case 22:
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("END in method; use at_exit");
                     }
-                    yyVal = new IterNode(getPosition(), null, new PostExeNode(getPosition()), ((Node)yyVals[-1+yyTop]));
+                    support.getResult().addEndNode(new IterNode(getPosition(), null, new PostExeNode(getPosition()), ((Node)yyVals[-1+yyTop])));
+                    yyVal = null;
                 }
   break;
 case 23:

@@ -29,9 +29,12 @@
 package org.jruby.parser;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ast.BlockNode;
 import org.jruby.ast.Node;
+import org.jruby.lexer.yacc.SourcePosition;
 
 /**
  *
@@ -39,7 +42,8 @@ import org.jruby.ast.Node;
  * @version $Revision$
  */
 public class RubyParserResult {
-    private Node beginNodes;
+    private final List beginNodes = new ArrayList();
+    private final List endNodes = new ArrayList();
     private Node ast;
     private List blockVariables;
     private List localVariables;
@@ -50,14 +54,6 @@ public class RubyParserResult {
      */
     public RubyParserResult() {
         super();
-    }
-
-    /**
-     * Gets the beginNodes.
-     * @return Returns a INode
-     */
-    public Node getBeginNodes() {
-        return beginNodes;
     }
 
     /**
@@ -104,14 +100,6 @@ public class RubyParserResult {
     }
 
     /**
-     * Sets the beginNodes.
-     * @param beginNodes The beginNodes to set
-     */
-    public void setBeginNodes(Node beginNodes) {
-        this.beginNodes = beginNodes;
-    }
-
-    /**
      * Sets the blockVariables.
      * @param blockVariables The blockVariables to set
      */
@@ -125,5 +113,41 @@ public class RubyParserResult {
      */
     public void setLocalVariables(List localVariables) {
         this.localVariables = localVariables;
+    }
+    
+    public void addBeginNode(Node node) {
+    	beginNodes.add(node);
+    }
+    
+    public void addEndNode(Node node) {
+    	endNodes.add(node);
+    }
+    
+    public void addAppendBeginAndEndNodes() {
+    	if (beginNodes.isEmpty() && endNodes.isEmpty()) {
+    		return;
+    	}
+    	BlockNode n;
+    	if (getAST() != null) {
+    		n = new BlockNode(getAST().getPosition());
+    	} else {
+    		SourcePosition p;
+    		if (!beginNodes.isEmpty()) {
+    			p = ((Node) beginNodes.get(0)).getPosition();
+    		} else {
+    			p = ((Node) endNodes.get(endNodes.size() - 1)).getPosition();
+    		}
+    		n = new BlockNode(p);
+    	}
+    	for (int i = 0; i < beginNodes.size(); i++) {
+    		n.add((Node) beginNodes.get(i));
+    	}
+    	if (getAST() != null) {
+    		n.add(getAST());
+    	}
+    	for (int i = endNodes.size() - 1; i >= 0; i--) {
+    		n.add((Node) endNodes.get(i));
+    	}
+    	setAST(n);
     }
 }
