@@ -26,8 +26,6 @@
  */
 package org.jruby;
 
-import javax.security.auth.callback.*;
-
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.Callback;

@@ -64,7 +64,7 @@ public class TestRubySymbol extends TestCase {
     }
 
     public void testNilSymbol() throws Exception {
-        assert(RubySymbol.nilSymbol(ruby).isNil());
+        assertTrue(RubySymbol.nilSymbol(ruby).isNil());
         assertSame(RubySymbol.nilSymbol(ruby),
                    RubySymbol.nilSymbol(ruby));
     }

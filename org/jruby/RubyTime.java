@@ -106,6 +106,11 @@ public class RubyTime extends RubyObject {
         return timeClass;
     }
 
+    protected long getTimeInMillis() {
+        return cal.getTime().getTime();  // For JDK 1.4 we can use "cal.getTimeInMillis()"
+    }
+
+
     public static RubyTime s_new(Ruby ruby, RubyObject rubyClass) {
         RubyObject[] args = new RubyObject[1];
         args[0] = new RubyFixnum(ruby, new Date().getTime());
@@ -120,7 +125,7 @@ public class RubyTime extends RubyObject {
 
         if (args[0] instanceof RubyTime) {
             time.cal.setTimeZone(((RubyTime) args[0]).cal.getTimeZone());
-            time.cal.setTimeInMillis(((RubyTime) args[0]).cal.getTimeInMillis());
+            time.cal.setTimeInMillis(((RubyTime) args[0]).getTimeInMillis());
         } else {
             long usec = len > 1 ? RubyNumeric.num2long(args[1]) / 1000 : 0;
             time.usec = len > 1 ? RubyNumeric.num2long(args[1]) % 1000 : 0;
@@ -246,7 +251,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyObject op_plus(RubyObject other) {
-        long time = cal.getTimeInMillis();
+        long time = getTimeInMillis();
 
         if (other instanceof RubyTime) {
             throw new TypeError(ruby, "time + time ?");
@@ -262,10 +267,10 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyObject op_minus(RubyObject other) {
-        long time = cal.getTimeInMillis();
+        long time = getTimeInMillis();
 
         if (other instanceof RubyTime) {
-            time -= ((RubyTime) other).cal.getTimeInMillis();
+            time -= ((RubyTime) other).getTimeInMillis();
 
             return RubyFloat.newFloat(ruby, time * 10e-4);
         } else {
@@ -280,7 +285,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyFixnum op_cmp(RubyObject other) {
-        long millis = cal.getTimeInMillis();
+        long millis = getTimeInMillis();
 
         if (other instanceof RubyFloat || other instanceof RubyBignum) {
             double time = ((double) millis) / 1000.0;
@@ -295,7 +300,7 @@ public class RubyTime extends RubyObject {
                 return RubyFixnum.zero(ruby);
             }
         } else {
-            long millis_other = (other instanceof RubyTime) ? ((RubyTime) other).cal.getTimeInMillis() : RubyNumeric.num2long(other) * 1000;
+            long millis_other = (other instanceof RubyTime) ? ((RubyTime) other).getTimeInMillis() : RubyNumeric.num2long(other) * 1000;
 
             if (millis > millis_other) {
                 return RubyFixnum.one(ruby);
@@ -339,15 +344,15 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyFloat to_f() {
-        return RubyFloat.newFloat(ruby, cal.getTimeInMillis() / 1000.0);
+        return RubyFloat.newFloat(ruby, getTimeInMillis() / 1000.0);
     }
 
     public RubyInteger to_i() {
-        return RubyFixnum.newFixnum(ruby, cal.getTimeInMillis() / 1000);
+        return RubyFixnum.newFixnum(ruby, getTimeInMillis() / 1000);
     }
 
     public RubyInteger usec() {
-        return RubyFixnum.newFixnum(ruby, cal.getTimeInMillis() % 1000 * 1000 + usec);
+        return RubyFixnum.newFixnum(ruby, getTimeInMillis() % 1000 * 1000 + usec);
     }
 
     public RubyInteger sec() {
