@@ -52,8 +52,8 @@ public class RubyBignum extends RubyInteger {
 
     private final BigInteger value;
 
-    public RubyBignum(Ruby ruby, BigInteger value) {
-        super(ruby, ruby.getClass("Bignum"));
+    public RubyBignum(Ruby runtime, BigInteger value) {
+        super(runtime, runtime.getClass("Bignum"));
         this.value = value;
     }
 
@@ -80,9 +80,9 @@ public class RubyBignum extends RubyInteger {
         return value;
     }
 
-    public static RubyClass createBignumClass(Ruby ruby) {
-        RubyClass result = ruby.defineClass("Bignum", ruby.getClasses().getIntegerClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createBignumClass(Ruby runtime) {
+        RubyClass result = runtime.defineClass("Bignum", runtime.getClasses().getIntegerClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         result.defineMethod("~", callbackFactory.getMethod(RubyBignum.class, "op_invert"));
         result.defineMethod("&", callbackFactory.getMethod(RubyBignum.class, "op_and", RubyNumeric.class));
@@ -112,11 +112,11 @@ public class RubyBignum extends RubyInteger {
     }
 
     /* If the value will fit in a Fixnum, return one of those. */
-    private static RubyInteger bigNorm(Ruby ruby, BigInteger bi) {
+    private static RubyInteger bigNorm(Ruby runtime, BigInteger bi) {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {
-            return newBignum(ruby, bi);
+            return newBignum(runtime, bi);
         }
-        return RubyFixnum.newFixnum(ruby, bi.longValue());
+        return RubyFixnum.newFixnum(runtime, bi.longValue());
     }
 
     static public BigInteger bigIntValue(RubyNumeric other) {
@@ -143,16 +143,16 @@ public class RubyBignum extends RubyInteger {
 
     // Bignum methods
 
-    public static RubyBignum newBignum(Ruby ruby, long value) {
-        return newBignum(ruby, BigInteger.valueOf(value));
+    public static RubyBignum newBignum(Ruby runtime, long value) {
+        return newBignum(runtime, BigInteger.valueOf(value));
     }
 
-    public static RubyBignum newBignum(Ruby ruby, double value) {
-        return newBignum(ruby, new BigDecimal(value).toBigInteger());
+    public static RubyBignum newBignum(Ruby runtime, double value) {
+        return newBignum(runtime, new BigDecimal(value).toBigInteger());
     }
 
-    public static RubyBignum newBignum(Ruby ruby, BigInteger value) {
-        return new RubyBignum(ruby, value);
+    public static RubyBignum newBignum(Ruby runtime, BigInteger value) {
+        return new RubyBignum(runtime, value);
     }
 
     public RubyBignum newBignum(BigInteger value) {

@@ -43,8 +43,8 @@ public class RegexpError extends RaiseException {
      * Constructs an <code>RubyRegexpException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RegexpError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getRegexpError(), msg);
+    public RegexpError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getRegexpError(), msg);
     }
 }
 

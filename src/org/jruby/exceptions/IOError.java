@@ -42,12 +42,12 @@ public class IOError extends RaiseException {
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public IOError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getIOError(), msg);
+    public IOError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getIOError(), msg);
     }
 
-    public static RuntimeException fromException(Ruby ruby, java.io.IOException exception) {
+    public static RuntimeException fromException(Ruby runtime, java.io.IOException exception) {
         // TODO: add a table of known corresponding exceptions
-        return new IOError(ruby, exception.getMessage());
+        return new IOError(runtime, exception.getMessage());
     }
 }

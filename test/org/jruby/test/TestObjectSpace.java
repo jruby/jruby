@@ -48,23 +48,23 @@ import java.util.List;
 */
 public class TestObjectSpace extends TestCase {
 
-    private Ruby ruby;
+    private Ruby runtime;
 
     public TestObjectSpace(String name) {
         super(name);
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
+        runtime = Ruby.getDefaultInstance();
     }
 
     public void testObjectSpace() {
         ObjectSpace os = new ObjectSpace();
 
-        IRubyObject o1 = RubyFixnum.newFixnum(ruby, 10);
-        IRubyObject o2 = RubyFixnum.newFixnum(ruby, 20);
-        IRubyObject o3 = RubyFixnum.newFixnum(ruby, 30);
-        IRubyObject o4 = RubyString.newString(ruby, "hello");
+        IRubyObject o1 = RubyFixnum.newFixnum(runtime, 10);
+        IRubyObject o2 = RubyFixnum.newFixnum(runtime, 20);
+        IRubyObject o3 = RubyFixnum.newFixnum(runtime, 30);
+        IRubyObject o4 = RubyString.newString(runtime, "hello");
 
         os.add(o1);
         os.add(o2);
@@ -76,12 +76,12 @@ public class TestObjectSpace extends TestCase {
         storedFixnums.add(o2);
         storedFixnums.add(o3);
 
-        Iterator strings = os.iterator(ruby.getClasses().getStringClass());
+        Iterator strings = os.iterator(runtime.getClasses().getStringClass());
         assertTrue(strings.hasNext());
         assertSame(o4, strings.next());
         assertTrue(! strings.hasNext());
 
-        Iterator numerics = os.iterator(ruby.getClasses().getNumericClass());
+        Iterator numerics = os.iterator(runtime.getClasses().getNumericClass());
         for (int i = 0; i < 3; i++) {
             assertTrue(numerics.hasNext());
             Object item = numerics.next();

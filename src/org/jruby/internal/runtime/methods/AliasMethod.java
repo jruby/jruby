@@ -63,8 +63,8 @@ public class AliasMethod extends AbstractMethod {
     /**
      * @fixme name or oldName ?
      */
-    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return oldMethod.call(ruby, receiver, name, args, noSuper);
+    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        return oldMethod.call(runtime, receiver, name, args, noSuper);
     }
 
     public ICallable getOldMethod() {

@@ -54,7 +54,7 @@ import org.jruby.util.Asserts;
  * @version $Revision$
  */
 public class AssignmentVisitor extends AbstractVisitor {
-    private Ruby ruby;
+    private Ruby runtime;
     private ThreadContext threadContext;
     private IRubyObject self;
 
@@ -64,10 +64,10 @@ public class AssignmentVisitor extends AbstractVisitor {
     private boolean check;
     private IRubyObject result;
 
-    public AssignmentVisitor(Ruby ruby, IRubyObject self) {
-        this.ruby = ruby;
+    public AssignmentVisitor(Ruby runtime, IRubyObject self) {
+        this.runtime = runtime;
         this.self = self;
-        this.threadContext = ruby.getCurrentContext();
+        this.threadContext = runtime.getCurrentContext();
     }
 
     public IRubyObject assign(Node node, IRubyObject value, boolean check) {
@@ -114,8 +114,8 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitClassVarDeclNode(ClassVarDeclNode)
      */
     public void visitClassVarDeclNode(ClassVarDeclNode iVisited) {
-        if (ruby.isVerbose() && threadContext.getRubyClass().isSingleton()) {
-            errorHandler.handleError(IErrors.WARN, "Declaring singleton class variable.");
+        if (runtime.isVerbose() && threadContext.getRubyClass().isSingleton()) {
+            errorHandler.handleError(IErrors.WARN, iVisited.getPosition(), "Declaring singleton class variable.");
         }
         threadContext.getRubyClass().setClassVar(iVisited.getName(), value);
     }
@@ -138,7 +138,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitGlobalAsgnNode(GlobalAsgnNode)
      */
     public void visitGlobalAsgnNode(GlobalAsgnNode iVisited) {
-        ruby.getGlobalVariables().set(iVisited.getName(), value);
+        runtime.getGlobalVariables().set(iVisited.getName(), value);
     }
 
     /**

@@ -43,11 +43,11 @@ public class TypeError extends RaiseException {
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public TypeError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getTypeError(), msg);
+    public TypeError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getTypeError(), msg);
     }
 
-    public TypeError(Ruby ruby, IRubyObject receivedObject, RubyClass expectedType) {
-        this(ruby, "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType);
+    public TypeError(Ruby runtime, IRubyObject receivedObject, RubyClass expectedType) {
+        this(runtime, "wrong argument type " + receivedObject.getMetaClass() + " (expected " + expectedType);
     }
 }

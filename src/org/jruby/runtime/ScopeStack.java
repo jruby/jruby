@@ -40,10 +40,10 @@ import java.util.List;
  * @version $Revision$
  */
 public class ScopeStack extends AbstractStack {
-    private Ruby ruby;
+    private Ruby runtime;
 
-    public ScopeStack(Ruby ruby) {
-        this.ruby = ruby;
+    public ScopeStack(Ruby runtime) {
+        this.runtime = runtime;
     }
 
     public void push(String[] localNames) {
@@ -64,7 +64,7 @@ public class ScopeStack extends AbstractStack {
     }
 
     public void push() {
-        this.push(new Scope(ruby));
+        this.push(new Scope(runtime));
     }
 
     public StackElement pop() {

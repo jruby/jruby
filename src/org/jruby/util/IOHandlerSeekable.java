@@ -48,9 +48,9 @@ public class IOHandlerSeekable extends IOHandler {
     protected RandomAccessFile file;
     protected String path;
     
-    public IOHandlerSeekable(Ruby ruby, String path, IOModes modes) 
+    public IOHandlerSeekable(Ruby runtime, String path, IOModes modes) 
     	throws IOException {
-        super(ruby);
+        super(runtime);
         
         this.path = path;
         this.modes = modes;
@@ -66,7 +66,7 @@ public class IOHandlerSeekable extends IOHandler {
             }
         } else {
             if (modes.isReadable() == true && modes.isWriteable() == false) {
-                throw ErrnoError.getErrnoError(ruby, "ENOENT", "No such file");
+                throw ErrnoError.getErrnoError(runtime, "ENOENT", "No such file");
             }
         }
 

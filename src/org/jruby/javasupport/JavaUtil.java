@@ -128,54 +128,54 @@ public class JavaUtil {
         }
     }
 
-    public static IRubyObject[] convertJavaArrayToRuby(Ruby ruby, Object[] objects) {
+    public static IRubyObject[] convertJavaArrayToRuby(Ruby runtime, Object[] objects) {
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
-            rubyObjects[i] = convertJavaToRuby(ruby, objects[i]);
+            rubyObjects[i] = convertJavaToRuby(runtime, objects[i]);
         }
         return rubyObjects;
     }
 
-    public static IRubyObject convertJavaToRuby(Ruby ruby, Object object) {
+    public static IRubyObject convertJavaToRuby(Ruby runtime, Object object) {
         if (object == null) {
-            return ruby.getNil();
+            return runtime.getNil();
         }
-        return convertJavaToRuby(ruby, object, object.getClass());
+        return convertJavaToRuby(runtime, object, object.getClass());
     }
 
-    public static IRubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {
+    public static IRubyObject convertJavaToRuby(Ruby runtime, Object object, Class javaClass) {
         if (object == null) {
-            return ruby.getNil();
+            return runtime.getNil();
         }
 
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
+                return RubyBoolean.newBoolean(runtime, ((Boolean) object).booleanValue());
             } else if (cName == "float" || cName == "double") {
-                return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
+                return RubyFloat.newFloat(runtime, ((Number) object).doubleValue());
             } else if (cName == "char") {
-                return RubyFixnum.newFixnum(ruby, ((Character) object).charValue());
+                return RubyFixnum.newFixnum(runtime, ((Character) object).charValue());
             } else {
                 // else it's one of the integral types
-                return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
+                return RubyFixnum.newFixnum(runtime, ((Number) object).longValue());
             }
         } else if (javaClass == Boolean.class) {
-            return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
+            return RubyBoolean.newBoolean(runtime, ((Boolean) object).booleanValue());
         } else if (javaClass == Float.class || javaClass == Double.class) {
-            return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
+            return RubyFloat.newFloat(runtime, ((Number) object).doubleValue());
         } else if (javaClass == Character.class) {
-            return RubyFixnum.newFixnum(ruby, ((Character) object).charValue());
+            return RubyFixnum.newFixnum(runtime, ((Character) object).charValue());
         } else if (Number.class.isAssignableFrom(javaClass)) {
-            return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
+            return RubyFixnum.newFixnum(runtime, ((Number) object).longValue());
         } else if (javaClass == String.class) {
-            return RubyString.newString(ruby, object.toString());
+            return RubyString.newString(runtime, object.toString());
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
         } else if (object instanceof RubyProxy) {
             return ((RubyProxy) object).getRubyObject();
         } else {
-            return JavaObject.wrap(ruby, object);
+            return JavaObject.wrap(runtime, object);
         }
     }
 

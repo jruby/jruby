@@ -40,21 +40,20 @@ package org.jruby.test;
 import org.jruby.Ruby; 
  
 public class TestRubyCollect extends TestRubyBase { 
- public TestRubyCollect(String name) { 
- super(name); 
- } 
- 
- public void setUp() { 
-        ruby = Ruby.getDefaultInstance();
- } 
- 
- public void tearDown() { 
- super.tearDown(); 
- } 
- 
- public void testRubyCollect() throws Exception { 
- String result = eval("a = ['a', 'b'].collect {|x| \"#{x}\"}; p a"); 
- assertEquals("Bug: [ #502036 ]", "[\"a\", \"b\"]", result); 
- } 
-} 
- 
+	public TestRubyCollect(String name) { 
+		super(name); 
+	} 
+	
+	public void setUp() { 
+		runtime = Ruby.getDefaultInstance();
+	} 
+	
+	public void tearDown() { 
+		super.tearDown(); 
+	} 
+	
+	public void testRubyCollect() throws Exception { 
+		String result = eval("a = ['a', 'b'].collect {|x| \"#{x}\"}; p a"); 
+		assertEquals("Bug: [ #502036 ]", "[\"a\", \"b\"]", result); 
+	} 
+}

@@ -61,23 +61,23 @@ public class RubyHash extends RubyObject {
 
     private boolean isRehashing = false;
 
-    public RubyHash(Ruby ruby) {
-        this(ruby, ruby.getNil());
+    public RubyHash(Ruby runtime) {
+        this(runtime, runtime.getNil());
     }
 
-    public RubyHash(Ruby ruby, IRubyObject defaultValue) {
-        this(ruby, new HashMap(), defaultValue);
+    public RubyHash(Ruby runtime, IRubyObject defaultValue) {
+        this(runtime, new HashMap(), defaultValue);
     }
 
-    public RubyHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {
-        super(ruby, ruby.getClass("Hash"));
+    public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        super(runtime, runtime.getClass("Hash"));
         this.valueMap = new HashMap(valueMap);
         this.defaultValue = defaultValue;
-        this.defaultProc = ruby.getNil();
+        this.defaultProc = runtime.getNil();
     }
 
-    public static RubyHash nilHash(Ruby ruby) {
-        return new RubyHash(ruby) {
+    public static RubyHash nilHash(Ruby runtime) {
+        return new RubyHash(runtime) {
             public boolean isNil() {
                 return true;
             }
@@ -138,11 +138,11 @@ public class RubyHash extends RubyObject {
 		return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
 	}
 
-    public static RubyClass createHashClass(Ruby ruby) {
-        RubyClass hashClass = ruby.defineClass("Hash", ruby.getClasses().getObjectClass());
-        hashClass.includeModule(ruby.getClasses().getEnumerableModule());
+    public static RubyClass createHashClass(Ruby runtime) {
+        RubyClass hashClass = runtime.defineClass("Hash", runtime.getClasses().getObjectClass());
+        hashClass.includeModule(runtime.getClasses().getEnumerableModule());
 
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         hashClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyHash.class, "newInstance"));
         hashClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod(RubyHash.class, "create"));
@@ -215,12 +215,12 @@ public class RubyHash extends RubyObject {
 
     // Hash methods
 
-    public static RubyHash newHash(Ruby ruby) {
-    	return new RubyHash(ruby);
+    public static RubyHash newHash(Ruby runtime) {
+    	return new RubyHash(runtime);
     }
 
-	public static RubyHash newHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {
-		return new RubyHash(ruby, valueMap, defaultValue);
+	public static RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+		return new RubyHash(runtime, valueMap, defaultValue);
 	}
 
     public static RubyHash newInstance(IRubyObject recv, IRubyObject[] args) {

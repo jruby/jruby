@@ -46,8 +46,8 @@ import java.math.BigInteger;
  */
 public abstract class RubyNumeric extends RubyObject {
 
-    public RubyNumeric(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    public RubyNumeric(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
     }
 
     public abstract double getDoubleValue();
@@ -57,11 +57,11 @@ public abstract class RubyNumeric extends RubyObject {
         return getLongValue();
     }
 
-    public static RubyClass createNumericClass(Ruby ruby) {
-        RubyClass result = ruby.defineClass("Numeric", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createNumericClass(Ruby runtime) {
+        RubyClass result = runtime.defineClass("Numeric", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
-        result.includeModule(ruby.getClasses().getComparableModule());
+        result.includeModule(runtime.getClasses().getComparableModule());
 
         result.defineMethod("+@", callbackFactory.getMethod(RubyNumeric.class, "op_uplus"));
         result.defineMethod("-@", callbackFactory.getMethod(RubyNumeric.class, "op_uminus"));
@@ -130,7 +130,7 @@ public abstract class RubyNumeric extends RubyObject {
      * as zero, since 'x' is not a valid decimal digit.  If the string fails 
      * to parse as a number, zero is returned.
      * 
-     * @param ruby  the ruby runtime
+     * @param runtime  the ruby runtime
      * @param str   the string to be converted
      * @param base  the expected base of the number (2, 8, 10 or 16), or 0 
      *              if the method should determine the base automatically 
@@ -139,10 +139,10 @@ public abstract class RubyNumeric extends RubyObject {
      *          the result of the conversion, which will be zero if the 
      *          conversion failed.
      */
-    public static RubyInteger str2inum(Ruby ruby, RubyString str, int base) {
+    public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
         StringBuffer sbuf = new StringBuffer(str.getValue().trim());
         if (sbuf.length() == 0) {
-            return RubyFixnum.zero(ruby);
+            return RubyFixnum.zero(runtime);
         }
         int pos = 0;
         int radix = (base != 0) ? base : 10;
@@ -153,12 +153,12 @@ public abstract class RubyNumeric extends RubyObject {
             sbuf.deleteCharAt(pos);
         }
         if (pos == sbuf.length()) {
-            return RubyFixnum.zero(ruby);
+            return RubyFixnum.zero(runtime);
         }
         if (sbuf.charAt(pos) == '0') {
             sbuf.deleteCharAt(pos);
             if (pos == sbuf.length()) {
-                return RubyFixnum.zero(ruby);
+                return RubyFixnum.zero(runtime);
             }
             if (sbuf.charAt(pos) == 'x' || sbuf.charAt(pos) == 'X') {
                 if (base == 0 || base == 16) {
@@ -185,14 +185,14 @@ public abstract class RubyNumeric extends RubyObject {
             }
         }
         if (!digitsFound) {
-            return RubyFixnum.zero(ruby);
+            return RubyFixnum.zero(runtime);
         }
         try {
             long l = Long.parseLong(sbuf.substring(0, pos), radix);
-            return RubyFixnum.newFixnum(ruby, l);
+            return RubyFixnum.newFixnum(runtime, l);
         } catch (NumberFormatException ex) {
             BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
-            return new RubyBignum(ruby, bi);
+            return new RubyBignum(runtime, bi);
         }
     }
 
@@ -203,12 +203,12 @@ public abstract class RubyNumeric extends RubyObject {
      * end or at the first character that can't be part of a number.  If 
      * the string fails to parse as a number, 0.0 is returned.
      * 
-     * @param ruby  the ruby runtime
+     * @param runtime  the ruby runtime
      * @param arg   the string to be converted
      * @return  a RubyFloat representing the result of the conversion, which
      *          will be 0.0 if the conversion failed.
      */
-    public static RubyFloat str2fnum(Ruby ruby, RubyString arg) {
+    public static RubyFloat str2fnum(Ruby runtime, RubyString arg) {
         String str = arg.getValue().trim();
         double d = 0.0;
         int pos = str.length();
@@ -226,7 +226,7 @@ public abstract class RubyNumeric extends RubyObject {
             }
             break;
         }
-        return new RubyFloat(ruby, d);
+        return new RubyFloat(runtime, d);
     }
 
     /* Numeric methods. (num_*)

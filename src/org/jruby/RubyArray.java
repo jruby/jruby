@@ -62,13 +62,13 @@ public class RubyArray extends RubyObject {
     private List list;
     private boolean tmpLock;
 
-	private RubyArray(Ruby ruby, List list) {
-		super(ruby, ruby.getClass("Array"));
+	private RubyArray(Ruby runtime, List list) {
+		super(runtime, runtime.getClass("Array"));
         this.list = list;
     }
 
-    public static RubyArray nilArray(Ruby ruby) {
-        return new RubyArray(ruby, null) {
+    public static RubyArray nilArray(Ruby runtime) {
+        return new RubyArray(runtime, null) {
             public boolean isNil() {
                 return true;
             }
@@ -117,11 +117,11 @@ public class RubyArray extends RubyObject {
         return false;
     }
 
-    public static RubyClass createArrayClass(Ruby ruby) {
-        RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
-        arrayClass.includeModule(ruby.getModule("Enumerable"));
+    public static RubyClass createArrayClass(Ruby runtime) {
+        RubyClass arrayClass = runtime.defineClass("Array", runtime.getClasses().getObjectClass());
+        arrayClass.includeModule(runtime.getModule("Enumerable"));
 
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         arrayClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyArray.class, "newInstance"));
         arrayClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
@@ -470,50 +470,50 @@ public class RubyArray extends RubyObject {
     /** rb_ary_new2
      *
      */
-    public final static RubyArray newArray(final Ruby ruby, final long len) {
-        return new RubyArray(ruby, new ArrayList((int) len));
+    public final static RubyArray newArray(final Ruby runtime, final long len) {
+        return new RubyArray(runtime, new ArrayList((int) len));
     }
 
     /** rb_ary_new
      *
      */
-    public final static RubyArray newArray(final Ruby ruby) {
+    public final static RubyArray newArray(final Ruby runtime) {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
          */
     	
-        return new RubyArray(ruby, new ArrayList(16));
+        return new RubyArray(runtime, new ArrayList(16));
     }
 
     /**
      *
      */
-    public static RubyArray newArray(Ruby ruby, IRubyObject obj) {
+    public static RubyArray newArray(Ruby runtime, IRubyObject obj) {
         ArrayList list = new ArrayList(1);
         list.add(obj);
-        return new RubyArray(ruby, list);
+        return new RubyArray(runtime, list);
     }
 
     /** rb_assoc_new
      *
      */
-    public static RubyArray newArray(Ruby ruby, IRubyObject car, IRubyObject cdr) {
+    public static RubyArray newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
         ArrayList list = new ArrayList(2);
         list.add(car);
         list.add(cdr);
-        return new RubyArray(ruby, list);
+        return new RubyArray(runtime, list);
     }
 
-    public final static RubyArray newArray(final Ruby ruby, final List list) {
-        return new RubyArray(ruby, list);
+    public final static RubyArray newArray(final Ruby runtime, final List list) {
+        return new RubyArray(runtime, list);
     }
 
-    public static RubyArray newArray(Ruby ruby, IRubyObject[] args) {
+    public static RubyArray newArray(Ruby runtime, IRubyObject[] args) {
         final ArrayList list = new ArrayList(args.length);
         for (int i = 0; i < args.length; i++) {
             list.add(args[i]);
         }
-        return new RubyArray(ruby, list);
+        return new RubyArray(runtime, list);
     }
 
     /** rb_ary_s_new

@@ -48,14 +48,14 @@ public class RubyProc extends RubyObject {
     private Block block = null;
     private RubyModule wrapper = null;
 
-    public RubyProc(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    public RubyProc(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
     }
 
-    public static RubyClass createProcClass(Ruby ruby) {
-        RubyClass result = ruby.defineClass("Proc", 
-                ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createProcClass(Ruby runtime) {
+        RubyClass result = runtime.defineClass("Proc", 
+                runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         result.defineMethod("arity", 
                 callbackFactory.getMethod(RubyProc.class, "arity"));
@@ -86,23 +86,23 @@ public class RubyProc extends RubyObject {
         return proc;
     }
 
-    public static RubyProc newProc(Ruby ruby, boolean isLambda) {
-        if (!ruby.isBlockGiven() && !ruby.isFBlockGiven()) {
-            throw new ArgumentError(ruby, "tried to create Proc object without a block");
+    public static RubyProc newProc(Ruby runtime, boolean isLambda) {
+        if (!runtime.isBlockGiven() && !runtime.isFBlockGiven()) {
+            throw new ArgumentError(runtime, "tried to create Proc object without a block");
         }
 
-        RubyProc newProc = new RubyProc(ruby, ruby.getClasses().getProcClass());
+        RubyProc newProc = new RubyProc(runtime, runtime.getClasses().getProcClass());
 
-        newProc.block = ruby.getBlockStack().getCurrent().cloneBlock();
-        newProc.wrapper = ruby.getWrapper();
+        newProc.block = runtime.getBlockStack().getCurrent().cloneBlock();
+        newProc.wrapper = runtime.getWrapper();
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
         newProc.block.isLambda = isLambda;
 
         return newProc;
     }
     
-    public static RubyProc newProc(Ruby ruby) {
-    	return newProc(ruby, false);
+    public static RubyProc newProc(Ruby runtime) {
+    	return newProc(runtime, false);
     }
 
     public IRubyObject call(IRubyObject[] args) {

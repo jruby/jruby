@@ -48,11 +48,11 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
     /**
      * Compile the regex.
      */
-    public void compile(Ruby ruby, String regex) throws RegexpError {
+    public void compile(Ruby runtime, String regex) throws RegexpError {
         try {
             pattern = Pattern.compile(regex, cflags);
         } catch (PatternSyntaxException e) {
-            throw new RegexpError(ruby, e.getMessage());
+            throw new RegexpError(runtime, e.getMessage());
         }
     }
 
@@ -99,7 +99,7 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
     /**
      * Does the given argument match the pattern?
      */
-    public IRubyObject search(Ruby ruby, String target, int startPos) {
+    public IRubyObject search(Ruby runtime, String target, int startPos) {
         if (matcher == null) {
             matcher = pattern.matcher(target);
         } else {
@@ -113,9 +113,9 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
                 begin[i] = matcher.start(i);
                 end[i] = matcher.end(i);
             }
-            return new RubyMatchData(ruby, target, begin, end);
+            return new RubyMatchData(runtime, target, begin, end);
         }
-        return ruby.getNil();
+        return runtime.getNil();
     }
 }
 

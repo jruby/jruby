@@ -44,7 +44,7 @@ import java.util.Date;
  * @author chadfowler
  */
 public class TestRubyTime extends TestCase {
-    private Ruby ruby;
+    private Ruby runtime;
     private RubyClass rubyTime;
     private RubyTime nineTeenSeventy;
 
@@ -53,12 +53,12 @@ public class TestRubyTime extends TestCase {
     }
 
     public void setUp() {
-        if (ruby == null) {
-            ruby = Ruby.getDefaultInstance();
+        if (runtime == null) {
+            runtime = Ruby.getDefaultInstance();
         }
-        rubyTime = ruby.getClasses().getTimeClass();
+        rubyTime = runtime.getClasses().getTimeClass();
         IRubyObject[] args = new IRubyObject[1];
-        args[0] = RubyFixnum.newFixnum(ruby, 18000000);
+        args[0] = RubyFixnum.newFixnum(runtime, 18000000);
         nineTeenSeventy = RubyTime.s_at(rubyTime, args);
     }
 

@@ -55,22 +55,22 @@ public class RubyString extends RubyObject {
 
 	private String value;
 	
-	private RubyString(Ruby ruby) {
-		this(ruby, ruby.getClasses().getStringClass(), null);
+	private RubyString(Ruby runtime) {
+		this(runtime, runtime.getClasses().getStringClass(), null);
 	}
 
-	public RubyString(Ruby ruby, String str) {
-		this(ruby, ruby.getClasses().getStringClass(), str);
+	public RubyString(Ruby runtime, String str) {
+		this(runtime, runtime.getClasses().getStringClass(), str);
         Asserts.notNull(str);
 	}
 
-	public RubyString(Ruby ruby, RubyClass rubyClass, String str) {
-		super(ruby, rubyClass);
+	public RubyString(Ruby runtime, RubyClass rubyClass, String str) {
+		super(runtime, rubyClass);
 		this.value = str;
 	}
 
-	public static RubyString nilString(Ruby ruby) {
-		return new RubyString(ruby) {
+	public static RubyString nilString(Ruby runtime) {
+		return new RubyString(runtime) {
 			public boolean isNil() {
 				return true;
 			}
@@ -115,13 +115,13 @@ public class RubyString extends RubyObject {
 		return stringToBytes(value);
 	}
 
-    public static RubyClass createStringClass(Ruby ruby) {
-        RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
+    public static RubyClass createStringClass(Ruby runtime) {
+        RubyClass stringClass = runtime.defineClass("String", runtime.getClasses().getObjectClass());
 
-        stringClass.includeModule(ruby.getClasses().getComparableModule());
-        stringClass.includeModule(ruby.getClasses().getEnumerableModule());
+        stringClass.includeModule(runtime.getClasses().getComparableModule());
+        stringClass.includeModule(runtime.getClasses().getEnumerableModule());
 
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         stringClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
         stringClass.defineMethod("initialize", callbackFactory.getMethod(RubyString.class, "replace", IRubyObject.class));
@@ -301,19 +301,19 @@ public class RubyString extends RubyObject {
 	/** rb_str_new2
 	 *
 	 */
-	public static RubyString newString(Ruby ruby, String str) {
-		return new RubyString(ruby, str);
+	public static RubyString newString(Ruby runtime, String str) {
+		return new RubyString(runtime, str);
 	}
 
 	/** rb_str_new
 	 *
 	 */
-	public static RubyString newString(Ruby ruby, String str, int len) {
-		return new RubyString(ruby, str.substring(0, len));
+	public static RubyString newString(Ruby runtime, String str, int len) {
+		return new RubyString(runtime, str.substring(0, len));
 	}
 
-	public static RubyString newString(Ruby ruby, byte[] bytes) {
-		return newString(ruby, bytesToString(bytes));
+	public static RubyString newString(Ruby runtime, byte[] bytes) {
+		return newString(runtime, bytesToString(bytes));
 	}
 
 

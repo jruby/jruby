@@ -30,7 +30,7 @@ import org.jruby.Ruby;
  * @author enebo
  */
 public class NoMethodError extends NameError {
-    public NoMethodError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getNoMethodError(), msg);
+    public NoMethodError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getNoMethodError(), msg);
     }
 }

@@ -64,9 +64,9 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class RubyKernel {
-    public static RubyModule createKernelModule(Ruby ruby) {
-        RubyModule module = ruby.defineModule("Kernel");
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyModule createKernelModule(Ruby runtime) {
+        RubyModule module = runtime.defineModule("Kernel");
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         module.defineModuleFunction("Array", callbackFactory.getSingletonMethod(RubyKernel.class, "new_array", IRubyObject.class));
         module.defineModuleFunction("Float", callbackFactory.getSingletonMethod(RubyKernel.class, "new_float", IRubyObject.class));
@@ -324,13 +324,13 @@ public class RubyKernel {
      * @throws TypeError if $_ is not a String or nil.
      * @return value of $_ as String.
      */
-    private static RubyString getLastlineString(Ruby ruby) {
-        IRubyObject line = ruby.getLastline();
+    private static RubyString getLastlineString(Ruby runtime) {
+        IRubyObject line = runtime.getLastline();
 
         if (line.isNil()) {
-            throw new TypeError(ruby, "$_ value need to be String (nil given).");
+            throw new TypeError(runtime, "$_ value need to be String (nil given).");
         } else if (!(line instanceof RubyString)) {
-            throw new TypeError(ruby, "$_ value need to be String (" + line.getMetaClass().getName() + " given).");
+            throw new TypeError(runtime, "$_ value need to be String (" + line.getMetaClass().getName() + " given).");
         } else {
             return (RubyString) line;
         }

@@ -90,8 +90,8 @@ public class RubyModule extends RubyObject {
 
     private Map methodCache = new TreeMap();
 
-    protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass, RubyModule parentModule, String name) {
-        super(ruby, rubyClass);
+    protected RubyModule(Ruby runtime, RubyClass rubyClass, RubyClass superClass, RubyModule parentModule, String name) {
+        super(runtime, rubyClass);
         
         this.superClass = superClass;
         this.parentModule = parentModule;
@@ -99,7 +99,7 @@ public class RubyModule extends RubyObject {
 
         // If no parent is passed in, it is safe to assume Object.
         if (this.parentModule == null) {
-            this.parentModule = (RubyModule) ruby.getClasses().getObjectClass();
+            this.parentModule = (RubyModule) runtime.getClasses().getObjectClass();
 
             // We are constructing object itself...Set its parent to itself.
             if (this.parentModule == null) {
@@ -415,11 +415,11 @@ public class RubyModule extends RubyObject {
      *
      */
     public void undef(String name) {
-        Ruby ruby = getRuntime();
-        if (this == ruby.getClasses().getObjectClass()) {
-            ruby.secure(4);
+        Ruby runtime = getRuntime();
+        if (this == runtime.getClasses().getObjectClass()) {
+            runtime.secure(4);
         }
-        if (ruby.getSafeLevel() >= 4 && !isTaint()) {
+        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
             throw new SecurityException("Insecure: can't undef");
         }
         testFrozen("module");
@@ -443,7 +443,7 @@ public class RubyModule extends RubyObject {
                 s0 = " module";
             }
 
-            throw new NameError(ruby, "Undefined method " + name + " for" + s0 + " '" + c.getName() + "'");
+            throw new NameError(runtime, "Undefined method " + name + " for" + s0 + " '" + c.getName() + "'");
         }
         addMethod(name, UndefinedMethod.getInstance());
     }
@@ -924,12 +924,12 @@ public class RubyModule extends RubyObject {
 
     // Methods of the Module Class (rb_mod_*):
 
-    public static RubyModule newModule(Ruby ruby, String name) {
-        return newModule(ruby, name, null);
+    public static RubyModule newModule(Ruby runtime, String name) {
+        return newModule(runtime, name, null);
     }
 
-    public static RubyModule newModule(Ruby ruby, String name, RubyModule parentModule) {
-        return new RubyModule(ruby, ruby.getClasses().getModuleClass(), null, parentModule, name);
+    public static RubyModule newModule(Ruby runtime, String name, RubyModule parentModule) {
+        return new RubyModule(runtime, runtime.getClasses().getModuleClass(), null, parentModule, name);
     }
     
     /** rb_mod_name
@@ -1486,10 +1486,10 @@ public class RubyModule extends RubyObject {
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
-        Ruby ruby = input.getRuntime();
-        RubyModule result = ruby.getClasses().getClassFromPath(name);
+        Ruby runtime = input.getRuntime();
+        RubyModule result = runtime.getClasses().getClassFromPath(name);
         if (result == null) {
-            throw new NameError(ruby, "uninitialized constant " + name);
+            throw new NameError(runtime, "uninitialized constant " + name);
         }
         input.registerLinkTarget(result);
         return result;

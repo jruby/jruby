@@ -35,9 +35,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyGC {
-    public static RubyModule createGCModule(Ruby ruby) {
-        RubyModule result = ruby.defineModule("GC");
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyModule createGCModule(Ruby runtime) {
+        RubyModule result = runtime.defineModule("GC");
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         result.defineSingletonMethod("start", callbackFactory.getSingletonMethod(RubyGC.class, "start"));
         result.defineSingletonMethod("garbage_collect", callbackFactory.getSingletonMethod(RubyGC.class, "start"));

@@ -120,14 +120,14 @@ public abstract class AbstractCallback implements Callback {
         return result;
     }
 
-    protected void testArgsCount(Ruby ruby, IRubyObject[] methodArgs) {
+    protected void testArgsCount(Ruby runtime, IRubyObject[] methodArgs) {
         if (isRestArgs) {
             if (methodArgs.length < (argumentTypes.length - 1)) {
-                throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
+                throw new ArgumentError(runtime, getExpectedArgsString(methodArgs));
             }
         } else {
             if (methodArgs.length != argumentTypes.length) {
-                throw new ArgumentError(ruby, getExpectedArgsString(methodArgs));
+                throw new ArgumentError(runtime, getExpectedArgsString(methodArgs));
             }
         }
     }

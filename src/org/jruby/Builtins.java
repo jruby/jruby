@@ -35,22 +35,22 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class Builtins {
-    private Ruby ruby;
+    private Ruby runtime;
 
-    public Builtins(Ruby ruby) {
-        this.ruby = ruby;
+    public Builtins(Ruby runtime) {
+        this.runtime = runtime;
     }
     
     public RubyArray newArray() {
-        return RubyArray.newArray(ruby, 0);
+        return RubyArray.newArray(runtime, 0);
     }
     
     public RubySymbol toSymbol(String name) {
-        return RubySymbol.newSymbol(ruby, name);
+        return RubySymbol.newSymbol(runtime, name);
     }
     
     public RubyString toString(String value) {
-        return RubyString.newString(ruby, value);
+        return RubyString.newString(runtime, value);
     }
 
 	/** Converts a RubyObject into a RubyArray.
@@ -60,10 +60,10 @@ public class Builtins {
 	 * 
 	 */
     public RubyArray toArray(IRubyObject value) {
-        return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(ruby, value);
+        return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
     }
 
     public RubyInteger toInteger(long value) {
-        return RubyFixnum.newFixnum(ruby, value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 }

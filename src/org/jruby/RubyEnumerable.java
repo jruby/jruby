@@ -37,8 +37,8 @@ package org.jruby;
  */
 public class RubyEnumerable {
 
-    public static RubyModule createEnumerableModule(Ruby ruby) {
-        RubyModule enumerableModule = ruby.defineModule("Enumerable");
+    public static RubyModule createEnumerableModule(Ruby runtime) {
+        RubyModule enumerableModule = runtime.defineModule("Enumerable");
 
         return enumerableModule;
     }

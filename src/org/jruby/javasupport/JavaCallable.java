@@ -31,8 +31,8 @@ import org.jruby.RubyString;
 
 public abstract class JavaCallable extends RubyObject {
 
-    public JavaCallable(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    public JavaCallable(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
     }
 
     public final RubyFixnum arity() {

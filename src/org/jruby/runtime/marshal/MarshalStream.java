@@ -49,10 +49,10 @@ public class MarshalStream extends FilterOutputStream {
     private int depth = 0;
     private MarshalCache cache;
 
-    public MarshalStream(Ruby ruby, OutputStream out, int depthLimit) throws IOException {
+    public MarshalStream(Ruby runtime, OutputStream out, int depthLimit) throws IOException {
         super(out);
 
-        this.runtime = ruby;
+        this.runtime = runtime;
         this.depthLimit = (depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE);
         this.cache = new MarshalCache();
 

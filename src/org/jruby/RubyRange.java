@@ -46,8 +46,8 @@ public class RubyRange extends RubyObject {
     private IRubyObject end;
     private boolean isExclusive;
 
-    public RubyRange(Ruby ruby) {
-        super(ruby, ruby.getClass("Range"));
+    public RubyRange(Ruby runtime) {
+        super(runtime, runtime.getClass("Range"));
     }
 
     public void init(IRubyObject begin, IRubyObject end, RubyBoolean isExclusive) {
@@ -64,12 +64,12 @@ public class RubyRange extends RubyObject {
         this.isExclusive = isExclusive.isTrue();
     }
 
-    public static RubyClass createRangeClass(Ruby ruby) {
-        RubyClass result = ruby.defineClass("Range", 
-                ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createRangeClass(Ruby runtime) {
+        RubyClass result = runtime.defineClass("Range", 
+                runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
-        result.includeModule(ruby.getClasses().getEnumerableModule());
+        result.includeModule(runtime.getClasses().getEnumerableModule());
 
         result.defineMethod("==", callbackFactory.getMethod(RubyRange.class, "equal", IRubyObject.class));
         result.defineMethod("===", callbackFactory.getMethod(RubyRange.class, "op_eqq", IRubyObject.class));
@@ -158,9 +158,9 @@ public class RubyRange extends RubyObject {
 
     // public Range methods
 
-    public static RubyRange newRange(Ruby ruby, IRubyObject begin, IRubyObject end, boolean isExclusive) {
-        RubyRange range = new RubyRange(ruby);
-        range.init(begin, end, isExclusive ? ruby.getTrue() : ruby.getFalse());
+    public static RubyRange newRange(Ruby runtime, IRubyObject begin, IRubyObject end, boolean isExclusive) {
+        RubyRange range = new RubyRange(runtime);
+        range.init(begin, end, isExclusive ? runtime.getTrue() : runtime.getFalse());
         return range;
     }
 

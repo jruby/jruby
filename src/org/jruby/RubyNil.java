@@ -38,9 +38,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  */
 public class RubyNil {
-    public static RubyClass createNilClass(Ruby ruby) {
-        RubyClass nilClass = ruby.defineClass("NilClass", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createNilClass(Ruby runtime) {
+        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         nilClass.defineMethod("type", callbackFactory.getSingletonMethod(RubyNil.class, "type"));
         nilClass.defineMethod("to_i", callbackFactory.getSingletonMethod(RubyNil.class, "to_i"));
         nilClass.defineMethod("to_s", callbackFactory.getSingletonMethod(RubyNil.class, "to_s"));
@@ -57,7 +57,7 @@ public class RubyNil {
 
         nilClass.getMetaClass().undefineMethod("new");
         
-        ruby.defineGlobalConstant("NIL", ruby.getNil());
+        runtime.defineGlobalConstant("NIL", runtime.getNil());
         
         return nilClass;
     }

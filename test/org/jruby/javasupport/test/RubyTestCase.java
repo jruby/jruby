@@ -37,29 +37,29 @@ public class RubyTestCase extends TestCase {
         out.close();
 
         String filePath = f.getAbsolutePath();
-        Ruby ruby = Ruby.getDefaultInstance("JDK");
-        initRuby(ruby);
-        RubyKernel.require(ruby.getTopSelf(), new RubyString(ruby, filePath));
+        Ruby runtime = Ruby.getDefaultInstance("JDK");
+        initRuby(runtime);
+        RubyKernel.require(runtime.getTopSelf(), new RubyString(runtime, filePath));
         f.delete();
-        return ruby;
+        return runtime;
     }
 
     // Is there something built into JRuby to do this?
-    protected void initRuby(Ruby ruby) throws IOException {
+    protected void initRuby(Ruby runtime) throws IOException {
         IRubyObject empty =
             JavaUtil.convertJavaToRuby(
-                ruby,
+                runtime,
                 EMPTY_ARRAY,
                 EMPTY_ARRAY.getClass());
 
-        ruby.defineReadonlyVariable("$-p", ruby.getNil());
-        ruby.defineReadonlyVariable("$-n", ruby.getNil());
-        ruby.defineReadonlyVariable("$-a", ruby.getNil());
-        ruby.defineReadonlyVariable("$-l", ruby.getNil());
-        ruby.defineReadonlyVariable("$\"", empty);
-        ruby.defineReadonlyVariable("$*", empty);
-        ruby.defineReadonlyVariable("$:", empty);
-        ruby.defineGlobalConstant("ARGV", empty);
+        runtime.defineReadonlyVariable("$-p", runtime.getNil());
+        runtime.defineReadonlyVariable("$-n", runtime.getNil());
+        runtime.defineReadonlyVariable("$-a", runtime.getNil());
+        runtime.defineReadonlyVariable("$-l", runtime.getNil());
+        runtime.defineReadonlyVariable("$\"", empty);
+        runtime.defineReadonlyVariable("$*", empty);
+        runtime.defineReadonlyVariable("$:", empty);
+        runtime.defineGlobalConstant("ARGV", empty);
     }
 }
 

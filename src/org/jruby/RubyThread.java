@@ -78,10 +78,10 @@ public class RubyThread extends RubyObject {
     private volatile boolean killed = false;
     public Object killLock = new Object();
     
-    public static RubyClass createThreadClass(Ruby ruby) {
-        RubyClass threadClass = ruby.defineClass("Thread", 
-                ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createThreadClass(Ruby runtime) {
+        RubyClass threadClass = runtime.defineClass("Thread", 
+                runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         threadClass.defineMethod("[]", 
                 callbackFactory.getMethod(RubyThread.class, "aref", IRubyObject.class));
@@ -141,12 +141,12 @@ public class RubyThread extends RubyObject {
         threadClass.defineSingletonMethod("exit", 
                 callbackFactory.getSingletonMethod(RubyThread.class, "s_exit"));
 
-        RubyThread rubyThread = new RubyThread(ruby, threadClass);
+        RubyThread rubyThread = new RubyThread(runtime, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
         rubyThread.hasStarted = true;
         // TODO: need to isolate the "current" thread from class creation
         rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
-        ruby.getThreadService().setMainThread(rubyThread);
+        runtime.getThreadService().setMainThread(rubyThread);
         
         threadClass.defineSingletonMethod("main",
         		callbackFactory.getSingletonMethod(RubyThread.class, "main"));
@@ -263,11 +263,11 @@ public class RubyThread extends RubyObject {
     	dieIfKilled();
     }
 
-    private RubyThread(Ruby ruby, RubyClass type) {
-        super(ruby, type);
-        this.threadService = ruby.getThreadService();
+    private RubyThread(Ruby runtime, RubyClass type) {
+        super(runtime, type);
+        this.threadService = runtime.getThreadService();
         // set to default thread group
-        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)ruby.getClass("ThreadGroup").getConstant("Default");
+        RubyThreadGroup defaultThreadGroup = (RubyThreadGroup)runtime.getClass("ThreadGroup").getConstant("Default");
         defaultThreadGroup.add(this);
         
     }

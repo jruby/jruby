@@ -46,11 +46,11 @@ public class TestRuby extends TestRubyBase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
+        runtime = Ruby.getDefaultInstance();
     }
     
     public void testVarAndMet() throws Exception {
-        ruby.getLoadService().init(ruby, new ArrayList());
+        runtime.getLoadService().init(runtime, new ArrayList());
         eval("load './test/testVariableAndMethod.rb'");
         assertEquals("Hello World", eval("puts($a)"));
         assertEquals("dlroW olleH", eval("puts $b"));

@@ -27,9 +27,9 @@ package org.jruby.main;
 
 import org.ablaf.ast.IAstEncoder;
 import org.ablaf.internal.ast.XmlAstMarshal;
-import org.ablaf.internal.common.NullErrorHandler;
 import org.jruby.ast.util.AstPersistenceDelegates;
 import org.jruby.ast.util.RubyAstMarshal;
+import org.jruby.common.NullErrorHandler;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.parser.DefaultRubyParser;
 import org.jruby.parser.RubyParserResult;

@@ -41,7 +41,7 @@ public class RubyExceptions implements IErrno {
     private RubyClass threadError = null;
     private RubyClass systemStackError = null;
 
-    private Ruby ruby = null;
+    private Ruby runtime = null;
     private RubyModule errnoModule;
    
  private RubyClass _ENOTEMPTY   ;
@@ -89,45 +89,45 @@ public class RubyExceptions implements IErrno {
 
 
     
-    public RubyExceptions(Ruby ruby) {
-        this.ruby = ruby;
+    public RubyExceptions(Ruby runtime) {
+        this.runtime = runtime;
     }
         
     public void initDefaultExceptionClasses() {
-        RubyClass exceptionClass = ruby.getClasses().getExceptionClass();
+        RubyClass exceptionClass = runtime.getClasses().getExceptionClass();
         
-        systemExit = ruby.defineClass("SystemExit", exceptionClass);
-        fatal = ruby.defineClass("Fatal", exceptionClass);
-        interrupt = ruby.defineClass("Interrupt", exceptionClass);
-        signalException = ruby.defineClass("SignalException", exceptionClass);
+        systemExit = runtime.defineClass("SystemExit", exceptionClass);
+        fatal = runtime.defineClass("Fatal", exceptionClass);
+        interrupt = runtime.defineClass("Interrupt", exceptionClass);
+        signalException = runtime.defineClass("SignalException", exceptionClass);
         
-        standardError = ruby.defineClass("StandardError", exceptionClass);
-        typeError = ruby.defineClass("TypeError", standardError);
-        argumentError = ruby.defineClass("ArgumentError", standardError);
-        indexError = ruby.defineClass("IndexError", standardError);
-        rangeError = ruby.defineClass("RangeError", standardError);
+        standardError = runtime.defineClass("StandardError", exceptionClass);
+        typeError = runtime.defineClass("TypeError", standardError);
+        argumentError = runtime.defineClass("ArgumentError", standardError);
+        indexError = runtime.defineClass("IndexError", standardError);
+        rangeError = runtime.defineClass("RangeError", standardError);
         
-        scriptError = ruby.defineClass("ScriptError", exceptionClass);
-        syntaxError = ruby.defineClass("SyntaxError", scriptError);
-        nameError = ruby.defineClass("NameError", scriptError);
-        loadError = ruby.defineClass("LoadError", scriptError);
-        notImplementedError = ruby.defineClass("NotImplementedError", scriptError);
-        noMethodError = ruby.defineClass("NoMethodError", nameError);
+        scriptError = runtime.defineClass("ScriptError", exceptionClass);
+        syntaxError = runtime.defineClass("SyntaxError", scriptError);
+        nameError = runtime.defineClass("NameError", scriptError);
+        loadError = runtime.defineClass("LoadError", scriptError);
+        notImplementedError = runtime.defineClass("NotImplementedError", scriptError);
+        noMethodError = runtime.defineClass("NoMethodError", nameError);
         
-        runtimeError = ruby.defineClass("RuntimeError", standardError);
-        securityError = ruby.defineClass("SecurityError", standardError);
-        noMemError = ruby.defineClass("NoMemError", exceptionClass);
+        runtimeError = runtime.defineClass("RuntimeError", standardError);
+        securityError = runtime.defineClass("SecurityError", standardError);
+        noMemError = runtime.defineClass("NoMemError", exceptionClass);
         
-        regexpError = ruby.defineClass("RegexpError", standardError);
+        regexpError = runtime.defineClass("RegexpError", standardError);
         
-        ioError = ruby.defineClass("IOError", standardError);
-        eofError = ruby.defineClass("EOFError", ioError);
-        systemCallError = ruby.defineClass("SystemCallError", standardError);
-        localJumpError = ruby.defineClass("LocalJumpError", standardError);
-        threadError = ruby.defineClass("ThreadError", standardError);
-        systemStackError = ruby.defineClass("SystemStackError", exceptionClass);
+        ioError = runtime.defineClass("IOError", standardError);
+        eofError = runtime.defineClass("EOFError", ioError);
+        systemCallError = runtime.defineClass("SystemCallError", standardError);
+        localJumpError = runtime.defineClass("LocalJumpError", standardError);
+        threadError = runtime.defineClass("ThreadError", standardError);
+        systemStackError = runtime.defineClass("SystemStackError", exceptionClass);
 
-        errnoModule = ruby.defineModule("Errno");
+        errnoModule = runtime.defineModule("Errno");
 
         _ENOTEMPTY = setSysErr(ENOTEMPTY, "ENOTEMPTY");   
         _ERANGE = setSysErr(ERANGE, "ERANGE");      
@@ -180,7 +180,7 @@ public class RubyExceptions implements IErrno {
     private RubyClass setSysErr(int i, String iName)
     {
         RubyClass lError = errnoModule.defineClassUnder(iName, systemCallError);
-        lError.defineConstant("Errno", RubyFixnum.newFixnum(ruby, i));
+        lError.defineConstant("Errno", RubyFixnum.newFixnum(runtime, i));
         return lError;
     }
         

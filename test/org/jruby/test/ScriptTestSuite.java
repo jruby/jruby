@@ -84,17 +84,17 @@ public class ScriptTestSuite extends TestSuite {
             
             // Ensure we have a new interpreter for each test. Previous we were using the
             //  same interpreter which caused problems as soon as one test failed.
-            Ruby ruby = setupInterpreter();
+            Ruby runtime = setupInterpreter();
             
-            suite.addTest(new ScriptTest(ruby, line));
+            suite.addTest(new ScriptTest(runtime, line));
         }
 
         return suite;
     }
 
     private static Ruby setupInterpreter() {
-        Ruby result = Ruby.getDefaultInstance();
-        return result;
+        Ruby runtime = Ruby.getDefaultInstance();
+        return runtime;
     }
 
 
@@ -113,12 +113,12 @@ public class ScriptTestSuite extends TestSuite {
 
 
     private static class ScriptTest extends TestCase {
-        private final Ruby ruby;
+        private final Ruby runtime;
         private final String filename;
 
-        public ScriptTest(Ruby ruby, String filename) {
+        public ScriptTest(Ruby runtime, String filename) {
             super(filename);
-            this.ruby = ruby;
+            this.runtime = runtime;
             this.filename = filename;
         }
 
@@ -133,7 +133,7 @@ public class ScriptTestSuite extends TestSuite {
         	script.append("test_load('").append(scriptName()).append("')").append('\n');
             script.append("test_get_last_failed()").append('\n');
 
-            IRubyObject lastFailed = ruby.evalScript(script.toString());
+            IRubyObject lastFailed = runtime.evalScript(script.toString());
             
             if (! lastFailed.isNil()) {
 				RubyString message = (RubyString) lastFailed.callMethod("to_s");

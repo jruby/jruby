@@ -49,13 +49,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class JavaObject extends RubyObject {
     private final Object value;
 
-    protected JavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
-        super(ruby, rubyClass);
+    protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
+        super(runtime, rubyClass);
         this.value = value;
     }
 
-    protected JavaObject(Ruby ruby, Object value) {
-        this(ruby, ruby.getClasses().getJavaObjectClass(), value);
+    protected JavaObject(Ruby runtime, Object value) {
+        this(runtime, runtime.getClasses().getJavaObjectClass(), value);
     }
 
     public static synchronized JavaObject wrap(Ruby runtime, Object value) {
@@ -79,10 +79,10 @@ public class JavaObject extends RubyObject {
         return value;
     }
 
-    public static RubyClass createJavaObjectClass(Ruby ruby) {
+    public static RubyClass createJavaObjectClass(Ruby runtime) {
         RubyClass result = 
-            ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+            runtime.defineClass("JavaObject", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         result.defineMethod("to_s", 
             callbackFactory.getMethod(JavaObject.class, "to_s"));
@@ -90,6 +90,8 @@ public class JavaObject extends RubyObject {
             callbackFactory.getMethod(JavaObject.class, "equal", IRubyObject.class));
         result.defineMethod("eql?", 
             callbackFactory.getMethod(JavaObject.class, "equal", IRubyObject.class));
+        result.defineMethod("equal?", 
+            callbackFactory.getMethod(JavaObject.class, "same", IRubyObject.class));
         result.defineMethod("hash", 
             callbackFactory.getMethod(JavaObject.class, "hash"));
         result.defineMethod("java_type", 
@@ -119,16 +121,24 @@ public class JavaObject extends RubyObject {
     }
 
     public IRubyObject equal(IRubyObject other) {
-        if (other instanceof JavaObject == false) {
-	    return getRuntime().getFalse();
-	}
-
-	if (getValue() == null && ((JavaObject) other).getValue() == null) {
-	    return getRuntime().getTrue();
-	}
-
-	return (getValue().equals(((JavaObject) other).getValue()))
-	    ? getRuntime().getTrue() : getRuntime().getFalse();
+    	if (other instanceof JavaObject == false) {
+    		return getRuntime().getFalse();
+    	}
+    	
+    	if (getValue() == null && ((JavaObject) other).getValue() == null) {
+    		return getRuntime().getTrue();
+    	}
+    	
+    	return (getValue().equals(((JavaObject) other).getValue())) ? getRuntime().getTrue() : getRuntime().getFalse();
+    }
+    
+    public IRubyObject same(IRubyObject other) {
+    	if (other instanceof JavaObject && 
+    			value == ((JavaObject) other).value) {
+    		return getRuntime().getTrue();
+    	} else {
+    		return getRuntime().getFalse();
+    	}
     }
 
     public RubyString java_type() {

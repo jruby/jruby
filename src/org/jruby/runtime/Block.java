@@ -55,8 +55,8 @@ public class Block implements StackElement {
     private Block next;
 
     public static Block createBlock(Node var, ICallable method, IRubyObject self) {
-        Ruby ruby = self.getRuntime();
-        ThreadContext context = ruby.getCurrentContext();
+        Ruby runtime = self.getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         return new Block(var,
                          method,
                          self,
@@ -92,8 +92,8 @@ public class Block implements StackElement {
     }
 
     public IRubyObject call(IRubyObject[] args, IRubyObject replacementSelf) {
-        Ruby ruby = self.getRuntime();
-        ThreadContext context = ruby.getCurrentContext();
+        Ruby runtime = self.getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
         Block oldBlock = context.getBlockStack().getCurrent();
         Block newBlock = this.cloneBlock();
         if (replacementSelf != null) {
@@ -103,7 +103,7 @@ public class Block implements StackElement {
         context.getIterStack().push(Iter.ITER_CUR);
         context.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
-            return ruby.yield(args != null ? RubyArray.newArray(ruby, args) : null, null, null, true);
+            return runtime.yield(args != null ? RubyArray.newArray(runtime, args) : null, null, null, true);
         } finally {
             context.getIterStack().pop();
             context.getBlockStack().setCurrent(oldBlock);

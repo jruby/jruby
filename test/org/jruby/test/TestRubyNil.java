@@ -42,8 +42,7 @@ import java.util.ArrayList;
 * @author chadfowler
 */
 public class TestRubyNil extends TestCase {
-
-    private Ruby ruby;
+    private Ruby runtime;
     private IRubyObject rubyNil;
 
     public TestRubyNil(String name) {
@@ -51,8 +50,8 @@ public class TestRubyNil extends TestCase {
     } 
     
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
-        rubyNil = ruby.getNil();
+        runtime = Ruby.getDefaultInstance();
+        rubyNil = runtime.getNil();
     }
     
     public void testIsNil() {
@@ -64,7 +63,7 @@ public class TestRubyNil extends TestCase {
     }
 
     public void testToI() {
-        assertEquals(RubyFixnum.zero(ruby), RubyNil.to_i(rubyNil));
+        assertEquals(RubyFixnum.zero(runtime), RubyNil.to_i(rubyNil));
     }
 
     public void testToS() {
@@ -88,12 +87,12 @@ public class TestRubyNil extends TestCase {
     }
   
     public void testOpOr() {
-        assertTrue(RubyNil.op_or(rubyNil, ruby.getTrue()).isTrue());
-        assertTrue(RubyNil.op_or(rubyNil, ruby.getFalse()).isFalse());
+        assertTrue(RubyNil.op_or(rubyNil, runtime.getTrue()).isTrue());
+        assertTrue(RubyNil.op_or(rubyNil, runtime.getFalse()).isFalse());
     }
 
     public void testOpXOr() {
-        assertTrue(RubyNil.op_xor(rubyNil, ruby.getTrue()).isTrue());
-        assertTrue(RubyNil.op_xor(rubyNil, ruby.getFalse()).isFalse());
+        assertTrue(RubyNil.op_xor(rubyNil, runtime.getTrue()).isTrue());
+        assertTrue(RubyNil.op_xor(rubyNil, runtime.getFalse()).isFalse());
     }
 }

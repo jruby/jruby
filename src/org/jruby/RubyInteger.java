@@ -42,15 +42,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public abstract class RubyInteger extends RubyNumeric { 
-    public RubyInteger(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    public RubyInteger(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
     }
 
-    public static RubyClass createIntegerClass(Ruby ruby) {
-        RubyClass result = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createIntegerClass(Ruby runtime) {
+        RubyClass result = runtime.defineClass("Integer", runtime.getClasses().getNumericClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
-        result.includeModule(ruby.getClasses().getEnumerableModule());
+        result.includeModule(runtime.getClasses().getEnumerableModule());
         
         result.defineMethod("chr", callbackFactory.getMethod(RubyInteger.class, "chr"));
         result.defineMethod("downto", callbackFactory.getMethod(RubyInteger.class, "downto", RubyNumeric.class));

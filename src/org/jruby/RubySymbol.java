@@ -52,8 +52,8 @@ public class RubySymbol extends RubyObject {
     private final String symbol;
     private final int id;
 
-    private RubySymbol(Ruby ruby, String symbol) {
-        super(ruby, ruby.getClass("Symbol"));
+    private RubySymbol(Ruby runtime, String symbol) {
+        super(runtime, runtime.getClass("Symbol"));
         this.symbol = symbol;
 
         lastId++;
@@ -67,14 +67,14 @@ public class RubySymbol extends RubyObject {
         return symbol;
     }
 
-    public static RubySymbol nilSymbol(Ruby ruby) {
-        return newSymbol(ruby, null);
+    public static RubySymbol nilSymbol(Ruby runtime) {
+        return newSymbol(runtime, null);
     }
 
-    public static RubyClass createSymbolClass(Ruby ruby) {
-		RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
+    public static RubyClass createSymbolClass(Ruby runtime) {
+		RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getClasses().getObjectClass());
     	
-		CallbackFactory callbackFactory = ruby.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory();
         
 		symbolClass.defineMethod("to_i",
 			callbackFactory.getMethod(RubySymbol.class, "to_i"));
@@ -112,10 +112,10 @@ public class RubySymbol extends RubyObject {
         return false;
     }
 
-    public static RubySymbol getSymbol(Ruby ruby, long id) {
-        RubySymbol result = ruby.symbolTable.lookup(id);
+    public static RubySymbol getSymbol(Ruby runtime, long id) {
+        RubySymbol result = runtime.symbolTable.lookup(id);
         if (result == null) {
-            return nilSymbol(ruby);
+            return nilSymbol(runtime);
         }
         return result;
     }
@@ -124,24 +124,24 @@ public class RubySymbol extends RubyObject {
      * 
      */
 
-    public static RubySymbol newSymbol(Ruby ruby, String name) {
+    public static RubySymbol newSymbol(Ruby runtime, String name) {
         RubySymbol result;
         synchronized (RubySymbol.class) {
             // Locked to prevent the creation of multiple instances of
             // the same symbol. Most code depends on them being unique.
 
-            result = ruby.symbolTable.lookup(name);
+            result = runtime.symbolTable.lookup(name);
             if (result == null) {
                 if (name == null) {
-                    result = new RubySymbol(ruby, null) {
+                    result = new RubySymbol(runtime, null) {
                         public boolean isNil() {
                             return true;
                         }
                     };
                 } else {
-                    result = new RubySymbol(ruby, name);
+                    result = new RubySymbol(runtime, name);
                 }
-                ruby.symbolTable.store(result);
+                runtime.symbolTable.store(result);
             }
         }
         return result;

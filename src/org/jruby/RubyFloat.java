@@ -43,12 +43,12 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 public class RubyFloat extends RubyNumeric {
     private final double value;
 
-    public RubyFloat(Ruby ruby) {
-        this(ruby, 0.0);
+    public RubyFloat(Ruby runtime) {
+        this(runtime, 0.0);
     }
 
-    public RubyFloat(Ruby ruby, double value) {
-        super(ruby, ruby.getClass("Float"));
+    public RubyFloat(Ruby runtime, double value) {
+        super(runtime, runtime.getClass("Float"));
         this.value = value;
     }
 
@@ -71,9 +71,9 @@ public class RubyFloat extends RubyNumeric {
         return (long) value;
     }
 
-    public static RubyClass createFloatClass(Ruby ruby) {
-        RubyClass result = ruby.defineClass("Float", ruby.getClasses().getNumericClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createFloatClass(Ruby runtime) {
+        RubyClass result = runtime.defineClass("Float", runtime.getClasses().getNumericClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         result.defineMethod("+", callbackFactory.getMethod(RubyFloat.class, "op_plus", RubyNumeric.class));
         result.defineMethod("-", callbackFactory.getMethod(RubyFloat.class, "op_minus", RubyNumeric.class));
@@ -112,8 +112,8 @@ public class RubyFloat extends RubyNumeric {
     /**
      *
      */
-    public static RubyFloat newFloat(Ruby ruby, double value) {
-        return new RubyFloat(ruby, value);
+    public static RubyFloat newFloat(Ruby runtime, double value) {
+        return new RubyFloat(runtime, value);
     }
 
     public static RubyFloat induced_from(IRubyObject recv, IRubyObject number) {

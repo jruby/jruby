@@ -86,23 +86,23 @@ public class RubyObject implements Cloneable, IRubyObject {
     private boolean frozen;
     private boolean taint;
 
-    public RubyObject(Ruby ruby) {
-        this(ruby, null, false);
+    public RubyObject(Ruby runtime) {
+        this(runtime, null, false);
     }
 
-    public RubyObject(Ruby ruby, RubyClass rubyClass) {
-        this(ruby, rubyClass, true);
+    public RubyObject(Ruby runtime, RubyClass rubyClass) {
+        this(runtime, rubyClass, true);
     }
 
-    public RubyObject(Ruby ruby, RubyClass rubyClass, boolean useObjectSpace) {
-        this.runtime = ruby;
+    public RubyObject(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace) {
+        this.runtime = runtime;
         this.metaClass = rubyClass;
         this.frozen = false;
         this.taint = false;
 
         // Do not store any immediate objects into objectspace.
         if (useObjectSpace && isImmediate() == false) {
-            ruby.objectSpace.add(this);
+            runtime.objectSpace.add(this);
         }
     }
     
@@ -113,11 +113,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     	return false;
     }
 
-    public static IRubyObject nilObject(Ruby ruby) {
-        if (ruby.getNil() != null) {
-            return ruby.getNil();
+    public static IRubyObject nilObject(Ruby runtime) {
+        if (runtime.getNil() != null) {
+            return runtime.getNil();
         } else {
-            return new RubyObject(ruby) {
+            return new RubyObject(runtime) {
                 public boolean isNil() {
                     return true;
                 }
@@ -614,6 +614,10 @@ public class RubyObject implements Cloneable, IRubyObject {
         }
         return RubyBoolean.newBoolean(getRuntime(), this == obj);
     }
+    
+	public IRubyObject same(IRubyObject other) {
+		return this == other ? runtime.getTrue() : runtime.getFalse();
+	}
 
     /**
      * respond_to?( aSymbol, includePriv=false ) -> true or false
@@ -1019,7 +1023,7 @@ public class RubyObject implements Cloneable, IRubyObject {
         module.defineMethod("kind_of?", callbackFactory.getMethod(RubyObject.class, "kind_of", IRubyObject.class));
         module.defineMethod("dup", callbackFactory.getMethod(RubyObject.class, "dup"));
         module.defineMethod("eql?", equal);
-        module.defineMethod("equal?", equal);
+        module.defineMethod("equal?", callbackFactory.getMethod(RubyObject.class, "same", IRubyObject.class));
         module.defineMethod("type", callbackFactory.getMethod(RubyObject.class, "type"));
         module.defineMethod("class", callbackFactory.getMethod(RubyObject.class, "type"));
         module.defineMethod("inspect", callbackFactory.getMethod(RubyObject.class, "inspect"));

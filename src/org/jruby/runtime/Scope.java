@@ -65,8 +65,8 @@ public class Scope implements StackElement {
 
     private Scope next = null;
 
-    public Scope(Ruby ruby) {
-        this.rubyNil = ruby.getNil();
+    public Scope(Ruby runtime) {
+        this.rubyNil = runtime.getNil();
     }
 
     public StackElement getNext() {

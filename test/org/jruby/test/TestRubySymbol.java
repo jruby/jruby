@@ -40,33 +40,33 @@ import org.jruby.RubySymbol;
 import java.util.ArrayList;
 
 public class TestRubySymbol extends TestCase {
-    private Ruby ruby;
+    private Ruby runtime;
 
     public TestRubySymbol(String name) {
 	super(name);
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
-        ruby.getLoadService().init(ruby, new ArrayList());
+        runtime = Ruby.getDefaultInstance();
+        runtime.getLoadService().init(runtime, new ArrayList());
     }
 
     public void testSymbolTable() throws Exception {
         RubySymbol.SymbolTable st = new RubySymbol.SymbolTable();
 
         assertNull(st.lookup("somename"));
-        RubySymbol symbol = RubySymbol.newSymbol(ruby, "somename");
+        RubySymbol symbol = RubySymbol.newSymbol(runtime, "somename");
         st.store(symbol);
         assertSame(symbol, st.lookup("somename"));
 
-        RubySymbol nilSymbol = RubySymbol.nilSymbol(ruby);
+        RubySymbol nilSymbol = RubySymbol.nilSymbol(runtime);
         st.store(nilSymbol);
         assertSame(nilSymbol, st.lookup(null));
     }
 
     public void testNilSymbol() throws Exception {
-        assertTrue(RubySymbol.nilSymbol(ruby).isNil());
-        assertSame(RubySymbol.nilSymbol(ruby),
-                   RubySymbol.nilSymbol(ruby));
+        assertTrue(RubySymbol.nilSymbol(runtime).isNil());
+        assertSame(RubySymbol.nilSymbol(runtime),
+                   RubySymbol.nilSymbol(runtime));
     }
 }

@@ -38,16 +38,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.lang.reflect.Proxy;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class JavaSupport {
     private Ruby runtime;
@@ -56,7 +52,7 @@ public class JavaSupport {
 
     private ClassLoader javaClassLoader = this.getClass().getClassLoader();
 
-    private Map javaObjectMap = new HashMap();
+    private WeakHashMap javaObjectCache = new WeakHashMap(100);
 
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
@@ -140,42 +136,19 @@ public class JavaSupport {
     }
     
     public JavaObject getJavaObjectFromCache(Object object) {
-        Integer hash = getHashFromObject(object);
-        List cached = (List)javaObjectMap.get(hash);
-        if (cached == null) {
-            return null;
-        } else {
-            Iterator iter = cached.iterator();
-            while (iter.hasNext()) {
-                Reference ref = (Reference) iter.next();
-                JavaObject javaObject = (JavaObject)ref.get();
-                if (javaObject == null) {
-                    iter.remove();
-                } else if (javaObject.getValue() == object) {
-                    return javaObject;
-                }
-            }
-            return null;
-        }
+    	WeakReference ref = (WeakReference)javaObjectCache.get(object);
+    	if (ref == null) {
+    		return null;
+    	}
+    	JavaObject javaObject = (JavaObject)(ref).get();
+    	if (javaObject != null && javaObject.getValue() == object) {
+    		return javaObject;
+    	} else {
+    		return null;
+    	}
     }
     
     public void putJavaObjectIntoCache(JavaObject object) {
-        Integer hash = getHashFromObject(object.getValue());
-        List cached = (List)javaObjectMap.get(hash);
-        if (cached == null) {
-            cached = new LinkedList();
-            javaObjectMap.put(hash, cached);
-        }
-        cached.add(new SoftReference(object));
-    }
-    
-    private Integer getHashFromObject(Object value) {
-        if (value == null) {
-            return new Integer(0);
-        } else if (value instanceof Proxy) {
-            return new Integer(value.getClass().hashCode());
-        } else {
-            return new Integer(value.hashCode());
-        }
+    	javaObjectCache.put(object.getValue(), new WeakReference(object));
     }
 }

@@ -33,9 +33,9 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RubyFileTest {
-    public static RubyModule createFileTestModule(Ruby ruby) {
-        RubyModule fileTestModule = ruby.defineModule("FileTest");
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyModule createFileTestModule(Ruby runtime) {
+        RubyModule fileTestModule = runtime.defineModule("FileTest");
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod(RubyFileTest.class, "directory_p", RubyString.class));
         fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod(RubyFileTest.class, "exist_p", RubyString.class));

@@ -47,18 +47,18 @@ public class RubyFixnum extends RubyInteger {
     public static final long MIN = -1 * MAX - 1;
     private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
 
-    public RubyFixnum(Ruby ruby) {
-        this(ruby, 0);
+    public RubyFixnum(Ruby runtime) {
+        this(runtime, 0);
     }
 
-    public RubyFixnum(Ruby ruby, long value) {
-        super(ruby, ruby.getClass("Fixnum"));
+    public RubyFixnum(Ruby runtime, long value) {
+        super(runtime, runtime.getClass("Fixnum"));
         this.value = value;
     }
 
-    public static RubyClass createFixnumClass(Ruby ruby) {
-        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createFixnumClass(Ruby runtime) {
+        RubyClass fixnumClass = runtime.defineClass("Fixnum", runtime.getClasses().getIntegerClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         fixnumClass.defineMethod("quo", callbackFactory.getMethod(RubyFixnum.class, "quo", RubyNumeric.class));
         fixnumClass.defineMethod("to_f", callbackFactory.getMethod(RubyFixnum.class, "to_f"));
@@ -106,16 +106,16 @@ public class RubyFixnum extends RubyInteger {
         return value;
     }
 
-    public static RubyFixnum zero(Ruby ruby) {
-        return newFixnum(ruby, 0);
+    public static RubyFixnum zero(Ruby runtime) {
+        return newFixnum(runtime, 0);
     }
 
-    public static RubyFixnum one(Ruby ruby) {
-        return newFixnum(ruby, 1);
+    public static RubyFixnum one(Ruby runtime) {
+        return newFixnum(runtime, 1);
     }
 
-    public static RubyFixnum minus_one(Ruby ruby) {
-        return newFixnum(ruby, -1);
+    public static RubyFixnum minus_one(Ruby runtime) {
+        return newFixnum(runtime, -1);
     }
 
     protected int compareValue(RubyNumeric other) {
@@ -136,16 +136,16 @@ public class RubyFixnum extends RubyInteger {
 
     // Methods of the Fixnum Class (fix_*):
 
-    public static RubyFixnum newFixnum(Ruby ruby, long value) {
+    public static RubyFixnum newFixnum(Ruby runtime, long value) {
         RubyFixnum fixnum;
-        if (value >= 0 && value < ruby.fixnumCache.length) {
-            fixnum = ruby.fixnumCache[(int) value];
+        if (value >= 0 && value < runtime.fixnumCache.length) {
+            fixnum = runtime.fixnumCache[(int) value];
             if (fixnum == null) {
-                fixnum = new RubyFixnum(ruby, value);
-                ruby.fixnumCache[(int) value] = fixnum;
+                fixnum = new RubyFixnum(runtime, value);
+                runtime.fixnumCache[(int) value] = fixnum;
             }
         } else {
-            fixnum = new RubyFixnum(ruby, value);
+            fixnum = new RubyFixnum(runtime, value);
         }
         return fixnum;
     }

@@ -59,12 +59,12 @@ public class JavaClass extends RubyObject {
         return javaClass;
     }
 
-    public static RubyClass createJavaClassClass(Ruby ruby, RubyModule javaModule) {
+    public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaClass", 
-                ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+                runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
-        result.includeModule(ruby.getClasses().getComparableModule());
+        result.includeModule(runtime.getClasses().getComparableModule());
 
         result.defineSingletonMethod("for_name", 
                 callbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));

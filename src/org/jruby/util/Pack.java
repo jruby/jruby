@@ -57,31 +57,31 @@ public class Pack {
     static {
         // short, little-endian (network)
         converters.put(new Character('v'), new Converter(2) { 
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, 
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, 
                         decodeShortUnsignedLittleEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-            	int s = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+            	int s = (o == runtime.getNil() ? 0 :
 						 (int) (RubyNumeric.num2long(o) & 0xffff));
            		encodeShortLittleEndian(result, s);
            	}});
     	// single precision, little-endian
         converters.put(new Character('e'), new Converter(4) { 
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFloat.newFloat(ruby, decodeFloatLittleEndian(enc));
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                float f = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                float f = (o == runtime.getNil() ? 0 :
                     (float)RubyNumeric.numericValue(o).getDoubleValue());
                 encodeFloatLittleEndian(result, f);
             }});
         Converter tmp = new Converter(4) {
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFloat.newFloat(ruby, decodeFloatBigEndian(enc));
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                float f = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                float f = (o == runtime.getNil() ? 0 :
                     (float)RubyNumeric.numericValue(o).getDoubleValue());
                 encodeFloatBigEndian(result, f);
             }
@@ -90,20 +90,20 @@ public class Pack {
         converters.put(new Character('g'), tmp); // single precision, native
         // double precision, little-endian
         converters.put(new Character('E'), new Converter(8) { 
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFloat.newFloat(ruby, decodeDoubleLittleEndian(enc));
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                double d = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                double d = (o == runtime.getNil() ? 0 :
                     RubyNumeric.numericValue(o).getDoubleValue());
                 encodeDoubleLittleEndian(result, d);
             }});
         tmp = new Converter(8) {
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFloat.newFloat(ruby, decodeDoubleBigEndian(enc));
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFloat.newFloat(runtime, decodeDoubleBigEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                double d = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                double d = (o == runtime.getNil() ? 0 :
                     RubyNumeric.numericValue(o).getDoubleValue());
                 encodeDoubleBigEndian(result, d);
             }
@@ -111,21 +111,21 @@ public class Pack {
         converters.put(new Character('d'), tmp); // double precision native
         converters.put(new Character('G'), tmp); // double precision bigendian 
         converters.put(new Character('s'), new Converter(2) { // signed short
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, decodeShortBigEndian(enc));
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, decodeShortBigEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                int s = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                int s = (o == runtime.getNil() ? 0 :
                     (int) (RubyNumeric.num2long(o) & 0xffff));
                 encodeShortBigEndian(result, s);
             }});
         tmp = new Converter(2) {
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, 
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, 
                         decodeShortUnsignedBigEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                int s = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                int s = (o == runtime.getNil() ? 0 :
                     (int) (RubyNumeric.num2long(o) & 0xffff));
                 encodeShortBigEndian(result, s);
             }
@@ -133,42 +133,42 @@ public class Pack {
         converters.put(new Character('S'), tmp); // unsigned short
         converters.put(new Character('n'), tmp); // short network
         converters.put(new Character('c'), new Converter(1) { // signed char
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
                 int c = enc.nextChar();
-                return RubyFixnum.newFixnum(ruby, c > (char) 127 ? c-256 : c);
+                return RubyFixnum.newFixnum(runtime, c > (char) 127 ? c-256 : c);
             }	
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                char c = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                char c = (o == runtime.getNil() ? 0 :
                     (char) (RubyNumeric.num2long(o) & 0xff));
                 result.append(c);
             }});
         converters.put(new Character('C'), new Converter(1) { // unsigned char
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, (int)enc.nextChar());
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, (int)enc.nextChar());
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                char c = (o == ruby.getNil() ? 0 :
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                char c = (o == runtime.getNil() ? 0 :
                     (char) (RubyNumeric.num2long(o) & 0xff));
                 result.append(c);
             }});
         // long, little-endian 
         converters.put(new Character('V'), new Converter(4) { 
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, 
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, 
                         decodeIntUnsignedLittleEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                int s = (o == ruby.getNil() ? 0 : 
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                int s = (o == runtime.getNil() ? 0 : 
                     (int) (RubyNumeric.num2long(o)));
                 encodeIntLittleEndian(result, s);
             }});
         tmp = new Converter(4) {
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, 
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, 
                         decodeIntUnsignedBigEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                int s = (o == ruby.getNil() ? 0 : 
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                int s = (o == runtime.getNil() ? 0 : 
                     (int) (RubyNumeric.num2long(o)));
                 encodeIntBigEndian(result, s);
             }
@@ -177,11 +177,11 @@ public class Pack {
         converters.put(new Character('L'), tmp); // unsigned long (bugs?)
         converters.put(new Character('N'), tmp); // long, network
         tmp = new Converter(4) {
-            public IRubyObject decode(Ruby ruby, PtrList enc) {
-                return RubyFixnum.newFixnum(ruby, decodeIntBigEndian(enc));
+            public IRubyObject decode(Ruby runtime, PtrList enc) {
+                return RubyFixnum.newFixnum(runtime, decodeIntBigEndian(enc));
             }
-            public void encode(Ruby ruby, IRubyObject o, StringBuffer result){
-                int s = (o == ruby.getNil() ? 0 : 
+            public void encode(Ruby runtime, IRubyObject o, StringBuffer result){
+                int s = (o == runtime.getNil() ? 0 : 
                     (int) (RubyNumeric.num2long(o)));
                 encodeIntBigEndian(result, s);
             }
@@ -199,7 +199,7 @@ public class Pack {
      * @param iType the type of encoding required (this is the same type as used by the pack method)
      * @return the io2Append buffer
      **/
-    private static StringBuffer encodes(Ruby ruby, StringBuffer io2Append, String i2Encode, int iLength, char iType) {
+    private static StringBuffer encodes(Ruby runtime, StringBuffer io2Append, String i2Encode, int iLength, char iType) {
         iLength = iLength < i2Encode.length() ? iLength : i2Encode.length();
         io2Append.ensureCapacity(iLength * 4 / 3 + 6);
         int i = 0;
@@ -209,7 +209,7 @@ public class Pack {
         if (iType == 'u') {
             if (iLength >= lTranslationTable.length)
                 throw new ArgumentError(
-                    ruby,
+                    runtime,
                     ""
                         + iLength
                         + " is not a correct value for the number of bytes per line in a u directive.  Correct values range from 0 to "
@@ -302,8 +302,8 @@ public class Pack {
     }
 
     private static String convert2String(IRubyObject l2Conv) {
-        Ruby ruby = l2Conv.getRuntime();
-        if (l2Conv.getMetaClass() != ruby.getClasses().getStringClass()) {
+        Ruby runtime = l2Conv.getRuntime();
+        if (l2Conv.getMetaClass() != runtime.getClasses().getStringClass()) {
             l2Conv = l2Conv.convertToType("String", "to_s", true); //we may need a false here, not sure
         }
         return ((RubyString) l2Conv).getValue();
@@ -546,10 +546,10 @@ public class Pack {
      **/
     public static RubyArray unpack(String encodedString, 
             RubyString formatString) {
-        Ruby ruby = formatString.getRuntime();
-        RubyArray result = RubyArray.newArray(ruby);
-        PtrList format = new PtrList(ruby, formatString.getValue());
-        PtrList encode = new PtrList(ruby, encodedString);
+        Ruby runtime = formatString.getRuntime();
+        RubyArray result = RubyArray.newArray(runtime);
+        PtrList format = new PtrList(runtime, formatString.getValue());
+        PtrList encode = new PtrList(runtime, encodedString);
         char type = format.nextChar(); // Type to be unpacked
         
         while(format.isAtEnd() == false) {
@@ -559,7 +559,7 @@ public class Pack {
             // Next indicates to decode using native encoding format
             if (next == '_' || next == '!') {
                 if (NATIVE_CODES.indexOf(type) == -1) {
-                	throw new ArgumentError(ruby, "'" + next + 
+                	throw new ArgumentError(runtime, "'" + next + 
                 	        "' allowed only after types " + NATIVE_CODES);
                 } 
                 // We advance in case occurences follows
@@ -584,7 +584,7 @@ public class Pack {
             // See if we have a converter for the job...
             Converter converter = (Converter) converters.get(new Character(type));
             if (converter != null) {
-            	decode(ruby, encode, occurrences, result, converter);
+            	decode(runtime, encode, occurrences, result, converter);
             	type = next;
             	continue;
             }
@@ -595,7 +595,7 @@ public class Pack {
             	    encode.setPosition(occurrences);
             	    break;
                 case '%' :
-                    throw new ArgumentError(ruby, "% is not supported");
+                    throw new ArgumentError(runtime, "% is not supported");
                 case 'A' :
                 	{
                     if (occurrences == IS_STAR || occurrences > encode.remaining())
@@ -612,7 +612,7 @@ public class Pack {
                     }
                     
                     potential = potential.substring(0, occurrences);
-                    result.append(RubyString.newString(ruby, potential));
+                    result.append(RubyString.newString(runtime, potential));
                     }
                     break;
                 case 'Z' :
@@ -631,13 +631,13 @@ public class Pack {
                     }
                     
                     potential = potential.substring(0, occurrences);
-                    result.append(RubyString.newString(ruby, potential));
+                    result.append(RubyString.newString(runtime, potential));
                 	}
                     break;
                 case 'a' :
                     if (occurrences == IS_STAR || occurrences > encode.remaining())
                         occurrences = encode.remaining();
-                    result.append(RubyString.newString(ruby, encode.nextSubstring(occurrences)));
+                    result.append(RubyString.newString(runtime, encode.nextSubstring(occurrences)));
                     break;
                 case 'b' :
                     {
@@ -652,7 +652,7 @@ public class Pack {
                                 bits = encode.nextChar();
                             lElem.append((bits & 1) != 0 ? '1' : '0');
                         }
-                        result.append(RubyString.newString(ruby, lElem.toString()));
+                        result.append(RubyString.newString(runtime, lElem.toString()));
                     }
                     break;
                 case 'B' :
@@ -669,7 +669,7 @@ public class Pack {
                             lElem.append((bits & 128) != 0 ? '1' : '0');
                         }
                         
-                        result.append(RubyString.newString(ruby, lElem.toString()));
+                        result.append(RubyString.newString(runtime, lElem.toString()));
                     }
                     break;
                 case 'h' :
@@ -685,7 +685,7 @@ public class Pack {
                                 bits = encode.nextChar();
                             lElem.append(sHexDigits[bits & 15]);
                         }
-                        result.append(RubyString.newString(ruby, lElem.toString()));
+                        result.append(RubyString.newString(runtime, lElem.toString()));
                     }
                     break;
                 case 'H' :
@@ -701,7 +701,7 @@ public class Pack {
                                 bits = encode.nextChar();
                             lElem.append(sHexDigits[(bits >>> 4) & 15]);
                         }
-                        result.append(RubyString.newString(ruby, lElem.toString()));
+                        result.append(RubyString.newString(runtime, lElem.toString()));
                     }
                     break;
                 case 'U' :
@@ -718,7 +718,7 @@ public class Pack {
                         }
                         char[] c = lUtf8.toCharArray();
                         for (int lCurCharIdx = 0; occurrences-- > 0 && lCurCharIdx < c.length; lCurCharIdx++)
-                            result.append(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
+                            result.append(RubyFixnum.newFixnum(runtime, c[lCurCharIdx]));
                     }
                     break;
                  case 'X':
@@ -729,7 +729,7 @@ public class Pack {
                      try {
                          encode.backup(occurrences);
                      } catch (IllegalArgumentException e) {
-                         throw new ArgumentError(ruby, "in `unpack': X outside of string");
+                         throw new ArgumentError(runtime, "in `unpack': X outside of string");
                      }
                      break;
                  case 'x':
@@ -740,7 +740,7 @@ public class Pack {
               		try {
               		    encode.nextSubstring(occurrences);
               		} catch (IllegalArgumentException e) {
-              		    throw new ArgumentError(ruby, "in `unpack': x outside of string");
+              		    throw new ArgumentError(runtime, "in `unpack': x outside of string");
               		}
 
                  	break;
@@ -750,7 +750,7 @@ public class Pack {
         return result;
     }
     
-    public static void decode(Ruby ruby, PtrList encode, int occurrences, 
+    public static void decode(Ruby runtime, PtrList encode, int occurrences, 
             RubyArray result, Converter converter) {
         int lPadLength = 0;
     	
@@ -761,24 +761,24 @@ public class Pack {
             occurrences = encode.remaining() / converter.size;
         }
         for (; occurrences-- > 0;) {
-            result.append(converter.decode(ruby, encode));
+            result.append(converter.decode(runtime, encode));
         }
         for (; lPadLength-- > 0;)
-            result.append(ruby.getNil());
+            result.append(runtime.getNil());
     }
    
-    public static int encode(Ruby ruby, int occurrences, StringBuffer result, 
+    public static int encode(Ruby runtime, int occurrences, StringBuffer result, 
             List list, int index, Converter converter) {
         int listSize = list.size();
 
         while (occurrences-- > 0) {
             if (listSize-- <= 0) {
-                throw new ArgumentError(ruby, sTooFew);
+                throw new ArgumentError(runtime, sTooFew);
             }
 
             IRubyObject from = (IRubyObject) list.get(index++);
 
-            converter.encode(ruby, from, result);
+            converter.encode(runtime, from, result);
         }
 
         return index;
@@ -791,18 +791,18 @@ public class Pack {
     		this.size = size;
     	}
     	
-    	public abstract IRubyObject decode(Ruby ruby, PtrList format);
-    	public abstract void encode(Ruby ruby, IRubyObject from, 
+    	public abstract IRubyObject decode(Ruby runtime, PtrList format);
+    	public abstract void encode(Ruby runtime, IRubyObject from, 
     	        StringBuffer result);
     }
  
     static class PtrList {
-        private Ruby ruby;
+        private Ruby runtime;
         private char[] buffer; // List to be managed
         private int index; // Pointer location in list
 
-        public PtrList(Ruby ruby, String bufferString) {
-            this.ruby = ruby;
+        public PtrList(Ruby runtime, String bufferString) {
+            this.runtime = runtime;
             buffer = bufferString.toCharArray();
             index = 0;
         }
@@ -1125,8 +1125,8 @@ public class Pack {
      * @see RubyString#unpack
      **/
     public static RubyString pack(List list, RubyString formatString) {
-        Ruby ruby = formatString.getRuntime();
-        PtrList format = new PtrList(ruby, formatString.getValue());
+        Ruby runtime = formatString.getRuntime();
+        PtrList format = new PtrList(runtime, formatString.getValue());
         StringBuffer result = new StringBuffer();
         int listSize = list.size();
         char type = format.nextChar();
@@ -1145,7 +1145,7 @@ public class Pack {
             
             if (next == '!' || next == '_') {
                 if (NATIVE_CODES.indexOf(type) == -1) {
-                	throw new ArgumentError(ruby, "'" + next +
+                	throw new ArgumentError(runtime, "'" + next +
                 	        "' allowed only after types " + NATIVE_CODES);
                 }
 
@@ -1173,14 +1173,14 @@ public class Pack {
             Converter converter = (Converter) converters.get(new Character(type));
 
             if (converter != null) {
-                idx = encode(ruby, occurrences, result, list, idx, converter);
+                idx = encode(runtime, occurrences, result, list, idx, converter);
                 type = next;
                 continue;
             }
 
             switch (type) {
                 case '%' :
-                    throw new ArgumentError(ruby, "% is not supported");
+                    throw new ArgumentError(runtime, "% is not supported");
                 case 'A' :
                 case 'a' :
                 case 'Z' :
@@ -1190,11 +1190,11 @@ public class Pack {
                 case 'h' :
                 	{
                 		if (listSize-- <= 0) {
-                			throw new ArgumentError(ruby, sTooFew);
+                			throw new ArgumentError(runtime, sTooFew);
                 		}
                 		
                 		IRubyObject from = (IRubyObject) list.get(idx++);
-                		lCurElemString = (from == ruby.getNil() ? "" : 
+                		lCurElemString = (from == runtime.getNil() ? "" : 
 										  convert2String(from));
 
                 		if (isStar) {
@@ -1364,7 +1364,7 @@ public class Pack {
                     try {
                         shrink(result, occurrences);
                     } catch (IllegalArgumentException e) {
-                        throw new ArgumentError(ruby, "in `pack': X outside of string");
+                        throw new ArgumentError(runtime, "in `pack': X outside of string");
                     }
                     break;
                 case '@' :
@@ -1379,16 +1379,16 @@ public class Pack {
                 case 'm' :
                 	{
                 		if (listSize-- <= 0) {
-                			throw new ArgumentError(ruby, sTooFew);
+                			throw new ArgumentError(runtime, sTooFew);
                 		}
                         IRubyObject from = (IRubyObject) list.get(idx++);
-                        lCurElemString = (from == ruby.getNil() ? "" :
+                        lCurElemString = (from == runtime.getNil() ? "" :
 										  convert2String(from));
                         occurrences = (occurrences <= 2 ? 45 :
 									   occurrences / 3 * 3);
 
                         for (;;) {
-                        	encodes(ruby, result, lCurElemString, occurrences, type);
+                        	encodes(runtime, result, lCurElemString, occurrences, type);
                         	
                         	if (occurrences >= lCurElemString.length()) {
                         		break;
@@ -1401,11 +1401,11 @@ public class Pack {
                 case 'M' :
                 	{
                		if (listSize-- <= 0) {
-               			throw new ArgumentError(ruby, sTooFew);
+               			throw new ArgumentError(runtime, sTooFew);
                		}
                 	
                		IRubyObject from = (IRubyObject) list.get(idx++);
-               		lCurElemString = (from == ruby.getNil() ? "" :
+               		lCurElemString = (from == runtime.getNil() ? "" :
 									  convert2String(from));
 
                		if (occurrences <= 1) {
@@ -1419,11 +1419,11 @@ public class Pack {
                		char[] c = new char[occurrences];
                		for (int cIndex = 0; occurrences-- > 0; cIndex++) {
                			if (listSize-- <= 0) {
-               				throw new ArgumentError(ruby, sTooFew);
+               				throw new ArgumentError(runtime, sTooFew);
                			}
 
                			IRubyObject from = (IRubyObject) list.get(idx++);
-               			long l = (from == ruby.getNil() ? 0 :
+               			long l = (from == runtime.getNil() ? 0 :
 								RubyNumeric.num2long(from));
 
                			c[cIndex] = (char) l;
@@ -1440,7 +1440,7 @@ public class Pack {
             
             type = next;
         }
-        return RubyString.newString(ruby, result.toString());
+        return RubyString.newString(runtime, result.toString());
     }
     
     /**

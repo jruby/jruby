@@ -39,9 +39,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class RubyComparable {
-    public static RubyModule createComparable(Ruby ruby) {
-        RubyModule comparableModule = ruby.defineModule("Comparable");
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyModule createComparable(Ruby runtime) {
+        RubyModule comparableModule = runtime.defineModule("Comparable");
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         comparableModule.defineMethod(
             "==",
             callbackFactory.getSingletonMethod(RubyComparable.class, "equal", IRubyObject.class));

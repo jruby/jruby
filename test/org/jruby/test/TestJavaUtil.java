@@ -38,22 +38,22 @@ import org.jruby.javasupport.JavaUtil;
  * @version $Revision$
  */
 public class TestJavaUtil extends TestCase {
-    private Ruby ruby;
+    private Ruby runtime;
 
     public TestJavaUtil(String name) {
         super(name);
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
+        runtime = Ruby.getDefaultInstance();
     }
 
     public void testConvertJavaToRuby() {
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, null).getType().name().toString(), "NilClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, new Integer(1000)).getType().name().toString(), "Fixnum");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, new Double(1.0)).getType().name().toString(), "Float");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.TRUE).getType().name().toString(), "TrueClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.FALSE).getType().name().toString(), "FalseClass");
-        assertEquals(JavaUtil.convertJavaToRuby(ruby, "AString").getType().name().toString(), "String");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, null).getType().name().toString(), "NilClass");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Integer(1000)).getType().name().toString(), "Fixnum");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, new Double(1.0)).getType().name().toString(), "Float");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.TRUE).getType().name().toString(), "TrueClass");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, Boolean.FALSE).getType().name().toString(), "FalseClass");
+        assertEquals(JavaUtil.convertJavaToRuby(runtime, "AString").getType().name().toString(), "String");
     }
 }

@@ -59,16 +59,16 @@ public class RubyDir extends RubyObject {
     private   int       pos;        // current position in directory
     private boolean isOpen = true;
 
-    public RubyDir(Ruby ruby, RubyClass type) {
-        super(ruby, type);
+    public RubyDir(Ruby runtime, RubyClass type) {
+        super(runtime, type);
     }
 
-    public static RubyClass createDirClass(Ruby ruby) {
-        RubyClass dirClass = ruby.defineClass("Dir", ruby.getClasses().getObjectClass());
+    public static RubyClass createDirClass(Ruby runtime) {
+        RubyClass dirClass = runtime.defineClass("Dir", runtime.getClasses().getObjectClass());
 
-        dirClass.includeModule(ruby.getModule("Enumerable"));
+        dirClass.includeModule(runtime.getModule("Enumerable"));
 
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
 		dirClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyDir.class, "newInstance"));
         dirClass.defineSingletonMethod("glob", callbackFactory.getSingletonMethod(RubyDir.class, "glob", RubyString.class));
@@ -349,11 +349,11 @@ public class RubyDir extends RubyObject {
      * @param   path path for which to return the <code>File</code> object.
      * @throws  IOError if <code>path</code> is not a directory.
      */
-    protected static File getDir(Ruby ruby, String path) {
+    protected static File getDir(Ruby runtime, String path) {
         File result = new File(path);
 
         if (!result.isDirectory()) {
-            throw ErrnoError.getErrnoError(ruby, "ENOENT", 
+            throw ErrnoError.getErrnoError(runtime, "ENOENT", 
 					   path + " is not a directory");
         }
 
@@ -382,11 +382,11 @@ public class RubyDir extends RubyObject {
      * Returns the contents of the specified <code>directory</code> as an
      * <code>ArrayList</code> containing the names of the files as Ruby Strings.
      */
-    protected static List getContents(File directory, Ruby ruby) {
+    protected static List getContents(File directory, Ruby runtime) {
         List result = new ArrayList();
         String[] contents = directory.list();
         for (int i=0; i<contents.length; i++) {
-            result.add(new RubyString(ruby, contents[i]));
+            result.add(new RubyString(runtime, contents[i]));
         }
         return result;
     }

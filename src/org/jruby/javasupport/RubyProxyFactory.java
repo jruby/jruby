@@ -27,18 +27,18 @@ import java.lang.reflect.Proxy;
  * @author schwardo
  */
 public class RubyProxyFactory {
-    private Ruby ruby = null;
+    private Ruby runtime = null;
     private RubyToJavaClassMap classMap = null;
     private RubyConversion conversion = null;
 
-    public RubyProxyFactory(Ruby ruby, RubyToJavaClassMap classMap) {
-        this.ruby = ruby;
+    public RubyProxyFactory(Ruby runtime, RubyToJavaClassMap classMap) {
+        this.runtime = runtime;
         this.classMap = classMap;
         this.conversion = new RubyConversion(this);
     }
 
-    public Ruby getRuby() {
-        return ruby;
+    public Ruby getRuntime() {
+        return runtime;
     }
 
     /**
@@ -66,7 +66,7 @@ public class RubyProxyFactory {
     }
 
     public RubyProxy getProxyForGlobal(String globalVar, Class javaInterface) {
-        IRubyObject obj = getRuby().getGlobalVariables().get(globalVar);
+        IRubyObject obj = getRuntime().getGlobalVariables().get(globalVar);
 
         if (obj != null && !obj.isNil())
             return getProxyForObject(obj, javaInterface);
@@ -100,7 +100,7 @@ public class RubyProxyFactory {
 
     protected RubyClass getRubyClassForJavaClass(Class javaClass) {
         String className = classMap.getRubyClassNameForJavaClass(javaClass);
-        return getRuby().getClass(className);
+        return getRuntime().getClass(className);
     }
 
     protected Class getJavaClassForRubyClass(RubyClass rubyClass) {

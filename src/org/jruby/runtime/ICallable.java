@@ -47,7 +47,7 @@ public interface ICallable {
 
     boolean isUndefined();
 
-    IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
+    IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper);
 
     Arity getArity();
 

@@ -37,9 +37,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyPrecision {
     
-    public static RubyModule createPrecisionModule(Ruby ruby) {
-        RubyModule precisionModule = ruby.defineModule("Precision");
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyModule createPrecisionModule(Ruby runtime) {
+        RubyModule precisionModule = runtime.defineModule("Precision");
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         precisionModule.defineSingletonMethod("append_features", callbackFactory.getSingletonMethod(RubyPrecision.class, "append_features", IRubyObject.class));
         precisionModule.defineMethod("prec", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec", IRubyObject.class));
         precisionModule.defineMethod("prec_i", callbackFactory.getSingletonMethod(RubyPrecision.class, "prec_i"));

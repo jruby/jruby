@@ -32,10 +32,10 @@ import java.io.File;
 public class FileStatClass extends RubyObject {
     private File file;
 
-    public static RubyClass createFileStatClass(Ruby ruby) {
-        RubyClass fileStatClass = ruby.defineClass("FileStat", ruby.getClasses().getObjectClass());
+    public static RubyClass createFileStatClass(Ruby runtime) {
+        RubyClass fileStatClass = runtime.defineClass("FileStat", runtime.getClasses().getObjectClass());
     	
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         fileStatClass.defineMethod("directory?", 
         		callbackFactory.getMethod(FileStatClass.class, "directory_p"));

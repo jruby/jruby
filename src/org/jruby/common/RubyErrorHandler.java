@@ -51,20 +51,10 @@ public class RubyErrorHandler implements IRubyErrorHandler {
     }
 
     /**
-     * @see org.ablaf.common.IErrorHandler#isHandled(int)
-     */
-    public boolean isHandled(int type) {
-        if (type == IErrors.WARNING || type == IErrors.VERBOSE) {
-            return verbose;
-        }
-        return true;
-    }
-
-    /**
      * @see org.ablaf.common.IErrorHandler#handleError(int, ISourcePosition, String, Object)
      */
     public void handleError(int type, SourcePosition position, String message, Object args) {
-        if (isHandled(type)) {
+        if (type != IErrors.WARNING || isVerbose()) {
             if (type == IErrors.WARN || type == IErrors.WARNING) {
                 message = "warning: " + message;
             }
@@ -104,13 +94,6 @@ public class RubyErrorHandler implements IRubyErrorHandler {
      */
     public void handleError(int type, SourcePosition position, String message) {
         handleError(type, position, message, null);
-    }
-
-    /**
-     * @see org.ablaf.common.IErrorHandler#handleError(int, String)
-     */
-    public void handleError(int type, String message) {
-        handleError(type, null, message, null);
     }
 
     /**

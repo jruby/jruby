@@ -17,7 +17,7 @@ public class RubyConversion {
     }
 
     public Ruby getRuby() {
-        return factory.getRuby();
+        return factory.getRuntime();
     }
 
     public IRubyObject[] convertJavaToRuby(Object[] obj) {

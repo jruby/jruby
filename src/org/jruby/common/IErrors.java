@@ -37,7 +37,6 @@ public interface IErrors {
 	public static final int WARNING = 2;
 	public static final int WARN_UNLESS_E = 3;
 	public static final int WARNING_UNLESS_E = 4;
-	public static final int VERBOSE = 5;
 
 	public static final int SYNTAX_ERROR = 10;
 	public static final int COMPILE_ERROR = 11;

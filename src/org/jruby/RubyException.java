@@ -48,23 +48,23 @@ public class RubyException extends RubyObject {
     private RubyArray backtrace;
     public IRubyObject message;
 
-    private RubyException(Ruby ruby, RubyClass rubyClass) {
-        this(ruby, rubyClass, null);
+    private RubyException(Ruby runtime, RubyClass rubyClass) {
+        this(runtime, rubyClass, null);
     }
 
-    private RubyException(Ruby ruby, RubyClass rubyClass, String message) {
-        super(ruby, rubyClass);
+    private RubyException(Ruby runtime, RubyClass rubyClass, String message) {
+        super(runtime, rubyClass);
         if (message == null) {
-            this.message = ruby.getNil();
+            this.message = runtime.getNil();
         } else {
-            this.message = RubyString.newString(ruby, message);
+            this.message = RubyString.newString(runtime, message);
         }
     }
 
-    public static RubyClass createExceptionClass(Ruby ruby) {
-		RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
+    public static RubyClass createExceptionClass(Ruby runtime) {
+		RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getClasses().getObjectClass());
     	
-		CallbackFactory callbackFactory = ruby.callbackFactory();
+		CallbackFactory callbackFactory = runtime.callbackFactory();
         
 		exceptionClass.defineSingletonMethod("new", 
 				callbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));		
@@ -90,8 +90,8 @@ public class RubyException extends RubyObject {
 		return exceptionClass;
     }
 
-    public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
-        return new RubyException(ruby, excptnClass, msg);
+    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
+        return new RubyException(runtime, excptnClass, msg);
     }
 
     // Exception methods

@@ -169,15 +169,15 @@ public class JRubyEngine extends BSFEngineImpl {
      *
      * @param exception An Exception thrown by JRuby
      */
-    private static void printException(Ruby ruby, Exception exception) {
+    private static void printException(Ruby runtime, Exception exception) {
         if (exception instanceof RaiseException) {
-            ruby.printError(((RaiseException) exception).getException());
+            runtime.printError(((RaiseException) exception).getException());
         } else if (exception instanceof ThrowJump) {
-            ruby.printError(((ThrowJump) exception).getNameError());
+            runtime.printError(((ThrowJump) exception).getNameError());
         } else if (exception instanceof BreakJump) {
-            ruby.getErrorStream().println("break without block.");
+            runtime.getErrorStream().println("break without block.");
         } else if (exception instanceof ReturnJump) {
-            ruby.getErrorStream().println("return without block.");
+            runtime.getErrorStream().println("return without block.");
         }
     }
 

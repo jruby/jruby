@@ -49,9 +49,9 @@ public class IOHandlerUnseekable extends IOHandler {
      * @param inStream
      * @param outStream
      */
-    public IOHandlerUnseekable(Ruby ruby, InputStream inStream, 
+    public IOHandlerUnseekable(Ruby runtime, InputStream inStream, 
                      OutputStream outStream) {
-        super(ruby);
+        super(runtime);
         String mode = "";
         
         if (inStream != null) {
@@ -73,30 +73,30 @@ public class IOHandlerUnseekable extends IOHandler {
         
         // Neither stream exists?
         if (isOpen == false) {
-            throw new IOError(ruby, "Opening nothing?");
+            throw new IOError(runtime, "Opening nothing?");
         }
         
-        modes = new IOModes(ruby, mode);
+        modes = new IOModes(runtime, mode);
         fileno = RubyIO.getNewFileno();
     }
     
-    public IOHandlerUnseekable(Ruby ruby, int fileno) {
-        super(ruby);
+    public IOHandlerUnseekable(Ruby runtime, int fileno) {
+        super(runtime);
         
         switch (fileno) {
         case 0:
             input = new RubyInputStream(System.in);
-            modes = new IOModes(ruby, "r");
+            modes = new IOModes(runtime, "r");
             isOpen = true;
             break;
         case 1:
             output = System.out;
-            modes = new IOModes(ruby, "w");
+            modes = new IOModes(runtime, "w");
             isOpen = true;
             break;
         case 2:
             output = System.err;
-            modes = new IOModes(ruby, "w");
+            modes = new IOModes(runtime, "w");
             isOpen = true;
             break;
         default:
@@ -106,10 +106,10 @@ public class IOHandlerUnseekable extends IOHandler {
         this.fileno = fileno;
     }
     
-    public IOHandlerUnseekable(Ruby ruby, int fileno, String mode) {
-        super(ruby);
+    public IOHandlerUnseekable(Ruby runtime, int fileno, String mode) {
+        super(runtime);
 
-        modes = new IOModes(ruby, mode);
+        modes = new IOModes(runtime, mode);
         
         if (fileno < 0 || fileno > 2) {
             throw new IOError(getRuntime(), "Bad file descriptor");

@@ -72,7 +72,7 @@ public abstract class IRegexpAdapter {
     /**
      * Compile the regex.
      */
-    public abstract void compile(Ruby ruby, String pattern) throws RegexpError;
+    public abstract void compile(Ruby runtime, String pattern) throws RegexpError;
 
     /**
      * Set whether matches should be case-insensitive or not

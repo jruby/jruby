@@ -55,7 +55,7 @@ public class ORORegexpAdapter extends IRegexpAdapter {
 	/**
 	 * Compile the regex.
 	 */
-	public void compile(Ruby ruby, String pattern) throws RegexpError {
+	public void compile(Ruby runtime, String pattern) throws RegexpError {
 		if (extended) {
 			pattern = unextend(pattern);
 		}
@@ -64,7 +64,7 @@ public class ORORegexpAdapter extends IRegexpAdapter {
 			PatternCompiler compiler = new Perl5Compiler();
 			this.pattern = compiler.compile(pattern, cflags);
 		} catch (MalformedPatternException e) {
-			throw new RegexpError(ruby, e.getMessage());
+			throw new RegexpError(runtime, e.getMessage());
 		}
 	}
 
@@ -107,7 +107,7 @@ public class ORORegexpAdapter extends IRegexpAdapter {
 	/**
 	 * Does the given argument match the pattern?
 	 */
-	public IRubyObject search(Ruby ruby, String target, int startPos) {
+	public IRubyObject search(Ruby runtime, String target, int startPos) {
 		PatternMatcherInput pmi = new PatternMatcherInput(target);
 		pmi.setCurrentOffset(startPos);
 
@@ -123,8 +123,8 @@ public class ORORegexpAdapter extends IRegexpAdapter {
 				begin[i] = match.beginOffset(i);
 				end[i] = match.endOffset(i);
 			}
-			return new RubyMatchData(ruby, target, begin, end);
+			return new RubyMatchData(runtime, target, begin, end);
 		}
-		return ruby.getNil();
+		return runtime.getNil();
 	}
 }

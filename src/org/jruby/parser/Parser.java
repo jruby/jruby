@@ -42,8 +42,8 @@ public class Parser {
     private final Ruby runtime;
     private final RubyParserPool pool;
 
-    public Parser(Ruby ruby) {
-        this.runtime = ruby;
+    public Parser(Ruby runtime) {
+        this.runtime = runtime;
         this.pool = RubyParserPool.getInstance();
     }
 

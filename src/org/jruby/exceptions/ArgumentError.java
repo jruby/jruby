@@ -41,11 +41,11 @@ public class ArgumentError extends RaiseException {
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public ArgumentError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getArgumentError(), msg);
+    public ArgumentError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getArgumentError(), msg);
     }
 
-    public ArgumentError(Ruby ruby, int got, int expected) {
-        this(ruby, "wrong # of arguments(" + got + " for " + expected);
+    public ArgumentError(Ruby runtime, int got, int expected) {
+        this(runtime, "wrong # of arguments(" + got + " for " + expected);
     }
 }

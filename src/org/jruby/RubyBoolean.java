@@ -40,8 +40,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 public class RubyBoolean extends RubyObject {
 	private final boolean value;
 
-	public RubyBoolean(Ruby ruby, boolean value) {
-		super(ruby, null, // Don't initialize with class
+	public RubyBoolean(Ruby runtime, boolean value) {
+		super(runtime, null, // Don't initialize with class
 		false); // Don't put in object space
 		this.value = value;
 	}
@@ -68,34 +68,34 @@ public class RubyBoolean extends RubyObject {
 		return !value;
 	}
 
-	public static RubyClass createFalseClass(Ruby ruby) {
+	public static RubyClass createFalseClass(Ruby runtime) {
 		RubyClass falseClass =
-			ruby.defineClass("FalseClass", ruby.getClasses().getObjectClass());
+			runtime.defineClass("FalseClass", runtime.getClasses().getObjectClass());
 
 		falseClass.defineMethod(
 			"type",
-			ruby.callbackFactory().getMethod(RubyBoolean.class, "type"));
+			runtime.callbackFactory().getMethod(RubyBoolean.class, "type"));
 
-		ruby.defineGlobalConstant("FALSE", ruby.getFalse());
+		runtime.defineGlobalConstant("FALSE", runtime.getFalse());
 
 		return falseClass;
 	}
 
-	public static RubyClass createTrueClass(Ruby ruby) {
+	public static RubyClass createTrueClass(Ruby runtime) {
 		RubyClass trueClass =
-			ruby.defineClass("TrueClass", ruby.getClasses().getObjectClass());
+			runtime.defineClass("TrueClass", runtime.getClasses().getObjectClass());
 
 		trueClass.defineMethod(
 			"type",
-			ruby.callbackFactory().getMethod(RubyBoolean.class, "type"));
+			runtime.callbackFactory().getMethod(RubyBoolean.class, "type"));
 
-		ruby.defineGlobalConstant("TRUE", ruby.getTrue());
+		runtime.defineGlobalConstant("TRUE", runtime.getTrue());
 
 		return trueClass;
 	}
 
-	public static RubyBoolean newBoolean(Ruby ruby, boolean value) {
-        return (value ? ruby.getTrue() : ruby.getFalse());
+	public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
+        return (value ? runtime.getTrue() : runtime.getFalse());
 	}
 
 	/** false_type

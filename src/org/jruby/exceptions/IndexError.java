@@ -42,8 +42,8 @@ public class IndexError extends RaiseException {
      * Constructs an <code>RubyIndexException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public IndexError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getIndexError(), msg);
+    public IndexError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getIndexError(), msg);
     }
 }
 

@@ -47,7 +47,7 @@ public abstract class IOHandler {
     // The 100% solution is not really worth the extra code.
     public static final String PARAGRAPH_DELIMETER = "PARAGRPH_DELIM_MRK_ER";
     
-    private Ruby ruby;
+    private Ruby runtime;
     protected IOModes modes;
     protected int fileno;
     protected boolean isOpen = false;
@@ -56,8 +56,8 @@ public abstract class IOHandler {
     // Last char to be 'ungot'.  <0 indicates nothing waiting to be re-got  
     private int ungotc = -1;
     
-    protected IOHandler(Ruby ruby) {
-        this.ruby = ruby;
+    protected IOHandler(Ruby runtime) {
+        this.runtime = runtime;
     }
 
     public int getFileno() {
@@ -72,7 +72,7 @@ public abstract class IOHandler {
      * @return
      */
     protected Ruby getRuntime() {
-        return ruby;
+        return runtime;
     }
     
     /**

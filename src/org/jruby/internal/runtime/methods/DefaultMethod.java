@@ -67,12 +67,12 @@ public final class DefaultMethod extends AbstractMethod {
     /**
      * @see AbstractMethod#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        ThreadContext context = ruby.getCurrentContext();
+    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        ThreadContext context = runtime.getCurrentContext();
 
         RubyProc optionalBlockArg = null;
         if (argsNode.getBlockArgNode() != null && context.isBlockGiven()) {
-            optionalBlockArg = RubyProc.newProc(ruby);
+            optionalBlockArg = RubyProc.newProc(runtime);
         }
 
         context.getScopeStack().push();
@@ -87,14 +87,14 @@ public final class DefaultMethod extends AbstractMethod {
 
         try {
             if (argsNode != null) {
-                prepareArguments(ruby, receiver, args);
+                prepareArguments(runtime, receiver, args);
             }
 
             if (optionalBlockArg != null) {
                 context.getScopeStack().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
 
-            traceCall(ruby, receiver, name);
+            traceCall(runtime, receiver, name);
 
             return receiver.eval(body.getBodyNode());
 
@@ -104,33 +104,33 @@ public final class DefaultMethod extends AbstractMethod {
             context.popClass();
             context.popDynamicVars();
             context.getScopeStack().pop();
-            traceReturn(ruby, receiver, name);
+            traceReturn(runtime, receiver, name);
         }
     }
 
-    private void prepareArguments(Ruby ruby, IRubyObject receiver, IRubyObject[] args) {
+    private void prepareArguments(Ruby runtime, IRubyObject receiver, IRubyObject[] args) {
         if (args == null) {
             args = IRubyObject.NULL_ARRAY;
         }
 
         int expectedArgsCount = argsNode.getArgsCount();
         if (expectedArgsCount > args.length) {
-            throw new ArgumentError(ruby, "Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
+            throw new ArgumentError(runtime, "Wrong # of arguments(" + args.length + " for " + expectedArgsCount + ")");
         }
         if (argsNode.getRestArg() == -1 && argsNode.getOptArgs() != null) {
             int opt = expectedArgsCount + argsNode.getOptArgs().size();
 
             if (opt < args.length) {
-                throw new ArgumentError(ruby, "wrong # of arguments(" + args.length + " for " + opt + ")");
+                throw new ArgumentError(runtime, "wrong # of arguments(" + args.length + " for " + opt + ")");
             }
 
-            ruby.getCurrentFrame().setArgs(args);
+            runtime.getCurrentFrame().setArgs(args);
         }
 
-        if (ruby.getScope().hasLocalVariables()) {
+        if (runtime.getScope().hasLocalVariables()) {
             if (expectedArgsCount > 0) {
                 for (int i = 0; i < expectedArgsCount; i++) {
-                    ruby.getScope().setValue(i + 2, args[i]);
+                    runtime.getScope().setValue(i + 2, args[i]);
                 }
             }
 
@@ -139,7 +139,7 @@ public final class DefaultMethod extends AbstractMethod {
 
                 Iterator iter = optArgs.iterator();
                 for (int i = expectedArgsCount; i < args.length && iter.hasNext(); i++) {
-                    new AssignmentVisitor(ruby, receiver).assign((Node)iter.next(), args[i], true);
+                    new AssignmentVisitor(runtime, receiver).assign((Node)iter.next(), args[i], true);
                     expectedArgsCount++;
                 }
 
@@ -150,29 +150,29 @@ public final class DefaultMethod extends AbstractMethod {
             }
 
             if (argsNode.getRestArg() >= 0) {
-                RubyArray array = RubyArray.newArray(ruby, args.length - expectedArgsCount);
+                RubyArray array = RubyArray.newArray(runtime, args.length - expectedArgsCount);
                 for (int i = expectedArgsCount; i < args.length; i++) {
                     array.append(args[i]);
                 }
-                ruby.getScope().setValue(argsNode.getRestArg(), array);
+                runtime.getScope().setValue(argsNode.getRestArg(), array);
             }
         }
     }
 
-    private void traceReturn(Ruby ruby, IRubyObject receiver, String name) {
-        if (ruby.getTraceFunction() == null) {
+    private void traceReturn(Ruby runtime, IRubyObject receiver, String name) {
+        if (runtime.getTraceFunction() == null) {
             return;
         }
 
-        SourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
+        SourcePosition position = runtime.getFrameStack().getPrevious().getPosition();
         if (position == null) {
-            position = ruby.getPosition();
+            position = runtime.getPosition();
         }
-        ruby.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
+        runtime.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
-    private void traceCall(Ruby ruby, IRubyObject receiver, String name) {
-        if (ruby.getTraceFunction() == null) {
+    private void traceCall(Ruby runtime, IRubyObject receiver, String name) {
+        if (runtime.getTraceFunction() == null) {
             return;
         }
         //a lot of complication to try to get a line number and a file name
@@ -195,9 +195,9 @@ public final class DefaultMethod extends AbstractMethod {
 
 
         if (lPosition == null) {
-           lPosition = ruby.getPosition();
+           lPosition = runtime.getPosition();
         }
-        ruby.callTraceFunction("call", lPosition, receiver, name, getImplementationClass()); // XXX
+        runtime.callTraceFunction("call", lPosition, receiver, name, getImplementationClass()); // XXX
     }
 
     /**

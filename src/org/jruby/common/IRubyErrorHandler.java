@@ -36,19 +36,8 @@ import org.jruby.lexer.yacc.SourcePosition;
  * @version $Revision$
  */
 public interface IRubyErrorHandler {
-    void warn(String message);
-
-    /** 
-     * reports only if in verbose mode.
-     */
-    void warning(String message);
-    
     boolean isVerbose();
-    void setVerbose(boolean verbose);
-    
-    public boolean isHandled(int type);
 
-    public void handleError(int type, String message);
     public void handleError(int type, SourcePosition position, String message);
     public void handleError(int type, SourcePosition position, String message, Object args);
 }

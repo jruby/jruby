@@ -93,17 +93,16 @@ public final class EvaluateVisitor implements NodeVisitor {
     private IRubyObject self;
     private IRubyObject result;
 
-    public EvaluateVisitor(Ruby ruby, IRubyObject self) {
-        this.runtime = ruby;
+    public EvaluateVisitor(Ruby runtime, IRubyObject self) {
+        this.runtime = runtime;
         this.threadContext = runtime.getCurrentContext();
         this.self = self;
 
-        builtins = new Builtins(ruby);
+        builtins = new Builtins(runtime);
     }
 
     public static EvaluateVisitor createVisitor(IRubyObject self) {
-        Ruby ruby = self.getRuntime();
-        return new EvaluateVisitor(ruby, self);
+        return new EvaluateVisitor(self.getRuntime(), self);
     }
 
     /**

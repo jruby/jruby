@@ -52,8 +52,8 @@ public class WrapperCallable extends AbstractMethod {
     /**
      * @see org.jruby.runtime.ICallable#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
-    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        return callable.call(ruby, receiver, name, args, noSuper);
+    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+        return callable.call(runtime, receiver, name, args, noSuper);
     }
     
     public ICallable dup() {

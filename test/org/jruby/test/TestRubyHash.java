@@ -44,8 +44,8 @@ public class TestRubyHash extends TestRubyBase {
     }
 
     public void setUp() throws Exception {
-        if (ruby == null) {
-        	ruby = Ruby.getDefaultInstance();
+        if (runtime == null) {
+        	runtime = Ruby.getDefaultInstance();
         }
         eval("$h = {'foo' => 'bar'}");
     }

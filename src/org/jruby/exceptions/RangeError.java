@@ -42,7 +42,7 @@ public class RangeError extends RaiseException {
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RangeError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getRangeError(), msg);
+    public RangeError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getRangeError(), msg);
     }
 }

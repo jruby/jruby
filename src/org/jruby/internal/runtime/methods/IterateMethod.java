@@ -51,7 +51,7 @@ public class IterateMethod extends AbstractMethod {
      * @see IMethod#execute(Ruby, RubyObject, String, RubyObject[], boolean)
 	 * @fixme implement it 
      */
-    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return callback.execute(args[0], new IRubyObject[] { data, receiver });
     }
     

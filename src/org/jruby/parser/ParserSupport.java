@@ -279,7 +279,7 @@ public class ParserSupport {
             head = new BlockNode(head.getPosition()).add(head);
         }
 
-        if (errorHandler.isHandled(IErrors.VERBOSE) && NodeUtil.isBreakStatement(ListNodeUtil.getLast((ListNode) head))) {
+        if (errorHandler.isVerbose() && NodeUtil.isBreakStatement(ListNodeUtil.getLast((ListNode) head))) {
             errorHandler.handleError(IErrors.WARNING, tail.getPosition(), "Statement not reached.", null);
         }
 
@@ -393,13 +393,13 @@ public class ParserSupport {
     }
 
     public void checkUselessStatement(Node node) {
-        if (errorHandler.isHandled(IErrors.VERBOSE)) {
+        if (errorHandler.isVerbose()) {
             new UselessStatementVisitor(errorHandler).acceptNode(node);
         }
     }
 
     public void checkUselessStatements(BlockNode blockNode) {
-        if (errorHandler.isHandled(IErrors.VERBOSE)) {
+        if (errorHandler.isVerbose()) {
             Iterator iterator = blockNode.iterator();
             while (iterator.hasNext()) {
                 checkUselessStatement((Node) iterator.next());

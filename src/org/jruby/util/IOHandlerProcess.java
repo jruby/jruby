@@ -50,11 +50,11 @@ public class IOHandlerProcess extends IOHandler {
      * @param inStream
      * @param outStream
      */
-    public IOHandlerProcess(Ruby ruby, Process process, IOModes modes) {
-        super(ruby);
+    public IOHandlerProcess(Ruby runtime, Process process, IOModes modes) {
+        super(runtime);
         
         if (process == null) {
-        	throw new IOError(ruby, "Null process");
+        	throw new IOError(runtime, "Null process");
         }
         
         this.process = process;

@@ -51,8 +51,8 @@ public class TestKernel extends TestRubyBase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
-        ruby.getLoadService().init(ruby, new ArrayList());
+        runtime = Ruby.getDefaultInstance();
+        runtime.getLoadService().init(runtime, new ArrayList());
     }
 
     public void testLoad() throws Exception {

@@ -43,11 +43,11 @@ public class NameError extends RaiseException {
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public NameError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getNameError(), msg);
+    public NameError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getNameError(), msg);
     }
     
-    public NameError(Ruby ruby, RubyClass exceptionClass, String msg) {
-        super(ruby, exceptionClass, msg);
+    public NameError(Ruby runtime, RubyClass exceptionClass, String msg) {
+        super(runtime, exceptionClass, msg);
     }
 }

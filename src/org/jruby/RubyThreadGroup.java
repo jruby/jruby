@@ -45,10 +45,10 @@ public class RubyThreadGroup extends RubyObject {
     private List rubyThreadList = new ArrayList();
     private boolean enclosed = false;
 
-    public static RubyClass createThreadGroupClass(Ruby ruby) {
-        RubyClass threadGroupClass = ruby.defineClass("ThreadGroup", 
-                ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createThreadGroupClass(Ruby runtime) {
+        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", 
+                runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         threadGroupClass.defineMethod("add",
         		callbackFactory.getMethod(RubyThreadGroup.class, "add", RubyThread.class));
@@ -62,7 +62,7 @@ public class RubyThreadGroup extends RubyObject {
                 callbackFactory.getSingletonMethod(RubyThreadGroup.class, "newInstance"));
         
         // create the default thread group
-        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(ruby, threadGroupClass);
+        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
         threadGroupClass.defineConstant("Default", defaultThreadGroup);
 
         return threadGroupClass;
@@ -102,8 +102,8 @@ public class RubyThreadGroup extends RubyObject {
     	return RubyArray.newArray(getRuntime(), rubyThreadList);
     }
 
-    private RubyThreadGroup(Ruby ruby, RubyClass type) {
-        super(ruby, type);
+    private RubyThreadGroup(Ruby runtime, RubyClass type) {
+        super(runtime, type);
     }
 
 }

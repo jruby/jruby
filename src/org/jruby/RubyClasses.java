@@ -163,10 +163,10 @@ public class RubyClasses {
      * Creates a new RubyClasses instance and defines all the
      * core classes and modules in the Ruby runtime.
      *
-     * @param ruby The Ruby runtime.
+     * @param runtime The Ruby runtime.
      */
-    public RubyClasses(Ruby ruby) {
-        this.runtime = ruby;
+    public RubyClasses(Ruby runtime) {
+        this.runtime = runtime;
 
         classMap = new HashMap();
     }

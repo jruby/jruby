@@ -79,7 +79,7 @@ public class RubyInvocationHandler implements InvocationHandler {
 
     /** Get the Ruby instance that should be used. */
     protected Ruby getRuby() {
-        return factory.getRuby();
+        return factory.getRuntime();
     }
 
     /** Get the RubyProxyFactory instance that created this handler. */

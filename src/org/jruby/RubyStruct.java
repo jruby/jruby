@@ -53,17 +53,17 @@ public class RubyStruct extends RubyObject {
 
     /**
      * Constructor for RubyStruct.
-     * @param ruby
+     * @param runtime
      * @param rubyClass
      */
-    public RubyStruct(Ruby ruby, RubyClass rubyClass) {
-        super(ruby, rubyClass);
+    public RubyStruct(Ruby runtime, RubyClass rubyClass) {
+        super(runtime, rubyClass);
     }
 
-    public static RubyClass createStructClass(Ruby ruby) {
-        RubyClass structClass = ruby.defineClass("Struct", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
-        structClass.includeModule(ruby.getModule("Enumerable"));
+    public static RubyClass createStructClass(Ruby runtime) {
+        RubyClass structClass = runtime.defineClass("Struct", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
+        structClass.includeModule(runtime.getModule("Enumerable"));
 
         structClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyStruct.class, "newInstance"));
 
@@ -412,12 +412,12 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        Ruby ruby = input.getRuntime();
+        Ruby runtime = input.getRuntime();
 
         RubySymbol className = (RubySymbol) input.unmarshalObject();
-        RubyClass rbClass = pathToClass(ruby, className.asSymbol());
+        RubyClass rbClass = pathToClass(runtime, className.asSymbol());
         if (rbClass == null) {
-            throw new NameError(ruby, "uninitialized constant " + className);
+            throw new NameError(runtime, "uninitialized constant " + className);
         }
 
         int size = input.unmarshalInt();
@@ -433,9 +433,9 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
-    private static RubyClass pathToClass(Ruby ruby, String path) {
+    private static RubyClass pathToClass(Ruby runtime, String path) {
         // FIXME: Throw the right ArgumentError's if the class is missing
         // or if it's a module.
-        return (RubyClass) ruby.getClasses().getClassFromPath(path);
+        return (RubyClass) runtime.getClasses().getClassFromPath(path);
     }
 }

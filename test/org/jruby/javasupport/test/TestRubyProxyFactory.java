@@ -13,7 +13,7 @@ public class TestRubyProxyFactory extends RubyTestCase {
     private static final String RUBY_PACKAGE = "org.jruby.javasupport.test";
     private static final String RUBY_FILE = "test.rb";
 
-    private Ruby ruby = null;
+    private Ruby runtime = null;
     private RubyToJavaClassMap classMap = null;
     private RubyProxyFactory factory = null;
     private RubyTestObject test = null;
@@ -27,14 +27,14 @@ public class TestRubyProxyFactory extends RubyTestCase {
         if (testFile == null) {
             fail("Couldn't locate test file: " + RUBY_FILE);
         }
-        ruby = createRuby(testFile);
+        runtime = createRuby(testFile);
         classMap = new ReflectionClassMap(RUBY_PACKAGE);
-        factory = new RubyProxyFactory(ruby, classMap);
+        factory = new RubyProxyFactory(runtime, classMap);
         test = (RubyTestObject) factory.newProxyObject(RubyTestObject.class);
     }
 
     public void tearDown() {
-        ruby = null;
+        runtime = null;
         classMap = null;
         factory = null;
         test = null;

@@ -55,7 +55,7 @@ public class EvaluateMethod extends AbstractMethod {
         this(node, null);
     }
 
-    public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
+    public IRubyObject call(Ruby runtime, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         return EvaluateVisitor.createVisitor(receiver).eval(node);
     }
 

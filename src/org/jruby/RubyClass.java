@@ -56,16 +56,16 @@ public class RubyClass extends RubyModule {
         infectBy(superClass);
     }
 
-    protected RubyClass(Ruby ruby, RubyClass superClass) {
-        super(ruby, null, superClass, null, null);
+    protected RubyClass(Ruby runtime, RubyClass superClass) {
+        super(runtime, null, superClass, null, null);
     }
 
-    protected RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
-        super(ruby, rubyClass, superClass, null, null);
+    protected RubyClass(Ruby runtime, RubyClass rubyClass, RubyClass superClass) {
+        super(runtime, rubyClass, superClass, null, null);
     }
     
-    protected RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass, RubyModule parentClass, String name) {
-        super(ruby, rubyClass, superClass, parentClass, name);
+    protected RubyClass(Ruby runtime, RubyClass rubyClass, RubyClass superClass, RubyModule parentClass, String name) {
+        super(runtime, rubyClass, superClass, parentClass, name);
     }
 
     public boolean isModule() {
@@ -154,8 +154,8 @@ public class RubyClass extends RubyModule {
         return newClass;
     }
 
-    public static RubyClass newClass(Ruby ruby, RubyClass superClass, RubyModule parentClass, String name) {
-        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass, parentClass, name);
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, RubyModule parentClass, String name) {
+        return new RubyClass(runtime, runtime.getClasses().getClassClass(), superClass, parentClass, name);
     }
 
     /** Create a new subclass of this class.

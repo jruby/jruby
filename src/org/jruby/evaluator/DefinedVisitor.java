@@ -77,16 +77,16 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class DefinedVisitor extends AbstractVisitor {
-    private Ruby ruby;
+    private Ruby runtime;
     private IRubyObject self;
     private ThreadContext threadContext;
 
     private String definition;
 
-    public DefinedVisitor(Ruby ruby, IRubyObject self) {
-        this.ruby = ruby;
+    public DefinedVisitor(Ruby runtime, IRubyObject self) {
+        this.runtime = runtime;
         this.self = self;
-        this.threadContext = ruby.getCurrentContext();
+        this.threadContext = runtime.getCurrentContext();
     }
 
     public String getDefinition(Node expression) {
@@ -343,7 +343,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        if (ruby.getClasses().getModuleClass().getConstant(iVisited.getName(), false) != null) {
+        if (runtime.getClasses().getModuleClass().getConstant(iVisited.getName(), false) != null) {
             definition = "constant";
         }
     }
@@ -352,7 +352,7 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitGlobalVarNode(GlobalVarNode)
      */
     public void visitGlobalVarNode(GlobalVarNode iVisited) {
-        if (ruby.getGlobalVariables().isDefined(iVisited.getName())) {
+        if (runtime.getGlobalVariables().isDefined(iVisited.getName())) {
             definition = "global-variable";
         }
     }

@@ -32,7 +32,7 @@ import org.jruby.RubyObject;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TestRubyObject extends TestCase {
-    private Ruby ruby;
+    private Ruby runtime;
     private IRubyObject rubyObject;
 
     public TestRubyObject(String name) {
@@ -40,8 +40,8 @@ public class TestRubyObject extends TestCase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance();
-        rubyObject = new RubyObject(ruby, ruby.getClasses().getObjectClass());
+        runtime = Ruby.getDefaultInstance();
+        rubyObject = new RubyObject(runtime, runtime.getClasses().getObjectClass());
     }
 
     public void testNil() {
@@ -85,7 +85,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void test_kind_of() {
-        assertTrue(rubyObject.isKindOf(ruby.getClasses().getObjectClass()));
+        assertTrue(rubyObject.isKindOf(runtime.getClasses().getObjectClass()));
         // assertTrue(rubyObject.kind_of(ruby.getClasses().getStringClass()).isFalse());
     }
 }

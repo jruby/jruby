@@ -39,7 +39,7 @@ public class SystemStackError extends RaiseException {
      * Constructs a <code>SystemStackException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public SystemStackError(Ruby ruby, String msg) {
-        super(ruby, ruby.getExceptions().getSystemStackError(), msg);
+    public SystemStackError(Ruby runtime, String msg) {
+        super(runtime, runtime.getExceptions().getSystemStackError(), msg);
     }
 }

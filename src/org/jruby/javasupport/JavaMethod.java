@@ -41,10 +41,10 @@ import java.lang.reflect.Modifier;
 public class JavaMethod extends JavaCallable {
     private final Method method;
 
-    public static RubyClass createJavaMethodClass(Ruby ruby, RubyModule javaModule) {
+    public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = 
-            javaModule.defineClassUnder("JavaMethod", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+            javaModule.defineClassUnder("JavaMethod", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         result.defineMethod("name", 
                 callbackFactory.getMethod(JavaMethod.class, "name"));

@@ -49,18 +49,18 @@ public class RaiseException extends JumpException {
         setException(actException);
     }
 
-    public RaiseException(Ruby ruby, RubyClass excptnClass, String msg) {
+    public RaiseException(Ruby runtime, RubyClass excptnClass, String msg) {
 		super(msg);
-        setException(RubyException.newException(ruby, excptnClass, msg));
+        setException(RubyException.newException(runtime, excptnClass, msg));
     }
 
-    public RaiseException(Ruby ruby, String excptnClassName, String msg) {
+    public RaiseException(Ruby runtime, String excptnClassName, String msg) {
 		super(msg);
-        RubyClass excptnClass = ruby.getClass(excptnClassName);
+        RubyClass excptnClass = runtime.getClass(excptnClassName);
         if (excptnClass == null) {
             System.err.println(excptnClassName);
         }
-        setException(RubyException.newException(ruby, excptnClass, msg));
+        setException(RubyException.newException(runtime, excptnClass, msg));
     }
 
     public Throwable fillInStackTrace() {
@@ -70,13 +70,13 @@ public class RaiseException extends JumpException {
     /** 
      * Create an Array with backtrace information.
      */
-    public static RubyArray createBacktrace(Ruby ruby, int level) {
-        RubyArray backtrace = RubyArray.newArray(ruby);
-        FrameStack stack = ruby.getFrameStack();
+    public static RubyArray createBacktrace(Ruby runtime, int level) {
+        RubyArray backtrace = RubyArray.newArray(runtime);
+        FrameStack stack = runtime.getFrameStack();
         int traceSize = stack.size() - level - 1;
         
         if (traceSize <= 0) {
-        	return RubyArray.nilArray(ruby);
+        	return RubyArray.nilArray(runtime);
         }
         
         for (int i = traceSize; i > 0; i--) {
@@ -114,29 +114,29 @@ public class RaiseException extends JumpException {
      * @param newException The exception to set
      */
     protected void setException(RubyException newException) {
-        Ruby ruby = newException.getRuntime();
+        Ruby runtime = newException.getRuntime();
 
-        if (ruby.getTraceFunction() != null) {
-            ruby.callTraceFunction(
+        if (runtime.getTraceFunction() != null) {
+            runtime.callTraceFunction(
                 "return",
-                ruby.getPosition(),
-                ruby.getCurrentFrame().getSelf(),
-                ruby.getCurrentFrame().getLastFunc(),
-                ruby.getCurrentFrame().getLastClass());
+                runtime.getPosition(),
+                runtime.getCurrentFrame().getSelf(),
+                runtime.getCurrentFrame().getLastFunc(),
+                runtime.getCurrentFrame().getLastClass());
         }
 
         this.exception = newException;
 
-        if (ruby.stackTraces > 5) {
+        if (runtime.stackTraces > 5) {
             return;
         }
 
-        ruby.stackTraces++;
+        runtime.stackTraces++;
 
-        if (newException.callMethod("backtrace").isNil() && ruby.getSourceFile() != null) {
-            newException.callMethod("set_backtrace", createBacktrace(ruby, 1));
+        if (newException.callMethod("backtrace").isNil() && runtime.getSourceFile() != null) {
+            newException.callMethod("set_backtrace", createBacktrace(runtime, 1));
         }
 
-        ruby.stackTraces--;
+        runtime.stackTraces--;
     }
 }

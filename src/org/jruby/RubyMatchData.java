@@ -44,18 +44,18 @@ public class RubyMatchData extends RubyObject {
     private int[] begin;
     private int[] end;
 
-    public RubyMatchData(Ruby ruby, String str, int[] begin, int[] end) {
-        super(ruby, ruby.getClass("MatchData"));
+    public RubyMatchData(Ruby runtime, String str, int[] begin, int[] end) {
+        super(runtime, runtime.getClass("MatchData"));
         this.str = str;
         this.begin = begin;
         this.end = end;
     }
 
-    public static RubyClass createMatchDataClass(Ruby ruby) {
-        RubyClass matchDataClass = ruby.defineClass("MatchData", ruby.getClasses().getObjectClass());
-        ruby.defineGlobalConstant("MatchingData", matchDataClass);
+    public static RubyClass createMatchDataClass(Ruby runtime) {
+        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getClasses().getObjectClass());
+        runtime.defineGlobalConstant("MatchingData", matchDataClass);
 
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         matchDataClass.defineMethod("clone", callbackFactory.getMethod(RubyMatchData.class, "rbClone"));
         matchDataClass.defineMethod("size", callbackFactory.getMethod(RubyMatchData.class, "size"));

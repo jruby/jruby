@@ -50,23 +50,23 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     private int options;
     private String lang = null;
 
-    public RubyRegexp(Ruby ruby) {
-        super(ruby, ruby.getClass("Regexp"));
+    public RubyRegexp(Ruby runtime) {
+        super(runtime, runtime.getClass("Regexp"));
         try {
-            matcher = (IRegexpAdapter) ruby.getRegexpAdapterClass().newInstance();
+            matcher = (IRegexpAdapter) runtime.getRegexpAdapterClass().newInstance();
         } catch (Exception ex) {
             // can't happen if JRuby is invoked via Main class
             Asserts.notReached("Couldn't create regexp adapter");
         }
     }
 
-    public static RubyClass createRegexpClass(Ruby ruby) {
-        RubyClass regexpClass = ruby.defineClass("Regexp", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+    public static RubyClass createRegexpClass(Ruby runtime) {
+        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
-        regexpClass.defineConstant("IGNORECASE", RubyFixnum.newFixnum(ruby, RE_OPTION_IGNORECASE));
-        regexpClass.defineConstant("EXTENDED", RubyFixnum.newFixnum(ruby, RE_OPTION_EXTENDED));
-        regexpClass.defineConstant("MULTILINE", RubyFixnum.newFixnum(ruby, RE_OPTION_MULTILINE));
+        regexpClass.defineConstant("IGNORECASE", RubyFixnum.newFixnum(runtime, RE_OPTION_IGNORECASE));
+        regexpClass.defineConstant("EXTENDED", RubyFixnum.newFixnum(runtime, RE_OPTION_EXTENDED));
+        regexpClass.defineConstant("MULTILINE", RubyFixnum.newFixnum(runtime, RE_OPTION_MULTILINE));
 
         regexpClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyRegexp.class, "initialize"));
         regexpClass.defineMethod("clone", callbackFactory.getMethod(RubyRegexp.class, "rbClone"));
@@ -144,8 +144,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return newRegexp(str.getRuntime(), str.getValue(), options, lang);
     }
     
-    public static RubyRegexp newRegexp(Ruby ruby, String str, int options, String lang) {
-        RubyRegexp re = new RubyRegexp(ruby);
+    public static RubyRegexp newRegexp(Ruby runtime, String str, int options, String lang) {
+        RubyRegexp re = new RubyRegexp(runtime);
         re.lang = lang;
         re.initialize(str, options);
         return re;

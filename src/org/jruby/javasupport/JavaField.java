@@ -38,10 +38,10 @@ import java.lang.reflect.Modifier;
 public class JavaField extends RubyObject {
     private final Field field;
 
-    public static RubyClass createJavaFieldClass(Ruby ruby, RubyModule javaModule) {
+    public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result = javaModule.defineClassUnder("JavaField", 
-            ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+            runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
         result.defineMethod("value_type", 
             callbackFactory.getMethod(JavaField.class, "value_type"));

@@ -38,10 +38,10 @@ import java.lang.reflect.InvocationTargetException;
 public class JavaConstructor extends JavaCallable {
     private final Constructor constructor;
 
-    public static RubyClass createJavaConstructorClass(Ruby ruby, RubyModule javaModule) {
+    public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         RubyClass result =
-                javaModule.defineClassUnder("JavaConstructor", ruby.getClasses().getObjectClass());
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+                javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         
         result.defineMethod("arity", 
                 callbackFactory.getMethod(JavaConstructor.class, "arity"));

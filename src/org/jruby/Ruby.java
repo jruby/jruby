@@ -32,7 +32,6 @@
 package org.jruby;
 
 import org.jruby.ast.Node;
-import org.jruby.common.IRubyErrorHandler;
 import org.jruby.common.RubyErrorHandler;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.IOError;
@@ -143,7 +142,7 @@ public final class Ruby {
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
     private IGlobalVariables globalVariables = new GlobalVariables(this);
-    private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
+    private RubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
     // Contains a list of all blocks (as Procs) that should be called when
     // the runtime environment exits.
@@ -170,9 +169,9 @@ public final class Ruby {
      */
     public static Ruby getDefaultInstance(String regexpEngineName) {
         Class regexpAdapterClass = IRegexpAdapter.getAdapter(regexpEngineName);
-        Ruby ruby = new Ruby(regexpAdapterClass);
-        ruby.init();
-        return ruby;
+        Ruby runtime = new Ruby(regexpAdapterClass);
+        runtime.init();
+        return runtime;
     }
 
     public static Ruby getDefaultInstance() {
@@ -597,7 +596,7 @@ public final class Ruby {
      * Returns the errorHandler.
      * @return IRubyErrorHandler
      */
-    public IRubyErrorHandler getErrorHandler() {
+    public RubyErrorHandler getErrorHandler() {
         return errorHandler;
     }
 

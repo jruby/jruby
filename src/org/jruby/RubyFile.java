@@ -52,15 +52,15 @@ import java.io.IOException;
 public class RubyFile extends RubyIO {
     protected String path;
     
-    public RubyFile(Ruby ruby, String path) {
-        super(ruby, ruby.getClasses().getFileClass());
+    public RubyFile(Ruby runtime, String path) {
+        super(runtime, runtime.getClasses().getFileClass());
 
         this.path = path;
         
         try {
             FileInputStream inputStream = new FileInputStream(new File(path));
-            handler = new IOHandlerUnseekable(getRuntime(), inputStream, null);
-            modes = new IOModes(ruby, "r");
+            handler = new IOHandlerUnseekable(runtime, inputStream, null);
+            modes = new IOModes(runtime, "r");
         } catch (FileNotFoundException e) {
             throw new IOError(runtime, e.getMessage());
         }
@@ -68,48 +68,48 @@ public class RubyFile extends RubyIO {
         registerIOHandler(handler);
     }
     
-	public RubyFile(Ruby ruby, RubyClass type) {
-	    super(ruby, type);
+	public RubyFile(Ruby runtime, RubyClass type) {
+	    super(runtime, type);
 	}
 
-    public static RubyClass createFileClass(Ruby ruby) {
-        RubyClass fileClass = ruby.defineClass("File", 
-                ruby.getClasses().getIoClass());
+    public static RubyClass createFileClass(Ruby runtime) {
+        RubyClass fileClass = runtime.defineClass("File", 
+                runtime.getClasses().getIoClass());
 
-        RubyString separator = RubyString.newString(ruby, separator());
+        RubyString separator = RubyString.newString(runtime, separator());
         separator.freeze();
         fileClass.defineConstant("SEPARATOR", separator);
         fileClass.defineConstant("Separator", separator);
-        RubyString altSeparator = RubyString.newString(ruby, (File.separatorChar == '/'? "\\" : "/"));
+        RubyString altSeparator = RubyString.newString(runtime, (File.separatorChar == '/'? "\\" : "/"));
         altSeparator.freeze();
         fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
-        RubyString pathSeparator = RubyString.newString(ruby, File.pathSeparator);
+        RubyString pathSeparator = RubyString.newString(runtime, File.pathSeparator);
         pathSeparator.freeze();
         fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
         
         // Create constants for open flags
         fileClass.setConstant("RDONLY", 
-        		RubyFixnum.newFixnum(ruby, IOModes.RDONLY));
+        		RubyFixnum.newFixnum(runtime, IOModes.RDONLY));
         fileClass.setConstant("WRONLY", 
-        		RubyFixnum.newFixnum(ruby, IOModes.WRONLY));
+        		RubyFixnum.newFixnum(runtime, IOModes.WRONLY));
         fileClass.setConstant("RDWR", 
-        		RubyFixnum.newFixnum(ruby, IOModes.RDWR));
+        		RubyFixnum.newFixnum(runtime, IOModes.RDWR));
         fileClass.setConstant("CREAT", 
-        		RubyFixnum.newFixnum(ruby, IOModes.CREAT));
+        		RubyFixnum.newFixnum(runtime, IOModes.CREAT));
         fileClass.setConstant("EXCL", 
-        		RubyFixnum.newFixnum(ruby, IOModes.EXCL));
+        		RubyFixnum.newFixnum(runtime, IOModes.EXCL));
         fileClass.setConstant("NOCTTY", 
-        		RubyFixnum.newFixnum(ruby, IOModes.NOCTTY));
+        		RubyFixnum.newFixnum(runtime, IOModes.NOCTTY));
         fileClass.setConstant("TRUNC", 
-        		RubyFixnum.newFixnum(ruby, IOModes.TRUNC));
+        		RubyFixnum.newFixnum(runtime, IOModes.TRUNC));
         fileClass.setConstant("APPEND", 
-        		RubyFixnum.newFixnum(ruby, IOModes.APPEND));
+        		RubyFixnum.newFixnum(runtime, IOModes.APPEND));
         fileClass.setConstant("NONBLOCK", 
-        		RubyFixnum.newFixnum(ruby, IOModes.NONBLOCK));
+        		RubyFixnum.newFixnum(runtime, IOModes.NONBLOCK));
 
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
 
-        fileClass.extendObject(ruby.getClasses().getFileTestModule());
+        fileClass.extendObject(runtime.getClasses().getFileTestModule());
         
         fileClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyFile.class, "newInstance"));
         fileClass.defineSingletonMethod("open", callbackFactory.getOptSingletonMethod(RubyFile.class, "open"));

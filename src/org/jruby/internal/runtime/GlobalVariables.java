@@ -97,17 +97,17 @@ public class GlobalVariables implements IGlobalVariables {
     }
 
     public IRubyObject get(String name) {
-        Asserts.notNull(name);
-        Asserts.isTrue(name.startsWith("$"));
-
-        GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
-        if (variable != null) {
-            return variable.getAccessor().getValue();
-        } else {
-            runtime.getErrorHandler().warning("global variable `" + name + "' not initialized");
-            return runtime.getNil();
-        }
-    }
+	    Asserts.notNull(name);
+	    Asserts.isTrue(name.startsWith("$"));
+	
+	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+	    if (variable != null) {
+	        return variable.getAccessor().getValue();
+	    } else {
+	        runtime.getErrorHandler().warning("global variable `" + name + "' not initialized");
+	        return runtime.getNil();
+	    }
+	}
 
     public IRubyObject set(String name, IRubyObject value) {
         Asserts.notNull(name);

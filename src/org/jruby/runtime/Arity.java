@@ -80,15 +80,15 @@ public final class Arity {
         return value;
     }
 
-    public void checkArity(Ruby ruby, IRubyObject[] args) {
+    public void checkArity(Ruby runtime, IRubyObject[] args) {
         if (isFixed()) {
             if (args.length != required()) {
-                throw new ArgumentError(ruby,
+                throw new ArgumentError(runtime,
                                         "wrong # of arguments(" + args.length + " for " + required() + ")");
             }
         } else {
             if (args.length < required()) {
-                throw new ArgumentError(ruby, "wrong # of arguments(at least " + required() + ")");
+                throw new ArgumentError(runtime, "wrong # of arguments(at least " + required() + ")");
             }
         }
     }

@@ -9,8 +9,8 @@ import java.util.Map;
 public final class IncludedModuleWrapper extends RubyClass {
     private RubyModule delegate;
 
-    public IncludedModuleWrapper(Ruby ruby, RubyClass superClass, RubyModule delegate) {
-        super(ruby, superClass);
+    public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
+        super(runtime, superClass);
 
         this.delegate = delegate;
     }

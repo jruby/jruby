@@ -159,56 +159,56 @@ public class RubyIO extends RubyObject {
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
-    protected RubyIO(Ruby ruby, RubyClass type) {
-        super(ruby, type);
+    protected RubyIO(Ruby runtime, RubyClass type) {
+        super(runtime, type);
     }
 
-    public RubyIO(Ruby ruby, OutputStream outputStream) {
-        super(ruby, ruby.getClasses().getIoClass());
+    public RubyIO(Ruby runtime, OutputStream outputStream) {
+        super(runtime, runtime.getClasses().getIoClass());
         
         // We only want IO objects with valid streams (better to error now). 
         if (outputStream == null) {
-            throw new IOError(ruby, "Opening invalid stream");
+            throw new IOError(runtime, "Opening invalid stream");
         }
         
-        handler = new IOHandlerUnseekable(ruby, null, outputStream);
+        handler = new IOHandlerUnseekable(runtime, null, outputStream);
         modes = handler.getModes();
         
         registerIOHandler(handler);
     }
     
-    public RubyIO(Ruby ruby, Process process) {
-    	super(ruby, ruby.getClasses().getIoClass());
+    public RubyIO(Ruby runtime, Process process) {
+    	super(runtime, runtime.getClasses().getIoClass());
 
-        modes = new IOModes(ruby, "w+");
+        modes = new IOModes(runtime, "w+");
 
-    	handler = new IOHandlerProcess(ruby, process, modes);
+    	handler = new IOHandlerProcess(runtime, process, modes);
     	modes = handler.getModes();
     	
     	registerIOHandler(handler);
     }
     
-    public RubyIO(Ruby ruby, int descriptor) {
-        super(ruby, ruby.getClasses().getIoClass());
+    public RubyIO(Ruby runtime, int descriptor) {
+        super(runtime, runtime.getClasses().getIoClass());
 
-        handler = new IOHandlerUnseekable(ruby, descriptor);
+        handler = new IOHandlerUnseekable(runtime, descriptor);
         modes = handler.getModes();
         
         registerIOHandler(handler);
     }
     
-    public static RubyClass createIOClass(Ruby ruby) {
+    public static RubyClass createIOClass(Ruby runtime) {
         RubyClass result = 
-            ruby.defineClass("IO", ruby.getClasses().getObjectClass());
+            runtime.defineClass("IO", runtime.getClasses().getObjectClass());
         
-        result.includeModule(ruby.getClasses().getEnumerableModule());
+        result.includeModule(runtime.getClasses().getEnumerableModule());
         
         // TODO: Implement tty? and isatty.  We have no real capability to 
         // determine this from java, but if we could set tty status, then
         // we could invoke jruby differently to allow stdin to return true
         // on this.  This would allow things like cgi.rb to work properly.
         
-        CallbackFactory callbackFactory = ruby.callbackFactory();
+        CallbackFactory callbackFactory = runtime.callbackFactory();
         result.defineMethod("<<", callbackFactory.getMethod(RubyIO.class, "addString", IRubyObject.class));
         result.defineMethod("clone", callbackFactory.getMethod(RubyIO.class, "clone_IO"));
         result.defineMethod("close", callbackFactory.getMethod(RubyIO.class, "close"));
@@ -254,9 +254,9 @@ public class RubyIO extends RubyObject {
         result.defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
         
         // Constants for seek
-        result.setConstant("SEEK_SET", RubyFixnum.newFixnum(ruby, IOHandler.SEEK_SET));
-        result.setConstant("SEEK_CUR", RubyFixnum.newFixnum(ruby, IOHandler.SEEK_CUR));
-        result.setConstant("SEEK_END", RubyFixnum.newFixnum(ruby, IOHandler.SEEK_END));
+        result.setConstant("SEEK_SET", RubyFixnum.newFixnum(runtime, IOHandler.SEEK_SET));
+        result.setConstant("SEEK_CUR", RubyFixnum.newFixnum(runtime, IOHandler.SEEK_CUR));
+        result.setConstant("SEEK_END", RubyFixnum.newFixnum(runtime, IOHandler.SEEK_END));
         
         return result;
     }
@@ -265,8 +265,8 @@ public class RubyIO extends RubyObject {
      * <p>Open a file descriptor, unless it is already open, then return
      * it.</p> 
      */
-    public static IRubyObject fdOpen(Ruby ruby, int descriptor) {
-        return new RubyIO(ruby, descriptor);
+    public static IRubyObject fdOpen(Ruby runtime, int descriptor) {
+        return new RubyIO(runtime, descriptor);
     }
 
     /*

@@ -780,7 +780,7 @@ public class RubyYaccLexer {
             errorHandler.handleError(
                     IErrors.SYNTAX_ERROR,
                     src.getPosition(),
-                    Messages.getString("unknown_quotation_type", String.valueOf(c)));
+                    "Unknown type of %string. Expected 'Q', 'q', 'w', 'x', 'r' or any non letter character, but found '" + c + "'.");
             return 0;
         }
     }
@@ -1005,7 +1005,7 @@ public class RubyYaccLexer {
     }
     
     private void arg_ambiguous() {
-        errorHandler.handleError(IErrors.WARNING, src.getPosition(), Messages.getString("ambiguous_first_argument")); //$NON-NLS-1$
+        errorHandler.handleError(IErrors.WARNING, src.getPosition(), "Ambiguous first argument; make sure.");
     }
 
 
@@ -2103,9 +2103,9 @@ public class RubyYaccLexer {
                     src.unread(c);
 
                     if (tokenBuffer.length() == startLen) {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_hex_digits")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Hexadecimal number without hex-digits.");
                     } else if (nondigit != '\0') {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 16);
                     return Token.tINTEGER;
@@ -2131,9 +2131,9 @@ public class RubyYaccLexer {
                     src.unread(c);
 
                     if (tokenBuffer.length() == startLen) {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_bin_digits")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Token.tINTEGER;
@@ -2159,9 +2159,9 @@ public class RubyYaccLexer {
                     src.unread(c);
 
                     if (tokenBuffer.length() == startLen) {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("number_without_bin_digits")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Binary number without digits.");
                     } else if (nondigit != '\0') {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                     }
                     yaccValue = getInteger(tokenBuffer.toString(), 2);
                     return Token.tINTEGER;
@@ -2185,7 +2185,7 @@ public class RubyYaccLexer {
                         src.unread(c);
 
                         if (nondigit != '\0') {
-                            errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc")); //$NON-NLS-1$
+                            errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                         }
 
                         yaccValue = getInteger(tokenBuffer.toString(), 8);
@@ -2193,7 +2193,7 @@ public class RubyYaccLexer {
                     }
                 case '8' :
                 case '9' :
-                    errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("illegal_octal_digit")); //$NON-NLS-1$
+                    errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Illegal octal digit.");
                     break;
                 case '.' :
                 case 'e' :
@@ -2228,7 +2228,7 @@ public class RubyYaccLexer {
                 case '.' :
                     if (nondigit != '\0') {
                         src.unread(c);
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         src.unread(c);
                         return getNumberToken(tokenBuffer.toString(), true, nondigit);
@@ -2256,7 +2256,7 @@ public class RubyYaccLexer {
                 case 'E' :
                     if (nondigit != '\0') {
                         src.unread(c);
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                         return 0;
                     } else if (seen_e) {
                         src.unread(c);
@@ -2276,7 +2276,7 @@ public class RubyYaccLexer {
                     break;
                 case '_' : //  '_' in number just ignored
                     if (nondigit != '\0') {
-                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), Messages.getString("trailing_uc")); //$NON-NLS-1$
+                        errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
                         return 0;
                     }
                     nondigit = c;
@@ -2290,7 +2290,7 @@ public class RubyYaccLexer {
 
     private int getNumberToken(String number, boolean isFloat, char nondigit) {
         if (nondigit != '\0') {
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc", String.valueOf(nondigit))); //$NON-NLS-1$
+            errorHandler.handleError(IErrors.SYNTAX_ERROR, src.getPosition(), "Trailing '_' in number.");
             return 0;
         }
         if (isFloat) {
@@ -2298,7 +2298,7 @@ public class RubyYaccLexer {
             try {
                 d = Double.valueOf(number);
             } catch (NumberFormatException e) {
-                errorHandler.handleError(IErrors.WARN, src.getPosition(), Messages.getString("float_out_of_range", number)); //$NON-NLS-1$
+                errorHandler.handleError(IErrors.WARN, src.getPosition(), "Float " + number + " out of range.");
             }
             yaccValue = d;
             return Token.tFLOAT;

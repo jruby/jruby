@@ -41,7 +41,7 @@ import java.io.StringReader;
  * @author Benoit
  */
 public class TestRubyBase extends TestCase {
-    protected Ruby ruby;
+    protected Ruby runtime;
     private PrintStream out;
 
     public TestRubyBase(String name) {
@@ -56,12 +56,12 @@ public class TestRubyBase extends TestCase {
     protected String eval(String script) throws Exception {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         out = new PrintStream(result);
-        RubyIO lStream = new RubyIO(ruby, out); 
-        ruby.getGlobalVariables().set("$stdout", lStream);
-        ruby.getGlobalVariables().set("$>", lStream);
-        ruby.getGlobalVariables().set("$stderr", lStream);
+        RubyIO lStream = new RubyIO(runtime, out); 
+        runtime.getGlobalVariables().set("$stdout", lStream);
+        runtime.getGlobalVariables().set("$>", lStream);
+        runtime.getGlobalVariables().set("$stderr", lStream);
         
-        ruby.loadScript("test", new StringReader(script), false);
+        runtime.loadScript("test", new StringReader(script), false);
         StringBuffer sb = new StringBuffer(new String(result.toByteArray()));
         for (int idx = sb.indexOf("\n"); idx != -1; idx = sb.indexOf("\n")) {
             sb.deleteCharAt(idx);
