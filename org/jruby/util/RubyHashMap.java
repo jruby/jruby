@@ -28,13 +28,11 @@ package org.jruby.util;
 
 import java.util.*;
 
-import org.jruby.original.*;
-
 /**
  *
  * @author  jpetersen
  */
-public class RubyHashMap extends HashMap implements RubyMap, st_table {
+public class RubyHashMap extends HashMap implements RubyMap {
     public RubyHashMap() {
         super();
     }
