@@ -37,6 +37,16 @@ public class RubyFileTest {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyFileTest.class);
 
+        fileTestModule.defineSingletonMethod("directory?", callbackFactory.getSingletonMethod("directory_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("exist?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("exists?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("readable?", callbackFactory.getSingletonMethod("readable_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("readable_real?", callbackFactory.getSingletonMethod("readable_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("size", callbackFactory.getSingletonMethod("size", RubyString.class));
+        fileTestModule.defineSingletonMethod("writable?", callbackFactory.getSingletonMethod("writable_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("writable_real?", callbackFactory.getSingletonMethod("writable_p", RubyString.class));
+        fileTestModule.defineSingletonMethod("zero?", callbackFactory.getSingletonMethod("zero_p", RubyString.class));
+        
         fileTestModule.defineMethod("directory?", callbackFactory.getSingletonMethod("directory_p", RubyString.class));
         fileTestModule.defineMethod("exist?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
         fileTestModule.defineMethod("exists?", callbackFactory.getSingletonMethod("exist_p", RubyString.class));
