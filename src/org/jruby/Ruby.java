@@ -391,7 +391,9 @@ public final class Ruby {
                 try {
                     return iterateMethod.execute(data1, null);
                 } catch (BreakJump bExcptn) {
-                    return getNil();
+                    IRubyObject breakValue = bExcptn.getBreakValue();
+                    
+                    return breakValue == null ? this.getNil() : breakValue;
                 } catch (ReturnJump rExcptn) {
                     return rExcptn.getReturnValue();
                 } catch (RetryJump rExcptn) {

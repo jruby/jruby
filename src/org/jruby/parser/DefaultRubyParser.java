@@ -576,42 +576,81 @@ case 32:
                     yyVal = new NotNode(getPosition(), support.getConditionNode(((INode)yyVals[0+yyTop])));
                 }
   break;
+case 36:
+					// line 366 "DefaultRubyParser.y"
+  {
+                    support.checkExpression(((INode)yyVals[0+yyTop]));
+                    if (((INode)yyVals[0+yyTop]) instanceof ArrayNode && 
+                        ListNodeUtil.getLength(((IListNode)yyVals[0+yyTop])) == 1) {
+                        yyVal = new ReturnNode(getPosition(), 
+                            ListNodeUtil.getLast(((IListNode)yyVals[0+yyTop])));
+                    } else {
+                        yyVal = new ReturnNode(getPosition(), ((INode)yyVals[0+yyTop]));
+                    }
+                }
+  break;
 case 37:
-					// line 368 "DefaultRubyParser.y"
+					// line 376 "DefaultRubyParser.y"
+  {
+                    support.checkExpression(((INode)yyVals[0+yyTop]));
+                    if (((INode)yyVals[0+yyTop]) instanceof ArrayNode && 
+                        ListNodeUtil.getLength(((IListNode)yyVals[0+yyTop])) == 1) {
+                        yyVal = new BreakNode(getPosition(), 
+                            ListNodeUtil.getLast(((IListNode)yyVals[0+yyTop])));
+                    } else {
+                        yyVal = new BreakNode(getPosition(), ((INode)yyVals[0+yyTop]));
+                    }
+                }
+  break;
+case 38:
+					// line 386 "DefaultRubyParser.y"
+  {
+                    support.checkExpression(((INode)yyVals[0+yyTop]));
+                    if (((INode)yyVals[0+yyTop]) instanceof ArrayNode && 
+                        ListNodeUtil.getLength(((IListNode)yyVals[0+yyTop])) == 1) {
+                        yyVal = new NextNode(getPosition(), 
+                            ListNodeUtil.getLast(((IListNode)yyVals[0+yyTop])));
+                    } else {
+                        yyVal = new NextNode(getPosition(), ((INode)yyVals[0+yyTop]));
+                    }
+                }
+  break;
+case 40:
+					// line 398 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 38:
-					// line 372 "DefaultRubyParser.y"
+case 41:
+					// line 402 "DefaultRubyParser.y"
   {
 	            support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 39:
-					// line 377 "DefaultRubyParser.y"
+case 42:
+					// line 407 "DefaultRubyParser.y"
   {
                     yyVal = support.new_fcall(((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]), getPosition()); /* .setPosFrom($2);*/
                 }
   break;
-case 40:
-					// line 380 "DefaultRubyParser.y"
+case 43:
+					// line 410 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop])); /*.setPosFrom($1);*/
                 }
   break;
-case 41:
-					// line 384 "DefaultRubyParser.y"
+case 44:
+					// line 414 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop])); /*.setPosFrom($1);*/
                 }
   break;
-case 42:
-					// line 388 "DefaultRubyParser.y"
+case 45:
+					// line 418 "DefaultRubyParser.y"
   {
                     if (!support.isCompileForEval() && support.isInDef() 
                                                && support.isInSingle()){
@@ -620,309 +659,309 @@ case 42:
 		    yyVal = support.new_super(((INode)yyVals[0+yyTop]), getPosition()); /* .setPosFrom($2);*/
 		}
   break;
-case 43:
-					// line 395 "DefaultRubyParser.y"
+case 46:
+					// line 425 "DefaultRubyParser.y"
   {
 	            yyVal = new YieldNode(getPosition(), ((INode)yyVals[0+yyTop])); /* .setPosFrom($2);*/
 		}
   break;
-case 45:
-					// line 400 "DefaultRubyParser.y"
+case 48:
+					// line 430 "DefaultRubyParser.y"
   {
                     yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
 		}
   break;
-case 47:
-					// line 405 "DefaultRubyParser.y"
+case 50:
+					// line 435 "DefaultRubyParser.y"
   {
 	            yyVal = new MultipleAsgnNode(getPosition(), new ArrayNode(getPosition()).add(((MultipleAsgnNode)yyVals[-1+yyTop])), null);
                 }
   break;
-case 48:
-					// line 409 "DefaultRubyParser.y"
+case 51:
+					// line 439 "DefaultRubyParser.y"
   {
                     yyVal = new MultipleAsgnNode(getPosition(), ((ArrayNode)yyVals[0+yyTop]), null);
                 }
   break;
-case 49:
-					// line 412 "DefaultRubyParser.y"
+case 52:
+					// line 442 "DefaultRubyParser.y"
   {
                     yyVal = new MultipleAsgnNode(getPosition(), ((ArrayNode)yyVals[-1+yyTop]).add(((INode)yyVals[0+yyTop])), null);
                 }
   break;
-case 50:
-					// line 415 "DefaultRubyParser.y"
+case 53:
+					// line 445 "DefaultRubyParser.y"
   {
                     yyVal = new MultipleAsgnNode(getPosition(), ((ArrayNode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 51:
-					// line 418 "DefaultRubyParser.y"
+case 54:
+					// line 448 "DefaultRubyParser.y"
   {
                     yyVal = new MultipleAsgnNode(getPosition(), ((ArrayNode)yyVals[-1+yyTop]), new StarNode());
                 }
   break;
-case 52:
-					// line 421 "DefaultRubyParser.y"
+case 55:
+					// line 451 "DefaultRubyParser.y"
   {
                     yyVal = new MultipleAsgnNode(getPosition(), null, ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 53:
-					// line 424 "DefaultRubyParser.y"
+case 56:
+					// line 454 "DefaultRubyParser.y"
   {
                     yyVal = new MultipleAsgnNode(getPosition(), null, new StarNode());
                 }
   break;
-case 55:
-					// line 429 "DefaultRubyParser.y"
+case 58:
+					// line 459 "DefaultRubyParser.y"
   {
                     yyVal = ((MultipleAsgnNode)yyVals[-1+yyTop]);
                 }
   break;
-case 56:
-					// line 433 "DefaultRubyParser.y"
+case 59:
+					// line 463 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 57:
-					// line 436 "DefaultRubyParser.y"
+case 60:
+					// line 466 "DefaultRubyParser.y"
   {
                     yyVal = ((ArrayNode)yyVals[-2+yyTop]).add(((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 58:
-					// line 440 "DefaultRubyParser.y"
+case 61:
+					// line 470 "DefaultRubyParser.y"
   {
                     yyVal = support.getAssignmentNode(((String)yyVals[0+yyTop]), null, getPosition());
                 }
   break;
-case 59:
-					// line 443 "DefaultRubyParser.y"
+case 62:
+					// line 473 "DefaultRubyParser.y"
   {
                     yyVal = support.getElementAssignmentNode(((INode)yyVals[-3+yyTop]), ((IListNode)yyVals[-1+yyTop]));
                 }
   break;
-case 60:
-					// line 446 "DefaultRubyParser.y"
-  {
-                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
-                }
-  break;
-case 61:
-					// line 449 "DefaultRubyParser.y"
-  {
-                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
-                }
-  break;
-case 62:
-					// line 452 "DefaultRubyParser.y"
-  {
-                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
-                }
-  break;
 case 63:
-					// line 455 "DefaultRubyParser.y"
+					// line 476 "DefaultRubyParser.y"
+  {
+                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
+                }
+  break;
+case 64:
+					// line 479 "DefaultRubyParser.y"
+  {
+                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
+                }
+  break;
+case 65:
+					// line 482 "DefaultRubyParser.y"
+  {
+                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
+                }
+  break;
+case 66:
+					// line 485 "DefaultRubyParser.y"
   {
 	            support.backrefAssignError(((INode)yyVals[0+yyTop]));
                     yyVal = null;
                 }
   break;
-case 64:
-					// line 460 "DefaultRubyParser.y"
+case 67:
+					// line 490 "DefaultRubyParser.y"
   {
                     yyVal = support.getAssignmentNode(((String)yyVals[0+yyTop]), null, getPosition());
                 }
   break;
-case 65:
-					// line 463 "DefaultRubyParser.y"
+case 68:
+					// line 493 "DefaultRubyParser.y"
   {
                     yyVal = support.getElementAssignmentNode(((INode)yyVals[-3+yyTop]), ((IListNode)yyVals[-1+yyTop]));
                 }
   break;
-case 66:
-					// line 466 "DefaultRubyParser.y"
-  {
-                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
-                }
-  break;
-case 67:
-					// line 469 "DefaultRubyParser.y"
-  {
-                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
-                }
-  break;
-case 68:
-					// line 472 "DefaultRubyParser.y"
-  {
-                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
-                }
-  break;
 case 69:
-					// line 475 "DefaultRubyParser.y"
+					// line 496 "DefaultRubyParser.y"
+  {
+                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
+                }
+  break;
+case 70:
+					// line 499 "DefaultRubyParser.y"
+  {
+                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
+                }
+  break;
+case 71:
+					// line 502 "DefaultRubyParser.y"
+  {
+                    yyVal = support.getAttributeAssignmentNode(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
+                }
+  break;
+case 72:
+					// line 505 "DefaultRubyParser.y"
   {
                     support.backrefAssignError(((INode)yyVals[0+yyTop]));
                     yyVal = null;
 		}
   break;
-case 70:
-					// line 480 "DefaultRubyParser.y"
+case 73:
+					// line 510 "DefaultRubyParser.y"
   {
                     yyerror("class/module name must be CONSTANT");
                 }
   break;
-case 75:
-					// line 488 "DefaultRubyParser.y"
+case 78:
+					// line 518 "DefaultRubyParser.y"
   {
                     lexer.setState(LexState.EXPR_END);
                     yyVal = ((String)yyVals[0+yyTop]);
                 }
   break;
-case 76:
-					// line 492 "DefaultRubyParser.y"
+case 79:
+					// line 522 "DefaultRubyParser.y"
   {
                     lexer.setState(LexState.EXPR_END);
                     yyVal = yyVals[0+yyTop];
                 }
   break;
-case 79:
-					// line 500 "DefaultRubyParser.y"
+case 82:
+					// line 530 "DefaultRubyParser.y"
   {
                     yyVal = new UndefNode(getPosition(), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 80:
-					// line 503 "DefaultRubyParser.y"
+case 83:
+					// line 533 "DefaultRubyParser.y"
   {
                     lexer.setState(LexState.EXPR_FNAME);
 	        }
   break;
-case 81:
-					// line 505 "DefaultRubyParser.y"
+case 84:
+					// line 535 "DefaultRubyParser.y"
   {
                     yyVal = support.appendToBlock(((INode)yyVals[-3+yyTop]), new UndefNode(getPosition(), ((String)yyVals[0+yyTop])));
                 }
   break;
-case 82:
-					// line 509 "DefaultRubyParser.y"
+case 85:
+					// line 539 "DefaultRubyParser.y"
   { yyVal = "|"; }
   break;
-case 83:
-					// line 510 "DefaultRubyParser.y"
+case 86:
+					// line 540 "DefaultRubyParser.y"
   { yyVal = "^"; }
   break;
-case 84:
-					// line 511 "DefaultRubyParser.y"
+case 87:
+					// line 541 "DefaultRubyParser.y"
   { yyVal = "&"; }
   break;
-case 85:
-					// line 512 "DefaultRubyParser.y"
+case 88:
+					// line 542 "DefaultRubyParser.y"
   { yyVal = "<=>"; }
   break;
-case 86:
-					// line 513 "DefaultRubyParser.y"
+case 89:
+					// line 543 "DefaultRubyParser.y"
   { yyVal = "=="; }
   break;
-case 87:
-					// line 514 "DefaultRubyParser.y"
+case 90:
+					// line 544 "DefaultRubyParser.y"
   { yyVal = "==="; }
   break;
-case 88:
-					// line 515 "DefaultRubyParser.y"
+case 91:
+					// line 545 "DefaultRubyParser.y"
   { yyVal = "=~"; }
   break;
-case 89:
-					// line 516 "DefaultRubyParser.y"
+case 92:
+					// line 546 "DefaultRubyParser.y"
   { yyVal = ">"; }
   break;
-case 90:
-					// line 517 "DefaultRubyParser.y"
+case 93:
+					// line 547 "DefaultRubyParser.y"
   { yyVal = ">="; }
   break;
-case 91:
-					// line 518 "DefaultRubyParser.y"
+case 94:
+					// line 548 "DefaultRubyParser.y"
   { yyVal = "<"; }
   break;
-case 92:
-					// line 519 "DefaultRubyParser.y"
+case 95:
+					// line 549 "DefaultRubyParser.y"
   { yyVal = "<="; }
   break;
-case 93:
-					// line 520 "DefaultRubyParser.y"
+case 96:
+					// line 550 "DefaultRubyParser.y"
   { yyVal = "<<"; }
   break;
-case 94:
-					// line 521 "DefaultRubyParser.y"
+case 97:
+					// line 551 "DefaultRubyParser.y"
   { yyVal = ">>"; }
   break;
-case 95:
-					// line 522 "DefaultRubyParser.y"
+case 98:
+					// line 552 "DefaultRubyParser.y"
   { yyVal = "+"; }
   break;
-case 96:
-					// line 523 "DefaultRubyParser.y"
+case 99:
+					// line 553 "DefaultRubyParser.y"
   { yyVal = "-"; }
   break;
-case 97:
-					// line 524 "DefaultRubyParser.y"
-  { yyVal = "*"; }
-  break;
-case 98:
-					// line 525 "DefaultRubyParser.y"
-  { yyVal = "*"; }
-  break;
-case 99:
-					// line 526 "DefaultRubyParser.y"
-  { yyVal = "/"; }
-  break;
 case 100:
-					// line 527 "DefaultRubyParser.y"
-  { yyVal = "%"; }
+					// line 554 "DefaultRubyParser.y"
+  { yyVal = "*"; }
   break;
 case 101:
-					// line 528 "DefaultRubyParser.y"
-  { yyVal = "**"; }
+					// line 555 "DefaultRubyParser.y"
+  { yyVal = "*"; }
   break;
 case 102:
-					// line 529 "DefaultRubyParser.y"
-  { yyVal = "~"; }
+					// line 556 "DefaultRubyParser.y"
+  { yyVal = "/"; }
   break;
 case 103:
-					// line 530 "DefaultRubyParser.y"
-  { yyVal = "+@"; }
+					// line 557 "DefaultRubyParser.y"
+  { yyVal = "%"; }
   break;
 case 104:
-					// line 531 "DefaultRubyParser.y"
-  { yyVal = "-@"; }
+					// line 558 "DefaultRubyParser.y"
+  { yyVal = "**"; }
   break;
 case 105:
-					// line 532 "DefaultRubyParser.y"
-  { yyVal = "[]"; }
+					// line 559 "DefaultRubyParser.y"
+  { yyVal = "~"; }
   break;
 case 106:
-					// line 533 "DefaultRubyParser.y"
-  { yyVal = "[]="; }
+					// line 560 "DefaultRubyParser.y"
+  { yyVal = "+@"; }
   break;
 case 107:
-					// line 534 "DefaultRubyParser.y"
+					// line 561 "DefaultRubyParser.y"
+  { yyVal = "-@"; }
+  break;
+case 108:
+					// line 562 "DefaultRubyParser.y"
+  { yyVal = "[]"; }
+  break;
+case 109:
+					// line 563 "DefaultRubyParser.y"
+  { yyVal = "[]="; }
+  break;
+case 110:
+					// line 564 "DefaultRubyParser.y"
   { yyVal = "`"; }
   break;
-case 149:
-					// line 578 "DefaultRubyParser.y"
+case 152:
+					// line 608 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = support.node_assign(((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 150:
-					// line 582 "DefaultRubyParser.y"
+case 153:
+					// line 612 "DefaultRubyParser.y"
   {
                     yyVal = support.getAssignmentNode(((String)yyVals[-1+yyTop]), null, getPosition());
                 }
   break;
-case 151:
-					// line 584 "DefaultRubyParser.y"
+case 154:
+					// line 614 "DefaultRubyParser.y"
   {
                     if (((String)yyVals[-2+yyTop]).equals("||")) {
 	                ((IAssignableNode)yyVals[-1+yyTop]).setValueNode(((INode)yyVals[0+yyTop]));
@@ -943,81 +982,81 @@ case 151:
                     /* $<Node>$.setPosFrom($4);*/
                 }
   break;
-case 152:
-					// line 603 "DefaultRubyParser.y"
+case 155:
+					// line 633 "DefaultRubyParser.y"
   {
                     yyVal = new OpElementAsgnNode(getPosition(), ((INode)yyVals[-5+yyTop]), ((String)yyVals[-1+yyTop]), ((IListNode)yyVals[-3+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 153:
-					// line 606 "DefaultRubyParser.y"
-  {
-                    yyVal = new OpAsgnNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((INode)yyVals[0+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]));
-                }
-  break;
-case 154:
-					// line 609 "DefaultRubyParser.y"
-  {
-                    yyVal = new OpAsgnNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((INode)yyVals[0+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]));
-                }
-  break;
-case 155:
-					// line 612 "DefaultRubyParser.y"
-  {
-                    yyVal = new OpAsgnNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((INode)yyVals[0+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]));
-                }
-  break;
 case 156:
-					// line 615 "DefaultRubyParser.y"
+					// line 636 "DefaultRubyParser.y"
+  {
+                    yyVal = new OpAsgnNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((INode)yyVals[0+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]));
+                }
+  break;
+case 157:
+					// line 639 "DefaultRubyParser.y"
+  {
+                    yyVal = new OpAsgnNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((INode)yyVals[0+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]));
+                }
+  break;
+case 158:
+					// line 642 "DefaultRubyParser.y"
+  {
+                    yyVal = new OpAsgnNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((INode)yyVals[0+yyTop]), ((String)yyVals[-2+yyTop]), ((String)yyVals[-1+yyTop]));
+                }
+  break;
+case 159:
+					// line 645 "DefaultRubyParser.y"
   {
                     support.backrefAssignError(((INode)yyVals[-2+yyTop]));
                     yyVal = null;
                 }
   break;
-case 157:
-					// line 619 "DefaultRubyParser.y"
+case 160:
+					// line 649 "DefaultRubyParser.y"
   {
                     yyVal = new DotNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]), false);
                 }
   break;
-case 158:
-					// line 622 "DefaultRubyParser.y"
+case 161:
+					// line 652 "DefaultRubyParser.y"
   {
                     yyVal = new DotNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]), true);
                 }
   break;
-case 159:
-					// line 625 "DefaultRubyParser.y"
+case 162:
+					// line 655 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "+", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 160:
-					// line 628 "DefaultRubyParser.y"
+case 163:
+					// line 658 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "-", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 161:
-					// line 631 "DefaultRubyParser.y"
+case 164:
+					// line 661 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "*", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 162:
-					// line 634 "DefaultRubyParser.y"
+case 165:
+					// line 664 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "/", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 163:
-					// line 637 "DefaultRubyParser.y"
+case 166:
+					// line 667 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "%", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 164:
-					// line 640 "DefaultRubyParser.y"
+case 167:
+					// line 670 "DefaultRubyParser.y"
   {
                     /* Covert '- number ** number' to '- (number ** number)' */
                     boolean needNegate = false;
@@ -1036,281 +1075,281 @@ case 164:
                     }
                 }
   break;
-case 165:
-					// line 657 "DefaultRubyParser.y"
+case 168:
+					// line 687 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[0+yyTop]), "+@");
                 }
   break;
-case 166:
-					// line 660 "DefaultRubyParser.y"
+case 169:
+					// line 690 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[0+yyTop]), "-@");
                 }
   break;
-case 167:
-					// line 663 "DefaultRubyParser.y"
+case 170:
+					// line 693 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "|", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 168:
-					// line 666 "DefaultRubyParser.y"
+case 171:
+					// line 696 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "^", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 169:
-					// line 669 "DefaultRubyParser.y"
+case 172:
+					// line 699 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "&", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 170:
-					// line 672 "DefaultRubyParser.y"
+case 173:
+					// line 702 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "<=>", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 171:
-					// line 675 "DefaultRubyParser.y"
+case 174:
+					// line 705 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), ">", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 172:
-					// line 678 "DefaultRubyParser.y"
+case 175:
+					// line 708 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), ">=", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 173:
-					// line 681 "DefaultRubyParser.y"
+case 176:
+					// line 711 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "<", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 174:
-					// line 684 "DefaultRubyParser.y"
+case 177:
+					// line 714 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "<=", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 175:
-					// line 687 "DefaultRubyParser.y"
+case 178:
+					// line 717 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "==", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 176:
-					// line 690 "DefaultRubyParser.y"
+case 179:
+					// line 720 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "===", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 177:
-					// line 693 "DefaultRubyParser.y"
+case 180:
+					// line 723 "DefaultRubyParser.y"
   {
                     yyVal = new NotNode(getPosition(), support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "==", ((INode)yyVals[0+yyTop])));
                 }
   break;
-case 178:
-					// line 696 "DefaultRubyParser.y"
+case 181:
+					// line 726 "DefaultRubyParser.y"
   {
                     yyVal = support.getMatchNode(((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 179:
-					// line 699 "DefaultRubyParser.y"
+case 182:
+					// line 729 "DefaultRubyParser.y"
   {
                     yyVal = new NotNode(getPosition(), support.getMatchNode(((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop])));
                 }
   break;
-case 180:
-					// line 702 "DefaultRubyParser.y"
+case 183:
+					// line 732 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = new NotNode(getPosition(), support.getConditionNode(((INode)yyVals[0+yyTop])));
                 }
   break;
-case 181:
-					// line 706 "DefaultRubyParser.y"
+case 184:
+					// line 736 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[0+yyTop]), "~");
                 }
   break;
-case 182:
-					// line 709 "DefaultRubyParser.y"
+case 185:
+					// line 739 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), "<<", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 183:
-					// line 712 "DefaultRubyParser.y"
+case 186:
+					// line 742 "DefaultRubyParser.y"
   {
                     yyVal = support.getOperatorCallNode(((INode)yyVals[-2+yyTop]), ">>", ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 184:
-					// line 715 "DefaultRubyParser.y"
+case 187:
+					// line 745 "DefaultRubyParser.y"
   {
                     yyVal = support.newAndNode(((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 185:
-					// line 718 "DefaultRubyParser.y"
+case 188:
+					// line 748 "DefaultRubyParser.y"
   {
                     yyVal = support.newOrNode(((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 186:
-					// line 721 "DefaultRubyParser.y"
+case 189:
+					// line 751 "DefaultRubyParser.y"
   {
 	            support.setInDefined(true);
 		}
   break;
-case 187:
-					// line 723 "DefaultRubyParser.y"
+case 190:
+					// line 753 "DefaultRubyParser.y"
   {
                     support.setInDefined(false);
                     yyVal = new DefinedNode(getPosition(), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 188:
-					// line 727 "DefaultRubyParser.y"
+case 191:
+					// line 757 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new IfNode(getPosition(), support.getConditionNode(((INode)yyVals[-4+yyTop])), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 189:
-					// line 732 "DefaultRubyParser.y"
+case 192:
+					// line 762 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
-case 190:
-					// line 736 "DefaultRubyParser.y"
+case 193:
+					// line 766 "DefaultRubyParser.y"
   {
                     yyVal = null;
                 }
   break;
-case 191:
-					// line 739 "DefaultRubyParser.y"
+case 194:
+					// line 769 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 192:
-					// line 742 "DefaultRubyParser.y"
+case 195:
+					// line 772 "DefaultRubyParser.y"
   {
                     yyVal = ((ArrayNode)yyVals[-3+yyTop]).add(((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 193:
-					// line 745 "DefaultRubyParser.y"
+case 196:
+					// line 775 "DefaultRubyParser.y"
   {
                     yyVal = ((ArrayNode)yyVals[-1+yyTop]);
                 }
   break;
-case 194:
-					// line 748 "DefaultRubyParser.y"
+case 197:
+					// line 778 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
                     yyVal = ((ArrayNode)yyVals[-4+yyTop]).add(new ExpandArrayNode(((INode)yyVals[-1+yyTop])));
                 }
   break;
-case 195:
-					// line 752 "DefaultRubyParser.y"
+case 198:
+					// line 782 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(new HashNode(((ArrayNode)yyVals[-1+yyTop])));
                 }
   break;
-case 196:
-					// line 755 "DefaultRubyParser.y"
+case 199:
+					// line 785 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
 
                     yyVal = new ArrayNode(getPosition()).add(new ExpandArrayNode(((INode)yyVals[-1+yyTop])));
                 }
   break;
-case 197:
-					// line 761 "DefaultRubyParser.y"
+case 200:
+					// line 791 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[-1+yyTop]);
                 }
   break;
-case 198:
-					// line 764 "DefaultRubyParser.y"
+case 201:
+					// line 794 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[-2+yyTop]);
                 }
   break;
-case 199:
-					// line 767 "DefaultRubyParser.y"
+case 202:
+					// line 797 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[-2+yyTop]));
                 }
   break;
-case 200:
-					// line 770 "DefaultRubyParser.y"
+case 203:
+					// line 800 "DefaultRubyParser.y"
   {
                     yyVal = ((ArrayNode)yyVals[-4+yyTop]).add(((INode)yyVals[-2+yyTop]));
                 }
   break;
-case 203:
-					// line 777 "DefaultRubyParser.y"
+case 206:
+					// line 807 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 204:
-					// line 780 "DefaultRubyParser.y"
+case 207:
+					// line 810 "DefaultRubyParser.y"
   {
                     yyVal = ((ArrayNode)yyVals[-2+yyTop]).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 205:
-					// line 783 "DefaultRubyParser.y"
+case 208:
+					// line 813 "DefaultRubyParser.y"
   {
                     yyVal = support.arg_blk_pass(((ArrayNode)yyVals[-1+yyTop]), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 206:
-					// line 786 "DefaultRubyParser.y"
+case 209:
+					// line 816 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
                     yyVal = support.arg_blk_pass(((ArrayNode)yyVals[-4+yyTop]).add(new ExpandArrayNode(((INode)yyVals[-1+yyTop]))), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 207:
-					// line 790 "DefaultRubyParser.y"
+case 210:
+					// line 820 "DefaultRubyParser.y"
   {
                     yyVal = support.arg_blk_pass(new ArrayNode(getPosition()).add(new HashNode(((ArrayNode)yyVals[-1+yyTop]))), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 208:
-					// line 793 "DefaultRubyParser.y"
+case 211:
+					// line 823 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
                     yyVal = support.arg_blk_pass(((ArrayNode)yyVals[-4+yyTop]).add(new ExpandArrayNode(((INode)yyVals[-1+yyTop]))), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 209:
-					// line 797 "DefaultRubyParser.y"
+case 212:
+					// line 827 "DefaultRubyParser.y"
   {
                     yyVal = support.arg_blk_pass(((ArrayNode)yyVals[-3+yyTop]).add(new HashNode(((ArrayNode)yyVals[-1+yyTop]))), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 210:
-					// line 800 "DefaultRubyParser.y"
+case 213:
+					// line 830 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
                     yyVal = support.arg_blk_pass(((ArrayNode)yyVals[-6+yyTop]).add(new HashNode(((ArrayNode)yyVals[-4+yyTop]))).add(new ExpandArrayNode(((INode)yyVals[-1+yyTop]))), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 211:
-					// line 804 "DefaultRubyParser.y"
+case 214:
+					// line 834 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
 		    /* FIXME*/
@@ -1318,88 +1357,88 @@ case 211:
 		    yyVal = support.arg_blk_pass(new ArrayNode(getPosition()).add(new ExpandArrayNode(((INode)yyVals[-1+yyTop]))), ((BlockPassNode)yyVals[0+yyTop]));
                 }
   break;
-case 212:
-					// line 810 "DefaultRubyParser.y"
+case 215:
+					// line 840 "DefaultRubyParser.y"
   {
 	            yyVal = ((BlockPassNode)yyVals[0+yyTop]);
 	        }
   break;
-case 213:
-					// line 814 "DefaultRubyParser.y"
+case 216:
+					// line 844 "DefaultRubyParser.y"
   { 
 		    yyVal = new Long(lexer.getCmdArgumentState().begin());
 		}
   break;
-case 214:
-					// line 816 "DefaultRubyParser.y"
+case 217:
+					// line 846 "DefaultRubyParser.y"
   {
                     lexer.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
-case 215:
-					// line 821 "DefaultRubyParser.y"
+case 218:
+					// line 851 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = new BlockPassNode(getPosition(), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 216:
-					// line 826 "DefaultRubyParser.y"
+case 219:
+					// line 856 "DefaultRubyParser.y"
   {
                     yyVal = ((BlockPassNode)yyVals[0+yyTop]);
                 }
   break;
-case 217:
-					// line 829 "DefaultRubyParser.y"
+case 220:
+					// line 859 "DefaultRubyParser.y"
   {
 	            yyVal = null;
 	      }
   break;
-case 218:
-					// line 833 "DefaultRubyParser.y"
+case 221:
+					// line 863 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 219:
-					// line 837 "DefaultRubyParser.y"
-  {
-                    support.checkExpression(((INode)yyVals[0+yyTop]));
-                    yyVal = ((ArrayNode)yyVals[-2+yyTop]).add(((INode)yyVals[0+yyTop]));
-                }
-  break;
-case 220:
-					// line 842 "DefaultRubyParser.y"
-  {
-                    support.checkExpression(((INode)yyVals[0+yyTop]));
-                    yyVal = ((INode)yyVals[0+yyTop]);
-                }
-  break;
 case 222:
-					// line 848 "DefaultRubyParser.y"
+					// line 867 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = ((ArrayNode)yyVals[-2+yyTop]).add(((INode)yyVals[0+yyTop]));
                 }
   break;
 case 223:
-					// line 852 "DefaultRubyParser.y"
-  {
-                    support.checkExpression(((INode)yyVals[0+yyTop]));
-                    yyVal = ((ArrayNode)yyVals[-3+yyTop]).add(new ExpandArrayNode(((INode)yyVals[0+yyTop])));
-                }
-  break;
-case 224:
-					// line 856 "DefaultRubyParser.y"
+					// line 872 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
 case 225:
-					// line 861 "DefaultRubyParser.y"
+					// line 878 "DefaultRubyParser.y"
+  {
+                    support.checkExpression(((INode)yyVals[0+yyTop]));
+                    yyVal = ((ArrayNode)yyVals[-2+yyTop]).add(((INode)yyVals[0+yyTop]));
+                }
+  break;
+case 226:
+					// line 882 "DefaultRubyParser.y"
+  {
+                    support.checkExpression(((INode)yyVals[0+yyTop]));
+                    yyVal = ((ArrayNode)yyVals[-3+yyTop]).add(new ExpandArrayNode(((INode)yyVals[0+yyTop])));
+                }
+  break;
+case 227:
+					// line 886 "DefaultRubyParser.y"
+  {
+                    support.checkExpression(((INode)yyVals[0+yyTop]));
+                    yyVal = ((INode)yyVals[0+yyTop]);
+                }
+  break;
+case 228:
+					// line 891 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[0+yyTop]);
                     if (((INode)yyVals[0+yyTop]) instanceof ArrayNode && ListNodeUtil.getLength(((IListNode)yyVals[0+yyTop])) == 1) {
@@ -1409,33 +1448,33 @@ case 225:
                     }
                 }
   break;
-case 228:
-					// line 872 "DefaultRubyParser.y"
+case 231:
+					// line 902 "DefaultRubyParser.y"
   {
 	            yyVal = ((ArrayNode)yyVals[0+yyTop]);
 	        }
   break;
-case 229:
-					// line 875 "DefaultRubyParser.y"
+case 232:
+					// line 905 "DefaultRubyParser.y"
   {
                     yyVal = new XStrNode(getPosition(), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 231:
-					// line 879 "DefaultRubyParser.y"
+case 234:
+					// line 909 "DefaultRubyParser.y"
   {
 	            support.getLocalNames().getLocalIndex("~");
 	            yyVal = ((INode)yyVals[0+yyTop]);
 	        }
   break;
-case 234:
-					// line 885 "DefaultRubyParser.y"
+case 237:
+					// line 915 "DefaultRubyParser.y"
   {
                     yyVal = new VCallNode(getPosition(), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 235:
-					// line 888 "DefaultRubyParser.y"
+case 238:
+					// line 918 "DefaultRubyParser.y"
   {
                     if (((IListNode)yyVals[-3+yyTop]) == null && ((INode)yyVals[-2+yyTop]) == null && ((INode)yyVals[-1+yyTop]) == null) {
                         yyVal = new BeginNode(getPosition(), ((INode)yyVals[-4+yyTop]));
@@ -1454,34 +1493,34 @@ case 235:
                     /* $<Node>$.setPosFrom($2);*/
                 }
   break;
-case 236:
-					// line 905 "DefaultRubyParser.y"
+case 239:
+					// line 935 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[-1+yyTop]);
                 }
   break;
-case 237:
-					// line 908 "DefaultRubyParser.y"
+case 240:
+					// line 938 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-2+yyTop]));
                     yyVal = new Colon2Node(getPosition(), ((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 238:
-					// line 912 "DefaultRubyParser.y"
+case 241:
+					// line 942 "DefaultRubyParser.y"
   {
                     yyVal = new Colon3Node(getPosition(), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 239:
-					// line 915 "DefaultRubyParser.y"
+case 242:
+					// line 945 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = new CallNode(getPosition(), ((INode)yyVals[-3+yyTop]), "[]", ((IListNode)yyVals[-1+yyTop]));
                 }
   break;
-case 240:
-					// line 919 "DefaultRubyParser.y"
+case 243:
+					// line 949 "DefaultRubyParser.y"
   {
                     if (((IListNode)yyVals[-1+yyTop]) == null) {
                         yyVal = new ArrayNode(getPosition()); /* zero length array*/
@@ -1490,14 +1529,14 @@ case 240:
                     }
                 }
   break;
-case 241:
-					// line 926 "DefaultRubyParser.y"
+case 244:
+					// line 956 "DefaultRubyParser.y"
   {
                     yyVal = new HashNode(getPosition(), ((IListNode)yyVals[-1+yyTop]));
                 }
   break;
-case 242:
-					// line 929 "DefaultRubyParser.y"
+case 245:
+					// line 959 "DefaultRubyParser.y"
   {
                     if (!support.isCompileForEval() && !support.isInDef() 
                                                && !support.isInSingle()) {
@@ -1507,8 +1546,8 @@ case 242:
                     yyVal = new ReturnNode(getPosition(), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 243:
-					// line 937 "DefaultRubyParser.y"
+case 246:
+					// line 967 "DefaultRubyParser.y"
   {
                     if (!support.isCompileForEval() && !support.isInDef()
                                                && !support.isInSingle()) {
@@ -1517,8 +1556,8 @@ case 243:
                     yyVal = new ReturnNode(getPosition(), null);
                 }
   break;
-case 244:
-					// line 944 "DefaultRubyParser.y"
+case 247:
+					// line 974 "DefaultRubyParser.y"
   {
                     if (!support.isCompileForEval() && !support.isInDef()
                                                && !support.isInSingle()) {
@@ -1527,47 +1566,47 @@ case 244:
                     yyVal = new ReturnNode(getPosition(), null);
                 }
   break;
-case 245:
-					// line 951 "DefaultRubyParser.y"
+case 248:
+					// line 981 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-1+yyTop]));
                     yyVal = new YieldNode(getPosition(), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 246:
-					// line 955 "DefaultRubyParser.y"
+case 249:
+					// line 985 "DefaultRubyParser.y"
   {
                     yyVal = new YieldNode(getPosition(), null);
                 }
   break;
-case 247:
-					// line 958 "DefaultRubyParser.y"
+case 250:
+					// line 988 "DefaultRubyParser.y"
   {
                     yyVal = new YieldNode(getPosition(), null);
                 }
   break;
-case 248:
-					// line 961 "DefaultRubyParser.y"
+case 251:
+					// line 991 "DefaultRubyParser.y"
   {
 	            support.setInDefined(true);
 		}
   break;
-case 249:
-					// line 963 "DefaultRubyParser.y"
+case 252:
+					// line 993 "DefaultRubyParser.y"
   {
                     support.setInDefined(false);
                     yyVal = new DefinedNode(getPosition(), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 250:
-					// line 967 "DefaultRubyParser.y"
+case 253:
+					// line 997 "DefaultRubyParser.y"
   {
                     ((IterNode)yyVals[0+yyTop]).setIterNode(new FCallNode(getPosition(), ((String)yyVals[-1+yyTop]), null));
                     yyVal = ((IterNode)yyVals[0+yyTop]);
                 }
   break;
-case 252:
-					// line 972 "DefaultRubyParser.y"
+case 255:
+					// line 1002 "DefaultRubyParser.y"
   {
                     if (((INode)yyVals[-1+yyTop]) instanceof BlockPassNode) {
                        errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
@@ -1577,92 +1616,92 @@ case 252:
                     /* $<Node>$.setPosFrom($1);*/
                 }
   break;
-case 253:
-					// line 980 "DefaultRubyParser.y"
+case 256:
+					// line 1010 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new IfNode(getPosition(), support.getConditionNode(((INode)yyVals[-4+yyTop])), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 254:
-					// line 984 "DefaultRubyParser.y"
+case 257:
+					// line 1014 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new IfNode(getPosition(), support.getConditionNode(((INode)yyVals[-4+yyTop])), ((INode)yyVals[-1+yyTop]), ((INode)yyVals[-2+yyTop]));
                 }
   break;
-case 255:
-					// line 988 "DefaultRubyParser.y"
+case 258:
+					// line 1018 "DefaultRubyParser.y"
   { 
 	            lexer.getConditionState().begin();
 		}
   break;
-case 256:
-					// line 990 "DefaultRubyParser.y"
+case 259:
+					// line 1020 "DefaultRubyParser.y"
   {
 		    lexer.getConditionState().end();
 		}
   break;
-case 257:
-					// line 992 "DefaultRubyParser.y"
+case 260:
+					// line 1022 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new WhileNode(getPosition(), support.getConditionNode(((INode)yyVals[-4+yyTop])), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 258:
-					// line 996 "DefaultRubyParser.y"
+case 261:
+					// line 1026 "DefaultRubyParser.y"
   {
                     lexer.getConditionState().begin();
                 }
   break;
-case 259:
-					// line 998 "DefaultRubyParser.y"
+case 262:
+					// line 1028 "DefaultRubyParser.y"
   {
                     lexer.getConditionState().end();
                 }
   break;
-case 260:
-					// line 1000 "DefaultRubyParser.y"
+case 263:
+					// line 1030 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new UntilNode(getPosition(), support.getConditionNode(((INode)yyVals[-4+yyTop])), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 261:
-					// line 1004 "DefaultRubyParser.y"
+case 264:
+					// line 1034 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new CaseNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((IListNode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop])); /* XXX*/
                 }
   break;
-case 262:
-					// line 1008 "DefaultRubyParser.y"
+case 265:
+					// line 1038 "DefaultRubyParser.y"
   {
                     yyVal = new CaseNode(getPosition(), null, ((IListNode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]));
                 }
   break;
-case 263:
-					// line 1011 "DefaultRubyParser.y"
+case 266:
+					// line 1041 "DefaultRubyParser.y"
   {
                     lexer.getConditionState().begin();
                 }
   break;
-case 264:
-					// line 1013 "DefaultRubyParser.y"
+case 267:
+					// line 1043 "DefaultRubyParser.y"
   {
                     lexer.getConditionState().end();
                 }
   break;
-case 265:
-					// line 1015 "DefaultRubyParser.y"
+case 268:
+					// line 1045 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-4+yyTop]));
                     yyVal = new ForNode(getPosition(), ((INode)yyVals[-7+yyTop]), ((INode)yyVals[-1+yyTop]), ((INode)yyVals[-4+yyTop]));
                 }
   break;
-case 266:
-					// line 1019 "DefaultRubyParser.y"
+case 269:
+					// line 1049 "DefaultRubyParser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("class definition in method body");
@@ -1672,8 +1711,8 @@ case 266:
                     /* $$ = new Integer(ruby.getSourceLine());*/
                 }
   break;
-case 267:
-					// line 1026 "DefaultRubyParser.y"
+case 270:
+					// line 1056 "DefaultRubyParser.y"
   {
                     yyVal = new ClassNode(getPosition(), ((String)yyVals[-4+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((INode)yyVals[-1+yyTop])), ((INode)yyVals[-3+yyTop]));
                     /* $<INode>$.setLine($<Integer>4.intValue());*/
@@ -1681,15 +1720,15 @@ case 267:
                     support.setClassNest(support.getClassNest() - 1);
                 }
   break;
-case 268:
-					// line 1032 "DefaultRubyParser.y"
+case 271:
+					// line 1062 "DefaultRubyParser.y"
   {
                     yyVal = new Boolean(support.isInDef());
                     support.setInDef(false);
                 }
   break;
-case 269:
-					// line 1035 "DefaultRubyParser.y"
+case 272:
+					// line 1065 "DefaultRubyParser.y"
   {
                     yyVal = new Integer(support.getInSingle());
                     support.setInSingle(0);
@@ -1697,8 +1736,8 @@ case 269:
                     support.getLocalNames().push();
                 }
   break;
-case 270:
-					// line 1040 "DefaultRubyParser.y"
+case 273:
+					// line 1070 "DefaultRubyParser.y"
   {
                     yyVal = new SClassNode(getPosition(), ((INode)yyVals[-5+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((INode)yyVals[-1+yyTop])));
                     support.getLocalNames().pop();
@@ -1707,8 +1746,8 @@ case 270:
                     support.setInSingle(((Integer)yyVals[-2+yyTop]).intValue());
                 }
   break;
-case 271:
-					// line 1047 "DefaultRubyParser.y"
+case 274:
+					// line 1077 "DefaultRubyParser.y"
   {
                     if (support.isInDef() || support.isInSingle()) { 
                         yyerror("module definition in method body");
@@ -1718,8 +1757,8 @@ case 271:
                     /* $$ = new Integer(ruby.getSourceLine());*/
                 }
   break;
-case 272:
-					// line 1054 "DefaultRubyParser.y"
+case 275:
+					// line 1084 "DefaultRubyParser.y"
   {
                     yyVal = new ModuleNode(getPosition(), ((String)yyVals[-3+yyTop]), new ScopeNode(support.getLocalNames().getNames(), ((INode)yyVals[-1+yyTop])));
                     /* $<Node>$.setLine($<Integer>3.intValue());*/
@@ -1727,8 +1766,8 @@ case 272:
                     support.setClassNest(support.getClassNest() - 1);
                 }
   break;
-case 273:
-					// line 1060 "DefaultRubyParser.y"
+case 276:
+					// line 1090 "DefaultRubyParser.y"
   {
                     if (support.isInDef() || support.isInSingle()) {
                         yyerror("nested method definition");
@@ -1737,8 +1776,8 @@ case 273:
                     support.getLocalNames().push();
                 }
   break;
-case 274:
-					// line 1066 "DefaultRubyParser.y"
+case 277:
+					// line 1096 "DefaultRubyParser.y"
   {
                     if (((IListNode)yyVals[-3+yyTop]) != null) {
                         yyVals[-4+yyTop] = new RescueNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((IListNode)yyVals[-3+yyTop]), ((INode)yyVals[-2+yyTop]));
@@ -1759,14 +1798,14 @@ case 274:
                     support.setInDef(false);
                 }
   break;
-case 275:
-					// line 1085 "DefaultRubyParser.y"
+case 278:
+					// line 1115 "DefaultRubyParser.y"
   {
                     lexer.setState(LexState.EXPR_FNAME);
                 }
   break;
-case 276:
-					// line 1087 "DefaultRubyParser.y"
+case 279:
+					// line 1117 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     support.setInSingle(support.getInSingle() + 1);
@@ -1774,8 +1813,8 @@ case 276:
                     lexer.setState(LexState.EXPR_END); /* force for args */
                 }
   break;
-case 277:
-					// line 1092 "DefaultRubyParser.y"
+case 280:
+					// line 1122 "DefaultRubyParser.y"
   {
                     if (((IListNode)yyVals[-3+yyTop]) != null) {
                         yyVals[-4+yyTop] = new RescueNode(getPosition(), ((INode)yyVals[-4+yyTop]), ((IListNode)yyVals[-3+yyTop]), ((INode)yyVals[-2+yyTop]));
@@ -1792,82 +1831,82 @@ case 277:
                     support.setInSingle(support.getInSingle() - 1);
                 }
   break;
-case 278:
-					// line 1107 "DefaultRubyParser.y"
+case 281:
+					// line 1137 "DefaultRubyParser.y"
   {
                     yyVal = new BreakNode(getPosition());
                 }
   break;
-case 279:
-					// line 1110 "DefaultRubyParser.y"
+case 282:
+					// line 1140 "DefaultRubyParser.y"
   {
                     yyVal = new NextNode(getPosition());
                 }
   break;
-case 280:
-					// line 1113 "DefaultRubyParser.y"
+case 283:
+					// line 1143 "DefaultRubyParser.y"
   {
                     yyVal = new RedoNode(getPosition());
                 }
   break;
-case 281:
-					// line 1116 "DefaultRubyParser.y"
+case 284:
+					// line 1146 "DefaultRubyParser.y"
   {
                     yyVal = new RetryNode(getPosition());
                 }
   break;
-case 288:
-					// line 1128 "DefaultRubyParser.y"
+case 291:
+					// line 1158 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = new IfNode(getPosition(), support.getConditionNode(((INode)yyVals[-3+yyTop])), ((INode)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 290:
-					// line 1134 "DefaultRubyParser.y"
+case 293:
+					// line 1164 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
-case 292:
-					// line 1139 "DefaultRubyParser.y"
+case 295:
+					// line 1169 "DefaultRubyParser.y"
   {
 	            yyVal = ((MultipleAsgnNode)yyVals[0+yyTop]);
 	      }
   break;
-case 294:
-					// line 1144 "DefaultRubyParser.y"
+case 297:
+					// line 1174 "DefaultRubyParser.y"
   {
                     yyVal = new ZeroArgNode();
                 }
   break;
-case 295:
-					// line 1147 "DefaultRubyParser.y"
+case 298:
+					// line 1177 "DefaultRubyParser.y"
   {
                     yyVal = new ZeroArgNode();
 		}
   break;
-case 296:
-					// line 1150 "DefaultRubyParser.y"
+case 299:
+					// line 1180 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[-1+yyTop]);
                 }
   break;
-case 297:
-					// line 1154 "DefaultRubyParser.y"
+case 300:
+					// line 1184 "DefaultRubyParser.y"
   {
                     support.getBlockNames().push();
                 }
   break;
-case 298:
-					// line 1156 "DefaultRubyParser.y"
+case 301:
+					// line 1186 "DefaultRubyParser.y"
   {
                     yyVal = new IterNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]), null);
                     support.getBlockNames().pop();
                 }
   break;
-case 299:
-					// line 1161 "DefaultRubyParser.y"
+case 302:
+					// line 1191 "DefaultRubyParser.y"
   {
                     if (((INode)yyVals[-1+yyTop]) instanceof BlockPassNode) {
 		        errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
@@ -1877,49 +1916,49 @@ case 299:
                     /* $$$2);*/
                 }
   break;
-case 300:
-					// line 1169 "DefaultRubyParser.y"
+case 303:
+					// line 1199 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 301:
-					// line 1173 "DefaultRubyParser.y"
+case 304:
+					// line 1203 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 302:
-					// line 1178 "DefaultRubyParser.y"
+case 305:
+					// line 1208 "DefaultRubyParser.y"
   {
                     yyVal = support.new_fcall(((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop]), getPosition()); /* .setPosFrom($2);*/
                 }
   break;
-case 303:
-					// line 1181 "DefaultRubyParser.y"
+case 306:
+					// line 1211 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop])); /*.setPosFrom($1);*/
                 }
   break;
-case 304:
-					// line 1185 "DefaultRubyParser.y"
+case 307:
+					// line 1215 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-3+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-3+yyTop]), ((String)yyVals[-1+yyTop]), ((INode)yyVals[0+yyTop])); /*.setPosFrom($1);*/
                 }
   break;
-case 305:
-					// line 1189 "DefaultRubyParser.y"
+case 308:
+					// line 1219 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[-2+yyTop]));
                     yyVal = support.new_call(((INode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]), null);
                 }
   break;
-case 306:
-					// line 1193 "DefaultRubyParser.y"
+case 309:
+					// line 1223 "DefaultRubyParser.y"
   {
                     if (!support.isCompileForEval() && !support.isInDef()
                                     && !support.isInSingle() && !support.isInDefined()) {
@@ -1928,8 +1967,8 @@ case 306:
                     yyVal = support.new_super(((INode)yyVals[0+yyTop]), getPosition());
                 }
   break;
-case 307:
-					// line 1200 "DefaultRubyParser.y"
+case 310:
+					// line 1230 "DefaultRubyParser.y"
   {
                     if (!support.isCompileForEval() && !support.isInDef()
                                     && !support.isInSingle() && !support.isInDefined()) {
@@ -1938,78 +1977,78 @@ case 307:
                     yyVal = new ZSuperNode(getPosition());
                 }
   break;
-case 308:
-					// line 1208 "DefaultRubyParser.y"
-  {
-                    support.getBlockNames().push();
-                }
-  break;
-case 309:
-					// line 1210 "DefaultRubyParser.y"
-  {
-                    yyVal = new IterNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]), null);
-                    support.getBlockNames().pop();
-                }
-  break;
-case 310:
-					// line 1214 "DefaultRubyParser.y"
-  {
-                    support.getBlockNames().push();
-                }
-  break;
 case 311:
-					// line 1216 "DefaultRubyParser.y"
+					// line 1238 "DefaultRubyParser.y"
   {
-                    yyVal = new IterNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]), null);
-                    support.getBlockNames().pop();
+                    support.getBlockNames().push();
                 }
   break;
 case 312:
-					// line 1221 "DefaultRubyParser.y"
+					// line 1240 "DefaultRubyParser.y"
+  {
+                    yyVal = new IterNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]), null);
+                    support.getBlockNames().pop();
+                }
+  break;
+case 313:
+					// line 1244 "DefaultRubyParser.y"
+  {
+                    support.getBlockNames().push();
+                }
+  break;
+case 314:
+					// line 1246 "DefaultRubyParser.y"
+  {
+                    yyVal = new IterNode(getPosition(), ((INode)yyVals[-2+yyTop]), ((INode)yyVals[-1+yyTop]), null);
+                    support.getBlockNames().pop();
+                }
+  break;
+case 315:
+					// line 1251 "DefaultRubyParser.y"
   {
                     yyVal = new WhenNode(getPosition(), ((ArrayNode)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]));
                 }
   break;
-case 314:
-					// line 1226 "DefaultRubyParser.y"
+case 317:
+					// line 1256 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = ((ArrayNode)yyVals[-3+yyTop]).add(new ExpandArrayNode(((INode)yyVals[0+yyTop])));
                 }
   break;
-case 315:
-					// line 1230 "DefaultRubyParser.y"
+case 318:
+					// line 1260 "DefaultRubyParser.y"
   {
                     support.checkExpression(((INode)yyVals[0+yyTop]));
                     yyVal = new ArrayNode(getPosition()).add(new ExpandArrayNode(((INode)yyVals[0+yyTop])));
                 }
   break;
-case 316:
-					// line 1235 "DefaultRubyParser.y"
+case 319:
+					// line 1265 "DefaultRubyParser.y"
   {
                     yyVal = ((IListNode)yyVals[-1+yyTop]).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 317:
-					// line 1238 "DefaultRubyParser.y"
+case 320:
+					// line 1268 "DefaultRubyParser.y"
   {
 	            yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[0+yyTop]));
 	        }
   break;
-case 318:
-					// line 1242 "DefaultRubyParser.y"
+case 321:
+					// line 1272 "DefaultRubyParser.y"
   {
                     yyVal = null;
                 }
   break;
-case 320:
-					// line 1247 "DefaultRubyParser.y"
+case 323:
+					// line 1277 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
-case 322:
-					// line 1252 "DefaultRubyParser.y"
+case 325:
+					// line 1282 "DefaultRubyParser.y"
   {
                     if (((INode)yyVals[-2+yyTop]) != null) {
                         yyVals[-2+yyTop] = support.node_assign(((INode)yyVals[-2+yyTop]), new GlobalVarNode(getPosition(), "$!"));
@@ -2021,14 +2060,14 @@ case 322:
                     yyVal = ((IListNode)yyVals[-5+yyTop]).add(new RescueBodyNode(getPosition(), ((ArrayNode)yyVals[-3+yyTop]), ((INode)yyVals[0+yyTop])));
                 }
   break;
-case 323:
-					// line 1262 "DefaultRubyParser.y"
+case 326:
+					// line 1292 "DefaultRubyParser.y"
   {
 	            yyVal = null;
 	        }
   break;
-case 325:
-					// line 1267 "DefaultRubyParser.y"
+case 328:
+					// line 1297 "DefaultRubyParser.y"
   {
                     /*if ($2 != null) {*/
                         yyVal = ((INode)yyVals[0+yyTop]);
@@ -2037,21 +2076,21 @@ case 325:
                     /*}*/
                 }
   break;
-case 327:
-					// line 1276 "DefaultRubyParser.y"
+case 330:
+					// line 1306 "DefaultRubyParser.y"
   {
                     yyVal = new SymbolNode(getPosition(), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 328:
-					// line 1279 "DefaultRubyParser.y"
+case 331:
+					// line 1309 "DefaultRubyParser.y"
   {
 	            support.getLocalNames().getLocalIndex("~");  
 	            yyVal = ((RegexpNode)yyVals[0+yyTop]);
 	        }
   break;
-case 329:
-					// line 1284 "DefaultRubyParser.y"
+case 332:
+					// line 1314 "DefaultRubyParser.y"
   {
 	            /* FIXME */
                     if (((INode)yyVals[-1+yyTop]) instanceof DStrNode) {
@@ -2062,8 +2101,8 @@ case 329:
                     yyVal = ((INode)yyVals[-1+yyTop]);
                 }
   break;
-case 330:
-					// line 1293 "DefaultRubyParser.y"
+case 333:
+					// line 1323 "DefaultRubyParser.y"
   {
 	            /* FIXME */
                     if (((INode)yyVals[-1+yyTop]) instanceof StrNode) {
@@ -2075,27 +2114,27 @@ case 330:
 		    yyVal = ListNodeUtil.addAll(((DStrNode)yyVal), ((DStrNode)yyVals[0+yyTop]));
                 }
   break;
-case 331:
-					// line 1303 "DefaultRubyParser.y"
+case 334:
+					// line 1333 "DefaultRubyParser.y"
   {
                     yyVal = new StrNode(getPosition(), ((String)yyVals[0+yyTop]));
                 }
   break;
-case 332:
-					// line 1306 "DefaultRubyParser.y"
+case 335:
+					// line 1336 "DefaultRubyParser.y"
   {
 	            yyVal = ((DStrNode)yyVals[0+yyTop]);
 	        }
   break;
-case 333:
-					// line 1310 "DefaultRubyParser.y"
+case 336:
+					// line 1340 "DefaultRubyParser.y"
   {
                     lexer.setState(LexState.EXPR_END);
                     yyVal = ((String)yyVals[0+yyTop]);
                 }
   break;
-case 338:
-					// line 1320 "DefaultRubyParser.y"
+case 341:
+					// line 1350 "DefaultRubyParser.y"
   {
                     if (((Number)yyVals[0+yyTop]) instanceof Long) {
                         yyVal = new FixnumNode(getPosition(), ((Long)yyVals[0+yyTop]).longValue());
@@ -2104,14 +2143,14 @@ case 338:
                     }
                 }
   break;
-case 339:
-					// line 1327 "DefaultRubyParser.y"
+case 342:
+					// line 1357 "DefaultRubyParser.y"
   {
 	                yyVal = new FloatNode(getPosition(), ((Double)yyVals[0+yyTop]).doubleValue());
 	            }
   break;
-case 345:
-					// line 1337 "DefaultRubyParser.y"
+case 348:
+					// line 1367 "DefaultRubyParser.y"
   {
                     if (((String)yyVals[0+yyTop]).equals("$_") || ((String)yyVals[0+yyTop]).equals("$~")) {
 		        support.getLocalNames().getLocalIndex("~");
@@ -2119,178 +2158,178 @@ case 345:
                     yyVal = ((String)yyVals[0+yyTop]);
                 }
   break;
-case 346:
-					// line 1344 "DefaultRubyParser.y"
+case 349:
+					// line 1374 "DefaultRubyParser.y"
   {
                     yyVal = support.getAccessNode(((String)yyVals[0+yyTop]), getPosition());
                 }
   break;
-case 347:
-					// line 1347 "DefaultRubyParser.y"
+case 350:
+					// line 1377 "DefaultRubyParser.y"
   { 
                     yyVal = new NilNode(getPosition());
                 }
   break;
-case 348:
-					// line 1350 "DefaultRubyParser.y"
+case 351:
+					// line 1380 "DefaultRubyParser.y"
   {
                     yyVal = new SelfNode(getPosition());
                 }
   break;
-case 349:
-					// line 1353 "DefaultRubyParser.y"
+case 352:
+					// line 1383 "DefaultRubyParser.y"
   { 
                     yyVal = new TrueNode(getPosition());
                 }
   break;
-case 350:
-					// line 1356 "DefaultRubyParser.y"
+case 353:
+					// line 1386 "DefaultRubyParser.y"
   {
                     yyVal = new FalseNode(getPosition());
                 }
   break;
-case 351:
-					// line 1359 "DefaultRubyParser.y"
+case 354:
+					// line 1389 "DefaultRubyParser.y"
   {
                     yyVal = new StrNode(getPosition(), getPosition().getFile());
                 }
   break;
-case 352:
-					// line 1362 "DefaultRubyParser.y"
+case 355:
+					// line 1392 "DefaultRubyParser.y"
   {
                     yyVal = new FixnumNode(getPosition(), getPosition().getLine());
                 }
   break;
-case 353:
-					// line 1366 "DefaultRubyParser.y"
+case 356:
+					// line 1396 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
-case 354:
-					// line 1369 "DefaultRubyParser.y"
+case 357:
+					// line 1399 "DefaultRubyParser.y"
   {
 	            yyVal = ((INode)yyVals[0+yyTop]);
 	        }
   break;
-case 355:
-					// line 1373 "DefaultRubyParser.y"
-  {
-                    yyVal = null;
-                }
-  break;
-case 356:
-					// line 1376 "DefaultRubyParser.y"
-  {
-                    lexer.setState(LexState.EXPR_BEG);
-                }
-  break;
-case 357:
-					// line 1378 "DefaultRubyParser.y"
-  {
-                    yyVal = ((INode)yyVals[-1+yyTop]);
-                }
-  break;
 case 358:
-					// line 1381 "DefaultRubyParser.y"
+					// line 1403 "DefaultRubyParser.y"
   {
-                    yyerrok();
                     yyVal = null;
                 }
   break;
 case 359:
-					// line 1386 "DefaultRubyParser.y"
+					// line 1406 "DefaultRubyParser.y"
   {
-                    yyVal = ((INode)yyVals[-2+yyTop]);
                     lexer.setState(LexState.EXPR_BEG);
                 }
   break;
 case 360:
-					// line 1390 "DefaultRubyParser.y"
+					// line 1408 "DefaultRubyParser.y"
   {
                     yyVal = ((INode)yyVals[-1+yyTop]);
                 }
   break;
 case 361:
-					// line 1394 "DefaultRubyParser.y"
+					// line 1411 "DefaultRubyParser.y"
+  {
+                    yyerrok();
+                    yyVal = null;
+                }
+  break;
+case 362:
+					// line 1416 "DefaultRubyParser.y"
+  {
+                    yyVal = ((INode)yyVals[-2+yyTop]);
+                    lexer.setState(LexState.EXPR_BEG);
+                }
+  break;
+case 363:
+					// line 1420 "DefaultRubyParser.y"
+  {
+                    yyVal = ((INode)yyVals[-1+yyTop]);
+                }
+  break;
+case 364:
+					// line 1424 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), ((Integer)yyVals[-5+yyTop]).intValue(), ((IListNode)yyVals[-3+yyTop]), ((Integer)yyVals[-1+yyTop]).intValue(), ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 362:
-					// line 1397 "DefaultRubyParser.y"
+case 365:
+					// line 1427 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), ((Integer)yyVals[-3+yyTop]).intValue(), ((IListNode)yyVals[-1+yyTop]), -1, ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 363:
-					// line 1400 "DefaultRubyParser.y"
+case 366:
+					// line 1430 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), ((Integer)yyVals[-3+yyTop]).intValue(), null, ((Integer)yyVals[-1+yyTop]).intValue(), ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 364:
-					// line 1403 "DefaultRubyParser.y"
+case 367:
+					// line 1433 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), ((Integer)yyVals[-1+yyTop]).intValue(), null, -1, ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 365:
-					// line 1406 "DefaultRubyParser.y"
+case 368:
+					// line 1436 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), 0, ((IListNode)yyVals[-3+yyTop]), ((Integer)yyVals[-1+yyTop]).intValue(), ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 366:
-					// line 1409 "DefaultRubyParser.y"
+case 369:
+					// line 1439 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), 0, ((IListNode)yyVals[-1+yyTop]), -1, ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 367:
-					// line 1412 "DefaultRubyParser.y"
+case 370:
+					// line 1442 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), 0, null, ((Integer)yyVals[-1+yyTop]).intValue(), ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 368:
-					// line 1415 "DefaultRubyParser.y"
+case 371:
+					// line 1445 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), 0, null, -1, ((BlockArgNode)yyVals[0+yyTop]));
                 }
   break;
-case 369:
-					// line 1418 "DefaultRubyParser.y"
+case 372:
+					// line 1448 "DefaultRubyParser.y"
   {
                     yyVal = new ArgsNode(getPosition(), 0, null, -1, null);
                 }
   break;
-case 370:
-					// line 1422 "DefaultRubyParser.y"
+case 373:
+					// line 1452 "DefaultRubyParser.y"
   {
                     yyerror("formal argument cannot be a constant");
                 }
   break;
-case 371:
-					// line 1425 "DefaultRubyParser.y"
+case 374:
+					// line 1455 "DefaultRubyParser.y"
   {
                     yyerror("formal argument cannot be an instance variable");
                 }
   break;
-case 372:
-					// line 1428 "DefaultRubyParser.y"
+case 375:
+					// line 1458 "DefaultRubyParser.y"
   {
                     yyerror("formal argument cannot be a global variable");
                 }
   break;
-case 373:
-					// line 1431 "DefaultRubyParser.y"
+case 376:
+					// line 1461 "DefaultRubyParser.y"
   {
                     yyerror("formal argument cannot be a class variable");
                 }
   break;
-case 374:
-					// line 1434 "DefaultRubyParser.y"
+case 377:
+					// line 1464 "DefaultRubyParser.y"
   {
                     if (!IdUtil.isLocal(((String)yyVals[0+yyTop]))) {
                         yyerror("formal argument must be local variable");
@@ -2301,14 +2340,14 @@ case 374:
                     yyVal = new Integer(1);
                 }
   break;
-case 376:
-					// line 1445 "DefaultRubyParser.y"
+case 379:
+					// line 1475 "DefaultRubyParser.y"
   {
                     yyVal = new Integer(((Integer)yyVal).intValue() + 1);
                 }
   break;
-case 377:
-					// line 1449 "DefaultRubyParser.y"
+case 380:
+					// line 1479 "DefaultRubyParser.y"
   {
                     if (!IdUtil.isLocal(((String)yyVals[-2+yyTop]))) {
                         yyerror("formal argument must be local variable");
@@ -2319,20 +2358,20 @@ case 377:
                     yyVal = support.getAssignmentNode(((String)yyVals[-2+yyTop]), ((INode)yyVals[0+yyTop]), getPosition());
                 }
   break;
-case 378:
-					// line 1459 "DefaultRubyParser.y"
+case 381:
+					// line 1489 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 379:
-					// line 1462 "DefaultRubyParser.y"
+case 382:
+					// line 1492 "DefaultRubyParser.y"
   {
                     yyVal = ((IListNode)yyVals[-2+yyTop]).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 380:
-					// line 1466 "DefaultRubyParser.y"
+case 383:
+					// line 1496 "DefaultRubyParser.y"
   {
                     if (!IdUtil.isLocal(((String)yyVals[0+yyTop]))) {
                         yyerror("rest argument must be local variable");
@@ -2342,14 +2381,14 @@ case 380:
                     yyVal = new Integer(support.getLocalNames().getLocalIndex(((String)yyVals[0+yyTop])));
                 }
   break;
-case 381:
-					// line 1474 "DefaultRubyParser.y"
+case 384:
+					// line 1504 "DefaultRubyParser.y"
   {
                     yyVal = new Integer(-2);
                 }
   break;
-case 382:
-					// line 1478 "DefaultRubyParser.y"
+case 385:
+					// line 1508 "DefaultRubyParser.y"
   {
                     if (!IdUtil.isLocal(((String)yyVals[0+yyTop]))) {
                         yyerror("block argument must be local variable");
@@ -2359,20 +2398,20 @@ case 382:
                     yyVal = new BlockArgNode(getPosition(), support.getLocalNames().getLocalIndex(((String)yyVals[0+yyTop])));
                 }
   break;
-case 383:
-					// line 1487 "DefaultRubyParser.y"
+case 386:
+					// line 1517 "DefaultRubyParser.y"
   {
                     yyVal = ((BlockArgNode)yyVals[0+yyTop]);
                 }
   break;
-case 384:
-					// line 1490 "DefaultRubyParser.y"
+case 387:
+					// line 1520 "DefaultRubyParser.y"
   {
 	            yyVal = null;
 	        }
   break;
-case 385:
-					// line 1494 "DefaultRubyParser.y"
+case 388:
+					// line 1524 "DefaultRubyParser.y"
   {
                     /*if ($1 instanceof SelfNode()) {
                         $$ = new SelfNode(null);
@@ -2381,14 +2420,14 @@ case 385:
                     /*}*/
                 }
   break;
-case 386:
-					// line 1501 "DefaultRubyParser.y"
+case 389:
+					// line 1531 "DefaultRubyParser.y"
   {
                     lexer.setState(LexState.EXPR_BEG);
                 }
   break;
-case 387:
-					// line 1503 "DefaultRubyParser.y"
+case 390:
+					// line 1533 "DefaultRubyParser.y"
   {
                     if (((INode)yyVals[-2+yyTop]) instanceof ILiteralNode) {
                         /*case Constants.NODE_STR:
@@ -2404,14 +2443,14 @@ case 387:
                     yyVal = ((INode)yyVals[-2+yyTop]);
                 }
   break;
-case 389:
-					// line 1519 "DefaultRubyParser.y"
+case 392:
+					// line 1549 "DefaultRubyParser.y"
   {
                     yyVal = ((ArrayNode)yyVals[-1+yyTop]);
                 }
   break;
-case 390:
-					// line 1522 "DefaultRubyParser.y"
+case 393:
+					// line 1552 "DefaultRubyParser.y"
   {
                     if (ListNodeUtil.getLength(((ArrayNode)yyVals[-1+yyTop])) % 2 != 0) {
                         yyerror("Odd number list for Hash.");
@@ -2419,37 +2458,37 @@ case 390:
                     yyVal = ((ArrayNode)yyVals[-1+yyTop]);
                 }
   break;
-case 392:
-					// line 1530 "DefaultRubyParser.y"
+case 395:
+					// line 1560 "DefaultRubyParser.y"
   {
                     yyVal = ListNodeUtil.addAll(((ArrayNode)yyVals[-2+yyTop]), ((ArrayNode)yyVals[0+yyTop]));
                 }
   break;
-case 393:
-					// line 1534 "DefaultRubyParser.y"
+case 396:
+					// line 1564 "DefaultRubyParser.y"
   {
                     yyVal = new ArrayNode(getPosition()).add(((INode)yyVals[-2+yyTop])).add(((INode)yyVals[0+yyTop]));
                 }
   break;
-case 413:
-					// line 1564 "DefaultRubyParser.y"
-  {
-                    yyerrok();
-                }
-  break;
 case 416:
-					// line 1570 "DefaultRubyParser.y"
+					// line 1594 "DefaultRubyParser.y"
   {
                     yyerrok();
                 }
   break;
-case 417:
-					// line 1574 "DefaultRubyParser.y"
+case 419:
+					// line 1600 "DefaultRubyParser.y"
+  {
+                    yyerrok();
+                }
+  break;
+case 420:
+					// line 1604 "DefaultRubyParser.y"
   {
                     yyVal = null;
                 }
   break;
-					// line 2477 "-"
+					// line 2516 "-"
         }
         yyTop -= YyLenClass.yyLen[yyN];
         yyState = yyStates[yyTop];
@@ -2480,45 +2519,45 @@ case 417:
          75,    0,    5,    6,    6,    6,    6,   78,    7,    7,
           7,    7,    7,    7,    7,    7,    7,    7,   79,    7,
           7,    7,    7,    7,    7,    8,    8,    8,    8,    8,
-          8,    8,    8,   12,   12,   29,   29,   29,   11,   11,
-         11,   11,   11,   46,   46,   48,   48,   47,   47,   47,
-         47,   47,   47,   44,   44,   49,   49,   45,   45,   45,
-         45,   45,   45,   40,   40,   40,   40,   40,   40,   68,
-         68,   69,   69,   69,   69,   69,   61,   61,   36,   81,
-         36,   70,   70,   70,   70,   70,   70,   70,   70,   70,
+          8,    8,    8,   12,   12,   12,   12,   12,   29,   29,
+         29,   11,   11,   11,   11,   11,   46,   46,   48,   48,
+         47,   47,   47,   47,   47,   47,   44,   44,   49,   49,
+         45,   45,   45,   45,   45,   45,   40,   40,   40,   40,
+         40,   40,   68,   68,   69,   69,   69,   69,   69,   61,
+         61,   36,   81,   36,   70,   70,   70,   70,   70,   70,
          70,   70,   70,   70,   70,   70,   70,   70,   70,   70,
-         70,   70,   70,   70,   70,   70,   70,   80,   80,   80,
+         70,   70,   70,   70,   70,   70,   70,   70,   70,   70,
          80,   80,   80,   80,   80,   80,   80,   80,   80,   80,
          80,   80,   80,   80,   80,   80,   80,   80,   80,   80,
          80,   80,   80,   80,   80,   80,   80,   80,   80,   80,
-         80,   80,   80,   80,   80,   80,   80,   80,    9,   82,
+         80,   80,   80,   80,   80,   80,   80,   80,   80,   80,
+         80,    9,   82,    9,    9,    9,    9,    9,    9,    9,
           9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
           9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
-          9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
-          9,    9,    9,    9,    9,   84,    9,    9,    9,   56,
-         56,   56,   56,   56,   56,   56,   21,   21,   21,   21,
-         22,   22,   20,   20,   20,   20,   20,   20,   20,   20,
-         20,   20,   86,   23,   59,   60,   60,   50,   50,   25,
-         25,   26,   26,   26,   19,   10,   10,   10,   10,   10,
+          9,    9,    9,    9,    9,    9,    9,    9,   84,    9,
+          9,    9,   56,   56,   56,   56,   56,   56,   56,   21,
+         21,   21,   21,   22,   22,   20,   20,   20,   20,   20,
+         20,   20,   20,   20,   20,   86,   23,   59,   60,   60,
+         50,   50,   25,   25,   26,   26,   26,   19,   10,   10,
          10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
-         10,   10,   10,   10,   10,   10,   10,   87,   10,   10,
-         10,   10,   10,   10,   89,   91,   10,   92,   93,   10,
-         10,   10,   94,   95,   10,   96,   10,   98,   99,   10,
-        100,   10,  101,   10,  103,  104,   10,   10,   10,   10,
-         10,   88,   88,   88,   90,   90,   14,   14,   15,   15,
-         38,   38,   39,   39,   39,   39,  105,   43,   28,   28,
-         28,   13,   13,   13,   13,   13,   13,  106,   42,  107,
-         42,   16,   51,   51,   51,   58,   58,   52,   52,   17,
-         17,   57,   57,   18,   18,    3,    3,    3,    2,    2,
-          2,    2,   64,   63,   63,   63,   63,    4,    4,   62,
-         62,   62,   62,   62,   71,   24,   24,   24,   24,   24,
-         24,   24,   37,   37,   27,  108,   27,   27,   30,   30,
-         31,   31,   31,   31,   31,   31,   31,   31,   31,   73,
-         73,   73,   73,   73,   74,   74,   32,   55,   55,   72,
-         72,   33,   34,   34,    1,  109,    1,   35,   35,   35,
-         54,   54,   53,   65,   65,   65,   66,   66,   66,   66,
-         67,   67,   67,  102,  102,   76,   76,   83,   83,   85,
-         85,   85,   97,   97,   77,   77,   41,
+         10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
+         87,   10,   10,   10,   10,   10,   10,   89,   91,   10,
+         92,   93,   10,   10,   10,   94,   95,   10,   96,   10,
+         98,   99,   10,  100,   10,  101,   10,  103,  104,   10,
+         10,   10,   10,   10,   88,   88,   88,   90,   90,   14,
+         14,   15,   15,   38,   38,   39,   39,   39,   39,  105,
+         43,   28,   28,   28,   13,   13,   13,   13,   13,   13,
+        106,   42,  107,   42,   16,   51,   51,   51,   58,   58,
+         52,   52,   17,   17,   57,   57,   18,   18,    3,    3,
+          3,    2,    2,    2,    2,   64,   63,   63,   63,   63,
+          4,    4,   62,   62,   62,   62,   62,   71,   24,   24,
+         24,   24,   24,   24,   24,   37,   37,   27,  108,   27,
+         27,   30,   30,   31,   31,   31,   31,   31,   31,   31,
+         31,   31,   73,   73,   73,   73,   73,   74,   74,   32,
+         55,   55,   72,   72,   33,   34,   34,    1,  109,    1,
+         35,   35,   35,   54,   54,   53,   65,   65,   65,   66,
+         66,   66,   66,   67,   67,   67,  102,  102,   76,   76,
+         83,   83,   85,   85,   85,   97,   97,   77,   77,   41,
     };
   } /* End of class YyLhsClass */
 
@@ -2528,45 +2567,45 @@ case 417:
           0,    2,    2,    1,    1,    3,    2,    0,    4,    3,
           3,    3,    2,    3,    3,    3,    3,    3,    0,    5,
           4,    3,    3,    3,    1,    3,    2,    1,    3,    3,
-          2,    2,    1,    1,    1,    1,    4,    4,    2,    4,
-          4,    2,    2,    1,    3,    1,    3,    1,    2,    3,
-          2,    2,    1,    1,    3,    2,    3,    1,    4,    3,
-          3,    3,    1,    1,    4,    3,    3,    3,    1,    1,
-          1,    1,    1,    1,    1,    1,    1,    1,    1,    0,
-          4,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+          2,    2,    1,    1,    1,    2,    2,    2,    1,    4,
+          4,    2,    4,    4,    2,    2,    1,    3,    1,    3,
+          1,    2,    3,    2,    2,    1,    1,    3,    2,    3,
+          1,    4,    3,    3,    3,    1,    1,    4,    3,    3,
+          3,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+          1,    1,    0,    4,    1,    1,    1,    1,    1,    1,
           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-          1,    1,    1,    1,    1,    1,    1,    1,    3,    0,
-          4,    6,    5,    5,    5,    3,    3,    3,    3,    3,
-          3,    3,    3,    3,    2,    2,    3,    3,    3,    3,
-          3,    3,    3,    3,    3,    3,    3,    3,    3,    2,
-          2,    3,    3,    3,    3,    0,    4,    5,    1,    0,
-          2,    4,    2,    5,    2,    3,    3,    4,    4,    6,
-          1,    1,    1,    3,    2,    5,    2,    5,    4,    7,
-          3,    1,    0,    2,    2,    2,    0,    1,    3,    1,
-          1,    3,    4,    2,    1,    1,    1,    1,    1,    1,
-          1,    1,    1,    1,    6,    3,    3,    2,    4,    3,
-          3,    4,    3,    1,    4,    3,    1,    0,    6,    2,
-          1,    2,    6,    6,    0,    0,    7,    0,    0,    7,
-          6,    5,    0,    0,    9,    0,    6,    0,    0,    8,
-          0,    5,    0,    9,    0,    0,   12,    1,    1,    1,
-          1,    1,    1,    2,    1,    1,    1,    5,    1,    2,
-          1,    1,    1,    2,    1,    3,    0,    5,    2,    4,
-          4,    2,    4,    4,    3,    2,    1,    0,    5,    0,
-          5,    4,    1,    4,    2,    2,    1,    0,    1,    2,
-          1,    6,    0,    1,    2,    1,    1,    1,    2,    2,
-          1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
           1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-          1,    1,    1,    1,    1,    0,    4,    2,    4,    2,
-          6,    4,    4,    2,    4,    2,    2,    1,    0,    1,
-          1,    1,    1,    1,    1,    3,    3,    1,    3,    2,
-          1,    2,    2,    0,    1,    0,    5,    1,    2,    2,
-          1,    3,    3,    1,    1,    1,    1,    1,    1,    1,
-          1,    1,    1,    1,    1,    0,    1,    0,    1,    0,
-          1,    1,    1,    1,    1,    2,    0,
+          1,    3,    0,    4,    6,    5,    5,    5,    3,    3,
+          3,    3,    3,    3,    3,    3,    3,    2,    2,    3,
+          3,    3,    3,    3,    3,    3,    3,    3,    3,    3,
+          3,    3,    2,    2,    3,    3,    3,    3,    0,    4,
+          5,    1,    0,    2,    4,    2,    5,    2,    3,    3,
+          4,    4,    6,    1,    1,    1,    3,    2,    5,    2,
+          5,    4,    7,    3,    1,    0,    2,    2,    2,    0,
+          1,    3,    1,    1,    3,    4,    2,    1,    1,    1,
+          1,    1,    1,    1,    1,    1,    1,    6,    3,    3,
+          2,    4,    3,    3,    4,    3,    1,    4,    3,    1,
+          0,    6,    2,    1,    2,    6,    6,    0,    0,    7,
+          0,    0,    7,    6,    5,    0,    0,    9,    0,    6,
+          0,    0,    8,    0,    5,    0,    9,    0,    0,   12,
+          1,    1,    1,    1,    1,    1,    2,    1,    1,    1,
+          5,    1,    2,    1,    1,    1,    2,    1,    3,    0,
+          5,    2,    4,    4,    2,    4,    4,    3,    2,    1,
+          0,    5,    0,    5,    4,    1,    4,    2,    2,    1,
+          0,    1,    2,    1,    6,    0,    1,    2,    1,    1,
+          1,    2,    2,    1,    1,    2,    1,    1,    1,    1,
+          1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+          1,    1,    1,    1,    1,    1,    1,    1,    0,    4,
+          2,    4,    2,    6,    4,    4,    2,    4,    2,    2,
+          1,    0,    1,    1,    1,    1,    1,    1,    3,    3,
+          1,    3,    2,    1,    2,    2,    0,    1,    0,    5,
+          1,    2,    2,    1,    3,    3,    1,    1,    1,    1,
+          1,    1,    1,    1,    1,    1,    1,    1,    0,    1,
+          0,    1,    0,    1,    1,    1,    1,    1,    2,    0,
     };
   } /* End class YyLenClass */
 
@@ -2574,272 +2613,272 @@ case 417:
 
     public static final short yyDefRed [] = {            1,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,  255,  258,    0,  278,  279,  280,  281,    0,    0,
-          0,  348,  347,  349,  350,    0,    0,    0,   19,    0,
-        352,  351,    0,    0,  345,  341,    0,  344,  338,  339,
-        331,  229,  328,  230,  231,  354,  353,  332,  228,    0,
+          0,  258,  261,    0,    0,    0,  283,  284,    0,    0,
+          0,  351,  350,  352,  353,    0,    0,    0,   19,    0,
+        355,  354,    0,    0,  348,  344,    0,  347,  341,  342,
+        334,  232,  331,  233,  234,  357,  356,  335,  231,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        226,  326,    2,    0,    0,    0,    0,    0,    0,   28,
-          0,  232,    0,   35,    0,    0,    4,    0,   54,    0,
-         44,    0,    0,  327,    0,  342,    0,   70,   71,    0,
-          0,  271,  117,  129,  118,  142,  114,  135,  124,  123,
-        140,  122,  121,  116,  145,  126,  115,  130,  134,  136,
-        128,  120,  137,  147,  139,    0,    0,    0,    0,  113,
-        133,  132,  127,  143,  146,  144,  148,  112,  119,  110,
-        111,    0,    0,    0,   74,    0,  103,  104,  101,   85,
-         86,   87,   90,   92,   88,  105,  106,   93,   94,   98,
-         89,   91,   82,   83,   84,   95,   96,   97,   99,  100,
-        102,  107,  386,    0,  385,  346,  273,   75,   76,  138,
-        131,  141,  125,  108,  109,   72,   73,    0,   79,   78,
-         77,  323,    0,    0,    0,    0,  414,  413,    0,    0,
-          0,  415,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,  291,  292,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,  203,   27,  225,    0,    0,  391,    0,  212,
-          0,    0,   43,    0,  306,   42,    0,   31,    8,    0,
-        409,    0,    0,    0,    0,    0,    0,  238,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,  388,    0,
-          0,    0,    0,   52,    0,  335,  337,  333,  334,  336,
-          0,   32,    0,  329,  330,    3,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,  297,  299,  310,  308,  252,    0,    0,
-          0,    0,   56,    0,    0,    0,    0,  150,  302,   39,
-        250,    0,    0,  356,  266,  355,    0,    0,  405,  404,
-        275,    0,   80,    0,  283,    0,    0,    0,    0,    0,
-          0,    0,  317,    0,  416,    0,    0,    0,    0,    0,
-          0,  263,    0,    0,  243,    0,    0,    0,    0,    0,
-          0,  205,    0,  207,  246,    0,    0,    0,    0,    0,
-          0,  214,    0,   11,   12,   10,  248,    0,    0,    0,
-          0,    0,    0,  236,    0,    0,  191,    0,  411,  193,
-          0,  195,  240,  241,    0,  390,  389,    0,    0,    0,
-          0,    0,    0,    0,    0,   18,   29,   30,    0,    0,
+        229,  329,    2,    0,    0,    0,    0,    0,    0,   28,
+          0,  235,    0,   35,    0,    0,    4,    0,   57,    0,
+         47,    0,    0,  330,    0,  345,    0,   73,   74,    0,
+          0,  274,  120,  132,  121,  145,  117,  138,  127,  126,
+        143,  125,  124,  119,  148,  129,  118,  133,  137,  139,
+        131,  123,  140,  150,  142,    0,    0,    0,    0,  116,
+        136,  135,  130,  146,  149,  147,  151,  115,  122,  113,
+        114,    0,    0,    0,   77,    0,  106,  107,  104,   88,
+         89,   90,   93,   95,   91,  108,  109,   96,   97,  101,
+         92,   94,   85,   86,   87,   98,   99,  100,  102,  103,
+        105,  110,  389,    0,  388,  349,  276,   78,   79,  141,
+        134,  144,  128,  111,  112,   75,   76,    0,   82,   81,
+         80,  326,    0,    0,    0,    0,  417,  416,    0,    0,
+          0,  418,    0,    0,  281,  282,    0,    0,    0,    0,
+          0,    0,    0,  294,  295,    0,    0,    0,    0,    0,
+          0,    0,    0,  206,   37,    0,    0,  394,    0,  215,
+          0,   38,    0,   27,   36,    0,   46,  228,    0,  309,
+         45,    0,   31,    8,    0,  412,    0,    0,    0,    0,
+          0,    0,  241,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,  391,    0,    0,    0,    0,   55,
+          0,  338,  340,  336,  337,  339,    0,   32,    0,  332,
+        333,    3,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,  305,    0,
-          0,  399,    0,    0,  400,    0,    0,    0,    0,  397,
-        398,    0,    0,    0,    0,    0,   22,   24,    0,    0,
-         23,   26,  221,    0,   50,   57,    0,    0,  358,    0,
-          0,    0,    0,    0,    0,  371,  370,  373,    0,    0,
-          0,    0,    0,  378,  368,    0,  372,    0,  375,    0,
-          0,    0,    0,    0,  289,    0,  284,    0,    0,    0,
-          0,    0,    0,    0,    0,  316,  286,  256,  285,  259,
-          0,    0,    0,    0,    0,    0,    0,    0,  211,  242,
-          0,    0,    0,    0,    0,    0,    0,  204,    0,  216,
-          0,    0,  392,  245,    0,    0,    0,    0,  197,    0,
-          9,    0,    0,    0,   21,    0,  196,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,  304,   41,    0,    0,
-        202,  303,   40,  201,    0,  295,    0,    0,  293,    0,
-          0,  301,   38,  300,   37,    0,    0,   55,    0,  269,
-          0,    0,  272,    0,  276,    0,  380,  382,    0,  323,
-        360,    0,  366,    0,  367,    0,  364,   81,    0,    0,
-        290,    0,    0,  324,    0,    0,  287,    0,    0,    0,
-          0,    0,  262,    0,    0,    0,    0,    0,    0,    0,
-        209,    0,  198,    0,    0,  199,    0,    0,    0,   20,
-          0,  192,    0,    0,    0,    0,    0,    0,  294,    0,
-          0,    0,    0,    0,    0,    0,  357,  267,  387,    0,
-          0,    0,    0,    0,  379,  383,    0,    0,    0,  376,
-          0,    0,    0,  321,  325,  235,    0,  253,  254,  261,
-          0,  312,    0,    0,  264,  206,    0,  208,    0,  249,
-        194,    0,  296,  298,  311,  309,    0,    0,    0,  359,
-          0,  365,    0,  362,  363,    0,    0,  320,    0,    0,
-          0,    0,  257,  260,    0,    0,  200,  270,  323,    0,
-          0,    0,    0,    0,  322,    0,    0,  210,    0,  274,
-        361,    0,    0,    0,    0,  288,  265,    0,    0,    0,
-        277,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,  300,
+        302,  313,  311,  255,    0,    0,    0,    0,   59,    0,
+          0,    0,    0,  153,  305,   42,  253,    0,    0,  359,
+        269,  358,    0,    0,  408,  407,  278,    0,   83,    0,
+        286,    0,    0,    0,    0,    0,    0,    0,  320,    0,
+        419,    0,    0,    0,    0,    0,    0,  266,    0,    0,
+          0,    0,    0,    0,    0,  208,    0,  210,  246,    0,
+        249,    0,    0,    0,    0,    0,    0,  217,    0,   11,
+         12,   10,  251,    0,    0,    0,    0,    0,    0,  239,
+          0,   36,    0,  194,    0,  414,  196,    0,  198,  243,
+        244,    0,  393,  392,    0,    0,    0,    0,    0,    0,
+          0,    0,   18,   29,   30,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,  308,    0,    0,  402,    0,
+          0,  403,    0,    0,    0,    0,  400,  401,    0,    0,
+          0,    0,    0,   22,   24,    0,    0,   23,   26,  224,
+          0,   53,   60,    0,    0,  361,    0,    0,    0,    0,
+          0,    0,  374,  373,  376,    0,    0,    0,    0,    0,
+        381,  371,    0,  375,    0,  378,    0,    0,    0,    0,
+          0,  292,    0,  287,    0,    0,    0,    0,    0,    0,
+          0,    0,  319,  289,  259,  288,  262,    0,    0,    0,
+          0,    0,    0,    0,    0,  214,    0,    0,    0,    0,
+          0,    0,    0,  207,    0,  219,    0,    0,  395,  245,
+        248,    0,    0,    0,    0,  200,    0,    9,    0,    0,
+          0,   21,    0,  199,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,  307,   44,    0,    0,  205,  306,   43,
+        204,    0,  298,    0,    0,  296,    0,    0,  304,   41,
+        303,   40,    0,    0,   58,    0,  272,    0,    0,  275,
+          0,  279,    0,  383,  385,    0,  326,  363,    0,  369,
+          0,  370,    0,  367,   84,    0,    0,  293,    0,    0,
+        327,    0,    0,  290,    0,    0,    0,    0,    0,  265,
+          0,    0,    0,    0,    0,    0,    0,  212,    0,  201,
+          0,    0,  202,    0,    0,    0,   20,    0,  195,    0,
+          0,    0,    0,    0,    0,  297,    0,    0,    0,    0,
+          0,    0,    0,  360,  270,  390,    0,    0,    0,    0,
+          0,  382,  386,    0,    0,    0,  379,    0,    0,    0,
+        324,  328,  238,    0,  256,  257,  264,    0,  315,    0,
+          0,  267,  209,    0,  211,    0,  252,  197,    0,  299,
+        301,  314,  312,    0,    0,    0,  362,    0,  368,    0,
+        365,  366,    0,    0,  323,    0,    0,    0,    0,  260,
+        263,    0,    0,  203,  273,  326,    0,    0,    0,    0,
+          0,  325,    0,    0,  213,    0,  277,  364,    0,    0,
+          0,    0,  291,  268,    0,    0,    0,  280,
     };
   } /* End of class YyDefRedClass */
 
   protected static final class YyDgotoClass {
 
     public static final short yyDgoto [] = {             1,
-        164,   60,   61,   62,  240,   64,   65,   66,   67,  236,
-         69,   70,   71,  606,  607,  343,  663,  603,  214,  215,
-        561,  562,  226,   72,  462,  463,  325,   73,   74,  482,
-        483,  484,  656,  593,  248,  178,  216,  201,  568,  184,
-         77,  321,  305,   78,   79,   80,   81,  242,   82,  245,
-        504,  600,  218,  219,  486,  247,  334,  344,  220,  362,
-        179,  221,  258,   84,  205,  512,  439,   91,  181,  445,
-         86,  488,  489,  490,    2,  190,  191,  373,  233,  169,
-        491,  467,  232,  378,  390,  227,  542,  336,  193,  508,
-        614,  194,  615,  517,  705,  471,  337,  468,  646,  327,
-        332,  331,  474,  650,  447,  449,  448,  470,  328,
+        164,   60,   61,   62,  245,   64,   65,   66,   67,  241,
+         69,   70,   71,  613,  614,  349,  670,  610,  224,  228,
+        568,  569,  231,   72,  469,  470,  331,   73,   74,  489,
+        490,  491,  663,  600,  254,  178,  216,  203,  575,  184,
+         77,  327,  311,   78,   79,   80,   81,  247,   82,  217,
+        511,  607,  218,  219,  493,  253,  340,  350,  220,  366,
+        179,  221,  264,   84,  207,  519,  446,   91,  181,  452,
+         86,  495,  496,  497,    2,  190,  191,  379,  238,  169,
+        498,  474,  237,  384,  397,  232,  549,  342,  193,  515,
+        621,  194,  622,  524,  712,  478,  343,  475,  653,  333,
+        338,  337,  481,  657,  454,  456,  455,  477,  334,
     };
   } /* End of class YyDgotoClass */
 
   protected static final class YySindexClass {
 
     public static final short yySindex [] = {            0,
-          0,11517,11919,  226,   62,14458,14365,11517,12408,12408,
-      11347,    0,    0,16112,    0,    0,    0,    0,12013,12116,
-          6,    0,    0,    0,    0,12408,14092,   47,    0,  -26,
+          0,12071,12473,  -68, -115,15012,14919,12071,12962,12962,
+      11901,    0,    0,16566,13065,13065,    0,    0,12567,12670,
+         73,    0,    0,    0,    0,12962,14646,   62,    0,   11,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,13787,
-      13787,   62,11722,12999,13787,16298,14731,13890,13787, -214,
-          0,    0,    0,  496,  480,  258, 2640,   76, -172,    0,
-        -80,    0,  -21,    0, -221,  104,    0,   94,    0,  142,
-          0,16205, -169,    0,  132,    0,  480,    0,    0,12408,
-        233,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,14341,
+      14341, -115,12276,13553,14341,16752,15285,14444,14341,  -97,
+          0,    0,    0,  110,  407,  294, 3146,   -5, -159,    0,
+       -103,    0,  -43,    0, -205,  126,    0,  172,    0,  195,
+          0,16659,  -82,    0,  144,    0,  407,    0,    0,12962,
+        173,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,  -10,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,  220,    0,    0,
-          0,    0,  228,  215,  267,  228,    0,    0,  214,   60,
-        285,    0,12408,12408,  321,  327,    6,   47,   84,    0,
-        110,    0,    0,    0,  132,11517,13787,13787,13787,12210,
-       1761,   91,    0,    0,    0, -221,  355,    0,  381,    0,
-       -169,12314,    0,12511,    0,    0,12511,    0,    0, -206,
-          0,  394,  339,11517,  117,   99,  117,    0,11722,  403,
-          0,  432,13787,   47,  247,  278,  458,  395,    0,  377,
-        278,  108,    0,    0,    0,    0,    0,    0,    0,    0,
-        117,    0,  117,    0,    0,    0,11816,12408,12408,12408,
-      12408,11919,12408,12408,13787,13787,13787,13787,13787,13787,
-      13787,13787,13787,13787,13787,13787,13787,13787,13787,13787,
-      13787,13787,13787,13787,13787,13787,13787,13787,13787,13787,
-      14859,15162,12999,    0,    0,    0,    0,    0,15199,15199,
-      13787,13102,    0,13102,11722,16298,  510,    0,    0,    0,
-          0,  258,  496,    0,    0,    0,11517,12408,    0,    0,
-          0,  271,    0, -149,    0,11517,  289,13787,13196,11517,
-         60,13299,    0,  260,    0,  164,  164,  394,15236,15273,
-      12999,    0, 2203, 2640,    0,  520,13787,15310,15347,12999,
-      12605,    0,12708,    0,    0,  522, -172,   47,   77,  529,
-        530,    0,14365,    0,    0,    0,    0,13787,11517,  460,
-      15310,15347,  551,    0,    0, 7900,    0,13393,    0,    0,
-      13787,    0,    0,    0,13787,    0,    0,15384,15687,12999,
-        480,  258,  258,  258,  258,    0,    0,    0,  117, 4722,
-       4722, 4722, 4722,  773,  773, 4386, 3514, 4722, 4722, 3077,
-       3077,  184,  184, 3951,  773,  773,  119,  119,  632,   59,
-         59,  117,  117,  117,  257,    0,    0,    6,    0,    0,
-        275,    0,  297,    6,    0,  527,  -97,  -97,  -97,    0,
-          0,    6,    6, 2640,13787, 2640,    0,    0,  583, 2640,
-          0,    0,    0,  604,    0,    0,13787,  496,    0,12408,
-      11517,  385,    9,14822,  593,    0,    0,    0,  351,  353,
-        761,11517,  496,    0,    0,  614,    0,  615,    0,  617,
-      14365,13787,11517,  399,    0,  -75,    0, 2640,  398,  260,
-      13787, 2640,  626,   48,  408,    0,    0,    0,    0,    0,
-          0,    6,    0,    0,    6,  585,12408,  334,    0,    0,
-       2640,  257,  275,  297,  597,13787, 1761,    0,  648,    0,
-      13787, 1761,    0,    0,  655,15199,15199,  656,    0,12605,
-          0,12408, 2640,  575,    0,    0,    0,13787, 2640,   47,
-          0,    0,    0,  621,13787,13787,    0,    0,13787,13787,
-          0,    0,    0,    0,  365,    0,16019,11517,    0,11517,
-      11517,    0,    0,    0,    0, 2640,13496,    0, 2640,    0,
-        214,  444,    0,  681,    0,13787,    0,    0,   47,    0,
-          0, -245,    0,  375,    0,  761,    0,    0,  680,  386,
-          0,11517,  466,    0,12408,  467,    0,  470,  472, 2640,
-      13590,11517,    0,11517,11517,    0,  164,  365, 2203,12802,
-          0, 2203,    0,    6,    6,    0, -172,   77,  112,    0,
-       7900,    0,    0, 2640, 2640, 2640, 2640,13787,    0,  616,
-        479,  481,  625,13787, 2640,11517,    0,    0,    0,  271,
-       2640,  705, -149,  593,    0,    0,  615,  708,  615,    0,
-      13787,16298,   48,    0,    0,    0,  228,    0,    0,    0,
-      13787,    0,  487,  490,    0,    0,13787,    0,  717,    0,
-          0, 2640,    0,    0,    0,    0, 2640,  495,11517,    0,
-        399,    0, -245,    0,    0,  125,    0,    0,    0,11517,
-      11517, 2640,    0,    0,11517, 2203,    0,    0,    0,  501,
-        615,15724,15761,12999,    0,  -75,  502,    0, -149,    0,
-          0,    0,    0,    0,  675,    0,    0,  399,    0,  506,
-          0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,  -42,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,  237,    0,    0,
+          0,    0,   37,  225,  241,   37,    0,    0,  123,   38,
+        291,    0,12962,12962,    0,    0,  314,  336,   73,   62,
+         13,    0,  131,    0,    0,    0,  144,12071,14341,14341,
+      14341, 2272,   39,    0,    0, -205,  388,    0,  410,    0,
+        -82,    0,12764,    0,    0,12868,    0,    0,13065,    0,
+          0,13065,    0,    0, -219,    0,  380,  344,12071,  136,
+         56,  136,    0,12276,  440,    0,  442,12567,14341,   62,
+        166,  204,  393,  369,    0,  209,  204,   75,    0,    0,
+          0,    0,    0,    0,    0,    0,  136,    0,  136,    0,
+          0,    0,12370,12962,12962,12962,12962,12473,12962,12962,
+      14341,14341,14341,14341,14341,14341,14341,14341,14341,14341,
+      14341,14341,14341,14341,14341,14341,14341,14341,14341,14341,
+      14341,14341,14341,14341,14341,14341,15413,15716,13553,    0,
+          0,    0,    0,    0,15753,15753,14341,13656,    0,13656,
+      12276,16752,  452,    0,    0,    0,    0,  294,  110,    0,
+          0,    0,12071,12962,    0,    0,    0,  325,    0,   32,
+          0,12071,  235,14341,13750,12071,   38,13853,    0, -143,
+          0,  378,  378,  380,15790,15827,13553,    0, 2709, 3146,
+      14341,15864,15901,13553,13159,    0,13262,    0,    0,  499,
+          0,  501, -159,   62,   47,  522,  493,    0,14919,    0,
+          0,    0,    0,14341,12071,  444,15864,15901,  537,    0,
+          0,    0, 8454,    0,13947,    0,    0,14341,    0,    0,
+          0,14341,    0,    0,15938,16241,13553,  407,  294,  294,
+        294,  294,    0,    0,    0,  136, 1130, 1130, 1130, 1130,
+        760,  760, 4455, 1603, 1130, 1130, 3583, 3583,  496,  496,
+       4020,  760,  760,  212,  212,  111,  120,  120,  136,  136,
+        136,  223,    0,    0,   73,    0,    0,  248,    0,  251,
+         73,    0,  489,  -80,  -80,  -80,    0,    0,   73,   73,
+       3146,14341, 3146,    0,    0,  555, 3146,    0,    0,    0,
+        567,    0,    0,14341,  110,    0,12962,12071,  342,  162,
+      15376,  554,    0,    0,    0,  317,  319,  911,12071,  110,
+          0,    0,  581,    0,  592,    0,  598,14919,14341,12071,
+        383,    0,  327,    0, 3146,  370, -143,14341, 3146,  605,
+         58,  391,    0,    0,    0,    0,    0,    0,   73,    0,
+          0,   73,  568,12962,  326,    0, 3146,  223,  248,  251,
+        583,14341, 2272,    0,  634,    0,14341, 2272,    0,    0,
+          0,  638,15753,15753,  649,    0,13159,    0,12962, 3146,
+        556,    0,    0,    0,14341, 3146,   62,    0,    0,    0,
+        599,14341,14341,    0,    0,14341,14341,    0,    0,    0,
+          0,  349,    0,16473,12071,    0,12071,12071,    0,    0,
+          0,    0, 3146,14050,    0, 3146,    0,  123,  433,    0,
+        666,    0,14341,    0,    0,   62,    0,    0,  201,    0,
+        363,    0,  911,    0,    0,  669,  374,    0,12071,  458,
+          0,12962,  462,    0,  473,  476, 3146,14144,12071,    0,
+      12071,12071,    0,  378,  349, 2709,13356,    0, 2709,    0,
+         73,   73,    0, -159,   47,  188,    0, 8454,    0,    0,
+       3146, 3146, 3146, 3146,14341,    0,  597,  479,  485,  628,
+      14341, 3146,12071,    0,    0,    0,  325, 3146,  714,   32,
+        554,    0,    0,  592,  712,  592,    0,14341,16752,   58,
+          0,    0,    0,   37,    0,    0,    0,14341,    0,  502,
+        503,    0,    0,14341,    0,  722,    0,    0, 3146,    0,
+          0,    0,    0, 3146,  509,12071,    0,  383,    0,  201,
+          0,    0,  104,    0,    0,    0,12071,12071, 3146,    0,
+          0,12071, 2709,    0,    0,    0,  510,  592,16278,16315,
+      13553,    0,  327,  513,    0,   32,    0,    0,    0,    0,
+          0,  672,    0,    0,  383,    0,  514,    0,
     };
   } /* End of class YySindexClass */
 
   protected static final class YyRindexClass {
 
     public static final short yyRindex [] = {            0,
-          0,  572,    0,    0,    0,    0,    0,  493,    0,    0,
-        507,    0,    0,    0,    0,    0,    0,    0,11016, 6238,
-       3384,    0,    0,    0,    0,    0,    0,13693,    0,    0,
-          0,    0, 1625, 2605,    0,    0, 1723,    0,    0,    0,
+          0,  145,    0,    0,    0,    0,    0,  521,    0,    0,
+        508,    0,    0,    0, 6611, 6696,    0,    0,11570, 6307,
+       3453,    0,    0,    0,    0,    0,    0,14247,    0,    0,
+          0,    0, 1693, 2674,    0,    0, 1792,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,  573,  686,  657,  157,    0,    0,    0, 5657,
-          0,    0,    0,  894, 1472, 1352,11588,11638, 8378,    0,
-       5753,    0,15603,    0,10533,    0,    0,    0,    0,    0,
-          0,  512,10623,    0,12905,    0, 5708,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,  486,  643,  845,  923,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,  978,  990,  999,    0, 1073,    0,    0,    0,    0,
+          0,    0,  184,  688,  657,  533,    0,    0,    0, 5726,
+          0,    0,    0,  846, 1632, 1341, 8932,12192, 6430,    0,
+       5822,    0, 6707,    0,11087,    0,    0,    0,    0,    0,
+          0,  536,11177,    0,13459,    0, 4825,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,  100,  376,  524,  618,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,    0,    0,    0, 4800,    0,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,  507,    0,
-        509,    0,    0,    0, 6057, 6142, 4785,  743,    0,  106,
-          0,    0,    0,  580,    0,  573,    0,    0,    0,    0,
-      10834, 6627,    0,    0,    0, 5178, 5876,    0, 5876,    0,
-       5268,    0,    0,  744,    0,    0,    0,    0,    0,    0,
-          0,13984,    0,  517, 6722, 6542, 7025,    0,  573,    0,
-        425,    0,    0,  691,  695,  695,    0,    0,    0,  671,
-        671,    0,  589,    0,  781,    0,    0,    0,    0,    0,
-       7110,    0, 7205,    0,    0,    0, 5029,    0,    0,    0,
+          0, 1013, 1079, 1143,    0, 1242,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,  686,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,  573,  560,  561,    0,    0,    0,
-          0,  536,    0,    0,    0,    0,  317,    0,    0,    0,
-          0,  552,    0,  344,    0,  244,10901,    0,    0,   40,
-          0,    0,    0,  535,    0,    0,    0,    0,    0,    0,
-        686,    0, 5876, 6361,    0,    0,    0,    0,    0,  686,
-          0,    0,    0,    0,    0,    0,  236,  767,  767,    0,
-        248,    0,    0,    0,    0,    0,    0,    0,  517,    0,
-          0,    0,    0,    0,  409,  691,    0,  720,    0,    0,
-         55,    0,    0,    0,  689,    0,    0,    0,    0,  686,
-       6193, 4934, 5140, 5194, 5768,    0,    0,    0, 7508, 9087,
-       9173, 9270, 9352, 8714, 8809, 9443, 9691, 9499, 9596, 9747,
-       9787, 8251, 8414,    0, 8895, 8992, 7809, 8595, 8499, 8069,
-       8154, 7593, 7688, 7991, 3916, 2947, 3479,12905,    0, 3042,
-       4258,    0, 4353, 3821,    0,    0,11109,11109,11227,    0,
-          0, 4695, 4695, 1290,    0, 1567,    0,    0,    0, 4896,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        317,    0,  767,    0,  200,    0,    0,    0,  201,    0,
-        264,  493,    0,    0,    0,  587,    0,  587,    0,  587,
-          0,   12,  442,  535,    0,  535,    0, 9825,  535,  535,
-          0,   30,   81,    0,    0,    0,    0,    0,    0,    0,
-       1220,    0, 1452, 1478, 5089,    0,    0,    0,    0,    0,
-      14553, 2073, 2168, 2510,    0,    0,15842,    0, 5876,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,    0, 9907,    0,    0,  543,    0,    0,   11,  691,
-       1204, 1475, 4746,    0,    0,    0,    0,    0,    0,    0,
-          0,    0,    0,    0,10712,    0,    0,  317,    0,  317,
-        517,    0,    0,    0,    0,15914,    0,    0,10091,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,  767,    0,
-          0,    0,    0,    0,    0,    0,    0,    0,   31,  176,
-          0,  317,    0,    0,    0,    0,    0,    0,    0,  204,
-          0,  478,    0,  317,  317,  620,    0, 5572, 5876,    0,
-          0, 5876,    0,   83,   83,    0,  468,  767,    0,    0,
-        691,    0, 1000,10136,10173,10213,10255,    0,    0,    0,
-          0,    0,    0,    0,15878,  317,    0,    0,    0,  552,
-        547,    0,  344,    0,    0,    0,  587,  587,  587,    0,
+          0,    0,    0,    0,    0,    0,    0, 5837,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,  508,    0,
+        515,    0,    0,    0,    0,    0, 6126, 6211, 4854,  755,
+          0,   51,    0,    0,    0,  348,    0,  184,    0,    0,
+          0,11388, 7181,    0,    0, 5247, 5005,    0, 5005,    0,
+       5337,    0,    0,    0,    0,    0,    0,    0,  758,    0,
+          0,    0,    0,    0,    0,    0,14538,    0,  101, 7276,
+       7096, 7579,    0,  184,    0,  505,    0, 6792,    0,  708,
+        713,  713,    0,    0,    0,  683,  683,    0,  776,    0,
+        956,    0,    0,    0,    0,    0, 7664,    0, 7759,    0,
+          0,    0, 1415,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-          0,10320,    0,    0,    0,    0,15976,    0,  493,    0,
-        535,    0,    0,    0,    0,    0,   68,    0,   69,  493,
-        244,  223,    0,    0,  317, 5876,    0,    0,    0,    0,
-        587,    0,    0,  686,    0,  535,    0,    0,  344,    0,
-          0,  401,  550,  843,    0,    0,    0,  535,  137,    0,
-          0,
+          0,    0,    0,    0,    0,    0,    0,    0,  688,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+        184,  710,  711,    0,    0,    0,    0,  112,    0,    0,
+          0,    0,   53,    0,    0,    0,    0,  119,    0,  340,
+          0,  402,11455,    0,    0,  640,    0,    0,    0,  546,
+          0,    0,    0,    0,    0,    0,  688,    0, 5005, 5945,
+          0,    0,    0,  688,    0,    0,    0,    0,    0,    0,
+          0,    0,  133,  770,  770,    0,  472,    0,    0,    0,
+          0,    0,    0,    0,  101,    0,    0,    0,    0,    0,
+        457,    0,  708,    0,  723,    0,    0,  186,    0,    0,
+          0,  696,    0,    0,    0,    0,  688, 5777, 6322, 6747,
+       6807, 7197,    0,    0,    0, 8062, 9641, 9727, 9824, 9906,
+       9268, 9363, 9997,10245,10053,10150, 1362,10301, 8805, 8968,
+          0, 9449, 9546, 8363, 9149, 9053, 8623, 8708, 8147, 8242,
+       8545, 3985, 3016, 3548,13459,    0, 3111, 4327,    0, 4422,
+       3890,    0,    0,11663,11663,11781,    0,    0, 4764, 4764,
+      10341,    0, 5097,    0,    0,    0, 4965,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,   53,    0,  770,
+          0,  176,    0,    0,    0,  467,    0,  482,  521,    0,
+          0,    0,  520,    0,  520,    0,  520,    0,   59,  221,
+        546,    0,  546,    0,10379,  546,  546,    0,   17,  169,
+          0,    0,    0,    0,    0,    0,    0,  572,    0, 1057,
+       1088, 5158,    0,    0,    0,    0,15107, 2142, 2237, 2579,
+          0,    0,16396,    0, 5005,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,10461,
+          0,    0,  527,    0,    0,   80,  708, 1750, 2103, 4812,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,11266,    0,    0,   53,    0,   53,  101,    0,    0,
+          0,    0,12142,    0,    0,10645,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,  770,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,   82,  175,    0,   53,    0,
+          0,    0,    0,    0,    0,    0,  199,    0,  256,    0,
+         53,   53,  565,    0, 5641, 5005,    0,    0, 5005,    0,
+         60,   60,    0,  511,  770,    0,    0,  708,    0, 1349,
+      10690,10727,10767,10809,    0,    0,    0,    0,    0,    0,
+          0,16432,   53,    0,    0,    0,  119,  750,    0,  340,
+          0,    0,    0,  520,  520,  520,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0,    0,    0,    0,    0,    0,    0,    0,10874,    0,
+          0,    0,    0,16157,    0,  521,    0,  546,    0,    0,
+          0,    0,    0,   90,    0,  105,  521,  402,  203,    0,
+          0,   53, 5005,    0,    0,    0,    0,  520,    0,    0,
+        688,    0,  546,    0,    0,  340,    0,    0,   79,  595,
+        702,    0,    0,    0,  546,  106,    0,    0,
     };
   } /* End of class YyRindexClass */
 
   protected static final class YyGindexClass {
 
     public static final short yyGindex [] = {            0,
-          0,    0,    0,    0,  316,    0,   13,  159, 1151,   -2,
-        -15,  -28,    0,  103, -252, -250,    0, -652,  197, -108,
-        -18,   23,  -38,  815,    0,  519,    0, -201,    0,  182,
-        354, -547, -266,  448,    0,    0,  707,  269,  189,  514,
-        427,  772,    0,  756,  -14,  988,   22, -176,    0,   29,
-          0,    0, -326,   18,  249, -265, -546,  503, -278, -209,
-          2,  533,    0,    8,  123, -241,    0,  231,    5,    7,
-        -25, -441,  250,    0,    0,  -11,  783,    0,    0,    0,
-          0,    0, -167,    0,  -62,    0,    0, -153,    0, -327,
-          0,    0,    0,    0,    0,    0,   17,    0,    0,    0,
+          0,    0,    0,    0,  622,    0,  160, 1015, 1213,   -2,
+         15,    4,    0,  113, -308, -295,    0, -627,  232,  116,
+        -19,  354,  -70,  817,    0,  506,    0, -191,    0,  181,
+        352, -492, -288,  273,    0,    0,  736,  267,  197,  706,
+        414,  771,    0,  761,  -37,  867,   61, -153,    0,   -6,
+          0,    0, -334,   20,  242, -304, -515,  500, -286, -198,
+         18,  454,    0,   19,  280, -279,    0,  240,   10,   16,
+        -17, -392,  245,    0,    0,    1,  785,    0,    0,    0,
+          0,    0, -106,    0,  335,    0,    0, -175,    0, -314,
+          0,    0,    0,    0,    0,    0,   14,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,
     };
   } /* End of class YyGindexClass */
@@ -2896,7 +2935,7 @@ case 417:
   } /* End of class YyNameClass */
 
 
-					// line 1578 "DefaultRubyParser.y"
+					// line 1608 "DefaultRubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -2928,4 +2967,4 @@ case 417:
         return lexer.getPosition();
     }
 }
-					// line 6713 "-"
+					// line 6847 "-"

@@ -234,9 +234,8 @@ public class ThreadContext {
                 }
             }
         } catch (NextJump nExcptn) {
-            return runtime.getNil();
-        /*} catch (BreakJump rExcptn) {
-            return runtime.getNil(); */
+            IRubyObject nextValue = nExcptn.getNextValue();
+            return nextValue == null ? runtime.getNil() : nextValue;
         } finally {
             getIterStack().pop();
             popClass();

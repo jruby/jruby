@@ -29,14 +29,29 @@
  */
 package org.jruby.exceptions;
 
+import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
 public class BreakJump extends JumpException {
-
+    private IRubyObject breakValue;
+    
     /** Creates new BreakException */
     public BreakJump() {
+    }
+
+    public BreakJump(IRubyObject breakValue) {
+        this.breakValue = breakValue;
+    }
+    
+    /** Returns the return value.
+     * 
+     * @return Value of property returnValue.
+     */
+    public IRubyObject getBreakValue() {
+        return breakValue;
     }
 }

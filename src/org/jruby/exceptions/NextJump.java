@@ -26,14 +26,29 @@
  */
 package org.jruby.exceptions;
 
+import org.jruby.runtime.builtin.IRubyObject;
+
 /** The NextJump is thrown if a 'next' statement is evaluated.
  *
  * @author  jpetersen
  * @version $Revision$
  */
 public class NextJump extends JumpException {
-
+    private IRubyObject nextValue;
+    
     /** Creates new NextJump */
     public NextJump() {
+    }
+    
+    public NextJump(IRubyObject nextValue) {
+        this.nextValue = nextValue;
+    }
+    
+    /** Returns the return value.
+     * 
+     * @return Value of property returnValue.
+     */
+    public IRubyObject getNextValue() {
+        return nextValue;
     }
 }

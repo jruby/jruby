@@ -36,6 +36,7 @@ import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
@@ -536,6 +537,10 @@ public class RubyObject implements Cloneable, IRubyObject {
                     IRubyObject valueInYield = args[0];
                     IRubyObject selfInYield = args[0];
                     return context.yield(valueInYield, selfInYield, context.getRubyClass(), false);
+                } catch (BreakJump e) {
+                    IRubyObject breakValue = e.getBreakValue();
+                    
+                    return breakValue == null ? runtime.getNil() : breakValue;
                 } finally {
                     block.setVisibility(savedVisibility);
                 }

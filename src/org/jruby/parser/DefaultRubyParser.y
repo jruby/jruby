@@ -363,6 +363,36 @@ expr          : mlhs '=' mrhs {
 
 command_call  : command
               | block_command
+              | kRETURN call_args {
+                    support.checkExpression($2);
+                    if ($2 instanceof ArrayNode && 
+                        ListNodeUtil.getLength($<IListNode>2) == 1) {
+                        $$ = new ReturnNode(getPosition(), 
+                            ListNodeUtil.getLast($<IListNode>2));
+                    } else {
+                        $$ = new ReturnNode(getPosition(), $2);
+                    }
+                }
+              | kBREAK call_args {
+                    support.checkExpression($2);
+                    if ($2 instanceof ArrayNode && 
+                        ListNodeUtil.getLength($<IListNode>2) == 1) {
+                        $$ = new BreakNode(getPosition(), 
+                            ListNodeUtil.getLast($<IListNode>2));
+                    } else {
+                        $$ = new BreakNode(getPosition(), $2);
+                    }
+                }
+              | kNEXT call_args {
+                    support.checkExpression($2);
+                    if ($2 instanceof ArrayNode && 
+                        ListNodeUtil.getLength($<IListNode>2) == 1) {
+                        $$ = new NextNode(getPosition(), 
+                            ListNodeUtil.getLast($<IListNode>2));
+                    } else {
+                        $$ = new NextNode(getPosition(), $2);
+                    }
+                }
 
 block_command : block_call
               | block_call '.' operation2 command_args {

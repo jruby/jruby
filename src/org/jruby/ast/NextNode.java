@@ -26,6 +26,7 @@
  */
 package org.jruby.ast;
 
+import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -38,16 +39,31 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class NextNode extends AbstractNode {
     static final long serialVersionUID = -6688896555206419923L;
 
-
+    private final INode valueNode;
+    
     public NextNode(ISourcePosition position) {
         super(position);
+        valueNode = null;
     }
 
+    public NextNode(ISourcePosition position, INode valueNode) {
+        super(position);
+        this.valueNode = valueNode;
+    }
+    
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
      **/
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitNextNode(this);
+    }
+    
+    /**
+     * Gets the valueNode.
+     * @return Returns a INode
+     */
+    public INode getValueNode() {
+        return valueNode;
     }
 }

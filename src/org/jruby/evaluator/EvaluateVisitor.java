@@ -274,6 +274,9 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBreakNode(BreakNode)
      */
     public void visitBreakNode(BreakNode iVisited) {
+        if (iVisited.getValueNode() != null) {
+            throw new BreakJump(eval(iVisited.getValueNode()));
+        }
         throw new BreakJump();
     }
 
@@ -324,7 +327,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitCallNode(CallNode iVisited) {
         Block tmpBlock = ArgsUtil.beginCallArgs(threadContext);
-
         IRubyObject receiver = null;
         IRubyObject[] args = null;
         try {
@@ -334,7 +336,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
         Asserts.notNull(receiver.getMetaClass(), receiver.getClass().getName());
-
+        
         result = receiver.getMetaClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
 
@@ -691,7 +693,9 @@ public final class EvaluateVisitor implements NodeVisitor {
                 }
             }
         } catch (BreakJump bExcptn) {
-            result = runtime.getNil();
+            IRubyObject breakValue = bExcptn.getBreakValue();
+            
+            result = breakValue == null ? runtime.getNil() : breakValue;
         } finally {
             threadContext.getIterStack().pop();
             threadContext.getBlockStack().pop();
@@ -776,7 +780,9 @@ public final class EvaluateVisitor implements NodeVisitor {
                 }
             }
         } catch (BreakJump bExcptn) {
-            result = runtime.getNil();
+            IRubyObject breakValue = bExcptn.getBreakValue();
+            
+            result = breakValue == null ? runtime.getNil() : breakValue;
         } finally {
             threadContext.getIterStack().pop();
             threadContext.getBlockStack().pop();
@@ -872,6 +878,9 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNextNode(NextNode)
      */
     public void visitNextNode(NextNode iVisited) {
+        if (iVisited.getValueNode() != null) {
+            throw new NextJump(eval(iVisited.getValueNode()));
+        }
         throw new NextJump();
     }
 
@@ -1273,6 +1282,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getArgsNode() instanceof ExpandArrayNode && ((RubyArray) result).getLength() == 1) {
             result = ((RubyArray) result).first();
         }
+
         result = threadContext.yield(result, null, null, false);
     }
 

@@ -26,6 +26,7 @@
  */
 package org.jruby.ast;
 
+import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -38,8 +39,16 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class BreakNode extends AbstractNode {
     static final long serialVersionUID = 1491046888629861035L;
 
+    private final INode valueNode;
+    
     public BreakNode(ISourcePosition position) {
         super(position);
+        valueNode = null;
+    }
+    
+    public BreakNode(ISourcePosition position, INode valueNode) {
+        super(position);
+        this.valueNode = valueNode;
     }
 
     /**
@@ -48,5 +57,13 @@ public class BreakNode extends AbstractNode {
      **/
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitBreakNode(this);
+    }
+    
+    /**
+     * Gets the valueNode.
+     * @return Returns a INode
+     */
+    public INode getValueNode() {
+        return valueNode;
     }
 }
