@@ -147,7 +147,7 @@ public class RubyDir extends RubyObject {
     /** Changes the current directory to <code>path</code> */
     public static RubyObject chdir(Ruby ruby, RubyObject recv, RubyString path) {
         System.setProperty("user.dir", getDir(ruby, path.toString()).toString());
-        return new RubyFixnum(ruby, 0);
+        return RubyFixnum.newFixnum(ruby, 0);
     }
 
     /**
@@ -164,7 +164,7 @@ public class RubyDir extends RubyObject {
      */
     public static RubyObject rmdir(Ruby ruby, RubyObject recv, RubyString path) {
         new File(path.toString()).delete();
-        return new RubyFixnum(ruby, 0);
+        return RubyFixnum.newFixnum(ruby, 0);
     }
 
     /**
@@ -208,7 +208,7 @@ public class RubyDir extends RubyObject {
             throw new IOError(ruby, path + " already exists");
         }
 
-        return new RubyBoolean(ruby, newDir.mkdir());
+        return RubyBoolean.newBoolean(ruby, newDir.mkdir());
     }
 
     /**
@@ -237,7 +237,7 @@ public class RubyDir extends RubyObject {
     public RubyObject each() {
         String[] contents = snapshot;
         for (int i=0; i<contents.length; i++) {
-            getRuby().yield(new RubyString(getRuby(),contents[i]));
+            getRuby().yield(RubyString.newString(getRuby(), contents[i]));
         }
         return this;
     }
@@ -246,7 +246,7 @@ public class RubyDir extends RubyObject {
      * Returns the current position in the directory.
      */
     public RubyInteger tell() {
-        return new RubyFixnum(getRuby(), pos);
+        return RubyFixnum.newFixnum(getRuby(), pos);
     }
 
     /**
@@ -266,7 +266,7 @@ public class RubyDir extends RubyObject {
     /** Moves position in this directory to the first entry. */
     public RubyObject rewind() {
         pos = 0;
-        return new RubyFixnum(getRuby(), pos);
+        return RubyFixnum.newFixnum(getRuby(), pos);
     }
 
 // ----- Helper Methods --------------------------------------------------------

@@ -115,6 +115,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
     private static final int M_EMPTY_P = 24;
     private static final int M_INDEX = 25;
     private static final int M_RINDEX = 26;
+    private static final int M_CLONE = 260;
+    private static final int M_JOIN = 261;
     private static final int M_INDICES = 27;
     private static final int M_REVERSE = 30;
     private static final int M_REVERSE_BANG = 31;
@@ -129,7 +131,6 @@ public class RubyArray extends RubyObject implements IndexCallable {
     private static final int M_REPLACE = 50;
     private static final int M_CLEAR = 51;
     private static final int M_INCLUDE_P = 53;
-    private static final int M_CLONE = 60;
 
 	public static RubyClass createArrayClass(Ruby ruby) {
 		RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
@@ -170,7 +171,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("indexes", IndexedCallback.createOptional(M_INDICES));
 		arrayClass.defineMethod("indices", IndexedCallback.createOptional(M_INDICES));
 		arrayClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
-		arrayClass.defineMethod("join", CallbackFactory.getOptMethod(RubyArray.class, "join"));
+		arrayClass.defineMethod("join", IndexedCallback.createOptional(M_JOIN));
 		arrayClass.defineMethod("reverse", IndexedCallback.create(M_REVERSE, 0));
 		arrayClass.defineMethod("reverse!", IndexedCallback.create(M_REVERSE_BANG, 0));
 		arrayClass.defineMethod("sort", IndexedCallback.create(M_SORT, 0));
@@ -262,6 +263,10 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return rindex(args[0]);
         case M_INDICES:
             return indices(args);
+        case M_CLONE:
+            return rbClone();
+        case M_JOIN:
+            return join(args);
         case M_REVERSE:
             return reverse();
         case M_REVERSE_BANG:
@@ -288,8 +293,6 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return clear();
         case M_INCLUDE_P:
             return include_p(args[0]);
-        case M_CLONE:
-            return rbClone();
         }
         Asserts.assertNotReached();
         return null;
@@ -529,7 +532,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyFixnum length() {
-		return new RubyFixnum(getRuby(), getLength());
+		return RubyFixnum.newFixnum(getRuby(), getLength());
 	}
 
 	/** rb_ary_push_m

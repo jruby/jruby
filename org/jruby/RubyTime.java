@@ -112,7 +112,7 @@ public class RubyTime extends RubyObject {
 
     public static RubyTime s_new(Ruby ruby, RubyObject rubyClass) {
         RubyObject[] args = new RubyObject[1];
-        args[0] = new RubyFixnum(ruby, new Date().getTime());
+        args[0] = RubyFixnum.newFixnum(ruby, new Date().getTime());
         return s_at(ruby, rubyClass, args);
     }
 

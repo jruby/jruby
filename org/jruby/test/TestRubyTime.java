@@ -54,7 +54,7 @@ public class TestRubyTime extends TestCase {
 
         rubyTime = ruby.getClasses().getTimeClass();
         RubyObject[] args = new RubyObject[1];
-        args[0] = new RubyFixnum(ruby, 18000000);
+        args[0] = RubyFixnum.newFixnum(ruby, 18000000);
         nineTeenSeventy = RubyTime.s_at(ruby, rubyTime, args);
     }
 

@@ -192,7 +192,7 @@ public class RubyRange extends RubyObject {
         long size = 0;
 
         if (begin.funcall(">", end).isTrue()) {
-            return new RubyFixnum(getRuby(), 0);
+            return RubyFixnum.newFixnum(getRuby(), 0);
         }
 
         if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
@@ -201,7 +201,7 @@ public class RubyRange extends RubyObject {
                 size++;
             }
         }
-        return new RubyFixnum(getRuby(), size);
+        return RubyFixnum.newFixnum(getRuby(), size);
     }
 
     public RubyBoolean equal(RubyObject obj) {

@@ -693,14 +693,14 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyFixnum length() {
-		return new RubyFixnum(getRuby(), getValue().length());
+		return RubyFixnum.newFixnum(getRuby(), getValue().length());
 	}
 
 	/** rb_str_empty
 	 *
 	 */
 	public RubyBoolean empty() {
-		return new RubyBoolean(getRuby(), getValue().length() == 0);
+		return RubyBoolean.newBoolean(getRuby(), getValue().length() == 0);
 	}
 
 	/** rb_str_append
@@ -933,7 +933,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 			if (idx < 0 || idx >= getValue().length()) {
 				return getRuby().getNil();
 			}
-			return new RubyFixnum(getRuby(), getValue().charAt(idx));
+			return RubyFixnum.newFixnum(getRuby(), getValue().charAt(idx));
 		}
 		if (args[0] instanceof RubyRegexp) {
 			if (RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0) {
@@ -961,7 +961,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		if (idx < 0 || idx >= getValue().length()) {
 			return getRuby().getNil();
 		}
-		return new RubyFixnum(getRuby(), getValue().charAt(idx));
+		return RubyFixnum.newFixnum(getRuby(), getValue().charAt(idx));
 	}
 
 	/** rb_str_aset, rb_str_aset_m
@@ -1738,7 +1738,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		byte[] lByteValue = toByteArray();
 		int lLength = lByteValue.length;
 		for (int i = 0; i < lLength; i++) {
-			ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+			ruby.yield(RubyFixnum.newFixnum(ruby, lByteValue[i]));
 		}
 		return this;
 	}
