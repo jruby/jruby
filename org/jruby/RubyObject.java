@@ -48,7 +48,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Callback;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.Iter;
@@ -417,6 +416,10 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             }
         }
         return callMethod(convertMethod);
+    }
+
+    public IRubyObject convertToString() {
+        return (RubyString) convertToType("String", "to_s", true);
     }
 
     /** rb_convert_type

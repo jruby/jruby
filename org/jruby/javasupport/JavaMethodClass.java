@@ -55,9 +55,9 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         this.method = method;
     }
 
-    public static JavaMethodClass create(Ruby runtime, Class javaClass, String methodName) {
+    public static JavaMethodClass create(Ruby runtime, Class javaClass, String methodName, Class[] argumentTypes) {
         try {
-            Method method = javaClass.getMethod(methodName, new Class[0]);
+            Method method = javaClass.getMethod(methodName, argumentTypes);
             return new JavaMethodClass(runtime, method);
         } catch (NoSuchMethodException e) {
             throw new NameError(runtime, "undefined method '" + methodName + "' for class '" + javaClass.getName() + "'");

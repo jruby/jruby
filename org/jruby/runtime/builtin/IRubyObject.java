@@ -182,6 +182,8 @@ public interface IRubyObject {
      */
     IRubyObject convertToType(String string, String string1, boolean b);
 
+    IRubyObject convertToString();
+
     /**
      * Method setTaint.
      * @param b
