@@ -32,25 +32,25 @@
 
 package org.jruby;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
 import org.jruby.util.collections.IdentitySet;
-import org.jruby.internal.runtime.builtin.definitions.ArrayDefinition;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -112,133 +112,88 @@ public class RubyArray extends RubyObject {
     }
 
     public static RubyClass createArrayClass(Ruby ruby) {
-        return new ArrayDefinition(ruby).getType();
-    }
+        RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
+        arrayClass.includeModule(ruby.getModule("Enumerable"));
 
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case ArrayDefinition.AT:
-                return at(args[0]);
-            case ArrayDefinition.INITIALIZE :
-                return initialize(args);
-            case ArrayDefinition.INSPECT :
-                return inspect();
-            case ArrayDefinition.TO_S :
-                return to_s();
-            case ArrayDefinition.TO_A :
-                return to_a();
-            case ArrayDefinition.FROZEN :
-                return frozen();
-            case ArrayDefinition.EQUAL :
-                return equal(args[0]);
-            case ArrayDefinition.EQL :
-                return eql(args[0]);
-            case ArrayDefinition.HASH :
-                return hash();
-            case ArrayDefinition.AREF :
-                return aref(args);
-            case ArrayDefinition.SLICE_BANG :
-                return slice_bang(args);
-            case ArrayDefinition.ASET :
-                return aset(args);
-            case ArrayDefinition.FIRST :
-                return first();
-            case ArrayDefinition.LAST :
-                return last();
-            case ArrayDefinition.CONCAT :
-                return concat(args[0]);
-            case ArrayDefinition.APPEND :
-                return append(args[0]);
-            case ArrayDefinition.PUSH :
-                return push(args);
-            case ArrayDefinition.POP :
-                return pop();
-            case ArrayDefinition.SHIFT :
-                return shift();
-            case ArrayDefinition.UNSHIFT :
-                return unshift(args);
-            case ArrayDefinition.EACH :
-                return each();
-            case ArrayDefinition.EACH_INDEX :
-                return each_index();
-            case ArrayDefinition.REVERSE_EACH :
-                return reverse_each();
-            case ArrayDefinition.LENGTH :
-                return length();
-            case ArrayDefinition.EMPTY_P :
-                return empty_p();
-            case ArrayDefinition.INDEX :
-                return index(args[0]);
-            case ArrayDefinition.RINDEX :
-                return rindex(args[0]);
-            case ArrayDefinition.INDICES :
-                return indices(args);
-            case ArrayDefinition.RBCLONE :
-                return rbClone();
-            case ArrayDefinition.JOIN :
-                return join(args);
-            case ArrayDefinition.REVERSE :
-                return reverse();
-            case ArrayDefinition.REVERSE_BANG :
-                return reverse_bang();
-            case ArrayDefinition.SORT :
-                return sort();
-            case ArrayDefinition.SORT_BANG :
-                return sort_bang();
-            case ArrayDefinition.COLLECT :
-                return collect();
-            case ArrayDefinition.COLLECT_BANG :
-                return collect_bang();
-            case ArrayDefinition.DELETE :
-                return delete(args[0]);
-            case ArrayDefinition.DELETE_AT :
-                return delete_at(args[0]);
-            case ArrayDefinition.DELETE_IF :
-                return delete_if();
-            case ArrayDefinition.REJECT_BANG :
-                return reject_bang();
-            case ArrayDefinition.REPLACE :
-                return replace(args[0]);
-            case ArrayDefinition.CLEAR :
-                return clear();
-            case ArrayDefinition.FILL :
-                return fill(args);
-            case ArrayDefinition.INCLUDE_P :
-                return include_p(args[0]);
-            case ArrayDefinition.ASSOC :
-                return assoc(args[0]);
-            case ArrayDefinition.RASSOC :
-                return rassoc(args[0]);
-            case ArrayDefinition.OP_PLUS :
-                return op_plus(args[0]);
-            case ArrayDefinition.OP_DIFF :
-                return op_diff(args[0]);
-            case ArrayDefinition.OP_TIMES :
-                return op_times(args[0]);
-            case ArrayDefinition.OP_AND :
-                return op_and(args[0]);
-            case ArrayDefinition.OP_OR :
-                return op_or(args[0]);
-            case ArrayDefinition.PACK :
-                return pack(args[0]);
-            case ArrayDefinition.UNIQ :
-                return uniq();
-            case ArrayDefinition.UNIQ_BANG :
-                return uniq_bang();
-            case ArrayDefinition.COMPACT :
-                return compact();
-            case ArrayDefinition.COMPACT_BANG :
-                return compact_bang();
-            case ArrayDefinition.FLATTEN :
-                return flatten();
-            case ArrayDefinition.NITEMS :
-                return nitems();
-            case ArrayDefinition.FLATTEN_BANG :
-                return flatten_bang();
-            case ArrayDefinition.OP_CMP :
-                return op_cmp(args[0]);
-        }
-        return super.callIndexed(index, args);
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+
+        arrayClass.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod(RubyArray.class, "newInstance"));
+        arrayClass.defineSingletonMethod("[]", callbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
+        arrayClass.defineMethod("initialize", callbackFactory.getOptMethod(RubyArray.class, "initialize"));
+
+        arrayClass.defineMethod("inspect", callbackFactory.getMethod(RubyArray.class, "inspect"));
+        arrayClass.defineMethod("to_s", callbackFactory.getMethod(RubyArray.class, "to_s"));
+        arrayClass.defineMethod("to_a", callbackFactory.getSelfMethod(0));
+        arrayClass.defineMethod("to_ary", callbackFactory.getSelfMethod(0));
+        arrayClass.defineMethod("frozen?", callbackFactory.getMethod(RubyArray.class, "frozen"));
+        arrayClass.defineMethod("==", callbackFactory.getMethod(RubyArray.class, "equal", IRubyObject.class));
+        arrayClass.defineMethod("eql?", callbackFactory.getMethod(RubyArray.class, "eql", IRubyObject.class));
+        arrayClass.defineMethod("===", callbackFactory.getMethod(RubyArray.class, "equal", IRubyObject.class));
+        arrayClass.defineMethod("hash", callbackFactory.getMethod(RubyArray.class, "hash"));
+        arrayClass.defineMethod("[]", callbackFactory.getOptMethod(RubyArray.class, "aref"));
+        arrayClass.defineMethod("[]=", callbackFactory.getOptMethod(RubyArray.class, "aset"));
+        arrayClass.defineMethod("at", callbackFactory.getMethod(RubyArray.class, "at", IRubyObject.class));
+        arrayClass.defineMethod("first", callbackFactory.getMethod(RubyArray.class, "first"));
+        arrayClass.defineMethod("last", callbackFactory.getMethod(RubyArray.class, "last"));
+        arrayClass.defineMethod("concat", callbackFactory.getMethod(RubyArray.class, "concat", IRubyObject.class));
+        arrayClass.defineMethod("<<", callbackFactory.getMethod(RubyArray.class, "append", IRubyObject.class));
+        arrayClass.defineMethod("push", callbackFactory.getOptMethod(RubyArray.class, "push"));
+        arrayClass.defineMethod("pop", callbackFactory.getMethod(RubyArray.class, "pop"));
+        arrayClass.defineMethod("shift", callbackFactory.getMethod(RubyArray.class, "shift"));
+        arrayClass.defineMethod("unshift", callbackFactory.getOptMethod(RubyArray.class, "unshift"));
+        arrayClass.defineMethod("each", callbackFactory.getMethod(RubyArray.class, "each"));
+        arrayClass.defineMethod("each_index", callbackFactory.getMethod(RubyArray.class, "each_index"));
+        arrayClass.defineMethod("reverse_each", callbackFactory.getMethod(RubyArray.class, "reverse_each"));
+        arrayClass.defineMethod("length", callbackFactory.getMethod(RubyArray.class, "length"));
+        arrayClass.defineMethod("size", callbackFactory.getMethod(RubyArray.class, "length"));
+        arrayClass.defineMethod("empty?", callbackFactory.getMethod(RubyArray.class, "empty_p"));
+        arrayClass.defineMethod("index", callbackFactory.getMethod(RubyArray.class, "index", IRubyObject.class));
+        arrayClass.defineMethod("rindex", callbackFactory.getMethod(RubyArray.class, "rindex", IRubyObject.class));
+        arrayClass.defineMethod("indexes", callbackFactory.getOptMethod(RubyArray.class, "indices"));
+        arrayClass.defineMethod("indices", callbackFactory.getOptMethod(RubyArray.class, "indices"));
+        arrayClass.defineMethod("clone", callbackFactory.getMethod(RubyArray.class, "rbClone"));
+        arrayClass.defineMethod("join", callbackFactory.getOptMethod(RubyArray.class, "join"));
+        arrayClass.defineMethod("reverse", callbackFactory.getMethod(RubyArray.class, "reverse"));
+        arrayClass.defineMethod("reverse!", callbackFactory.getMethod(RubyArray.class, "reverse_bang"));
+        arrayClass.defineMethod("sort", callbackFactory.getMethod(RubyArray.class, "sort"));
+        arrayClass.defineMethod("sort!", callbackFactory.getMethod(RubyArray.class, "sort_bang"));
+        arrayClass.defineMethod("collect", callbackFactory.getMethod(RubyArray.class, "collect"));
+        arrayClass.defineMethod("collect!", callbackFactory.getMethod(RubyArray.class, "collect_bang"));
+        arrayClass.defineMethod("map!", callbackFactory.getMethod(RubyArray.class, "collect_bang"));
+        arrayClass.defineMethod("filter", callbackFactory.getMethod(RubyArray.class, "collect_bang"));
+        arrayClass.defineMethod("delete", callbackFactory.getMethod(RubyArray.class, "delete", IRubyObject.class));
+        arrayClass.defineMethod("delete_at", callbackFactory.getMethod(RubyArray.class, "delete_at", IRubyObject.class));
+        arrayClass.defineMethod("delete_if", callbackFactory.getMethod(RubyArray.class, "delete_if"));
+        arrayClass.defineMethod("reject!", callbackFactory.getMethod(RubyArray.class, "reject_bang"));
+        arrayClass.defineMethod("replace", callbackFactory.getMethod(RubyArray.class, "replace", IRubyObject.class));
+        arrayClass.defineMethod("clear", callbackFactory.getMethod(RubyArray.class, "clear"));
+        arrayClass.defineMethod("fill", callbackFactory.getOptMethod(RubyArray.class, "fill"));
+        arrayClass.defineMethod("include?", callbackFactory.getMethod(RubyArray.class, "include_p", IRubyObject.class));
+        arrayClass.defineMethod("<=>", callbackFactory.getMethod(RubyArray.class, "op_cmp", IRubyObject.class));
+
+        arrayClass.defineMethod("slice", callbackFactory.getOptMethod(RubyArray.class, "aref"));
+        arrayClass.defineMethod("slice!", callbackFactory.getOptMethod(RubyArray.class, "slice_bang"));
+
+        arrayClass.defineMethod("assoc", callbackFactory.getMethod(RubyArray.class, "assoc", IRubyObject.class));
+        arrayClass.defineMethod("rassoc", callbackFactory.getMethod(RubyArray.class, "rassoc", IRubyObject.class));
+
+        arrayClass.defineMethod("+", callbackFactory.getMethod(RubyArray.class, "op_plus", IRubyObject.class));
+        arrayClass.defineMethod("*", callbackFactory.getMethod(RubyArray.class, "op_times", IRubyObject.class));
+
+        arrayClass.defineMethod("-", callbackFactory.getMethod(RubyArray.class, "op_diff", IRubyObject.class));
+        arrayClass.defineMethod("&", callbackFactory.getMethod(RubyArray.class, "op_and", IRubyObject.class));
+        arrayClass.defineMethod("|", callbackFactory.getMethod(RubyArray.class, "op_or", IRubyObject.class));
+
+        arrayClass.defineMethod("uniq", callbackFactory.getMethod(RubyArray.class, "uniq"));
+        arrayClass.defineMethod("uniq!", callbackFactory.getMethod(RubyArray.class, "uniq_bang"));
+        arrayClass.defineMethod("compact", callbackFactory.getMethod(RubyArray.class, "compact"));
+        arrayClass.defineMethod("compact!", callbackFactory.getMethod(RubyArray.class, "compact_bang"));
+        arrayClass.defineMethod("flatten", callbackFactory.getMethod(RubyArray.class, "flatten"));
+        arrayClass.defineMethod("flatten!", callbackFactory.getMethod(RubyArray.class, "flatten_bang"));
+        arrayClass.defineMethod("nitems", callbackFactory.getMethod(RubyArray.class, "nitems"));
+        arrayClass.defineMethod("pack", callbackFactory.getMethod(RubyArray.class, "pack", IRubyObject.class));
+
+        return arrayClass;
     }
 
     public RubyFixnum hash() {
