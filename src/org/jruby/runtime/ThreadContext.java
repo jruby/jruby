@@ -46,7 +46,6 @@ import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -349,21 +348,5 @@ public class ThreadContext {
 
         // Then search the inheritance hierarchy
         return getRubyClass().getConstant(name);
-    }
-
-    public RubyArray moduleNesting() {
-        RubyArray result = RubyArray.newArray(runtime);
-        Iterator iter = classStack.contents();
-        while (iter.hasNext()) {
-            RubyModule module = (RubyModule) iter.next();
-            // Do not include 'Object' as a module.  I would have
-            // though module.isModule() would work, but this expects
-            // the class the module is defined in (except if it is
-            // Object).
-            if (module.getName().equals("Object") == false) {
-                 result.append(module);
-            }
-        }
-        return result;
     }
 }

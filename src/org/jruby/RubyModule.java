@@ -1174,7 +1174,16 @@ public class RubyModule extends RubyObject {
      *
      */
     public static RubyArray nesting(IRubyObject recv) {
-        return recv.getRuntime().getCurrentContext().moduleNesting();
+        RubyModule objectClass = recv.getRuntime().getClasses().getObjectClass();
+        RubyModule recvModule = recv.getRuntime().getCurrentContext().getRubyClass();
+        RubyArray result = RubyArray.newArray(recv.getRuntime());
+        
+        for (RubyModule current = recvModule; current != objectClass;
+        	current = current.parentModule) {
+            result.append(current);
+        }
+        
+        return result;
     }
 
     /** rb_mod_attr
