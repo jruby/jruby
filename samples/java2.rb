@@ -1,6 +1,4 @@
-JavaObject.load_class "java.io.File"
-JavaObject.load_class "java.io.FileReader"
-JavaObject.load_class "java.io.BufferedReader"
+Java::import "java.io"
 
 filename = "./samples/java2.rb"
 

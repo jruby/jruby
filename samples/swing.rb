@@ -1,5 +1,4 @@
-JavaObject.load_class "javax.swing.JFrame"
-JavaObject.load_class "javax.swing.JLabel"
+Java.import "javax.swing"
 
 frame = JFrame.new("HelloWorldSwing")
 label = JLabel.new("Hello World")
