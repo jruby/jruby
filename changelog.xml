@@ -2,6 +2,7 @@
 
 <changelog>
 	<release version="0.3.1">
+        <change type="fix" description="Replaced non-bounded Fixnum cache with a limited, but faster, cache" author="ndrs" date="7 Apr 2002 11:30:00 +0200"/>
         <change type="new" description="Partial support for marshaling added" author="ndrs" date="29 Mar 2002 10:42:00 +0100"/>
 		<change type="new" description="Add delete, delete_if, reject, reject!, clear, default, default=, ... to Hash" author="ndrs" date="16 Mar 2002 01:07:42 +0100"/>
 		<change type="new" description="Add each_key, each_value methods to Hash" author="ndrs" date="14  Mar  2002 18:00:00 +0100"/>

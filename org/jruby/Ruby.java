@@ -77,7 +77,7 @@ public final class Ruby {
 
     public LinkedList objectSpace = new LinkedList();
 
-    public HashMap fixnumMap = new HashMap();
+    public final RubyFixnum[] fixnumCache = new RubyFixnum[256];
 
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)

@@ -120,17 +120,20 @@ public class RubyFixnum extends RubyInteger {
     // Methods of the Fixnum Class (fix_*):
 
     public static RubyFixnum newFixnum(Ruby ruby, long value) {
-        // Cache for Fixnums (Performance)
-        RubyFixnum fixnum = (RubyFixnum)ruby.fixnumMap.get(new Long(value));
-        if (fixnum == null) {
+        RubyFixnum fixnum;
+        if (value >= 0 && value < ruby.fixnumCache.size) {
+            fixnum = ruby.fixnumCache[(int) value];
+            if (fixnum == null) {
+                fixnum = new RubyFixnum(ruby, value);
+                ruby.fixnumCache[(int) value] = fixnum;
+            }
+        } else {
             fixnum = new RubyFixnum(ruby, value);
-            ruby.fixnumMap.put(new Long(value), fixnum);
         }
         return fixnum;
     }
 
     public RubyFixnum newFixnum(long value) {
-        // Cache for Fixnums (Performance)
         return newFixnum(ruby, value);
     }
 
