@@ -33,7 +33,7 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.util.RubyStack;
+import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
 import org.jruby.Ruby;
@@ -55,7 +55,7 @@ public class ThreadContext {
     private final Ruby ruby;
 
     private BlockStack blockStack;
-    private RubyStack dynamicVarsStack;
+    private ArrayStack dynamicVarsStack;
 
     private ThreadClass currentThread;
 
@@ -72,7 +72,7 @@ public class ThreadContext {
         this.ruby = ruby;
 
         this.blockStack = new BlockStack();
-        this.dynamicVarsStack = new RubyStack();
+        this.dynamicVarsStack = new ArrayStack();
         this.scopeStack = new ScopeStack(ruby);
         this.frameStack = new FrameStack(this);
         this.iterStack = CollectionFactory.getInstance().newStack();

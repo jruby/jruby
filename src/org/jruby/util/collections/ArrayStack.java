@@ -23,27 +23,32 @@
  * the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
  * Boston, MA  02111-1307 USA
  */
-package org.jruby.util;
+package org.jruby.util.collections;
 
-/** Java 1.3 compatibility class.
- * 
- * @author jpetersen
+import java.util.List;
+import java.util.ArrayList;
+
+/**
+ *
+ * @author  jpetersen
  * @version $Revision$
  */
-public class AssertError extends Error {
+public class ArrayStack {
+    private List elements;
 
-    /**
-     * Constructor for AssertError.
-     */
-    public AssertError() {
-        super();
+    public ArrayStack() {
+        this.elements = new ArrayList();
     }
-
-    /**
-     * Constructor for AssertError.
-     * @param message
-     */
-    public AssertError(String message) {
-        super(message);
+    
+    public void push(Object element) {
+        elements.add(element);
+    }
+    
+    public Object pop() {
+        return elements.remove(elements.size() - 1);
+    }
+    
+    public Object peek() {
+        return elements.get(elements.size() - 1);
     }
 }

@@ -81,7 +81,7 @@ import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.Asserts;
-import org.jruby.util.RubyStack;
+import org.jruby.util.collections.ArrayStack;
 import org.jruby.util.collections.IStack;
 
 /**
@@ -165,7 +165,7 @@ public final class Ruby {
 
     private RubyModule wrapper;
 
-    private RubyStack classStack = new RubyStack();
+    private ArrayStack classStack = new ArrayStack();
 
     // Java support
     private JavaSupport javaSupport;
