@@ -52,6 +52,7 @@ import org.jruby.exceptions.SecurityError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.ThreadService;
+import org.jruby.internal.runtime.ClassFactory;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
@@ -259,24 +260,7 @@ public final class Ruby {
      *
      */
     public RubyClass defineClass(String name, RubyClass superClass) {
-        if (superClass == null) {
-            superClass = getClasses().getObjectClass();
-        }
-		//find the boot classes
-		name = name.intern();
-		if (name == "Object")
-			return getClasses().getObjectClass();
-		else if (name == "Module")
-			return getClasses().getModuleClass();
-		else if (name == "Class")
-			return getClasses().getClassClass();
-
-
-        RubyClass newClass = RubyClass.newClass(this, superClass, name);
-        newClass.makeMetaClass(superClass.getMetaClass());
-        newClass.inheritedBy(superClass);
-        classes.putClass(name, newClass);
-        return newClass;
+        return new ClassFactory(this).defineClass(superClass, name);
     }
 
     public RubyClass defineClass(String name, String superName) {
@@ -289,32 +273,7 @@ public final class Ruby {
      *
      */
     public RubyModule defineModule(String name) {
-        RubyModule newModule = RubyModule.newModule(this, name);
-        getClasses().putClass(name, newModule);
-        return newModule;
-    }
-
-    /**
-     * In the current context, get the named module. If it doesn't exist a
-     * new module is created.
-     */
-    public RubyModule getModule(String name) {
-        RubyModule module;
-        if (getRubyClass().isConstantDefined(name)) {
-            module = (RubyModule) getRubyClass().getConstant(name);
-            if (getSafeLevel() >= 4) {
-                throw new SecurityError(this, "Extending module prohibited.");
-            }
-        } else {
-            module = defineModule(name);
-            getRubyClass().setConstant(name, module);
-            module.setClassPath(getRubyClass(), name);
-        }
-        if (getWrapper() != null) {
-            module.getSingletonClass().includeModule(getWrapper());
-            module.includeModule(getWrapper());
-        }
-        return module;
+        return new ClassFactory(this).defineModule(name);
     }
 
     /** Getter for property securityLevel.

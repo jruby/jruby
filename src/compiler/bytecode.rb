@@ -92,6 +92,10 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
+
+          # FIXME: broken right now - replace Ruby#getModule with
+          # call to ClassFactory#getOrCreateModule
+
           push_runtime(generator)
           generator.appendPush(@name)
           arg_types = BCEL::Type[].new(1)

@@ -156,6 +156,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
+import org.jruby.internal.runtime.ClassFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
@@ -458,46 +459,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         RubyClass superClass = getSuperClassFromNode(iVisited.getSuperNode());
         String name = iVisited.getClassName();
         RubyClass rubyClass;
-        if (matchingClassExists(name, superClass)) {
-            rubyClass = (RubyClass) getConstant(name);
-        } else {
-            rubyClass = createClass(name, superClass);
-        }
+        ClassFactory classFactory = new ClassFactory(runtime);
+        rubyClass = classFactory.getOrCreateClass(name, superClass);
         if (threadContext.getWrapper() != null) {
             rubyClass.extendObject(threadContext.getWrapper());
             rubyClass.includeModule(threadContext.getWrapper());
         }
         evalClassDefinitionBody(iVisited.getBodyNode(), rubyClass);
-    }
-
-    private boolean matchingClassExists(String className, RubyClass superClass) {
-        if (! isConstantDefined(className)) {
-            return false;
-        }
-        IRubyObject type = getConstant(className);
-        if (! (type instanceof RubyClass)) {
-            throw new TypeError(runtime, className + " is not a class");
-        }
-        RubyClass rubyClass = (RubyClass) type;
-        if (superClass != null) {
-            if (rubyClass.getSuperClass().getRealClass() != superClass) {
-                return false;
-            }
-        }
-        if (runtime.getSafeLevel() >= 4) {
-            throw new SecurityError(runtime, "extending class prohibited");
-        }
-        return true;
-    }
-
-    private RubyClass createClass(String className, RubyClass superClass) {
-        if (superClass == null) {
-            superClass = runtime.getClasses().getObjectClass();
-        }
-        RubyClass result = runtime.defineClass(className, superClass);
-        result.setClassPath(threadContext.getRubyClass(), className);
-        setConstant(className, result);
-        return result;
     }
 
     private RubyClass getSuperClassFromNode(INode superNode) {
@@ -951,20 +919,12 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no outer class/module");
         }
-        RubyModule module = runtime.getModule(iVisited.getName());
+        RubyModule module = new ClassFactory(runtime).getOrCreateModule(iVisited.getName());
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
-    }
-
-    private boolean isConstantDefined(String name) {
-        return threadContext.getRubyClass().isConstantDefined(name);
     }
 
     private void setConstant(String name, IRubyObject value) {
         threadContext.getRubyClass().setConstant(name, value);
-    }
-
-    private IRubyObject getConstant(String name) {
-        return threadContext.getRubyClass().getConstant(name);
     }
 
     /**

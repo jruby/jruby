@@ -20,6 +20,10 @@ public final class ByteCodeRuntime {
         runtime.getRubyClass().addMethod(methodName, method);
     }
 
+
+
+
+
     public static void addClass(String name, byte[] javaClass) {
         classLoader.loadClass(name, javaClass);
     }
