@@ -61,6 +61,19 @@ public class ThreadService {
         mainContext.setThread(thread);
     }
     
+    public ThreadClass[] getActiveRubyThreads() {
+    	// all threads in ruby thread group plus main thread
+    	Thread[] threads = new Thread[rubyThreadGroup.activeCount() + 1];
+    	ThreadClass[] rubyThreads = new ThreadClass[threads.length];
+    	
+    	rubyThreadGroup.enumerate(threads);
+    	for (int i = 0; i < threads.length; i++) {
+    		rubyThreads[i] = getRubyThreadFromThread(threads[i]);
+    	}
+    	
+    	return rubyThreads;
+    }
+    
     public ThreadGroup getRubyThreadGroup() {
     	return rubyThreadGroup;
     }
