@@ -574,7 +574,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     public RubyArray append(IRubyObject value) {
         modify();
         list.add(value);
-        infectObject(value);
+        infectBy(value);
         return this;
     }
 
@@ -722,7 +722,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
         modify();
         RubyArray other = arrayValue(obj);
         list.addAll(other.getList());
-        infectObject(other);
+        infectBy(other);
         return this;
     }
 

@@ -385,7 +385,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public IRubyObject dup() {
 		RubyString newStr = newString(getValue());
-		newStr.infectObject(this);
+		newStr.infectBy(this);
 		return newStr;
 	}
 
@@ -424,7 +424,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 			return this;
 		}
 		setValue(str.getValue());
-		infectObject(str);
+		infectBy(str);
 		return this;
 	}
 
@@ -665,7 +665,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 
 		RubyString newString = newString(getValue() + str.getValue());
 
-		newString.infectObject(str);
+		newString.infectBy(str);
 
 		return newString;
 	}
@@ -712,7 +712,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString append(IRubyObject other) {
-		infectObject(other);
+		infectBy(other);
 		return cat(stringValue(other).getValue());
 	}
 
@@ -906,7 +906,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		}
 		int end = Math.min(strLen, beg + len);
 		RubyString newStr = newString(getValue().substring(beg, end));
-		newStr.infectObject(this);
+		newStr.infectBy(this);
 		return newStr;
 	}
 
@@ -917,7 +917,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 			len = strLen - beg;
 		}
 		setValue(getValue().substring(0, beg) + repl.getValue() + getValue().substring(beg + len));
-		infectObject(repl);
+		infectBy(repl);
 		return this;
 	}
 
@@ -1552,7 +1552,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public IRubyObject delete(IRubyObject[] args) {
 		RubyString newStr = newString(getDelete(args));
-		newStr.infectObject(this);
+		newStr.infectBy(this);
 		return newStr;
 	}
 
@@ -1603,7 +1603,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public IRubyObject squeeze(IRubyObject[] args) {
 		RubyString newStr = newString(getSqueeze(args));
-		newStr.infectObject(this);
+		newStr.infectBy(this);
 		return newStr;
 	}
 
@@ -1669,7 +1669,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public IRubyObject tr(IRubyObject[] args) {
 		RubyString newStr = newString(tr(args, false));
-		newStr.infectObject(this);
+		newStr.infectBy(this);
 		return newStr;
 	}
 
@@ -1690,7 +1690,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public IRubyObject tr_s(IRubyObject[] args) {
 		RubyString newStr = newString(tr(args, true));
-		newStr.infectObject(this);
+		newStr.infectBy(this);
 		return newStr;
 	}
 

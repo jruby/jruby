@@ -713,7 +713,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
             noex = Visibility.PROTECTED;
         } else if (rubyClass == ruby.getClasses().getObjectClass()) {
-            noex = iVisited.getNoex();
+            noex = iVisited.getVisibility();
         }
 
         /* FIXME Fix the undef stuff

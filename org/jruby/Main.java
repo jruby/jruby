@@ -287,9 +287,9 @@ public class Main {
             }
 
             if (sCheckOnly) {
-                DumpVisitor lVisitor = new DumpVisitor();
-                lScript.accept(lVisitor);
-                ruby.getRuntime().getOutputStream().println(lVisitor.dump());
+                //DumpVisitor lVisitor = new DumpVisitor();
+                //lScript.accept(lVisitor);
+                //ruby.getRuntime().getOutputStream().println(lVisitor.dump());
             } else {
                 ruby.eval(lScript);
             }

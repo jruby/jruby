@@ -190,7 +190,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public static RubyString quote(IRubyObject recv, RubyString str) {
         String orig = str.getValue();
         RubyString newStr = RubyString.newString(recv.getRuntime(), quote(orig));
-        newStr.infectObject(str);
+        newStr.infectBy(str);
         return newStr;
     }
 

@@ -42,15 +42,15 @@ public class DefnNode extends AbstractNode {
     private String name;
     private INode argsNode;
     private ScopeNode bodyNode;
-    private Visibility noex;
+    private Visibility visibility;
     
-    public DefnNode(ISourcePosition position, String name, INode argsNode, ScopeNode bodyNode, Visibility noex) {
+    public DefnNode(ISourcePosition position, String name, INode argsNode, ScopeNode bodyNode, Visibility visibility) {
         super(position);
         
         this.name = name;
         this.argsNode = argsNode;
         this.bodyNode = bodyNode;
-        this.noex = noex;
+        this.visibility = visibility;
     }
 
     public void accept(INodeVisitor iVisitor) {
@@ -66,27 +66,11 @@ public class DefnNode extends AbstractNode {
     }
 
     /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(INode argsNode) {
-        this.argsNode = argsNode;
-    }
-
-    /**
      * Gets the bodyNode.
      * @return Returns a ScopeNode
      */
     public ScopeNode getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(ScopeNode bodyNode) {
-        this.bodyNode = bodyNode;
     }
 
     /**
@@ -98,18 +82,10 @@ public class DefnNode extends AbstractNode {
     }
 
     /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Gets the noex.
      * @return Returns a int
      */
-    public Visibility getNoex() {
-        return noex;
+    public Visibility getVisibility() {
+        return visibility;
     }
 }

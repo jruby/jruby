@@ -745,7 +745,7 @@ public class RubyClasses {
     }
     
     private RubyModule getAutoload(String name) {
-        String intern = name.intern();
+        name = name.intern();
         if (name == "Array") {
             return getArrayClass();
         } else if (name == "Bignum") {
