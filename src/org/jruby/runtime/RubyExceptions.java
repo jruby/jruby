@@ -39,6 +39,7 @@ public class RubyExceptions implements IErrno {
     private RubyClass localJumpError = null;
 
     private RubyClass threadError = null;
+    private RubyClass systemStackError = null;
 
     private Ruby ruby = null;
     private RubyModule errnoModule;
@@ -124,6 +125,7 @@ public class RubyExceptions implements IErrno {
         systemCallError = ruby.defineClass("SystemCallError", standardError);
         localJumpError = ruby.defineClass("LocalJumpError", standardError);
         threadError = ruby.defineClass("ThreadError", standardError);
+        systemStackError = ruby.defineClass("SystemStackError", exceptionClass);
 
         errnoModule = ruby.defineModule("Errno");
 
@@ -365,5 +367,9 @@ public class RubyExceptions implements IErrno {
 
     public RubyClass getThreadError() {
         return threadError;
+    }
+
+    public RubyClass getSystemStackError() {
+        return systemStackError;
     }
 }
