@@ -40,9 +40,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.TypeError;
+import org.jruby.internal.runtime.builtin.definitions.SymbolDefinition;
 
 /**
  *
@@ -73,50 +72,31 @@ public class RubySymbol extends RubyObject implements IndexCallable {
         return newSymbol(ruby, null);
     }
 
-    private static final int M_TO_I = 2;
-    private static final int M_TO_S = 3;
-    private static final int M_EQUAL = 4;
-    private static final int M_HASH = 5;
-    private static final int M_INSPECT = 6;
-    private static final int M_CLONE = 7;
-
     public static RubyClass createSymbolClass(Ruby ruby) {
-        RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
-
-        symbolClass.getMetaClass().undefMethod("new");
-
-        symbolClass.defineMethod("to_i", IndexedCallback.create(M_TO_I, 0));
-        symbolClass.defineMethod("to_int", IndexedCallback.create(M_TO_I, 0));
-        symbolClass.defineMethod("id2name", IndexedCallback.create(M_TO_S, 0));
-        symbolClass.defineMethod("to_s", IndexedCallback.create(M_TO_S, 0));
-
-        symbolClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
-        symbolClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
-        symbolClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
-        symbolClass.defineMethod("dup", IndexedCallback.create(M_CLONE, 0));
-        symbolClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
-        symbolClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
-        symbolClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
-
-        return symbolClass;
+        return new SymbolDefinition(ruby).getType();
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-            case M_TO_S :
+            case SymbolDefinition.TO_S :
                 return to_s();
-            case M_TO_I :
+            case SymbolDefinition.TO_I :
                 return to_i();
-            case M_EQUAL :
+            case SymbolDefinition.EQUAL :
                 return equal(args[0]);
-            case M_HASH :
+            case SymbolDefinition.HASH :
                 return hash();
-            case M_INSPECT :
+            case SymbolDefinition.INSPECT :
                 return inspect();
-            case M_CLONE :
+            case SymbolDefinition.RBCLONE :
                 return rbClone();
+            case SymbolDefinition.FREEZE :
+                return freeze();
+            case SymbolDefinition.TAINT :
+                return taint();
+            default :
+                return super.callIndexed(index, args);
         }
-        return super.callIndexed(index, args);
     }
 
     public static RubySymbol getSymbol(Ruby ruby, long id) {
@@ -178,6 +158,14 @@ public class RubySymbol extends RubyObject implements IndexCallable {
 
     public IRubyObject rbClone() {
         throw new TypeError(getRuntime(), "can't clone Symbol");
+    }
+
+    public IRubyObject freeze() {
+        return this;
+    }
+
+    public IRubyObject taint() {
+        return this;
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

@@ -1,12 +1,15 @@
 require 'test/minirunit'
 test_check "Test Symbol:"
 
-# Should not be able to dup or clone a symbol
+# Should not be able to dup, clone or create a symbol
 test_exception() {
   :hej.dup
 }
 test_exception() {
   :hej.clone
+}
+test_exception(NameError) {
+  Symbol.new
 }
 
 # Tainting or freezing a symbol is ignored

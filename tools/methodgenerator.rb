@@ -118,6 +118,29 @@ class Alias
 end
 
 
+class UndefineMethod
+
+  def initialize(name)
+    @name = name
+  end
+
+  def generate_constant(output)
+    # no-op
+  end
+
+  def generate_creation(output)
+    output.write('context.undefineMethod("')
+    output.write(@name)
+    output.write('");' + "\n")
+  end
+
+  def generate_switch_case(output)
+    # no-op
+  end
+end
+
+
+
 class MethodGenerator
 
   def initialize(input)
@@ -291,6 +314,10 @@ class MethodGenerator
       original = methods.detect {|m| m.name == original_name }
       name = attributes['name']
       methods << Alias.new(name, original)
+    }
+    parser.listen(:start_element, ['^undefine-method$']) {|uri, localname, qname, attributes|
+      name = attributes['name']
+      methods << UndefineMethod.new(name)
     }
     parser.parse
   end

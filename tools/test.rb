@@ -145,4 +145,16 @@ class TestGenerator < Test::Unit::TestCase
     output = stream_string
     m.generate_creation(output)
     assert_equal('context.createOptional("xyz", HELLO_JAVA, 0);' + "\n", output)  end
+
+  def test_undefine_method
+    m = UndefineMethod.new("froboz")
+
+    output = stream_string
+    m.generate_constant(output)
+    assert(output.empty?)
+
+    output = stream_string
+    m.generate_creation(output)
+    assert_equal('context.undefineMethod("froboz");' + "\n", output)
+  end
 end

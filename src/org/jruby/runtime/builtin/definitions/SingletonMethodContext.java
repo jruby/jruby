@@ -15,7 +15,6 @@ public class SingletonMethodContext {
 
     /**
      * Constructor for SingletonMethodContext.
-     * @param runtime
      */
     public SingletonMethodContext(RubyObject singleton, IStaticCallable callable) {
         this.callable = callable;
@@ -32,5 +31,9 @@ public class SingletonMethodContext {
 
     public void createOptional(String name, int index, int required) {
         singleton.defineSingletonMethod(name, StaticCallback.createOptional(callable, index, required));
+    }
+
+    public void undefineMethod(String name) {
+        singleton.getSingletonClass().undefMethod(name);
     }
 }

@@ -45,7 +45,8 @@ Meta-class:
 
 MRI (Matz' Ruby Interpreter):
 
-    The original Ruby interpreter, implemented in C.
+    The original Ruby interpreter, implemented in C. Also known as
+    "ruby" (spelled in all lower-case).
 
 Scope:
 
@@ -58,15 +59,18 @@ Scope:
     ends in "topScope". From the viewpoint of a single Scope, this graph
     appears to be a stack, hence the name ScopeStack.
 
+Type:
+
+    The "type" of an object is almost always used as a synonym for
+    "class" here.
+
 Variable, Block:
 
     See Variable, Dynamic.
 
-
 Variable, Dynamic:
 
     Similar to a Local Variable, used for Block arguments.
-
 
 Variable, Local:
 

@@ -35,6 +35,7 @@ context.create("some_method", SOME_METHOD, 2);
 context.create("some_other_method", SOMEOTHERMETHOD, 0);
 context.createOptional("optional_method", OPTIONAL_METHOD, 1);
 context.createOptional("op2", OPTIONAL_METHOD, 1);
+context.undefineMethod("whoah");
 }
 
 protected void defineSingletonMethods(SingletonMethodContext context) {

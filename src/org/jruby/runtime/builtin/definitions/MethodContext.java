@@ -34,4 +34,8 @@ public class MethodContext {
     public void createAlias(String name, String definition) {
         module.defineAlias(name, definition);
     }
+
+    public void undefineMethod(String name) {
+        module.undefMethod(name);
+    }
 }

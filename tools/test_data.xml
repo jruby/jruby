@@ -16,6 +16,7 @@
       <arity optional="true">1</arity>
     </method>
     <method-alias name="op2" original="optional_method"/>
+    <undefine-method name="whoah"/>
   </instance-methods>
 
   <class-methods>
