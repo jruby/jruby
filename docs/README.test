@@ -1,15 +1,63 @@
-Procedures/Standards for testing:
 
 Software Requirements
 ---------------------
 Testing is done with JUnit (http://www.junit.org).
-To run the JUnit ant tasks, you also need the optional ant tasks jar file from http://jakarta.apache.org/site/binindex.html
+To run the JUnit ant tasks, you also need the optional ant tasks jar file from
+http://jakarta.apache.org/site/binindex.html
 
-The default build.xml is setup to look for the JUnit jar file under $JRUBY_HOME/lib.  The optional ant tasks should be put in $ANT_HOME/lib/optional.jar.
+The default build.xml is setup to look for the JUnit jar file under 
+$JRUBY_HOME/lib.  The optional ant tasks should be put in 
+$ANT_HOME/lib/optional.jar.
 
+Testing 
+-------
 
-Writing Tests
+Testing in jruby is based on two seperate unit test suites.  The first
+and foremost is rubicon (http://rubyforge.org/projects/rubytests).  This
+is the same test suite that ruby uses to verify the interpreter is running
+correctly.  The second is our own unit tests via ant/junit/minirunit.  This
+test suite is mostly for tests that we cannot or do not want to submit
+to rubicon (a good example is tests involving java integration).
+
+Using Rubicon
 -------------
+
+a) Before you can use rubicon, you must allow jruby to use ruby's core 
+modules.  jruby does not distribute its own set, so you must borrow them.  
+Copy your 'ruby/{verion}' (i.e. /usr/lib/ruby/1.8 on most linuxes) to 
+'lib/ruby' in your CVS sandbox (on linux a softlink works also).
+
+b) Install rubicon (http://rubyforge.org/projects/rubytests).  To get 
+it from CVS:
+
+    cvs -d:pserver:anonymous@rubyforge.org:/var/cvs/rubytests login
+    cvs -z3 -d:pserver:anonymous@rubyforge.org:/var/cvs/rubytests co rubicon
+
+c) Run rubicon 
+
+    make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby.sh 
+
+  to run all tests
+
+    {PATH_TO_JRUBY_HOME}/bin/jruby.sh builtin/TestFloat.rb
+
+  to test a single file (TestFloat in this case). 
+
+  Read rubicon documentation for more details (or if rubicon changes
+something since this document was published).
+
+Using minirunit
+---------------
+
+When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby. It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
+In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI. Run all of them with:
+
+        ./jruby.sh test/testSuite.rb
+or
+        jruby.bat test/testSuite.rb
+
+Writing Java Tests
+------------------
 
 1) Java unit tests with JUnit:
 
@@ -28,45 +76,4 @@ This will ensure that your changes not only work by themselves but haven't cause
 Unit tests should ALWAYS run at 100% pass rate when checked into CVS.
 
 
-2) Ruby tests with minirunit:
 
-When implementing new methods on the builtin classes the easiest way is to write the tests in Ruby. It also makes it possible to verify the tests against the original Ruby interpreter (MRI).
-In the folder "test" you will find JRuby's own tests, and in "test/mri" some tests taken from MRI. Run all of them with:
-
-        ./jruby.sh test/testSuite.rb
-or
-        jruby.bat test/testSuite.rb
-
-
-3) Using Rubicon:
-
-a) Before you can use rubicon, you must allow jruby to use ruby's modules.
-jruby does not distribute its own set, so you must borrow them.  Copy your 
-'ruby' distrubution directory (i.e. /usr/lib/ruby on most linuxes) to lib 
-in your CVS sandbox.
-
-b) Currently, jruby does not support the ruby Socket module.  When
-rubicon runs, it will try and load it.  To workaround this problem either:
- i) Comment out the require 'socket' calls from rubicon test files
- ii) Create a 'lib/site_ruby/1.8/socket.rb' file containing:
-
-    module Socket
-    end
-
-c) Install rubicon.  To get it from CVS:
-
-    cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src login
-    cvs -d:pserver:anonymous@cvs.ruby-lang.org:/src co rubicon
-
-d) Run rubicon
-
-    make RUBY={PATH_TO_JRUBY_HOME}/bin/jruby.sh 
-
-  to run all tests
-
-    {PATH_TO_JRUBY_HOME}/bin/jruby.sh builtin/TestFloat.rb
-
-  to test a single file (TestFloat in this case). 
-
-  Read rubicon documentation for more details (or if rubicon changes
-something since this document was published).
