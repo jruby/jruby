@@ -85,12 +85,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
-            // throw new RubyRangeException();
-            // HACK +++
-            throw new RuntimeException();
-            // HACK ---
+            throw new RangeError(getRuby(), this.toString() + " out of char range");
         }
-
         return RubyString.newString(getRuby(), new String(new char[] {(char) getLongValue()}));
     }
 

@@ -91,8 +91,6 @@ public class RubyBignum extends RubyInteger {
         //rb_define_method(rb_cBignum, "modulo", rb_big_modulo, 1);
         //rb_define_method(rb_cBignum, "remainder", rb_big_remainder, 1);
         //rb_define_method(rb_cBignum, "&", rb_big_and, 1);
-        //rb_define_method(rb_cBignum, "|", rb_big_or, 1);
-        //rb_define_method(rb_cBignum, "^", rb_big_xor, 1);
         //    rb_define_method(rb_cBignum, "~", rb_big_neg, 0);
         //    rb_define_method(rb_cBignum, "[]", rb_big_aref, 1);
         //
@@ -129,6 +127,8 @@ public class RubyBignum extends RubyInteger {
         bignumClass.defineMethod(">=", CallbackFactory.getMethod(RubyBignum.class, "op_ge", RubyObject.class));
         bignumClass.defineMethod("<", CallbackFactory.getMethod(RubyBignum.class, "op_lt", RubyObject.class));
         bignumClass.defineMethod("<=", CallbackFactory.getMethod(RubyBignum.class, "op_le", RubyObject.class));
+        bignumClass.defineMethod("|", CallbackFactory.getMethod(RubyBignum.class, "op_or", RubyInteger.class));
+        bignumClass.defineMethod("^", CallbackFactory.getMethod(RubyBignum.class, "op_xor", RubyInteger.class));
         bignumClass.defineMethod("[]", CallbackFactory.getMethod(RubyBignum.class, "aref", RubyInteger.class));
 
         return bignumClass;
@@ -171,6 +171,10 @@ public class RubyBignum extends RubyInteger {
 
     public static RubyBignum newBignum(Ruby ruby, BigInteger value) {
         return new RubyBignum(ruby, value);
+    }
+
+    public RubyBignum newBignum(BigInteger value) {
+        return newBignum(ruby, value);
     }
 
     public RubyFixnum hash() {
@@ -287,6 +291,14 @@ public class RubyBignum extends RubyInteger {
     public RubyBoolean op_le(RubyObject num) {
         RubyNumeric other = numericValue(num);
         return RubyBoolean.newBoolean(getRuby(), compareValue(other) <= 0);
+    }
+
+    public RubyInteger op_or(RubyInteger other) {
+        return newBignum(value.or(bigIntValue(other)));
+    }
+
+    public RubyInteger op_xor(RubyInteger other) {
+        return newBignum(value.xor(bigIntValue(other)));
     }
 
     public RubyFixnum aref(RubyInteger pos) {

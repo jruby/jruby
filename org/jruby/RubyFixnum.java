@@ -79,6 +79,8 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("<", CallbackFactory.getMethod(RubyFixnum.class, "op_lt", RubyObject.class));
         fixnumClass.defineMethod("<=", CallbackFactory.getMethod(RubyFixnum.class, "op_le", RubyObject.class));
         fixnumClass.defineMethod("&", CallbackFactory.getMethod(RubyFixnum.class, "op_and", RubyObject.class));
+        fixnumClass.defineMethod("|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
+        fixnumClass.defineMethod("^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
         fixnumClass.defineMethod("size", CallbackFactory.getMethod(RubyFixnum.class, "size"));
         fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
 
@@ -313,6 +315,20 @@ public class RubyFixnum extends RubyInteger {
         RubyNumeric otherNumeric = numericValue(other);
         long otherLong = otherNumeric.getTruncatedLongValue();
         return newFixnum(value & otherLong);
+    }
+
+    public RubyInteger op_or(RubyInteger other) {
+        if (other instanceof RubyBignum) {
+            return (RubyInteger) other.funcall("|", this);
+        }
+        return newFixnum(value | other.getLongValue());
+    }
+
+    public RubyInteger op_xor(RubyInteger other) {
+        if (other instanceof RubyBignum) {
+            return (RubyInteger) other.funcall("^", this);
+        }
+        return newFixnum(value ^ other.getLongValue());
     }
 
     /**
