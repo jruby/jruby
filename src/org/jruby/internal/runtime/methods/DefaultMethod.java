@@ -98,6 +98,8 @@ public final class DefaultMethod extends AbstractMethod {
             if (optionalBlockArg != null) {
                 context.getScopeStack().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
+            
+            getArity().checkArity(runtime, args);
 
             traceCall(runtime, receiver, name);
 
