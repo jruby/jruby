@@ -282,7 +282,7 @@ public class Main {
             System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-            System.out.println("    -rx 'class'     The adapter class for the regexp engine, for now can be:");
+            System.out.println("    -R 'class'     The adapter class for the regexp engine, for now can be:");
             System.out.println("                    org.jruby.regexp.GNURegexpAdapter or org.jruby.regexp.JDKRegexpAdapter");
             System.out.println("    -c 				check syntax and dump parse tree");
             System.out.println("    -y 				activate parser traces.");
