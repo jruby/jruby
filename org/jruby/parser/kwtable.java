@@ -27,11 +27,11 @@ package org.jruby.parser;
 
 import org.jruby.original.*;
 
-public class kwtable implements lex_state, token {
+public class kwtable implements Token, LexState {
 
     String name;
     int id0, id1;
-    /*enum lex_state*/int state;
+    int state;
 
     private kwtable() {
         this("", 0, 0, 0);
