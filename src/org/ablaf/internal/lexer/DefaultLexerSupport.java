@@ -63,7 +63,7 @@ import org.ablaf.lexer.ILexerSupport;
  */
 public class DefaultLexerSupport implements ILexerSupport {
     protected ILexerSource source;
-    private int[] lineOffset = new int[100];
+    protected int[] lineOffset = new int[100];
 
     public DefaultLexerSupport(ILexerSource source) {
         this.source = source;
@@ -76,7 +76,7 @@ public class DefaultLexerSupport implements ILexerSupport {
         char c = source.read();
         if (c == '\n') {
             if (source.getLine() >= lineOffset.length) {
-                int[] _lineOffset = new int[lineOffset.length * 2];
+                int[] _lineOffset = new int[lineOffset.length + 200];
                 System.arraycopy(lineOffset, 0, _lineOffset, 0, lineOffset.length);
                 lineOffset = _lineOffset;
             }
@@ -209,11 +209,9 @@ public class DefaultLexerSupport implements ILexerSupport {
      * @see ILexerSupport#readLine()
      */
     public String readLine() {
-        StringBuffer sb = new StringBuffer();
-        char c = read();
-        while (c != '\n') {
+        StringBuffer sb = new StringBuffer(80);
+        for (char c = read(); c != '\n' && c != '\0'; c = read()) {
             sb.append(c);
-            c = read();
         }
         return sb.toString();
     }

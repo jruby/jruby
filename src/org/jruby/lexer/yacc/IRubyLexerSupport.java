@@ -37,4 +37,6 @@ public interface IRubyLexerSupport extends ILexerSupport {
     public void setBuffer(String buffer, ISourcePosition startPosition);
 
     public char readEscape() throws LexerException;
+
+    public int getColumn();
 }

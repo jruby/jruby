@@ -550,8 +550,72 @@ public class RubyYaccLexer implements IYaccLexer {
     }
 
     ISourcePosition currentPos;
+
+    private static final int EOF = 0;
     public ISourcePosition getPosition() {
         return currentPos;
+    }
+
+    private boolean readSpace() {
+        boolean spaceSeen = false;
+
+        for (char c = support.read();; c = support.read()) {
+            switch (c) {
+                case '\0' : // NUL
+                case '\004' : // ^D
+                case '\032' : // ^Z
+                    token = EOF;
+                    return spaceSeen;
+                case ' ' : // white spaces
+                case '\t' :
+                case '\f' :
+                case '\r' :
+                case '\u0013' : // '\v'
+                    spaceSeen = true;
+                    continue;
+                case '#' : // it's a comment
+                    support.readLine();
+                    if (support.isEOF()) {
+                        token = EOF;
+                        return spaceSeen;
+                    }
+                    // fall through
+                case '\n' :
+                    if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot()) {
+                        continue;
+                    }
+                    lexState = LexState.EXPR_BEG;
+                    token = '\n';
+                    return spaceSeen;
+                case '=' :
+                    if (support.getColumn() == 1) {
+                        // skip embedded rd document
+                        if (support.isNext("begin") && Character.isWhitespace(support.getCharAt(6))) {
+                            support.readLine();
+                            for (c = support.read();; c = support.read()) {
+                                if (c == '\0') {
+                                    errorHandler.handleError(
+                                        IErrors.COMPILE_ERROR,
+                                        "embedded document meets end of file");
+                                    token = EOF;
+                                    return spaceSeen;
+                                } else if (
+                                    c == '='
+                                        && support.getColumn() == 1
+                                        && support.isNext("end")
+                                        && Character.isWhitespace(support.getCharAt(4))) {
+                                    break;
+                                }
+                            }
+                            support.readLine();
+                            continue;
+                        }
+                    }
+            }
+            break;
+        }
+        support.unread();
+        return spaceSeen;
     }
 
     /**
@@ -561,62 +625,15 @@ public class RubyYaccLexer implements IYaccLexer {
      */
     private int yylex() {
         char c;
-        boolean spaceSeen = false;
 
-        //first eat as much space as possible then grab the position of the
-        //beginning of the token
-        for (;;) {
-            switch (c = support.read()) {
-                case '\0' : // NUL
-                case '\004' : // ^D
-                case '\032' : // ^Z
-                    return 0;
-                    // white spaces
-                case ' ' :
-                case '\t' :
-                case '\f' :
-                case '\r' :
-                case '\u0013' : // '\v'
-                    spaceSeen = true;
-                    continue;
-                case '#' : // it's a comment
-                    while ((c = support.read()) != '\n') {
-                        if (c == '\0') {
-                            return 0;
-                        }
-                    }
-                    // fall through
-                case '\n' :
-                    if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot()) {
-                        continue;
-                    }
-                    lexState = LexState.EXPR_BEG;
-                    return '\n';
-                case '=' :
-                    if (support.getPosition().getColumn() == 1) {
-                        // skip embedded rd document
-                        if (support.isNext("begin") && Character.isWhitespace(support.getCharAt(6))) {
-                            for (;;) {
-                                // col = lex_pend;
-                                c = support.read();
-                                if (c == '\0') {
-                                    errorHandler.handleError(IErrors.COMPILE_ERROR, Messages.getString("unterminated_embedded_document")); //$NON-NLS-1$
-                                    return 0;
-                                } else if (c != '=') {
-                                    continue;
-                                } else if (support.getPosition().getColumn() == 1 && support.isNext("end") && Character.isWhitespace(support.getCharAt(4))) { //$NON-NLS-1$
-                                    break;
-                                }
-                            }
-                            support.readLine();
-                            continue;
-                        }
-                    }
-
-            }
-            break;
+        //first eat as much space as possible
+        token = -1;
+        boolean spaceSeen = readSpace();
+        if (token != -1) {
+            return token;
         }
-        support.unread();
+
+        // then grab the position of the beginning of the token
         currentPos = support.getPosition();
         retry : for (;;) {
             switch (c = support.read()) {
@@ -624,14 +641,14 @@ public class RubyYaccLexer implements IYaccLexer {
                     if ((c = support.read()) == '*') {
                         if (support.read() == '=') {
                             lexState = LexState.EXPR_BEG;
-                            yaccValue = "**"; //$NON-NLS-1$
+                            yaccValue = "**";
                             return Token.tOP_ASGN;
                         }
                         support.unread();
                         c = (char) Token.tPOW;
                     } else {
                         if (c == '=') {
-                            yaccValue = "*"; //$NON-NLS-1$
+                            yaccValue = "*";
                             lexState = LexState.EXPR_BEG;
                             return Token.tOP_ASGN;
                         }
