@@ -23,3 +23,14 @@ test_equal(1.0, Float.induced_from(1.0))
 test_exception(TypeError) { Float.induced_from(:hello) }
 test_exception(TypeError) { Float.induced_from("hello") }
 test_exception(TypeError) { Float.induced_from(true) }
+
+# You can't freeze Fixnums...
+test_ok(! 303.freeze.frozen?)
+test_ok(! 303.taint.tainted?)
+
+# ... but you can apparently freeze Bignums and Fixnums.
+test_ok(1000000000000000000000000000000.freeze.frozen?)
+test_ok(1000000000000000000000000000000.taint.tainted?)
+test_ok(1.337.freeze.frozen?)
+test_ok(1.337.taint.tainted?)
+
