@@ -26,5 +26,3 @@ module A
 end
 test_equal([], Module.nesting)
 test_equal([A::B::C, A::B, A], $nest)
-
-test_print_report

@@ -22,7 +22,9 @@
     <method name="alive?">
       <java>is_alive</java>
     </method>
+<!--
     <method name="exit"/>
+-->
     <method name="join"/>
     <method name="key?">
       <arity>1</arity>

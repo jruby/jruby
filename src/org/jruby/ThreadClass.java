@@ -32,6 +32,7 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadError;
 import org.jruby.internal.runtime.builtin.definitions.ThreadDefinition;
+import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.IndexCallable;
@@ -52,7 +53,7 @@ import org.jruby.util.Asserts;
  * @version $Revision$
  */
 public class ThreadClass extends RubyObject implements IndexCallable {
-    private static boolean globalAbortOnException; // remove it. - why?
+    private static boolean globalAbortOnException; // move to runtime object
 
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
@@ -60,6 +61,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     private RaiseException exitingException = null;
     private IRubyObject receivedException = null;
     
+    private ThreadService threadService;
     private Object hasStartedLock = new Object();
     private boolean hasStarted = false;
 
@@ -68,7 +70,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         
         ThreadClass currentThread = new ThreadClass(runtime, threadClass);
         currentThread.jvmThread = Thread.currentThread();
-        runtime.getMainContext().setCurrentThread(currentThread);
+        runtime.getThreadService().getMainContext().setCurrentThread(currentThread);
 
         return threadClass;
     }
@@ -121,7 +123,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
             public void run() {
                 thread.notifyStarted();
 
-                runtime.registerNewContext(thread);
+                runtime.getThreadService().registerNewContext(thread);
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
                 context.getBlockStack().setCurrent(currentBlock);
@@ -161,6 +163,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
 
     private ThreadClass(Ruby ruby, RubyClass type) {
         super(ruby, type);
+        this.threadService = ruby.getThreadService();
     }
 
     /**
@@ -317,7 +320,8 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         if (abortOnException()) {
             // FIXME: printError explodes on some nullpointer
             //getRuntime().getRuntime().printError(exception.getException());
-            runtime.getMainContext().getCurrentThread().raise(RubyException.newException(getRuntime(), getRuntime().getExceptions().getSystemExit(), ""));
+            threadService.getMainContext().getCurrentThread().raise(RubyException.newException(getRuntime(),
+                                                                                         getRuntime().getExceptions().getSystemExit(), ""));
         } else {
             exitingException = exception;
         }
@@ -328,7 +332,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     }
 
     public static ThreadClass mainThread(IRubyObject receiver) {
-        return receiver.getRuntime().getMainContext().getCurrentThread();
+        return receiver.getRuntime().getThreadService().getMainContext().getCurrentThread();
     }
 
     /**

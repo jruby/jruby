@@ -21,7 +21,6 @@ testException.rb
 testException2.rb
 testFile.rb
 testThread.rb
-#testThreadLibrary.rb
 testMarshal.rb
 testBackquote.rb
 testHash.rb

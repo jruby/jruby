@@ -51,6 +51,7 @@ import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
+import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.javasupport.JavaSupport;
@@ -89,32 +90,7 @@ import org.jruby.util.collections.IStack;
  * @since   0.1
  */
 public final class Ruby {
-    private ThreadContext mainContext = new ThreadContext(Ruby.this);
-    private ThreadContextLocal threadContext = new ThreadContextLocal(mainContext);
-
-    private static class ThreadContextLocal extends ThreadLocal {
-        private ThreadContext mainContext;
-
-        public ThreadContextLocal(ThreadContext mainContext) {
-            this.mainContext = mainContext;
-        }
-
-        /**
-         * @see java.lang.ThreadLocal#initialValue()
-         */
-        protected Object initialValue() {
-            return this.mainContext;
-        }
-
-        public void dereferenceMainContext() {
-            this.mainContext = null;
-            set(null);
-        }
-    }
-
-    public void dispose() {
-        threadContext.dereferenceMainContext();
-    }
+    private ThreadService threadService = new ThreadService(this);
 
     public int stackTraces = 0;
 
@@ -604,17 +580,16 @@ public final class Ruby {
         return parser;
     }
 
+    public ThreadService getThreadService() {
+        return threadService;
+    }
+
+    public void disposeCurrentThread() {
+        threadService.dispose();
+    }
+
     public ThreadContext getCurrentContext() {
-        return (ThreadContext)threadContext.get();
-    }
-
-    public ThreadContext getMainContext() {
-        return mainContext;
-    }
-
-    public void registerNewContext(ThreadClass thread) {
-        threadContext.set(new ThreadContext(this));
-        getCurrentContext().setCurrentThread(thread);
+        return threadService.getCurrentContext();
     }
 
     public ISourcePosition getPosition() {
