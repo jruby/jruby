@@ -122,10 +122,15 @@ public class JavaField extends RubyObject {
 
     public JavaObject static_value() {
         try {
+	    // TODO: Only setAccessible to account for pattern found by
+	    // accessing constants included from a non-public interface.
+	    // (aka java.util.zip.ZipConstants being implemented by many
+	    // classes)
+	    field.setAccessible(true);
             return JavaObject.wrap(getRuntime(), field.get(null));
         } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(),
-                                "illegal static value access: " + iae.getMessage());
+	    throw new TypeError(getRuntime(),
+				"illegal static value access: " + iae.getMessage());
         }
     }
 
