@@ -40,7 +40,6 @@ import org.jruby.nodes.types.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
-import sun.security.krb5.internal.*;
 
 /**
  * The jruby runtime.

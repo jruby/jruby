@@ -36,7 +36,6 @@ import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
-import sun.security.krb5.internal.*;
 
 /**
  *
