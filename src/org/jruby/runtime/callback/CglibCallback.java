@@ -4,6 +4,7 @@ import net.sf.cglib.reflect.FastClass;
 import net.sf.cglib.reflect.FastMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.RaiseException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -65,7 +66,15 @@ public class CglibCallback extends ReflectionCallback {
             if (isRestArgs) {
                 arguments = packageRestArgumentsForReflection(arguments);
             }
-            return (IRubyObject) fastMethod.invoke(recv, arguments);
+            try {
+                return (IRubyObject) fastMethod.invoke(recv, arguments);
+            } catch (InvocationTargetException e) {
+                if (e.getCause() instanceof ClassCastException) {
+                    throw new RaiseException(recv.getRuntime(), "TypeError", e.getCause().getMessage());
+                } else {
+                    throw e;
+                }
+            }
         }
 
         public Class[] reflectionArgumentTypes() {
