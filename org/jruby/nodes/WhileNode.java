@@ -44,10 +44,6 @@ public class WhileNode extends Node {
         super(Constants.NODE_WHILE, conditionNode, bodyNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "conditionNode:" + getClassNameId().toString() + ", "  + "body:" + getBodyNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         while (getConditionNode().eval(ruby, self).isTrue()) {
             while (true) {
@@ -65,4 +61,12 @@ public class WhileNode extends Node {
         
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitWhileNode(this);
+	}
 }

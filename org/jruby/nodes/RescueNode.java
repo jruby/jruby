@@ -98,4 +98,12 @@ public class RescueNode extends Node {
         }
         return false;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitRescueNode(this);
+	}
 }

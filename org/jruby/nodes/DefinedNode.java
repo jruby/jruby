@@ -44,10 +44,6 @@ public class DefinedNode extends Node{
         super(Constants.NODE_DEFINED, headNode, null, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // String buf;
         // String desc = is_defined(self, node.nd_head(), buf);
@@ -191,4 +187,12 @@ public class DefinedNode extends Node{
 	
 	return null;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDefinedNode(this);
+	}
 }

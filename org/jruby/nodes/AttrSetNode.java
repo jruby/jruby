@@ -46,11 +46,7 @@ public class AttrSetNode extends Node implements CallableNode {
         super(Constants.NODE_ATTRSET, vId, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyFrame().getArgs().size() != 1) {
             throw new RubyArgumentException(ruby, "wrong # of arguments(" + ruby.getRubyFrame().getArgs().size() + "for 1)");
         }
@@ -60,4 +56,13 @@ public class AttrSetNode extends Node implements CallableNode {
     public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitAttrSetNode(this);
+	}
+
 }

@@ -43,11 +43,15 @@ public class NotNode extends Node {
         super(Constants.NODE_NOT, null, bodyNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "body:" + getBodyNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getBodyNode().eval(ruby, self).isTrue() ? ruby.getFalse() : ruby.getTrue();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitNotNode(this);
+	}
 }

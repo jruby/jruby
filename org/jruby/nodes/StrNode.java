@@ -45,10 +45,6 @@ public class StrNode extends Node implements StringExpandableNode {
         super(Constants.NODE_STR, literal, null, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + "literal:" + getLiteral().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getLiteral().to_s();
     }
@@ -56,4 +52,12 @@ public class StrNode extends Node implements StringExpandableNode {
     public RubyString expandString(Ruby ruby, RubyObject self, Node parent) {
         return (RubyString)getLiteral();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitStrNode(this);
+	}
 }

@@ -43,11 +43,15 @@ public class ArgsPushNode extends Node {
         super(Constants.NODE_ARGSPUSH, headNode, bodyNode, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         return ((RubyArray)getHeadNode().eval(ruby, self).dup()).push(getBodyNode().eval(ruby, self));
     }
+/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitArgsPushNode(this);
+	}
 }

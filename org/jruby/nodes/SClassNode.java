@@ -44,10 +44,6 @@ public class SClassNode extends Node {
         super(Constants.NODE_SCLASS, recvNode, bodyNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "recv:" + getRecvNode().toString() + ", "  + "body:" + getBodyNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyClass rubyClass = (RubyClass)getRecvNode().eval(ruby, self);
         if (rubyClass.isSpecialConst()) {
@@ -68,4 +64,12 @@ public class SClassNode extends Node {
         
         return ((ScopeNode)getBodyNode()).setupModule(ruby, rubyClass);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitSClassNode(this);
+	}
 }

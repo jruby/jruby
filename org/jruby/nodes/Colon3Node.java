@@ -43,11 +43,15 @@ public class Colon3Node extends Node {
         super(Constants.NODE_COLON3, null, mId, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getBodyNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getClasses().getObjectClass().getConstant(getMId());
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitColon3Node(this);
+	}
 }

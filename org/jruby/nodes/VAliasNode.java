@@ -43,13 +43,17 @@ public class VAliasNode extends Node {
         super(Constants.NODE_VALIAS, oldId, newId, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "oldId:" + getOldId().toString() + ", "  + "newid:" + getNewId().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyGlobalEntry.getGlobalEntry(ruby, getOldId()).alias(getNewId());
         
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitVAliasNode(this);
+	}
 }

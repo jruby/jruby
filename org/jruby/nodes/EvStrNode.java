@@ -46,10 +46,6 @@ public class EvStrNode extends Node implements StringExpandableNode {
         super(Constants.NODE_EVSTR, literal, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ")";
-	}
     public RubyString expandString(Ruby ruby, RubyObject self, Node parent) {
         // result = ruby_errinfo;
         // ruby_errinfo = Qnil;
@@ -68,4 +64,12 @@ public class EvStrNode extends Node implements StringExpandableNode {
         // Evaluate the new compiled Node
         return (RubyString)parent.getHeadNode().eval(ruby, self).convertType(RubyString.class, "String", "to_s");
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitEvStrNode(this);
+	}
 }

@@ -44,11 +44,15 @@ public class NilNode extends Node {
         super(Constants.NODE_NIL);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitNilNode(this);
+	}
 }

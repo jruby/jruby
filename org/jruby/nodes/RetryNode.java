@@ -45,11 +45,15 @@ public class RetryNode extends Node {
         super(Constants.NODE_RETRY);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new RetryException();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitRetryNode(this);
+	}
 }

@@ -43,10 +43,6 @@ public class Match3Node extends Node {
         super(Constants.NODE_MATCH3, recvNode, valueNode, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getRecvNode().toString() + ", "  + getValueNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject r = getRecvNode().eval(ruby, self);
         RubyObject l = getValueNode().eval(ruby, self);
@@ -56,4 +52,12 @@ public class Match3Node extends Node {
             return l.funcall("=~", r);
         }
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitMatch3Node(this);
+	}
 }

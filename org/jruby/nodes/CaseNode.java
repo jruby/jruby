@@ -43,11 +43,7 @@ public class CaseNode extends Node {
         super(Constants.NODE_CASE, headNode, bodyNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject obj = getHeadNode().eval(ruby, self);
         
         Node node = getBodyNode();
@@ -89,4 +85,14 @@ public class CaseNode extends Node {
         }
         return ruby.getNil();
     }
+
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitCaseNode(this);
+	}
+
 }

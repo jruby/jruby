@@ -44,10 +44,6 @@ public class IAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_IASGN, vId, valueNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getVId().toString() + ", "  + getValueNode().toString() + ")";
-	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         self.setInstanceVar(getVId(), value);
     }
@@ -57,4 +53,12 @@ public class IAsgnNode extends Node implements AssignableNode {
         self.setInstanceVar(getVId(), result);
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitIAsgnNode(this);
+	}
 }

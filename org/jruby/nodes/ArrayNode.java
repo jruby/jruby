@@ -46,11 +46,7 @@ public class ArrayNode extends Node {
         super(Constants.NODE_ARRAY, headNode, aLength, nextNode);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + stringOrNull(getHeadNode()) + ", length:"  + getALength() + ", next:" + stringOrNull(getNextNode()) +")";
-	}
-	
+ 	
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getRubyArray(ruby, self);
     }
@@ -71,4 +67,13 @@ public class ArrayNode extends Node {
         ArrayList ary = getArrayList(ruby, self);
         return (RubyObject[])ary.toArray(new RubyObject[ary.size()]);
     }
+
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitArrayNode(this);
+	}
 }

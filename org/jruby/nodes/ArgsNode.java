@@ -42,8 +42,12 @@ public class ArgsNode extends Node {
         super(Constants.NODE_ARGS, optNode, rest, count);
     }
 
- 	public String toString()   
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
 	{
-		return super.toString() + stringOrNull(getFirstNode()) + ", "  + getRest() + ", count:" +  getCount() + ")";
+		iVisitor.visitArgsNode(this);
 	}
 }

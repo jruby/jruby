@@ -46,11 +46,15 @@ public class ZArrayNode extends Node {
         super(Constants.NODE_ZARRAY);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return RubyArray.newArray(ruby, 0);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitZArrayNode(this);
+	}
 }

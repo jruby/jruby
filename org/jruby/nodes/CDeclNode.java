@@ -46,11 +46,7 @@ public class CDeclNode extends Node implements AssignableNode {
         super(Constants.NODE_CDECL, vid, valueNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
-    public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
+ 	public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         ruby.getRubyClass().setConstant(getVId(), value);
     }
     
@@ -62,4 +58,14 @@ public class CDeclNode extends Node implements AssignableNode {
         ruby.getRubyClass().setConstant(getVId(), result);
         return result;
     }
+
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitCDeclNode(this);
+	}
+
 }

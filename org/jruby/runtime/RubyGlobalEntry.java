@@ -62,7 +62,7 @@ public class RubyGlobalEntry {
     /** Getter for property id.
      * @return Value of property id.
      */
-    protected String getId() {
+    public String getId() {
         return id;
     }
 

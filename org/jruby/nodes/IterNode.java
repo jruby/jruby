@@ -44,10 +44,6 @@ public class IterNode extends Node {
     public IterNode(Node varNode, Node bodyNode, Node iterNode) {
         super(Constants.NODE_ITER, varNode, bodyNode, iterNode);
     }
- 	public String toString()   
-	{
-		return super.toString() + getVarNode().toString() + ", "  + getBodyNode().toString() + "," + getIterNode() +")";
-	}
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result;
@@ -71,4 +67,12 @@ public class IterNode extends Node {
         ruby.getBlock().pop();
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitIterNode(this);
+	}
 }

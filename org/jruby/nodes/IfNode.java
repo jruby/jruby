@@ -43,10 +43,6 @@ public class IfNode extends Node {
         super(Constants.NODE_IF, conditionNode, bodyNode, elseNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getConditionNode().toString() + ", "  + getBodyNode().toString() + "," + getElseNode() +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         ruby.setSourceLine(getLine());
        Node x = getConditionNode();
@@ -56,4 +52,12 @@ public class IfNode extends Node {
             return self.eval(getElseNode());
         }
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitIfNode(this);
+	}
 }

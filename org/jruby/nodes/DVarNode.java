@@ -46,4 +46,13 @@ public class DVarNode extends Node {
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getDynamicVars().getRef(ruby, getVId());
     }
+
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDVarNode(this);
+	}
 }

@@ -46,11 +46,16 @@ public class CFuncNode extends Node implements CallableNode {
         super(Constants.NODE_CFUNC, callbackMethod, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ")";
-	}
-    public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
+ 	public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         return getCallbackMethod().execute(recv, args == null ? null : args.toRubyArray(), ruby);
     }
+
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitCFuncNode(this);
+	}
 }

@@ -45,11 +45,16 @@ public class BreakNode extends Node {
         super(Constants.NODE_BREAK);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new BreakException();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitBreakNode(this);
+	}
+
 }

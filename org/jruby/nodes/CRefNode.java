@@ -44,11 +44,7 @@ public class CRefNode extends Node {
         this(null, nextNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + (getFirstNode() == null? "null" : getFirstNode().toString()) + ", "  + getSecondNode().toString() + ")";
-	}
-    public CRefNode(RubyObject classValue, Node nextNode) {
+ 	public CRefNode(RubyObject classValue, Node nextNode) {
         super(Constants.NODE_CREF, classValue, null, nextNode);
     }
     
@@ -72,4 +68,12 @@ public class CRefNode extends Node {
         setClassValue(getNextNode().getClassValue());
         setNextNode(getNextNode().getNextNode());
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitCRefNode(this);
+	}
 }

@@ -44,10 +44,6 @@ public class WhenNode extends Node {
         super(Constants.NODE_WHEN, headNode, bodyNode, nextNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "head:" + getHeadNode().toString() + ", body"  + getBodyNode().toString() + ", next:" + getNextNode() +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         WhenNode node = this;
         
@@ -89,4 +85,12 @@ public class WhenNode extends Node {
         }
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitWhenNode(this);
+	}
 }

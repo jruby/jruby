@@ -45,10 +45,6 @@ public class ForNode extends Node {
         super(Constants.NODE_FOR, varNode, bodyNode, iterNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode() +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result;
         
@@ -82,4 +78,12 @@ public class ForNode extends Node {
         ruby.getBlock().pop();
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitForNode(this);
+	}
 }

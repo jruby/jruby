@@ -45,11 +45,15 @@ public class RedoNode extends Node {
         super(Constants.NODE_REDO);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new RedoException();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitRedoNode(this);
+	}
 }

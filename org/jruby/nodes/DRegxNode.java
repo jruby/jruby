@@ -45,10 +45,6 @@ public class DRegxNode extends Node implements StringEvaluableNode {
         super(Constants.NODE_DREGX, literal, cflag, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return StringEvaluate.eval(ruby, self, this);
     }
@@ -56,4 +52,12 @@ public class DRegxNode extends Node implements StringEvaluableNode {
     public RubyObject evalString(Ruby ruby, RubyObject self, RubyString str) {
         return RubyRegexp.newRegexp(ruby, str, getCFlag());
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDRegxNode(this);
+	}
 }

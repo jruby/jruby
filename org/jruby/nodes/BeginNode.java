@@ -43,12 +43,17 @@ public class BeginNode extends Node {
         super(Constants.NODE_BEGIN, null, body, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getSecondNode().toString() + ")";
-	}
-    
+ 	
 	public RubyObject eval(Ruby ruby, RubyObject self) {
         return getBodyNode() != null ? getBodyNode().eval(ruby, self) : ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitBeginNode(this);
+	}
+
 }

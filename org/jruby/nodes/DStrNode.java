@@ -46,10 +46,6 @@ public class DStrNode extends Node implements StringEvaluableNode {
         super(Constants.NODE_DSTR, literal, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return StringEvaluate.eval(ruby, self, this);
     }
@@ -57,4 +53,12 @@ public class DStrNode extends Node implements StringEvaluableNode {
     public RubyObject evalString(Ruby ruby, RubyObject self, RubyString str) {
         return str;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDStrNode(this);
+	}
 }

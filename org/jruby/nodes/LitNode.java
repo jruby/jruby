@@ -34,7 +34,20 @@ import org.jruby.*;
 import org.jruby.runtime.*;
 
 /**
- *
+ * a literal.
+ * the meaning of the Node fields for BlockNodes is:
+ * <ul>
+ * <li>
+ * u1 ==&gt; literal (RubyObject)
+ * </li>
+ * <li>
+ * u2 ==&gt; unused
+ * </li>
+ * <li>
+ * u3 ==&gt; unused
+ * </li>
+ * </ul>
+
  * @author  jpetersen
  * @version 
  */
@@ -43,11 +56,17 @@ public class LitNode extends Node {
         super(Constants.NODE_LIT, literal, null, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getLiteral().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getLiteral();
     }
+
+	/**
+	 * Method used by visitors.
+	 * accepts the visitor.
+	 * @param iVisitor the visitor to accept
+	 **/
+	public void accept(NodeVisitor iVisitor)
+	{
+		iVisitor.visitLitNode(this);
+	}
 }

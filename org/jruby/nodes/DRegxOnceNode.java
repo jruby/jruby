@@ -48,10 +48,6 @@ public class DRegxOnceNode extends Node implements StringEvaluableNode {
         super(Constants.NODE_DREGX_ONCE, literal, cflag, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (expanded) {
             return getLiteral();
@@ -68,4 +64,12 @@ public class DRegxOnceNode extends Node implements StringEvaluableNode {
         
         return regex;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDRegxOnceNode(this);
+	}
 }

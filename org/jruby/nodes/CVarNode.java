@@ -44,11 +44,7 @@ public class CVarNode extends Node {
         super(Constants.NODE_CVAR, vId, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getCBase() == null) {
             return self.getRubyClass().getClassVar(getVId());
         } else if (!ruby.getCBase().isSingleton()) {
@@ -57,4 +53,12 @@ public class CVarNode extends Node {
             return ruby.getCBase().getInstanceVar("__attached__").getClassVarSingleton().getClassVar(getVId());
         }
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitCVarNode(this);
+	}
 }

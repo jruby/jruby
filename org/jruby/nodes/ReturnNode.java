@@ -44,10 +44,6 @@ public class ReturnNode extends Node {
         super(Constants.NODE_RETURN, sttsNode, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "stts:" + getSttsNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getSttsNode() != null) {
             throw new ReturnException(getSttsNode().eval(ruby, self));
@@ -55,4 +51,12 @@ public class ReturnNode extends Node {
             throw new ReturnException(ruby.getNil());
         }
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitReturnNode(this);
+	}
 }

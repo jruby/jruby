@@ -44,10 +44,6 @@ public class RestArgsNode extends Node {
         super(Constants.NODE_RESTARGS, headNode, null, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + "head:" + getHeadNode().toString() +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result = getHeadNode().eval(ruby, self);
         if (!(result instanceof RubyArray)) {
@@ -55,4 +51,12 @@ public class RestArgsNode extends Node {
         }
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitRestArgsNode(this);
+	}
 }

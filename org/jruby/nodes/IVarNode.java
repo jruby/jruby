@@ -45,10 +45,6 @@ public class IVarNode extends Node implements CallableNode {
         super(Constants.NODE_IVAR, vId, null, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getVId().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return self.getInstanceVar(getVId());
     }
@@ -56,4 +52,12 @@ public class IVarNode extends Node implements CallableNode {
     public RubyObject call(Ruby ruby, RubyObject recv, String id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitIVarNode(this);
+	}
 }

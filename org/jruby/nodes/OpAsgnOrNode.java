@@ -51,4 +51,12 @@ public class OpAsgnOrNode extends Node {
         }
         return ruby.getTrue();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitOpAsgnOrNode(this);
+	}
 }

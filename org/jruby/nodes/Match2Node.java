@@ -43,12 +43,16 @@ public class Match2Node extends Node {
         super(Constants.NODE_MATCH2, recvNode, valueNode, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getRecvNode().toString() + ", "  + getValueNode().toString() + ")";
-	}
 	
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ((RubyRegexp)getRecvNode().eval(ruby, self)).match(getValueNode().eval(ruby, self));
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitMatch2Node(this);
+	}
 }

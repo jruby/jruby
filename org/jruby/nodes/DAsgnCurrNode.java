@@ -44,10 +44,6 @@ public class DAsgnCurrNode extends Node implements AssignableNode {
         super(Constants.NODE_DASGN_CURR, vId, valueNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         RubyVarmap.assignCurrent(ruby, getVId(), value);
     }
@@ -57,4 +53,12 @@ public class DAsgnCurrNode extends Node implements AssignableNode {
         RubyVarmap.assignCurrent(ruby, getVId(), result);
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDAsgnCurrNode(this);
+	}
 }

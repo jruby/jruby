@@ -45,10 +45,6 @@ public class MethodNode extends Node {
         super(Constants.NODE_METHOD, noex, bodyNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "noex:" + getNoex() + ", "  + "body:" +getBodyNode().toString() + ")";
-	}
     public RubyModule getMethodOrigin() {
         return methodOrigin;
     }
@@ -56,4 +52,12 @@ public class MethodNode extends Node {
     public void setMethodOrigin(RubyModule newMethodOrigin) {
         methodOrigin = newMethodOrigin;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitMethodNode(this);
+	}
 }

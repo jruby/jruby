@@ -43,14 +43,18 @@ public class OrNode extends Node {
         super(Constants.NODE_OR, firstNode, secondNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "first:" + getFirstNode().toString() + ", second:" + getSecondNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getFirstNode().eval(ruby, self).isTrue()) {
             return ruby.getTrue();
         }
         return getSecondNode().eval(ruby, self);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitOrNode(this);
+	}
 }

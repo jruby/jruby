@@ -43,11 +43,7 @@ public class BlockPassNode extends Node {
         super(Constants.NODE_BLOCK_PASS, null, bodyNode, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getBodyNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject block = getBodyNode().eval(ruby, self);
         
         // RubyBlock oldBlock;
@@ -142,4 +138,13 @@ public class BlockPassNode extends Node {
     return result;
 */
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitBlockPassNode(this);
+	}
+
 }

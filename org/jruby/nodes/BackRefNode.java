@@ -44,11 +44,7 @@ public class BackRefNode extends Node {
         super(Constants.NODE_BACK_REF, null, nth, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getSecondNode().toString() + ")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         switch ((char)getNth()) {
             case '&':
                 return RubyRegexp.last_match(ruby.getBackRef());
@@ -66,4 +62,13 @@ public class BackRefNode extends Node {
                 throw new RubyBugException("unexpected back-ref");
         }
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitBackRefNode(this);
+	}
+
 }

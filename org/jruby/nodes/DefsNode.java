@@ -44,10 +44,6 @@ public class DefsNode extends Node {
         super(Constants.NODE_DEFS, recvNode, mId, defnNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "recv:" + getRecvNode().toString() + ", mid:"  + getMId().toString() + ", defnNode:" + getDefnNode() +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getDefnNode() != null) {
             RubyObject recv = getRecvNode().eval(ruby, self);
@@ -83,4 +79,12 @@ public class DefsNode extends Node {
         }
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDefsNode(this);
+	}
 }

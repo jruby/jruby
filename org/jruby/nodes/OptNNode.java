@@ -65,4 +65,12 @@ public class OptNNode extends Node {
         }
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitOptNNode(this);
+	}
 }

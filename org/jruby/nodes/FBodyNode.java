@@ -44,11 +44,15 @@ public class FBodyNode extends Node {
         super(Constants.NODE_FBODY, bodyNode, mId, origin);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode() +")";
-	}
     public RubyObject execute(RubyObject receiver, RubyObject[] args, Ruby ruby) {
         throw new RuntimeException("Not executed yet");
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitFBodyNode(this);
+	}
 }

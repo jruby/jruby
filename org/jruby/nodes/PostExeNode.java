@@ -45,10 +45,6 @@ public class PostExeNode extends Node {
         super(Constants.NODE_POSTEXE);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (!executed) {
             // rb_f_END();
@@ -57,4 +53,12 @@ public class PostExeNode extends Node {
 
         return ruby.getNil();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitPostExeNode(this);
+	}
 }

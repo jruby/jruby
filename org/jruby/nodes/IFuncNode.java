@@ -44,11 +44,15 @@ public class IFuncNode extends Node implements ExecutableNode {
         super(Constants.NODE_IFUNC, callbackMethod, tValue, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getCallbackMethod().toString() + ", "  + getTValue().toString() + ")";
-	}
     public RubyObject execute(RubyObject receiver, RubyObject[] args, Ruby ruby) {
         return getCallbackMethod().execute(receiver, args, ruby);
-    }    
+    }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitIFuncNode(this);
+	}
 }

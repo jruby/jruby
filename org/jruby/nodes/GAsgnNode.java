@@ -35,7 +35,20 @@ import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
 
 /**
- *
+ *  Global Assignment node.
+ *  Assignment to a global variable.
+ * the meaning of the Node fields for BlockNodes is:
+ * <ul>
+ * <li>
+ * u1 ==&gt; unused
+ * </li>
+ * <li>
+ * u2 ==&gt; value (any Node subtype)
+ * </li>
+ * <li>
+ * u3 ==&gt; entry (RubyGlobalEntry)
+ * </li>
+ * </ul>
  * @author  jpetersen
  * @version
  */
@@ -44,10 +57,6 @@ public class GAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_GASGN, null, valueNode, entry);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getValueNode().toString() + ", "  + getEntry().toString() + ")";
-	}
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         getEntry().set(value);
     }
@@ -57,4 +66,14 @@ public class GAsgnNode extends Node implements AssignableNode {
         getEntry().set(result);
         return result;
     }
+	
+	/**
+	 * Method used by visitors.
+	 * accepts the visitor 
+	 * @param iVisitor the visitor to accept
+	 **/
+	public void accept(NodeVisitor iVisitor)
+	{
+		iVisitor.visitGAsgnNode(this);
+	}
 }

@@ -36,7 +36,18 @@ import org.jruby.runtime.*;
 import org.jruby.util.*;
 
 /**
- *
+ * end of method definition node.
+  * <ul>
+ * <li>
+ * u1 ==&gt; noex (int) NOTE: noex flag, private, public or protected?
+ * </li>
+ * <li>
+ * u2 ==&gt;  mId (String) NOTE: method id
+ * </li>
+ * <li>
+ * u3 ==&gt; defnNode (ScopeNode) NOTE: the body of the method
+ * </li>
+ * </ul>
  * @author  jpetersen
  * @version
  */
@@ -45,13 +56,10 @@ public class DefnNode extends Node {
         super(Constants.NODE_DEFN, noex, mId, defnNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "noex:" + getNoex() + ", "  + "mid:" + getMId().toString() + "," + "defnNode:" + getDefnNode() +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getDefnNode() != null) {
-            if (ruby.getRubyClass() == null) {
+			RubyModule rubyClass = ruby.getRubyClass()	;
+            if (rubyClass == null) {
                 throw new RubyTypeException(ruby, "no class to add method");
             }
             
@@ -63,10 +71,10 @@ public class DefnNode extends Node {
             //}
             // ruby_class.setFrozen(true);
             
-            MethodNode body = ruby.getRubyClass().searchMethod(getMId());
+            MethodNode body = rubyClass.searchMethod(getMId());
             // RubyObject origin = body.getOrigin();
             
-            if (body != null){
+//            if (body != null){
                 // if (ruby_verbose.isTrue() && ruby_class == origin && body.nd_cnt() == 0) {
                 //     rom.rb_warning("discarding old %s", ((RubyId)node.nd_mid()).toName());
                 // }
@@ -74,7 +82,7 @@ public class DefnNode extends Node {
                             /* should upgrade to rb_warn() if no super was called inside? */
                 //     rom.rb_warning("overriding global function `%s'", ((RubyId)node.nd_mid()).toName());
                 // }
-            }
+  //          }
             
             int noex;
             
@@ -82,32 +90,36 @@ public class DefnNode extends Node {
                 noex = Constants.NOEX_PRIVATE;
             } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
                 noex = Constants.NOEX_PROTECTED;
-            } else if (ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+            } else if (rubyClass == ruby.getClasses().getObjectClass()) {
                 noex =  getNoex();
             } else {
                 noex = Constants.NOEX_PUBLIC;
             }
 
-            if (body != null && body.getOrigin() == ruby.getRubyClass() && (body.getNoex() & Constants.NOEX_UNDEF) != 0) {
+            if (body != null && body.getOrigin() == rubyClass && (body.getNoex() & Constants.NOEX_UNDEF) != 0) {
                 noex |= Constants.NOEX_UNDEF;
             }
             
             Node defn = getDefnNode().copyNodeScope(ruby.getCRef());
-            ruby.getRubyClass().addMethod(getMId(), defn, noex);
+            rubyClass.addMethod(getMId(), defn, noex);
             
             // rb_clear_cache_by_id(node.nd_mid());
             
             if (ruby.getActMethodScope() == Constants.SCOPE_MODFUNC) {
-                ruby.getRubyClass().getSingletonClass().addMethod(getMId(), defn, Constants.NOEX_PUBLIC);
-                ruby.getRubyClass().funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
+                rubyClass.getSingletonClass().addMethod(getMId(), defn, Constants.NOEX_PUBLIC);
+                rubyClass.funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
             }
 
-            if (ruby.getRubyClass().isSingleton()) {
-                ruby.getRubyClass().getInstanceVar("__attached__").funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
+            if (rubyClass.isSingleton()) {
+                rubyClass.getInstanceVar("__attached__").funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
             } else {
-                ruby.getRubyClass().funcall("method_added", RubySymbol.newSymbol(ruby, getMId()));
+                rubyClass.funcall("method_added", RubySymbol.newSymbol(ruby, getMId()));
             }
         }
         return ruby.getNil();
     }
+	public void accept(NodeVisitor iVisitor)
+	{
+		iVisitor.visitDefnNode(this);
+	}
 }

@@ -43,11 +43,15 @@ public class MatchNode extends Node {
         super(Constants.NODE_MATCH, headNode, null, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + "head:" + getHeadNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ((RubyRegexp)getHeadNode().getLiteral()).match2();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitMatchNode(this);
+	}
 }

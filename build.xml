@@ -133,7 +133,7 @@
     <target description="Build Javadoc documentation" name="javadocs">
         <mkdir dir="${build.docs}"/>
         <mkdir dir="${build.docs}/support"/>
-        <javadoc destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
+	<javadoc classpathref="classpath" destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
         <javadoc destdir="${build.docs}/support" doctitle="${javadoc.title}" packagenames="gnu.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
     </target>
 	

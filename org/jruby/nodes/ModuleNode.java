@@ -45,10 +45,6 @@ public class ModuleNode extends Node {
         super(Constants.NODE_MODULE, className, bodyNode, null);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "class:" + getClassNameId().toString() + ", "  + "body:" + getBodyNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new RubyTypeException(ruby, "no outer class/module");
@@ -83,4 +79,12 @@ public class ModuleNode extends Node {
         
         return ((ScopeNode)getBodyNode()).setupModule(ruby, module);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitModuleNode(this);
+	}
 }

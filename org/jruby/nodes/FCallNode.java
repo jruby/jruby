@@ -45,10 +45,6 @@ public class FCallNode extends Node {
         super(Constants.NODE_FCALL, null, mId, argsNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getMId() + ", "  + getArgsNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // TMP_PROTECT;
         
@@ -58,4 +54,12 @@ public class FCallNode extends Node {
         
         return self.getRubyClass().call(self, getMId(), args, 1);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitFCallNode(this);
+	}
 }

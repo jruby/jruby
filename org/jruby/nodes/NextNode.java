@@ -45,11 +45,15 @@ public class NextNode extends Node {
         super(Constants.NODE_NEXT);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         throw new NextException();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitNextNode(this);
+	}
 }

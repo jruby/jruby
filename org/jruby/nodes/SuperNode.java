@@ -46,10 +46,6 @@ public class SuperNode extends Node {
         super(Constants.NODE_SUPER, null, null, argsNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "args:" + getArgsNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         // TMP_PROTECT;
         
@@ -71,4 +67,12 @@ public class SuperNode extends Node {
         
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitSuperNode(this);
+	}
 }

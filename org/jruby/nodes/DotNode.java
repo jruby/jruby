@@ -50,10 +50,6 @@ public class DotNode extends Node {
         this.exclusive = exclusive;
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (cachedValue != null) {
             return cachedValue;
@@ -74,4 +70,12 @@ public class DotNode extends Node {
         
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitDotNode(this);
+	}
 }

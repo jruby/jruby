@@ -34,7 +34,29 @@ import org.jruby.*;
 import org.jruby.runtime.*;
 
 /**
+ * A new (logical) source code line.
+ * This is used to change the value of the ruby interpreter        
+ * source and line values.
+ * There is one such node for each logical line.  Logical line differs
+ * from physical line in that a ';' can be used to make several logical
+ * line out of a physical line and a physical line if it is in a comment
+ * or in a string does not necessarily correspond to a physical line.
+ * This is normally a wrapper around another more significant node.
+ * The parser generates such a node around each separate statement.  
  *
+ * the meaning of the Node fields for BlockNodes is:
+ * <ul>
+ * <li>
+ * u1 ==&gt; unused
+ * </li>
+ * <li>
+ * u2 ==&gt; nth (line number) unused, this is redundant with the line
+ * field in the Node class
+ * </li>
+ * <li>
+ * u3 ==&gt; next the wrapped node
+ * </li>
+ * </ul>
  * @author  jpetersen
  * @version
  */
@@ -43,13 +65,9 @@ public class NewlineNode extends Node{
         super(Constants.NODE_NEWLINE, null, null, nextNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "next:" + getNextNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         ruby.setSourceFile(getFile());
-        ruby.setSourceLine(getNth());
+        ruby.setSourceLine(getLine());
         // if (trace_func) {
         //     call_trace_func("line", ruby_sourcefile, ruby_sourceline, self,
         //     ruby_frame.last_func(),
@@ -57,4 +75,15 @@ public class NewlineNode extends Node{
         // }
         return getNextNode().eval(ruby, self);
     }
+	
+	/**
+	 * Method used by visitors.
+	 * accepts the visitor
+	 * @param iVisitor the visitor to accept
+	 **/
+	public void accept(NodeVisitor iVisitor)
+	{
+		iVisitor.visitNewlineNode(this);
+	}
+
 }

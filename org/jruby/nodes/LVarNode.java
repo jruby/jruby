@@ -43,11 +43,15 @@ public class LVarNode extends Node {
         super(Constants.NODE_LVAR, null, null, count);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getCount() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getRubyScope().getValue(getCount());
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitLVarNode(this);
+	}
 }

@@ -44,11 +44,15 @@ public class TrueNode extends Node {
         super(Constants.NODE_TRUE);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return ruby.getTrue();
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitTrueNode(this);
+	}
 }

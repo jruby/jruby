@@ -44,11 +44,7 @@ public class ClassNode extends Node {
         super(Constants.NODE_CLASS, classNameId, bodyNode, superNode);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode().toString() +")";
-	}
-    public RubyObject eval(Ruby ruby, RubyObject self) {
+ 	public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new RubyTypeException(ruby, "no outer class/module");
         }
@@ -141,4 +137,14 @@ public class ClassNode extends Node {
         }
         return (RubyClass)obj;
     }
+
+	
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitClassNode(this);
+	}
 }

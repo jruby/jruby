@@ -50,4 +50,12 @@ public class OpAsgnAndNode extends Node {
 
         return getValueNode().eval(ruby, self);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitOpAsgnAndNode(this);
+	}
 }

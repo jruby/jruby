@@ -43,10 +43,10 @@ import org.jruby.runtime.*;
  * u1 ==&gt; head the node in this link
  * </li>
  * <li>
- * u2 ==&gt; end the last link of the list
+ * u2 ==&gt; end the last link of the list this is a blocknode
  * </li>
  * <li>
- * u3 ==&gt; next the next link
+ * u3 ==&gt; next the next link this is a blocknode
  * </li>
  * </ul>
  * this nodes are created through the {@link NodeFactory#newBlock newBlock} 
@@ -56,6 +56,7 @@ import org.jruby.runtime.*;
  * @version 
  */
 public class BlockNode extends Node {
+
 	/**
 	 * Builds a BlockNode with a given head.
 	 * The end node of this block node will be set to itself.
@@ -66,10 +67,6 @@ public class BlockNode extends Node {
 		setEndNode(this);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + "head:" + stringOrNull(getHeadNode()) + ",\nnext:" + stringOrNull(getNextNode()) + ")";
-	}
 	/**
 	 * Evaluate this node.
 	 *	To eval a blocknode, if present the head node is evaled then 
@@ -87,4 +84,14 @@ public class BlockNode extends Node {
         return node.getHeadNode() != null ? node.getHeadNode().eval(ruby, self) 
                                           : ruby.getNil();
     }
+
+	/**
+	 * Method used by visitors.
+	 * accepts the visitor
+	 * @param iVisitor the visitor to accept
+	 **/
+	public void accept(NodeVisitor iVisitor)
+	{
+		iVisitor.visitBlockNode(this);
+	}
 }

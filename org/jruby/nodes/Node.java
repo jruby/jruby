@@ -38,7 +38,7 @@ import org.jruby.util.collections.*;
 /**
  *
  * @author  jpetersen
- * @version 
+ * @version $Revision$
  */
 public class Node {
 	public static final Node ONE = new Node(-1);
@@ -56,9 +56,6 @@ public class Node {
 			return "null";
 		else 
 			return io.toString();
-	}
-	public String toString()	 {
-		return "(l"+ line + ":" + Constants.NODE_TRANSLATOR[type] + ":";
 	}
 
 	protected Node(int type) {
@@ -404,5 +401,10 @@ public class Node {
 
 	public RubyObject getTValue() {
 		return (RubyObject)u2;
+	}
+
+	public void accept(NodeVisitor iVisitor)
+	{
+
 	}
 }

@@ -41,6 +41,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.RubyGlobalEntry;
 import org.jruby.nodes.Node;
+import org.jruby.nodes.DumpVisitor;
 
 /**
  * Class used to launch the interpreter.
@@ -63,10 +64,11 @@ public class Main
 	private static ArrayList sLoadDirectories = new ArrayList();
 	private static String sScript = null;
 	private static String sFileName = null;
-	private static boolean sBenchmarkMode = false;
-	private static boolean sCheckOnly = false;
 	//list of libraries to require first
 	private static ArrayList sRequireFirst = new ArrayList();
+	private static boolean sYyDebug = false;
+	private static boolean sBenchmarkMode = false;
+	private static boolean sCheckOnly = false;
 	/**
 	 * process the command line arguments.
 	 * This method will consume the appropriate arguments and valuate
@@ -131,6 +133,10 @@ public class Main
 			{
 				sCheckOnly = true;
 			}
+			 else if (args[i].equals("-y"))
+			{
+				sYyDebug = true;
+			}
 			else
 			{
 				if (lBuf.length() == 0)		//only get a filename if there were no -e
@@ -188,6 +194,7 @@ public class Main
 	 *           -Idirectory    specify $LOAD_PATH directory (may be used more than once)
 	 *           -rx 'adapter'  used to select a regexp engine
 	 *           -c 			check syntax and dump parse tree
+	 *           -y 			debug parser
 	 */
 	protected static void printUsage()
 	{
@@ -200,7 +207,8 @@ public class Main
 			System.out.println("    -rx 'class'     The adapter class for the regexp engine, for now can be:");
 			System.out.println("                    org.jruby.regexp.GNURegexpAdapter or org.jruby.regexp.JDKRegexpAdapter");
 			System.out.println("    -c 				check syntax and dump parse tree");
-
+			System.out.println("    -y 				activate parser traces.");	
+			sPrintedUsage = true;
 		}
 	}
 
@@ -244,7 +252,11 @@ public class Main
 		{	
 			Node lScript = ruby.getRubyParser().compileString(iFileName, rs, 0);
 			if (sCheckOnly)
-				ruby.getRuntime().getOutputStream().println(lScript.toString());
+			{
+				DumpVisitor lVisitor = new DumpVisitor();
+				lScript.accept(lVisitor);
+				ruby.getRuntime().getOutputStream().println(lVisitor.dump());
+			}
 			else
 				ruby.getRubyTopSelf().eval(lScript);
 		} catch (RaiseException rExcptn)

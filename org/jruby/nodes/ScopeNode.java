@@ -52,10 +52,6 @@ public class ScopeNode extends Node implements CallableNode {
         super(Constants.NODE_SCOPE, table, refValue, nextNode);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + "table:" + stringOrNull(getTable()) + ", ref:"  + stringOrNull(getRefValue()) + ", next:" + stringOrNull(getNextNode()) +")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         CRefNode savedCRef = null;
 
@@ -105,7 +101,7 @@ public class ScopeNode extends Node implements CallableNode {
 
         RubyFrame frame = ruby.getRubyFrame();
         frame.setTmp(ruby.getRubyFrame());
-        ruby.setRubyFrame(frame);
+//        ruby.setRubyFrame(frame);		seems useless Benoit
 
         ruby.pushClass();
         ruby.setRubyClass(module);
@@ -286,4 +282,12 @@ public class ScopeNode extends Node implements CallableNode {
 
         return result;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitScopeNode(this);
+	}
 }

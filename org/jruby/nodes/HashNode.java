@@ -44,10 +44,6 @@ public class HashNode extends Node {
 	super(Constants.NODE_HASH, headNode, null, null);
     }
 
-    public String toString()   
-    {
-	return super.toString() + "head:" + stringOrNull(getHeadNode()) + ")";
-    }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
 	RubyHash hash = RubyHash.newHash(ruby);
@@ -67,4 +63,12 @@ public class HashNode extends Node {
 	}
 	return hash;
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitHashNode(this);
+	}
 }

@@ -44,11 +44,15 @@ public class XStrNode extends Node {
         super(Constants.NODE_XSTR, literal, null, null);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + "literal:" + getLiteral().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return self.funcall("`", getLiteral());
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitXStrNode(this);
+	}
 }

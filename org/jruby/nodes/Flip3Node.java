@@ -44,10 +44,6 @@ public class Flip3Node extends Node {
         super(Constants.NODE_FLIP2, beginNode, endNode, count);
     }
     
- 	public String toString()   
-	{
-		return super.toString() + getFirstNode().toString() + ", "  + getSecondNode().toString() + "," + getNextNode().toString() +")";
-	}
 	
     public RubyObject eval(Ruby ruby, RubyObject self) {
         /*
@@ -66,4 +62,12 @@ public class Flip3Node extends Node {
             return ruby.getTrue();
         }
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitFlip3Node(this);
+	}
 }

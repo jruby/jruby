@@ -44,10 +44,6 @@ public class MAsgnNode extends Node implements AssignableNode {
         super(Constants.NODE_MASGN, headNode, null, argsNode);
     }
 
- 	public String toString()   
-	{
-		return super.toString() + getHeadNode().toString() + ", "  + getArgsNode().toString() + ")";
-	}
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return massign(ruby, self, getValueNode().eval(ruby, self), false);
     }
@@ -96,4 +92,12 @@ public class MAsgnNode extends Node implements AssignableNode {
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         massign(ruby, self, value, check);
     }
+	/**
+	 * Accept for the visitor pattern.
+	 * @param iVisitor the visitor
+	 **/
+	public void accept(NodeVisitor iVisitor)	
+	{
+		iVisitor.visitMAsgnNode(this);
+	}
 }
