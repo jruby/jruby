@@ -2,6 +2,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2003-2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -36,6 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class Pack {
     private static final String sSp10 = "          ";
@@ -767,7 +769,7 @@ public class Pack {
     }
    
     public static int encode(Ruby ruby, int occurrences, StringBuffer result, 
-            ArrayList list, int index, Converter converter) {
+            List list, int index, Converter converter) {
         int listSize = list.size();
 
         while (occurrences-- > 0) {
@@ -1123,7 +1125,7 @@ public class Pack {
      * use a platform-independent size. Spaces are ignored in the template string.
      * @see RubyString#unpack
      **/
-    public static RubyString pack(ArrayList list, RubyString formatString) {
+    public static RubyString pack(List list, RubyString formatString) {
         Ruby ruby = formatString.getRuntime();
         PtrList format = new PtrList(ruby, formatString.getValue());
         StringBuffer result = new StringBuffer();

@@ -4,11 +4,13 @@
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Copyright (C) 2002-2004 Thomas E Enebo
+ * Copyright (C) 2004 Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Thomas E Enebo <enebo@acm.org>
+ * Charles O Nutter <headius@headius.com>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -32,6 +34,14 @@
 
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.SecurityError;
@@ -43,23 +53,15 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;
 import org.jruby.util.collections.IdentitySet;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 /**
  *
  * @author  jpetersen
  */
 public class RubyArray extends RubyObject {
-    private ArrayList list;
+    private List list;
     private boolean tmpLock;
 
-	private RubyArray(Ruby ruby, ArrayList list) {
+	private RubyArray(Ruby ruby, List list) {
 		super(ruby, ruby.getClass("Array"));
         this.list = list;
     }
@@ -79,12 +81,12 @@ public class RubyArray extends RubyObject {
     /** Getter for property list.
      * @return Value of property list.
      */
-    public ArrayList getList() {
+    public List getList() {
         return list;
     }
 
     public IRubyObject[] toJavaArray() {
-        return (IRubyObject[]) list.toArray(new IRubyObject[getLength()]);
+        return (IRubyObject[])list.toArray(new IRubyObject[getLength()]);
     }
 
     /** Getter for property tmpLock.
@@ -222,7 +224,7 @@ public class RubyArray extends RubyObject {
 
     /* if list's size is not at least 'toLength', add nil's until it is */
     private void autoExpand(long toLength) {
-        list.ensureCapacity((int) toLength);
+        //list.ensureCapacity((int) toLength);
         for (int i = getLength(); i < toLength; i++) {
             list.add(getRuntime().getNil());
         }
@@ -416,7 +418,7 @@ public class RubyArray extends RubyObject {
         autoExpand(beg);
         if (repl instanceof RubyArray) {
             List repList = ((RubyArray) repl).getList();
-            list.ensureCapacity(getLength() + repList.size());
+            //list.ensureCapacity(getLength() + repList.size());
             list.addAll((int) beg, new ArrayList(repList));
         } else if (!repl.isNil()) {
             list.add((int) beg, repl);
@@ -438,11 +440,11 @@ public class RubyArray extends RubyObject {
         }
     }
 
-    private boolean flatten(ArrayList array) {
+    private boolean flatten(List array) {
         return flatten(array, new IdentitySet());
     }
 
-    private boolean flatten(ArrayList array, IdentitySet visited) {
+    private boolean flatten(List array, IdentitySet visited) {
         if (visited.contains(array)) {
             throw new ArgumentError(runtime, "tried to flatten recursive array");
         }
@@ -450,7 +452,7 @@ public class RubyArray extends RubyObject {
         boolean isModified = false;
         for (int i = array.size() - 1; i >= 0; i--) {
             if (array.get(i) instanceof RubyArray) {
-                ArrayList ary2 = ((RubyArray) array.remove(i)).getList();
+                List ary2 = ((RubyArray) array.remove(i)).getList();
                 flatten(ary2, visited);
                 array.addAll(i, ary2);
                 isModified = true;
@@ -500,7 +502,7 @@ public class RubyArray extends RubyObject {
         return new RubyArray(ruby, list);
     }
 
-    public final static RubyArray newArray(final Ruby ruby, final ArrayList list) {
+    public final static RubyArray newArray(final Ruby ruby, final List list) {
         return new RubyArray(ruby, list);
     }
 
@@ -1239,8 +1241,8 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject op_plus(IRubyObject other) {
-        ArrayList otherList = arrayValue(other).getList();
-        ArrayList newList = new ArrayList(getLength() + otherList.size());
+        List otherList = arrayValue(other).getList();
+        List newList = new ArrayList(getLength() + otherList.size());
         newList.addAll(list);
         newList.addAll(otherList);
         return new RubyArray(getRuntime(), newList);
@@ -1304,8 +1306,8 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject op_diff(IRubyObject other) {
-        ArrayList ary1 = (ArrayList) list.clone();
-        ArrayList ary2 = arrayValue(other).getList();
+        List ary1 = new ArrayList(list);
+        List ary2 = arrayValue(other).getList();
         int len2 = ary2.size();
         for (int i = ary1.size() - 1; i >= 0; i--) {
             IRubyObject obj = (IRubyObject) ary1.get(i);
@@ -1323,9 +1325,9 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject op_and(IRubyObject other) {
-        ArrayList ary1 = uniq(list);
+        List ary1 = uniq(list);
         int len1 = ary1.size();
-        ArrayList ary2 = arrayValue(other).getList();
+        List ary2 = arrayValue(other).getList();
         int len2 = ary2.size();
         ArrayList ary3 = new ArrayList(len1);
         for (int i = 0; i < len1; i++) {
@@ -1345,8 +1347,8 @@ public class RubyArray extends RubyObject {
      *
      */
     public IRubyObject op_or(IRubyObject other) {
-        ArrayList ary1 = new ArrayList(list);
-        ArrayList ary2 = arrayValue(other).getList();
+        List ary1 = new ArrayList(list);
+        List ary2 = arrayValue(other).getList();
         ary1.addAll(ary2);
         return new RubyArray(getRuntime(), uniq(ary1));
     }
