@@ -33,7 +33,7 @@ package org.jruby.runtime;
 
 
 public interface Constants {
-    public static final String RUBY_MAJOR_VERSION = "${version.ruby}";
+    public static final String RUBY_MAJOR_VERSION = "${version.ruby.major}";
     public static final String RUBY_VERSION = "${version.ruby}";
     public static final String COMPILE_DATE = "${build.date}";
     public static final String VERSION = "${version.jruby}";

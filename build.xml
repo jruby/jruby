@@ -6,19 +6,16 @@
     JRuby is a pure Java implementation of a Ruby interpreter.
   </description>
 
-  <property name="base.dir"
-            value="."/>
-  <property name="src.dir"
-            value="${base.dir}/src"/>
-  <property name="test.dir"
-            value="${base.dir}/test"/>
-  <property name="lib.dir"
-            value="${base.dir}/lib"/>
+  <property name="base.dir" value="."/>
+  <property name="src.dir" value="${base.dir}/src"/>
+  <property name="test.dir" value="${base.dir}/test"/>
+  <property name="lib.dir" value="${base.dir}/lib"/>
+  
+  <property name="docs.dir" value="${base.dir}/docs"/>
+  <property name="apidocs.dir" value="${docs.dir}/api"/>
 
-  <property name="release.dir"
-            value="${base.dir}/release"/>
-  <property name="tmp.dir"
-            value="${base.dir}/.tmp"/>
+  <property name="release.dir" value="${base.dir}/release"/>
+  <property name="tmp.dir" value="${base.dir}/.tmp"/>
 
   <path id="build.classpath">
     <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby.jar"/>
@@ -109,5 +106,14 @@
         <attribute name="Main-Class" value="org.jruby.Main"/>
       </manifest>
     </jar>
+  </target>
+  
+  <target name="create-apidocs" description="creates the java api doc" depends="init">
+    <javadoc destdir="${apidocs.dir}" author="true" version="true" use="true" windowtitle="JRuby API">
+      <fileset dir="${src.dir}"/>
+      <fileset dir="${test.dir}"/>
+      <doctitle><![CDATA[<h1>JRuby</h1>]]></doctitle>
+      <bottom><![CDATA[<i>Copyright &#169; 2002 Jan Arne Petersen. All Rights Reserved.</i>]]></bottom>
+    </javadoc>
   </target>
 </project>
