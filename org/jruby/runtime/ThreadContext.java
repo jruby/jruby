@@ -97,12 +97,8 @@ public class ThreadContext {
         return currentThread;
     }
 
-    /**
-     * Sets the currentThread.
-     * @param currentThread The currentThread to set
-     */
-    public void setCurrentThread(RubyThread currentThread) {
-        this.currentThread = currentThread;
+    public void setCurrentThread(RubyThread thread) {
+        this.currentThread = thread;
     }
 
     public IRubyObject eval(INode node) {

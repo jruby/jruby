@@ -111,11 +111,11 @@ public class RubyThread extends RubyObject {
         threadClass.defineMethod("raise", CallbackFactory.getMethod(RubyThread.class, "raise", RubyException.class));
         threadClass.defineMethod("run", CallbackFactory.getMethod(RubyThread.class, "run"));
         threadClass.defineMethod("safe_level", CallbackFactory.getMethod(RubyThread.class, "safe_level"));
-//        threadClass.defineMethod("status", CallbackFactory.getMethod(RubyThread.class, "status"));
+        threadClass.defineMethod("status", CallbackFactory.getMethod(RubyThread.class, "status"));
         threadClass.defineMethod("stop?", CallbackFactory.getMethod(RubyThread.class, "is_stopped"));
         threadClass.defineMethod("value", CallbackFactory.getMethod(RubyThread.class, "value"));
         threadClass.defineMethod("wakeup", CallbackFactory.getMethod(RubyThread.class, "wakeup"));
-        
+
         Ruby runtime = threadClass.getRuntime();
         RubyThread currentThread = new RubyThread(runtime, threadClass);
         currentThread.jvmThread = Thread.currentThread();
@@ -293,6 +293,14 @@ public class RubyThread extends RubyObject {
 
     public void raise(RubyException exc) {
         throw new NotImplementedError();
+    }
+
+    public IRubyObject status() {
+        if (jvmThread.isAlive()) {
+            return RubyString.newString(getRuntime(), "run");
+        } else {
+            return RubyBoolean.newBoolean(getRuntime(), false);
+        }
     }
 }
 

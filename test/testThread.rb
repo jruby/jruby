@@ -1,11 +1,11 @@
 require 'minirunit'
 test_check "Test Thread:"
-aProc = proc { 
-	$toto = 1
+thread = Thread.new {
+  $toto = 1
 }
-thread = Thread.new &aProc
 thread.join
 test_equal(1, $toto)
+test_equal(false, thread.status)
 
 v = nil
 t = Thread.new { v = 1 }
@@ -27,4 +27,11 @@ t = Thread.new {
   test_ok(Thread.current.key?(:x))
   test_ok(! Thread.current.key?(:y))
 }
+t.join
 test_ok(! Thread.current.key?(:x))
+
+v = nil
+t = Thread.new {
+  v = Thread.current.status
+}
+test_equal("run", v)
