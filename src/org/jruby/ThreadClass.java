@@ -354,7 +354,8 @@ public class ThreadClass extends RubyObject {
     }
 
     public static IRubyObject critical(IRubyObject receiver) {
-    	// Useless implementation to satisfy rubicon, always returns false
+    	// TODO: Useless implementation to satisfy rubicon, always returns false
+    	// real implementation, like kill, will require method call hooks
     	return RubyBoolean.newBoolean(receiver.getRuntime(), false);
     }
 
