@@ -344,8 +344,8 @@ public class ThreadContext {
         classStack.push(newClass);
     }
 
-    public void popClass() {
-        classStack.pop();
+    public RubyModule popClass() {
+        return (RubyModule)classStack.pop();
     }
 
     public RubyModule getRubyClass() {
