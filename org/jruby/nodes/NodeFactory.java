@@ -2,8 +2,8 @@
  * NodeFactory.java - No description
  * Created on 05. November 2001, 21:46
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
