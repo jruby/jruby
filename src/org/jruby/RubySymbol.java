@@ -41,13 +41,13 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.exceptions.TypeError;
-import org.jruby.internal.runtime.builtin.definitions.SymbolDefinition;
+import org.jruby.runtime.CallbackFactory;
 
 /**
  *
  * @author  jpetersen
  */
-public class RubySymbol extends RubyObject implements IndexCallable {
+public class RubySymbol extends RubyObject {
     private static int lastId = 0;
 
     private final String symbol;
@@ -73,30 +73,36 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     }
 
     public static RubyClass createSymbolClass(Ruby ruby) {
-        return new SymbolDefinition(ruby).getType();
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case SymbolDefinition.TO_S :
-                return to_s();
-            case SymbolDefinition.TO_I :
-                return to_i();
-            case SymbolDefinition.EQUAL :
-                return equal(args[0]);
-            case SymbolDefinition.HASH :
-                return hash();
-            case SymbolDefinition.INSPECT :
-                return inspect();
-            case SymbolDefinition.RBCLONE :
-                return rbClone();
-            case SymbolDefinition.FREEZE :
-                return freeze();
-            case SymbolDefinition.TAINT :
-                return taint();
-            default :
-                return super.callIndexed(index, args);
-        }
+		RubyClass symbolClass = ruby.defineClass("Symbol", ruby.getClasses().getObjectClass());
+    	
+		CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+		symbolClass.defineMethod("to_i",
+			callbackFactory.getMethod(RubySymbol.class, "to_i"));
+		symbolClass.defineMethod("to_int", 
+			callbackFactory.getMethod(RubySymbol.class, "to_i"));
+		symbolClass.defineMethod("to_s", 
+			callbackFactory.getMethod(RubySymbol.class, "to_s"));
+		symbolClass.defineMethod("id2name", 
+			callbackFactory.getMethod(RubySymbol.class, "to_s"));
+		symbolClass.defineMethod("==", 
+			callbackFactory.getMethod(RubySymbol.class, "equal", IRubyObject.class));
+		symbolClass.defineMethod("hash", 
+			callbackFactory.getMethod(RubySymbol.class, "hash"));
+		symbolClass.defineMethod("inspect", 
+			callbackFactory.getMethod(RubySymbol.class, "inspect"));
+		symbolClass.defineMethod("clone", 
+			callbackFactory.getMethod(RubySymbol.class, "rbClone"));
+		symbolClass.defineMethod("dup", 
+			callbackFactory.getMethod(RubySymbol.class, "rbClone"));
+		symbolClass.defineMethod("freeze", 
+			callbackFactory.getMethod(RubySymbol.class, "freeze"));
+		symbolClass.defineMethod("taint", 
+			callbackFactory.getMethod(RubySymbol.class, "taint"));
+		
+		symbolClass.getMetaClass().undefineMethod("new");
+		
+		return symbolClass;
     }
 
     public boolean singletonMethodsAllowed() {
