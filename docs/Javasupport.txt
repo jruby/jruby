@@ -1,7 +1,7 @@
 
 Javasupport Low-level API
 -------------------------
-$Revision$
+$Id$
 
 
 Java:

@@ -1,7 +1,7 @@
 
 JRuby TODO
 ----------
-$Revision$
+$Id$
 
 Items marked '-' are done and will be available in the next release.
 
@@ -22,7 +22,7 @@ Items marked '-' are done and will be available in the next release.
 
 * Java support
     * Improved interface for importing Java classes.
-        * Extending Java classes and interfaces.
+        * Extending Java classes and interfaces (using reflection proxy)
     * Loading external libraries written in Java.
 
 * Thread support
@@ -38,7 +38,7 @@ Items marked '-' are done and will be available in the next release.
     - Serialize builtin Ruby code
     * General parse cache
 
-- FIX build.xml (use a filtered copying to fill constants)
+- Fix build.xml (use a filtered copying to fill constants)
 
 * Marshalling
     - Reading links

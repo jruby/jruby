@@ -1013,17 +1013,13 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitNewlineNode(NewlineNode)
      */
     public void visitNewlineNode(NewlineNode iVisited) {
-        if (iVisited.getPosition() != null) {
-            threadContext.setPosition(iVisited.getPosition());
-
+        final ISourcePosition position = iVisited.getPosition();
+        if (position != null) {
+            threadContext.setPosition(position);
             if (isTrace()) {
-                callTraceFunction(
-                    "line",
-                        self
-                );
+                callTraceFunction("line", self);
             }
         }
-
         eval(iVisited.getNextNode());
     }
 

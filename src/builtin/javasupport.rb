@@ -63,7 +63,6 @@ module JavaUtilities
 
       proxy_class = new_proxy_class(java_class.name)
       proxy = proxy_class.new_proxy
-      proxy.extend(JavaProxy)   # FIXME: do this on the class level instead
       proxy.java_class = java_class
       proxy.java_object = java_object
       proxy
@@ -85,8 +84,8 @@ module JavaUtilities
 
       java_class = Java::JavaClass.for_name(java_class_name)
 
-      #proxy_class = Class.new(JavaProxy)  ... borken in jruby?
       proxy_class = Class.new
+      proxy_class.class_eval { include(JavaProxy) }
 
       proxy_class.class_eval("@java_class = java_class")
       proxy_classes[java_class_name] = proxy_class
@@ -106,7 +105,6 @@ module JavaUtilities
           args = JavaProxy.convert_arguments(args)
           java_object = constructor.new_instance(*args)
           result = new_proxy
-          result.extend(JavaProxy) # FIXME: do on class level instead
           result.java_class = @java_class
           result.java_object = java_object
           result
