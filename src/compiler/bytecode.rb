@@ -77,7 +77,8 @@ module JRuby
         def emit_jvm_bytecode(list, factory)
           # ..., receiver, arg1, arg2
 
-          list.append(factory.createNewArray(BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"), arity))
+          list.append(BCEL::ICONST.new(@arity))
+          list.append(factory.createNewArray(BCEL::ObjectType.new("org.jruby.runtime.builtin.IRubyObject"), @arity)) # is this argument really arity?
 
           # ..., receiver, arg1, arg2, args_array
 
