@@ -41,6 +41,7 @@ import org.jruby.internal.runtime.builtin.definitions.IODefinition;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.FileDescriptor;
 
 /**
  * 
@@ -50,6 +51,7 @@ import java.io.IOException;
 public class RubyIO extends RubyObject {
     protected RubyInputStream inStream = null;
     protected OutputStream outStream = null;
+    protected FileDescriptor outFileDescriptor = null;
 
     protected boolean sync = false;
 
@@ -76,6 +78,7 @@ public class RubyIO extends RubyObject {
         result.defineMethod("puts", CallbackFactory.getOptSingletonMethod(RubyIO.class, "puts"));
         result.defineMethod("lineno=", CallbackFactory.getMethod(RubyIO.class, "lineno_set", RubyFixnum.class));
         result.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
+        result.defineMethod("fsync", CallbackFactory.getMethod(RubyIO.class, "fsync"));
         result.defineSingletonMethod("foreach", CallbackFactory.getOptSingletonMethod(RubyIO.class, "foreach", IRubyObject.class));
         result.defineSingletonMethod("readlines", CallbackFactory.getOptSingletonMethod(RubyIO.class, "readlines"));
         return result;
@@ -360,6 +363,19 @@ public class RubyIO extends RubyObject {
      */
     public RubyBoolean sync() {
         return RubyBoolean.newBoolean(getRuntime(), sync);
+    }
+
+    public RubyFixnum fsync() {
+        checkWriteable();
+        try {
+            outStream.flush();
+            if (outFileDescriptor != null) {
+                outFileDescriptor.sync();
+            }
+        } catch (IOException e) {
+            throw IOError.fromException(runtime, e);
+        }
+        return RubyFixnum.zero(runtime);
     }
 
     /** Sets the current sync mode.

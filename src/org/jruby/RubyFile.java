@@ -68,10 +68,12 @@ public class RubyFile extends RubyIO {
         File file = new File(path);
         try {
             if (isReadable()) {
-        		this.inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
+                this.inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
             }
             if (isWriteable()) {
-        		this.outStream = new BufferedOutputStream(new FileOutputStream(file.getAbsolutePath(), append));
+                FileOutputStream fileOutput = new FileOutputStream(file.getAbsolutePath(), append);
+                this.outStream = new BufferedOutputStream(fileOutput);
+                this.outFileDescriptor = fileOutput.getFD();
             }
         } catch (IOException e) {
             throw IOError.fromException(runtime, e);

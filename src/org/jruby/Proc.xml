@@ -37,6 +37,7 @@
        <arity optional="true">0</arity>
     </method>
     <method-alias name="[]" original="call"/>
+    <method-alias name="yield" original="call"/>
     <method name="arity"/>
   </instance-methods>
 
