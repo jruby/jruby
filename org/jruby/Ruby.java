@@ -55,7 +55,7 @@ public final class Ruby {
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
 
     private RubyMethodCache methodCache;
-    
+
     public int stackTraces = 0;
 
     /** rb_global_tbl
@@ -173,7 +173,7 @@ public final class Ruby {
         RubyObject result = getRubyTopSelf().eval(getRubyParser().compileJavaString("<script>", script, script.length(), 1));
         return JavaUtil.convertRubyToJava(this, result, returnClass);
     }
-    
+
     /**
      * 
      * Prints out an error message.
@@ -182,9 +182,9 @@ public final class Ruby {
      */
     public void printException(Exception exception) {
         if (exception instanceof RaiseException) {
-            getRuntime().printError(((RaiseException)exception).getActException());
+            getRuntime().printError(((RaiseException) exception).getActException());
         } else if (exception instanceof ThrowJump) {
-            getRuntime().printError(((ThrowJump)exception).getNameError());
+            getRuntime().printError(((ThrowJump) exception).getNameError());
         } else if (exception instanceof BreakJump) {
             getRuntime().getErrorStream().println("break without block.");
         } else if (exception instanceof ReturnException) {
@@ -299,9 +299,7 @@ public final class Ruby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw new RubySecurityException(
-                this,
-                "Insecure operation '" + getRubyFrame().getLastFunc() + "' at level " + safeLevel);
+            throw new RubySecurityException(this, "Insecure operation '" + getRubyFrame().getLastFunc() + "' at level " + safeLevel);
         }
     }
 
@@ -400,7 +398,7 @@ public final class Ruby {
         CRefNode oldCRef = getCRef();
         setCRef(getRubyFrame().getCbase());
 
-        Scope oldScope = (Scope)getScope().getTop();
+        Scope oldScope = (Scope) getScope().getTop();
         getScope().setTop(tmpBlock.scope);
         // getScope().push(tmpBlock.scope);
 
@@ -473,10 +471,10 @@ public final class Ruby {
         } catch (ReturnException rExcptn) {
             // break;
             return rExcptn.getReturnValue();
-        /* catch (BreakException bExcptn) {
-            // +++
-            throw new ReturnException(getNil());
-            // ---*/
+            /* catch (BreakException bExcptn) {
+                // +++
+                throw new ReturnException(getNil());
+                // ---*/
         } finally {
             iter.pop();
             popClass();
@@ -560,7 +558,7 @@ public final class Ruby {
         // Init_heap();
         getScope().push(); // PUSH_SCOPE();
         // rubyScope.setLocalVars(null);
-        topScope = (Scope)getScope().getTop();
+        topScope = (Scope) getScope().getTop();
 
         setActMethodScope(Constants.SCOPE_PRIVATE);
 
@@ -879,15 +877,11 @@ public final class Ruby {
     /** defines a global variable with getter and setter methods
      * 
      */
-    public void defineHookedVariable(
-        String name,
-        RubyObject value,
-        RubyGlobalEntry.GetterMethod getter,
-        RubyGlobalEntry.SetterMethod setter) {
+    public void defineHookedVariable(String name, RubyObject value, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
 
         RubyGlobalEntry globalEntry = getGlobalEntry(name);
 
-        globalEntry.setData(value);
+        globalEntry.setInternalData(value);
         globalEntry.setGetter(getter != null ? getter : RubyGlobalEntry.valueMethods);
         globalEntry.setSetter(setter != null ? setter : RubyGlobalEntry.valueMethods);
     }
@@ -906,10 +900,7 @@ public final class Ruby {
         defineHookedVariable(name, value, null, RubyGlobalEntry.readonlySetter);
     }
 
-    public void defineVirtualVariable(
-        String name,
-        RubyGlobalEntry.GetterMethod getter,
-        RubyGlobalEntry.SetterMethod setter) {
+    public void defineVirtualVariable(String name, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
         getter = getter != null ? getter : RubyGlobalEntry.valueMethods;
         setter = setter != null ? setter : RubyGlobalEntry.readonlySetter;
 

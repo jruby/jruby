@@ -50,15 +50,15 @@ public class TestRubyTime extends TestCase {
 
     public TestRubyTime(String name) {
         super(name);
-    } 
-    
+    }
+
     public void setUp() {
         ruby = new Ruby();
         ruby.init();
         rubyTime = ruby.getClasses().getTimeClass();
         RubyObject[] args = new RubyObject[1];
-	args[0] = new RubyFixnum(ruby, 18000000);
-        nineTeenSeventy = RubyTime.s_at(ruby, RubyTime.s_new(ruby, rubyTime), args);
+        args[0] = new RubyFixnum(ruby, 18000000);
+        nineTeenSeventy = RubyTime.s_at(ruby, rubyTime, args);
     }
 
     public void testTimeCreated() {
@@ -69,9 +69,9 @@ public class TestRubyTime extends TestCase {
     public void testTimeNow() {
         RubyTime myTime = RubyTime.s_new(ruby, rubyTime);
         try {
-           Thread.sleep(1000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
-           fail("Unexpected InterruptedException");
+            fail("Unexpected InterruptedException");
         }
         Date now = new Date();
         assertTrue(now.after(myTime.getJavaDate()));
@@ -83,9 +83,8 @@ public class TestRubyTime extends TestCase {
     }
 
     public void testGmtimeAndZone() {
-        Date myDate = new Date(18000000); 
+        Date myDate = new Date(18000000);
         assertEquals("GMT", nineTeenSeventy.gmtime(ruby).zone(ruby).getValue());
     }
 
 }
-

@@ -149,7 +149,7 @@ public class JRubyEngine extends BSFEngineImpl {
         int size = declaredBeans.size();
         for (int i = 0; i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
-            BeanAccessor accessor = new BeanAccessor(ruby, bean);
+            BeanAccessor accessor = new BeanAccessor(bean);
             ruby.defineVirtualVariable(bean.name, accessor, accessor);
         }
 
@@ -157,7 +157,7 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
-        BeanAccessor accessor = new BeanAccessor(ruby, bean);
+        BeanAccessor accessor = new BeanAccessor(bean);
         ruby.defineVirtualVariable(bean.name, accessor, accessor);
     }
 
@@ -171,25 +171,23 @@ public class JRubyEngine extends BSFEngineImpl {
 
 
     private static class BeanAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
-        private Ruby ruby;
         private BSFDeclaredBean bean;
 
-        protected BeanAccessor(Ruby ruby, BSFDeclaredBean bean) {
-            this.ruby = ruby;
+        protected BeanAccessor(BSFDeclaredBean bean) {
             this.bean = bean;
         }
 
         /*
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
          */
-        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
+        public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
             return JavaUtil.convertJavaToRuby(ruby, bean.bean);
         }
 
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             bean.bean = JavaUtil.convertRubyToJava(ruby, value, bean.type);
         }
     }

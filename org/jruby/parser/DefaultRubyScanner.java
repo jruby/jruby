@@ -65,8 +65,9 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         private boolean lex_file_io; //true, if scanner source is a file and false, if lex_get_str() shall be used.
     */
 
-    private MarkFilterScannerSource markFilterSource;
-    private LineFilterScannerSource source;
+    // private MarkFilterScannerSource markFilterSource;
+    // private LineFilterScannerSource source;
+    private LineBufferScannerSource source;
     private IScannerSupport support;
 
     // deal with tokens..................
@@ -877,8 +878,11 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 break;
         }
         
-        markFilterSource.mark();
-        support.readLine();
+        // markFilterSource.mark();
+        // support.readLine();
+        int bufferLine = source.getLine();
+        int bufferColumn = source.getColumn();
+        String buffer = support.readLine() + '\n';
 
         String eos = tok();
 
@@ -894,7 +898,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 return 0;
             } else if ((indent && line.trim().startsWith(eos)) || line.startsWith(eos)) {
                 if (line.trim().length() == eos.length()) {
-                    source.addCurrentLine();
+                    // source.addCurrentLine();
                     break;
                 }
             }
@@ -935,7 +939,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         return 0;
                 }
                 if (source.isEOL()) {
-                    source.addCurrentLine();
+                    // source.addCurrentLine();
                     break;
                 }
             }
@@ -945,7 +949,8 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         ph.setHeredocEnd(ruby.getSourceLine());
         ruby.setSourceLine(linesave);
 
-        markFilterSource.reset();
+        //markFilterSource.reset();
+        source.setBufferLine(buffer, bufferLine, bufferColumn);
 
         if (list != null) {
             list.setLine(linesave + 1);
@@ -2091,8 +2096,9 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
      * @param source The source to set
      */
     public void setSource(IScannerSource source) {
-        this.markFilterSource = new MarkFilterScannerSource(source);
-        this.source = new LineFilterScannerSource(markFilterSource);
+        // this.markFilterSource = new MarkFilterScannerSource(source);
+        // this.source = new LineFilterScannerSource(markFilterSource);
+        this.source = new LineBufferScannerSource(source);
 
         this.support = new DefaultScannerSupport(this.source);
     }

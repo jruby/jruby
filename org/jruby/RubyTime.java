@@ -2,9 +2,8 @@
  * RubyTime.java - No description
  * Created on 1. Dec 2001, 15:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
@@ -30,6 +29,7 @@
  */
 package org.jruby;
 
+import java.text.*;
 import java.util.*;
 
 import org.jruby.runtime.*;
@@ -38,7 +38,6 @@ import org.jruby.runtime.*;
  * @author chadfowler
  */
 public class RubyTime extends RubyObject {
-
     private Calendar cal;
 
     public RubyTime(Ruby ruby, RubyClass rubyClass) {
@@ -51,6 +50,12 @@ public class RubyTime extends RubyObject {
 
         timeClass.defineSingletonMethod("new", s_new);
         timeClass.defineSingletonMethod("now", s_new);
+        
+        timeClass.defineMethod("-", CallbackFactory.getMethod(RubyTime.class, "op_minus", RubyObject.class));
+
+        timeClass.defineMethod("to_s", CallbackFactory.getMethod(RubyTime.class, "to_s"));
+        timeClass.defineMethod("inspect", CallbackFactory.getMethod(RubyTime.class, "to_s"));
+
         return timeClass;
     }
 
@@ -62,7 +67,7 @@ public class RubyTime extends RubyObject {
 
     public static RubyTime s_at(Ruby ruby, RubyObject rubyClass, RubyObject[] args) {
         long secs = RubyNumeric.num2long(args[0]);
-        RubyTime time = new RubyTime(ruby, (RubyClass) rubyClass.getRubyClass());
+        RubyTime time = new RubyTime(ruby, (RubyClass) rubyClass);
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTime(new Date(secs));
         time.setJavaCalendar(cal);
@@ -76,6 +81,28 @@ public class RubyTime extends RubyObject {
 
     public RubyString zone(Ruby ruby) {
         return RubyString.newString(ruby, cal.getTimeZone().getID());
+    }
+    
+    public RubyObject op_minus(RubyObject other) {
+        long time = cal.getTimeInMillis();
+
+        if (other instanceof RubyTime) {
+            time -= ((RubyTime)other).cal.getTimeInMillis();
+        } else {
+            time -= (RubyNumeric.fix2long(other) * 1000);
+        }
+        
+        RubyTime newTime = new RubyTime(ruby, getRubyClass());
+        newTime.cal = Calendar.getInstance();
+        newTime.cal.setTime(new Date(time));
+        
+		return newTime;
+    }
+    
+    public RubyString to_s() {
+        String result = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy").format(cal.getTime());
+
+        return RubyString.newString(ruby, result);
     }
 
     public void setJavaCalendar(Calendar cal) {

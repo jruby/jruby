@@ -84,7 +84,7 @@ public class RubyArgsFile extends RubyObject {
             } else {
                 next_p = -1;
                 currentFile = (RubyIO) ruby.getGlobalVar("$stdin");
-                ruby.getGlobalEntry("$FILENAME").setData(RubyString.newString(ruby, "-"));
+                ruby.getGlobalEntry("$FILENAME").setInternalData(RubyString.newString(ruby, "-"));
             }
             init_p = true;
             first_p = false;
@@ -95,7 +95,7 @@ public class RubyArgsFile extends RubyObject {
         if (next_p == 1) {
             next_p = 0;
             if (args.getLength() > 0) {
-                ruby.getGlobalEntry("$FILENAME").setData(args.shift());
+                ruby.getGlobalEntry("$FILENAME").setInternalData(args.shift());
                 String filename = ruby.getGlobalVar("$FILENAME").toString();
                 if (filename.equals("-")) {
                     currentFile = (RubyIO) ruby.getGlobalVar("$stdin");

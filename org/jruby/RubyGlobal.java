@@ -503,9 +503,9 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            ((RubyArgsFile) entry.getRuby().getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
-            entry.setData(value);
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+            ((RubyArgsFile) ruby.getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
+            entry.setInternalData(value);
         }
     }
 
@@ -513,11 +513,11 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             if (!value.isNil() && value.kind_of(entry.getRuby().getClasses().getExceptionClass()).isFalse()) {
-                throw new TypeError(entry.getRuby(), "assigning non-exception to $!");
+                throw new TypeError(ruby, "assigning non-exception to $!");
             }
-            entry.setData(value);
+            entry.setInternalData(value);
         }
     }
 
@@ -525,11 +525,11 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             if (!(value instanceof RubyString)) {
-                throw new TypeError(entry.getRuby(), "value of " + id + " must be a String");
+                throw new TypeError(ruby, "value of " + entry.getName() + " must be a String");
             }
-            entry.setData(value);
+            entry.setInternalData(value);
         }
     }
 
@@ -537,16 +537,14 @@ public class RubyGlobal {
         /*
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
          */
-        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
-            return RubyFixnum.newFixnum(entry.getRuby(), entry.getRuby().getSafeLevel());
+        public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
+            return RubyFixnum.newFixnum(ruby, ruby.getSafeLevel());
         }
 
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            Ruby ruby = entry.getRuby();
-
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             int level = RubyFixnum.fix2int(value);
 
             if (level < ruby.getSafeLevel()) {
@@ -562,9 +560,7 @@ public class RubyGlobal {
         /*
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
          */
-        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
-            Ruby ruby = entry.getRuby();
-            
+        public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
             RubyObject errorInfo = ruby.getGlobalVar("$!");
             
             return errorInfo.isNil() ? ruby.getNil() : errorInfo.funcall("backtrace");
@@ -573,9 +569,7 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            Ruby ruby = entry.getRuby();
-
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             if (ruby.getGlobalVar("$!").isNil()) {
                 throw new RubyArgumentException(ruby, "$! not set.");
             }
@@ -588,15 +582,15 @@ public class RubyGlobal {
         /*
          * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
          */
-        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
-            return entry.getRuby().getParserHelper().getLastline();
+        public RubyObject get(Ruby ruby, RubyGlobalEntry entry) {
+            return ruby.getParserHelper().getLastline();
         }
 
         /*
          * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            entry.getRuby().getParserHelper().setLastline(value);
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+            ruby.getParserHelper().setLastline(value);
         }
     }
 
@@ -604,17 +598,17 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            if (value == data) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+            if (value == entry.getInternalData()) {
                 return;
             } else if (!(value instanceof RubyIO)) {
-                entry.setData(value);
+                entry.setInternalData(value);
                 return;
             } else {
                 ((RubyIO) value).checkReadable();
                 // ((RubyIO)value).fileno = 0;
 
-                entry.setData(value);
+                entry.setInternalData(value);
             }
         }
     }
@@ -623,17 +617,17 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            if (value == data) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+            if (value == entry.getInternalData()) {
                 return;
             } else if (!(value instanceof RubyIO)) {
-                entry.setData(value);
+                entry.setInternalData(value);
                 return;
             } else {
                 ((RubyIO) value).checkWriteable();
                 //((RubyIO)value).fileno = 0;
 
-                entry.setData(value);
+                entry.setInternalData(value);
             }
         }
     }
@@ -642,17 +636,17 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            if (value == data) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
+            if (value == entry.getInternalData()) {
                 return;
             } else if (!(value instanceof RubyIO)) {
-                entry.setData(value);
+                entry.setInternalData(value);
                 return;
             } else {
                 ((RubyIO) value).checkWriteable();
                 // ((RubyIO)value).f= 0;
 
-                entry.setData(value);
+                entry.setInternalData(value);
             }
         }
     }
@@ -661,12 +655,12 @@ public class RubyGlobal {
         /*
          * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
          */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+        public void set(Ruby ruby, RubyGlobalEntry entry, RubyObject value) {
             if (value.respond_to(RubySymbol.newSymbol(entry.getRuby(), "write")).isFalse()) {
                 throw new TypeError(entry.getRuby(), "$> must have write method, " + value.type().toName() + " given");
             }
 
-            entry.setData(value);
+            entry.setInternalData(value);
         }
     }
 }

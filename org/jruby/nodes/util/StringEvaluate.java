@@ -33,6 +33,7 @@ package org.jruby.nodes.util;
 import org.jruby.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
+import org.jruby.runtime.*;
 
 /**
  *
@@ -40,26 +41,52 @@ import org.jruby.nodes.types.*;
  */
 public class StringEvaluate {
     public static RubyObject eval(Ruby ruby, RubyObject self, Node node) {
-        Node list = node.getNextNode();
+        StringBuffer sb = new StringBuffer();
         
-        RubyString str = (RubyString)node.getLiteral();
-        RubyString str2 = (RubyString)node.getNextNode().getHeadNode().getLiteral();
+        sb.append(node.getLiteral().toString());
+        
+        // = (RubyString)node.getNextNode().getHeadNode().getLiteral();
+
+        Node list = node.getNextNode();
         
         while (list != null) {
             if (list.getHeadNode() != null) {
-                Node head = list.getHeadNode();
+                switch (list.getHeadNode().getType()) {
+                    case Constants.NODE_STR: 
+                    	sb.append(list.getHeadNode().getLiteral().toString());
+                    	break;
+                   	case Constants.NODE_EVSTR:
+                   	    ruby.setSourceLine(node.getLine());
+						ruby.setInEval(ruby.getInEval() + 1);
+
+						list.setHeadNode(ruby.getRubyParser().compileString(ruby.getSourceFile(), list.getHeadNode().getLiteral(), node.getLine()));
+
+						ruby.getParserHelper().setEvalTree(null);
+						ruby.setInEval(ruby.getInEval() - 1);
+
+						// if (ruby_nerrs > 0) {
+						//    compile_error("string expansion");
+						// }
+						// if (!NIL_P(result)) ruby_errinfo = result;
+
+						// Evaluate the new compiled Node
+					default:
+						sb.append(list.getHeadNode().eval(ruby, self).toString());
+                }
+                
+                /*Node head = list.getHeadNode();
                 if (head instanceof StringExpandableNode) {
                     str2 = ((StringExpandableNode)head).expandString(ruby, self, list);
                 } else {
                     str2 = (RubyString)head.eval(ruby, self).convertType(RubyString.class, "String", "to_s");
-                }
+                }*/
                 
-                str.concat(str2);
+                // str.concat(str2);
                 // str.infectObject(str2);
             }
             list = list.getNextNode();
         }
         
-        return ((StringEvaluableNode)node).evalString(ruby, self, str);
+        return ((StringEvaluableNode)node).evalString(ruby, self, RubyString.newString(ruby, sb.toString()));
     }
 }

@@ -254,26 +254,24 @@ public class RubyObject {
         kernelModule.defineAlias("===", "==");
         kernelModule.defineAlias("equal?", "==");
 
-		Ruby ruby = kernelModule.getRuby();
+        Ruby ruby = kernelModule.getRuby();
 
         ruby.defineGlobalFunction("method_missing", CallbackFactory.getOptMethod(RubyObject.class, "method_missing", RubyObject.class));
     }
-    
+
     // Some helper functions:
-    
+
     protected int argCount(RubyObject[] args, int min, int max) {
         int len = args.length;
         if (len < min || (max > -1 && len > max)) {
-            throw new RubyArgumentException(getRuby(), "Wrong # of arguments for method. " + args.length +
-                         " is not in Range " + min + ".." + max);
+            throw new RubyArgumentException(getRuby(), "Wrong # of arguments for method. " + args.length + " is not in Range " + min + ".." + max);
         }
         return len;
     }
-    
+
     protected RubyBoolean toBoolean(boolean value) {
         return value ? ruby.getTrue() : ruby.getFalse();
     }
-    
 
     /** rb_special_const_p
      *
@@ -519,9 +517,7 @@ public class RubyObject {
                 throw new RubyArgumentException(getRuby(), "block not supplied");
             } else if (args.length > 3) {
                 String lastFuncName = ruby.getRubyFrame().getLastFunc();
-                throw new RubyArgumentException(
-                    getRuby(),
-                    "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
+                throw new RubyArgumentException(getRuby(), "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
             }
             /*
             if (ruby.getSecurityLevel() >= 4) {
@@ -967,8 +963,7 @@ public class RubyObject {
         // ---
 
         Ruby ruby = getRuby();
-        throw new NameError(
-            ruby,
+        throw new NameError(ruby,
             ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for '" + type().toName() + '\'');
     }
 

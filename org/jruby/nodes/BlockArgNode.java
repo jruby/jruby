@@ -49,7 +49,12 @@ public class BlockArgNode extends Node {
             throw new RuntimeException("BUG: unexpected block argument");
         } else if (ruby.isBlockGiven()) {
             // Create Proc object
-            RubyObject result = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+            RubyProc result = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+
+            // +++ Don't know if it helps
+            result.getBlock().scope = (Scope)ruby.getScope().getTop().getNext();
+            // ---
+
             ruby.getScope().setValue(getCount(), result);
             return result;
         } else {

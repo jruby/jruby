@@ -36,7 +36,7 @@ import org.jruby.nodes.visitor.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
-/**
+/** A #{} construct.
  *
  * @author  jpetersen
  * @version $Revision$

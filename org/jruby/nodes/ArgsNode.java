@@ -2,10 +2,8 @@
  * ArgsNode.java - No description
  * Created on 05. November 2001, 21:15
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
- * Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
  * JRuby - http://jruby.sourceforge.net
@@ -27,7 +25,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.nodes;
 
 import org.jruby.*;
@@ -53,26 +50,25 @@ import org.jruby.runtime.*;
  * @author  jpetersen
  */
 public class ArgsNode extends Node {
-	/**
-	 * 
-	 * @param optNode  Node describing the optional arguments
-	 * This Block will contain assignments to locals (LAsgnNode)
-	 * @param rest  index of the rest argument in the local table
-	 * 				(the array argument prefixed by a * which collects 
-	 * 				all additional params)
-	 * 				or -1 if there is none.
-	 * @param count number of regular arguments
-	 **/
+    /**
+     * 
+     * @param optNode  Node describing the optional arguments
+     * This Block will contain assignments to locals (LAsgnNode)
+     * @param rest  index of the rest argument in the local table
+     * 				(the array argument prefixed by a * which collects 
+     * 				all additional params)
+     * 				or -1 if there is none.
+     * @param count number of regular arguments
+     **/
     public ArgsNode(Node optNode, int rest, int count) {
         super(Constants.NODE_ARGS, optNode, rest, count);
     }
 
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitArgsNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitArgsNode(this);
+    }
 }
