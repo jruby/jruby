@@ -82,7 +82,7 @@ public class RubyFile extends RubyIO {
     }
 
 	private static String separator() {
-		return java.io.File.separator;
+		return "/";
 	}
 
 	/*
@@ -172,15 +172,37 @@ public class RubyFile extends RubyIO {
         return RubyBoolean.newBoolean(recv.getRuntime(), new File(filename.toString()).exists());
     }
 
-    public static RubyString dirname(IRubyObject recv, RubyString filename) {
+	public static RubyString dirname(IRubyObject recv, RubyString filename) {
 		String name = filename.toString();
+		
 		int index = name.lastIndexOf(separator());
+		boolean alt = false;
+				
 		if (index == -1) {
-			return RubyString.newString(recv.getRuntime(), ".");
-		} else if (index == 0) {
-			return RubyString.newString(recv.getRuntime(), separator());
+			index = name.lastIndexOf(altSeparator());
+			
+			if (index == -1) {
+				return RubyString.newString(recv.getRuntime(), "."); 
+			} else
+			{
+				alt = true;
+			}
 		}
-		return RubyString.newString(recv.getRuntime(), name.substring(0, index));
+		
+		
+		if (index == 0) {
+			return RubyString.newString(recv.getRuntime(), alt ? altSeparator() : separator());
+		} else {		
+			return RubyString.newString(recv.getRuntime(), name.substring(0, index));
+		}
+	}
+	
+	/**
+	 * @return alternate DOS separator
+	 */
+	private static String altSeparator()
+	{
+		return "\\";
 	}
 
     public static RubyString basename(IRubyObject recv, IRubyObject[] args) {
