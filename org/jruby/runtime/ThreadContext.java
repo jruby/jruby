@@ -173,7 +173,7 @@ public class ThreadContext {
 
         getIterStack().push(currentBlock.getIter());
 
-        RubyObject[] args = prepareArguments(value, self, currentBlock, checkArguments);
+        RubyObject[] args = prepareArguments(value, self, currentBlock.getVar(), checkArguments);
 
         try {
             while (true) {
@@ -201,10 +201,8 @@ public class ThreadContext {
         }
     }
 
-    private RubyObject[] prepareArguments(IRubyObject value, IRubyObject self, Block currentBlock, boolean checkArguments) {
-        INode blockVariableNode = currentBlock.getVar();
-
-        value = prepareBlockVariable(blockVariableNode, checkArguments, value, self);
+    private RubyObject[] prepareArguments(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
+        value = prepareBlockVariable(value, self, blockVariableNode, checkArguments);
 
         if (blockVariableNode == null) {
             if (checkArguments && value instanceof RubyArray && ((RubyArray) value).getLength() == 1) {
@@ -212,16 +210,18 @@ public class ThreadContext {
             }
         }
 
-        RubyObject[] result;
-        if (value instanceof RubyArray) {
-            result = ((RubyArray) value).toJavaArray();
-        } else {
-            result = new RubyObject[] { value.toRubyObject() };
-        }
-        return result;
+        return arrayify(value);
     }
 
-    private IRubyObject prepareBlockVariable(INode blockVariableNode, boolean checkArguments, IRubyObject value, IRubyObject self) {
+    private RubyObject[] arrayify(IRubyObject value) {
+        if (value instanceof RubyArray) {
+            return ((RubyArray) value).toJavaArray();
+        } else {
+            return new RubyObject[] { value.toRubyObject() };
+        }
+    }
+
+    private IRubyObject prepareBlockVariable(IRubyObject value, IRubyObject self, INode blockVariableNode, boolean checkArguments) {
         if (blockVariableNode == null) {
             return value;
         }
