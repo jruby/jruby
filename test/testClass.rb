@@ -35,20 +35,13 @@ test_ok(f.kind_of?(Froboz))
 test_ok(f.kind_of?(Enumerable))
 
 class CM1
-  def a
-    A
-  end
 end
 
 class CM2
-  def a
-    A
-  end
-
   def CM2::constant_missing
     "A"
   end
 end
 
-test_exception(NameError) {CM1.new.a}
-test_equal(CM2.new.a, "A")
+test_exception(NameError) {CM1::A}
+test_equal(CM2::A, "A")
