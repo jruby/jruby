@@ -27,25 +27,57 @@
 -->
 
 <module type="class">
-  <name>Fixnum</name>
-  <superclass>Integer</superclass>
-  <includes>Precision</includes>
-  <implementation>org.jruby.RubyFixnum</implementation>
+  <name>Float</name>
+  <superclass>Numeric</superclass>
+  <implementation>org.jruby.RubyFloat</implementation>
 
   <instance-methods>
+    <method name="ceil"/>
+    <method name="finite?">
+      <java>finite_p</java>
+    </method>
+    <method name="floor"/>
+    <method name="infinite?">
+      <java>infinite_p</java>
+    </method>
+    <method name="nan?">
+      <java>nan_p</java>
+    </method>
+    <method name="round"/>
+    <method name="truncate"/>
     <method name="to_f"/>
     <method name="to_i"/>
     <method name="to_s"/>
-    <method-alias name="to_str" original="to_s"/>
-    <method name="taint"/>
-    <method name="freeze"/>
-    <method name="&lt;&lt;">
-      <arity>1</arity>
-      <java>op_lshift</java>
+    <method name="zero?">
+      <java>zero_p</java>
     </method>
-    <method name=">>">
+    <method name="&lt;">
       <arity>1</arity>
-      <java>op_rshift</java>
+      <java>op_lt</java>
+    </method>
+    <method name="&lt;=">
+      <arity>1</arity>
+      <java>op_le</java>
+    </method>
+    <method name="&lt;=>">
+      <arity>1</arity>
+      <java>op_cmp</java>
+    </method>
+    <method name=">">
+      <arity>1</arity>
+      <java>op_gt</java>
+    </method>
+    <method name=">=">
+      <arity>1</arity>
+      <java>op_ge</java>
+    </method>
+    <method name="%">
+      <arity>1</arity>
+      <java>op_mod</java>
+    </method>
+    <method name="/">
+      <arity>1</arity>
+      <java>op_div</java>
     </method>
     <method name="+">
       <arity>1</arity>
@@ -59,76 +91,25 @@
       <arity>1</arity>
       <java>op_mul</java>
     </method>
-    <method name="/">
-      <arity>1</arity>
-      <java>op_div</java>
-    </method>
-    <method name="%">
-      <arity>1</arity>
-      <java>op_mod</java>
-    </method>
     <method name="**">
       <arity>1</arity>
       <java>op_pow</java>
     </method>
-    <method name="==">
-      <arity>1</arity>
-      <java>equal</java>
-    </method>
     <method name="eql?">
       <arity>1</arity>
-      <java>veryEqual</java>
+      <java>op_eql</java>
     </method>
-    <method-alias name="equal?" original="eql?"/>
-    <method name="&lt;=>">
+    <method name="==">
       <arity>1</arity>
-      <java>op_cmp</java>
+      <java>op_equal</java>
     </method>
-    <method name=">">
-      <arity>1</arity>
-      <java>op_gt</java>
-    </method>
-    <method name=">=">
-      <arity>1</arity>
-      <java>op_ge</java>
-    </method>
-    <method name="&lt;">
-      <arity>1</arity>
-      <java>op_lt</java>
-    </method>
-    <method name="&lt;=">
-      <arity>1</arity>
-      <java>op_le</java>
-    </method>
-    <method name="&amp;">
-      <arity>1</arity>
-      <java>op_and</java>
-    </method>
-    <method name="|">
-      <arity>1</arity>
-      <java>op_or</java>
-    </method>
-    <method name="^">
-      <arity>1</arity>
-      <java>op_xor</java>
-    </method>
-    <method name="size"/>
-    <method name="[]">
-      <arity>1</arity>
-      <java>aref</java>
-    </method>
+    <method-alias name="===" original="=="/>
     <method name="hash"/>
-    <method name="id2name"/>
-    <method name="~">
-      <java>invert</java>
-    </method>
-    <method name="id"/>
   </instance-methods>
 
   <class-methods>
     <method name="induced_from">
-      <arity>1</arity>
+       <arity>1</arity>
     </method>
   </class-methods>
-
 </module>

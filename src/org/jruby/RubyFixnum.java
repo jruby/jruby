@@ -3,9 +3,11 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2002 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -42,6 +44,8 @@ import org.jruby.internal.runtime.builtin.definitions.FixnumDefinition;
 public class RubyFixnum extends RubyInteger implements IndexCallable {
     private long value;
     private static final int BIT_SIZE = 64;
+    public static final long MAX = (1L<<(BIT_SIZE - 2)) - 1;
+    public static final long MIN = -1 * MAX - 1;
     private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
 
     public RubyFixnum(Ruby ruby) {
@@ -54,11 +58,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public static RubyClass createFixnumClass(Ruby runtime) {
-        RubyClass fixnumClass = new FixnumDefinition(runtime).getType();
-
-        fixnumClass.includeModule(runtime.getClasses().getPrecisionModule());
-
-        return fixnumClass;
+        return new FixnumDefinition(runtime).getType();
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
@@ -67,6 +67,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
             return aref(args[0]);
         case FixnumDefinition.TO_F:
             return to_f();
+        case FixnumDefinition.TO_I:
+            return to_i();
         case FixnumDefinition.TO_S:
             return to_s();
         case FixnumDefinition.OP_LSHIFT:
@@ -85,6 +87,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
             return op_mod(args[0]);
         case FixnumDefinition.OP_POW:
             return op_pow(args[0]);
+        case FixnumDefinition.VERYEQUAL:
+            return veryEqual(args[0]);
         case FixnumDefinition.EQUAL:
             return equal(args[0]);
         case FixnumDefinition.OP_CMP:
@@ -181,15 +185,14 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         return newFixnum(runtime, value);
     }
 
-    public static RubyInteger induced_from(IRubyObject recv, IRubyObject number) {
-        if (number instanceof RubyFixnum) {
-            return (RubyFixnum) number;
-        } else if (number instanceof RubyFloat) {
-            return ((RubyFloat) number).to_i();
-        } else if (number instanceof RubyBignum) {
-            return RubyFixnum.newFixnum(recv.getRuntime(), ((RubyBignum) number).getLongValue());
-        }
-        return (RubyFixnum) number.convertToType("Fixnum", "to_int", true);
+    public static RubyInteger induced_from(IRubyObject recv, 
+					   IRubyObject number) {
+	// For undocumented reasons ruby allows Symbol as parm for Fixnum.
+	if (number instanceof RubySymbol) {
+            return (RubyInteger) number.callMethod("to_i");
+	} 
+
+	return RubyInteger.induced_from(recv, number);
     }
 
     public RubyNumeric op_plus(IRubyObject num) {
@@ -201,7 +204,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         } else {
             long otherValue = other.getLongValue();
             long result = value + otherValue;
-            if ((value < 0 && otherValue < 0 && result > 0) || (value > 0 && otherValue > 0 && result < 0)) {
+            if ((value < 0 && otherValue < 0 && (result > 0 || result < -MAX)) || 
+                (value > 0 && otherValue > 0 && (result < 0 || result > MAX))) {
                 return RubyBignum.newBignum(getRuntime(), value).op_plus(other);
             }
             return newFixnum(result);
@@ -217,7 +221,8 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         } else {
             long otherValue = other.getLongValue();
             long result = value - otherValue;
-            if ((value < 0 && otherValue > 0 && result > 0) || (value > 0 && otherValue < 0 && result < 0)) {
+            if ((value <= 0 && otherValue >= 0 && (result > 0 || result < -MAX)) || 
+		(value >= 0 && otherValue <= 0 && (result < 0 || result > MAX))) {
                 return RubyBignum.newBignum(getRuntime(), value).op_minus(other);
             }
             return newFixnum(result);
@@ -233,10 +238,10 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         } else {
             long otherValue = other.getLongValue();
             long result = value * otherValue;
-            if (result / otherValue == value) {
-                return newFixnum(result);
-            } else {
+            if (result > MAX || result < MIN || result / otherValue != value) {
                 return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mul(other);
+            } else {
+                return newFixnum(result);
             }
         }
     }
@@ -248,7 +253,17 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_div(other);
         } else {
-            return newFixnum(getRuntime(), getLongValue() / other.getLongValue());
+	    // Java / and % are not the same as ruby
+	    long x = getLongValue();
+	    long y = other.getLongValue();
+	    long div = x / y;
+	    long mod = x % y;
+
+	    if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+		div -= 1;
+	    }
+
+            return newFixnum(getRuntime(), div);
         }
     }
 
@@ -259,7 +274,17 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mod(other);
         } else {
-            return newFixnum(getRuntime(), getLongValue() % other.getLongValue());
+	    // Java / and % are not the same as ruby
+	    long x = getLongValue();
+	    long y = other.getLongValue();
+	    long div = x / y;
+	    long mod = x % y;
+
+	    if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
+		mod += y;
+	    }
+
+            return newFixnum(getRuntime(), mod);
         }
     }
 
@@ -280,12 +305,22 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         }
     }
 
-    public RubyBoolean equal(IRubyObject other) {
-        if (!(other instanceof RubyNumeric)) {
+    public RubyBoolean veryEqual(IRubyObject other) {
+        if (other instanceof RubyFixnum == false) {
             return getRuntime().getFalse();
-        } else {
-            return RubyBoolean.newBoolean(getRuntime(), compareValue((RubyNumeric) other) == 0);
-        }
+        } 
+          
+	return RubyBoolean.newBoolean(getRuntime(), 
+				      compareValue((RubyNumeric) other) == 0);
+    }
+
+    public RubyBoolean equal(IRubyObject other) {
+        if (other instanceof RubyNumeric == false) {
+            return getRuntime().getFalse();
+        } 
+          
+	return RubyBoolean.newBoolean(getRuntime(), 
+				      compareValue((RubyNumeric) other) == 0);
     }
 
     public RubyNumeric op_cmp(IRubyObject num) {
@@ -326,10 +361,24 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         long width = other.getLongValue();
         if (width < 0)
             return op_rshift(other.op_uminus());
-        if (width > BIT_SIZE || value >>> (BIT_SIZE - width) > 0) {
-            RubyBignum lBigValue = new RubyBignum(runtime, RubyBignum.bigIntValue(this));
-            return lBigValue.op_lshift(other);
-        }
+        if (value > 0) {
+	    if (width >= BIT_SIZE - 2 ||
+		value >> (BIT_SIZE - width) > 0) {
+		RubyBignum lBigValue = 
+		    RubyBignum.newBignum(runtime, 
+					 RubyBignum.bigIntValue(this));
+		return lBigValue.op_lshift(other);
+	    }
+	} else {
+	    if (width >= BIT_SIZE - 1 ||
+		value >> (BIT_SIZE - width) < -1) {
+		RubyBignum lBigValue = 
+		    RubyBignum.newBignum(runtime, 
+					 RubyBignum.bigIntValue(this));
+		return lBigValue.op_lshift(other);
+	    }
+	}
+
         return newFixnum(value << width);
     }
 
@@ -338,7 +387,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         long width = other.getLongValue();
         if (width < 0)
             return op_lshift(other.op_uminus());
-        return newFixnum(value >>> width);
+        return newFixnum(value >> width);
     }
 
     public RubyNumeric op_and(IRubyObject other) {
@@ -367,14 +416,22 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         return newFixnum((long) Math.ceil(BIT_SIZE / 8.0));
     }
 
-    public RubyFixnum aref(IRubyObject position) {
-        RubyNumeric numericPosition = numericValue(position);
-        long mask = 1 << numericPosition.getLongValue();
-        return newFixnum((value & mask) == 0 ? 0 : 1);
+    public RubyFixnum aref(IRubyObject other) {
+        RubyNumeric numericPosition = numericValue(other);
+	long position = numericPosition.getLongValue();
+
+	// Seems mighty expensive to keep creating over and over again.
+	// How else can this be done though?
+	if (position > BIT_SIZE) {
+	    RubyBignum bignum = RubyBignum.newBignum(runtime, value);
+	    return bignum.aref(numericPosition);
+	}
+
+        return newFixnum((value & (1L << position)) == 0 ? 0 : 1);
     }
 
-    public RubySymbol id2name() {
-        return RubySymbol.getSymbol(runtime, value);
+    public RubyString id2name() {
+        return (RubyString) RubySymbol.getSymbol(runtime, value).to_s();
     }
 
     public RubyFixnum invert() {

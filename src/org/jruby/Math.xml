@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<!--
+ Copyright (C) 2002 Thomas E Enebo <enebo@acm.org>
+
+ JRuby - http://jruby.sourceforge.net
+
+ This file is part of JRuby
+
+ JRuby is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License or
+ under the terms of the GNU Lesser General Public License as
+ published by the Free Software Foundation; either version 2 of the
+ License, or (at your option) any later version.
+
+ JRuby is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License and GNU Lesser General Public License
+ for more details.
+
+ You should have received a copy of the GNU General Public
+ License and GNU Lesser General Public License along with JRuby;
+ if not, write to
+ the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ Boston, MA  02111-1307 USA
+-->
+
+<module type="module">
+  <name>Math</name>
+  <implementation>org.jruby.RubyMath</implementation>
+  <index-offset>0x6700</index-offset>
+
+  <class-methods>
+    <method name="atan2">
+      <arity>2</arity>
+    </method>
+    <method name="cos">
+      <arity>1</arity>
+    </method>
+    <method name="exp">
+      <arity>1</arity>
+    </method>
+    <method name="frexp">
+      <arity>1</arity>
+    </method>
+    <method name="ldexp">
+      <arity>2</arity>
+    </method>
+    <method name="log">
+      <arity>1</arity>
+    </method>
+    <method name="log10">
+      <arity>1</arity>
+    </method>
+    <method name="sin">
+      <arity>1</arity>
+    </method>
+    <method name="sqrt">
+      <arity>1</arity>
+    </method>
+    <method name="tan">
+      <arity>1</arity>
+    </method>
+  </class-methods>
+</module>

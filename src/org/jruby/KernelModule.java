@@ -2,13 +2,15 @@
  * RubyKernel.java
  * Created on May 2, 2002
  *
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
+ * Copyright (C) 2001-2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
  * Chad Fowler, Anders Bengtsson
+ * Copyright (C) 2002 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@chadfowler.com>
  * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -488,7 +490,7 @@ public class KernelModule {
 
         long oldRandomSeed = recv.getRuntime().randomSeed;
         if (args.length > 0) {
-            RubyInteger integerSeed = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
+            RubyInteger integerSeed = (RubyInteger) args[0].convertToType("Integer", "to_i", true);
             recv.getRuntime().randomSeed = integerSeed.getLongValue();
         } else {
             recv.getRuntime().randomSeed = System.currentTimeMillis(); // FIXME
@@ -502,7 +504,7 @@ public class KernelModule {
         if (args.length == 0) {
             ceil = 0;
         } else if (args.length == 1) {
-            RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_int", true);
+            RubyInteger integerCeil = (RubyInteger) args[0].convertToType("Integer", "to_i", true);
             ceil = integerCeil.getLongValue();
             ceil = Math.abs(ceil);
             if (ceil > Integer.MAX_VALUE) {

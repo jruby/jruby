@@ -2,8 +2,8 @@
  * RubyString.java - No description
  * Created on 04. Juli 2001, 22:53
  *
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina,
- *    Thomas E. Enebo
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2002 Thomas E. Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -36,7 +36,6 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -632,7 +631,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public RubyString op_mul(IRubyObject other) {
 		RubyInteger otherInteger =
-                (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_int");
+                (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_i");
         long len = otherInteger.getLongValue();
 
 		if (len < 0) {
@@ -1648,7 +1647,7 @@ public class RubyString extends RubyObject implements IndexCallable {
             RubyInteger sizeArgument =
                 (RubyInteger) args[0].convertType(RubyInteger.class,
                                                   "Integer",
-                                                  "to_int");
+                                                  "to_i");
             bitSize = sizeArgument.getLongValue();
         }
 

@@ -2,11 +2,14 @@
  * RubyNumeric.java - No description
  * Created on 10. September 2001, 17:49
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001,2002 Jan Arne Petersen, Stefan Matthias Aust, 
+ *    Alan Moore, Benoit Cerrina
+ * Copyright (C) 2002 Thomas E. Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -33,15 +36,16 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.builtin.definitions.NumericDefinition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public abstract class RubyNumeric extends RubyObject {
+public abstract class RubyNumeric extends RubyObject implements IndexCallable {
 
     public RubyNumeric(Ruby ruby, RubyClass rubyClass) {
         super(ruby, rubyClass);
@@ -55,32 +59,47 @@ public abstract class RubyNumeric extends RubyObject {
     }
 
     public static RubyClass createNumericClass(Ruby ruby) {
-        RubyClass numericClass = ruby.defineClass("Numeric", ruby.getClasses().getObjectClass());
+        return new NumericDefinition(ruby).getType();
+    }
 
-        numericClass.includeModule(ruby.getClasses().getComparableModule());
-
-        numericClass.defineMethod("coerce", CallbackFactory.getMethod(RubyNumeric.class, "coerce", IRubyObject.class));
-        numericClass.defineMethod("clone", CallbackFactory.getMethod(RubyNumeric.class, "rbClone"));
-
-        numericClass.defineMethod("+@", CallbackFactory.getMethod(RubyNumeric.class, "op_uplus"));
-        numericClass.defineMethod("-@", CallbackFactory.getMethod(RubyNumeric.class, "op_uminus"));
-        numericClass.defineMethod("===", CallbackFactory.getMethod(RubyNumeric.class, "equal", IRubyObject.class));
-        numericClass.defineMethod("eql?", CallbackFactory.getMethod(RubyNumeric.class, "eql", IRubyObject.class));
-        numericClass.defineMethod("divmod", CallbackFactory.getMethod(RubyNumeric.class, "divmod", IRubyObject.class));
-        numericClass.defineMethod("modulo", CallbackFactory.getMethod(RubyNumeric.class, "modulo", IRubyObject.class));
-        numericClass.defineMethod("remainder", CallbackFactory.getMethod(RubyNumeric.class, "remainder", IRubyObject.class));
-        numericClass.defineMethod("abs", CallbackFactory.getMethod(RubyNumeric.class, "abs"));
-
-        numericClass.defineMethod("integer?", CallbackFactory.getMethod(RubyNumeric.class, "int_p"));
-        numericClass.defineMethod("zero?", CallbackFactory.getMethod(RubyNumeric.class, "zero_p"));
-        numericClass.defineMethod("nonzero?", CallbackFactory.getMethod(RubyNumeric.class, "nonzero_p"));
-
-        numericClass.defineMethod("floor", CallbackFactory.getMethod(RubyNumeric.class, "floor"));
-        numericClass.defineMethod("ceil", CallbackFactory.getMethod(RubyNumeric.class, "ceil"));
-        numericClass.defineMethod("round", CallbackFactory.getMethod(RubyNumeric.class, "round"));
-        numericClass.defineMethod("truncate", CallbackFactory.getMethod(RubyNumeric.class, "truncate"));
-
-        return numericClass;
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+	switch(index) {
+        case NumericDefinition.ABS:
+	    return abs();
+        case NumericDefinition.RBCLONE:
+	    return rbClone();
+        case NumericDefinition.CEIL:
+	    return ceil();
+        case NumericDefinition.COERCE:
+	    return coerce(args[0]);
+        case NumericDefinition.DIVMOD:
+	    return divmod(args[0]);
+        case NumericDefinition.EQL:
+	    return eql(args[0]);
+        case NumericDefinition.EQUAL:
+	    return equal(args[0]);
+        case NumericDefinition.FLOOR:
+	    return floor();
+        case NumericDefinition.INT_P:
+	    return int_p();
+        case NumericDefinition.MODULO:
+	    return modulo(args[0]);
+        case NumericDefinition.NONZERO_P:
+	    return nonzero_p();
+        case NumericDefinition.OP_UMINUS:
+	    return op_uminus();
+        case NumericDefinition.OP_UPLUS:
+	    return op_uplus();
+        case NumericDefinition.REMAINDER:
+	    return remainder(args[0]);
+        case NumericDefinition.ROUND:
+	    return round();
+        case NumericDefinition.TRUNCATE:
+	    return truncate();
+        case NumericDefinition.ZERO_P:
+	    return zero_p();
+        }
+        return super.callIndexed(index, args);
     }
 
     public static long num2long(IRubyObject arg) {
