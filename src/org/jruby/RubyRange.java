@@ -3,9 +3,11 @@
  * Created on 26. Juli 2001, 00:01
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2002 Thomas E. Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E. Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -31,12 +33,13 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.builtin.definitions.RangeDefinition;
 
 /**
  * @author jpetersen
  * @version $Revision$
  */
-public class RubyRange extends RubyObject {
+public class RubyRange extends RubyObject implements IndexCallable {
 
     private IRubyObject begin;
     private IRubyObject end;
@@ -61,26 +64,34 @@ public class RubyRange extends RubyObject {
     }
 
     public static RubyClass createRangeClass(Ruby ruby) {
-        RubyClass rangeClass = ruby.defineClass("Range", ruby.getClasses().getObjectClass());
+        return new RangeDefinition(ruby).getType();
+    }
 
-        rangeClass.includeModule(ruby.getClasses().getEnumerableModule());
-
-        rangeClass.defineMethod("==", CallbackFactory.getMethod(RubyRange.class, "equal", IRubyObject.class));
-        rangeClass.defineMethod("===", CallbackFactory.getMethod(RubyRange.class, "op_eqq", IRubyObject.class));
-        rangeClass.defineMethod("first", CallbackFactory.getMethod(RubyRange.class, "first"));
-        rangeClass.defineMethod("begin", CallbackFactory.getMethod(RubyRange.class, "first"));
-        rangeClass.defineMethod("last", CallbackFactory.getMethod(RubyRange.class, "last"));
-        rangeClass.defineMethod("end", CallbackFactory.getMethod(RubyRange.class, "last"));
-
-        rangeClass.defineMethod("to_s", CallbackFactory.getMethod(RubyRange.class, "inspect"));
-        rangeClass.defineMethod("inspect", CallbackFactory.getMethod(RubyRange.class, "inspect"));
-        rangeClass.defineMethod("exclude_end?", CallbackFactory.getMethod(RubyRange.class, "exclude_end_p"));
-        rangeClass.defineMethod("length", CallbackFactory.getMethod(RubyRange.class, "length"));
-        rangeClass.defineMethod("size", CallbackFactory.getMethod(RubyRange.class, "length"));
-        rangeClass.defineMethod("each", CallbackFactory.getMethod(RubyRange.class, "each"));
-        rangeClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyRange.class, "initialize"));
-
-        return rangeClass;
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+        case RangeDefinition.EQUAL :
+            return equal(args[0]);
+        case RangeDefinition.OP_EQQ :
+            return op_eqq(args[0]);
+        case RangeDefinition.FIRST :
+            return first();
+        case RangeDefinition.LAST :
+            return last();
+        case RangeDefinition.TO_S :
+            return inspect();
+        case RangeDefinition.INSPECT :
+            return inspect();
+        case RangeDefinition.LENGTH :
+            return length();
+        case RangeDefinition.EXCLUDE_END_P :
+            return exclude_end_p();
+        case RangeDefinition.EACH :
+            return each();
+        case RangeDefinition.INITIALIZE :
+            return initialize(args);
+        default :
+            return super.callIndexed(index, args);
+        }
     }
 
     /**
@@ -201,7 +212,18 @@ public class RubyRange extends RubyObject {
             if (!isExclusive) {
                 size++;
             }
-        }
+        } else { // Support length for arbitrary classes
+            IRubyObject currentObject = begin;
+	    String compareMethod = (isExclusive ? "<" : "<=");
+
+	    while (currentObject.callMethod(compareMethod, end).isTrue()) {
+		size++;
+		if (currentObject.equals(end)) {
+		    break;
+		}
+		currentObject = currentObject.callMethod("succ");
+	    }
+	}
         return RubyFixnum.newFixnum(getRuntime(), size);
     }
 
