@@ -924,7 +924,7 @@ public class RubyObject implements Cloneable {
                 public int execute(Object key, Object value, Object arg) {
                     RubyString name = RubyString.newString(getRuby(), (String) key);
                     if ((((IMethod) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
-                        if (((RubyArray) arg).includes(name).isFalse()) {
+                        if (! ((RubyArray) arg).includes(name)) {
                             if (((IMethod) value) == null) {
                                 ((RubyArray) arg).push(getRuby().getNil());
                             }

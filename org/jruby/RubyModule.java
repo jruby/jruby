@@ -1202,7 +1202,7 @@ public class RubyModule extends RubyObject {
                     String id = (String) iter.next();
                     if (IdUtil.isClassVariable(id)) {
                         RubyString kval = RubyString.newString(getRuby(), id);
-                        if (ary.includes(kval).isFalse()) {
+                        if (! ary.includes(kval)) {
                             ary.push(kval);
                         }
                     }
@@ -1518,7 +1518,7 @@ public class RubyModule extends RubyObject {
                 if ((method.getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                     RubyString name = RubyString.newString(getRuby(), id);
 
-                    if (ary.includes(name).isFalse()) {
+                    if (! ary.includes(name)) {
                         if (method == null) {
                             ary.push(getRuby().getNil());
                         }
@@ -1556,7 +1556,7 @@ public class RubyModule extends RubyObject {
                 } else if ((method.getNoex() & Constants.NOEX_PROTECTED) != 0) {
                     RubyString name = RubyString.newString(getRuby(), id);
 
-                    if (ary.includes(name).isFalse()) {
+                    if (! ary.includes(name)) {
                         ary.push(name);
                     }
                 } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
@@ -1591,7 +1591,7 @@ public class RubyModule extends RubyObject {
                 } else if ((method.getNoex() & Constants.NOEX_PRIVATE) != 0) {
                     RubyString name = RubyString.newString(getRuby(), id);
 
-                    if (ary.includes(name).isFalse()) {
+                    if (! ary.includes(name)) {
                         ary.push(name);
                     }
                 } else if (method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {

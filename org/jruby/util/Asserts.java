@@ -35,10 +35,16 @@ public final class Asserts {
 
     /** If the assertion fails (i.e. the expression is not true), an error 
      * message is logged and the application is terminated.
-     */    
+     */
     public static void assertExpression(boolean condition) {
         if (ENABLE_ASSERTS && !condition) {
             throw new AssertError("assertTrue failed.");
+        }
+    }
+
+    public static void assertTrue(boolean condition, String message) {
+        if (ENABLE_ASSERTS && ! condition) {
+            throw new AssertError(message);
         }
     }
 
@@ -50,18 +56,13 @@ public final class Asserts {
             throw new AssertError("assertNotReached failed.");
         }
     }
-	/** If the assertion fails (i.e. the method is invoked), an error 
+
+    /** If the assertion fails (i.e. the method is invoked), the
      * message is logged and the application is terminated.
-     * 
-	 * @param errorMessage An ErrorMessage which is used to create an user
-     * defined ErrorMessage, if the assertin failed.
-	 */
-	public static void assertNotReached(ErrorMessage errorMessage) {
+     */
+    public static void assertNotReached(String message) {
         if (ENABLE_ASSERTS) {
-            StringBuffer buffer = new StringBuffer(200);
-            buffer.append("assertNotReached failed.\n");
-            errorMessage.generate(buffer);
-            throw new AssertError(buffer.toString());
+            throw new AssertError(message);
         }
 	}
 }

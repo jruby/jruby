@@ -89,6 +89,10 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		return list.size();
 	}
 
+    public boolean includes(RubyObject item) {
+        return include_p(item).isTrue();
+    }
+
     private static final int M_INSPECT = 2;
     private static final int M_TO_S = 3;
     private static final int M_FROZEN = 4;
@@ -106,15 +110,20 @@ public class RubyArray extends RubyObject implements IndexCallable {
     private static final int M_EMPTY_P = 24;
     private static final int M_INDEX = 25;
     private static final int M_RINDEX = 26;
-
     private static final int M_REVERSE = 30;
     private static final int M_REVERSE_BANG = 31;
     private static final int M_SORT = 32;
     private static final int M_SORT_BANG = 33;
     private static final int M_COLLECT = 34;
     private static final int M_COLLECT_BANG = 35;
-
-    private static final int M_CLONE = 50;
+    private static final int M_DELETE = 40;
+    private static final int M_DELETE_AT = 41;
+    private static final int M_DELETE_IF = 42;
+    private static final int M_REJECT_BANG = 43;
+    private static final int M_REPLACE = 50;
+    private static final int M_CLEAR = 51;
+    private static final int M_INCLUDE_P = 53;
+    private static final int M_CLONE = 60;
 
 	public static RubyClass createArrayClass(Ruby ruby) {
 		RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
@@ -152,7 +161,6 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("each", IndexedCallback.create(M_EACH, 0));
 		arrayClass.defineMethod("each_index", IndexedCallback.create(M_EACH_INDEX, 0));
 		arrayClass.defineMethod("reverse_each", IndexedCallback.create(M_REVERSE_EACH, 0));
-
 		arrayClass.defineMethod("length", IndexedCallback.create(M_LENGTH, 0));
 		arrayClass.defineMethod("size", IndexedCallback.create(M_LENGTH, 0));
 		arrayClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY_P, 0));
@@ -166,21 +174,18 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("reverse!", IndexedCallback.create(M_REVERSE_BANG, 0));
 		arrayClass.defineMethod("sort", IndexedCallback.create(M_SORT, 0));
 		arrayClass.defineMethod("sort!", IndexedCallback.create(M_SORT_BANG, 0));
-
 		arrayClass.defineMethod("collect", IndexedCallback.create(M_COLLECT, 0));
 		arrayClass.defineMethod("collect!", IndexedCallback.create(M_COLLECT_BANG, 0));
 		arrayClass.defineMethod("map!", IndexedCallback.create(M_COLLECT_BANG, 0));
 		arrayClass.defineMethod("filter", IndexedCallback.create(M_COLLECT_BANG, 0));
-		arrayClass.defineMethod("delete", CallbackFactory.getMethod(RubyArray.class, "delete", RubyObject.class));
-		arrayClass.defineMethod("delete_at", CallbackFactory.getMethod(RubyArray.class, "delete_at", RubyObject.class));
-		arrayClass.defineMethod("delete_if", CallbackFactory.getMethod(RubyArray.class, "delete_if"));
-		arrayClass.defineMethod("reject!", CallbackFactory.getMethod(RubyArray.class, "reject_bang"));
-		arrayClass.defineMethod("replace", CallbackFactory.getMethod(RubyArray.class, "replace", RubyObject.class));
-		arrayClass.defineMethod("clear", CallbackFactory.getMethod(RubyArray.class, "clear"));
+		arrayClass.defineMethod("delete", IndexedCallback.create(M_DELETE, 1));
+		arrayClass.defineMethod("delete_at", IndexedCallback.create(M_DELETE_AT, 1));
+		arrayClass.defineMethod("delete_if", IndexedCallback.create(M_DELETE_IF, 0));
+		arrayClass.defineMethod("reject!", IndexedCallback.create(M_REJECT_BANG, 0));
+		arrayClass.defineMethod("replace", IndexedCallback.create(M_REPLACE, 1));
+		arrayClass.defineMethod("clear", IndexedCallback.create(M_CLEAR, 0));
 		arrayClass.defineMethod("fill", CallbackFactory.getOptMethod(RubyArray.class, "fill"));
-
-		arrayClass.defineMethod("include?", CallbackFactory.getMethod(RubyArray.class, "includes", RubyObject.class));
-
+		arrayClass.defineMethod("include?", IndexedCallback.create(M_INCLUDE_P, 1));
 		arrayClass.defineMethod("<=>", CallbackFactory.getMethod(RubyArray.class, "op_cmp", RubyObject.class));
 
 		arrayClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
@@ -256,6 +261,20 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return collect();
         case M_COLLECT_BANG:
             return collect_bang();
+        case M_DELETE:
+            return delete(args[0]);
+        case M_DELETE_AT:
+            return delete_at(args[0]);
+        case M_DELETE_IF:
+            return delete_if();
+        case M_REJECT_BANG:
+            return reject_bang();
+        case M_REPLACE:
+            return replace(args[0]);
+        case M_CLEAR:
+            return clear();
+        case M_INCLUDE_P:
+            return include_p(args[0]);
         case M_CLONE:
             return rbClone();
         }
@@ -567,10 +586,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		return this;
 	}
 
-	/** rb_ary_includes
-	 *
-	 */
-	public RubyBoolean includes(RubyObject item) {
+	public RubyBoolean include_p(RubyObject item) {
 		for (int i = 0, n = getLength(); i < n; i++) {
 			if (item.funcall("==", entry(i)).isTrue()) {
 				return getRuby().getTrue();

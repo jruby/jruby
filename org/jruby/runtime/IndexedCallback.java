@@ -25,6 +25,7 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.util.Asserts;
 
 /**
  * Implements callback on built-in Ruby methods using an integer index.
@@ -32,8 +33,8 @@ import org.jruby.RubyObject;
  */
 
 public class IndexedCallback implements Callback {
-    private int index;
-    private int arity;
+    private final int index;
+    private final int arity;
 
     private IndexedCallback(int index, int arity) {
         this.index = index;
@@ -45,10 +46,18 @@ public class IndexedCallback implements Callback {
     }
 
     public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
+        checkArity(args);
         return ((IndexCallable) recv).callIndexed(index, args);
     }
 
     public int getArity() {
         return arity;
+    }
+
+    private void checkArity(RubyObject[] args) {
+        if (arity >= 0) {
+            Asserts.assertTrue(args.length == arity,
+                               "Expected " + arity + ", got " + args.length);
+        }
     }
 }

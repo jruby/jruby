@@ -139,24 +139,19 @@ public final class ReflectionCallbackMethod implements Callback {
                 return ruby.getNil();
             }
         } catch (final IllegalAccessException iaExcptn) {
-            Asserts.assertNotReached(new ErrorMessage() {
-                /**
-                 * @see org.jruby.util.ErrorMessage#generate(StringBuffer)
-                 */
-                public void generate(StringBuffer buffer) {
-                    buffer.append(iaExcptn.getMessage());
-                    buffer.append(':');
-                    buffer.append(" methodName=").append(methodName);
-                    buffer.append(" recv=").append(recv.toString());
-                    buffer.append(" klass=").append(klass.getName());
-                    buffer.append(" methodArgs=[");
-                    for (int i = 0; i < methodArgs.length; i++) {
-                        buffer.append(methodArgs[i]);
-                        buffer.append(' ');
-                    }
-                    buffer.append(']');
-                }
-            });
+            StringBuffer message = new StringBuffer();
+            message.append(iaExcptn.getMessage());
+            message.append(':');
+            message.append(" methodName=").append(methodName);
+            message.append(" recv=").append(recv.toString());
+            message.append(" klass=").append(klass.getName());
+            message.append(" methodArgs=[");
+            for (int i = 0; i < methodArgs.length; i++) {
+                message.append(methodArgs[i]);
+                message.append(' ');
+            }
+            message.append(']');
+            Asserts.assertNotReached(message.toString());
         } catch (final IllegalArgumentException iaExcptn) {
             throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
         }
