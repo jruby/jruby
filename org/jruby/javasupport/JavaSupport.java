@@ -1,10 +1,13 @@
 package org.jruby.javasupport;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.*;
 import java.util.*;
 
 import org.jruby.*;
 import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.RaiseException;
 
 public class JavaSupport {
     private Ruby ruby;
@@ -12,6 +15,7 @@ public class JavaSupport {
     private Map loadedJavaClasses = new HashMap();
     private List importedPackages = new ArrayList();
     private Map renamedJavaClasses = new HashMap();
+    private Map exceptionHandlers = new HashMap();
 
     private ClassLoader javaClassLoader = new ClassLoader() {};
 
@@ -281,5 +285,32 @@ public class JavaSupport {
             }
         }
         return null;
+    }
+
+    public void defineExceptionHandler(String exceptionClass, RubyProc handler) {
+        exceptionHandlers.put(exceptionClass, handler);
+    }
+
+    public void handleNativeException(Exception excptn) {
+        Class excptnClass = excptn.getClass();
+        RubyProc handler = (RubyProc)exceptionHandlers.get(excptnClass.getName());
+        while (handler == null &&
+               excptnClass != Exception.class) {
+            excptnClass = excptnClass.getSuperclass();
+        }
+        if (handler != null) {
+            handler.call(new RubyObject[]{JavaUtil.convertJavaToRuby(ruby, excptn)});
+        } else {
+            StringWriter stackTrace = new StringWriter();
+            excptn.printStackTrace(new PrintWriter(stackTrace));
+
+            StringBuffer sb = new StringBuffer();
+            sb.append("Native Exception: '");
+            sb.append(excptn.getClass()).append("\'; Message: ");
+            sb.append(excptn.getMessage());
+            sb.append("; StackTrace: ");
+            sb.append(stackTrace.getBuffer().toString());
+            throw new RaiseException(ruby, "RuntimeError", sb.toString());
+        }
     }
 }

@@ -37,6 +37,7 @@ import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.util.Asserts;
 
 /**
  *
@@ -83,27 +84,23 @@ public class JavaMethod implements Callback {
             Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
 
             return JavaUtil.convertJavaToRuby(ruby, method.invoke(receiver, newArgs));
-        } catch (Exception e) {
-            throw convertException(ruby, e);
+        } catch (InvocationTargetException itExcptn) {
+            convertException(ruby, (Exception)itExcptn.getTargetException());
+
+            return ruby.getNil();
+        } catch (Exception excptn) {
+            Asserts.assertNotReached();
+            return null;
         }
     }
 
-    private static RuntimeException convertException(Ruby ruby, Exception e) {
+    private static void convertException(Ruby ruby, Exception e) {
         if (e instanceof RaiseException) {
-            return (RaiseException) e;
+            throw (RaiseException) e;
         } else if (e instanceof IOException) {
-            return IOError.fromException(ruby, (IOException) e);
+            throw IOError.fromException(ruby, (IOException) e);
         } else {
-            StringWriter stackTrace = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTrace));
-
-            StringBuffer sb = new StringBuffer();
-            sb.append("Native Exception: '");
-            sb.append(e.getClass()).append("\'; Message: ");
-            sb.append(e.getMessage());
-            sb.append("; StackTrace: ");
-            sb.append(stackTrace.getBuffer().toString());
-            throw new RaiseException(ruby, "RuntimeError", sb.toString());
+            ruby.getJavaSupport().handleNativeException(e);
         }
     }
 

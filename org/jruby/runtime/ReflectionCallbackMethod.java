@@ -128,13 +128,10 @@ public final class ReflectionCallbackMethod implements Callback {
         } catch (InvocationTargetException itExcptn) {
             if (itExcptn.getTargetException() instanceof RaiseException) {
                 throw (RaiseException) itExcptn.getTargetException();
-            } else if (
-                itExcptn.getTargetException() instanceof RuntimeException) {
-                throw (RuntimeException) itExcptn.getTargetException();
+            } else if (itExcptn.getTargetException() instanceof JumpException) {
+                throw (JumpException) itExcptn.getTargetException();
             } else {
-                System.err.println(
-                    "[ERROR] Calling method: " + klass + "#" + method);
-                itExcptn.getTargetException().printStackTrace();
+                ruby.getJavaSupport().handleNativeException((Exception)itExcptn.getTargetException());
                 return ruby.getNil();
             }
         } catch (final IllegalAccessException iaExcptn) {
