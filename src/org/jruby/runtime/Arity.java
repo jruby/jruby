@@ -81,6 +81,10 @@ public final class Arity {
         return createArity(1);
     }
 
+	public static Arity twoArguments() {
+		return createArity(2);
+	}
+
     public int getValue() {
         return value;
     }
