@@ -246,7 +246,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyObject set(RubyObject value) {
-        String name = ruby.getActFrame().getLastFunc();
+        String name = ruby.getCurrentFrame().getLastFunc();
         if (name.endsWith("=")) {
             name = name.substring(0, name.length() - 1);
         }
@@ -269,7 +269,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public RubyObject get() {
-        String name = ruby.getActFrame().getLastFunc();
+        String name = ruby.getCurrentFrame().getLastFunc();
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 

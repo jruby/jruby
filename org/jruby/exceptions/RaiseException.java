@@ -138,9 +138,9 @@ public class RaiseException extends JumpException {
                 "return",
                 ruby.getSourceFile(),
                 ruby.getSourceLine(),
-                ruby.getActFrame().getSelf(),
-                ruby.getActFrame().getLastFunc(),
-                ruby.getActFrame().getLastClass());
+                ruby.getCurrentFrame().getSelf(),
+                ruby.getCurrentFrame().getLastFunc(),
+                ruby.getCurrentFrame().getLastClass());
         }
 
         this.actException = actException;

@@ -50,10 +50,10 @@ public class ScopeStack extends AbstractStack {
 
     public void push(StackElement newElement) {
         if (current() != null) {
-            current().setMethodScope(ruby.getActMethodScope());
+            current().setMethodScope(ruby.getCurrentMethodScope());
         }
         super.push(newElement);
-        ruby.setActMethodScope(Constants.NOEX_PUBLIC);
+        ruby.setCurrentMethodScope(Constants.NOEX_PUBLIC);
     }
 
     public void push() {
@@ -62,7 +62,7 @@ public class ScopeStack extends AbstractStack {
 
     public StackElement pop() {
         Scope result = (Scope) super.pop();
-        ruby.setActMethodScope(result.getMethodScope());
+        ruby.setCurrentMethodScope(result.getMethodScope());
         return result;
     }
     

@@ -25,7 +25,7 @@ public class FrameStack extends Stack {
     public void push() {
         Namespace ns = peek() != null ? ((Frame)peek()).getNamespace() : null;
 
-        push(new Frame(null, null, null, null, ns, null, ruby.getSourceFile(), ruby.getSourceLine(), ruby.getActIter()));
+        push(new Frame(null, null, null, null, ns, null, ruby.getSourceFile(), ruby.getSourceLine(), ruby.getCurrentIter()));
     }
 
     /**

@@ -86,7 +86,7 @@ public class RubyProc extends RubyObject {
         newProc.wrapper = ruby.getWrapper();
         newProc.block.setIter(newProc.block.getNext() != null ? Iter.ITER_PRE : Iter.ITER_NOT);
 
-        newProc.block.setFrame(ruby.getActFrame());
+        newProc.block.setFrame(ruby.getCurrentFrame());
         newProc.block.setScope(ruby.currentScope());
         // +++
 
@@ -101,7 +101,7 @@ public class RubyProc extends RubyObject {
         getRuby().getBlock().setAct(block);
 
         getRuby().getIterStack().push(Iter.ITER_CUR);
-        getRuby().getActFrame().setIter(Iter.ITER_CUR);
+        getRuby().getCurrentFrame().setIter(Iter.ITER_CUR);
 
         try {
             return getRuby().yield0(args != null ? RubyArray.newArray(getRuby(), args) : null, null, null, true);

@@ -45,7 +45,7 @@ public final class ArgsUtil {
     public final static Block beginCallArgs(final Ruby ruby) {
         final Block actBlock = ruby.getBlock().getAct();
 
-        if (ruby.getActIter().isPre()) {
+        if (ruby.getCurrentIter().isPre()) {
             ruby.getBlock().pop();
         }
         ruby.getIterStack().push(Iter.ITER_NOT);

@@ -91,8 +91,8 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
-        String lastMethod = ruby.getActFrame().getLastFunc();
-        RubyModule lastClass = ruby.getActFrame().getLastClass();
+        String lastMethod = ruby.getCurrentFrame().getLastFunc();
+        RubyModule lastClass = ruby.getCurrentFrame().getLastClass();
         if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, 0)) {
             definition = getArgumentDefinition(iVisited.getArgsNode(), "super");
         }
@@ -102,8 +102,8 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
-        String lastMethod = ruby.getActFrame().getLastFunc();
-        RubyModule lastClass = ruby.getActFrame().getLastClass();
+        String lastMethod = ruby.getCurrentFrame().getLastFunc();
+        RubyModule lastClass = ruby.getCurrentFrame().getLastClass();
         if (lastMethod != null && lastClass != null && lastClass.getSuperClass().isMethodBound(lastMethod, 0)) {
             definition = "super";
         }

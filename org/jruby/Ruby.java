@@ -174,7 +174,7 @@ public final class Ruby {
     private IStack iterStack = CollectionFactory.getInstance().newStack();
     private BlockStack block = new BlockStack(this);
 
-    private int actMethodScope;
+    private int currentMethodScope;
 
     private RubyModule wrapper;
 
@@ -385,7 +385,7 @@ public final class Ruby {
 
     public void secure(int level) {
         if (level <= safeLevel) {
-            throw new RubySecurityException(this, "Insecure operation '" + getActFrame().getLastFunc() + "' at level " + safeLevel);
+            throw new RubySecurityException(this, "Insecure operation '" + getCurrentFrame().getLastFunc() + "' at level " + safeLevel);
         }
     }
 
@@ -490,7 +490,7 @@ public final class Ruby {
         getFrameStack().push(actBlock.getFrame());
 
         Namespace oldNamespace = getNamespace();
-        setNamespace(getActFrame().getNamespace());
+        setNamespace(getCurrentFrame().getNamespace());
 
         Scope oldScope = currentScope();
         getScope().setTop(actBlock.getScope());
@@ -622,7 +622,7 @@ public final class Ruby {
 
         getIterStack().push(Iter.ITER_NOT);
         getFrameStack().push();
-        topFrame = getActFrame();
+        topFrame = getCurrentFrame();
 
         // rb_origenviron = environ;
 
@@ -632,7 +632,7 @@ public final class Ruby {
         // rubyScope.setLocalVars(null);
         topScope = currentScope();
 
-        setActMethodScope(Constants.SCOPE_PRIVATE);
+        setCurrentMethodScope(Constants.SCOPE_PRIVATE);
 
         try {
             classes = new RubyClasses(this);
@@ -647,10 +647,10 @@ public final class Ruby {
             rubyTopSelfEvaluateVisitor = new EvaluateVisitor(this, rubyTopSelf);
 
             rubyClass = getClasses().getObjectClass();
-            getActFrame().setSelf(rubyTopSelf);
+            getCurrentFrame().setSelf(rubyTopSelf);
             topNamespace = new Namespace(getClasses().getObjectClass());
             namespace = topNamespace;
-            getActFrame().setNamespace(namespace);
+            getCurrentFrame().setNamespace(namespace);
             // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
             // ruby_prog_init();
         } catch (Exception excptn) {
@@ -711,7 +711,7 @@ public final class Ruby {
     }
 
     public boolean isBlockGiven() {
-        return !getActFrame().getIter().isNot();
+        return !getCurrentFrame().getIter().isNot();
     }
 
     public boolean isFBlockGiven() {
@@ -780,7 +780,7 @@ public final class Ruby {
         return frameStack;
     }
 
-    public Frame getActFrame() {
+    public Frame getCurrentFrame() {
         return (Frame) frameStack.peek();
     }
 
@@ -818,7 +818,7 @@ public final class Ruby {
         return iterStack;
     }
 
-    public final Iter getActIter() {
+    public final Iter getCurrentIter() {
         return (Iter) getIterStack().peek();
     }
 
@@ -833,32 +833,32 @@ public final class Ruby {
      * @return Value of property cBase.
      */
     public RubyModule getCBase() {
-        return getActFrame().getNamespace().getNamespaceModule();
+        return getCurrentFrame().getNamespace().getNamespaceModule();
     }
 
     /** Setter for property cBase.
      * @param cBase New value of property cBase.
      */
     public void setCBase(RubyModule cBase) {
-        getActFrame().getNamespace().setNamespaceModule(cBase);
+        getCurrentFrame().getNamespace().setNamespaceModule(cBase);
     }
 
     public boolean isScope(int scope) {
-        return (getActMethodScope() & scope) != 0;
+        return (getCurrentMethodScope() & scope) != 0;
     }
 
-    /** Getter for property actMethodScope.
-     * @return Value of property actMethodScope.
+    /** Getter for property currentMethodScope.
+     * @return Value of property currentMethodScope.
      */
-    public int getActMethodScope() {
-        return actMethodScope;
+    public int getCurrentMethodScope() {
+        return currentMethodScope;
     }
 
-    /** Setter for property actMethodScope.
-     * @param actMethodScope New value of property actMethodScope.
+    /** Setter for property currentMethodScope.
+     * @param actMethodScope New value of property currentMethodScope.
      */
-    public void setActMethodScope(int actMethodScope) {
-        this.actMethodScope = actMethodScope;
+    public void setCurrentMethodScope(int actMethodScope) {
+        this.currentMethodScope = actMethodScope;
     }
 
     /** Getter for property wrapper.

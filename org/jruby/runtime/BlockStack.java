@@ -18,7 +18,7 @@ public class BlockStack extends AbstractStack {
     }
 
     public void push(INode varNode, ICallable method, RubyObject self) {
-        push(new Block(varNode, method, self, ruby.getActFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getActIter(), ruby.getDynamicVars(), null));
+        push(new Block(varNode, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars(), null));
     }
 
     public Block getAct() {

@@ -38,7 +38,7 @@ public final class DefaultMethod extends AbstractMethod {
 
         savedNamespace = ruby.getNamespace();
         ruby.setNamespace(namespace);
-        ruby.getActFrame().setNamespace(namespace);
+        ruby.getCurrentFrame().setNamespace(namespace);
 
         if (body.getLocalNames() != null) {
             ruby.getScope().setLocalNames(body.getLocalNames());
@@ -86,7 +86,7 @@ public final class DefaultMethod extends AbstractMethod {
                 throw new ArgumentError(ruby, "wrong # of arguments(" + args.length + " for " + opt + ")");
             }
 
-            ruby.getActFrame().setArgs(args);
+            ruby.getCurrentFrame().setArgs(args);
         }
 
         if (ruby.getScope().hasLocalValues()) {

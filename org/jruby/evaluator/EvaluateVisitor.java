@@ -182,11 +182,11 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitAttrSetNode(AttrSetNode)
      */
     public void visitAttrSetNode(AttrSetNode iVisited) {
-        if (ruby.getActFrame().getArgs().length != 1) {
-            throw new ArgumentError(ruby, "wrong # of arguments(" + ruby.getActFrame().getArgs().length + "for 1)");
+        if (ruby.getCurrentFrame().getArgs().length != 1) {
+            throw new ArgumentError(ruby, "wrong # of arguments(" + ruby.getCurrentFrame().getArgs().length + "for 1)");
         }
 
-        result = self.setInstanceVar(iVisited.getAttributeName(), (RubyObject) ruby.getActFrame().getArgs()[0]);
+        result = self.setInstanceVar(iVisited.getAttributeName(), (RubyObject) ruby.getCurrentFrame().getArgs()[0]);
     }
 
     /**
@@ -253,7 +253,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         ruby.getBlock().push(((RubyProc) block).getBlock());
 
         ruby.getIterStack().push(Iter.ITER_PRE);
-        ruby.getActFrame().setIter(Iter.ITER_PRE);
+        ruby.getCurrentFrame().setIter(Iter.ITER_PRE);
 
         try {
             eval(iVisited.getIterNode());
@@ -351,8 +351,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                         ruby.getSourceFile(),
                         ruby.getSourceLine(),
                         self,
-                        ruby.getActFrame().getLastFunc(),
-                        ruby.getActFrame().getLastClass());
+                        ruby.getCurrentFrame().getLastFunc(),
+                        ruby.getCurrentFrame().getLastClass());
                 }
 
                 RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
@@ -377,8 +377,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                         ruby.getSourceFile(),
                         ruby.getSourceLine(),
                         self,
-                        ruby.getActFrame().getLastFunc(),
-                        ruby.getActFrame().getLastClass());
+                        ruby.getCurrentFrame().getLastFunc(),
+                        ruby.getCurrentFrame().getLastClass());
                 }
 
                 RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
@@ -518,7 +518,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        result = ruby.getActFrame().getNamespace().getConstant(self, iVisited.getName());
+        result = ruby.getCurrentFrame().getNamespace().getConstant(self, iVisited.getName());
     }
 
     /**
@@ -652,7 +652,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         rubyClass.addMethod(iVisited.getName(), newMethod, noex);
 
-        if (ruby.getActMethodScope() == Constants.SCOPE_MODFUNC) {
+        if (ruby.getCurrentMethodScope() == Constants.SCOPE_MODFUNC) {
             rubyClass.getSingletonClass().addMethod(iVisited.getName(), newMethod, Constants.NOEX_PUBLIC);
             rubyClass.funcall("singleton_method_added", builtins.toSymbol(iVisited.getName()));
         }
@@ -1030,8 +1030,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                     ruby.getSourceFile(),
                     ruby.getSourceLine(),
                     self,
-                    ruby.getActFrame().getLastFunc(),
-                    ruby.getActFrame().getLastClass());
+                    ruby.getCurrentFrame().getLastFunc(),
+                    ruby.getCurrentFrame().getLastClass());
             }
         }
 
@@ -1298,7 +1298,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitScopeNode(ScopeNode)
      */
     public void visitScopeNode(ScopeNode iVisited) {
-        ruby.getActFrame().tmpPush();
+        ruby.getCurrentFrame().tmpPush();
         ruby.getScope().push(iVisited.getLocalNames());
 
         Namespace savedNamespace = null;
@@ -1316,7 +1316,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             ruby.getScope().pop();
-            ruby.getActFrame().tmpPop();
+            ruby.getCurrentFrame().tmpPop();
         }
     }
 
@@ -1338,17 +1338,17 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitSuperNode(SuperNode)
      */
     public void visitSuperNode(SuperNode iVisited) {
-        if (ruby.getActFrame().getLastClass() == null) {
-            throw new NameError(ruby, "Superclass method '" + ruby.getActFrame().getLastFunc() + "' disabled.");
+        if (ruby.getCurrentFrame().getLastClass() == null) {
+            throw new NameError(ruby, "Superclass method '" + ruby.getCurrentFrame().getLastFunc() + "' disabled.");
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
         RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
-        ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        ruby.getIterStack().push(ruby.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            result = ruby.getActFrame().getLastClass().getSuperClass().call(ruby.getActFrame().getSelf(), ruby.getActFrame().getLastFunc(), args, 3);
+            result = ruby.getCurrentFrame().getLastClass().getSuperClass().call(ruby.getCurrentFrame().getSelf(), ruby.getCurrentFrame().getLastFunc(), args, 3);
         } finally {
             ruby.getIterStack().pop();
         }
@@ -1466,15 +1466,15 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitZSuperNode(ZSuperNode)
      */
     public void visitZSuperNode(ZSuperNode iVisited) {
-        if (ruby.getActFrame().getLastClass() == null) {
-            throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' disabled");
+        if (ruby.getCurrentFrame().getLastClass() == null) {
+            throw new NameError(ruby, "superclass method '" + ruby.getCurrentFrame().getLastFunc() + "' disabled");
         }
 
-        RubyObject[] args = ruby.getActFrame().getArgs();
+        RubyObject[] args = ruby.getCurrentFrame().getArgs();
 
-        ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        ruby.getIterStack().push(ruby.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
-            result = ruby.getActFrame().getLastClass().getSuperClass().call(ruby.getActFrame().getSelf(), ruby.getActFrame().getLastFunc(), args, 3);
+            result = ruby.getCurrentFrame().getLastClass().getSuperClass().call(ruby.getCurrentFrame().getSelf(), ruby.getCurrentFrame().getLastFunc(), args, 3);
         } finally {
             ruby.getIterStack().pop();
         }
@@ -1537,13 +1537,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         /* String file = ruby.getSourceFile();
            int line = ruby.getSourceLine(); */
 
-        ruby.getActFrame().tmpPush();
+        ruby.getCurrentFrame().tmpPush();
         ruby.pushClass(type);
         ruby.getScope().push(iVisited.getLocalNames());
         RubyVarmap.push(ruby);
 
         ruby.setNamespace(new Namespace(type, ruby.getNamespace()));
-        ruby.getActFrame().setNamespace(ruby.getNamespace());
+        ruby.getCurrentFrame().setNamespace(ruby.getNamespace());
 
         RubyObject oldSelf = self;
 
@@ -1554,8 +1554,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                     ruby.getSourceFile(),
                     ruby.getSourceLine(),
                     type,
-                    ruby.getActFrame().getLastFunc(),
-                    ruby.getActFrame().getLastClass());
+                    ruby.getCurrentFrame().getLastFunc(),
+                    ruby.getCurrentFrame().getLastClass());
             }
 
             self = type;
@@ -1567,7 +1567,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             RubyVarmap.pop(ruby);
             ruby.getScope().pop();
             ruby.popClass();
-            ruby.getActFrame().tmpPop();
+            ruby.getCurrentFrame().tmpPop();
 
             if (isTrace()) {
                 callTraceFunction(
@@ -1575,8 +1575,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                     ruby.getSourceFile(),
                     ruby.getSourceLine(),
                     null,
-                    ruby.getActFrame().getLastFunc(),
-                    ruby.getActFrame().getLastClass());
+                    ruby.getCurrentFrame().getLastFunc(),
+                    ruby.getCurrentFrame().getLastClass());
             }
         }
     }

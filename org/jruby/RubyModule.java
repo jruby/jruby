@@ -795,14 +795,14 @@ public class RubyModule extends RubyObject {
      */
     public final RubyObject call0(final RubyObject recv, final String name, final RubyObject[] args, final ICallable method, final boolean noSuper) {
         // ...
-        ruby.getIterStack().push(ruby.getActIter().isPre() ? Iter.ITER_CUR :
+        ruby.getIterStack().push(ruby.getCurrentIter().isPre() ? Iter.ITER_CUR :
                                                              Iter.ITER_NOT);
 
         ruby.getFrameStack().push();
-        ruby.getActFrame().setLastFunc(name);
-        ruby.getActFrame().setLastClass(noSuper ? null : this);
-        ruby.getActFrame().setSelf(recv);
-        ruby.getActFrame().setArgs(args);
+        ruby.getCurrentFrame().setLastFunc(name);
+        ruby.getCurrentFrame().setLastClass(noSuper ? null : this);
+        ruby.getCurrentFrame().setSelf(recv);
+        ruby.getCurrentFrame().setArgs(args);
 
         try {
             return method.call(ruby, recv, name, args, noSuper);
@@ -994,9 +994,9 @@ public class RubyModule extends RubyObject {
         int noex = Constants.NOEX_PUBLIC;
 
         if (ex) {
-            if (getRuby().getActMethodScope() == Constants.SCOPE_PRIVATE) {
+            if (getRuby().getCurrentMethodScope() == Constants.SCOPE_PRIVATE) {
                 noex = Constants.NOEX_PRIVATE;
-            } else if (getRuby().getActMethodScope() == Constants.SCOPE_PROTECTED) {
+            } else if (getRuby().getCurrentMethodScope() == Constants.SCOPE_PROTECTED) {
                 noex = Constants.NOEX_PROTECTED;
             } else {
                 noex = Constants.NOEX_PUBLIC;
@@ -1145,13 +1145,13 @@ public class RubyModule extends RubyObject {
     public RubyObject executeUnder(Callback method, RubyObject[] args) {
         ruby.pushClass(this);
 
-        Frame frame = ruby.getActFrame();
+        Frame frame = ruby.getCurrentFrame();
         ruby.getFrameStack().push();
-        ruby.getActFrame().setLastFunc(frame.getLastFunc());
-        ruby.getActFrame().setLastClass(frame.getLastClass());
-        ruby.getActFrame().setArgs(frame.getArgs());
+        ruby.getCurrentFrame().setLastFunc(frame.getLastFunc());
+        ruby.getCurrentFrame().setLastClass(frame.getLastClass());
+        ruby.getCurrentFrame().setArgs(frame.getArgs());
         if (ruby.getCBase() != this) {
-            ruby.getActFrame().setNamespace(new Namespace(this, ruby.getActFrame().getNamespace()));
+            ruby.getCurrentFrame().setNamespace(new Namespace(this, ruby.getCurrentFrame().getNamespace()));
         }
         ruby.setNamespace(new Namespace(this, ruby.getNamespace()));
 
@@ -1397,7 +1397,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public static RubyArray nesting(Ruby ruby, RubyObject recv) {
-        Namespace ns = ruby.getActFrame().getNamespace();
+        Namespace ns = ruby.getCurrentFrame().getNamespace();
         
         RubyArray ary = RubyArray.newArray(ruby);
 
@@ -1635,7 +1635,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuby().setActMethodScope(Constants.SCOPE_PUBLIC);
+            getRuby().setCurrentMethodScope(Constants.SCOPE_PUBLIC);
         } else {
             setMethodVisibility(args, Constants.NOEX_PUBLIC);
         }
@@ -1652,7 +1652,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuby().setActMethodScope(Constants.SCOPE_PROTECTED);
+            getRuby().setCurrentMethodScope(Constants.SCOPE_PROTECTED);
         } else {
             setMethodVisibility(args, Constants.NOEX_PROTECTED);
         }
@@ -1669,7 +1669,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuby().setActMethodScope(Constants.SCOPE_PRIVATE);
+            getRuby().setCurrentMethodScope(Constants.SCOPE_PRIVATE);
         } else {
             setMethodVisibility(args, Constants.NOEX_PRIVATE);
         }
@@ -1686,7 +1686,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (args.length == 0) {
-            getRuby().setActMethodScope(Constants.SCOPE_MODFUNC);
+            getRuby().setCurrentMethodScope(Constants.SCOPE_MODFUNC);
         } else {
             setMethodVisibility(args, Constants.NOEX_PRIVATE);
 

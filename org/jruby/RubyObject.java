@@ -481,8 +481,8 @@ public class RubyObject implements Cloneable {
 
     public void checkSafeString() {
         if (ruby.getSafeLevel() > 0 && isTaint()) {
-            if (ruby.getActFrame().getLastFunc() != null) {
-                throw new RubySecurityException(ruby, "Insecure operation - " + ruby.getActFrame().getLastFunc());
+            if (ruby.getCurrentFrame().getLastFunc() != null) {
+                throw new RubySecurityException(ruby, "Insecure operation - " + ruby.getCurrentFrame().getLastFunc());
             } else {
                 throw new RubySecurityException(ruby, "Insecure operation: -r");
             }
@@ -506,7 +506,7 @@ public class RubyObject implements Cloneable {
             if (args.length == 0) {
                 throw new ArgumentError(getRuby(), "block not supplied");
             } else if (args.length > 3) {
-                String lastFuncName = ruby.getActFrame().getLastFunc();
+                String lastFuncName = ruby.getCurrentFrame().getLastFunc();
                 throw new ArgumentError(getRuby(), "wrong # of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
             }
             /*
@@ -548,7 +548,7 @@ public class RubyObject implements Cloneable {
                 Block oldBlock = ruby.getBlock().getAct().cloneBlock();
 
                 /* copy the block to avoid modifying global data. */
-                ruby.getBlock().getAct().getFrame().setNamespace(ruby.getActFrame().getNamespace());
+                ruby.getBlock().getAct().getFrame().setNamespace(ruby.getCurrentFrame().getNamespace());
                 RubyObject result = null;
                 try {
                     result = ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
@@ -573,7 +573,7 @@ public class RubyObject implements Cloneable {
     public RubyObject eval(RubyObject src, RubyObject scope, String file, int line) {
         String fileSave = ruby.getSourceFile();
         int lineSave = ruby.getSourceLine();
-        Iter iter = ruby.getActFrame().getIter();
+        Iter iter = ruby.getCurrentFrame().getIter();
         if (file == null) {
             file = ruby.getSourceFile();
             line = ruby.getSourceLine();
@@ -608,7 +608,7 @@ public class RubyObject implements Cloneable {
             */
         } else {
             if (ruby.getFrameStack().getPrevious() != null) {
-                ruby.getActFrame().setIter(ruby.getFrameStack().getPrevious().getIter());
+                ruby.getCurrentFrame().setIter(ruby.getFrameStack().getPrevious().getIter());
             }
         }
         getRuby().pushClass(ruby.getCBase());
@@ -686,7 +686,7 @@ public class RubyObject implements Cloneable {
                 }
                 */
             } else {
-                ruby.getActFrame().setIter(iter);
+                ruby.getCurrentFrame().setIter(iter);
             }
             ruby.setSourceFile(fileSave);
             ruby.setSourceLine(lineSave);

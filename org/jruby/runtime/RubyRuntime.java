@@ -69,19 +69,19 @@ public class RubyRuntime {
 	 * @matz rb_call_super
 	 */
 	public RubyObject callSuper(RubyObject[] args) {
-		if (ruby.getActFrame().getLastClass() == null) {
-			throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' must be enabled by enableSuper().");
+		if (ruby.getCurrentFrame().getLastClass() == null) {
+			throw new NameError(ruby, "superclass method '" + ruby.getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
 		}
 
-		ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+		ruby.getIterStack().push(ruby.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
 
 		RubyObject result = ruby.getNil();
 
 		try {
 			result =
-				ruby.getActFrame().getLastClass().getSuperClass().call(
-						ruby.getActFrame().getSelf(),
-						ruby.getActFrame().getLastFunc(),
+				ruby.getCurrentFrame().getLastClass().getSuperClass().call(
+						ruby.getCurrentFrame().getSelf(),
+						ruby.getCurrentFrame().getLastFunc(),
 						args,
 						3);
 		} finally {
@@ -127,17 +127,17 @@ public class RubyRuntime {
 			ruby.setNamespace(new Namespace(ruby.getWrapper(), ruby.getNamespace()));
 		}
 
-		String last_func = ruby.getActFrame().getLastFunc();
+		String last_func = ruby.getCurrentFrame().getLastFunc();
 
 		ruby.getFrameStack().push();
-		ruby.getActFrame().setLastFunc(null);
-		ruby.getActFrame().setLastClass(null);
-		ruby.getActFrame().setSelf(self);
-		ruby.getActFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
+		ruby.getCurrentFrame().setLastFunc(null);
+		ruby.getCurrentFrame().setLastClass(null);
+		ruby.getCurrentFrame().setSelf(self);
+		ruby.getCurrentFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
 		ruby.getScope().push();
 
 		/* default visibility is private at loading toplevel */
-		ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
+		ruby.setCurrentMethodScope(Constants.SCOPE_PRIVATE);
 
 		try {
 			// RubyId last_func = ruby.getRubyFrame().getLastFunc();
@@ -153,7 +153,7 @@ public class RubyRuntime {
 
 			self.eval(node);
 		} finally {
-			ruby.getActFrame().setLastFunc(last_func);
+			ruby.getCurrentFrame().setLastFunc(last_func);
 
 			/*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
 			  if (ruby_scope->local_tbl)
@@ -320,9 +320,9 @@ public class RubyRuntime {
 
 	private void printErrorPos() {
 		if (ruby.getSourceFile() != null) {
-			if (ruby.getActFrame().getLastFunc() != null) {
+			if (ruby.getCurrentFrame().getLastFunc() != null) {
 				getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
-				getErrorStream().print(":in '" + ruby.getActFrame().getLastFunc() + '\'');
+				getErrorStream().print(":in '" + ruby.getCurrentFrame().getLastFunc() + '\'');
 			} else if (ruby.getSourceLine() != 0) {
 				getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
 			} else {
