@@ -554,12 +554,12 @@ public class RubyGlobal {
 			{
 				if (!lShellProp.endsWith("sh"))	//case windowslike
 					lSwitch = "/c";
-				System.out.println("command: " + lShellProp + " " + lSwitch +  " " + lCommand);
+//				System.out.println("command: " + lShellProp + " " + lSwitch +  " " + lCommand);
 				aProcess = Runtime.getRuntime().exec(new String[] { lShellProp, lSwitch, lCommand});
 			}
             else
 			{
-				System.out.println("command: " + lCommand);
+//				System.out.println("command: " + lCommand);
                 aProcess = Runtime.getRuntime().exec(lCommand);
 			}
 
