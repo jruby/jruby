@@ -787,10 +787,12 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public RubyArray instance_variables() {
         ArrayList names = new ArrayList();
-        Iterator iter = instanceVariables.keySet().iterator();
-        while (iter.hasNext()) {
-            String name = (String) iter.next();
-            names.add(RubyString.newString(getRuntime(), name));
+        if (instanceVariables != null) {
+            Iterator iter = instanceVariables.keySet().iterator();
+            while (iter.hasNext()) {
+                String name = (String) iter.next();
+                names.add(RubyString.newString(getRuntime(), name));
+            }
         }
         return RubyArray.newArray(runtime, names);
     }
