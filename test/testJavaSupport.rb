@@ -31,6 +31,6 @@ if defined? Java
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",
                Character::UnicodeBlock.class_eval("@java_class.name"))
-    #test_ok(Character::UnicodeBlock.instance_methods.include?("of"))
+    test_ok(Character::UnicodeBlock.methods.include?("of"))
   end
 end
