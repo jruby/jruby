@@ -667,10 +667,8 @@ public class RubyArray extends RubyObject {
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), true, false);
-            if (begLen == null) {
-                return getRuntime().getNil();
-            }
-            return subseq(begLen[0], begLen[1]);
+
+            return begLen == null ? newArray(getRuntime()) : subseq(begLen[0], begLen[1]);
         }
         return entry(RubyNumeric.num2long(args[0]));
     }
