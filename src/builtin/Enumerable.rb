@@ -46,7 +46,7 @@ module Enumerable
     each do |item|
       result << [yield(item), item]
     end
-    result.sort do |a, b|
+    result.sort! do |a, b|
       a.first <=> b.first
     end
     result.collect do |item|
@@ -187,6 +187,25 @@ module Enumerable
       return true if yield(item)
     end
     false
+  end
+
+  def zip(*args)
+    zip = []
+    i = 0
+    each do |elem|
+      array = [elem]
+      args.each do |a| 
+        array << a[i]
+      end
+      if block_given? then
+        yield(array) 
+      else 
+        zip << array
+      end
+      i = i + 1
+    end
+    return nil if block_given?
+    zip
   end
 
   # WARNING this isn't a default ruby method
