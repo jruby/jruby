@@ -1066,7 +1066,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     }
                     pushback(c);
                     if (IS_ARG() && space_seen != 0 && !ISSPACE(c)) {
-                        ph.rb_warning("`*' interpreted as argument prefix");
+                        ph.rb_warning("'*' interpreted as argument prefix");
                         c = Token.tSTAR;
                     } else if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
                         c = Token.tSTAR;

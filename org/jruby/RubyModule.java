@@ -422,6 +422,12 @@ public class RubyModule extends RubyObject {
             }
             break;
         }
+        
+        try {
+            Class javaClass = RubyJavaObject.loadJavaClass(getRuby(), RubyString.newString(getRuby(), name));
+        	return RubyJavaObject.loadClass(getRuby(), javaClass, null);
+        } catch(RubyNameException excptn) {
+        }
 
         /* Uninitialized constant */
         if (this != getRuby().getClasses().getObjectClass()) {
