@@ -102,7 +102,7 @@ public class RubyArray extends RubyObject {
 
         arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
 
-        arrayClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyArray.class, "newInstance"));
+        arrayClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
         arrayClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
         arrayClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
 
