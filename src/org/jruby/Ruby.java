@@ -424,6 +424,7 @@ public final class Ruby {
 
         topSelf = TopSelfFactory.createTopSelf(this);
 
+        getCurrentContext().pushClass(getClasses().getObjectClass());
         getCurrentFrame().setSelf(topSelf);
         topNamespace = new Namespace(getClasses().getObjectClass());
         namespace = topNamespace;
