@@ -30,10 +30,23 @@
 
 package org.jruby.javasupport;
 
-import java.lang.reflect.Array;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
+import org.jruby.RubyJavaObject;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,20 +58,6 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Arrays;
-
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyHash;
-import org.jruby.RubyJavaObject;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.util.Asserts;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -76,19 +75,13 @@ public class JavaUtil {
             return true;
         }
         if (javaClass == Object.class || javaClass == null) {
-            // return arg.getJavaClass() != RubyObject.class;
             return true;
         } else if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return true; // XXX arg instanceof RubyBoolean;
+                return true;
             }
-            // XXX if (cName == "float" || cName == "double") {
-            // XXX     return arg instanceof RubyFloat;
-            // XXX }
-            // else it's one of the integral types
             return arg instanceof RubyNumeric || arg instanceof RubyString;
-            // XXX arg instanceof RubyFixnum;
         } else if (javaClass.isArray()) {
             if (!(arg instanceof RubyArray)) {
                 return false;
@@ -202,69 +195,6 @@ public class JavaUtil {
             }
         } else if (javaClass == String.class) {
             return ((RubyString) rubyObject.callMethod("to_s")).getValue();
-/*
-        } else if (javaClass.isArray()) {
-            try {
-                Class arrayClass = javaClass.getComponentType();
-                int len = ((RubyArray) rubyObject).getLength();
-                Object javaObject = Array.newInstance(arrayClass, len);
-                for (int i = 0; i < len; i++) {
-                    Object item =
-                        convertRubyToJava(
-                            ruby,
-                            ((RubyArray) rubyObject).entry(i),
-                            getCanonicalJavaClass(arrayClass));
-                    Array.set(javaObject, i, item);
-                }
-                return javaObject;
-            } catch (NegativeArraySizeException ex) {
-                return null;
-            }
-        } else if (List.class.isAssignableFrom(javaClass)) {
-            if (javaClass == List.class) {
-                javaClass = ArrayList.class;
-            }
-            try {
-                List javaObject = (List) javaClass.newInstance();
-                int len = ((RubyArray) rubyObject).getLength();
-                for (int i = 0; i < len; i++) {
-                    javaObject.add(
-                        convertRubyToJava(
-                            ruby,
-                            ((RubyArray) rubyObject).entry(i),
-                            null));
-                }
-                return javaObject;
-            } catch (InstantiationException iExcptn) {
-            } catch (IllegalAccessException iaExcptn) {
-            }
-            return null;
-        } else if (Map.class.isAssignableFrom(javaClass)) {
-            if (javaClass == Map.class) {
-                javaClass = HashMap.class;
-            }
-            try {
-                Map javaObject = (Map) javaClass.newInstance();
-                Iterator iter =
-                    ((RubyHash) rubyObject).getValueMap().entrySet().iterator();
-                while (iter.hasNext()) {
-                    Map.Entry entry = (Map.Entry) iter.next();
-                    javaObject.put(
-                        convertRubyToJava(
-                            ruby,
-                            (IRubyObject) entry.getKey(),
-                            null),
-                        convertRubyToJava(
-                            ruby,
-                            (IRubyObject) entry.getValue(),
-                            null));
-                }
-                return javaObject;
-            } catch (InstantiationException iExcptn) {
-            } catch (IllegalAccessException iaExcptn) {
-            }
-            return null;
-*/
         } else {
             return ((RubyJavaObject) rubyObject).getValue();
         }
@@ -331,34 +261,6 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
         } else if (javaClass == String.class) {
             return RubyString.newString(ruby, object.toString());
-/*
-        } else if (javaClass.isArray()) {
-            int len = Array.getLength(object);
-            IRubyObject[] items = new IRubyObject[len];
-            for (int i = 0; i < len; i++) {
-                items[i] = convertJavaToRuby(ruby, Array.get(object, i));
-            }
-            return RubyArray.newArray(ruby, items);
-
-        } else if (List.class.isAssignableFrom(javaClass)) {
-            int len = ((List) object).size();
-            IRubyObject[] items = new IRubyObject[len];
-            for (int i = 0; i < len; i++) {
-                items[i] = convertJavaToRuby(ruby, ((List) object).get(i));
-            }
-            return RubyArray.newArray(ruby, items);
-
-        } else if (Map.class.isAssignableFrom(javaClass)) {
-            int len = ((Map) object).size();
-            IRubyObject[] items = new IRubyObject[len * 2];
-            Iterator iter = ((Map) object).entrySet().iterator();
-            for (int i = 0; i < len; i++) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                items[2 * i] = convertJavaToRuby(ruby, entry.getKey());
-                items[2 * i + 1] = convertJavaToRuby(ruby, entry.getValue());
-            }
-            return RubyHash.create(ruby.getClasses().getHashClass(), items);
-*/
         } else if (IRubyObject.class.isAssignableFrom(javaClass)) {
             return (IRubyObject) object;
         } else if (object instanceof RubyProxy) {

@@ -1,12 +1,9 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.Proxy;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.util.*;
-import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.*;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
 
 /**
  * <p> A RubyProxyFactory dispenses RubyProxy objects, which provide a
