@@ -45,6 +45,15 @@ public class ScopeStack extends AbstractStack {
         // top = new Scope();
     }
 
+    public void push(List localNames) {
+        push();
+
+        setLocalNames(localNames);
+        if (localNames != null) {
+            setLocalValues(new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil())));
+        }
+    }
+
     public void push(StackElement newElement) {
         if (top != null) {
             ((Scope) top).setMethodScope(ruby.getActMethodScope());
