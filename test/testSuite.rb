@@ -42,6 +42,7 @@ test_load('test/testNumber.rb')
 test_load('test/testFloat.rb')
 test_load('test/testBlock.rb')
 test_load('test/testRange.rb')
+test_load('test/testString.rb')
 
 #MRI Ruby tests:
 test_load('test/mri/testAssignment.rb')
