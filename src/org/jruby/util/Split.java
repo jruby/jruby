@@ -15,6 +15,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -108,7 +109,7 @@ public class Split {
 		} else if (pos <= len) {
 			addResult(substring(splitee, pos, len - pos));
 		}
-		if (limit == 0) {
+		if (limit == 0 && result.size() > 0) {
 			while (((String) result.get(result.size() - 1)).length() == 0) {
 				result.remove(result.size() - 1);
 			}
