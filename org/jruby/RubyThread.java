@@ -241,6 +241,8 @@ public class RubyThread extends RubyObject {
     }
 
     public void raise(RubyException exc) {
+        // TODO: How do we raise the exception from the target thread
+        // (as opposed to the calling thread)?
         //throw exc;
     }
 
