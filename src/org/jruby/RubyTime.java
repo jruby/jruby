@@ -45,7 +45,8 @@ import java.util.TimeZone;
  * @author chadfowler, jpetersen
  */
 public class RubyTime extends RubyObject {
-    private Calendar cal;
+    private static final String UTC = "UTC";
+	private Calendar cal;
     private long usec;
 
     private static RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US);
@@ -59,6 +60,8 @@ public class RubyTime extends RubyObject {
 		RubyClass rubyTimeClass = runtime.defineClass("Time", runtime.getClasses().getObjectClass());
     	
 		CallbackFactory callbackFactory = runtime.callbackFactory();
+		
+		rubyTimeClass.includeModule(runtime.getClasses().getComparableModule());
         
 		rubyTimeClass.defineSingletonMethod("new", 
 			callbackFactory.getSingletonMethod(RubyTime.class, "s_new"));
@@ -140,7 +143,7 @@ public class RubyTime extends RubyObject {
 		rubyTimeClass.defineMethod("localtime", 
 			callbackFactory.getMethod(RubyTime.class, "localtime"));
 		rubyTimeClass.defineMethod("hash", 
-			callbackFactory.getMethod(RubyTime.class, "hash"));		
+			callbackFactory.getMethod(RubyTime.class, "hash"));
 
 		return rubyTimeClass;
     }
@@ -245,7 +248,7 @@ public class RubyTime extends RubyObject {
 
         RubyTime time = new RubyTime(type.getRuntime(), (RubyClass) type);
         if (gmt) {
-            time.cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+            time.cal = Calendar.getInstance(TimeZone.getTimeZone(UTC));
         } else {
             time.cal = Calendar.getInstance();
         }
@@ -268,7 +271,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyTime gmtime() {
-        cal.setTimeZone(TimeZone.getTimeZone("GMT"));
+        cal.setTimeZone(TimeZone.getTimeZone(UTC));
         return this;
     }
 
@@ -278,7 +281,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyBoolean gmt() {
-        return RubyBoolean.newBoolean(runtime, cal.getTimeZone().getID().equals("GMT"));
+        return RubyBoolean.newBoolean(runtime, cal.getTimeZone().getID().equals(UTC));
     }
 
     public RubyString strftime(IRubyObject format) {
@@ -380,7 +383,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyFloat to_f() {
-        return RubyFloat.newFloat(runtime, getTimeInMillis() / 1000.0);
+        return RubyFloat.newFloat(runtime, getTimeInMillis() / 1000 + microseconds() / 1000000.0);
     }
 
     public RubyInteger to_i() {
@@ -388,7 +391,11 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyInteger usec() {
-        return RubyFixnum.newFixnum(runtime, getTimeInMillis() % 1000 * 1000 + usec);
+        return RubyFixnum.newFixnum(runtime, microseconds());
+    }
+    
+    public long microseconds() {
+    	return getTimeInMillis() % 1000 * 1000 + usec;
     }
 
     public RubyInteger sec() {
@@ -440,6 +447,7 @@ public class RubyTime extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, (int)(cal.get(Calendar.SECOND) ^ usec));
+    	// modified to match how hash is calculated in 1.8.2
+        return RubyFixnum.newFixnum(runtime, (int)(((cal.getTimeInMillis() / 1000) ^ microseconds()) << 1) >> 1);
     }    
 }
