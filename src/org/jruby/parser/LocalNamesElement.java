@@ -68,13 +68,7 @@ public class LocalNamesElement implements StackElement {
         if (localNames == null) {
             return false;
         } else {
-            Iterator iter = localNames.iterator();
-            while (iter.hasNext()) {
-                if (name.equals(iter.next())) {
-                    return true;
-                }
-            }
-            return false;
+            return localNames.contains(name);
         }
     }
 
@@ -100,13 +94,10 @@ public class LocalNamesElement implements StackElement {
         } else if (localNames == null) {
             return registerLocal(name);
         }
-
-        for (int i = 0; i < localNames.size(); i++) {
-            if (name.equals(localNames.get(i))) {
-                return i;
-            }
+        int index = localNames.indexOf(name);
+        if (index != -1) {
+            return index;
         }
-
         return registerLocal(name);
     }
 
@@ -131,9 +122,7 @@ public class LocalNamesElement implements StackElement {
                 return 1;
             }
         }
-
         localNames.add(name);
-
         return localNames.size() - 1;
     }
     
@@ -158,7 +147,7 @@ public class LocalNamesElement implements StackElement {
      * @return Returns a List
      */
     public List getLocalNames() {
-        return localNames != null ? localNames : new ArrayList(0);
+        return localNames != null ? localNames : Collections.EMPTY_LIST;
     }
 
     /**

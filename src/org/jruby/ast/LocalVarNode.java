@@ -36,11 +36,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class LocalVarNode extends AbstractNode {
-    private int count;
+    private final int count;
 
     public LocalVarNode(ISourcePosition position, int count) {
         super(position);
-
         this.count = count;
     }
 
@@ -59,13 +58,4 @@ public class LocalVarNode extends AbstractNode {
     public int getCount() {
         return count;
     }
-
-    /**
-     * Sets the count.
-     * @param count The count to set
-     */
-    public void setCount(int count) {
-        this.count = count;
-    }
-
 }
