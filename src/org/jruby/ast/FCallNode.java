@@ -27,9 +27,9 @@
 package org.jruby.ast;
 
 import org.ablaf.ast.visitor.INodeVisitor;
-import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.ast.types.IListNode;
 
 /** Represents a method call with self as receiver.
  *
@@ -40,12 +40,18 @@ public final class FCallNode extends AbstractNode {
     static final long serialVersionUID = 3590332973770104094L;
 
     private final String name;
-    private final INode argsNode;
+    private final IListNode argsNode;
 
-    public FCallNode(ISourcePosition position, String name, INode argsNode) {
+    public FCallNode(ISourcePosition position, String name, IListNode argsNode) {
         super(position);
         this.name = name.intern();
         this.argsNode = argsNode;
+
+        if (! (argsNode instanceof ArrayNode)) {
+            if (argsNode != null) {
+                System.out.println("" + argsNode.getClass());
+            }
+        }
     }
 
     /**
@@ -60,7 +66,7 @@ public final class FCallNode extends AbstractNode {
      * Gets the argsNode.
      * @return Returns a INode
      */
-    public INode getArgsNode() {
+    public IListNode getArgsNode() {
         return argsNode;
     }
 

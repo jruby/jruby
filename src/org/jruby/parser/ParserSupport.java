@@ -425,7 +425,7 @@ public class ParserSupport {
             ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new FCallNode(iPosition, name, args);
+        return new FCallNode(iPosition, name, (IListNode) args);
     }
 
     public INode new_super(INode args, ISourcePosition iPosition) {
