@@ -20,6 +20,8 @@ test_equal(['.', '..'], d.entries)
   }
 }
 
+save_dir = Dir.pwd
+
 test_equal(['.', '..', "file1", "file2"], Dir.entries('./testDir_1').sort)
 test_equal(['.', '..', "file1", "file2"], Dir.new('./testDir_1').entries.sort)
 Dir.chdir("./testDir_1")
@@ -36,3 +38,5 @@ test_equal(['.', '..', "file1", "file2"], files.sort)
   File.delete("./testDir_1/file" + i.to_s)
 }
 Dir.delete("./testDir_1")
+Dir.chdir(save_dir)
+
