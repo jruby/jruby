@@ -40,7 +40,7 @@ import org.jruby.marshal.*;
  *
  * @author  jpetersen
  */
-public class RubyString extends RubyObject {
+public class RubyString extends RubyObject implements IndexCallable {
 
 	private static final String encoding = "iso8859-1";
 
@@ -103,6 +103,20 @@ public class RubyString extends RubyObject {
 		return stringToBytes(value);
 	}
 
+    private static final int M_DUP = 1;
+    private static final int M_OP_CMP = 2;
+    private static final int M_EQUAL = 3;
+    private static final int M_OP_PLUS = 4;
+    //private static final int M_OP_MUL = 5;
+    private static final int M_FORMAT = 6;
+    private static final int M_LENGTH = 7;
+    private static final int M_EMPTY = 8;
+
+    private static final int M_MATCH = 9;
+    private static final int M_MATCH2 = 10;
+    private static final int M_SUCC = 11;
+    private static final int M_SUCC_BANG = 12;
+
 	public static RubyClass createStringClass(Ruby ruby) {
 		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
 
@@ -112,27 +126,27 @@ public class RubyString extends RubyObject {
 		stringClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
 		stringClass.defineMethod("initialize", CallbackFactory.getMethod(RubyString.class, "replace", RubyObject.class));
 		stringClass.defineMethod("clone", CallbackFactory.getMethod(RubyString.class, "rbClone"));
-		stringClass.defineMethod("dup", CallbackFactory.getMethod(RubyString.class, "dup"));
+		stringClass.defineMethod("dup", IndexedCallback.create(M_DUP, 0));
 
-		stringClass.defineMethod("<=>", CallbackFactory.getMethod(RubyString.class, "op_cmp", RubyObject.class));
-		stringClass.defineMethod("==", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
-		stringClass.defineMethod("===", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
-		stringClass.defineMethod("eql?", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
+		stringClass.defineMethod("<=>", IndexedCallback.create(M_OP_CMP, 1));
+		stringClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
+		stringClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
+		stringClass.defineMethod("eql?", IndexedCallback.create(M_EQUAL, 1));
 
-		stringClass.defineMethod("+", CallbackFactory.getMethod(RubyString.class, "op_plus", RubyObject.class));
+		stringClass.defineMethod("+", IndexedCallback.create(M_OP_PLUS, 1));
 		stringClass.defineMethod("*", CallbackFactory.getMethod(RubyString.class, "op_mul", RubyInteger.class));
-		stringClass.defineMethod("%", CallbackFactory.getMethod(RubyString.class, "format", RubyObject.class));
+		stringClass.defineMethod("%", IndexedCallback.create(M_FORMAT, 1));
 		stringClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyString.class, "aref"));
 		stringClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyString.class, "aset"));
-		stringClass.defineMethod("length", CallbackFactory.getMethod(RubyString.class, "length"));
-		stringClass.defineMethod("size", CallbackFactory.getMethod(RubyString.class, "length"));
-		stringClass.defineMethod("empty?", CallbackFactory.getMethod(RubyString.class, "empty"));
-		stringClass.defineMethod("=~", CallbackFactory.getMethod(RubyString.class, "match", RubyObject.class));
-		stringClass.defineMethod("~", CallbackFactory.getMethod(RubyString.class, "match2"));
-		stringClass.defineMethod("succ", CallbackFactory.getMethod(RubyString.class, "succ"));
-		stringClass.defineMethod("succ!", CallbackFactory.getMethod(RubyString.class, "succ_bang"));
-		stringClass.defineMethod("next", CallbackFactory.getMethod(RubyString.class, "succ"));
-		stringClass.defineMethod("next!", CallbackFactory.getMethod(RubyString.class, "succ_bang"));
+		stringClass.defineMethod("length", IndexedCallback.create(M_LENGTH, 0));
+		stringClass.defineMethod("size", IndexedCallback.create(M_LENGTH, 0));
+		stringClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY, 0));
+		stringClass.defineMethod("=~", IndexedCallback.create(M_MATCH, 1));
+		stringClass.defineMethod("~", IndexedCallback.create(M_MATCH2, 0));
+		stringClass.defineMethod("succ", IndexedCallback.create(M_SUCC, 0));
+		stringClass.defineMethod("succ!", IndexedCallback.create(M_SUCC_BANG, 0));
+		stringClass.defineMethod("next", IndexedCallback.create(M_SUCC, 0));
+		stringClass.defineMethod("next!", IndexedCallback.create(M_SUCC_BANG, 0));
 		stringClass.defineMethod("upto", CallbackFactory.getMethod(RubyString.class, "upto", RubyObject.class));
 		stringClass.defineMethod("index", CallbackFactory.getOptMethod(RubyString.class, "index"));
 		stringClass.defineMethod("rindex", CallbackFactory.getOptMethod(RubyString.class, "rindex"));
@@ -215,6 +229,35 @@ public class RubyString extends RubyObject {
 		stringClass.defineMethod("unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
 		return stringClass;
 	}
+
+    public RubyObject callIndexed(int index, RubyObject[] args) {
+        switch (index) {
+        case M_DUP:
+            return dup();
+        case M_OP_CMP:
+            return op_cmp(args[0]);
+        case M_EQUAL:
+            return equal(args[0]);
+        case M_OP_PLUS:
+            return op_plus(args[0]);
+        case M_FORMAT:
+            return format(args[0]);
+        case M_LENGTH:
+            return length();
+        case M_EMPTY:
+            return empty();
+        case M_MATCH:
+            return match(args[0]);
+        case M_MATCH2:
+            return match2();
+        case M_SUCC:
+            return succ();
+        case M_SUCC_BANG:
+            return succ_bang();
+        }
+        Asserts.assertNotReached();
+        return null;
+    }
 
 	public static boolean isDigit(char c) {
 		return c >= '0' && c <= '9';

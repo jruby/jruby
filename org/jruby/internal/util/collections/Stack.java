@@ -38,7 +38,7 @@ import org.jruby.util.collections.IStack;
  * @version $Revision$
  */
 public class Stack implements IStack {
-	public static final LinkedObject EMPTY = new LinkedObject(null);
+	private static final LinkedObject EMPTY = new LinkedObject(null);
     protected LinkedObject top = EMPTY;
 
     /**
@@ -66,7 +66,7 @@ public class Stack implements IStack {
      * @see IStack#pop()
      */
     public Object pop() {
-        if (top == EMPTY) {
+        if (isEmpty()) {
             throw new StackEmptyException("Stack is empty.");
         } else {
             Object data = top.data;

@@ -30,13 +30,14 @@ package org.jruby;
 
 import org.jruby.runtime.*;
 import org.jruby.marshal.*;
+import org.jruby.util.Asserts;
 
 /** Implementation of the Fixnum class.
  *
  * @author jpetersen
  * @version $Revision$
  */
-public class RubyFixnum extends RubyInteger {
+public class RubyFixnum extends RubyInteger implements IndexCallable {
     private long value;
     private static int BIT_SIZE = 63;
 
@@ -49,99 +50,109 @@ public class RubyFixnum extends RubyInteger {
         this.value = value;
     }
 
+    private static final int M_TO_F = 1;
+    private static final int M_TO_S = 2;
+    private static final int M_OP_LSHIFT = 3;
+    private static final int M_OP_RSHIFT = 4;
+    private static final int M_OP_PLUS = 5;
+    private static final int M_OP_MINUS = 6;
+    private static final int M_OP_MUL = 7;
+    private static final int M_OP_DIV = 8;
+    private static final int M_OP_MOD = 9;
+    private static final int M_OP_POW = 10;
+    private static final int M_EQUAL = 11;
+    private static final int M_OP_CMP = 12;
+    private static final int M_OP_GT = 13;
+    private static final int M_OP_GE = 14;
+    private static final int M_OP_LT = 15;
+    private static final int M_OP_LE = 16;
+    private static final int M_OP_AND = 17;
+//     private static final int M_OP_OR = 18;
+//     private static final int M_OP_XOR = 19;
+    private static final int M_SIZE = 20;
+
+
     public static RubyClass createFixnumClass(Ruby ruby) {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
         fixnumClass.includeModule(ruby.getClasses().getPrecisionModule());
 
         fixnumClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyFixnum.class, "induced_from", RubyObject.class));
 
-        fixnumClass.defineMethod("to_f", CallbackFactory.getMethod(RubyFixnum.class, "to_f"));
-        fixnumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
-        fixnumClass.defineMethod("to_str", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
+        fixnumClass.defineMethod("to_f", IndexedCallback.create(M_TO_F, 0));
+        fixnumClass.defineMethod("to_s", IndexedCallback.create(M_TO_S, 0));
+        fixnumClass.defineMethod("to_str", IndexedCallback.create(M_TO_S, 0));
         fixnumClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
         fixnumClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
 
-        fixnumClass.defineMethod("<<", CallbackFactory.getMethod(RubyFixnum.class, "op_lshift", RubyObject.class));
-        fixnumClass.defineMethod(">>", CallbackFactory.getMethod(RubyFixnum.class, "op_rshift", RubyObject.class));
+        fixnumClass.defineMethod("<<", IndexedCallback.create(M_OP_LSHIFT, 1));
+        fixnumClass.defineMethod(">>", IndexedCallback.create(M_OP_RSHIFT, 1));
 
-        /*
-        fixnumClass.defineMethod("+", CallbackFactory.getMethod(RubyFixnum.class, "op_plus", RubyObject.class));
-        fixnumClass.defineMethod("-", CallbackFactory.getMethod(RubyFixnum.class, "op_minus", RubyObject.class));
-        */
-        fixnumClass.defineMethod("+", new Callback() {
-            /**
-             * @see org.jruby.runtime.Callback#execute(RubyObject, RubyObject[], Ruby)
-             */
-            public final RubyObject execute(
-                final RubyObject recv,
-                final RubyObject[] args,
-                final Ruby ruby) {
-                return ((RubyFixnum)recv).op_plus(args[0]);
-            }
+        fixnumClass.defineMethod("+", IndexedCallback.create(M_OP_PLUS, 1));
+        fixnumClass.defineMethod("-", IndexedCallback.create(M_OP_MINUS, 1));
 
-            /**
-             * @see org.jruby.runtime.Callback#getArity()
-             */
-            public final int getArity() {
-                return 1;
-            }
-        });
-        fixnumClass.defineMethod("-", new Callback() {
-            /**
-             * @see org.jruby.runtime.Callback#execute(RubyObject, RubyObject[], Ruby)
-             */
-            public final RubyObject execute(
-                final RubyObject recv,
-                final RubyObject[] args,
-                final Ruby ruby) {
-                    return ((RubyFixnum)recv).op_minus(args[0]);
-            }
+        fixnumClass.defineMethod("*", IndexedCallback.create(M_OP_MUL, 1));
+        fixnumClass.defineMethod("/", IndexedCallback.create(M_OP_DIV, 1));
+        fixnumClass.defineMethod("%", IndexedCallback.create(M_OP_MOD, 1));
+        fixnumClass.defineMethod("**", IndexedCallback.create(M_OP_POW, 1));
 
-            /**
-             * @see org.jruby.runtime.Callback#getArity()
-             */
-            public final int getArity() {
-                return 1;
-            }
-        });
-        fixnumClass.defineMethod("*", CallbackFactory.getMethod(RubyFixnum.class, "op_mul", RubyObject.class));
-        fixnumClass.defineMethod("/", CallbackFactory.getMethod(RubyFixnum.class, "op_div", RubyObject.class));
-        fixnumClass.defineMethod("%", CallbackFactory.getMethod(RubyFixnum.class, "op_mod", RubyObject.class));
-        fixnumClass.defineMethod("**", CallbackFactory.getMethod(RubyFixnum.class, "op_pow", RubyObject.class));
-
-        fixnumClass.defineMethod("==", CallbackFactory.getMethod(RubyFixnum.class, "equal", RubyObject.class));
-        fixnumClass.defineMethod("eql?", CallbackFactory.getMethod(RubyFixnum.class, "equal", RubyObject.class));
-        fixnumClass.defineMethod("equal?", CallbackFactory.getMethod(RubyFixnum.class, "equal", RubyObject.class));
-        fixnumClass.defineMethod("<=>", CallbackFactory.getMethod(RubyFixnum.class, "op_cmp", RubyObject.class));
-        fixnumClass.defineMethod(">", CallbackFactory.getMethod(RubyFixnum.class, "op_gt", RubyObject.class));
-        fixnumClass.defineMethod(">=", CallbackFactory.getMethod(RubyFixnum.class, "op_ge", RubyObject.class));
-        // fixnumClass.defineMethod("<", CallbackFactory.getMethod(RubyFixnum.class, "op_lt", RubyObject.class));
-        fixnumClass.defineMethod("<", new Callback() {
-            /**
-             * @see org.jruby.runtime.Callback#execute(RubyObject, RubyObject[], Ruby)
-             */
-            public final RubyObject execute(
-                final RubyObject recv,
-                final RubyObject[] args,
-                final Ruby ruby) {
-                return ((RubyFixnum)recv).op_lt(args[0]);
-            }
-
-            /**
-             * @see org.jruby.runtime.Callback#getArity()
-             */
-            public final int getArity() {
-                return 1;
-            }
-        });
-        fixnumClass.defineMethod("<=", CallbackFactory.getMethod(RubyFixnum.class, "op_le", RubyObject.class));
-        fixnumClass.defineMethod("&", CallbackFactory.getMethod(RubyFixnum.class, "op_and", RubyObject.class));
+        fixnumClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
+        fixnumClass.defineMethod("eql?", IndexedCallback.create(M_EQUAL, 1));
+        fixnumClass.defineMethod("equal?", IndexedCallback.create(M_EQUAL, 1));
+        fixnumClass.defineMethod("<=>", IndexedCallback.create(M_OP_CMP, 1));
+        fixnumClass.defineMethod(">", IndexedCallback.create(M_OP_GT, 1));
+        fixnumClass.defineMethod(">=", IndexedCallback.create(M_OP_GE, 1));
+        fixnumClass.defineMethod("<", IndexedCallback.create(M_OP_LT, 1));
+        fixnumClass.defineMethod("<=", IndexedCallback.create(M_OP_LE, 1));
+        fixnumClass.defineMethod("&", IndexedCallback.create(M_OP_AND, 1));
         fixnumClass.defineMethod("|", CallbackFactory.getMethod(RubyFixnum.class, "op_or", RubyInteger.class));
         fixnumClass.defineMethod("^", CallbackFactory.getMethod(RubyFixnum.class, "op_xor", RubyInteger.class));
-        fixnumClass.defineMethod("size", CallbackFactory.getMethod(RubyFixnum.class, "size"));
+        fixnumClass.defineMethod("size", IndexedCallback.create(M_SIZE, 0));
         fixnumClass.defineMethod("[]", CallbackFactory.getMethod(RubyFixnum.class, "aref", RubyInteger.class));
 
         return fixnumClass;
+    }
+
+    public RubyObject callIndexed(int index, RubyObject[] args) {
+        switch (index) {
+        case M_TO_F:
+            return to_f();
+        case M_TO_S:
+            return to_s();
+        case M_OP_LSHIFT:
+            return op_lshift(args[0]);
+        case M_OP_RSHIFT:
+            return op_rshift(args[0]);
+        case M_OP_PLUS:
+            return op_plus(args[0]);
+        case M_OP_MINUS:
+            return op_minus(args[0]);
+        case M_OP_MUL:
+            return op_mul(args[0]);
+        case M_OP_DIV:
+            return op_div(args[0]);
+        case M_OP_MOD:
+            return op_mod(args[0]);
+        case M_OP_POW:
+            return op_pow(args[0]);
+        case M_EQUAL:
+            return equal(args[0]);
+        case M_OP_CMP:
+            return op_cmp(args[0]);
+        case M_OP_GT:
+            return op_gt(args[0]);
+        case M_OP_GE:
+            return op_ge(args[0]);
+        case M_OP_LT:
+            return op_lt(args[0]);
+        case M_OP_LE:
+            return op_le(args[0]);
+        case M_OP_AND:
+            return op_and(args[0]);
+        case M_SIZE:
+            return size();
+        }
+        Asserts.assertNotReached();
+        return null;
     }
 
     public Class getJavaClass() {
