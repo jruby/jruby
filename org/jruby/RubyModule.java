@@ -278,8 +278,9 @@ public class RubyModule extends RubyObject {
         arg.track = getRuntime().getClasses().getObjectClass();
         arg.prev = null;
 
-        if (getRuntime().getClasses().getObjectClass().getInstanceVariables() != null) {
-            getRuntime().getClasses().getObjectClass().getInstanceVariables().foreach(
+        RubyMap instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
+        if (instanceVariables != null) {
+            instanceVariables.foreach(
                 new FindClassPathMapMethod(),
                 arg);
         }
@@ -351,11 +352,11 @@ public class RubyModule extends RubyObject {
     public void setClassVar(String name, IRubyObject value) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
+            if (tmp.hasInstanceVariable(name)) {
                 if (tmp.isTaint() && getRuntime().getSafeLevel() >= 4) {
                     throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
                 }
-                tmp.getInstanceVariables().put(name, value);
+                tmp.setInstanceVariable(name, value);
                 return;
             }
             tmp = tmp.getSuperClass();
@@ -369,11 +370,11 @@ public class RubyModule extends RubyObject {
     public void declareClassVar(String name, IRubyObject value) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
+            if (tmp.hasInstanceVariable(name)) {
                 if (tmp.isTaint() && getRuntime().getSafeLevel() >= 4) {
                     throw new SecurityError(getRuntime(), "Insecure: can't modify class variable");
                 }
-                tmp.getInstanceVariables().put(name, value);
+                tmp.setInstanceVariable(name, value);
             }
             tmp = tmp.getSuperClass();
         }
@@ -386,8 +387,8 @@ public class RubyModule extends RubyObject {
     public IRubyObject getClassVar(String name) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
-                return (IRubyObject) tmp.getInstanceVariables().get(name);
+            if (tmp.hasInstanceVariable(name)) {
+                return (IRubyObject) tmp.getInstanceVariable(name);
             }
             tmp = tmp.getSuperClass();
         }
@@ -400,7 +401,7 @@ public class RubyModule extends RubyObject {
     public boolean isClassVarDefined(String name) {
         RubyModule tmp = this;
         while (tmp != null) {
-            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
+            if (tmp.hasInstanceVariable(name)) {
                 return true;
             }
             tmp = tmp.getSuperClass();

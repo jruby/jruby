@@ -151,6 +151,13 @@ public class RubyObject implements Cloneable, IRubyObject {
         return this.runtime;
     }
 
+    public boolean hasInstanceVariable(String name) {
+        if (getInstanceVariables() == null) {
+            return false;
+        }
+        return getInstanceVariables().containsKey(name);
+    }
+
     public RubyMap getInstanceVariables() {
         return instanceVariables;
     }
@@ -787,8 +794,8 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public RubyArray instance_variables() {
         ArrayList names = new ArrayList();
-        if (instanceVariables != null) {
-            Iterator iter = instanceVariables.keySet().iterator();
+        if (getInstanceVariables() != null) {
+            Iterator iter = getInstanceVariables().keySet().iterator();
             while (iter.hasNext()) {
                 String name = (String) iter.next();
                 names.add(RubyString.newString(getRuntime(), name));
