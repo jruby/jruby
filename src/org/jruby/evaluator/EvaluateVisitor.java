@@ -28,7 +28,6 @@ package org.jruby.evaluator;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.ListIterator;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
@@ -156,8 +155,14 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Iter;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Namespace;
 import org.jruby.util.Asserts;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
@@ -746,7 +751,6 @@ public final class EvaluateVisitor implements NodeVisitor {
 
     /**
      * @see NodeVisitor#visitEvStrNode(EvStrNode)
-     * @fixme Move the variable stuff to a Runtime method
      */
     public final void visitEvStrNode(final EvStrNode iVisited) {
         if (iVisited.getEvaluatedNode() == null) {

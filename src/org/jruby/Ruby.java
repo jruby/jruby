@@ -204,7 +204,7 @@ public final class Ruby {
 
         javaSupport = new JavaSupport(this);
 
-        methodCache = new RubyMethodCache(this);
+        methodCache = new RubyMethodCache();
     }
 
     /**

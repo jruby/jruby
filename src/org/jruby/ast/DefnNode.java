@@ -47,7 +47,7 @@ public class DefnNode extends AbstractNode {
     public DefnNode(ISourcePosition position, String name, INode argsNode, ScopeNode bodyNode, Visibility visibility) {
         super(position);
         
-        this.name = name;
+        this.name = name.intern();
         this.argsNode = argsNode;
         this.bodyNode = bodyNode;
         this.visibility = visibility;

@@ -50,7 +50,7 @@ public final class CallNode extends AbstractNode {
         super(position);
 
         this.receiverNode = receiverNode;
-        this.name = name;
+        this.name = name.intern();
         this.argsNode = argsNode;
     }
 

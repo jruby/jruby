@@ -43,7 +43,7 @@ public final class FCallNode extends AbstractNode {
     public FCallNode(ISourcePosition position, String name, INode argsNode) {
         super(position);
 
-        this.name = name;
+        this.name = name.intern();
         this.argsNode = argsNode;
     }
 

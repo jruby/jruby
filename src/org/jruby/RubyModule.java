@@ -240,7 +240,7 @@ public class RubyModule extends RubyObject {
         moduleClass.definePrivateMethod("define_method", CallbackFactory.getOptMethod(RubyModule.class, "define_method"));
 
         moduleClass.defineMethod("instance_method", CallbackFactory.getMethod(RubyModule.class, "instance_method", IRubyObject.class));
-        
+
         moduleClass.defineMethod("const_missing", CallbackFactory.getMethod(RubyModule.class, "const_missing", IRubyObject.class));
 
         moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
@@ -334,7 +334,7 @@ public class RubyModule extends RubyObject {
     }
 
     /** rb_cvar_singleton
-     * 
+     *
      *@deprecated since Ruby 1.6.7
      */
     public RubyModule getClassVarSingleton() {
@@ -434,7 +434,7 @@ public class RubyModule extends RubyObject {
         }
         return callMethod("const_missing", RubySymbol.newSymbol(runtime, name));
     }
-    
+
     public IRubyObject const_missing(IRubyObject name) {
         /* Uninitialized constant */
         if (this != getRuntime().getClasses().getObjectClass()) {
@@ -445,9 +445,9 @@ public class RubyModule extends RubyObject {
     }
 
     /** Include a new module in this module or class.
-     * 
+     *
      * MRI: rb_include_module
-     * 
+     *
      * Updated to Ruby 1.6.7.
      *
      */
@@ -638,9 +638,9 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * 
+     *
      * MRI: rb_const_defined_at
-     * 
+     *
      */
     public boolean isConstantDefinedAt(String name) {
         if (!getInstanceVariable(name).isNil()) {
@@ -677,6 +677,8 @@ public class RubyModule extends RubyObject {
      *
      */
     protected CacheEntry getMethodBody(String name) {
+        name = name.intern();
+
         ICallable method = searchMethod(name);
 
         if (method.isUndefined()) {
@@ -758,11 +760,11 @@ public class RubyModule extends RubyObject {
                 runtime.getFrameStack().pop();
             }
         }
-        
+
         IRubyObject[] newArgs = new IRubyObject[args.length + 1];
         System.arraycopy(args, 0, newArgs, 1, args.length);
         newArgs[0] = RubySymbol.newSymbol(runtime, name);
-        
+
         return receiver.callMethod("method_missing", newArgs);
     }
 
@@ -833,7 +835,7 @@ public class RubyModule extends RubyObject {
     }
 
     /** remove_method
-     * 
+     *
      */
     public void removeMethod(String name) {
         if (this == getRuntime().getClasses().getObjectClass()) {
@@ -1030,9 +1032,9 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /** 
+    /**
      * MRI: rb_method_boundp
-     * 
+     *
      */
     public boolean isMethodBound(String name, boolean checkVisibility) {
         CacheEntry entry = runtime.getMethodCache().getEntry(this, name);
@@ -1081,7 +1083,7 @@ public class RubyModule extends RubyObject {
 
         return method;
     }
-    
+
     public IRubyObject define_method(IRubyObject[] args) {
         if (args.length < 1 || args.length > 2) {
             throw new ArgumentError(runtime, "wrong # of arguments(" + args.length + " for 1)");
@@ -1098,7 +1100,7 @@ public class RubyModule extends RubyObject {
             }
             body = args[0];
         }
-        
+
 
         Visibility visibility = runtime.getCurrentVisibility();
         if (visibility.isModuleFunction()) {
@@ -1383,7 +1385,7 @@ public class RubyModule extends RubyObject {
     }
 
     /** Return an array of nested modules or classes.
-     * 
+     *
      * rb_mod_nesting
      *
      */
@@ -1530,7 +1532,7 @@ public class RubyModule extends RubyObject {
     public RubyArray instance_methods(IRubyObject[] args) {
         return instance_methods(args, Visibility.PUBLIC);
     }
-    
+
     public IRubyObject instance_method(IRubyObject symbol) {
         return newMethod(null, symbol.asSymbol(), false);
     }
