@@ -34,7 +34,7 @@ public class RubyFile extends RubyIO {
         		this.inStream = new RubyInputStream(new BufferedInputStream(new FileInputStream(file)));
             }
             if (isWriteable()) {
-        		this.outStream = new BufferedOutputStream(new FileOutputStream(file, append));
+        		this.outStream = new BufferedOutputStream(new FileOutputStream(file.getAbsolutePath(), append));
             }
         } catch (IOException ioExcptn) {
             throw new IOError(getRuby(), ioExcptn.getMessage());

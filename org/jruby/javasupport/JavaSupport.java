@@ -164,7 +164,11 @@ public class JavaSupport {
 	 * was needed null otherwise
 	 **/
     private String toRubyName(String javaName) {
-        if (javaName.equals("getElementAt")) {
+        if (javaName.equals("get")) {
+            return "[]";
+        } else if (javaName.equals("set")) {
+            return "[]=";
+        } else if (javaName.equals("getElementAt")) {
             return "[]";
         } else if (javaName.equals("getValueAt")) {
             return "[]";
