@@ -851,7 +851,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitForNode(ForNode)
      */
     public void visitForNode(ForNode iVisited) {
-        threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
+    	threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self);
         threadContext.getIterStack().push(Iter.ITER_PRE);
 
         try {
@@ -949,7 +949,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitIterNode(IterNode)
      */
     public void visitIterNode(IterNode iVisited) {
-        threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode()), self);
+    	threadContext.getBlockStack().push(iVisited.getVarNode(), new EvaluateMethod(iVisited.getBodyNode(), iVisited.getVarNode()), self);
         threadContext.getIterStack().push(Iter.ITER_PRE);
         try {
             while (true) {
