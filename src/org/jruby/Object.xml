@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 
-<module type="module"> <!-- Fixme: why is it created as module? -->
+<module type="class">
   <name>Object</name>
-  <superclass>none</superclass>
   <implementation>org.jruby.RubyObject</implementation>
+  <includes>Kernel</includes>
+  <index-offset>0x1400</index-offset>
 
   <instance-methods>
     <method name="==">
