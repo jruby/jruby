@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.HashMap;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
@@ -84,8 +85,6 @@ import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.runtime.variables.IVariablesService;
 import org.jruby.runtime.variables.VariablesServiceFactory;
 import org.jruby.util.Asserts;
-import org.jruby.util.RubyHashMap;
-import org.jruby.util.RubyMap;
 import org.jruby.util.RubyStack;
 import org.jruby.util.collections.IStack;
 
@@ -128,7 +127,7 @@ public final class Ruby {
 
     public int stackTraces = 0;
 
-    private RubyMap globalMap;
+    private Map globalMap;
 
     public ObjectSpace objectSpace = new ObjectSpace();
 
@@ -196,7 +195,7 @@ public final class Ruby {
     private Ruby(Class regexpAdapterClass) {
         this.regexpAdapterClass = regexpAdapterClass;
 
-        globalMap = new RubyHashMap();
+        globalMap = new HashMap();
 
         nilObject = RubyObject.nilObject(this);
         trueObject = new RubyBoolean(this, true);

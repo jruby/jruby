@@ -31,6 +31,7 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.jruby.ast.AttrSetNode;
 import org.jruby.ast.InstVarNode;
@@ -62,9 +63,6 @@ import org.jruby.runtime.Namespace;
 import org.jruby.runtime.Iter;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
-import org.jruby.util.RubyHashMap;
-import org.jruby.util.RubyMap;
-import org.jruby.util.RubyMapMethod;
 
 /**
  *
@@ -78,7 +76,7 @@ public class RubyModule extends RubyObject {
     private String classPath;
 
     // The methods.
-    private RubyMap methods = new RubyHashMap();
+    private Map methods = new HashMap();
 
     private RubyModule(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, null);
@@ -109,7 +107,7 @@ public class RubyModule extends RubyObject {
         this.superClass = superClass;
     }
 
-    public RubyMap getMethods() {
+    public Map getMethods() {
         return this.methods;
     }
 
@@ -275,7 +273,7 @@ public class RubyModule extends RubyObject {
         String path = null;
         String name = null;
 
-        RubyMap instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
+        Map instanceVariables = getRuntime().getClasses().getObjectClass().getInstanceVariables();
         if (instanceVariables != null) {
             Iterator iter = instanceVariables.entrySet().iterator();
             arg = findClassPathMap(iter, this, getRuntime().getClasses().getObjectClass());
@@ -965,30 +963,6 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /** method_list
-     *
-     */
-    private RubyArray methodList(boolean option, RubyMapMethod method) {
-        RubyArray ary = RubyArray.newArray(getRuntime());
-
-        for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
-            klass.getMethods().foreach(method, ary);
-            if (!option) {
-                break;
-            }
-        }
-
-        Iterator iter = ary.getList().iterator();
-        while (iter.hasNext()) {
-            if (getRuntime().getNil() == iter.next()) {
-                iter.remove();
-                iter.next();
-            }
-        }
-
-        return ary;
-    }
-
     /** set_method_visibility
      *
      */
@@ -1212,21 +1186,17 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject rbClone() {
         RubyModule clone = (RubyModule) super.rbClone();
+        Map cloneMethods = clone.getMethods();
 
-        // clone the methods.
         if (getMethods() != null) {
-            // clone.setMethods(new RubyHashMap());
-            getMethods().foreach(new RubyMapMethod() {
-                public int execute(Object key, Object value, Object arg) {
-                    ICallable method = (ICallable) value;
-
-                    ((RubyMap) arg).put(key, method);
-
-                    return RubyMapMethod.CONTINUE;
-                }
-            }, clone.getMethods());
+            Iterator iter = getMethods().entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                Object key = entry.getKey();
+                ICallable value = (ICallable) entry.getValue();
+                cloneMethods.put(key, value);
+            }
         }
-
         return clone;
     }
 
@@ -1500,12 +1470,14 @@ public class RubyModule extends RubyObject {
             includeSuper = args[0].isTrue();
         }
 
-        return methodList(includeSuper, new RubyMapMethod() {
-            public int execute(Object key, Object value, Object arg) {
-                // cast args
-                String id = (String) key;
-                ICallable method = (ICallable) value;
-                RubyArray ary = (RubyArray) arg;
+        RubyArray ary = RubyArray.newArray(getRuntime());
+
+        for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
+            Iterator iter = klass.getMethods().entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String id = (String) entry.getKey();
+                ICallable method = (ICallable) entry.getValue();
 
                 if (method.getVisibility() == visibility) {
                     RubyString name = RubyString.newString(getRuntime(), id);
@@ -1517,13 +1489,26 @@ public class RubyModule extends RubyObject {
                         ary.append(name);
                     }
                 } else if (
-                    method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
+                        method instanceof EvaluateMethod && ((EvaluateMethod) method).getNode() instanceof ZSuperNode) {
                     ary.append(getRuntime().getNil());
                     ary.append(RubyString.newString(getRuntime(), id));
                 }
-                return RubyMapMethod.CONTINUE;
             }
-        });
+
+            if (!includeSuper) {
+                break;
+            }
+        }
+
+        Iterator iter = ary.getList().iterator();
+        while (iter.hasNext()) {
+            if (getRuntime().getNil() == iter.next()) {
+                iter.remove();
+                iter.next();
+            }
+        }
+
+        return ary;
     }
 
     /** rb_class_instance_methods

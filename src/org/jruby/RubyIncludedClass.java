@@ -1,7 +1,8 @@
 package org.jruby;
 
-import org.jruby.util.RubyMap;
 import org.jruby.exceptions.FrozenError;
+
+import java.util.Map;
 
 /** This class represents an included module.
  * 
@@ -66,28 +67,28 @@ public final class RubyIncludedClass extends RubyClass {
     /*
      * @see RubyModule#getMethods()
      */
-    public RubyMap getMethods() {
+    public Map getMethods() {
         return delegate.getMethods();
     }
 
     /*
      * @see RubyModule#setMethods(RubyMap)
      */
-    public void setMethods(RubyMap newMethods) {
+    public void setMethods(Map newMethods) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
     /*
      * @see RubyObject#getInstanceVariables()
      */
-    public RubyMap getInstanceVariables() {
+    public Map getInstanceVariables() {
         return delegate.getInstanceVariables();
     }
 
     /*
      * @see RubyObject#setInstanceVariables(RubyMap)
      */
-    public void setInstanceVariables(RubyMap newMethods) {
+    public void setInstanceVariables(Map newMethods) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 

@@ -32,6 +32,7 @@ package org.jruby;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.TypeError;
@@ -130,9 +131,8 @@ public class RubyClass extends RubyModule {
 
         RubyClass clone = newClass(getRuntime(), getInternalClass(), getSuperClass());
         clone.setupClone(this);
-        clone.setInstanceVariables(getInstanceVariables().cloneRubyMap());
-        
-        
+        clone.setInstanceVariables(new HashMap(getInstanceVariables()));
+
         Iterator iter = getMethods().entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();

@@ -58,6 +58,9 @@ if defined? Java
   test_ok(! string_class.interface?)
   test_ok(! string_class.array?)
 
+  inner_class = Java::JavaClass.for_name("java.lang.Character$Subset")
+  test_equal("java.lang.Character$Subset", inner_class.name)
+
   object_class = string_class.superclass
   test_equal("java.lang.Object", object_class.name)
   test_equal(nil, object_class.superclass)

@@ -27,5 +27,9 @@ if defined? Java
     # Class methods
     result = System.currentTimeMillis()
     test_equal(Fixnum, result.type)
+
+    # Inner classes
+    #test_equal("java.lang.Character$UnicodeBlock",
+    #           Character::UnicodeBlock.java_class.name)
   end
 end

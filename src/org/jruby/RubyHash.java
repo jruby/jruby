@@ -43,7 +43,7 @@ import org.jruby.runtime.marshal.*;
  * @version $Revision$
  */
 public class RubyHash extends RubyObject {
-    private RubyMap valueMap;
+    private Map valueMap;
     private IRubyObject defaultValue;
 
     private boolean isRehashing = false;
@@ -53,12 +53,12 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyHash(Ruby ruby, IRubyObject defaultValue) {
-        this(ruby, new RubyHashMap(), defaultValue);
+        this(ruby, new HashMap(), defaultValue);
     }
 
     public RubyHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {
         super(ruby, ruby.getClass("Hash"));
-        this.valueMap = new RubyHashMap(valueMap);
+        this.valueMap = new HashMap(valueMap);
         this.defaultValue = defaultValue;
     }
 
@@ -78,11 +78,11 @@ public class RubyHash extends RubyObject {
         this.defaultValue = defaultValue;
     }
 
-    public RubyMap getValueMap() {
+    public Map getValueMap() {
         return valueMap;
     }
 
-    public void setValueMap(RubyMap valueMap) {
+    public void setValueMap(Map valueMap) {
         this.valueMap = valueMap;
     }
 
@@ -218,7 +218,7 @@ public class RubyHash extends RubyObject {
     public static RubyHash create(IRubyObject recv, IRubyObject[] args) {
         RubyHash hsh = new RubyHash(recv.getRuntime());
         if (args.length == 1) {
-            hsh.setValueMap(new RubyHashMap(((RubyHash) args[0]).getValueMap()));
+            hsh.setValueMap(new HashMap(((RubyHash) args[0]).getValueMap()));
         } else if (args.length % 2 != 0) {
             throw new ArgumentError(recv.getRuntime(), "odd number of args for Hash");
         } else {
@@ -244,21 +244,20 @@ public class RubyHash extends RubyObject {
 
         final StringBuffer sb = new StringBuffer("{");
 
-        valueMap.foreach(new RubyMapMethod() {
-            boolean firstEntry = true;
-            public int execute(Object key, Object value, Object arg) {
-                // RubyString str = RubyString.stringValue((RubyObject) arg);
-                if (!firstEntry) {
-                    sb.append(sep);
-                }
-                sb.append(((IRubyObject) key).callMethod("inspect"));
-                sb.append(arrow);
-                sb.append(((IRubyObject) value).callMethod("inspect"));
-                firstEntry = false;
-                return RubyMapMethod.CONTINUE;
+        Iterator iter = valueMap.entrySet().iterator();
+        boolean firstEntry = true;
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            IRubyObject key = (IRubyObject) entry.getKey();
+            IRubyObject value = (IRubyObject) entry.getValue();
+            if (!firstEntry) {
+                sb.append(sep);
             }
-        }, null);
-
+            sb.append(key.callMethod("inspect"));
+            sb.append(arrow);
+            sb.append(value.callMethod("inspect"));
+            firstEntry = false;
+        }
         sb.append("}");
         return RubyString.newString(runtime, sb.toString());
     }
@@ -273,13 +272,13 @@ public class RubyHash extends RubyObject {
 
     public RubyArray to_a() {
         RubyArray result = RubyArray.newArray(getRuntime(), length());
-        valueMap.foreach(new RubyMapMethod() {
-            public int execute(Object key, Object value, Object arg) {
-                RubyArray ary = RubyArray.arrayValue((IRubyObject) arg);
-                ary.append(RubyArray.newArray(getRuntime(), (IRubyObject) key, (IRubyObject) value));
-                return RubyMapMethod.CONTINUE;
-            }
-        }, result);
+        Iterator iter = valueMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            IRubyObject key = (IRubyObject) entry.getKey();
+            IRubyObject value = (IRubyObject) entry.getValue();
+            result.append(RubyArray.newArray(getRuntime(), key, value));
+        }
         return result;
     }
 
@@ -297,7 +296,7 @@ public class RubyHash extends RubyObject {
         modify();
         try {
             isRehashing = true;
-            valueMap = new RubyHashMap(valueMap);
+            valueMap = new HashMap(valueMap);
         } finally {
             isRehashing = false;
         }
@@ -314,7 +313,7 @@ public class RubyHash extends RubyObject {
         if (!(key instanceof RubyString) || valueMap.get(key) != null) {
             valueMap.put(key, value);
         } else {
-            IRubyObject realKey = ((RubyString) key).dup();
+            IRubyObject realKey = key.dup();
             realKey.setFrozen(true);
             valueMap.put(realKey, value);
         }

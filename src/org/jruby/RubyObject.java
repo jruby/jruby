@@ -32,6 +32,8 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
@@ -56,9 +58,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
-import org.jruby.util.RubyHashMap;
-import org.jruby.util.RubyMap;
-import org.jruby.util.RubyMapMethod;
 
 /**
  *
@@ -73,7 +72,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     private RubyClass internalClass;
 
     // The instance variables of this object.
-    private RubyMap instanceVariables;
+    private Map instanceVariables;
 
     // The two properties frozen and taint
     private boolean frozen;
@@ -159,11 +158,13 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             return null;
         }
         return (IRubyObject) getInstanceVariables().remove(name);
-    }    public RubyMap getInstanceVariables() {
+    }
+
+    public Map getInstanceVariables() {
         return instanceVariables;
     }
 
-    public void setInstanceVariables(RubyMap instanceVariables) {
+    public void setInstanceVariables(Map instanceVariables) {
         this.instanceVariables = instanceVariables;
     }
 
@@ -356,7 +357,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             throw new FrozenError(getRuntime(), "");
         }
         if (getInstanceVariables() == null) {
-            setInstanceVariables(new RubyHashMap());
+            setInstanceVariables(new HashMap());
         }
         getInstanceVariables().put(name, value);
 
@@ -632,7 +633,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             IRubyObject clone = (IRubyObject) clone();
             clone.setupClone(this);
             if (getInstanceVariables() != null) {
-                ((RubyObject) clone).setInstanceVariables(getInstanceVariables().cloneRubyMap());
+                clone.setInstanceVariables(new HashMap(getInstanceVariables()));
             }
             return clone;
         } catch (CloneNotSupportedException cnsExcptn) {
@@ -649,7 +650,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         destination.callMethod("become", this);
         destination.setInstanceVariables(null);
         if (getInstanceVariables() != null) {
-            destination.setInstanceVariables(new RubyHashMap(getInstanceVariables()));
+            destination.setInstanceVariables(new HashMap(getInstanceVariables()));
         }
     }
 
@@ -802,31 +803,32 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public RubyArray singleton_methods() {
-        RubyArray ary = RubyArray.newArray(getRuntime());
+        RubyArray result = RubyArray.newArray(getRuntime());
         RubyClass type = getInternalClass();
         while (type != null && type.isSingleton()) {
-            type.getMethods().foreach(new RubyMapMethod() {
-                public int execute(Object key, Object value, Object arg) {
-                    RubyString name = RubyString.newString(getRuntime(), (String) key);
-                    if (((ICallable) value).getVisibility().isPublic()) {
-                        if (!((RubyArray) arg).includes(name)) {
-                            if (((ICallable) value) == null) {
-                                ((RubyArray) arg).append(getRuntime().getNil());
-                            }
-                            ((RubyArray) arg).append(name);
+            Iterator iter = type.getMethods().entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                String key = (String) entry.getKey();
+                ICallable value = (ICallable) entry.getValue();
+                RubyString name = RubyString.newString(getRuntime(), key);
+                if (value.getVisibility().isPublic()) {
+                    if (! result.includes(name)) {
+                        if (value == null) {
+                            result.append(getRuntime().getNil());
                         }
-                    } else if (
-                        value instanceof EvaluateMethod && ((EvaluateMethod) value).getNode() instanceof ZSuperNode) {
-                        ((RubyArray) arg).append(getRuntime().getNil());
-                        ((RubyArray) arg).append(name);
+                        result.append(name);
                     }
-                    return CONTINUE;
+                } else if (
+                        value instanceof EvaluateMethod && ((EvaluateMethod) value).getNode() instanceof ZSuperNode) {
+                    result.append(getRuntime().getNil());
+                    result.append(name);
                 }
-            }, ary);
+            }
             type = type.getSuperClass();
         }
-        ary.compact_bang();
-        return ary;
+        result.compact_bang();
+        return result;
     }
 
     public IRubyObject method(IRubyObject symbol) {

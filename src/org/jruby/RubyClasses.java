@@ -35,6 +35,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
@@ -42,8 +44,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.Asserts;
-import org.jruby.util.RubyHashMap;
-import org.jruby.util.RubyMap;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -154,7 +154,7 @@ public class RubyClasses {
     private RubyModule processModule;
     private RubyModule precisionModule;
 
-    private RubyMap classMap;
+    private Map classMap;
 
     /**
      * Creates a new RubyClasses instance and defines all the
@@ -165,7 +165,7 @@ public class RubyClasses {
     public RubyClasses(Ruby ruby) {
         this.runtime = ruby;
 
-        classMap = new RubyHashMap();
+        classMap = new HashMap();
     }
 
     /**
@@ -742,7 +742,7 @@ public class RubyClasses {
      *
      * @return A map with references to all named classes.
      */
-    public RubyMap getClassMap() {
+    public Map getClassMap() {
         return classMap;
     }
 
