@@ -26,6 +26,7 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
+import org.jruby.RubyIO;
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.SystemCallError;
@@ -76,6 +77,7 @@ public class IOHandlerUnseekable extends IOHandler {
         }
         
         modes = new IOModes(ruby, mode);
+        fileno = RubyIO.getNewFileno();
     }
     
     public IOHandlerUnseekable(Ruby ruby, int fileno) {
