@@ -400,26 +400,34 @@ public final class Ruby {
     }
 
     public RubyObject setGlobalVar(String name, RubyObject value) {
-        return getGlobalEntry(name).set(value);
+        GlobalVariable global = (GlobalVariable) globalMap.get(name);
+        if (global == null) {
+            globalMap.put(name, new GlobalVariable(this, name, value));
+            return value;
+        }
+        global.set(value);
+        return value;
     }
 
     public RubyObject getGlobalVar(String name) {
-        return getGlobalEntry(name).get();
+        GlobalVariable global = (GlobalVariable) globalMap.get(name);
+        if (global == null) {
+            globalMap.put(name, new GlobalVariable(this, name, getNil()));
+            return getNil();
+        }
+        return global.get();
     }
 
     public void aliasGlobalVar(String oldName, String newName) {
-        RubyGlobalEntry oldEntry = getGlobalEntry(oldName);
-
         if (getSafeLevel() >= 4) {
             throw new RubySecurityException(this, "Insecure: can't alias global variable");
         }
 
-        RubyGlobalEntry entry = getGlobalEntry(newName);
-
-        RubyGlobalEntry.AliasAccessor aliasAccesor = new RubyGlobalEntry.AliasAccessor(oldEntry);
-
-        entry.setGetter(aliasAccesor);
-        entry.setSetter(aliasAccesor);
+        if (! globalMap.containsKey(oldName)) {
+            globalMap.put(oldName, new GlobalVariable(this, oldName, getNil()));
+        }
+        GlobalVariable oldEntry = (GlobalVariable) globalMap.get(oldName);
+        globalMap.put(newName, new AliasGlobalVariable(this, newName, oldEntry));
     }
 
     public RubyObject yield(RubyObject value) {
@@ -846,56 +854,17 @@ public final class Ruby {
         return exceptions;
     }
 
-    /** defines a global variable with getter and setter methods
-     * 
-     * @param name name of the new variable, since it is a global it
-     *  should normally start with a $
-     * @param value starting value for this variable, this value is used
-     *  by the default getter and setter implementation.
-     * @param getter the getter method for this variable, if null a default
-     *  method which reads the value is used
-     * @param setter the setter method for this variable, if null a default
-     *  method which writes the value is used
+    /** Defines a global variable
      */
-    public void defineHookedVariable(String name, RubyObject value, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
-
-        RubyGlobalEntry globalEntry = getGlobalEntry(name);
-
-        globalEntry.setInternalData(value);
-        globalEntry.setGetter(getter != null ? getter : RubyGlobalEntry.valueMethods);
-        globalEntry.setSetter(setter != null ? setter : RubyGlobalEntry.valueMethods);
-    }
-
-    /** defines a global variable
-     * 
-     */
-    public void defineVariable(String name, RubyObject value) {
-        defineHookedVariable(name, value, null, null);
+    public void defineVariable(GlobalVariable variable) {
+        globalMap.put(variable.name(), variable);
     }
 
     /** defines a readonly global variable
      * 
      */
     public void defineReadonlyVariable(String name, RubyObject value) {
-        defineHookedVariable(name, value, null, RubyGlobalEntry.readonlySetter);
-    }
-
-    /** rb_global_entry
-     *
-     */
-    public RubyGlobalEntry getGlobalEntry(String name) {
-        name = name.charAt(0) == '$' ? name : "$" + name;
-
-        //Ruby ruby = id.getRuby();
-
-        RubyGlobalEntry entry = (RubyGlobalEntry) globalMap.get(name);
-
-        if (entry == null) {
-            entry = new RubyGlobalEntry(this, name);
-            globalMap.put(name, entry);
-        }
-
-        return entry;
+        globalMap.put(name, new ReadonlyGlobalVariable(this, name, value));
     }
 
     /**

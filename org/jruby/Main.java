@@ -268,7 +268,7 @@ public class Main {
         ruby.defineReadonlyVariable("$-a", (sDoSplit ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$-l", (sDoLine ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$*", lArgv);
-        ruby.defineHookedVariable("$0", RubyString.newString(ruby, iFileName), null, new RubyGlobal.StringSetter());
+        ruby.defineVariable(new RubyGlobal.StringGlobalVariable(ruby, "$0", RubyString.newString(ruby, iFileName)));
         ruby.initLoad(sLoadDirectories);
         //require additional libraries
         int lNbRequire = sRequireFirst.size();
