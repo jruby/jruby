@@ -84,6 +84,7 @@ public class RubyKernel {
         kernelModule.defineMethod("throw", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rbThrow", RubyObject.class));
         kernelModule.defineMethod("singleton_method_added", CallbackFactory.getNilMethod(1));
         kernelModule.defineMethod("set_trace_func", CallbackFactory.getSingletonMethod(RubyKernel.class, "set_trace_func", RubyObject.class));
+        kernelModule.defineMethod("sleep", CallbackFactory.getSingletonMethod(RubyKernel.class, "sleep", RubyObject.class));
         kernelModule.defineMethod("`", CallbackFactory.getSingletonMethod(RubyKernel.class, "backquote", RubyString.class));
         kernelModule.defineMethod("exit", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "exit"));
         kernelModule.defineMethod("srand", CallbackFactory.getSingletonMethod(RubyKernel.class, "srand", RubyObject.class));
@@ -272,6 +273,14 @@ public class RubyKernel {
         return getLastlineString(ruby).scan(pattern);
     }
 
+    public static RubyObject sleep(Ruby ruby, RubyObject recv, RubyObject seconds) {
+        try {
+            Thread.sleep((long)(RubyNumeric.numericValue(seconds).getDoubleValue() * 1000.0));
+        } catch (InterruptedException iExcptn) {
+        }
+
+        return recv;
+    }
 
     public static RubyObject exit(Ruby ruby, RubyObject recv, RubyObject args[]) {
         int status = 0;
