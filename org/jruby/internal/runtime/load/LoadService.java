@@ -1,11 +1,19 @@
 package org.jruby.internal.runtime.load;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
@@ -79,7 +87,7 @@ public class LoadService implements ILoadService {
         RubyString name = RubyString.newString(runtime, file);
         if (!loadedFeatures.contains(name)) {
             if (file.endsWith(".jar")) {
-                runtime.getJavaSupport().addToClasspath(findFile(file));
+                loadJAR(file);
                 return true;
             }
             if (load(file)) {
@@ -88,6 +96,31 @@ public class LoadService implements ILoadService {
             }
         }
         return false;
+    }
+    
+    private void loadJAR(String file) {
+        File jarFile = findFile(file);
+
+        runtime.getJavaSupport().addToClasspath(jarFile);
+
+        try {
+            JarInputStream in = new JarInputStream(new BufferedInputStream(new FileInputStream(jarFile)));
+            
+            Manifest mf = in.getManifest();
+            String rubyInit = mf.getMainAttributes().getValue("Ruby-Init");
+            if (rubyInit != null) {
+                JarEntry entry = in.getNextJarEntry();
+                while (entry != null && !entry.getName().equals(rubyInit)) {
+                    entry = in.getNextJarEntry();
+                }
+                if (entry != null) {
+                    runtime.eval(runtime.parse(new InputStreamReader(in), "init"));
+                }
+            }
+            in.close();
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        }
     }
 
     /**
