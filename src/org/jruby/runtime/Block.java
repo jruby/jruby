@@ -49,13 +49,12 @@ public class Block implements StackElement {
     private RubyModule klass;
     private Iter iter;
     private Map dynamicVariables;
-    // private IRubyObject origThread;
 
     private Block next;
 
     public static Block createBlock(INode var, ICallable method, IRubyObject self) {
         Ruby ruby = self.getRuntime();
-        return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars()/*, null*/);
+        return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars());
     }
 
     private Block(
@@ -76,7 +75,6 @@ public class Block implements StackElement {
         this.klass = klass;
         this.iter = iter;
         this.dynamicVariables = dynamicVars;
-        // this.origThread = origThread;
     }
 
     public IRubyObject call(IRubyObject[] args) {

@@ -137,7 +137,7 @@ public class ParserSupport {
             }*/
             return new ClassVarNode(iPosition, id);
         }
-        // XXX Should not reached
+        Asserts.notReached();
         return null;
     }
 
@@ -431,7 +431,7 @@ public class ParserSupport {
             ((BlockPassNode) args).setIterNode(new FCallNode(args.getPosition(), name, ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new FCallNode(iPosition, name, (IListNode) args);
+        return new FCallNode(iPosition, name, args);
     }
 
     public INode new_super(INode args, ISourcePosition iPosition) {
@@ -439,7 +439,7 @@ public class ParserSupport {
             ((BlockPassNode) args).setIterNode(new SuperNode(args.getPosition(), ((BlockPassNode) args).getArgsNode()));
             return args;
         }
-        return new SuperNode(iPosition, (IListNode) args);
+        return new SuperNode(iPosition, args);
     }
 
     /**

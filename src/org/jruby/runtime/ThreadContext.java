@@ -77,10 +77,6 @@ public class ThreadContext {
         return blockStack;
     }
 
-    public RubyStack getDynamicVarsStack() {
-        return dynamicVarsStack;
-    }
-
     public Map getCurrentDynamicVars() {
         return (Map)dynamicVarsStack.peek();
     }
@@ -199,7 +195,7 @@ public class ThreadContext {
 
         getBlockStack().pop();
 
-        getDynamicVarsStack().push(currentBlock.getDynamicVariables());
+        dynamicVarsStack.push(currentBlock.getDynamicVariables());
 
         ruby.pushClass((klass != null) ? klass : currentBlock.getKlass());
 
@@ -233,7 +229,7 @@ public class ThreadContext {
         } finally {
             getIterStack().pop();
             ruby.popClass();
-            getDynamicVarsStack().pop();
+            dynamicVarsStack.pop();
 
             getBlockStack().setCurrent(currentBlock);
             getFrameStack().pop();
@@ -241,7 +237,7 @@ public class ThreadContext {
             ruby.setNamespace(oldNamespace);
 
             getScopeStack().setTop(oldScope);
-            getDynamicVarsStack().pop();
+            dynamicVarsStack.pop();
         }
     }
 

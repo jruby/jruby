@@ -256,7 +256,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return target;
         }
         IRubyObject result = match(target);
-        return result.isNil() ? result : ((RubyMatchData) runtime.getBackref()).rbClone();
+        return result.isNil() ? result : runtime.getBackref().rbClone();
     }
 
     /** rb_reg_source

@@ -31,7 +31,7 @@ public class FrameStack extends Stack {
     }
 
     /**
-     * @see IStack#pop()
+     * @see Stack#pop()
      */
     public Object pop() {
         Frame frame  = (Frame) super.pop();

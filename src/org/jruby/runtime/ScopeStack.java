@@ -76,16 +76,6 @@ public class ScopeStack extends AbstractStack {
         return (Scope) top;
     }
 
-    // delegates to the top object
-
-    public int getFlags() {
-        return current().getFlags();
-    }
-
-    public void setFlags(int flags) {
-        current().setFlags(flags);
-    }
-
     public IRubyObject getSuperObject() {
         return current().getSuperObject();
     }

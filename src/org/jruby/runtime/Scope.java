@@ -52,8 +52,6 @@ public class Scope implements StackElement {
 
     private IRubyObject superObject = null;
     
-    private int flags = 0;
-    
     private List localNames = null;
 	private List localValues = null;
     
@@ -71,20 +69,6 @@ public class Scope implements StackElement {
 
     public void setNext(StackElement newNext) {
         next = (Scope)newNext;
-    }
-
-    /** Getter for property flags.
-     * @return Value of property flags.
-     */
-    public int getFlags() {
-        return flags;
-    }
-
-    /** Setter for property flags.
-     * @param flags New value of property flags.
-     */
-    public void setFlags(int flags) {
-        this.flags = flags;
     }
 
     /** Getter for property superObject.
@@ -143,10 +127,6 @@ public class Scope implements StackElement {
         return visibility;
     }
 
-    /**
-     * Sets the methodScope.
-     * @param methodScope The methodScope to set
-     */
     public void setVisibility(Visibility visibility) {
         this.visibility = visibility;
     }

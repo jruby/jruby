@@ -98,7 +98,7 @@ import org.jruby.util.collections.IStack;
 public final class Ruby {
     private ThreadContext mainContext = new ThreadContext(Ruby.this);
     private ThreadContextLocal threadContext = new ThreadContextLocal(mainContext);
-        
+
     private static class ThreadContextLocal extends ThreadLocal {
         private ThreadContext mainContext;
 
@@ -118,7 +118,7 @@ public final class Ruby {
             set(null);
         }
     }
-    
+
     public void dispose() {
         threadContext.dereferenceMainContext();
     }
@@ -493,7 +493,7 @@ public final class Ruby {
         topNamespace = new Namespace(getClasses().getObjectClass());
         namespace = topNamespace;
         getCurrentFrame().setNamespace(namespace);
-        
+
         classes.initBuiltinClasses();
 
         getScope().pop();
@@ -759,7 +759,7 @@ public final class Ruby {
     }
 
     public void popDynamicVars() {
-        getCurrentContext().getDynamicVarsStack().pop();
+        getCurrentContext().popDynamicVars();
     }
 
     public void setDynamicVariable(String name, IRubyObject value) {
