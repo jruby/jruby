@@ -6,6 +6,7 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.oro.io.GlobFilenameFilter;
 
@@ -71,16 +72,20 @@ public class Glob {
         for (int length = dirs.length; idx < length; idx++) {
             ArrayList currentMatchingFiles = new ArrayList();
             for (int i = 0, size = matchingFiles.size(); i < size; i++) {
-                currentMatchingFiles.addAll(getMatchingFiles((File)matchingFiles.get(i), dirs[idx], idx + 1 != length));
+                boolean isDirectory = (idx + 1 != length);
+                String pattern = dirs[idx];
+                File parent = (File) matchingFiles.get(i);
+                currentMatchingFiles.addAll(getMatchingFiles(parent, pattern, isDirectory));
             }
             matchingFiles = currentMatchingFiles;
         }
         return (File[])matchingFiles.toArray(new File[matchingFiles.size()]);
     }
     
-    private Collection getMatchingFiles(final File parent, final String pattern, final boolean directory) {
+    private Collection getMatchingFiles(final File parent, final String pattern, final boolean isDirectory) {
         if (pattern.equals("**")) {
-            Asserts.notReached("Not supported yet");
+            // TODO: This kind of recursive globbing pattern needs to be implemented!
+            return Collections.EMPTY_LIST;
         }
         return Arrays.asList(parent.listFiles(new FileFilter() {
             FilenameFilter filter = new GlobFilenameFilter(pattern);
@@ -88,7 +93,7 @@ public class Glob {
              * @see java.io.FileFilter#accept(File)
              */
             public boolean accept(File pathname) {
-                return (pathname.isDirectory() || !directory) && filter.accept(parent, pathname.getName());
+                return (pathname.isDirectory() || !isDirectory) && filter.accept(parent, pathname.getName());
             }
         }));
     }
