@@ -12,10 +12,6 @@ Speed:
     Once JRuby gets a bytecode compiler the difference should be less
     obvious.
 
-    (Tip: If your program is long-running, try using the '-server'
-    option on your VM. Startup will be slower, but after that there
-    will be a major speed increase).
-
 Object ids and finalizers:
 
     JRuby doesn't guarantee that integers returned by Object#id are
@@ -31,12 +27,12 @@ Threading:
     sleep, wait, criticalize, or wakeup, JRuby threads' behavior will
     differ slightly from pthreads.
     Threads will also act according to the thread scheduling semantics
-    of the host system rather than according to the semantics of ruby's
-    internal scheduler. This can mean that new bugs will appear in
-    multithreaded programs because assumptions made under ruby's thread
-    scheduler do not hold under JVM threading or platform-native thread
-    schedulers. In general, threads provided by JRuby will act just
-    like native threads.
+    of the JVM and the host system rather than according to the
+    semantics of ruby's internal scheduler. This can mean that new bugs
+    will appear in multithreaded programs because assumptions made under
+    ruby's thread scheduler do not hold under JVM threading or
+    platform-native thread schedulers. In general, threads provided by
+    JRuby will act just like Java threads.
     
 Character encoding:
 
