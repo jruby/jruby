@@ -161,7 +161,7 @@ public class RubyMethod extends RubyObject {
      */
     public RubyObject call(RubyObject[] args) {
         getRuby().getIterStack().push(getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-        RubyObject result = getReceiverClass().call0(getReceiver(), getMethodId(), new RubyPointer(args), getMethod(), false);
+        RubyObject result = getReceiverClass().call0(getReceiver(), getMethodId(), args, getMethod(), false);
         getRuby().getIterStack().pop();
 
         return result;

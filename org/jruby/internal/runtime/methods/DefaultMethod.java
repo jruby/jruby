@@ -79,8 +79,7 @@ public class DefaultMethod extends AbstractMethod {
                         throw new ArgumentError(ruby, "wrong # of arguments(" + args.length + " for " + opt + ")");
                     }
 
-                    // XXX
-                    ruby.getActFrame().setArgs(Arrays.asList(args));
+                    ruby.getActFrame().setArgs(args);
                 }
 
                 if (ruby.getScope().getLocalValues() != null) {

@@ -743,10 +743,15 @@ public class RubyModule extends RubyObject {
         return result;
     }
 
+
     /** rb_call
      *
      */
-    public RubyObject call(RubyObject recv, String name, RubyPointer args, int scope) {
+    public RubyObject call(RubyObject recv, String name, RubyObject[] args, int scope) {
+        if (args == null) {
+            args = new RubyObject[0];
+        }
+
         CacheEntry ent = getRuby().getMethodCache().getEntry(this, name);
 
         RubyModule klass = this;
@@ -755,11 +760,9 @@ public class RubyModule extends RubyObject {
 
         if (ent != null) {
             if (ent.getMethod() == null) {
-                RubyPointer newArgs = new RubyPointer();
-                newArgs.add(RubySymbol.newSymbol(getRuby(), name));
-                if (args != null) {
-                    newArgs.addAll(args);
-                }
+                RubyObject[] newArgs = new RubyObject[args.length + 1];
+                newArgs[0] = RubySymbol.newSymbol(getRuby(), name);
+                System.arraycopy(args, 0, newArgs, 1, args.length);
                 return recv.funcall("method_missing", newArgs);
             }
 
@@ -774,11 +777,9 @@ public class RubyModule extends RubyObject {
                 if (scope == 3) {
                     throw new NameError(getRuby(), "super: no superclass method '" + name + "'");
                 }
-                RubyPointer newArgs = new RubyPointer();
-                newArgs.add(RubySymbol.newSymbol(getRuby(), name));
-                if (args != null) {
-                    newArgs.addAll(args);
-                }
+                RubyObject[] newArgs = new RubyObject[args.length + 1];
+                newArgs[0] = RubySymbol.newSymbol(getRuby(), name);
+                System.arraycopy(args, 0, newArgs, 1, args.length);
                 return recv.funcall("method_missing", newArgs);
             }
 
@@ -811,7 +812,10 @@ public class RubyModule extends RubyObject {
     /** rb_call0
      *
      */
-    public RubyObject call0(RubyObject recv, String name, RubyPointer args, IMethod method, boolean noSuper) {
+    public RubyObject call0(RubyObject recv, String name, RubyObject[] args, IMethod method, boolean noSuper) {
+        if (args == null) {
+            args = new RubyObject[0];
+        }
 
         // ...
         Ruby ruby = getRuby();
@@ -828,7 +832,7 @@ public class RubyModule extends RubyObject {
         ruby.getActFrame().setArgs(args);
 
         try {
-            return method.execute(ruby, recv, name, args != null ? args.toRubyArray() : new RubyObject[0], noSuper);
+            return method.execute(ruby, recv, name, args, noSuper);
         } finally {
             ruby.getFrameStack().pop();
             ruby.getIterStack().pop();

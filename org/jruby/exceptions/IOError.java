@@ -45,4 +45,9 @@ public class IOError extends RaiseException {
     public IOError(Ruby ruby, String msg) {
         super(ruby, ruby.getExceptions().getIOError(), msg);
     }
+
+    public static RuntimeException fromException(Ruby ruby, java.io.IOException exception) {
+        // TODO: add a table of known corresponding exceptions
+        return new IOError(ruby, exception.getMessage());
+    }
 }

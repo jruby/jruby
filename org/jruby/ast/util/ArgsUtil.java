@@ -58,22 +58,23 @@ public class ArgsUtil {
         ruby.getIterStack().pop();
     }
 
-    public static RubyPointer setupArgs(Ruby ruby, EvaluateVisitor visitor, INode node) {
-        if (node != null) {
-            String file = ruby.getSourceFile();
-            int line = ruby.getSourceLine();
-
-            RubyObject args = visitor.eval(node);
-
-            if (!(args instanceof RubyArray)) {
-                args = RubyArray.newArray(ruby, args);
-            }
-
-            ruby.setSourceFile(file);
-            ruby.setSourceLine(line);
-
-            return new RubyPointer(((RubyArray) args).getList());
+    public static RubyObject[] setupArgs(Ruby ruby, EvaluateVisitor visitor, INode node) {
+        if (node == null) {
+            return new RubyObject[0];
         }
-        return null; // new RubyPointer();
+
+        String file = ruby.getSourceFile();
+        int line = ruby.getSourceLine();
+
+        RubyObject args = visitor.eval(node);
+
+        ruby.setSourceFile(file);
+        ruby.setSourceLine(line);
+
+        if (args instanceof RubyArray) {
+            return ((RubyArray) args).toJavaArray();
+        } else {
+            return new RubyObject[] { args };
+        }
     }
 }

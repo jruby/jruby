@@ -84,9 +84,7 @@ public class RubyMarshal {
             }
 
         } catch (IOException ioe) {
-            RubyBugException exception = new RubyBugException(ioe.getMessage());
-            exception.initCause(ioe);
-            throw exception;
+            throw IOError.fromException(ruby, ioe);
         }
 
     }
@@ -116,10 +114,7 @@ public class RubyMarshal {
             return input.unmarshalObject();
 
         } catch (IOException ioe) {
-            // FIXME: throw appropriate ruby exception ..
-            RubyBugException exception = new RubyBugException(ioe.getMessage());
-            exception.initCause(ioe);
-            throw exception;
+            throw IOError.fromException(ruby, ioe);
         }
     }
 

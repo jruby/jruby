@@ -60,4 +60,8 @@ public class Builtins {
     public RubyArray toArray(RubyObject value) {
         return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(ruby, value);
     }
+
+    public RubyInteger toInteger(long value) {
+        return RubyFixnum.newFixnum(ruby, value);
+    }
 }

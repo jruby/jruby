@@ -300,6 +300,14 @@ public final class Ruby {
         return newClass;
     }
 
+    public RubyClass defineClass(String name, String superName) {
+        RubyClass superClass = getRubyClass(superName);
+        if (superClass == null) {
+            throw new RubyBugException("Error defining class: Unknown superclass '" + superName + "'");
+        }
+        return defineClass(name, superClass);
+    }
+
     /** rb_define_module / rb_define_module_id
      *
      */
@@ -337,10 +345,6 @@ public final class Ruby {
         if (level <= safeLevel) {
             throw new RubySecurityException(this, "Insecure operation '" + getActFrame().getLastFunc() + "' at level " + safeLevel);
         }
-    }
-
-    public RubyFixnum getFixnumInstance(long value) {
-        return new RubyFixnum(this, value);
     }
 
     /** rb_define_global_const

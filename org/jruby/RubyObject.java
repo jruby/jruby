@@ -336,33 +336,33 @@ public class RubyObject implements Cloneable {
      *
      */
     public RubyObject funcall(String name, RubyObject[] args) {
-        return funcall(name, new RubyPointer(args));
-    }
-
-    public RubyObject funcall(String name, RubyPointer args) {
         return getRubyClass().call(this, name, args, 1);
     }
 
+    public RubyObject funcall(String name, RubyPointer args) {
+        return funcall(name, args.toRubyArray());
+    }
+
     public RubyObject funcall(String name) {
-        return funcall(name, (RubyPointer) null);
+        return funcall(name, new RubyObject[0]);
     }
 
     /** rb_funcall3
      *
      */
-    public RubyObject funcall3(String name, RubyPointer args) {
+    public RubyObject funcall3(String name, RubyObject[] args) {
         return getRubyClass().call(this, name, args, 0);
     }
 
-    public RubyObject funcall3(String name, RubyObject[] args) {
-        return funcall3(name, new RubyPointer(args));
+    public RubyObject funcall3(String name, RubyPointer args) {
+        return funcall3(name, args.toRubyArray());
     }
 
     /** rb_funcall
      *
      */
     public RubyObject funcall(String name, RubyObject arg) {
-        return funcall(name, new RubyPointer(new RubyObject[] { arg }));
+        return funcall(name, new RubyObject[] { arg });
     }
 
     /** rb_iv_get / rb_ivar_get
@@ -454,10 +454,6 @@ public class RubyObject implements Cloneable {
     public String toId() {
         throw new TypeError(getRuby(), inspect().getValue() + " is not a symbol");
     }
-    
-    public boolean isRespondTo(String name) {
-        return getRubyClass().isMethodBound(name, 0);
-    }
 
     /** Converts this object to type 'targetType' using 'convertMethod' method.
      * 
@@ -467,7 +463,7 @@ public class RubyObject implements Cloneable {
      * @fixme error handling
      */
     public RubyObject convertToType(String targetType, String convertMethod, boolean raise) {
-        if (!isRespondTo(convertMethod)) {
+        if (! respondsTo(convertMethod)) {
             if (raise) {
                 throw new TypeError(ruby, "Failed to convert " + getRubyClass().toName() + " into " + targetType + ".");
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
@@ -1017,7 +1013,7 @@ public class RubyObject implements Cloneable {
     public RubyObject send(RubyObject method, RubyObject[] args) {
         try {
             getRuby().getIterStack().push(getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-            return getRubyClass().call(this, method.toId(), new RubyPointer(args), 1);
+            return getRubyClass().call(this, method.toId(), args, 1);
         } finally {
             getRuby().getIterStack().pop();
         }

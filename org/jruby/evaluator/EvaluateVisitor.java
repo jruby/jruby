@@ -174,11 +174,11 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitAttrSetNode(AttrSetNode iVisited) {
         setPosition(iVisited);
-        if (ruby.getActFrame().getArgs().size() != 1) {
-            throw new ArgumentError(ruby, "wrong # of arguments(" + ruby.getActFrame().getArgs().size() + "for 1)");
+        if (ruby.getActFrame().getArgs().length != 1) {
+            throw new ArgumentError(ruby, "wrong # of arguments(" + ruby.getActFrame().getArgs().length + "for 1)");
         }
 
-        result = self.setInstanceVar(iVisited.getAttributeName(), (RubyObject) ruby.getActFrame().getArgs().get(0));
+        result = self.setInstanceVar(iVisited.getAttributeName(), (RubyObject) ruby.getActFrame().getArgs()[0]);
     }
 
     /**
@@ -340,7 +340,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
 
         RubyObject receiver = eval(iVisited.getReceiverNode());
-        RubyPointer args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
+        RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
 
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
@@ -763,7 +763,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitFCallNode(FCallNode iVisited) {
         setPosition(iVisited);
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyPointer args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
+        RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
         result = self.getRubyClass().call(self, iVisited.getName(), args, 1);
@@ -1120,7 +1120,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         RubyObject receiver = eval(iVisited.getReceiverNode());
 
-        RubyPointer args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
+        RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
 
         RubyObject firstValue = receiver.funcall("[]", args);
 
@@ -1142,8 +1142,10 @@ public final class EvaluateVisitor implements NodeVisitor {
             firstValue = firstValue.funcall(iVisited.getOperatorName(), eval(iVisited.getValueNode()));
         }
 
-        args.add(firstValue);
-        result = receiver.funcall("[]=", args);
+        RubyObject[] expandedArgs = new RubyObject[args.length + 1];
+        System.arraycopy(args, 0, expandedArgs, 0, args.length);
+        expandedArgs[expandedArgs.length - 1] = firstValue;
+        result = receiver.funcall("[]=", expandedArgs);
     }
 
     /**
@@ -1424,7 +1426,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyPointer args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
+        RubyObject[] args = ArgsUtil.setupArgs(ruby, this, iVisited.getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
         ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
@@ -1572,7 +1574,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' disabled");
         }
 
-        RubyPointer args = (RubyPointer) ruby.getActFrame().getArgs();
+        RubyObject[] args = ruby.getActFrame().getArgs();
 
         ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
@@ -1714,14 +1716,14 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyPointer args = ArgsUtil.setupArgs(ruby, this, exceptionNodes);
+        RubyObject[] args = ArgsUtil.setupArgs(ruby, this, exceptionNodes);
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
-        for (int i = 0; i < args.size(); i++) {
-            if (args.getRuby(i).kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
                 throw new TypeError(ruby, "class or module required for rescue clause");
             }
-            if (actExcptn.kind_of((RubyModule) args.getRuby(i)).isTrue()) {
+            if (actExcptn.kind_of((RubyModule) args[i]).isTrue()) {
                 return true;
             }
         }

@@ -34,6 +34,7 @@ import java.util.Iterator;
 
 import org.jruby.runtime.*;
 import org.jruby.util.*;
+import org.jruby.ext.RubyTCPSocket;
 
 /** In this class there are references to the core (or built-in) classes
  * and modules of Ruby and JRuby. There is also a Map of referenced to the
@@ -262,6 +263,8 @@ public class RubyClasses {
         structClass = RubyStruct.createStructClass(ruby);
 
         gcModule = RubyGC.createGCModule(ruby);
+
+        RubyTCPSocket.createSocketClasses(ruby); // FIXME: dynamic loading instead
     }
 
     /** Returns the reference to the Binding class.

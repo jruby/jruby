@@ -29,6 +29,7 @@ testPackUnpack.rb
 testRandom.rb
 testStruct.rb
 testGC.rb
+#testSocket.rb
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

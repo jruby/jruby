@@ -43,7 +43,7 @@ import org.jruby.util.collections.StackElement;
  */
 public class Frame {
     private RubyObject self = null;
-    private List args = null;
+    private RubyObject[] args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
     private Namespace namespace = null;
@@ -54,7 +54,7 @@ public class Frame {
 
     public Frame(
         RubyObject self,
-        List args,
+        RubyObject[] args,
         String lastFunc,
         RubyModule lastClass,
         Namespace namespace,
@@ -81,14 +81,14 @@ public class Frame {
     /** Getter for property args.
      * @return Value of property args.
      */
-    public List getArgs() {
+    public RubyObject[] getArgs() {
         return args;
     }
 
     /** Setter for property args.
      * @param args New value of property args.
      */
-    public void setArgs(List args) {
+    public void setArgs(RubyObject[] args) {
         this.args = args;
     }
 

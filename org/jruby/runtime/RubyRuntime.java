@@ -84,7 +84,7 @@ public class RubyRuntime {
 				ruby.getActFrame().getLastClass().getSuperClass().call(
 						ruby.getActFrame().getSelf(),
 						ruby.getActFrame().getLastFunc(),
-						new RubyPointer(args),
+						args,
 						3);
 		} finally {
 			ruby.getIterStack().pop();

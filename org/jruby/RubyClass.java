@@ -46,11 +46,11 @@ public class RubyClass extends RubyModule {
     // Flags
     private boolean singleton = false;
 
-    public RubyClass(Ruby ruby) {
+    private RubyClass(Ruby ruby) {
         this(ruby, null, null);
     }
 
-    public RubyClass(Ruby ruby, RubyClass superClass) {
+    protected RubyClass(Ruby ruby, RubyClass superClass) {
         this(ruby, null, superClass);
     }
 
