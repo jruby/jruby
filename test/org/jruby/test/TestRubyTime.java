@@ -84,6 +84,6 @@ public class TestRubyTime extends TestCase {
     }
 
     public void testGmtimeAndZone() {
-        assertEquals("GMT", nineTeenSeventy.gmtime().zone().getValue());
+        assertEquals(RubyTime.UTC, nineTeenSeventy.gmtime().zone().getValue());
     }
 }
