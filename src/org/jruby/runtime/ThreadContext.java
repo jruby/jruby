@@ -201,9 +201,6 @@ public class ThreadContext {
 
         getFrameStack().push(currentBlock.getFrame());
 
-        Namespace oldNamespace = runtime.getNamespace();
-        runtime.setNamespace(getCurrentFrame().getNamespace());
-
         Scope oldScope = (Scope) getScopeStack().getTop();
         getScopeStack().setTop(currentBlock.getScope());
 
@@ -247,8 +244,6 @@ public class ThreadContext {
 
             getBlockStack().setCurrent(currentBlock);
             getFrameStack().pop();
-
-            runtime.setNamespace(oldNamespace);
 
             getScopeStack().setTop(oldScope);
             dynamicVarsStack.pop();

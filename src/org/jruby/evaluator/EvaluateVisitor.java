@@ -159,7 +159,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
-import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1452,11 +1451,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         threadContext.getScopeStack().push(iVisited.getLocalNames());
         threadContext.pushDynamicVars();
 
-        Namespace savedNamespace = runtime.getNamespace();
-        Namespace newNamespace = new Namespace(type);
-        runtime.setNamespace(newNamespace);
-        threadContext.getCurrentFrame().setNamespace(newNamespace);
-
         IRubyObject oldSelf = self;
 
         try {
@@ -1469,7 +1463,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             self = oldSelf;
 
-            runtime.setNamespace(savedNamespace);
             threadContext.popDynamicVars();
             threadContext.getScopeStack().pop();
             threadContext.popClass();

@@ -42,7 +42,6 @@ public class Frame {
     private IRubyObject[] args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
-    private Namespace namespace = null;
     private ISourcePosition position;
     private Iter iter = Iter.ITER_NOT;
 
@@ -51,7 +50,6 @@ public class Frame {
         IRubyObject[] args,
         String lastFunc,
         RubyModule lastClass,
-        Namespace namespace,
         ISourcePosition position,
         Iter iter) {
 
@@ -59,13 +57,12 @@ public class Frame {
         this.args = args;
         this.lastFunc = lastFunc;
         this.lastClass = lastClass;
-        this.namespace = namespace;
         this.position = position;
         this.iter = iter;
     }
 
     public Frame(Frame frame) {
-        this(frame.self, frame.args, frame.lastFunc, frame.lastClass, frame.namespace, frame.position, frame.iter);
+        this(frame.self, frame.args, frame.lastFunc, frame.lastClass, frame.position, frame.iter);
     }
 
     /** Getter for property args.
@@ -80,14 +77,6 @@ public class Frame {
      */
     public void setArgs(IRubyObject[] args) {
         this.args = args;
-    }
-
-    public Namespace getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(Namespace namespace) {
-        this.namespace = namespace;
     }
 
     public ISourcePosition getPosition() {
@@ -173,7 +162,7 @@ public class Frame {
         } else {
             newArgs = null;
         }
-        return new Frame(self, newArgs, lastFunc, lastClass, namespace, position, iter);
+        return new Frame(self, newArgs, lastFunc, lastClass, position, iter);
     }
 
 }

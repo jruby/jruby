@@ -24,8 +24,7 @@ public class FrameStack extends Stack {
     }
 
     public void push() {
-        Namespace ns = peek() != null ? ((Frame)peek()).getNamespace() : null;
-        push(new Frame(null, null, null, null, ns, threadContext.getPosition(), threadContext.getCurrentIter()));
+        push(new Frame(null, null, null, null, threadContext.getPosition(), threadContext.getCurrentIter()));
     }
 
     public void pushCopy() {

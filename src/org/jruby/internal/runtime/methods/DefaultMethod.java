@@ -15,7 +15,6 @@ import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.runtime.Namespace;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
@@ -29,7 +28,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class DefaultMethod extends AbstractMethod {
     private ScopeNode body;
     private ArgsNode argsNode;
-    private Namespace namespace;
     private RubyModule module;
 
     public DefaultMethod(ScopeNode body, ArgsNode argsNode, Visibility visibility, RubyModule module) {
@@ -37,7 +35,6 @@ public final class DefaultMethod extends AbstractMethod {
         this.body = body;
         this.argsNode = argsNode;
         this.module = module;
-        this.namespace = new Namespace(module);
     }
 
     /**
@@ -52,12 +49,6 @@ public final class DefaultMethod extends AbstractMethod {
         }
 
         context.getScopeStack().push();
-
-        Namespace savedNamespace = null;
-
-        savedNamespace = ruby.getNamespace();
-        ruby.setNamespace(namespace);
-        context.getCurrentFrame().setNamespace(namespace);
 
         if (body.getLocalNames() != null) {
             context.getScopeStack().resetLocalVariables(body.getLocalNames());
@@ -86,7 +77,6 @@ public final class DefaultMethod extends AbstractMethod {
             context.popClass();
             context.popDynamicVars();
             context.getScopeStack().pop();
-            ruby.setNamespace(savedNamespace);
             traceReturn(ruby, receiver, name);
         }
     }

@@ -55,7 +55,6 @@ import org.jruby.runtime.Iter;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Namespace;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.FrameStack;
@@ -521,19 +520,14 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
                 ThreadContext context = runtime.getCurrentContext();
 
                 Block block = context.getBlockStack().getCurrent();
-                Namespace savedNamespace = block.getNamespace();
                 Visibility savedVisibility = block.getVisibility();
 
-                // Modify the block's namespace so that we can reach surrounding local
-                // variables from within the block.
-                block.setNamespace(context.getCurrentFrame().getNamespace());
                 block.setVisibility(Visibility.PUBLIC);
                 try {
                     IRubyObject valueInYield = args[0];
                     IRubyObject selfInYield = args[0];
                     return context.yield(valueInYield, selfInYield, context.getRubyClass(), false);
                 } finally {
-                    block.setNamespace(savedNamespace);
                     block.setVisibility(savedVisibility);
                 }
             }

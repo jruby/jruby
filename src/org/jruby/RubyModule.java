@@ -62,7 +62,6 @@ import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.Namespace;
 import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 
@@ -1097,13 +1096,10 @@ public class RubyModule extends RubyObject {
         threadContext.getCurrentFrame().setLastFunc(frame.getLastFunc());
         threadContext.getCurrentFrame().setLastClass(frame.getLastClass());
         threadContext.getCurrentFrame().setArgs(frame.getArgs());
-        Namespace savedNamespace = runtime.getNamespace();
-        runtime.setNamespace(new Namespace(this));
 
         try {
             return method.execute(this, args);
         } finally {
-            runtime.setNamespace(savedNamespace);
             threadContext.getFrameStack().pop();
             threadContext.popClass();
         }

@@ -67,7 +67,6 @@ import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.IGlobalVariables;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
-import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.RubyExceptions;
 import org.jruby.runtime.Scope;
@@ -126,9 +125,6 @@ public final class Ruby {
     private RubyExceptions exceptions;
 
     private IRubyObject topSelf;
-
-    private Namespace namespace;
-    private Namespace topNamespace;
 
     private boolean isVerbose = false;
 
@@ -274,7 +270,7 @@ public final class Ruby {
 			return getClasses().getModuleClass();
 		else if (name == "Class")
 			return getClasses().getClassClass();
-			
+
 
         RubyClass newClass = RubyClass.newClass(this, superClass, name);
         newClass.makeMetaClass(superClass.getMetaClass());
@@ -427,9 +423,6 @@ public final class Ruby {
 
         getCurrentContext().pushClass(getClasses().getObjectClass());
         getCurrentFrame().setSelf(topSelf);
-        topNamespace = new Namespace(getClasses().getObjectClass());
-        namespace = topNamespace;
-        getCurrentFrame().setNamespace(namespace);
 
         classes.initBuiltinClasses();
     }
@@ -499,14 +492,6 @@ public final class Ruby {
 
     public Frame getCurrentFrame() {
         return getCurrentContext().getCurrentFrame();
-    }
-
-    public Namespace getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(Namespace newNamespace) {
-        namespace = newNamespace;
     }
 
     public JavaSupport getJavaSupport() {
@@ -766,14 +751,12 @@ public final class Ruby {
 
     public void loadScript(String scriptName, Reader source, boolean wrap) {
         IRubyObject self = getTopSelf();
-        Namespace savedNamespace = getNamespace();
 
         ThreadContext context = getCurrentContext();
 
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
-        setNamespace(topNamespace);
 
         if (!wrap) {
             secure(4); /* should alter global state */
@@ -785,7 +768,6 @@ public final class Ruby {
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
-            setNamespace(new Namespace(context.getWrapper()));
         }
 
         String last_func = context.getCurrentFrame().getLastFunc();
@@ -794,7 +776,6 @@ public final class Ruby {
         context.getCurrentFrame().setLastFunc(null);
         context.getCurrentFrame().setLastClass(null);
         context.getCurrentFrame().setSelf(self);
-        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass()));
         context.getScopeStack().push();
 
         /* default visibility is private at loading toplevel */
@@ -806,7 +787,6 @@ public final class Ruby {
 
         } finally {
             context.getCurrentFrame().setLastFunc(last_func);
-            setNamespace(savedNamespace);
             context.getScopeStack().pop();
             context.getFrameStack().pop();
             context.popClass();
@@ -817,14 +797,12 @@ public final class Ruby {
 
     public void loadNode(String scriptName, INode node, boolean wrap) {
         IRubyObject self = getTopSelf();
-        Namespace savedNamespace = getNamespace();
 
         ThreadContext context = getCurrentContext();
 
         context.pushDynamicVars();
 
         RubyModule wrapper = context.getWrapper();
-        setNamespace(topNamespace);
 
         if (!wrap) {
             secure(4); /* should alter global state */
@@ -836,7 +814,6 @@ public final class Ruby {
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
-            setNamespace(new Namespace(context.getWrapper()));
         }
 
         String last_func = getCurrentFrame().getLastFunc();
@@ -845,7 +822,6 @@ public final class Ruby {
         context.getCurrentFrame().setLastFunc(null);
         context.getCurrentFrame().setLastClass(null);
         context.getCurrentFrame().setSelf(self);
-        context.getCurrentFrame().setNamespace(new Namespace(context.getRubyClass()));
         context.getScopeStack().push();
 
         /* default visibility is private at loading toplevel */
@@ -856,7 +832,6 @@ public final class Ruby {
 
         } finally {
             context.getCurrentFrame().setLastFunc(last_func);
-            setNamespace(savedNamespace);
             context.getScopeStack().pop();
             context.getFrameStack().pop();
             context.popClass();
