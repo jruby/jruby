@@ -263,7 +263,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                 list.add(eval(node));
             }
         }
-
         result = RubyArray.newArray(runtime, list);
     }
 
@@ -311,7 +310,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitBlockArgNode(BlockArgNode iVisited) {
         Asserts.notReached();
-        // XXX See org.jruby.internal.runtime.methods.DefaultMethod.
     }
 
     /**
@@ -372,7 +370,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (runtime.getRubyClass() == null) {
             throw new TypeError(runtime, "no class/module to define constant");
         }
-
         runtime.getRubyClass().setConstant(iVisited.getName(), eval(iVisited.getValueNode()));
     }
 
@@ -483,10 +480,6 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         RubyClass rubyClass = null;
 
-        // if ((ruby_class == getRuby().getObjectClass()) && rb_autoload_defined(node.nd_cname())) {
-        //     rb_autoload_load(node.nd_cname());
-        // }
-
         if (runtime.getRubyClass().isConstantDefined(iVisited.getClassName())) {
             IRubyObject type = runtime.getRubyClass().getConstant(iVisited.getClassName());
 
@@ -497,7 +490,6 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             if (superClass != null && rubyClass.getSuperClass().getRealClass() != superClass) {
-                // FIXME add defineClassId again.
                 rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
 
                 rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
@@ -506,13 +498,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                 if (runtime.getSafeLevel() >= 4) {
                     throw new SecurityError(runtime, "extending class prohibited");
                 }
-                // rb_clear_cache();
             }
         } else {
             if (superClass == null) {
                 superClass = runtime.getClasses().getObjectClass();
             }
-            // FIXME see above
             rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
             runtime.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
             rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
@@ -796,15 +786,11 @@ public final class EvaluateVisitor implements NodeVisitor {
                         threadContext.setPosition(position);
                         ArgsUtil.endCallArgs(runtime, tmpBlock);
                     }
-
                     result = recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
-
                     return;
-                } catch (RetryJump rExcptn) {
+                } catch (RetryJump retry) {
                 }
             }
-        /* } catch (ReturnJump rExcptn) {
-            result = rExcptn.getReturnValue(); */
         } catch (BreakJump bExcptn) {
             result = runtime.getNil();
         } finally {
@@ -890,8 +876,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                 } catch (RetryJump rExcptn) {
                 }
             }
-        /* } catch (ReturnJump rExcptn) {
-            result = rExcptn.getReturnValue(); */
         } catch (BreakJump bExcptn) {
             result = runtime.getNil();
         } finally {
@@ -1461,7 +1445,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                 result = RubyArray.newArray(runtime, result);
             }
         }
-        // result.convertToType("Array", "to_ary", false);
     }
 
     /** Evaluates the body in a class or module definition statement.
