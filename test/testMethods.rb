@@ -30,3 +30,12 @@ class MethodTestingOne
 end
 mt1 = MethodTestingOne.new
 test_equal([:hello, [1, 2]], mt1.hello(1, 2))
+
+
+def f(x, &proc)
+  proc.call()
+end
+y = "hello"
+f(10) {
+  test_equal("hello", y)
+}

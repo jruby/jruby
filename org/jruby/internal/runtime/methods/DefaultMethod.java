@@ -32,6 +32,11 @@ public final class DefaultMethod extends AbstractMethod {
      */
     final public RubyObject call(final Ruby ruby, final RubyObject receiver, final String name, RubyObject[] args, final boolean noSuper) {
 
+        RubyProc optionalBlockArg = null;
+        if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
+            optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+        }
+
         ruby.getScope().push();
 
         Namespace savedNamespace = null;
@@ -51,8 +56,7 @@ public final class DefaultMethod extends AbstractMethod {
                 prepareArguments(ruby, receiver, args);
             }
 
-            if (argsNode.getBlockArgNode() != null && ruby.isBlockGiven()) {
-                RubyProc optionalBlockArg = RubyProc.newProc(ruby, ruby.getClasses().getProcClass());
+            if (optionalBlockArg != null) {
                 ruby.getScope().setValue(argsNode.getBlockArgNode().getCount(), optionalBlockArg);
             }
 

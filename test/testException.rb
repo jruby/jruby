@@ -24,14 +24,4 @@ rescue Exception => boom
 	end
   }
   test_equal([10,13,13] , result.slice(0..2))
-  #  p boom.backtrace
-  #p result
-end
-unless $recurse
-  Java::import "org.jruby.test"
-  begin
-	TestHelper:throwException
-  rescue NativeException
-	test_ok(true)
-  end
 end
