@@ -36,7 +36,6 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -44,6 +43,7 @@ import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.Split;
+import org.jruby.internal.runtime.builtin.definitions.StringDefinition;
 
 /**
  *
@@ -114,81 +114,15 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return stringToBytes(value);
 	}
 
-    private static final int M_CLONE = 101;
-
-    private static final int M_DUP = 1;
-    private static final int M_OP_CMP = 2;
-    private static final int M_EQUAL = 3;
-	private static final int M_HASH = 4;
-    private static final int M_OP_PLUS = 5;
-    //private static final int M_OP_MUL = 6;
-    private static final int M_FORMAT = 7;
-    private static final int M_LENGTH = 8;
-    private static final int M_EMPTY = 9;
-    private static final int M_MATCH = 10;
-    private static final int M_MATCH2 = 11;
-    private static final int M_SUCC = 12;
-    private static final int M_SUCC_BANG = 13;
-    private static final int M_UPTO = 14;
-    private static final int M_REPLACE = 15;
-
-    private static final int M_TO_I = 20;
-    private static final int M_TO_F = 21;
-    private static final int M_INSPECT = 22;
-
-    private static final int M_CONCAT = 50;
-    private static final int M_INTERN = 51;
-    private static final int M_SUM = 201;
-
 	public static RubyClass createStringClass(Ruby ruby) {
-		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
+        RubyClass stringClass = new StringDefinition(ruby).getType();
 
 		stringClass.includeModule(ruby.getClasses().getComparableModule());
 		stringClass.includeModule(ruby.getClasses().getEnumerableModule());
 
-		stringClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyString.class, "newInstance"));
-		stringClass.defineMethod("initialize", IndexedCallback.create(M_REPLACE, 1));
-		stringClass.defineMethod("clone", IndexedCallback.create(M_CLONE, 0));
-		stringClass.defineMethod("dup", IndexedCallback.create(M_DUP, 0));
-
-		stringClass.defineMethod("<=>", IndexedCallback.create(M_OP_CMP, 1));
-		stringClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
-		stringClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
-		stringClass.defineMethod("eql?", IndexedCallback.create(M_EQUAL, 1));
-		stringClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
-
-		stringClass.defineMethod("+", IndexedCallback.create(M_OP_PLUS, 1));
-		stringClass.defineMethod("*", CallbackFactory.getMethod(RubyString.class, "op_mul", RubyInteger.class));
-		stringClass.defineMethod("%", IndexedCallback.create(M_FORMAT, 1));
 		stringClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyString.class, "aref"));
 		stringClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyString.class, "aset"));
-		stringClass.defineMethod("length", IndexedCallback.create(M_LENGTH, 0));
-		stringClass.defineMethod("size", IndexedCallback.create(M_LENGTH, 0));
-		stringClass.defineMethod("empty?", IndexedCallback.create(M_EMPTY, 0));
-		stringClass.defineMethod("=~", IndexedCallback.create(M_MATCH, 1));
-		stringClass.defineMethod("~", IndexedCallback.create(M_MATCH2, 0));
-		stringClass.defineMethod("succ", IndexedCallback.create(M_SUCC, 0));
-		stringClass.defineMethod("succ!", IndexedCallback.create(M_SUCC_BANG, 0));
-		stringClass.defineMethod("next", IndexedCallback.create(M_SUCC, 0));
-		stringClass.defineMethod("next!", IndexedCallback.create(M_SUCC_BANG, 0));
-		stringClass.defineMethod("upto", IndexedCallback.create(M_UPTO, 1));
-		stringClass.defineMethod("index", CallbackFactory.getOptMethod(RubyString.class, "index"));
-		stringClass.defineMethod("rindex", CallbackFactory.getOptMethod(RubyString.class, "rindex"));
-		stringClass.defineMethod("replace", IndexedCallback.create(M_REPLACE, 1));
-
-		stringClass.defineMethod("to_i", IndexedCallback.create(M_TO_I, 0));
-		stringClass.defineMethod("to_f", IndexedCallback.create(M_TO_F, 0));
-
-		stringClass.defineMethod("to_s", CallbackFactory.getSelfMethod(0));
-		stringClass.defineMethod("to_str", CallbackFactory.getSelfMethod(0));
-		stringClass.defineMethod("inspect", IndexedCallback.create(M_INSPECT, 0));
-		stringClass.defineMethod("dump", CallbackFactory.getMethod(RubyString.class, "dump"));
-
-		stringClass.defineMethod("upcase", CallbackFactory.getMethod(RubyString.class, "upcase"));
-		stringClass.defineMethod("downcase", CallbackFactory.getMethod(RubyString.class, "downcase"));
-		stringClass.defineMethod("capitalize", CallbackFactory.getMethod(RubyString.class, "capitalize"));
 		stringClass.defineMethod("swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
-
 		stringClass.defineMethod("upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
 		stringClass.defineMethod("downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));
 		stringClass.defineMethod("capitalize!", CallbackFactory.getMethod(RubyString.class, "capitalize_bang"));
@@ -199,10 +133,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("split", CallbackFactory.getOptMethod(RubyString.class, "split"));
 		stringClass.defineMethod("reverse", CallbackFactory.getMethod(RubyString.class, "reverse"));
 		stringClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyString.class, "reverse_bang"));
-		stringClass.defineMethod("concat", IndexedCallback.create(M_CONCAT, 1));
-		stringClass.defineMethod("<<", IndexedCallback.create(M_CONCAT, 1));
-		//    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
-		stringClass.defineMethod("intern", IndexedCallback.create(M_INTERN, 0));
 
 		stringClass.defineMethod("include?", CallbackFactory.getMethod(RubyString.class, "include", IRubyObject.class));
 
@@ -238,16 +168,9 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-		stringClass.defineMethod("sum", IndexedCallback.createOptional(M_SUM));
 
 		stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
 		stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
-
-		//    id_to_s = rb_intern("to_s");
-
-		//    rb_fs = Qnil;
-		//    rb_define_hooked_variable("$;", &rb_fs, 0, rb_str_setter);
-		//    rb_define_hooked_variable("$-F", &rb_fs, 0, rb_str_setter);
 
 		stringClass.defineMethod("unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
 		return stringClass;
@@ -255,48 +178,64 @@ public class RubyString extends RubyObject implements IndexCallable {
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
-        case M_CLONE:
+        case StringDefinition.RBCLONE:
             return rbClone();
-        case M_DUP:
+        case StringDefinition.DUP:
             return dup();
-        case M_OP_CMP:
+        case StringDefinition.OP_CMP:
             return op_cmp(args[0]);
-        case M_EQUAL:
+        case StringDefinition.EQUAL:
             return equal(args[0]);
-		case M_HASH:
+		case StringDefinition.HASH:
 			return hash();
-        case M_OP_PLUS:
+        case StringDefinition.OP_PLUS:
             return op_plus(args[0]);
-        case M_FORMAT:
+        case StringDefinition.OP_MUL:
+            return op_mul(args[0]);
+        case StringDefinition.FORMAT:
             return format(args[0]);
-        case M_LENGTH:
+        case StringDefinition.LENGTH:
             return length();
-        case M_EMPTY:
+        case StringDefinition.EMPTY:
             return empty();
-        case M_MATCH:
+        case StringDefinition.MATCH:
             return match(args[0]);
-        case M_MATCH2:
+        case StringDefinition.MATCH2:
             return match2();
-        case M_SUCC:
+        case StringDefinition.SUCC:
             return succ();
-        case M_SUCC_BANG:
+        case StringDefinition.SUCC_BANG:
             return succ_bang();
-        case M_UPTO:
+        case StringDefinition.UPTO:
             return upto(args[0]);
-        case M_REPLACE:
+        case StringDefinition.REPLACE:
             return replace(args[0]);
-        case M_TO_I:
+        case StringDefinition.TO_I:
             return to_i();
-        case M_TO_F:
+        case StringDefinition.TO_F:
             return to_f();
-        case M_INSPECT:
+        case StringDefinition.TO_S:
+            return to_s();
+        case StringDefinition.INSPECT:
             return inspect();
-        case M_CONCAT:
+        case StringDefinition.CONCAT:
             return concat(args[0]);
-        case M_INTERN:
+        case StringDefinition.INTERN:
             return intern();
-        case M_SUM:
+        case StringDefinition.SUM:
             return sum(args);
+        case StringDefinition.DUMP:
+            return dump();
+        case StringDefinition.UPCASE:
+            return upcase();
+        case StringDefinition.DOWNCASE:
+            return downcase();
+        case StringDefinition.CAPITALIZE:
+            return capitalize();
+        case StringDefinition.INDEX:
+            return index(args);
+        case StringDefinition.RINDEX:
+            return rindex(args);
         }
         return super.callIndexed(index, args);
     }
@@ -678,8 +617,10 @@ public class RubyString extends RubyObject implements IndexCallable {
 	/** rb_str_mul
 	 *
 	 */
-	public RubyString op_mul(RubyInteger other) {
-		long len = other.getLongValue();
+	public RubyString op_mul(IRubyObject other) {
+		RubyInteger otherInteger =
+                (RubyInteger) other.convertType(RubyInteger.class, "Integer", "to_int");
+        long len = otherInteger.getLongValue();
 
 		if (len < 0) {
 			throw new ArgumentError(getRuntime(), "negative argument");

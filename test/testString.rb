@@ -15,3 +15,5 @@ test_equal(["1", "2", "3"], "1   2     3".split(' '))
 test_equal(["1", "2", "3"], "1 2 3".split())
 test_equal(["1", "2", "3"], "1x2y3".split(/(x|y)/))
 test_equal(["foo"], "foo".split("whatever", 1))
+
+test_equal("hihihi", "hi" * 3)
