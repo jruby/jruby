@@ -27,3 +27,25 @@ test_equal("bazbar", s)
 test_equal(9, "alphabetagamma" =~ /gamma$/)
 test_equal(nil, "alphabetagamma" =~ /GAMMA$/)
 
+test_equal("Hello", "hello".capitalize)
+test_equal("123abc", "123ABC".capitalize)
+
+s ="hello"
+s.capitalize!
+test_equal("Hello", s)
+test_equal(nil, s.capitalize!)
+s = "123ABC"
+s.capitalize!
+test_equal("123abc", s)
+test_equal(nil, s.capitalize!)
+
+test_equal("hello", "hello\n".chomp)
+test_equal("hello", "hello".chomp)
+test_equal("", "".chomp)
+test_equal("", "x".chomp("x"))
+test_equal("x", "x".chomp("xx"))
+old_separator = $/
+$/ = 'x'
+test_equal("hello", "hellox".chomp)
+test_equal("hello", "hello".chomp)
+$/ = old_separator

@@ -1,30 +1,30 @@
 /*
  * RubyString.java - No description
  * Created on 04. Juli 2001, 22:53
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -86,7 +86,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	}
 
 	public void setValue(String newValue) {
-		value = newValue;
+        value = newValue;
 	}
 
 	public String toString() {
@@ -347,7 +347,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString cat(String str) {
-		value = value + str;
+		setValue(getValue() + str);
 		return this;
 	}
 
@@ -396,9 +396,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	public static RubyString newInstance(IRubyObject recv, IRubyObject[] args) {
 		RubyString newString = newString(recv.getRuntime(), "");
 		newString.setMetaClass((RubyClass) recv);
-
 		newString.callInit(args);
-
 		return newString;
 	}
 
@@ -445,36 +443,29 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString capitalize() {
-		final int length = getValue().length();
-
-		StringBuffer sb = new StringBuffer(length);
-		if (length > 0) {
-			sb.append(Character.toUpperCase(getValue().charAt(0)));
-		}
-		if (length > 1) {
-			sb.append(getValue().toLowerCase().substring(1));
-		}
-
-		return newString(sb.toString());
+        RubyString result = (RubyString) rbClone();
+        result.capitalize_bang();
+        return result;
 	}
 
 	/** rb_str_capitalize_bang
 	 *
 	 */
 	public RubyString capitalize_bang() {
-		final int length = getValue().length();
-
-		StringBuffer sb = new StringBuffer(length);
-		if (length > 0) {
-			sb.append(Character.toUpperCase(getValue().charAt(0)));
-		}
-		if (length > 1) {
-			sb.append(getValue().toLowerCase().substring(1));
-		}
-
-		setValue(sb.toString());
-
-		return this;
+        if (isEmpty()) {
+            return nilString(getRuntime());
+        }
+        StringBuffer buffer = new StringBuffer(getValue().toLowerCase());
+        char capital = buffer.charAt(0);
+        if (Character.isLowerCase(capital)) {
+            buffer.setCharAt(0, Character.toUpperCase(capital));
+        }
+        String result = buffer.toString();
+        if (result.equals(getValue())) {
+            return nilString(getRuntime());
+        }
+        setValue(result);
+        return this;
 	}
 
 	/** rb_str_upcase
@@ -639,10 +630,14 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyBoolean empty() {
-		return RubyBoolean.newBoolean(getRuntime(), getValue().length() == 0);
+		return RubyBoolean.newBoolean(getRuntime(), isEmpty());
 	}
 
-	/** rb_str_append
+    private boolean isEmpty() {
+        return getValue().length() == 0;
+    }
+
+    /** rb_str_append
 	 *
 	 */
 	public RubyString append(IRubyObject other) {
@@ -1266,10 +1261,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return this;
 	}
 
-	protected String getChomp(IRubyObject[] args) {
-		if (getValue().length() == 0) {
-			return null;
-		}
+	private String getChomp(IRubyObject[] args) {
 		String sep = null;
 		if (argCount(args, 0, 1) == 1) {
 			sep = stringValue(args[0]).getValue();
@@ -1290,31 +1282,35 @@ public class RubyString extends RubyObject implements IndexCallable {
 	/** rb_str_chomp
 	 *
 	 */
-	public IRubyObject chomp(IRubyObject[] args) {
-		String newStr = getChomp(args);
-		if (newStr == null) {
-			return dup();
-		}
-		return newString(newStr);
+	public RubyString chomp(IRubyObject[] args) {
+        RubyString result = (RubyString) dup();
+        result.chomp_bang(args);
+        return result;
 	}
 
 	/** rb_str_chomp_bang
 	 *
 	 */
-	public IRubyObject chomp_bang(IRubyObject[] args) {
-		String newStr = getChomp(args);
-		if (newStr == null) {
-			return getRuntime().getNil();
-		}
-		setValue(newStr);
-		return this;
+	public RubyString chomp_bang(IRubyObject[] args) {
+        if (isEmpty()) {
+            return nilString(getRuntime());
+        }
+        String separator = getRuntime().getGlobalVariables().get("$/").asSymbol();
+        if (args.length > 0) {
+            separator = args[0].asSymbol();
+        }
+        if (getValue().endsWith(separator)) {
+            setValue(getValue().substring(0, getValue().length() - separator.length()));
+            return this;
+        }
+		return nilString(getRuntime());
 	}
 
 	/** rb_str_strip
 	 *
 	 */
 	public IRubyObject strip() {
-		if (getValue().length() == 0) {
+		if (isEmpty()) {
 			return dup();
 		}
 		return newString(getValue().trim());
@@ -1324,7 +1320,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public IRubyObject strip_bang() {
-		if (getValue().length() == 0) {
+		if (isEmpty()) {
 			return getRuntime().getNil();
 		}
 		String newStr = getValue().trim();

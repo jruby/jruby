@@ -40,3 +40,7 @@ Items marked '-' are done and will be available in the next release.
 * Bytecode generation
 
 * Warnings
+
+* Security
+    * Complete taint and freeze support
+    * Safe levels
