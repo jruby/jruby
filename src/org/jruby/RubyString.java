@@ -33,10 +33,7 @@ package org.jruby;
 import java.util.Locale;
 
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Pack;

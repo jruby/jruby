@@ -25,9 +25,7 @@
 package org.jruby.runtime.callback;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 
-import org.jruby.Ruby;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
