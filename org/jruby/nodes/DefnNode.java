@@ -60,7 +60,7 @@ public class DefnNode extends Node {
             // ruby_class.setFrozen(true);
             
             MethodNode body = ruby.getRubyClass().searchMethod(getMId());
-            RubyObject origin = body.getOrigin();
+            // RubyObject origin = body.getOrigin();
             
             if (body != null){
                 // if (ruby_verbose.isTrue() && ruby_class == origin && body.nd_cnt() == 0) {
@@ -84,7 +84,7 @@ public class DefnNode extends Node {
                 noex = Constants.NOEX_PUBLIC;
             }
 
-            if (body != null && origin == ruby.getRubyClass() && (body.getNoex() & Constants.NOEX_UNDEF) != 0) {
+            if (body != null && body.getOrigin() == ruby.getRubyClass() && (body.getNoex() & Constants.NOEX_UNDEF) != 0) {
                 noex |= Constants.NOEX_UNDEF;
             }
             

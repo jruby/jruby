@@ -140,6 +140,12 @@ public class DefaultPointer extends AbstractList implements Pointer {
         delegate.remove(position);
     }
     
+    public Object remove(int index) {
+        autoResize(position);
+        
+        return delegate.remove(position + index);
+    }
+    
     public Object next() {
         return delegate.get(position);
     }

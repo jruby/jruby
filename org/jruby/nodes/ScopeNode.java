@@ -155,7 +155,7 @@ public class ScopeNode extends Node implements CallableNode {
         CRefNode savedCref = null;
         // VALUE[] localVars = null;
         
-        RubyPointer argsList = new RubyPointer(new ArrayList(Arrays.asList(args)));
+        RubyPointer argsList = new RubyPointer(args);
         RubyPointer localVarsList = null;
         
         ruby.getRubyScope().push();

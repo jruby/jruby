@@ -39,8 +39,6 @@ import org.jruby.runtime.*;
  * @version
  */
 public class DotNode extends Node {
-    private Node beginNode;
-    private Node endNode;
     private boolean exclusive;
     
     private boolean cannotCached = false;
@@ -57,7 +55,7 @@ public class DotNode extends Node {
         }
 
         RubyObject result = RubyRange.m_newRange(ruby, 
-              self.eval(beginNode), self.eval(endNode), exclusive);
+              self.eval(getBeginNode()), self.eval(getEndNode()), exclusive);
         
         if (cannotCached) {
             return result;

@@ -60,6 +60,10 @@ public class RubyPointer extends DefaultPointer {
     public RubyPointer(List delegate) {
         this(delegate, 0, true, null);
     }
+    
+    public RubyPointer(RubyObject[] args) {
+        this(args == null ? new ArrayList() : new ArrayList(Arrays.asList(args)), 0, true, null);
+    }
 
     public RubyPointer(List delegate, Object autoResizeObject) {
         this(delegate, 0, true, autoResizeObject);
