@@ -606,7 +606,10 @@ public class KernelModule {
 
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
         StringBuffer output = new StringBuffer();
-        runInShell(recv.getRuntime(), aString.toString(), output);
+        Ruby runtime = recv.getRuntime();
+        runtime.getGlobalVariables().set("$?", RubyFixnum.newFixnum(runtime, 
+            runInShell(runtime, aString.toString(), output)));
+        
         return RubyString.newString(recv.getRuntime(), output.toString());
     }
 
