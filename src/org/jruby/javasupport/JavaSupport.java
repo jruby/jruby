@@ -24,7 +24,7 @@ public class JavaSupport {
 
     private Map exceptionHandlers = new HashMap();
 
-    private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
+    private ClassLoader javaClassLoader = Thread.currentThread().getContextClassLoader();
 
     private Map javaObjectMap = new HashMap();
 
