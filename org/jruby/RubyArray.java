@@ -57,8 +57,6 @@ public class RubyArray extends RubyObject {
 	public RubyArray(Ruby ruby, ArrayList array, boolean notCopy) {
 		super(ruby, ruby.getClasses().getArrayClass());
 		this.list = array;
-
-		// equals = ruby.intern("==");
 	}
 
 	public static RubyArray nilArray(Ruby ruby) {
@@ -927,10 +925,13 @@ public class RubyArray extends RubyObject {
 	/** rb_ary_reverse_bang
 	 *
 	 */
-	public RubyObject reverse_bang() {
-		modify();
-		Collections.reverse(list);
-		return this;
+	public RubyArray reverse_bang() {
+        if (list.size() <= 1) {
+            return nilArray(ruby);
+        }
+        modify();
+        Collections.reverse(list);
+        return this;
 	}
 
 	/** rb_ary_reverse_m
