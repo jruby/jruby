@@ -234,7 +234,7 @@ public final class Ruby {
      */
     public Object evalScript(String script, Class returnClass) {
         IRubyObject result = evalScript(script);
-        return JavaUtil.convertRubyToJava(this, result, returnClass);
+        return JavaUtil.convertRubyToJava(result, returnClass);
     }
 
     /**

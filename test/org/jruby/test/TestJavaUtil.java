@@ -33,9 +33,6 @@ import junit.framework.TestCase;
 
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyHash;
-import org.jruby.RubyString;
 
 /**
  * @author jpetersen
@@ -59,18 +56,5 @@ public class TestJavaUtil extends TestCase {
         assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.TRUE).getType().name().toString(), "TrueClass");
         assertEquals(JavaUtil.convertJavaToRuby(ruby, Boolean.FALSE).getType().name().toString(), "FalseClass");
         assertEquals(JavaUtil.convertJavaToRuby(ruby, "AString").getType().name().toString(), "String");
-    }
-
-    public void testCompatible() {
-        assertTrue(JavaUtil.isCompatible(RubyString.newString(ruby, "hello"),
-                                         String.class));
-
-        assertTrue(JavaUtil.isCompatible(RubyArray.newArray(ruby),
-                                         String[].class));
-        RubyArray array = RubyArray.newArray(ruby);
-        array.append(RubyString.newString(ruby, "hello"));
-        assertTrue(JavaUtil.isCompatible(array, String[].class));
-        array.append(RubyHash.newHash(ruby));
-        assertTrue(! JavaUtil.isCompatible(array, String[].class));
     }
 }

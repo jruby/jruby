@@ -19,6 +19,10 @@ if defined? Java
     r = Random.new(1001)
     test_equal(10.0, Double.new(10).doubleValue())
     test_equal(10.0, Double.new("10").doubleValue())
+#    module Swing
+#      include_package "javax.swing"
+#    end
+#    Swing::JFrame.new(nil)
 
     # Instance methods
     test_equal(Random, r.type)

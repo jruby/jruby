@@ -84,13 +84,13 @@ public class RubyConversion {
         } catch (Exception ex) {
         }
 
-        return JavaUtil.convertRubyToJava(getRuby(), obj, type);
+        return JavaUtil.convertRubyToJava(obj, type);
     }
 
     public Object convertRubyArrayToJava(RubyArray array, Class type)
         throws InstantiationException, IllegalAccessException {
         if (type.isArray()) {
-            return JavaUtil.convertRubyToJava(getRuby(), array, type);
+            return JavaUtil.convertRubyToJava(array, type);
         }
 
         if (Collection.class.isAssignableFrom(type)) {

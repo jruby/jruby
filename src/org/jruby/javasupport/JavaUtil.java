@@ -31,7 +31,6 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -45,44 +44,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class JavaUtil {
-    public static boolean isCompatible(IRubyObject arg, Class javaClass) {
-        if (arg.isNil()) {
-            return true;
-        }
 
-        if (javaClass.isInstance(arg)) {
-            // arg is already of the required jruby class (or subclass)
-            return true;
-        }
-        if (javaClass == Object.class || javaClass == null) {
-            return true;
-        } else if (javaClass.isPrimitive()) {
-            String cName = javaClass.getName();
-            if (cName == "boolean") {
-                return true;
-            }
-            return arg instanceof RubyNumeric || arg instanceof RubyString;
-        } else if (javaClass.isArray()) {
-            if (!(arg instanceof RubyArray)) {
-                return false;
-            }
-            Class arrayClass = javaClass.getComponentType();
-            for (int i = 0; i < ((RubyArray) arg).getLength(); i++) {
-                if (!isCompatible(((RubyArray) arg).entry(i), arrayClass)) {
-                    return false;
-                }
-            }
-            return true;
-        } else {
-            return javaClass.isAssignableFrom(arg.getJavaClass());
-        }
+    public static Object convertRubyToJava(IRubyObject rubyObject) {
+        return convertRubyToJava(rubyObject, null);
     }
 
-    public static Object convertRubyToJava(Ruby ruby, IRubyObject rubyObject) {
-        return convertRubyToJava(ruby, rubyObject, null);
-    }
-
-    public static Object convertRubyToJava(Ruby ruby, IRubyObject rubyObject, Class javaClass) {
+    public static Object convertRubyToJava(IRubyObject rubyObject, Class javaClass) {
         if (rubyObject == null || rubyObject.isNil()) {
             return null;
         }

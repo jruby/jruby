@@ -998,11 +998,11 @@ public class RubyString extends RubyObject implements IndexCallable {
 		if (arg instanceof RubyArray) {
 			Object[] args = new Object[((RubyArray) arg).getLength()];
 			for (int i = 0; i < args.length; i++) {
-				args[i] = JavaUtil.convertRubyToJava(runtime, ((RubyArray) arg).entry(i));
+				args[i] = JavaUtil.convertRubyToJava(((RubyArray) arg).entry(i));
 			}
 			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(args));
 		} else {
-			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(runtime, arg)));
+			return RubyString.newString(runtime, new PrintfFormat(Locale.US, getValue()).sprintf(JavaUtil.convertRubyToJava(arg)));
 		}
 	}
 

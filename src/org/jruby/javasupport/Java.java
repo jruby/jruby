@@ -44,7 +44,7 @@ public class Java {
 
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
         Ruby runtime = recv.getRuntime();
-        Object javaObject = JavaUtil.convertRubyToJava(runtime, object);
+        Object javaObject = JavaUtil.convertRubyToJava(object);
         return JavaObject.wrap(runtime, javaObject);
     }
 
