@@ -28,16 +28,96 @@
  */
 package org.jruby.parser;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.jruby.common.*;
-import org.jruby.lexer.yacc.*;
-import org.jruby.ast.*;
-import org.jruby.ast.types.*;
-
-import org.jruby.ast.util.*;
-import org.jruby.runtime.*;
-import org.jruby.util.*;
+import org.jruby.ast.AliasNode;
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AssignableNode;
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.BeginNode;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.BlockPassNode;
+import org.jruby.ast.BreakNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.CaseNode;
+import org.jruby.ast.ClassNode;
+import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
+import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DStrNode;
+import org.jruby.ast.DSymbolNode;
+import org.jruby.ast.DXStrNode;
+import org.jruby.ast.DefinedNode;
+import org.jruby.ast.DefnNode;
+import org.jruby.ast.DefsNode;
+import org.jruby.ast.DotNode;
+import org.jruby.ast.EnsureNode;
+import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.FalseNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.ForNode;
+import org.jruby.ast.GlobalVarNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.IfNode;
+import org.jruby.ast.InstVarNode;
+import org.jruby.ast.IterNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NextNode;
+import org.jruby.ast.NilNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.NotNode;
+import org.jruby.ast.OpAsgnAndNode;
+import org.jruby.ast.OpAsgnNode;
+import org.jruby.ast.OpAsgnOrNode;
+import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.PostExeNode;
+import org.jruby.ast.RedoNode;
+import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RescueBodyNode;
+import org.jruby.ast.RescueNode;
+import org.jruby.ast.RetryNode;
+import org.jruby.ast.ReturnNode;
+import org.jruby.ast.SClassNode;
+import org.jruby.ast.SValueNode;
+import org.jruby.ast.ScopeNode;
+import org.jruby.ast.SelfNode;
+import org.jruby.ast.SplatNode;
+import org.jruby.ast.StarNode;
+import org.jruby.ast.StrNode;
+import org.jruby.ast.SymbolNode;
+import org.jruby.ast.ToAryNode;
+import org.jruby.ast.TrueNode;
+import org.jruby.ast.UndefNode;
+import org.jruby.ast.UntilNode;
+import org.jruby.ast.VAliasNode;
+import org.jruby.ast.VCallNode;
+import org.jruby.ast.WhenNode;
+import org.jruby.ast.WhileNode;
+import org.jruby.ast.XStrNode;
+import org.jruby.ast.YieldNode;
+import org.jruby.ast.ZArrayNode;
+import org.jruby.ast.ZSuperNode;
+import org.jruby.ast.ZeroArgNode;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.types.INameNode;
+import org.jruby.ast.util.ListNodeUtil;
+import org.jruby.common.IErrors;
+import org.jruby.common.IRubyErrorHandler;
+import org.jruby.lexer.yacc.LexState;
+import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.lexer.yacc.RubyYaccLexer;
+import org.jruby.lexer.yacc.SourcePosition;
+import org.jruby.runtime.Visibility;
+import org.jruby.util.IdUtil;
 
 public class DefaultRubyParser {
     private ParserSupport support;
@@ -244,8 +324,8 @@ bodystmt    : compstmt
 		 if ($2 != null) {
 		    node = new RescueNode(getPosition(), $1, $2, $3);
 		 } else if ($3 != null) {
-		    errorHandler.handleError(IErrors.WARN, null, "else without rescue is useless");
-                    node = support.appendToBlock($1, $3);
+		       errorHandler.handleError(IErrors.WARN, getPosition(), "else without rescue is useless");
+                       node = support.appendToBlock($1, $3);
 		 }
 		 if ($4 != null) {
 		    node = new EnsureNode(getPosition(), node, $4);
@@ -458,7 +538,7 @@ command       : operation command_args  %prec tLOWEST {
                     $$ = support.new_fcall($1, $2, getPosition()); 
 	            if ($3 != null) {
                         if ($$ instanceof BlockPassNode) {
-                            errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
+			      errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
                         }
                         $3.setIterNode($<Node>$);
                         $$ = $2;
@@ -471,7 +551,7 @@ command       : operation command_args  %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4); 
 		    if ($5 != null) {
 		        if ($$ instanceof BlockPassNode) {
-                            errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
+			      errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
                         }
                         $5.setIterNode($<Node>$);
 			$$ = $5;
@@ -484,7 +564,7 @@ command       : operation command_args  %prec tLOWEST {
                     $$ = support.new_call($1, $3, $4); 
 		    if ($5 != null) {
 		        if ($$ instanceof BlockPassNode) {
-                            errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
+			    errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
                         }
                         $5.setIterNode($<Node>$);
 			$$ = $5;
@@ -880,7 +960,7 @@ arg_value     : arg {
 
 aref_args     : none
               | command opt_nl {
-		    errorHandler.handleError(IErrors.WARN, null, "parenthesize argument(s) for future version");
+                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
                     $$ = new ArrayNode(getPosition()).add($1);
                 }
               | args trailer {
@@ -905,11 +985,11 @@ paren_args    : '(' none_list ')' {
                     $$ = $2;
                 }
               | '(' block_call opt_nl ')' {
-		    errorHandler.handleError(IErrors.WARN, null, "parenthesize argument(s) for future version");
+                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
                     $$ = new ArrayNode(getPosition()).add($2);
                 }
               | '(' args ',' block_call opt_nl ')' {
-		    errorHandler.handleError(IErrors.WARN, null, "parenthesize argument(s) for future version");
+                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
                     $$ = $2.add($4);
                 }
 
@@ -917,7 +997,7 @@ opt_paren_args: none
               | paren_args 
 
 call_args     : command {
-		    errorHandler.handleError(IErrors.WARN, null, "parenthesize argument(s) for future version");
+                    errorHandler.handleError(IErrors.WARN, getPosition(), "parenthesize argument(s) for future version");
                     $$ = new ArrayNode(getPosition()).add($1);
                 }
               | args opt_block_arg {
@@ -1004,13 +1084,13 @@ command_args  : {
 	        | tLPAREN_ARG  {                    
 		    lexer.setState(LexState.EXPR_ENDARG);
 		  } ')' {
-		    errorHandler.handleError(IErrors.WARN, null, "don't put space before argument parentheses");
+                    errorHandler.handleError(IErrors.WARN, getPosition(), "don't put space before argument parentheses");
 		    $$ = null;
 		  }
 		| tLPAREN_ARG call_args2 {
 		    lexer.setState(LexState.EXPR_ENDARG);
 		  } ')' {
-		    errorHandler.handleError(IErrors.WARN, null, "don't put space before argument parentheses");
+                    errorHandler.handleError(IErrors.WARN, getPosition(), "don't put space before argument parentheses");
 		    $$ = $2;
 		  }
 
@@ -1058,7 +1138,7 @@ primary       : literal
 		}
 	      | tLPAREN_ARG expr opt_nl ')' {
 		    lexer.setState(LexState.EXPR_ENDARG);
-		    errorHandler.handleError(IErrors.WARN, null, "(...) interpreted as grouped expression");
+		    errorHandler.handleError(IErrors.WARN, getPosition(), "(...) interpreted as grouped expression");
                     $$ = $2;
 		}
               | tLPAREN compstmt ')' {
@@ -1108,7 +1188,7 @@ primary       : literal
               | method_call
               | method_call brace_block {
 		    if ($1 != null && $1 instanceof BlockPassNode) {
-                        errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
+		          errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
 		    }
                     $2.setIterNode($1);
                     $$ = $2;
@@ -1311,7 +1391,7 @@ do_block      : kDO_BLOCK {
 
 block_call    : command do_block {
                     if ($1 instanceof BlockPassNode) {
-		        errorHandler.handleError(IErrors.COMPILE_ERROR, null, "Both block arg and actual block given.");
+ 		          errorHandler.handleError(IErrors.COMPILE_ERROR, getPosition(), "Both block arg and actual block given.");
                     }
                     $2.setIterNode($1);
                     $$ = $2;
