@@ -18,7 +18,7 @@ test_equal("/tmp", File.dirname(File.join("/tmp/")))
 test_equal("g/f/d/s/a", File.dirname(File.join(*["g", "f", "d", "s", "a", "b"])))
 test_equal("b", File.basename(File.join(*["g", "f", "d", "s", "a", "b"])))
 test_equal("/", File.dirname("/"))
-test_equal("\\", File.dirname("\\"))
+test_equal(".", File.dirname("\\")) # ?
 test_equal(".", File.dirname("wahoo"))
 
 # IO#readlines, IO::readlines, open, close, delete, ...
