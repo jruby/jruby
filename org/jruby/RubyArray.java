@@ -1867,6 +1867,81 @@ public class RubyArray extends RubyObject {
 					}
 					break;
 
+				case 's':
+				case 'v':
+				case 'S':
+					while (lLength-- > 0) {
+						int s;
+						if (lLeftInArray-- > 0)
+							lFrom = (RubyObject)list.get(idx++);
+						else
+							throw new ArgumentError(ruby, sTooFew);
+						if (lFrom == ruby.getNil()) s = 0;
+						else {
+							s = (int)(RubyNumeric.num2long(lFrom) & 0xffff);
+						}
+						lResult.append((char)(s & 0xff));
+						lResult.append((char)((s & 0xff00)>>8));
+
+					}
+					break;
+				case 'n':
+					while (lLength-- > 0) {
+						int s;
+						if (lLeftInArray-- > 0)
+							lFrom = (RubyObject)list.get(idx++);
+						else
+							throw new ArgumentError(ruby, sTooFew);
+						if (lFrom == ruby.getNil()) s = 0;
+						else {
+							s = (int)(RubyNumeric.num2long(lFrom) & 0xffff);
+						}
+						lResult.append((char)((s & 0xff00)>>8));
+						lResult.append((char)(s & 0xff));
+
+					}
+					break;
+
+				case 'i':
+				case 'I':
+				case 'l':
+				case 'L':
+				case 'V':
+					while (lLength-- > 0) {
+						int s;
+						if (lLeftInArray-- > 0)
+							lFrom = (RubyObject)list.get(idx++);
+						else
+							throw new ArgumentError(ruby, sTooFew);
+						if (lFrom == ruby.getNil()) s = 0;
+						else {
+							s = (int)(RubyNumeric.num2long(lFrom));
+						}
+						lResult.append((char)(s & 0xff));
+						lResult.append((char)((s>>8) & 0xff));
+						lResult.append((char)((s>>16) & 0xff));
+						lResult.append((char)((s>>24) & 0xff));
+
+					}
+					break;
+				case 'N':
+					while (lLength-- > 0) {
+						int s;
+						if (lLeftInArray-- > 0)
+							lFrom = (RubyObject)list.get(idx++);
+						else
+							throw new ArgumentError(ruby, sTooFew);
+						if (lFrom == ruby.getNil()) s = 0;
+						else {
+							s = (int)(RubyNumeric.num2long(lFrom));
+						}
+						lResult.append((char)((s>>24) & 0xff));
+						lResult.append((char)((s>>16) & 0xff));
+						lResult.append((char)((s>>8) & 0xff));
+						lResult.append((char)(s & 0xff));
+
+					}
+					break;
 				case 'u':
 				case 'm':
 					if (lLeftInArray-- > 0)

@@ -44,7 +44,7 @@ import org.jruby.parser.*;
 import org.jruby.runtime.*;
 import org.jruby.runtime.methods.*;
 import org.jruby.util.*;
-
+//TODO this visitor often leads to very deep stacks.  If it happens to be a real problem, the trampoline method of tail call elimination could be used.
 /**
  *
  * @author  jpetersen

@@ -42,9 +42,9 @@ import org.jruby.marshal.*;
  */
 public class RubyString extends RubyObject {
 
-    private static final String encoding = "iso8859-1";
+	private static final String encoding = "iso8859-1";
 
-    private static RubyModule pfClass;
+	private static RubyModule pfClass;
 
 	private String value;
 
@@ -85,25 +85,25 @@ public class RubyString extends RubyObject {
 		return getValue();
 	}
 
-    public static String bytesToString(byte[] bytes) {
-        try {
-            return new String(bytes, encoding);
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RubyBugException("unsupported encoding " + e);
-        }
-    }
+	public static String bytesToString(byte[] bytes) {
+		try {
+			return new String(bytes, encoding);
+		} catch (java.io.UnsupportedEncodingException e) {
+			throw new RubyBugException("unsupported encoding " + e);
+		}
+	}
 
-    public static byte[] stringToBytes(String string) {
-        try {
-            return string.getBytes(encoding);
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RubyBugException("unsupported encoding " + e);
-        }
-    }
+	public static byte[] stringToBytes(String string) {
+		try {
+			return string.getBytes(encoding);
+		} catch (java.io.UnsupportedEncodingException e) {
+			throw new RubyBugException("unsupported encoding " + e);
+		}
+	}
 
-    public byte[] toByteArray() {
-        return stringToBytes(value);
-    }
+	public byte[] toByteArray() {
+		return stringToBytes(value);
+	}
 
 	public static RubyClass createStringClass(Ruby ruby) {
 		RubyClass stringClass = ruby.defineClass("String", ruby.getClasses().getObjectClass());
@@ -299,9 +299,9 @@ public class RubyString extends RubyObject {
 		return new RubyString(ruby, str.substring(0, len));
 	}
 
-    public static RubyString newString(Ruby ruby, byte[] bytes) {
-        return newString(ruby, bytesToString(bytes));
-    }
+	public static RubyString newString(Ruby ruby, byte[] bytes) {
+		return newString(ruby, bytesToString(bytes));
+	}
 
 
 	/** rb_str_dup
@@ -1671,13 +1671,13 @@ public class RubyString extends RubyObject {
 	 * rb_str_each_byte
 	 */
 	public RubyString each_byte() {
-        byte[] lByteValue = toByteArray();
-        int lLength = lByteValue.length;
-        for (int i = 0; i < lLength; i++) {
-            ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
-        }
-        return this;
-    }
+		byte[] lByteValue = toByteArray();
+		int lLength = lByteValue.length;
+		for (int i = 0; i < lLength; i++) {
+			ruby.yield(new RubyFixnum(ruby, lByteValue[i]));
+		}
+		return this;
+	}
 
 	/** rb_str_intern
 	 *
@@ -1697,6 +1697,7 @@ public class RubyString extends RubyObject {
 	}
 
 	static char[] sHexDigits = "0123456789abcdef0123456789ABCDEFx".toCharArray();
+
 	/**
 	 *    Decodes <i>str</i> (which may contain binary data) according to the format
 	 *       string, returning an array of each value extracted. 
@@ -1781,7 +1782,7 @@ public class RubyString extends RubyObject {
 		* <tr>
 		*   <td valign="top">G</td>
 		*   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
-		*           network byte order.</td>
+		*           network byte order.</td> 
 		*   <td valign="top">Float</td>
 		* </tr>
 		* <tr>
@@ -1931,7 +1932,7 @@ public class RubyString extends RubyObject {
 		*           </tr>
 		*         </table>
 		*
-		**/	
+		**/
 		public RubyArray unpack(RubyString iFmt)
 		{
 			char[] lFmt = iFmt.getValue().toCharArray();
@@ -1960,7 +1961,7 @@ public class RubyString extends RubyObject {
 				else if (lNext == '*')
 				{
 					lStar = true;
-					lLength = value.length();
+					lLength = lValueLength - lCurValueIdx;
 					lNext  = ++i < lFmtLength ? lFmt[i]:0;
 				}
 				else if (Character.isDigit(lNext))
@@ -2106,7 +2107,165 @@ public class RubyString extends RubyObject {
 								lResult.push(ruby.getNil());
 						}
 						break;
+					case 's':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx)/2 ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx)/2 ;
+								lLength = (lValueLength - lCurValueIdx)/2;
+							}
+							for (;lLength-- > 0;)	
+							{
+								short tmp = (short)(value.charAt(lCurValueIdx++) & 0xff);
+								short s  = (short)(value.charAt(lCurValueIdx++) & 0xff);
+								s <<=8;
+								s |= tmp;
+								lResult.push(RubyFixnum.newFixnum(ruby, s));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
 
+						break;
+
+					case 'S':
+					case 'v':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx)/2 ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx)/2 ;
+								lLength = (lValueLength - lCurValueIdx)/2;
+							}
+							for (;lLength-- > 0;)	
+							{
+								short tmp = (short)(value.charAt(lCurValueIdx++) & 0xff);
+								int s  = (short)(value.charAt(lCurValueIdx++) & 0xff);
+								s <<=8;
+								s |= tmp;
+								lResult.push(RubyFixnum.newFixnum(ruby, s));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+						break;
+
+					case 'i':
+					case 'l':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx)/4 ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx)/4 ;
+								lLength = (lValueLength - lCurValueIdx)/4;
+							}
+							for (;lLength-- > 0;)	
+							{
+								int i1 = (value.charAt(lCurValueIdx++) & 0xff);
+								int i2  = (value.charAt(lCurValueIdx++) & 0xff);
+								int i3  = (value.charAt(lCurValueIdx++) & 0xff);
+								int i4  = (value.charAt(lCurValueIdx++) & 0xff);
+								i4 <<=24;
+								i4 |= (i3 <<16);
+								i4 |= (i2 <<8);
+								i4 |= i1;
+								lResult.push(RubyFixnum.newFixnum(ruby, i4));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+
+						break;
+
+					case 'I':
+					case 'V':
+					case 'L':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx)/4 ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx)/4 ;
+								lLength = (lValueLength - lCurValueIdx)/4;
+							}
+							for (;lLength-- > 0;)	
+							{
+								int i1 = (value.charAt(lCurValueIdx++) & 0xff);
+								int i2  = (value.charAt(lCurValueIdx++) & 0xff);
+								int i3  = (value.charAt(lCurValueIdx++) & 0xff);
+								long i4  = (value.charAt(lCurValueIdx++) & 0xff);
+								i4 <<=24;
+								i4 |= (i3 <<16);
+								i4 |= (i2 <<8);
+								i4 |= i1;
+								lResult.push(RubyFixnum.newFixnum(ruby, i4));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+						break;
+					case 'N':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx)/4 ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx)/4 ;
+								lLength = (lValueLength - lCurValueIdx)/4;
+							}
+							for (;lLength-- > 0;)	
+							{
+								long i1 = (value.charAt(lCurValueIdx++) & 0xff);
+								i1 <<=8;
+								i1 |= (value.charAt(lCurValueIdx++) & 0xff);
+								i1 <<=8;
+								i1 |= (value.charAt(lCurValueIdx++) & 0xff);
+								i1 <<=8;
+								i1 |= (value.charAt(lCurValueIdx++) & 0xff);
+								lResult.push(RubyFixnum.newFixnum(ruby, i1));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+						break;
+					case 'n':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx)/2 ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx)/2 ;
+								lLength = (lValueLength - lCurValueIdx)/2;
+							}
+							for (;lLength-- > 0;)	
+							{
+								int i1 = (value.charAt(lCurValueIdx++) & 0xff);
+								i1 <<=8;
+								i1 |= (value.charAt(lCurValueIdx++) & 0xff);
+								lResult.push(RubyFixnum.newFixnum(ruby, i1));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+						break;
+					case 'U':
+						{
+							if (lLength > lValueLength - lCurValueIdx) lLength =  lValueLength -lCurValueIdx;
+							//get the correct substring
+							String toUnpack = value.substring(lCurValueIdx);
+							String lUtf8 = null;
+							try
+							{
+								lUtf8 = new String(toUnpack.getBytes(encoding), "UTF-8");
+							}
+							catch(java.io.UnsupportedEncodingException e)
+							{
+								throw new RubyBugException("can't convert from UTF8");
+							}
+							char[] c = lUtf8.toCharArray();
+							int lNbChar = c.length;
+							for (int lCurCharIdx = 0; lLength-- > 0 && lCurCharIdx< lNbChar ; lCurCharIdx++)
+								lResult.push(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
+						}
+						break;
 				}
 			}
 			return lResult;
