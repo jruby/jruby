@@ -52,7 +52,7 @@ import org.jruby.util.Asserts;
  * @version $Revision$
  */
 public class ThreadClass extends RubyObject implements IndexCallable {
-    private static boolean globalAbortOnException; // remove it.
+    private static boolean globalAbortOnException; // remove it. - why?
 
     private Thread jvmThread;
     private Map threadLocalVariables = new HashMap();
@@ -213,7 +213,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     private String keyName(IRubyObject key) {
         String name;
         if (key instanceof RubySymbol) {
-            name = ((RubySymbol) key).asSymbol();
+            name = key.asSymbol();
         } else if (key instanceof RubyString) {
             name = ((RubyString) key).getValue();
         } else {

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<module type="module">
+  <name>GC</name>
+  <superclass>none</superclass>
+  <implementation>org.jruby.RubyGC</implementation>
+
+  <class-methods>
+    <method name="start"/>
+    <method-alias name="garbage_collect" original="start"/>
+  </class-methods>
+</module>

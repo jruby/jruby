@@ -148,5 +148,3 @@ test_ok(a[0] == a[1])
 a = Marshal.load(Marshal.dump([:hi, :hi, :hi, :hi]))
 test_ok(a[0] == :hi)
 test_ok(a[1] == :hi)
-
-test_print_report

@@ -22,8 +22,8 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.builtin.definitions.GCDefinition;
 
 /**
  * GC (Garbage Collection) Module
@@ -37,10 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyGC {
 
     public static RubyModule createGCModule(Ruby ruby) {
-        RubyModule gcModule = ruby.defineModule("GC");
-        gcModule.defineSingletonMethod("start", CallbackFactory.getSingletonMethod(RubyGC.class, "start"));
-        gcModule.defineSingletonMethod("garbage_collect", CallbackFactory.getSingletonMethod(RubyGC.class, "start"));
-        return gcModule;
+        return new GCDefinition(ruby).getModule();
     }
 
     public static IRubyObject start(IRubyObject recv) {
