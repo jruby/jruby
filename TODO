@@ -6,9 +6,11 @@
 - Loading external libraries written in Java.
 
 - Thread support
+    - Able to start from a different JVM thread
 
-- Simplify installation (replace mkconfig.rb?)
-- Simplify command line interface (regexp engine, etc.)
+- Usability
+    - Simplify installation (replace mkconfig.rb?)
+    - Simplify command line interface (regexp engine, etc.)
 
 - Finish ASTWriterVisitor
 - Implement ASTReader
