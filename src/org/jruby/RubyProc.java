@@ -15,7 +15,7 @@
  * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
  * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2002-2004 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2002-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * 
  * Alternatively, the contents of this file may be used under the terms of
@@ -53,16 +53,13 @@ public class RubyProc extends RubyObject {
     }
 
     public static RubyClass createProcClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Proc", 
-                runtime.getClasses().getObjectClass());
+        RubyClass result = runtime.defineClass("Proc", runtime.getClasses().getObjectClass());
         CallbackFactory callbackFactory = runtime.callbackFactory(RubyProc.class);
         
-        result.defineMethod("arity", 
-                callbackFactory.getMethod("arity"));
-        result.defineMethod("call", 
-                callbackFactory.getOptMethod("call"));
-        result.defineMethod("[]", 
-                callbackFactory.getOptMethod("call"));
+        result.defineMethod("arity", callbackFactory.getMethod("arity"));
+        result.defineMethod("call", callbackFactory.getOptMethod("call"));
+        result.defineMethod("[]", callbackFactory.getOptMethod("call"));
+        result.defineMethod("to_proc", callbackFactory.getMethod("to_proc"));        
 
         result.defineSingletonMethod("new", 
                 callbackFactory.getOptSingletonMethod("newInstance"));
@@ -135,5 +132,9 @@ public class RubyProc extends RubyObject {
 
     public RubyFixnum arity() {
         return getRuntime().newFixnum(block.arity().getValue());
+    }
+    
+    public RubyProc to_proc() {
+    	return this;
     }
 }
