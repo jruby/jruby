@@ -940,26 +940,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (threadContext.getRubyClass() == null) {
             throw new TypeError(runtime, "no outer class/module");
         }
-
-        RubyModule module = null;
-
-        if (isConstantDefined(iVisited.getName())) {
-            module = (RubyModule) getConstant(iVisited.getName());
-
-            if (runtime.getSafeLevel() >= 4) {
-                throw new SecurityError(runtime, "Extending module prohibited.");
-            }
-        } else {
-            module = runtime.defineModule(iVisited.getName());
-            setConstant(iVisited.getName(), module);
-            module.setClassPath(threadContext.getRubyClass(), iVisited.getName());
-        }
-
-        if (threadContext.getWrapper() != null) {
-            module.getSingletonClass().includeModule(threadContext.getWrapper());
-            module.includeModule(threadContext.getWrapper());
-        }
-
+        RubyModule module = runtime.getModule(iVisited.getName());
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
     }
 

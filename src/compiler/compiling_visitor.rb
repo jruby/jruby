@@ -339,7 +339,7 @@ module JRuby
       end
 
       def visitModuleNode(node)
-        # @bytecodes << CreateModule.new(node.getName)
+        # @bytecodes << GetModule.new(node.getName)
         # @bytecodes << AssignSelf.new
 
         # .... etc. ... 

@@ -313,6 +313,29 @@ public final class Ruby {
         return newModule;
     }
 
+    /**
+     * In the current context, get the named module. If it doesn't exist a
+     * new module is created.
+     */
+    public RubyModule getModule(String name) {
+        RubyModule module;
+        if (getRubyClass().isConstantDefined(name)) {
+            module = (RubyModule) getRubyClass().getConstant(name);
+            if (getSafeLevel() >= 4) {
+                throw new SecurityError(this, "Extending module prohibited.");
+            }
+        } else {
+            module = defineModule(name);
+            getRubyClass().setConstant(name, module);
+            module.setClassPath(getRubyClass(), name);
+        }
+        if (getWrapper() != null) {
+            module.getSingletonClass().includeModule(getWrapper());
+            module.includeModule(getWrapper());
+        }
+        return module;
+    }
+
     /** Getter for property securityLevel.
      * @return Value of property securityLevel.
      */

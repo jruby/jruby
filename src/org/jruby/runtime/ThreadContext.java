@@ -23,11 +23,7 @@
  */
 package org.jruby.runtime;
 
-import org.jruby.exceptions.NameError;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RedoJump;
-import org.jruby.exceptions.NextJump;
-import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.*;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.runtime.builtin.IRubyObject;

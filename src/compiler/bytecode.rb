@@ -41,7 +41,7 @@ module JRuby
           generator.append(BCEL::ALOAD.new(RUNTIME_INDEX))
         end
 
-        def push_scope_stack(generator)
+        def get_scope_stack(generator)
           push_runtime(generator)
           generator.appendInvoke(RUBY_TYPE.getClassName,
                                  "getScope",
@@ -50,7 +50,7 @@ module JRuby
                                  BCEL::Constants::INVOKEVIRTUAL)
         end
 
-        def push_frame_stack(generator)
+        def get_frame_stack(generator)
           push_runtime(generator)
           generator.appendInvoke(RUBY_TYPE.getClassName,
                                  "getFrameStack",
@@ -164,7 +164,7 @@ module JRuby
         end
 
         def emit_jvm_bytecode(generator)
-          push_scope_stack(generator) # ... why do we do this?
+          get_scope_stack(generator) # ... why do we do this?
           generator.appendPush(@index)
           arg_types = BCEL::Type[].new(1)
           arg_types[0] = BCEL::Type::INT
@@ -387,7 +387,7 @@ module JRuby
 
         def emit_jvm_bytecode(generator)
           # runtime.getFrameStack().pushCopy()
-          push_frame_stack(generator)
+          get_frame_stack(generator)
           generator.appendInvoke("org.jruby.runtime.FrameStack",
                                  "pushCopy",
                                  BCEL::Type::VOID,
@@ -395,7 +395,7 @@ module JRuby
                                  BCEL::Constants::INVOKEVIRTUAL)
 
           # runtime.getScopeStack().push(localnames)
-          push_scope_stack(generator)
+          get_scope_stack(generator)
           # FIXME: store this array instead of creating it on the fly!
           generator.appendPush(@local_names.size)
           factory = generator.factory
@@ -422,7 +422,7 @@ module JRuby
 
           # Set up Ruby locals (ignore _ and ~ vars for now)
           for i in 2...@local_names.size
-            push_scope_stack(generator)
+            get_scope_stack(generator)
             generator.appendPush(i)
             generator.append(BCEL::ALOAD.new(i))
 
@@ -441,7 +441,7 @@ module JRuby
       class RestoreScope < Instruction
         def emit_jvm_bytecode(generator)
           # getScopeStack.pop()
-          push_scope_stack(generator)
+          get_scope_stack(generator)
           generator.appendInvoke("org.jruby.runtime.ScopeStack",
                                  "pop",
                                  BCEL::ObjectType.new("org.jruby.util.collections.StackElement"),
@@ -449,7 +449,7 @@ module JRuby
                                  BCEL::Constants::INVOKEVIRTUAL)
           generator.append(BCEL::POP.new)
           # getFrameStack.pop()
-          push_frame_stack(generator)
+          get_frame_stack(generator)
           generator.appendInvoke("org.jruby.runtime.FrameStack",
                                  "pop",
                                  BCEL::ObjectType.new("java.lang.Object"),
