@@ -85,6 +85,8 @@ public class RubyRange extends RubyObject {
         result.defineMethod("size", callbackFactory.getMethod(RubyRange.class, "length"));
         result.defineMethod("to_s", callbackFactory.getMethod(RubyRange.class, "inspect"));
 
+        result.defineMethod("to_a", callbackFactory.getMethod(RubyRange.class, "to_a"));
+
         return result;
     }
 
@@ -310,5 +312,23 @@ public class RubyRange extends RubyObject {
         }
 
         return this;
+    }
+    
+    public RubyArray to_a() {
+        IRubyObject currentObject = begin;
+	    String compareMethod = (isExclusive ? "<" : "<=");
+	    RubyArray array = RubyArray.newArray(getRuntime());
+        
+	    while (currentObject.callMethod(compareMethod, end).isTrue()) {
+	        array.append(currentObject);
+	        
+			if (currentObject.equals(end)) {
+			    break;
+			}
+			
+			currentObject = currentObject.callMethod("succ");
+	    }
+	    
+	    return array;
     }
 }

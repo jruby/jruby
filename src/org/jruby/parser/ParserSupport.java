@@ -45,8 +45,10 @@ import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DRegexpNode;
+import org.jruby.ast.DStrNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.DotNode;
+import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FalseNode;
 import org.jruby.ast.FixnumNode;
@@ -67,6 +69,7 @@ import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptNNode;
 import org.jruby.ast.OrNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.SelfNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.TrueNode;
@@ -148,6 +151,43 @@ public class ParserSupport {
         }
         return new OptNNode(null, block);
     }
+    
+    /// TODO: We make self,nil,true,false twice....
+    public INode gettable(String id, ISourcePosition position) {
+        if (id.equals("self")) {
+            return new SelfNode(position);
+        } else if (id.equals("nil")) {
+        	return new NilNode(position);
+        } else if (id.equals("true")) {
+        	return new TrueNode(position);
+        } else if (id.equals("false")) {
+        	return new FalseNode(position);
+        } /*else if (id == k__FILE__) {
+        	return NEW_STR(rb_str_new2(ruby_sourcefile));
+            }
+            else if (id == k__LINE__) {
+        	return NEW_LIT(INT2FIX(ruby_sourceline));
+            }*/
+        else if (IdUtil.isLocal(id)) {
+            if (blockNames.isInBlock() && blockNames.isDefined(id)) {
+                return new DVarNode(position, id);
+            } else if (getLocalNames().isLocalRegistered(id)) {
+                return new LocalVarNode(position, getLocalNames().getLocalIndex(id));
+            }
+            return new VCallNode(position, id); // Method call without arguments.
+        } else if (IdUtil.isGlobal(id)) {
+            return new GlobalVarNode(position, id);
+        } else if (IdUtil.isInstanceVariable(id)) {
+            return new InstVarNode(position, id);
+        } else if (IdUtil.isConstant(id)) {
+            return new ConstNode(position, id);
+        } else if (IdUtil.isClassVariable(id)) {
+            return new ClassVarNode(position, id);
+        } else {
+            errorHandler.handleError(IErrors.COMPILE_ERROR, position, "identifier " + id + " is not valid");
+        }
+        return null;
+    }
 
     /**
      * Returns a Node representing the access of the
@@ -180,7 +220,66 @@ public class ParserSupport {
         Asserts.notReached();
         return null;
     }
-
+    
+    public void yyerror(String message) {
+        errorHandler.handleError(IErrors.SYNTAX_ERROR, null, message, null);
+    }
+    
+    public INode assignable(ISourcePosition position, Object id, INode value) {
+        checkExpression(value);
+        
+        if (id instanceof SelfNode) {
+            yyerror("Can't change the value of self"); 
+        } else if (id instanceof NilNode) {
+            yyerror("Can't assign to nil");
+        } else if (id instanceof TrueNode) {
+    	    yyerror("Can't assign to true");
+        } else if (id instanceof FalseNode) {
+    	    yyerror("Can't assign to false");
+        } 
+        // TODO: Support FILE and LINE by making nodes of them.
+        /*else if (id == k__FILE__) {
+    	    yyerror("Can't assign to __FILE__");
+        } else if (id == k__LINE__) {
+            yyerror("Can't assign to __LINE__");
+        } */else {
+            String name = (String) id;
+            if (IdUtil.isLocal(name)) {
+                // TODO: Add curried dvar?
+                /*if (rb_dvar_curr(id)) {
+                    return NEW_DASGN_CURR(id, value);
+                } else*/
+                if (blockNames.isDefined(name)) {
+                    return new DAsgnNode(position, name, value);
+                } else if (getLocalNames().isLocalRegistered(name) || !blockNames.isInBlock()) {
+                    return new LocalAsgnNode(position, name, getLocalNames().getLocalIndex(name), value);
+                } else {
+                    blockNames.add(name);
+                    // TODO: Should be curried
+                    return new DAsgnNode(position, name, value);
+                }
+            } else if (IdUtil.isGlobal(name)) {
+                return new GlobalAsgnNode(position, name, value);
+            } else if (IdUtil.isInstanceVariable(name)) {
+                return new InstAsgnNode(position, name, value);
+            } else if (IdUtil.isConstant(name)) {
+                if (isInDef() || isInSingle()) {
+                    yyerror("dynamic constant assignment");
+                }
+                return new ConstDeclNode(position, name, value);
+            } else if (IdUtil.isClassVariable(name)) {
+                if (isInDef() || isInSingle()) {
+                    return new ClassVarAsgnNode(position, name, value);
+                }
+                return new ClassVarDeclNode(position, name, value);
+            } else {
+                errorHandler.handleError(IErrors.COMPILE_ERROR, position, "identifier " + name + " is not valid"); 
+            }
+        }
+        
+        return null;
+    }
+    
     /**
      * Returns a Node representing the assignment of value to
      * the variable or constant named id.
@@ -192,14 +291,14 @@ public class ParserSupport {
      *@return A Node representing the assignment.
 	 * @fixme need to handle positions
      */
-    public INode getAssignmentNode(String name, INode valueNode, ISourcePosition position) {
+    public IAssignableNode getAssignmentNode(String name, INode valueNode, ISourcePosition position) {
         checkExpression(valueNode);
 
         if (IdUtil.isLocal(name)) {
             if (blockNames.isDefined(name)) {
                 return new DAsgnNode(position, name, valueNode);
             } else if (getLocalNames().isLocalRegistered(name) || !blockNames.isInBlock()) {
-                return new LocalAsgnNode(position, getLocalNames().getLocalIndex(name), valueNode);
+                return new LocalAsgnNode(position, name, getLocalNames().getLocalIndex(name), valueNode);
             } else {
                 blockNames.add(name);
                 return new DAsgnNode(position, name, valueNode);
@@ -335,6 +434,24 @@ public class ParserSupport {
             lArgs.add(rhs);
         }
         return result;
+    }
+    
+    public INode ret_args(INode node, ISourcePosition position) {
+        if (node != null) {
+            if (node instanceof BlockPassNode) {
+                errorHandler.handleError(IErrors.COMPILE_ERROR, position, "Dynamic constant assignment.");
+            }
+
+            if (node instanceof ArrayNode && ((ArrayNode)node).size() == 1) {
+        	    node = (INode) ((ArrayNode)node).iterator().next();
+        	}
+        	/* TODO: SPLAT rule...
+        	if (node != null && node instanceof RestArgsNode) {
+        	    node = NEW_SVALUE(node);
+        	}*/
+        }
+        
+        return node;
     }
 
     public void checkExpression(INode node) {
@@ -615,5 +732,46 @@ public class ParserSupport {
      */
     public void setErrorHandler(IErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
+    }
+    
+    public INode literal_concat(ISourcePosition position, INode head, 
+            Object tail) {
+        IListNode list;
+        
+        if (head == null) {
+            list = new DStrNode(position);
+        } else if (head instanceof EvStrNode) {
+            list = new DStrNode(position).add(head);
+        } else {
+            list = (IListNode) head;
+        }
+        
+        if (tail instanceof String) {
+            tail = new StrNode(position, (String)tail);
+        }
+        list.add((INode)tail);
+        
+        return list;
+    }
+    
+    public INode newEvStrNode(ISourcePosition position, INode node) {
+        INode head = node;
+        while (true) {
+            if (node != null) {
+                if (node instanceof StrNode ||
+                    node instanceof DStrNode ||
+                    node instanceof EvStrNode) {
+                    return node;
+                }
+                
+                if (node instanceof NewlineNode == false) {
+                    break;
+                }
+                
+                node = ((NewlineNode) node).getNextNode();
+            }
+        }
+        
+        return new EvStrNode(position, head);
     }
 }

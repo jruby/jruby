@@ -46,7 +46,7 @@ module JavaCode
     end
 
     def to_s
-      code = "#@visible #{@flags.join(\" \")} class #@name {"
+      code = "#@visible #{@flags.join(" ")} class #@name {"
       @methods.each { |method|
 	code << "\n" << method
       }
@@ -85,7 +85,7 @@ module JavaCode
     end
 
     def to_s
-      code = "#@visible #{@flags.join(\" \")} #@return_type #@name(#@parameter) {\n"
+      code = "#@visible #{@flags.join(" ")} #@return_type #@name(#@parameter) {\n"
       @local.uniq.each { |item|
 	code << "item" << ";\n"
       }

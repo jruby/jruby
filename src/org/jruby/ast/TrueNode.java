@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -28,6 +30,7 @@ package org.jruby.ast;
 
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -35,7 +38,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class TrueNode extends AbstractNode {
+public class TrueNode extends AbstractNode implements INameNode {
     static final long serialVersionUID = -8198252481133454778L;
 
 
@@ -49,5 +52,12 @@ public class TrueNode extends AbstractNode {
      **/
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitTrueNode(this);
+    }
+    
+    /**
+     * Name of the true node.
+     */
+    public String getName() {
+        return "true";
     }
 }

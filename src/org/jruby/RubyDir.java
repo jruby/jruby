@@ -92,6 +92,7 @@ public class RubyDir extends RubyObject {
 
         dirClass.defineMethod("close", callbackFactory.getMethod(RubyDir.class, "close"));
         dirClass.defineMethod("each", callbackFactory.getMethod(RubyDir.class, "each"));
+        dirClass.defineMethod("entries", callbackFactory.getMethod(RubyDir.class, "entries"));
         dirClass.defineMethod("tell", callbackFactory.getMethod(RubyDir.class, "tell"));
         dirClass.defineAlias("pos", "tell");
         dirClass.defineMethod("seek", callbackFactory.getMethod(RubyDir.class, "seek", RubyFixnum.class));
@@ -146,6 +147,13 @@ public class RubyDir extends RubyObject {
         return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
+    /**
+     * @return all entries for this Dir
+     */
+    public RubyArray entries() {
+        return RubyArray.newArray(getRuntime(), JavaUtil.convertJavaArrayToRuby(getRuntime(), snapshot));
+    }
+    
     /**
      * Returns an array containing all of the filenames in the given directory.
      */

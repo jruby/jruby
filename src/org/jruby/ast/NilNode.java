@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -28,6 +30,7 @@ package org.jruby.ast;
 
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -35,7 +38,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class NilNode extends AbstractNode {
+public class NilNode extends AbstractNode implements INameNode {
     static final long serialVersionUID = -8702073984472296708L;
 
     public NilNode(ISourcePosition position) {
@@ -48,5 +51,12 @@ public class NilNode extends AbstractNode {
      **/
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitNilNode(this);
+    }
+    
+    /**
+     * Name of nil node.
+     **/
+    public String getName() {
+        return "nil";
     }
 }

@@ -3,10 +3,12 @@
  * Created on 05. Oktober 2001, 17:52
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <japetersen@web.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -87,19 +89,22 @@ public interface Token {
     int tCVAR       = DefaultRubyParser.tCVAR;
     int tINTEGER    = DefaultRubyParser.tINTEGER;
     int tFLOAT      = DefaultRubyParser.tFLOAT;
-    int tSTRING     = DefaultRubyParser.tSTRING;
-    int tXSTRING    = DefaultRubyParser.tXSTRING;
-    int tREGEXP     = DefaultRubyParser.tREGEXP;
-    int tDXSTRING   = DefaultRubyParser.tDXSTRING;
-    int tDREGEXP    = DefaultRubyParser.tDREGEXP;
-    int tDSTRING    = DefaultRubyParser.tDSTRING;
+    int tSTRING_CONTENT     = DefaultRubyParser.tSTRING_CONTENT;
+    int tSTRING_BEG = DefaultRubyParser.tSTRING_BEG;
+    int tSTRING_END = DefaultRubyParser.tSTRING_END;
+    int tSTRING_DBEG= DefaultRubyParser.tSTRING_DBEG;
+    int tSTRING_DVAR= DefaultRubyParser.tSTRING_DVAR;
+    int tXSTRING_BEG= DefaultRubyParser.tXSTRING_BEG;
+    int tREGEXP_BEG = DefaultRubyParser.tREGEXP_BEG;
+    int tREGEXP_END = DefaultRubyParser.tREGEXP_END;
+    int tWORDS_BEG      = DefaultRubyParser.tWORDS_BEG;
+    int tQWORDS_BEG      = DefaultRubyParser.tQWORDS_BEG;
     int tBACK_REF   = DefaultRubyParser.tBACK_REF;
     int tNTH_REF    = DefaultRubyParser.tNTH_REF;
-    
-    int tARRAY      = DefaultRubyParser.tARRAY;
 
     int tUPLUS      = DefaultRubyParser.tUPLUS;
     int tUMINUS     = DefaultRubyParser.tUMINUS;
+    int tUMINUS_NUM     = DefaultRubyParser.tUMINUS_NUM;
     int tPOW        = DefaultRubyParser.tPOW;
     int tCMP        = DefaultRubyParser.tCMP;
     int tEQ         = DefaultRubyParser.tEQ;
@@ -123,12 +128,13 @@ public interface Token {
     int tOP_ASGN    = DefaultRubyParser.tOP_ASGN;
     int tASSOC      = DefaultRubyParser.tASSOC;
     int tLPAREN     = DefaultRubyParser.tLPAREN;
+    int tLPAREN_ARG = DefaultRubyParser.tLPAREN_ARG;
     int tLBRACK     = DefaultRubyParser.tLBRACK;
     int tLBRACE     = DefaultRubyParser.tLBRACE;
+    int tLBRACE_ARG     = DefaultRubyParser.tLBRACE_ARG;
     int tSTAR       = DefaultRubyParser.tSTAR;
     int tAMPER      = DefaultRubyParser.tAMPER;
     int tSYMBEG     = DefaultRubyParser.tSYMBEG;
-    int LAST_TOKEN  = DefaultRubyParser.LAST_TOKEN;
 
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};

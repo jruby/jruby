@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -43,12 +45,11 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class EvStrNode extends AbstractNode {
     static final long serialVersionUID = 1681935012117120817L;
 
-    private final String value;
-    private INode evaluatedNode;
+    private INode body;
 
-    public EvStrNode(ISourcePosition position, String value) {
+    public EvStrNode(ISourcePosition position, INode body) {
         super(position);
-        this.value = value;
+        this.body = body;
     }
 
     /**
@@ -60,26 +61,10 @@ public class EvStrNode extends AbstractNode {
     }
 
     /**
-     * Gets the value.
-     * @return Returns a String
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
      * Gets the evaluatedNode.
      * @return Returns a INode
      */
-    public INode getEvaluatedNode() {
-        return evaluatedNode;
-    }
-
-    /**
-     * Sets the evaluatedNode.
-     * @param evaluatedNode The evaluatedNode to set
-     */
-    public void setEvaluatedNode(INode evaluatedNode) {
-        this.evaluatedNode = evaluatedNode;
+    public INode getBody() {
+        return body;
     }
 }

@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -33,7 +35,7 @@ import org.ablaf.ast.INode;
  * @author  jpetersen
  * @version $Revision$
  */
-public interface IAssignableNode {
+public interface IAssignableNode extends INode {
     public INode getValueNode();
     public void setValueNode(INode node);
 }

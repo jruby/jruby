@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -29,7 +31,6 @@ package org.jruby.ast;
 import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -41,13 +42,13 @@ public class RescueNode extends AbstractNode {
     static final long serialVersionUID = -4757038578511808125L;
 
     private INode bodyNode;
-    private IListNode rescueNodes;
+    private RescueBodyNode rescueNode;
     private INode elseNode;
     
-    public RescueNode(ISourcePosition position, INode bodyNode, IListNode rescueNodes, INode elseNode) {
+    public RescueNode(ISourcePosition position, INode bodyNode, RescueBodyNode rescueNode, INode elseNode) {
         super(position);
         this.bodyNode = bodyNode;
-        this.rescueNodes = rescueNodes;
+        this.rescueNode = rescueNode;
         this.elseNode = elseNode;
     }
 
@@ -76,10 +77,10 @@ public class RescueNode extends AbstractNode {
     }
 
     /**
-     * Gets the rescueNodes.
-     * @return Returns a IListNode
+     * Gets the first rescueNode.
+     * @return Returns a INode
      */
-    public IListNode getRescueNodes() {
-        return rescueNodes;
+    public RescueBodyNode getRescueNode() {
+        return rescueNode;
     }
 }

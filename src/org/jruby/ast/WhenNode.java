@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -42,11 +44,13 @@ public class WhenNode extends AbstractNode {
 
     private final IListNode expressionNodes;
     private final INode bodyNode;
+    private final INode nextCase;
 
-    public WhenNode(ISourcePosition position, IListNode expressionNodes, INode bodyNode) {
+    public WhenNode(ISourcePosition position, IListNode expressionNodes, INode bodyNode, INode nextCase) {
         super(position);
         this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;
+        this.nextCase = nextCase;
     }
 
     /**
@@ -63,6 +67,13 @@ public class WhenNode extends AbstractNode {
      */
     public INode getBodyNode() {
         return bodyNode;
+    }
+    
+    /**
+     * Gets the next case node (if any).
+     */
+    public INode getNextCase() {
+        return nextCase;
     }
 
     /**

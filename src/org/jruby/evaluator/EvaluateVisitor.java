@@ -348,9 +348,16 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getCaseNode() != null) {
             expression = eval(iVisited.getCaseNode());
         }
-        Iterator iter = iVisited.getWhenNodes().iterator();
-        while (iter.hasNext()) {
-            WhenNode whenNode = (WhenNode) iter.next();
+        
+        INode aNode = (WhenNode) iVisited.getFirstWhenNode();
+        
+        while (aNode != null) {
+            if (aNode instanceof WhenNode == false) {
+                eval(aNode);
+                break;
+            } 
+
+            WhenNode whenNode = (WhenNode) aNode;
             threadContext.setPosition(whenNode.getPosition());
             if (isTrace()) {
                 callTraceFunction("line", self);
@@ -358,13 +365,14 @@ public final class EvaluateVisitor implements NodeVisitor {
             RubyArray expressions = (RubyArray) eval(whenNode.getExpressionNodes());
             for (int i = 0; i < expressions.getLength(); i++) {
                 if ((expression != null && expressions.entry(i).callMethod("===", expression).isTrue())
-                        || (expression == null && expressions.entry(i).isTrue())) {
+                || (expression == null && expressions.entry(i).isTrue())) {
                     eval(whenNode.getBodyNode());
                     return;
                 }
             }
+            
+            aNode = whenNode.getNextCase();
         }
-        eval(iVisited.getElseNode());
     }
 
     /**
@@ -410,11 +418,20 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitColon2Node(Colon2Node)
      */
     public void visitColon2Node(Colon2Node iVisited) {
-        eval(iVisited.getLeftNode());
-        if (result instanceof RubyModule) {
-            result = ((RubyModule) result).getConstant(iVisited.getName());
+        INode node = iVisited.getLeftNode();
+
+        // TODO: Made this more colon3 friendly because of cpath production
+        // rule in grammar (it is convenient to think of them as the same thing
+        // at a grammar level even though evaluation is).
+        if (node == null) {
+            result = runtime.getClasses().getObjectClass().getConstant(iVisited.getName());
         } else {
-            result = result.callMethod(iVisited.getName());
+            eval(iVisited.getLeftNode());
+            if (result instanceof RubyModule) {
+                result = ((RubyModule) result).getConstant(iVisited.getName());
+            } else {
+                result = result.callMethod(iVisited.getName());
+            }
         }
     }
 
@@ -605,11 +622,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitEvStrNode(EvStrNode)
      */
     public final void visitEvStrNode(final EvStrNode iVisited) {
-        if (iVisited.getEvaluatedNode() == null) {
-            INode node = runtime.getParser().parse("#{}", iVisited.getValue(), threadContext.getDynamicNames());
-            iVisited.setEvaluatedNode(node);
-        }
-        eval(iVisited.getEvaluatedNode());
+        eval(iVisited.getBody());
     }
 
     /**
@@ -1055,10 +1068,21 @@ public final class EvaluateVisitor implements NodeVisitor {
             } catch (RaiseException raiseJump) {
                 runtime.getGlobalVariables().set("$!", raiseJump.getException());
 
-                Iterator iter = iVisited.getRescueNodes().iterator();
-                while (iter.hasNext()) {
-                    RescueBodyNode rescueNode = (RescueBodyNode) iter.next();
-                    if (isRescueHandled(raiseJump.getException(), rescueNode.getExceptionNodes())) {
+                RescueBodyNode rescueNode = iVisited.getRescueNode();
+
+                while (rescueNode != null) {
+                    INode exceptionNodes = rescueNode.getExceptionNodes();
+                    IListNode exceptionNodesList;
+                    
+                    // The grammar may store an ExpandArrayNode in place of
+                    // the list we want.  If so, then eval it into a list.
+                    if (exceptionNodes instanceof ExpandArrayNode) {
+                        exceptionNodesList = (IListNode) eval(exceptionNodes);
+                    } else {
+                        exceptionNodesList = (IListNode) exceptionNodes;
+                    }
+                    
+                    if (isRescueHandled(raiseJump.getException(), exceptionNodesList)) {
                         try {
                             eval(rescueNode);
                             return;
@@ -1067,6 +1091,8 @@ public final class EvaluateVisitor implements NodeVisitor {
                             continue RescuedBlock;
                         }
                     }
+                    
+                    rescueNode = rescueNode.getOptRescueNode();
                 }
 
                 throw raiseJump;
@@ -1283,7 +1309,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             result = ((RubyArray) result).first();
         }
 
-        result = threadContext.yield(result, null, null, false);
+        result = threadContext.yield(result, null, null, true);
     }
 
     /**

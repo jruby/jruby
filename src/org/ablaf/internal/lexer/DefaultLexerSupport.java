@@ -205,6 +205,23 @@ public class DefaultLexerSupport implements ILexerSupport {
         return true;
     }
 
+    public boolean isNextNoCase(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            char r = read();
+            
+            if (Character.toLowerCase(c) != r &&
+                Character.toUpperCase(c) != r) {
+                for (; i >= 0; i--) {
+                    unread();
+                }
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * @see ILexerSupport#readLine()
      */

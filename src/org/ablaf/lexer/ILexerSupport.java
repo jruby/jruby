@@ -68,6 +68,8 @@ public interface ILexerSupport {
 
     public boolean isNext(char c);
 
+    public boolean isNext(String s);
+    
 	/**
 	 * Check if the string s is the next string in the lexer.
 	 * If this is the case the String is consumed. If not the
@@ -75,7 +77,7 @@ public interface ILexerSupport {
 	 * @param s the string to check
 	 * @return true if the string s is next false otherwise
 	 */
-    public boolean isNext(String s);
+    public boolean isNextNoCase(String s);
     public char getNext();
     public char getLastRead();
     public char getCharAt(int idx);

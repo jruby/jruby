@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -45,15 +47,17 @@ import java.util.List;
 public class RescueBodyNode extends AbstractNode implements IListNode {
     static final long serialVersionUID = -6414517081810625663L;
 
-    private final IListNode exceptionNodes;
+    private final INode exceptionNodes;
     private final INode bodyNode;
+    private final RescueBodyNode optRescueNode;
 
     private List list = null;
 
-    public RescueBodyNode(ISourcePosition position, IListNode exceptionNodes, INode bodyNode) {
+    public RescueBodyNode(ISourcePosition position, INode exceptionNodes, INode bodyNode, RescueBodyNode optRescueNode) {
         super(position);
         this.exceptionNodes = exceptionNodes;
         this.bodyNode = bodyNode;
+        this.optRescueNode = optRescueNode;
     }
 
     /**
@@ -105,10 +109,17 @@ public class RescueBodyNode extends AbstractNode implements IListNode {
     }
 
     /**
+     * Get the next rescue node (if any).
+     */
+    public RescueBodyNode getOptRescueNode() {
+        return optRescueNode;
+    }
+
+    /**
      * Gets the exceptionNodes.
      * @return Returns a IListNode
      */
-    public IListNode getExceptionNodes() {
+    public INode getExceptionNodes() {
         return exceptionNodes;
     }
 }

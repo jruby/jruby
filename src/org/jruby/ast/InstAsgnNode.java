@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -30,6 +32,7 @@ import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents an instance variable assignment.
@@ -37,7 +40,7 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class InstAsgnNode extends AbstractNode implements IAssignableNode {
+public class InstAsgnNode extends AbstractNode implements IAssignableNode, INameNode {
     static final long serialVersionUID = 64498126883104604L;
 
     private final String name;

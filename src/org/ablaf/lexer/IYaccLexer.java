@@ -54,6 +54,8 @@ package org.ablaf.lexer;
 
 import java.io.IOException;
 
+import org.ablaf.ast.INode;
+
 /**
  *
  * @author  jpetersen
@@ -63,4 +65,6 @@ public interface IYaccLexer extends ILexer {
 	public boolean advance() throws IOException;
     public int token();
     public Object value();
+    public INode strTerm();
+    public void setStrTerm(INode strTerm);
 }

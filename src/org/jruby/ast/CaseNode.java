@@ -4,6 +4,8 @@
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -29,7 +31,6 @@ package org.jruby.ast;
 import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
-import org.jruby.ast.types.IListNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -50,18 +51,13 @@ public class CaseNode extends AbstractNode {
     private final INode caseNode;
 	/**
 	 * the body of the case.
-	 * this is a list of WhenNodes.
 	 */
-    private final IListNode whenNodes;
-    /** the else node
-     */
-    private final INode elseNode;
+    private final INode caseBody;
     
-    public CaseNode(ISourcePosition position, INode caseNode, IListNode whenNodes, INode elseNode) {
+    public CaseNode(ISourcePosition position, INode caseNode, INode caseBody) {
         super(position);
         this.caseNode = caseNode;
-        this.whenNodes = whenNodes;
-        this.elseNode = elseNode;
+        this.caseBody = caseBody;
     }
 
  	/**
@@ -82,19 +78,11 @@ public class CaseNode extends AbstractNode {
     }
 
     /**
-     * Gets the whenNodes.
-	 * the body of the case statement, a list of WhenNode
-     * @return whenNodes
+     * Gets the first whenNode.
+	 * the body of the case statement, the first of a list of WhenNodes
+     * @return whenNode
      */
-    public IListNode getWhenNodes() {
-        return whenNodes;
-    }
-
-    /**
-     * Gets the elseNode.
-     * @return Returns a INode
-     */
-    public INode getElseNode() {
-        return elseNode;
+    public INode getFirstWhenNode() {
+        return caseBody;
     }
 }

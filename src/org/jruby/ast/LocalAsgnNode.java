@@ -30,6 +30,7 @@ import org.ablaf.ast.INode;
 import org.ablaf.ast.visitor.INodeVisitor;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
@@ -37,14 +38,16 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  * @version $Revision$
  */
-public class LocalAsgnNode extends AbstractNode implements IAssignableNode {
+public class LocalAsgnNode extends AbstractNode implements IAssignableNode, INameNode {
     static final long serialVersionUID = 1118108700098164006L;
 
     private final int count;
     private INode valueNode;
+    private String name;
 
-    public LocalAsgnNode(ISourcePosition position, int count, INode valueNode) {
+    public LocalAsgnNode(ISourcePosition position, String name, int count, INode valueNode) {
         super(position);
+        this.name = name;
         this.count = count;
         this.valueNode = valueNode;
     }
@@ -55,6 +58,13 @@ public class LocalAsgnNode extends AbstractNode implements IAssignableNode {
      **/
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitLocalAsgnNode(this);
+    }
+    
+    /**
+     * Name of the local assignment.
+     **/
+    public String getName() {
+        return name;
     }
 
     /**

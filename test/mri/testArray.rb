@@ -74,7 +74,7 @@ test_ok(($x * 1).join(":") == '1')
 test_ok(($x * 0).join(":") == '')
 
 *$x = (1..7).to_a
-test_ok($x.size == 7)
-test_ok($x == [1, 2, 3, 4, 5, 6, 7])
+test_ok($x.size == 1)
+test_ok($x == [[1, 2, 3, 4, 5, 6, 7]])
 
 
