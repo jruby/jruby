@@ -53,23 +53,6 @@ public abstract class JumpException extends RuntimeException {
         super(msg);
     }
 
-    /**
-     * Constructor for JumpException.
-     * @param msg
-     * @param throwable
-     */
-    public JumpException(String msg, Throwable throwable) {
-        super(msg, throwable);
-    }
-
-    /**
-     * Constructor for JumpException.
-     * @param throwable
-     */
-    public JumpException(Throwable throwable) {
-        super(throwable);
-    }
-
     /** This method don't do anything for performance reasons.
      * 
      * @see Throwable#fillInStackTrace()

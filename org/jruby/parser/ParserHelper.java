@@ -1102,7 +1102,7 @@ public class ParserHelper {
             i = ruby.getScope().getLocalNames() != null ? ruby.getScope().getLocalNames().size() : 0;
 
             if (i < len) {
-                if (i == 0 || (ruby.getScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {
+                if (i == 0 || (ruby.getScope().getFlags() & Scope.SCOPE_MALLOC) == 0) {
                     //int vi = 0;
                     List values = new ArrayList(len); // len + 1
                     if (ruby.getScope().getLocalValues() != null) {
@@ -1110,7 +1110,7 @@ public class ParserHelper {
                     }
                     values.addAll(Collections.nCopies(len - values.size(), ruby.getNil()));
                     ruby.getScope().setLocalValues(values);
-                    ruby.getScope().setFlags(ruby.getScope().getFlags() | RubyScope.SCOPE_MALLOC);
+                    ruby.getScope().setFlags(ruby.getScope().getFlags() | Scope.SCOPE_MALLOC);
                 } else {
                     List values = new ArrayList(len); // Collections.nCopies(len /* + 1*/, ruby.getNil()));
                     values.addAll(ruby.getScope().getLocalValues()); // copy(ruby.getRubyScope().getLocalValues(), values.size());

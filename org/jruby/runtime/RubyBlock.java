@@ -47,7 +47,7 @@ public class RubyBlock {
     public Node body;
     public RubyObject self;
     public RubyFrame frame;
-    public RubyScope scope;
+    public Scope scope;
     // private BLOCKTAG tag;
     public RubyModule klass;
     public int iter;
@@ -68,7 +68,7 @@ public class RubyBlock {
         Node body,
         RubyObject self,
         RubyFrame frame,
-        RubyScope scope,
+        Scope scope,
         RubyModule klass,
         int iter,
         int vmode,
@@ -104,7 +104,7 @@ public class RubyBlock {
         klass = ruby.getRubyClass();
         frame.setFile(ruby.getSourceFile());
         frame.setLine(ruby.getSourceLine());
-        scope = ruby.getScope();
+        scope = (Scope)ruby.getScope().getTop();
         prev = oldBlock;
         iter = ruby.getIter().getIter();
         vmode = ruby.getActMethodScope();
@@ -149,7 +149,7 @@ public class RubyBlock {
             flags,
             dynamicVars,
             origThread,
-            prev != null ? prev.cloneBlock() : null,
+            prev, // != null && prev != this ? prev.cloneBlock() : null,
             ruby);
     }
 

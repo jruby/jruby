@@ -91,8 +91,8 @@ public final class Ruby {
     private RubyObject rubyTopSelf;
 
     // Eval
-    private RubyScope rubyScope = new RubyScope(this);
-    private RubyScope topScope = null;
+    private ScopeStack scope = new ScopeStack(this);
+    private Scope topScope = null;
     private RubyVarmap dynamicVars = null;
     private RubyModule rubyClass = null;
 
@@ -379,8 +379,10 @@ public final class Ruby {
         CRefNode oldCRef = getCRef();
         setCRef(getRubyFrame().getCbase());
 
-        RubyScope oldScope = getScope();
-        setScope(tmpBlock.scope);
+        Scope oldScope = (Scope)getScope().getTop();
+        getScope().setTop(tmpBlock.scope);
+        // getScope().push(tmpBlock.scope);
+
         // block.pop();
         block = block.prev;
 
@@ -450,6 +452,10 @@ public final class Ruby {
         } catch (ReturnException rExcptn) {
             // break;
             return rExcptn.getReturnValue();
+        } catch (BreakException bExcptn) {
+            // +++
+            throw new ReturnException(getNil());
+            // ---
         } finally {
             iter.pop();
             popClass();
@@ -462,8 +468,7 @@ public final class Ruby {
 
             // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
             //    scope_dup(old_scope);
-            setScope(oldScope);
-
+            getScope().setTop(oldScope);
         }
     }
 
@@ -540,9 +545,9 @@ public final class Ruby {
 
         // Init_stack(0);
         // Init_heap();
-        rubyScope.push(); // PUSH_SCOPE();
+        getScope().push(); // PUSH_SCOPE();
         // rubyScope.setLocalVars(null);
-        topScope = rubyScope;
+        topScope = (Scope)getScope().getTop();
 
         setActMethodScope(Constants.SCOPE_PRIVATE);
 
@@ -560,22 +565,15 @@ public final class Ruby {
             excptn.printStackTrace(getRuntime().getErrorStream());
         }
 
-        rubyScope.pop();
-        rubyScope = topScope;
+        getScope().pop();
+        getScope().push(topScope);
     }
 
     /** Getter for property rubyScope.
      * @return Value of property rubyScope.
      */
-    public RubyScope getScope() {
-        return rubyScope;
-    }
-
-    /** Setter for property rubyScope.
-     * @param rubyScope New value of property rubyScope.
-     */
-    public void setScope(RubyScope rubyScope) {
-        this.rubyScope = rubyScope;
+    public ScopeStack getScope() {
+        return scope;
     }
 
     /** Getter for property methodCache.
