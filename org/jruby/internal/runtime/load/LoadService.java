@@ -68,7 +68,7 @@ public class LoadService implements ILoadService {
         if (!file.endsWith(".rb")) {
             file += ".rb";
         }
-        runtime.getRuntime().loadFile(findFile(file), false);
+        runtime.loadFile(findFile(file), false);
         return true;
     }
 

@@ -119,9 +119,8 @@ public class RaiseException extends JumpException {
     protected void setException(RubyException newException) {
         Ruby ruby = newException.getRuntime();
 
-        // XXX Maybe move it into another methods.
-        if (ruby.getRuntime().getTraceFunction() != null) {
-            ruby.getRuntime().callTraceFunction(
+        if (ruby.getTraceFunction() != null) {
+            ruby.callTraceFunction(
                 "return",
                 ruby.getPosition(),
                 ruby.getCurrentFrame().getSelf(),

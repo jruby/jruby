@@ -157,13 +157,13 @@ public class JRubyEngine extends BSFEngineImpl {
      */
     private static void printException(Ruby ruby, Exception exception) {
         if (exception instanceof RaiseException) {
-            ruby.getRuntime().printError(((RaiseException) exception).getException());
+            ruby.printError(((RaiseException) exception).getException());
         } else if (exception instanceof ThrowJump) {
-            ruby.getRuntime().printError(((ThrowJump) exception).getNameError());
+            ruby.printError(((ThrowJump) exception).getNameError());
         } else if (exception instanceof BreakJump) {
-            ruby.getRuntime().getErrorStream().println("break without block.");
+            ruby.getErrorStream().println("break without block.");
         } else if (exception instanceof ReturnJump) {
-            ruby.getRuntime().getErrorStream().println("return without block.");
+            ruby.getErrorStream().println("return without block.");
         }
     }
 

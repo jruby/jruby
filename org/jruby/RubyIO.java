@@ -228,13 +228,13 @@ public class RubyIO extends RubyObject {
     protected void fdOpen(int fd) {
         switch (fd) {
             case 0 :
-                inStream = new RubyInputStream(getRuntime().getRuntime().getInputStream());
+                inStream = new RubyInputStream(getRuntime().getInputStream());
                 break;
             case 1 :
-                outStream = getRuntime().getRuntime().getOutputStream();
+                outStream = getRuntime().getOutputStream();
                 break;
             case 2 :
-                outStream = getRuntime().getRuntime().getErrorStream();
+                outStream = getRuntime().getErrorStream();
                 break;
             default :
                 throw new IOError(getRuntime(), "Bad file descriptor");

@@ -30,6 +30,12 @@
 package org.jruby;
 
 import java.io.Reader;
+import java.io.PrintStream;
+import java.io.InputStream;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -46,6 +52,8 @@ import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.IOError;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
@@ -64,11 +72,11 @@ import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ReadonlyGlobalVariable;
 import org.jruby.runtime.RubyExceptions;
-import org.jruby.runtime.RubyRuntime;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
@@ -113,6 +121,8 @@ public final class Ruby {
     public long randomSeed = 0;
     public Random random = new Random();
 
+    private RubyProc traceFunction;
+    private boolean isWithinTrace = false;
 
     /** safe-level:
     		0 - strings from streams/environment/ARGV are tainted (default)
@@ -133,8 +143,6 @@ public final class Ruby {
     // Default classes
     private RubyClasses classes;
     private RubyExceptions exceptions;
-
-    private final RubyRuntime runtime = new RubyRuntime(this);
 
     private IRubyObject topSelf;
 
@@ -641,14 +649,6 @@ public final class Ruby {
         this.wrapper = wrapper;
     }
 
-    /** Getter for property runtime.
-     * @return Value of property runtime.
-     */
-    public RubyRuntime getRuntime() {
-        Asserts.assertTrue(this.runtime != null, "runtime shouldn't be null");
-        return this.runtime;
-    }
-
     /**
      * Gets the exceptions
      * @return Returns a RubyExceptions
@@ -782,4 +782,260 @@ public final class Ruby {
         return errorHandler;
     }
 
+    public IRubyObject callSuper(IRubyObject[] args) {
+        if (getCurrentFrame().getLastClass() == null) {
+            throw new NameError(
+                this,
+                "superclass method '" + getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
+        }
+
+        getIterStack().push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+
+        try {
+            return getCurrentFrame().getLastClass().getSuperClass().call(
+                getCurrentFrame().getSelf(),
+                getCurrentFrame().getLastFunc(),
+                args,
+                CallType.SUPER);
+        } finally {
+            getIterStack().pop();
+        }
+    }
+
+    public PrintStream getErrorStream() {
+        return new PrintStream(((RubyIO) getGlobalVar("$stderr")).getOutStream());
+    }
+
+    public InputStream getInputStream() {
+        return ((RubyIO) getGlobalVar("$stdin")).getInStream();
+    }
+
+    public PrintStream getOutputStream() {
+        return new PrintStream(((RubyIO) getGlobalVar("$stdout")).getOutStream());
+    }
+
+    private static final int TRACE_HEAD = 8;
+    private static final int TRACE_TAIL = 5;
+    private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
+    /** Prints an error with backtrace to the error stream.
+     *
+     * MRI: eval.c - error_print()
+     *
+     */
+    public void printError(RubyException excp) {
+        if (excp == null || excp.isNil()) {
+            return;
+        }
+
+        RubyArray backtrace = (RubyArray) excp.callMethod("backtrace");
+
+        if (backtrace.isNil()) {
+            if (getSourceFile() != null) {
+                getErrorStream().print(getSourceFile() + ':' + getSourceLine());
+            } else {
+                getErrorStream().print(getSourceLine());
+            }
+        } else if (backtrace.getLength() == 0) {
+            printErrorPos();
+        } else {
+            IRubyObject mesg = backtrace.entry(0);
+
+            if (mesg.isNil()) {
+                printErrorPos();
+            } else {
+                getErrorStream().print(mesg);
+            }
+        }
+
+        RubyClass type = excp.getInternalClass();
+        String info = excp.toString();
+
+        if (type == getExceptions().getRuntimeError() && (info == null || info.length() == 0)) {
+            getErrorStream().print(": unhandled exception\n");
+        } else {
+            String path = type.getClassPath().toString();
+
+            if (info.length() == 0) {
+                getErrorStream().print(": " + path + '\n');
+            } else {
+                if (path.startsWith("#")) {
+                    path = null;
+                }
+
+                String tail = null;
+                if (info.indexOf("\n") != -1) {
+                    tail = info.substring(info.indexOf("\n") + 1);
+                    info = info.substring(0, info.indexOf("\n"));
+                }
+
+                getErrorStream().print(": " + info);
+
+                if (path != null) {
+                    getErrorStream().print(" (" + path + ")\n");
+                }
+
+                if (tail != null) {
+                    getErrorStream().print(tail + '\n');
+                }
+            }
+        }
+
+        if (!backtrace.isNil()) {
+            IRubyObject[] elements = backtrace.toJavaArray();
+
+            for (int i = 0; i < elements.length; i++) {
+                if (elements[i] instanceof RubyString) {
+                    getErrorStream().print("\tfrom " + elements[i] + '\n');
+                }
+
+                if (i == TRACE_HEAD && elements.length > TRACE_MAX) {
+                    getErrorStream().print("\t ... " + (elements.length - TRACE_HEAD - TRACE_TAIL) + "levels...\n");
+                    i = elements.length - TRACE_TAIL;
+                }
+            }
+        }
+    }
+
+    private void printErrorPos() {
+        if (getSourceFile() != null) {
+            if (getCurrentFrame().getLastFunc() != null) {
+                getErrorStream().print(getSourceFile() + ':' + getSourceLine());
+                getErrorStream().print(":in '" + getCurrentFrame().getLastFunc() + '\'');
+            } else if (getSourceLine() != 0) {
+                getErrorStream().print(getSourceFile() + ':' + getSourceLine());
+            } else {
+                getErrorStream().print(getSourceFile());
+            }
+        }
+    }
+
+    /** This method compiles and interprets a Ruby script.
+     *
+     *  It can be used if you want to use JRuby as a Macro language.
+     *
+     */
+    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
+        IRubyObject self = getTopSelf();
+        Namespace savedNamespace = getNamespace();
+
+        pushDynamicVars();
+
+        RubyModule wrapper = getWrapper();
+        setNamespace(getTopNamespace());
+
+        if (!wrap) {
+            secure(4); /* should alter global state */
+            pushClass(getClasses().getObjectClass());
+            setWrapper(null);
+        } else {
+            /* load in anonymous module as toplevel */
+            setWrapper(RubyModule.newModule(this));
+            pushClass(getWrapper());
+            self = getTopSelf().rbClone();
+            self.extendObject(getRubyClass());
+            setNamespace(new Namespace(getWrapper(), getNamespace()));
+        }
+
+        String last_func = getCurrentFrame().getLastFunc();
+
+        getFrameStack().push();
+        getCurrentFrame().setLastFunc(null);
+        getCurrentFrame().setLastClass(null);
+        getCurrentFrame().setSelf(self);
+        getCurrentFrame().setNamespace(new Namespace(getRubyClass(), null));
+        getScope().push();
+
+        /* default visibility is private at loading toplevel */
+        setCurrentVisibility(Visibility.PRIVATE);
+
+        try {
+            INode node = parse(source.toString(), scriptName.getValue());
+            self.eval(node);
+
+        } finally {
+            getCurrentFrame().setLastFunc(last_func);
+            setNamespace(savedNamespace);
+            getScope().pop();
+            getFrameStack().pop();
+            popClass();
+            popDynamicVars();
+            setWrapper(wrapper);
+        }
+    }
+
+
+    /** Loads, compiles and interprets a Ruby file.
+     *  Used by Kernel#require.
+     *
+     *  @mri rb_load
+     */
+    public void loadFile(File iFile, boolean wrap) {
+        Asserts.assertNotNull(iFile, "No such file to load");
+
+        try {
+            StringBuffer source = new StringBuffer((int) iFile.length());
+            BufferedReader br = new BufferedReader(new FileReader(iFile));
+            String line;
+            while ((line = br.readLine()) != null) {
+                source.append(line).append('\n');
+            }
+            br.close();
+
+            loadScript(new RubyString(this, iFile.getPath()), new RubyString(this, source.toString()), wrap);
+
+        } catch (IOException ioExcptn) {
+            throw IOError.fromException(this, ioExcptn);
+        }
+    }
+
+        /** Call the traceFunction
+     *
+     * MRI: eval.c - call_trace_func
+     *
+     */
+    public synchronized void callTraceFunction(
+        String event,
+        ISourcePosition position,
+        IRubyObject self,
+        String name,
+        IRubyObject type) {
+        if (!isWithinTrace && traceFunction != null) {
+            isWithinTrace = true;
+
+            ISourcePosition savePosition = getPosition();
+            String file = position.getFile();
+
+            if (file == null) {
+                file = "(ruby)";
+            }
+            if (type == null)
+                type = getFalse();
+
+            getFrameStack().push();
+            getCurrentFrame().setIter(Iter.ITER_NOT);
+
+            try {
+                traceFunction
+                    .call(new IRubyObject[] {
+                        RubyString.newString(this, event),
+                        RubyString.newString(this, file),
+                        RubyFixnum.newFixnum(this, position.getLine()),
+                        name != null ? RubySymbol.newSymbol(this, name) : getNil(),
+                        self != null ? self: getNil(),
+                        type });
+            } finally {
+                getFrameStack().pop();
+                setPosition(savePosition);
+                isWithinTrace = false;
+            }
+        }
+    }
+
+    public RubyProc getTraceFunction() {
+        return traceFunction;
+    }
+
+    public void setTraceFunction(RubyProc traceFunction) {
+        this.traceFunction = traceFunction;
+    }
 }

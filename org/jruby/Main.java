@@ -113,9 +113,9 @@ public class Main {
             runtime.eval(parsedScript);
 
         } catch (RaiseException rExcptn) {
-            runtime.getRuntime().printError(rExcptn.getException());
+            runtime.printError(rExcptn.getException());
         } catch (ThrowJump throwJump) {
-            runtime.getRuntime().printError(throwJump.getNameError());
+            runtime.printError(throwJump.getNameError());
         }
     }
 

@@ -195,13 +195,13 @@ public final class EvaluateVisitor implements NodeVisitor {
      *
      */
     private boolean isTrace() {
-        return runtime.getRuntime().getTraceFunction() != null;
+        return runtime.getTraceFunction() != null;
     }
 
     private void callTraceFunction(String event, IRubyObject self) {
         String name = threadContext.getCurrentFrame().getLastFunc();
         RubyModule type = threadContext.getCurrentFrame().getLastClass();
-        runtime.getRuntime().callTraceFunction(event, threadContext.getPosition(), self, name, type);
+        runtime.callTraceFunction(event, threadContext.getPosition(), self, name, type);
     }
 
     public IRubyObject eval(INode node) {
@@ -408,7 +408,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitCallNode(CallNode iVisited) {
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-        
+
         IRubyObject receiver = null;
         IRubyObject[] args = null;
         try {
@@ -418,7 +418,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
         Asserts.assertNotNull(receiver.getInternalClass(), receiver.getClass().getName());
-        
+
         result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
 
@@ -689,7 +689,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (rubyClass == null) {
             throw new TypeError(runtime, "No class to add method.");
         }
-        
+
         String name = iVisited.getName();
         if (rubyClass == runtime.getClasses().getObjectClass() && name.equals("initialize")) {
             runtime.getErrorHandler().warn("redefining Object#initialize may cause infinite loop");
@@ -860,7 +860,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         threadContext.setPosition(position);
                         ArgsUtil.endCallArgs(runtime, tmpBlock);
                     }
-                    
+
                     result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
 
                     return;
@@ -1598,7 +1598,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-        
+
         IRubyObject[] args = null;
         try {
             args = ArgsUtil.setupArgs(runtime, this, exceptionNodes);

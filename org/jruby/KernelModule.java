@@ -414,11 +414,11 @@ public class KernelModule {
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func) {
         if (trace_func.isNil()) {
-            recv.getRuntime().getRuntime().setTraceFunction(null);
+            recv.getRuntime().setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
             throw new TypeError(recv.getRuntime(), "trace_func needs to be Proc.");
         } else {
-            recv.getRuntime().getRuntime().setTraceFunction((RubyProc) trace_func);
+            recv.getRuntime().setTraceFunction((RubyProc) trace_func);
         }
         return trace_func;
     }

@@ -71,7 +71,7 @@ public class TestRubyBase extends TestCase {
         lStream.initIO(null, out, null);
         ruby.setGlobalVar("$stderr", lStream);
         
-        ruby.getRuntime().loadScript(RubyString.newString(ruby, "test"), RubyString.newString(ruby, script), false);
+        ruby.loadScript(RubyString.newString(ruby, "test"), RubyString.newString(ruby, script), false);
         
         /*new EvalThread("test", script).start();*/
         /*while ((output = in.readLine()) != null) {
@@ -97,7 +97,7 @@ public class TestRubyBase extends TestCase {
 
         public void run() {
             try {
-                ruby.getRuntime().loadScript(name, script, false);
+                ruby.loadScript(name, script, false);
             } finally {
                 out.close();
             }

@@ -74,7 +74,7 @@ public class JavaMethod implements Callback {
 
         if (method == null) {
             if (callSuper) {
-            	return recv.getRuntime().getRuntime().callSuper(args);
+            	return recv.getRuntime().callSuper(args);
             } else {
             	throw new ArgumentError(recv.getRuntime(), "wrong argument count or types.");
             }

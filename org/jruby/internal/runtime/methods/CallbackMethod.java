@@ -47,17 +47,17 @@ public class CallbackMethod extends AbstractMethod {
     }
 
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
-        if (ruby.getRuntime().getTraceFunction() != null) {
+        if (ruby.getTraceFunction() != null) {
             ISourcePosition position = ruby.getFrameStack().getPrevious().getPosition();
             if (position == null) {
                 position = ruby.getPosition();
             }
 
-            ruby.getRuntime().callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
+            ruby.callTraceFunction("c-call", position, receiver, name, getImplementationClass()); // XXX
             try {
                 return callback.execute(receiver, args);
             } finally {
-                ruby.getRuntime().callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
+                ruby.callTraceFunction("c-return", position, receiver, name, getImplementationClass()); // XXX
             }
         } else {
             return callback.execute(receiver, args);

@@ -37,7 +37,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     /**
-     * @see IMethod#execute(Ruby, IRubyObject, String, IRubyObject[], boolean)
+     * @see AbstractMethod#call(Ruby, IRubyObject, String, IRubyObject[], boolean)
      */
     public IRubyObject call(Ruby ruby, IRubyObject receiver, String name, IRubyObject[] args, boolean noSuper) {
         RubyProc optionalBlockArg = null;
@@ -134,7 +134,7 @@ public final class DefaultMethod extends AbstractMethod {
     }
 
     private void traceReturn(Ruby ruby, IRubyObject receiver, String name) {
-        if (ruby.getRuntime().getTraceFunction() == null) {
+        if (ruby.getTraceFunction() == null) {
             return;
         }
 
@@ -142,11 +142,11 @@ public final class DefaultMethod extends AbstractMethod {
         if (position == null) {
             position = ruby.getPosition();
         }
-        ruby.getRuntime().callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
+        ruby.callTraceFunction("return", position, receiver, name, getImplementationClass()); // XXX
     }
 
     private void traceCall(Ruby ruby, IRubyObject receiver, String name) {
-        if (ruby.getRuntime().getTraceFunction() == null) {
+        if (ruby.getTraceFunction() == null) {
             return;
         }
         //a lot of complication to try to get a line number and a file name
@@ -171,7 +171,7 @@ public final class DefaultMethod extends AbstractMethod {
         if (lPosition == null) {
            lPosition = ruby.getPosition();
         }
-        ruby.getRuntime().callTraceFunction("call", lPosition, receiver, name, getImplementationClass()); // XXX
+        ruby.callTraceFunction("call", lPosition, receiver, name, getImplementationClass()); // XXX
     }
 
     /**
