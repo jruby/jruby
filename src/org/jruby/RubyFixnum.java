@@ -462,6 +462,13 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
         return this;
     }
 
+    public IRubyObject times() {
+        for (long i = 0; i < value; i++) {
+            getRuntime().yield(newFixnum(i));
+        }
+        return this;
+    }
+
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         if (value <= MAX_MARSHAL_FIXNUM) {
             output.write('i');
