@@ -30,6 +30,7 @@ import java.io.StringReader;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFile;
 import org.jruby.ast.Node;
 import org.jruby.exceptions.SyntaxError;
 import org.jruby.lexer.yacc.LexerSource;
@@ -64,6 +65,10 @@ public class Parser {
             parser.init(config);
             LexerSource lexerSource = LexerSource.getSource(file, content);
             result = parser.parse(lexerSource);
+            if (result.isEndSeen()) {
+            	runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, content));
+            	result.setEndSeen(false);
+            }
         } catch (SyntaxException e) {
             StringBuffer buffer = new StringBuffer(100);
             buffer.append(e.getPosition().getFile()).append(':');

@@ -615,17 +615,17 @@ public class RubyYaccLexer {
                                 }
                                 if (c != '=') continue;
                                 if (src.wasBeginOfLine() && isNextNoCase("end")) {
-                                    if (src.peek('\n')) {
-                                        break;
-                                    } 
+                                    //if (src.peek('\n')) {
+                                    //    break;
+                                    //} 
                                     
-                                    c = src.read();
+                                    //c = src.read();
                                     
-                                    if (Character.isWhitespace(c)) {
+                                    //if (Character.isWhitespace(c)) {
                                         src.readLine();
                                         break;
-                                    }
-									src.unread(c);
+                                    //}
+									//src.unread(c);
                                 }
                             }
                             continue retry;
@@ -1234,7 +1234,8 @@ public class RubyYaccLexer {
                 break;
 
             case '_':
-                if (src.wasBeginOfLine() && src.matchString("_END__", false)) {
+                if (src.wasBeginOfLine() && src.matchString("_END__\n", false)) {
+                	parserSupport.getResult().setEndSeen(true);
                     return 0;
                 }
                 tokenBuffer.setLength(0);

@@ -48,6 +48,7 @@ public class RubyParserResult {
     private List blockVariables;
     private List localVariables;
     private InputStream afterEndStream;
+    private boolean endSeen;
 
     /**
      * Constructor for RubyParserResult.
@@ -149,5 +150,13 @@ public class RubyParserResult {
     		n.add((Node) endNodes.get(i));
     	}
     	setAST(n);
+    }
+    
+    public boolean isEndSeen() {
+    	return endSeen;
+    }
+    
+    public void setEndSeen(boolean endSeen) {
+    	this.endSeen = endSeen;
     }
 }
