@@ -64,3 +64,21 @@ test_exception(TypeError) { g.modifyAfterFreeze }
 test_no_exception {g = GV1.new}
 g.class.freeze
 test_exception(TypeError) {g.createAfterFreeze}
+
+module A
+  class Failure
+    def Failure.bar()
+      print "bar\n"
+    end
+  end
+end
+ 
+module B
+  class Failure
+    def Failure.foo()
+      print "foo\n"
+    end
+  end
+end
+ 
+test_exception(NameError) {B::Failure.bar}

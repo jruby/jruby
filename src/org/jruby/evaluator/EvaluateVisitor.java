@@ -3,7 +3,9 @@
  * Created on 19.02.2002, 18:14:29
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -458,9 +460,9 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitClassNode(ClassNode iVisited) {
         RubyClass superClass = getSuperClassFromNode(iVisited.getSuperNode());
         String name = iVisited.getClassName();
-        RubyClass rubyClass;
-        ClassFactory classFactory = new ClassFactory(runtime);
-        rubyClass = classFactory.getOrCreateClass(name, superClass);
+        RubyModule enclosingClass = threadContext.getRubyClass();
+        RubyClass rubyClass = enclosingClass.defineOrGetClassUnder(name, superClass);
+
         if (threadContext.getWrapper() != null) {
             rubyClass.extendObject(threadContext.getWrapper());
             rubyClass.includeModule(threadContext.getWrapper());

@@ -707,6 +707,24 @@ public class RubyModule extends RubyObject {
         clearMethodCache();
     }
 
+    public RubyClass defineOrGetClassUnder(String name, RubyClass superClass) {
+        if (isConstantDefinedAt(name)) {
+            IRubyObject type = getConstant(name);
+            if (!(type instanceof RubyClass)) {
+                throw new TypeError(runtime, name + " is not a class.");
+            } else {
+                return (RubyClass) type;
+            }
+        } else {
+            RubyClass newClass = getRuntime().defineClass(name, superClass);
+
+            newClass.setClassPath(this, name);
+            setConstant(name, newClass);
+
+            return newClass;
+        }
+    }
+    
     /** rb_define_class_under
      *
      */
@@ -724,7 +742,6 @@ public class RubyModule extends RubyObject {
             RubyClass newClass = getRuntime().defineClass(name, superClass);
 
             newClass.setClassPath(this, name);
-            newClass.inheritedBy(superClass);
             setConstant(name, newClass);
 
             return newClass;
