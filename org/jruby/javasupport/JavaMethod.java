@@ -63,28 +63,14 @@ public class JavaMethod implements Callback {
     }
 
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        LinkedList executeMethods = new LinkedList(Arrays.asList(methods));
-        
         int argsLength = args != null ? args.length : 0;
         
-        // remove mehods with wrong parameter count.
-        Iterator iter = executeMethods.iterator();
-        while (iter.hasNext()) {
-            Method method = (Method)iter.next();
-            if (method.getParameterTypes().length != argsLength) {
-                iter.remove();
-            }
-        }
-        
-        // remove mehods with wrong parameter types.
-        iter = executeMethods.iterator();
-        while (iter.hasNext()) {
-            Method method = (Method)iter.next();
-            for (int i = 0; i < method.getParameterTypes().length; i++) {
-                if (!JavaUtil.isCompatible(args[i], method.getParameterTypes()[i])) {
-                    iter.remove();
-                    break;
-                }
+        ArrayList executeMethods = new ArrayList(methods.length);
+
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (hasMatchingArguments(method, args)) {
+                executeMethods.add(method);
             }
         }
         
@@ -97,7 +83,7 @@ public class JavaMethod implements Callback {
         }
         
         // take the first method.
-        Method method = (Method)executeMethods.getFirst();
+        Method method = (Method)executeMethods.get(0);
         
         Object[] newArgs = new Object[argsLength];
         
@@ -121,5 +107,23 @@ public class JavaMethod implements Callback {
             sb.append(stackTrace.getBuffer().toString());
             throw new RaiseException(ruby, "RuntimeError", sb.toString());
         }
+    }
+
+    private static boolean hasMatchingArgumentCount(Method method, int expected) {
+        return (method.getParameterTypes().length == expected);
+    }
+
+    private static boolean hasMatchingArguments(Method method, RubyObject[] args) {
+        int expectedLength = (args != null ? args.length : 0);
+        if (! hasMatchingArgumentCount(method, expectedLength)) {
+            return false;
+        }
+        Class[] parameterTypes = method.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            if (! JavaUtil.isCompatible(args[i], parameterTypes[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 }
