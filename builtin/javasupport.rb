@@ -120,13 +120,13 @@ end
 
 if __FILE__ == $0
 
-  class Froboz
+  class JavaUtil
     include_package "java.util"
   end
 
-  p Froboz::Random
+  p JavaUtil::Random
 
-  r = Froboz::Random.new
+  r = JavaUtil::Random.new
 
   p r.to_s
   p r.type.instance_methods
