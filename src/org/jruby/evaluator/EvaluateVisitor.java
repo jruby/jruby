@@ -525,10 +525,9 @@ public final class EvaluateVisitor implements NodeVisitor {
 
             if (superClass != null && rubyClass.getSuperClass().getRealClass() != superClass) {
                 // FIXME add defineClassId again.
-                rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
-
-                rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
+                rubyClass = superClass.defineSubclass(iVisited.getClassName());
                 runtime.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
+                rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
             } else {
                 if (runtime.getSafeLevel() >= 4) {
                     throw new SecurityError(runtime, "extending class prohibited");
@@ -540,7 +539,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 superClass = runtime.getClasses().getObjectClass();
             }
             // FIXME see above
-            rubyClass = runtime.defineClass(iVisited.getClassName(), superClass);
+            rubyClass = superClass.defineSubclass(iVisited.getClassName());
             runtime.getRubyClass().setConstant(iVisited.getClassName(), rubyClass);
             rubyClass.setClassPath(runtime.getRubyClass(), iVisited.getClassName());
         }
