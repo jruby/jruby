@@ -71,11 +71,19 @@ public class TestHelper {
 
     public static interface SomeInterface {
         String doStuff();
+        String dispatchObject(Object iObject);
     }
 
     private static class SomeImplementation implements SomeInterface {
         public String doStuff() {
             return "stuff done";
+        }
+        public String dispatchObject(Object iObject)
+        {
+        	if (iObject == null)
+        		return null;
+        	else
+        		return iObject.toString();
         }
     }
 }

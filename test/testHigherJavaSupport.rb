@@ -36,9 +36,9 @@ if defined? Java
     test_ok(s1.compareTo(l2) > 0)
 
     # Dispatching on nil
-	include_package "org.jruby.test"
-    sb = TestHigherJava.new
-	test_equal(nil , sb.testNilDispatch(nil))
+	include_package "org.jruby.util"
+    sb = TestHelper.getInterfacedInstance()
+	test_equal(nil , sb.dispatchObject(nil))
 
 
     # FIXME: easy method for importing java class with colliding name
