@@ -177,11 +177,11 @@ public class JRubyEngine extends BSFEngineImpl {
         }
 
         public RubyObject get() {
-            return JavaUtil.convertJavaToRuby(ruby, bean.bean);
+            return JavaUtil.convertJavaToRuby(this.ruby, bean.bean);
         }
 
         public RubyObject set(RubyObject value) {
-            bean.bean = JavaUtil.convertRubyToJava(ruby, value, bean.type);
+            bean.bean = JavaUtil.convertRubyToJava(this.ruby, value, bean.type);
             return value;
         }
     }
