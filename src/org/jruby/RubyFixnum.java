@@ -233,19 +233,19 @@ public class RubyFixnum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_div(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_div(other);
-        } else {
-	    // Java / and % are not the same as ruby
-	    long x = getLongValue();
-	    long y = other.getLongValue();
-	    long div = x / y;
-	    long mod = x % y;
-
-	    if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-		div -= 1;
-	    }
-
-            return newFixnum(getRuntime(), div);
         }
+        
+        // Java / and % are not the same as ruby
+        long x = getLongValue();
+        long y = other.getLongValue();
+        long div = x / y;
+        long mod = x % y;
+
+        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+            div -= 1;
+        }
+
+        return newFixnum(getRuntime(), div);
     }
 
     public RubyNumeric op_mod(RubyNumeric other) {
@@ -253,19 +253,18 @@ public class RubyFixnum extends RubyInteger {
             return RubyFloat.newFloat(getRuntime(), getDoubleValue()).op_mod(other);
         } else if (other instanceof RubyBignum) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mod(other);
-        } else {
+        } 
+        
 	    // Java / and % are not the same as ruby
-	    long x = getLongValue();
-	    long y = other.getLongValue();
-	    long div = x / y;
-	    long mod = x % y;
+        long x = getLongValue();
+        long y = other.getLongValue();
+        long mod = x % y;
 
-	    if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-		mod += y;
-	    }
-
-            return newFixnum(getRuntime(), mod);
+        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+            mod += y;
         }
+
+        return newFixnum(getRuntime(), mod);
     }
 
     public RubyNumeric op_pow(RubyNumeric other) {
