@@ -3,8 +3,8 @@
 <module type="class">
   <name>String</name>
   <superclass>Object</superclass>
-  <ancestor>Comparable</ancestor>
-  <ancestor>Enumerable</ancestor>
+  <includes>Comparable</includes>
+  <includes>Enumerable</includes>
 
   <implementation>org.jruby.RubyString</implementation>
 

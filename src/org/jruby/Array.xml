@@ -3,7 +3,7 @@
 <module type="class">
   <name>Array</name>
   <superclass>Object</superclass>
-  <ancestor>Enumerable</ancestor>
+  <includes>Enumerable</includes>
 
   <implementation>org.jruby.RubyArray</implementation>
 

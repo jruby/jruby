@@ -42,21 +42,21 @@ class TestGenerator < Test::Unit::TestCase
     c.name = "Foo"
     assert_equal("FOO", c.constant_name)
 
-    c.add_ancestor("Froboz")
+    c.include_module("Froboz")
     output = stream_string
-    c.write_ancestors(output)
+    c.write_included_modules(output)
     assert_equal("result.includeModule(runtime.getClasses().getClass(\"Froboz\"));\n",
                  output)
   end
 
   def test_parser
     xml = '<?xml version="1.0"?>' +
-      '<module type="class"><ancestor>Foo</ancestor>' +
+      '<module type="class"><includes>Foo</includes>' +
       '</module>' + "\n"
 
     p = Parser.new(xml)
     description = p.read_input
-    assert_equal(["Foo"], description.ancestors)
+    assert_equal(["Foo"], description.included_modules)
   end
 
   def test_method_constant

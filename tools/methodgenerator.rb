@@ -149,7 +149,7 @@ class ClassDescription
   attr :implementation, true
   attr_writer :superclass
   attr_writer :package
-  attr :ancestors, false
+  attr :included_modules, false
 
   def initialize
     @is_module = false
@@ -159,11 +159,11 @@ class ClassDescription
     @implementation = nil
     @superclass = "Object"
     @package = nil
-    @ancestors = []
+    @included_modules = []
   end
 
-  def add_ancestor(ancestor)
-    @ancestors << ancestor
+  def include_module(ancestor)
+    @included_modules << ancestor
   end
 
   def generate_java(output)
@@ -205,7 +205,7 @@ class ClassDescription
       output.write('RubyModule result = runtime.defineModule("')
       output.write(@name)
       output.write('");' + "\n")
-      write_ancestors(output)
+      write_included_modules(output)
       output.write("return result;\n")
       output.write("}\n")
     else
@@ -221,7 +221,7 @@ class ClassDescription
         output.write('")')
       end
       output.write(');' + "\n")
-      write_ancestors(output)
+      write_included_modules(output)
       output.write("return result;\n")
       output.write("}\n")
     end
@@ -258,8 +258,8 @@ class ClassDescription
     output.write("}\n")
   end
 
-  def write_ancestors(output)
-    @ancestors.each {|ancestor|
+  def write_included_modules(output)
+    @included_modules.each {|ancestor|
       output.write("result.includeModule(runtime.getClasses().getClass(\"")
       output.write(ancestor)
       output.write("\"));\n")
@@ -321,8 +321,8 @@ class Parser
         class_description.superclass = text
       end
     }
-    parser.on_tag_content("ancestor") {|text|
-      class_description.add_ancestor(text)
+    parser.on_tag_content("includes") {|text|
+      class_description.include_module(text)
     }
     parser.on_tag_content("implementation") {|text|
       class_description.implementation = text
