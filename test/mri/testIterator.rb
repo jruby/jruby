@@ -145,17 +145,17 @@ test_ok($x == 8)
 IterTest.new([[0]]).each0 { |x| $x = x }
 test_ok($x == [0])
 IterTest.new([[1]]).each1 { |x| $x = x }
-test_ok($x == 1)
+test_ok($x == [1])
 IterTest.new([[2]]).each2 { |x| $x = x }
-test_ok($x == [2])
+test_ok($x == [[2]])
 IterTest.new([[3]]).each3 { |x| $x = x }
 test_ok($x == 3)
 IterTest.new([[4]]).each4 { |x| $x = x }
 test_ok($x == [4])
 IterTest.new([[5]]).each5 { |x| $x = x }
-test_ok($x == 5)
+test_ok($x == [5])
 IterTest.new([[6]]).each6 { |x| $x = x }
-test_ok($x == [6])
+test_ok($x == [[6]])
 IterTest.new([[7]]).each7 { |x| $x = x }
 test_ok($x == 7)
 IterTest.new([[8]]).each8 { |x| $x = x }
