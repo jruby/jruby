@@ -27,6 +27,7 @@
     <exclude unless="bsf.present" name="org/jruby/javasupport/bsf/**/*.java"/>
     <exclude unless="oro.present" name="**/ORORegexpAdapter.java"/>
     <exclude unless="jdk1.4+" name="**/JDKRegexpAdapter.java"/>
+    <exclude unless="jdk1.4+" name="**/XmlAstMarshal.java"/>
     <exclude unless="gnuregexp.present" name="**/GNURegexpAdapter.java"/>
   </patternset>
 
@@ -48,7 +49,7 @@
 
   <target name="check-for-optional-packages"
           description="check if specific libs and versions are avaiable"
-	  depends="init">
+          depends="init">
     <available property="jdk1.4+"
                classname="java.lang.CharSequence"/>
     <available property="bsf.present"

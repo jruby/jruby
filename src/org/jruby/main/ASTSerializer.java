@@ -1,52 +1,23 @@
 package org.jruby.main;
-import java.beans.DefaultPersistenceDelegate;
-import java.beans.Encoder;
-import java.beans.Expression;
-import java.beans.PersistenceDelegate;
-import java.beans.Statement;
-import java.beans.XMLEncoder;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Iterator;
 
+import org.ablaf.ast.IAstEncoder;
+import org.ablaf.internal.ast.XmlAstMarshal;
 import org.ablaf.internal.common.NullErrorHandler;
-import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.ablaf.lexer.ILexerSource;
 import org.ablaf.lexer.LexerFactory;
 import org.ablaf.parser.IParser;
-import org.jruby.ast.AliasNode;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.DAsgnCurrNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.DVarNode;
-import org.jruby.ast.DefnNode;
-import org.jruby.ast.FalseNode;
-import org.jruby.ast.HashNode;
-import org.jruby.ast.IfNode;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.LocalVarNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.NewlineNode;
-import org.jruby.ast.ScopeNode;
-import org.jruby.ast.SelfNode;
-import org.jruby.ast.TrueNode;
+import org.jruby.ast.util.AstPersistenceDelegates;
+import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.parser.IRubyParserResult;
 import org.jruby.parser.RubyParserConfiguration;
 import org.jruby.parser.RubyParserPool;
-import org.jruby.runtime.Visibility;
-import org.jruby.util.Asserts;
 
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
@@ -81,6 +52,12 @@ public class ASTSerializer {
     }
     
     public static void serialize(File input, File output) throws IOException {
+        IAstEncoder encoder = RubyAstMarshal.getInstance().openEncoder(new FileOutputStream(output));
+        serialize(input, encoder);
+        encoder.close();
+    }
+    
+    public static void serialize(File input, IAstEncoder encoder) throws IOException {
         Reader reader = new BufferedReader(new FileReader(input));
         RubyParserConfiguration config = new RubyParserConfiguration();
         config.setBlockVariables(new ArrayList());
@@ -99,19 +76,13 @@ public class ASTSerializer {
         }
         reader.close();
         
-        ObjectOutputStream out = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(output)));
-        out.writeObject(result.getAST());
-        out.close();
+        encoder.writeNode(result.getAST());
     }
 
     public static void main(String[] args) throws IOException {
-        if ("-f".equals(args[0])) {
-            ASTSerializer.serialize(new File(args[1]), new File(args[1] + ".ast.ser"));
-        } else if ("-d".equals(args[0])) {
-            File file = new File(args[1]);
-            
-        } else {
-            Asserts.notReached();
-        }
+        XmlAstMarshal marshal = new XmlAstMarshal(AstPersistenceDelegates.get());
+        IAstEncoder encoder = marshal.openEncoder(System.out);
+        serialize(new File(args[0]), encoder);
+        encoder.close();
     }
 }

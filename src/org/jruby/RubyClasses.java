@@ -29,21 +29,18 @@
  */
 package org.jruby;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.ablaf.ast.INode;
+import org.ablaf.ast.IAstDecoder;
+import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.util.Asserts;
 
 /**
  * In this class there are references to the core (or built-in) classes
@@ -248,15 +245,9 @@ public class RubyClasses {
 
     private void loadBuiltin(String name) {
         InputStream in = getClass().getResourceAsStream("/builtin/" + name + ".rb.ast.ser");
-        try {
-            ObjectInputStream oin = new ObjectInputStream(new BufferedInputStream(in));
-            runtime.loadNode("init-builtin", (INode)oin.readObject(), false);
-            oin.close();
-        } catch (IOException e) {
-            Asserts.notReached("IOException: " + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            Asserts.notReached("ClassNotFoundException: " + e.getMessage());
-        }
+        IAstDecoder decoder = RubyAstMarshal.getInstance().openDecoder(in);
+        runtime.loadNode("init-builtin", decoder.readNode(), false);
+        decoder.close();
     }
 
     public void initBuiltinClasses() {
