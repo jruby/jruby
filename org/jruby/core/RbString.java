@@ -73,8 +73,8 @@ public class RbString {
         stringClass.defineMethod("rindex", getMethod("m_rindex", true));
         stringClass.defineMethod("replace", getMethod("m_replace", RubyObject.class));
 
-//    rb_define_method(rb_cString, "to_i", rb_str_to_i, 0);
-
+        stringClass.defineMethod("to_i", getMethod("m_to_i", false));
+        stringClass.defineMethod("to_f", getMethod("m_to_f", false));
         
         stringClass.defineMethod("to_s", getMethod("m_to_s", false));
         stringClass.defineMethod("to_str", getMethod("m_to_s", false));
@@ -91,8 +91,8 @@ public class RbString {
         stringClass.defineMethod("capitalize!", getMethod("m_capitalize_bang", false));
         stringClass.defineMethod("swapcase!", getMethod("m_swapcase_bang", false));
 
-//    rb_define_method(rb_cString, "hex", rb_str_hex, 0);
-//    rb_define_method(rb_cString, "oct", rb_str_oct, 0);
+        stringClass.defineMethod("hex", getMethod("m_hex", false));
+        stringClass.defineMethod("oct", getMethod("m_oct", false));
 //    rb_define_method(rb_cString, "split", rb_str_split_m, -1);
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));
         stringClass.defineMethod("reverse!", getMethod("m_reverse_bang", false));
@@ -101,7 +101,7 @@ public class RbString {
 //    rb_define_method(rb_cString, "crypt", rb_str_crypt, 1);
 //    rb_define_method(rb_cString, "intern", rb_str_intern, 0);
 
-//    rb_define_method(rb_cString, "include?", rb_str_include, 1);
+        stringClass.defineMethod("include?", getMethod("m_include", RubyObject.class));
 
 //    rb_define_method(rb_cString, "scan", rb_str_scan, 1);
 

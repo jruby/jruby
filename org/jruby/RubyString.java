@@ -899,6 +899,39 @@ public class RubyString extends RubyObject {
         return this;
     }
     
+    public RubyBoolean m_include(RubyObject obj) {
+        if (obj instanceof RubyFixnum) {
+            char c = (char)RubyNumeric.fix2int(obj);
+            return getValue().indexOf(c) == -1 ? getRuby().getFalse() : getRuby().getTrue();
+        }
+        String str = get_str(obj).getValue();
+        return getValue().indexOf(str) == -1 ? getRuby().getFalse() : getRuby().getTrue();
+    }
+    
+    public RubyObject m_to_i() {
+        return RubyNumeric.str2inum(getRuby(), this, 10);
+    }
+    
+    public RubyObject m_oct() {
+        int base = 8;
+        String str = getValue().trim();
+        int pos = (str.charAt(0) == '-' || str.charAt(0) == '+') ? 1 : 0;
+        if (str.indexOf("0x") == pos || str.indexOf("0X") == pos) {
+            base = 16;
+        } else if (str.indexOf("0b") == pos || str.indexOf("0B") == pos) {
+            base = 2;
+        }
+        return RubyNumeric.str2inum(getRuby(), this, base);
+    }
+    
+    public RubyObject m_hex() {
+        return RubyNumeric.str2inum(getRuby(), this, 16);
+    }
+    
+    public RubyObject m_to_f() {
+        return RubyNumeric.str2d(getRuby(), this);
+    }
+    
     public static boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }

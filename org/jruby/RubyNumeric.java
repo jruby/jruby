@@ -28,6 +28,8 @@ package org.jruby;
 
 import org.jruby.exceptions.*;
 
+import java.math.BigInteger;
+
 
 /**
  *
@@ -69,7 +71,77 @@ public abstract class RubyNumeric extends RubyObject {
         }
         return (int)val;
     }
+
+    public static RubyObject str2inum(Ruby ruby, RubyString str, int base) {
+        StringBuffer sbuf = new StringBuffer(str.getValue().trim());
+        if (sbuf.length() == 0) {
+            return RubyFixnum.zero(ruby);
+        }
+        int pos = 0;
+        int radix = (base != 0) ? base : 10;
+        boolean digitsFound = false;
+        if (sbuf.charAt(pos) == '-') {
+            pos++;
+        } else if (sbuf.charAt(pos) == '+') {
+            sbuf.deleteCharAt(pos);
+        }
+        if (pos == sbuf.length()) {
+            return RubyFixnum.zero(ruby);
+        }
+        if (sbuf.charAt(pos) == '0') {
+            sbuf.deleteCharAt(pos);
+            if (pos == sbuf.length()) {
+                return RubyFixnum.zero(ruby);
+            }
+            if (sbuf.charAt(pos) == 'x' || sbuf.charAt(pos) == 'X') {
+                if (base == 0 || base == 16) {
+                    radix = 16;
+                    sbuf.deleteCharAt(pos);
+                }
+            } else if (sbuf.charAt(pos) == 'b' || sbuf.charAt(pos) == 'B') {
+                if (base == 0 || base == 2) {
+                    radix = 2;
+                    sbuf.deleteCharAt(pos);
+                }
+            } else {
+                radix = (base == 0) ? 8 : base;
+            }
+        }
+        while (pos < sbuf.length()) {
+            if (sbuf.charAt(pos) == '_') {
+                sbuf.deleteCharAt(pos);
+            } else if (Character.digit(sbuf.charAt(pos), radix) != -1) {
+                digitsFound = true;
+                pos++;
+            } else {
+                break;
+            }
+        }
+        if (!digitsFound) {
+            return RubyFixnum.zero(ruby);
+        }
+        try {
+            long l = Long.parseLong(sbuf.substring(0, pos), radix);
+            return RubyFixnum.m_newFixnum(ruby, l);
+        } catch (NumberFormatException ex) {
+            BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
+            return new RubyBignum(ruby, bi);
+        }
+    }
         
+    public static RubyObject str2d(Ruby ruby, RubyString arg) {
+        String str = arg.getValue().trim();
+        double d = 0.0;
+        for (int pos = str.length(); pos > 0; pos--) {
+            try {
+                d = Double.parseDouble(str.substring(0, pos));
+            } catch (Exception ex) {
+                continue;
+            }
+            break;
+        }
+        return new RubyFloat(ruby, d);
+    }
     
     /* Numeric methods. (num_*)
      *
