@@ -19,4 +19,8 @@
 
 * FIX build.xml (use a filtered copying to fill constants)
 
-* Finish Marshal implementation (add support for links, some special stuff)
+* Marshalling
+    * Reading links
+    * Special variables
+    * Make bignum marshaling work for all bignum values
+    * Don't store fixnums bigger than 63 bits (MRI's limit)
