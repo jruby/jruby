@@ -100,6 +100,7 @@ public class RubyFloat extends RubyNumeric {
         floatClass.defineMethod(">=", CallbackFactory.getMethod(RubyFloat.class, "op_ge", RubyObject.class));
         floatClass.defineMethod("<", CallbackFactory.getMethod(RubyFloat.class, "op_lt", RubyObject.class));
         floatClass.defineMethod("<=", CallbackFactory.getMethod(RubyFloat.class, "op_le", RubyObject.class));
+		floatClass.defineMethod("hash", CallbackFactory.getMethod(RubyFloat.class, "hash"));
 
         floatClass.defineMethod("floor", CallbackFactory.getMethod(RubyFloat.class, "floor"));
         floatClass.defineMethod("ceil", CallbackFactory.getMethod(RubyFloat.class, "ceil"));
@@ -114,8 +115,8 @@ public class RubyFloat extends RubyNumeric {
         return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
     }
 
-    public int hashCode() {
-        return new Double(value).hashCode();
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, new Double(value).hashCode());
     }
 
     // Float methods (flo_*)

@@ -25,7 +25,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 
 /**

@@ -729,16 +729,17 @@ public class RubyObject implements Cloneable {
         return RubyFixnum.newFixnum(getRuby(), System.identityHashCode(this));
     }
 
-    /**
-     * Get the object's hash code.
-     *
-     * Classes that need other implementations of hash() should override the
-     * Java method hashCode(). It is faster and more robust for Ruby to depend
-     * on Java hash codes than the other way around.
-     */
-    public final RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuby(), hashCode());
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, System.identityHashCode(this));
     }
+
+	/**
+ 	* hashCode() is just a wrapper around Ruby's hash() method, so that
+ 	* Ruby objects can be used in Java collections.
+	*/
+	public final int hashCode() {
+		return RubyNumeric.fix2int(funcall("hash"));
+	}
 
     /** rb_obj_type
      *

@@ -127,6 +127,7 @@ public class RubyBignum extends RubyInteger {
         bignumClass.defineMethod("^", CallbackFactory.getMethod(RubyBignum.class, "op_xor", RubyInteger.class));
         bignumClass.defineMethod("[]", CallbackFactory.getMethod(RubyBignum.class, "aref", RubyInteger.class));
         bignumClass.defineMethod("size", CallbackFactory.getMethod(RubyBignum.class, "size"));
+		bignumClass.defineMethod("hash", CallbackFactory.getMethod(RubyBignum.class, "hash"));
 
         return bignumClass;
     }
@@ -156,8 +157,8 @@ public class RubyBignum extends RubyInteger {
         return getValue().compareTo(bigIntValue(other));
     }
 
-    public int hashCode() {
-        return value.hashCode();
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, value.hashCode());
     }
 
     // Bignum methods

@@ -101,6 +101,7 @@ public class RubyTime extends RubyObject {
         timeClass.defineMethod("gmtime?", CallbackFactory.getMethod(RubyTime.class, "gmt"));
         timeClass.defineMethod("utc?", CallbackFactory.getMethod(RubyTime.class, "gmt"));
         timeClass.defineMethod("localtime", CallbackFactory.getMethod(RubyTime.class, "localtime"));
+		timeClass.defineMethod("hash", CallbackFactory.getMethod(RubyTime.class, "hash"));
 
         return timeClass;
     }
@@ -402,10 +403,7 @@ public class RubyTime extends RubyObject {
         return this.cal.getTime();
     }
 
-    /**
-     * @see Object#hashCode()
-     */
-    public int hashCode() {
-        return (int)(cal.get(Calendar.SECOND) ^ usec);
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, (int)(cal.get(Calendar.SECOND) ^ usec));
     }
 }

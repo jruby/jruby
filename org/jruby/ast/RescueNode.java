@@ -51,65 +51,6 @@ public class RescueNode extends AbstractNode {
         this.elseNode = elseNode;
     }
 
-    /*public RubyObject eval(Ruby ruby, RubyObject self) {
-        // RubyObject previousException = ruby.getGlobalVar("$!");
-        RescuedBlock: while (true) {
-            try {
-                // Execute recued Block
-                RubyObject result = getHeadNode().eval(ruby, self);
-    
-                // If no exception is thrown execute else Block
-                if (getElseNode() != null) {
-                    return getElseNode().eval(ruby, self);
-                }
-    
-                return result;
-            } catch (RaiseException raExcptn) {
-                ruby.setGlobalVar("$!", raExcptn.getActException());
-                
-                ruby.setSourceLine(getLine());
-    
-                Node body = getResqNode();
-                while (body != null) {
-                    if (isRescueHandled(ruby, raExcptn.getActException(), self, body)) {
-                        try {
-                            return body.eval(ruby, self);
-                        } catch (RetryException rExcptn) {
-                            ruby.setGlobalVar("$!", ruby.getNil());
-                            continue RescuedBlock;
-                        }
-                    }
-                    body = body.getHeadNode();
-                }
-                throw raExcptn;
-            } finally {
-                ruby.setGlobalVar("$!", ruby.getNil());
-            }
-        }
-    }
-    
-    private boolean isRescueHandled(Ruby ruby, RubyException actExcptn, RubyObject self, Node node) {
-        // TMP_PROTECT;
-        
-        if (node.getArgsNode() == null) {
-            return actExcptn.kind_of(ruby.getExceptions().getStandardError()).isTrue();
-        }
-    
-        RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyPointer args = ArgsUtil.setupArgs(ruby, self, node.getArgsNode());
-        ArgsUtil.endCallArgs(ruby, tmpBlock);
-        
-        for (int i = 0; i < args.size(); i++) {
-            if (args.getRuby(i).kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
-                throw new TypeError(ruby, "class or module required for rescue clause");
-            }
-            if (actExcptn.kind_of((RubyModule)args.getRuby(i)).isTrue()) {
-                return true;
-            }
-        }
-        return false;
-    }*/
-
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor

@@ -98,44 +98,45 @@ public class RubyArray extends RubyObject implements IndexCallable {
         return false;
     }
 
-    private static final int M_INSPECT = 2;
-    private static final int M_TO_S = 3;
-    private static final int M_FROZEN = 4;
-    private static final int M_EQUAL = 5;
-    private static final int M_AREF = 101;
-    private static final int M_ASET = 102;
-    private static final int M_EQL = 6;
-    private static final int M_FIRST = 10;
-    private static final int M_LAST = 11;
-    private static final int M_CONCAT = 12;
-    private static final int M_APPEND = 201;
-    private static final int M_PUSH = 202;
-    private static final int M_POP = 14;
-    private static final int M_SHIFT = 15;
-    private static final int M_UNSHIFT = 16;
-    private static final int M_EACH = 20;
-    private static final int M_EACH_INDEX = 21;
-    private static final int M_REVERSE_EACH = 22;
-    private static final int M_LENGTH = 23;
-    private static final int M_EMPTY_P = 24;
-    private static final int M_INDEX = 25;
-    private static final int M_RINDEX = 26;
-    private static final int M_CLONE = 260;
-    private static final int M_JOIN = 261;
-    private static final int M_INDICES = 27;
-    private static final int M_REVERSE = 30;
-    private static final int M_REVERSE_BANG = 31;
-    private static final int M_SORT = 32;
-    private static final int M_SORT_BANG = 33;
-    private static final int M_COLLECT = 34;
-    private static final int M_COLLECT_BANG = 35;
-    private static final int M_DELETE = 40;
-    private static final int M_DELETE_AT = 41;
-    private static final int M_DELETE_IF = 42;
-    private static final int M_REJECT_BANG = 43;
-    private static final int M_REPLACE = 50;
-    private static final int M_CLEAR = 51;
-    private static final int M_INCLUDE_P = 53;
+    private static final int M_INSPECT = 1;
+    private static final int M_TO_S = 2;
+    private static final int M_FROZEN = 3;
+    private static final int M_EQUAL = 4;
+    private static final int M_AREF = 10;
+    private static final int M_ASET = 11;
+    private static final int M_EQL = 12;
+	private static final int M_HASH = 13;
+    private static final int M_FIRST = 14;
+    private static final int M_LAST = 15;
+    private static final int M_CONCAT = 16;
+    private static final int M_APPEND = 20;
+    private static final int M_PUSH = 21;
+    private static final int M_POP = 22;
+    private static final int M_SHIFT = 23;
+    private static final int M_UNSHIFT = 24;
+    private static final int M_EACH = 25;
+    private static final int M_EACH_INDEX = 26;
+    private static final int M_REVERSE_EACH = 30;
+    private static final int M_LENGTH = 31;
+    private static final int M_EMPTY_P = 32;
+    private static final int M_INDEX = 33;
+    private static final int M_RINDEX = 34;
+    private static final int M_CLONE = 40;
+    private static final int M_JOIN = 41;
+    private static final int M_INDICES = 42;
+    private static final int M_REVERSE = 50;
+    private static final int M_REVERSE_BANG = 51;
+    private static final int M_SORT = 52;
+    private static final int M_SORT_BANG = 53;
+    private static final int M_COLLECT = 54;
+    private static final int M_COLLECT_BANG = 60;
+    private static final int M_DELETE = 61;
+    private static final int M_DELETE_AT = 62;
+    private static final int M_DELETE_IF = 63;
+    private static final int M_REJECT_BANG = 64;
+    private static final int M_REPLACE = 70;
+    private static final int M_CLEAR = 71;
+    private static final int M_INCLUDE_P = 72;
 
 	public static RubyClass createArrayClass(Ruby ruby) {
 		RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
@@ -154,6 +155,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
 		arrayClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
 		arrayClass.defineMethod("eql?", IndexedCallback.create(M_EQL, 1));
 		arrayClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
+		arrayClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
 		arrayClass.defineMethod("[]", IndexedCallback.createOptional(M_AREF));
 		arrayClass.defineMethod("[]=", IndexedCallback.createOptional(M_ASET));
 		arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
@@ -232,6 +234,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
             return equal(args[0]);
         case M_EQL:
             return eql(args[0]);
+		case M_HASH:
+			return hash();
         case M_AREF:
             return aref(args);
         case M_ASET:
@@ -303,8 +307,8 @@ public class RubyArray extends RubyObject implements IndexCallable {
         return null;
     }
 
-    public int hashCode() {
-        return list.hashCode();
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, list.hashCode());
     }
 
 	/** rb_ary_modify

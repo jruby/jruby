@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-    <classpathentry kind="var" path="JRE_LIB" rootpath="JRE_SRCROOT" sourcepath="JRE_SRC"/>
     <classpathentry kind="src" path=""/>
     <classpathentry kind="var" path="BSF_LIB" sourcepath="BSF_SRC"/>
     <classpathentry kind="var" path="ORO_LIB" sourcepath="ORO_SRC"/>
     <classpathentry kind="var" path="JUNIT_LIB" sourcepath="JUNIT_SRC"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
     <classpathentry kind="output" path="build/classes"/>
 </classpath>

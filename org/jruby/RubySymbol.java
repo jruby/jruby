@@ -71,6 +71,7 @@ public class RubySymbol extends RubyObject {
         symbolClass.defineMethod("to_s", CallbackFactory.getMethod(RubySymbol.class, "to_s"));
         
         symbolClass.defineMethod("==", CallbackFactory.getMethod(RubySymbol.class, "equal", RubyObject.class));
+		symbolClass.defineMethod("hash", CallbackFactory.getMethod(RubySymbol.class, "hash"));
         symbolClass.defineMethod("inspect", CallbackFactory.getMethod(RubySymbol.class, "inspect"));
         symbolClass.defineMethod("dup", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
         symbolClass.defineMethod("clone", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
@@ -80,8 +81,8 @@ public class RubySymbol extends RubyObject {
         return symbolClass;
     }
 
-    public int hashCode() {
-        return symbol.hashCode();
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, symbol.hashCode());
     }
 
     /* Symbol class methods.

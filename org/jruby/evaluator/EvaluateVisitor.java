@@ -1606,7 +1606,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         ArgsUtil.endCallArgs(ruby, tmpBlock);
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i].isKindOf(ruby.getClasses().getModuleClass())) {
+            if (! args[i].isKindOf(ruby.getClasses().getModuleClass())) {
                 throw new TypeError(ruby, "class or module required for rescue clause");
             }
             if (actExcptn.isKindOf((RubyModule) args[i])) {

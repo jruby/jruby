@@ -108,17 +108,18 @@ public class RubyString extends RubyObject implements IndexCallable {
     private static final int M_DUP = 1;
     private static final int M_OP_CMP = 2;
     private static final int M_EQUAL = 3;
-    private static final int M_OP_PLUS = 4;
-    //private static final int M_OP_MUL = 5;
-    private static final int M_FORMAT = 6;
-    private static final int M_LENGTH = 7;
-    private static final int M_EMPTY = 8;
-    private static final int M_MATCH = 9;
-    private static final int M_MATCH2 = 10;
-    private static final int M_SUCC = 11;
-    private static final int M_SUCC_BANG = 12;
-    private static final int M_UPTO = 13;
-    private static final int M_REPLACE = 16;
+	private static final int M_HASH = 4;
+    private static final int M_OP_PLUS = 5;
+    //private static final int M_OP_MUL = 6;
+    private static final int M_FORMAT = 7;
+    private static final int M_LENGTH = 8;
+    private static final int M_EMPTY = 9;
+    private static final int M_MATCH = 10;
+    private static final int M_MATCH2 = 11;
+    private static final int M_SUCC = 12;
+    private static final int M_SUCC_BANG = 13;
+    private static final int M_UPTO = 14;
+    private static final int M_REPLACE = 15;
 
     private static final int M_TO_I = 20;
     private static final int M_TO_F = 21;
@@ -143,6 +144,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("==", IndexedCallback.create(M_EQUAL, 1));
 		stringClass.defineMethod("===", IndexedCallback.create(M_EQUAL, 1));
 		stringClass.defineMethod("eql?", IndexedCallback.create(M_EQUAL, 1));
+		stringClass.defineMethod("hash", IndexedCallback.create(M_HASH, 0));
 
 		stringClass.defineMethod("+", IndexedCallback.create(M_OP_PLUS, 1));
 		stringClass.defineMethod("*", CallbackFactory.getMethod(RubyString.class, "op_mul", RubyInteger.class));
@@ -251,6 +253,8 @@ public class RubyString extends RubyObject implements IndexCallable {
             return op_cmp(args[0]);
         case M_EQUAL:
             return equal(args[0]);
+		case M_HASH:
+			return hash();
         case M_OP_PLUS:
             return op_plus(args[0]);
         case M_FORMAT:
@@ -310,8 +314,8 @@ public class RubyString extends RubyObject implements IndexCallable {
 		return c >= 0x20 && c <= 0x7E;
 	}
 
-    public int hashCode() {
-        return getValue().hashCode();
+    public RubyFixnum hash() {
+        return RubyFixnum.newFixnum(ruby, getValue().hashCode());
     }
 
 	/** rb_obj_as_string
