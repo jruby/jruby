@@ -41,13 +41,13 @@ public class JavaSupport {
     private RubyClass createRubyClass(Class javaClass, String rubyName) {
         RubyClass superClass = (RubyClass) loadClass(javaClass.getSuperclass(), null);
         RubyClass rubyClass = ruby.defineClass(rubyName, superClass);
-        
+
+        loadedJavaClasses.put(javaClass, rubyClass);
+
         defineWrapperMethods(javaClass, rubyClass, true);
         defineConstants(javaClass, rubyClass);
         defineFields(javaClass, rubyClass);
         addDefaultModules(rubyClass);
-
-        loadedJavaClasses.put(javaClass, rubyClass);
 
         return rubyClass;
     }
