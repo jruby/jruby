@@ -53,19 +53,7 @@ public class ArgsUtil {
         ruby.getBlock().setTmp(tmpBlock);
         ruby.getIter().pop();
     }
-    
-    public static RubyPointer setupArgs(Ruby ruby, RubyObject self, ArrayNode node) {
-        String file = ruby.getSourceFile();
-        int line = ruby.getSourceLine();
-        
-        RubyPointer args = new RubyPointer(node.getArrayList(ruby, self));
-        
-        ruby.setSourceFile(file);
-        ruby.setSourceLine(line);
-        
-        return args;
-    }
-    
+
     public static RubyPointer setupArgs(Ruby ruby, RubyObject self, Node node) {
         if (node != null) {
             if (node instanceof ArrayNode) {
@@ -83,10 +71,11 @@ public class ArgsUtil {
                 
                 String file = ruby.getSourceFile();
                 int line = ruby.getSourceLine();
-                
+
                 if (!(args instanceof RubyArray)) {
                     args = RubyArray.newArray(ruby, args);
                 }
+
                 ruby.setSourceFile(file);
                 ruby.setSourceLine(line);
                 

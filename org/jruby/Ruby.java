@@ -30,16 +30,17 @@
 
 package org.jruby;
 
+import java.io.*;
 import java.util.*;
-import java.io.File;
 
+import org.apache.xalan.templates.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
 import org.jruby.parser.*;
-import org.jruby.regexp.*;
 import org.jruby.runtime.*;
+import org.jruby.runtime.Constants;
 import org.jruby.util.*;
 
 /**
@@ -104,8 +105,8 @@ public final class Ruby {
     private RubyFrame rubyFrame;
     private RubyFrame topFrame;
 
-    private CRefNode cRef = new CRefNode(null, null);
-    private CRefNode topCRef;
+    private Namespace namespace;
+    private Namespace topNamespace;
 
     private String sourceFile;
     private int sourceLine;
@@ -406,8 +407,8 @@ public final class Ruby {
         frame.setPrev(getRubyFrame());
         setRubyFrame(frame);
 
-        CRefNode oldCRef = getCRef();
-        setCRef(getRubyFrame().getCbase());
+		Namespace oldNamespace = getNamespace();
+        setNamespace(getRubyFrame().getNamespace());
 
         Scope oldScope = (Scope) getScope().getTop();
         getScope().setTop(tmpBlock.scope);
@@ -494,7 +495,7 @@ public final class Ruby {
             block.setTmp(tmpBlock);
             setRubyFrame(getRubyFrame().getPrev());
 
-            setCRef(oldCRef);
+            setNamespace(oldNamespace);
 
             // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
             //    scope_dup(old_scope);
@@ -578,9 +579,9 @@ public final class Ruby {
 
             rubyClass = getClasses().getObjectClass();
             rubyFrame.setSelf(rubyTopSelf);
-            topCRef = new CRefNode(getClasses().getObjectClass(), null);
-            cRef = topCRef;
-            rubyFrame.setCbase(cRef);
+            topNamespace = new Namespace(getClasses().getObjectClass());
+            namespace = topNamespace;
+            rubyFrame.setNamespace(namespace);
             // defineGlobalConstant("TOPLEVEL_BINDING", rb_f_binding(ruby_top_self));
             // ruby_prog_init();
         } catch (Exception excptn) {
@@ -751,32 +752,16 @@ public final class Ruby {
         this.topFrame = topFrame;
     }
 
-    /** Getter for property rubyCRef.
-     * @return Value of property rubyCRef.
-     */
-    public CRefNode getCRef() {
-        return cRef;
+    public Namespace getNamespace() {
+        return namespace;
     }
 
-    /** Setter for property rubyCRef.
-     * @param rubyCRef New value of property rubyCRef.
-     */
-    public void setCRef(CRefNode newCRef) {
-        cRef = newCRef;
+    public void setNamespace(Namespace newNamespace) {
+        namespace = newNamespace;
     }
 
-    /** Getter for property topCRef.
-     * @return Value of property topCRef.
-     */
-    public CRefNode getTopCRef() {
-        return topCRef;
-    }
-
-    /** Setter for property topCRef.
-     * @param topCRef New value of property topCRef.
-     */
-    public void setTopCRef(CRefNode topCRef) {
-        this.topCRef = topCRef;
+    public Namespace getTopNamespace() {
+        return topNamespace;
     }
 
     public JavaSupport getJavaSupport() {
@@ -815,20 +800,14 @@ public final class Ruby {
      * @return Value of property cBase.
      */
     public RubyModule getCBase() {
-        return (RubyModule) getRubyFrame().getCbase().getClassValue();
-        // +++
-        // return cBase;
-        // ---
+        return (RubyModule) getRubyFrame().getNamespace().getNamespaceModule();
     }
 
     /** Setter for property cBase.
      * @param cBase New value of property cBase.
      */
     public void setCBase(RubyModule cBase) {
-        getRubyFrame().getCbase().setClassValue(cBase);
-        // +++
-        // this.cBase = cBase;
-        // ---
+        getRubyFrame().getNamespace().setNamespaceModule(cBase);
     }
 
     public boolean isScope(int scope) {

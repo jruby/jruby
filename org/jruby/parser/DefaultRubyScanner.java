@@ -501,7 +501,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         return 0;
     }
 
-    private int parse_regx(int term, int paren) {
+    private int parseRegexp(int closeQuote, int openQuote) {
         int c;
         char kcode = 0;
         boolean once = false;
@@ -512,19 +512,19 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
         newtok();
         regx_end : while ((c = nextc()) != -1) {
-            if (c == term && nest == 0) {
+            if (c == closeQuote && nest == 0) {
                 break regx_end;
             }
 
             switch (c) {
                 case '#' :
-                    list = str_extend(list, term);
+                    list = parseExpressionString(list, closeQuote);
                     if (list == Node.MINUS_ONE) {
                         return 0;
                     }
                     continue;
                 case '\\' :
-                    if (tokadd_escape(term) < 0) {
+                    if (tokadd_escape(closeQuote) < 0) {
                         /*
                          *  FIX 1.6.5
                          */
@@ -537,11 +537,11 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     ph.rb_compile_error("unterminated regexp meets end of file");
                     return 0;
                 default :
-                    if (paren != 0) {
-                        if (c == paren) {
+                    if (openQuote != 0) {
+                        if (c == openQuote) {
                             nest++;
                         }
-                        if (c == term) {
+                        if (c == closeQuote) {
                             nest--;
                         }
                     }
@@ -614,14 +614,14 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         //return 0;
     }
 
-    private int parse_string(int func, int term, int paren) {
+    private int parseString(int func, int closeQuote, int openQuote) {
         int c;
         Node list = null;
         int strstart;
         int nest = 0;
 
         if (func == '\'') {
-            return parse_qstring(term, paren);
+            return parseSingleQuotedString(closeQuote, openQuote);
         }
         if (func == 0) {
             // read 1 line for heredoc
@@ -631,7 +631,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         }
         strstart = ruby.getSourceLine();
         newtok();
-        while ((c = nextc()) != term || nest > 0) {
+        while ((c = nextc()) != closeQuote || nest > 0) {
             if (c == -1) {
                 //unterm_str:
                 ruby.setSourceLine(strstart);
@@ -649,7 +649,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
              *  else
              */
             if (c == '#') {
-                list = str_extend(list, term);
+                list = parseExpressionString(list, closeQuote);
                 if (list == Node.MINUS_ONE) {
                     //goto unterm_str;
                     ruby.setSourceLine(strstart);
@@ -662,7 +662,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 if (c == '\n') {
                     continue;
                 }
-                if (c == term) {
+                if (c == closeQuote) {
                     tokadd(c);
                 } else {
                     pushback(c);
@@ -673,11 +673,11 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                 }
                 continue;
             }
-            if (paren != 0) {
-                if (c == paren) {
+            if (openQuote != 0) {
+                if (c == openQuote) {
                     nest++;
                 }
-                if (c == term && nest-- == 0) {
+                if (c == closeQuote && nest-- == 0) {
                     break;
                 }
             }
@@ -708,14 +708,18 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         }
     }
 
-    private int parse_qstring(int term, int paren) {
-        int strstart;
+	/** Parse a single quoted string (', or %q).
+	 * 
+	 */
+    private int parseSingleQuotedString(int closeQuote, int openQuote) {
         int c;
         int nest = 0;
 
-        strstart = ruby.getSourceLine();
-        newtok();
-        while ((c = nextc()) != term || nest > 0) {
+        int strstart = ruby.getSourceLine();
+        
+        StringBuffer stringToken = new StringBuffer();
+
+        while ((c = nextc()) != closeQuote || nest > 0) {
             if (c == -1) {
                 ruby.setSourceLine(strstart);
                 ph.rb_compile_error("unterminated string meets end of file");
@@ -731,47 +735,48 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         break;
                     default :
                         // fall through
-                        if (c == term || (paren != 0 && c == paren)) {
-                            tokadd(c);
+                        if (c == closeQuote || (openQuote != 0 && c == openQuote)) {
+                            stringToken.append((char)c);
                             continue;
                         }
-                        tokadd('\\');
+                        stringToken.append('\\');
                 }
             }
-            if (paren != 0) {
-                if (c == paren) {
+            if (openQuote != 0) {
+                if (c == openQuote) {
                     nest++;
                 }
-                if (c == term && nest-- == 0) {
+                if (c == closeQuote && nest-- == 0) {
                     break;
                 }
             }
-            tokadd(c);
+            stringToken.append((char)c);
         }
 
-        yyVal = RubyString.newString(ruby, tok(), toklen());
+        yyVal = RubyString.newString(ruby, stringToken.toString());
         ph.setLexState(LexState.EXPR_END);
         return Token.tSTRING;
     }
 
-    private int parse_quotedwords(int term, int paren) {
+	/** parse quoted words (%w{})
+	 * 
+	 */
+    private int parseQuotedWords(int closeQuote, int openQuote) {
         Node qwords = null;
-        int strstart;
-        int c;
         int nest = 0;
 
-        strstart = ruby.getSourceLine();
-        newtok();
+        int strstart = ruby.getSourceLine();
+        StringBuffer stringToken = new StringBuffer();
 
-        c = nextc();
+        int c = nextc();
+        
+        // Skip preceding spaces.
         while (isSpace(c)) {
             c = nextc();
         }
-        /*
-         *  skip preceding spaces
-         */
         pushback(c);
-        while ((c = nextc()) != term || nest > 0) {
+
+        while ((c = nextc()) != closeQuote || nest > 0) {
             if (c == -1) {
                 ruby.setSourceLine(strstart);
                 ph.rb_compile_error("unterminated string meets end of file");
@@ -786,64 +791,63 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         c = '\\';
                         break;
                     default :
-                        if (c == term || (paren != 0 && c == paren)) {
-                            tokadd(c);
+                        if (c == closeQuote || (openQuote != 0 && c == openQuote)) {
+                            stringToken.append((char)c);
                             continue;
                         }
                         if (!isSpace(c)) {
-                            tokadd('\\');
+                            stringToken.append('\\');
                         }
                         break;
                 }
             } else if (isSpace(c)) {
+                Node str = nf.newStr(RubyString.newString(ruby, stringToken.toString()));
+                stringToken = new StringBuffer();
 
-                Node str = nf.newStr(RubyString.newString(ruby, tok(), toklen()));
-                newtok();
                 if (qwords == null) {
                     qwords = nf.newList(str);
                 } else {
                     ph.list_append(qwords, str);
                 }
+
+                // skip continuous spaces
                 c = nextc();
                 while (isSpace(c)) {
                     c = nextc();
                 }
-                // skip continuous spaces
                 pushback(c);
+
                 continue;
             }
-            if (paren != 0) {
-                if (c == paren) {
+            if (openQuote != 0) {
+                if (c == openQuote) {
                     nest++;
                 }
-                if (c == term && nest-- == 0) {
+                if (c == closeQuote && nest-- == 0) {
                     break;
                 }
             }
-            tokadd(c);
+            stringToken.append((char)c);
         }
 
-        if (toklen() > 0) {
-            Node str = nf.newStr(RubyString.newString(ruby, tok(), toklen()));
+        if (stringToken.length() > 0) {
+            Node str = nf.newStr(RubyString.newString(ruby, stringToken.toString()));
+
             if (qwords == null) {
                 qwords = nf.newList(str);
             } else {
                 ph.list_append(qwords, str);
             }
         }
-        if (qwords == null) {
-            qwords = nf.newZArray();
-        }
-        yyVal = qwords;
+
+        yyVal = qwords != null ? qwords : nf.newZArray();
+        
         ph.setLexState(LexState.EXPR_END);
+        
         return Token.tDSTRING;
     }
 
-    /*private int here_document(int term, int indent) {
-        throw new Error("not supported yet");
-    }*/
-
-    private int parseHereDocument(int term, boolean indent) {
+    private int parseHereDocument(int closeQuote, boolean indent) {
         int c;
         Node list = null;
 
@@ -851,20 +855,20 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
         newtok();
 
-        switch (term) {
+        switch (closeQuote) {
             case '\'' :
             case '"' :
             case '`' :
-                while ((c = nextc()) != term) {
+                while ((c = nextc()) != closeQuote) {
                     tokadd(c);
                 }
-                if (term == '\'') {
-                    term = 0;
+                if (closeQuote == '\'') {
+                    closeQuote = 0;
                 }
                 break;
             default :
-                c = term;
-                term = '"';
+                c = closeQuote;
+                closeQuote = '"';
                 if (!isIdentifierChar(c)) {
                     ph.rb_warn("use of bare << to mean <<\"\" is deprecated");
                     break;
@@ -905,7 +909,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             source.unread(line.length() + 1);
 
             while (true) {
-                switch (parse_string(term, '\n', '\n')) {
+                switch (parseString(closeQuote, '\n', '\n')) {
                     case Token.tSTRING :
                     case Token.tXSTRING :
                          ((RubyString) yyVal).cat("\n");
@@ -956,7 +960,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             list.setLine(linesave + 1);
             yyVal = list;
         }
-        switch (term) {
+        switch (closeQuote) {
             case '\0' :
             case '\'' :
             case '"' :
@@ -1146,7 +1150,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     pushback(c);
                     return '>';
                 case '"' :
-                    return parse_string(c, c, c);
+                    return parseString(c, c, c);
                 case '`' :
                     if (ph.getLexState() == LexState.EXPR_FNAME) {
                         return c;
@@ -1154,9 +1158,9 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     if (ph.getLexState() == LexState.EXPR_DOT) {
                         return c;
                     }
-                    return parse_string(c, c, c);
+                    return parseString(c, c, c);
                 case '\'' :
-                    return parse_qstring(c, 0);
+                    return parseSingleQuotedString(c, 0);
                 case '?' :
                     if (ph.getLexState() == LexState.EXPR_END) {
                         ph.setLexState(LexState.EXPR_BEG);
@@ -1335,7 +1339,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     return Token.tSYMBEG;
                 case '/' :
                     if (ph.getLexState() == LexState.EXPR_BEG || ph.getLexState() == LexState.EXPR_MID) {
-                        return parse_regx('/', '/');
+                        return parseRegexp('/', '/');
                     }
                     if ((c = nextc()) == '=') {
                         ph.setLexState(LexState.EXPR_BEG);
@@ -1346,7 +1350,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                     if (isArgState() && space_seen != 0) {
                         if (!isSpace(c)) {
                             arg_ambiguous();
-                            return parse_regx('/', '/');
+                            return parseRegexp('/', '/');
                         }
                     }
                     ph.setLexState(LexState.EXPR_BEG);
@@ -1621,43 +1625,45 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
         }
     }
 
-    private int parseQuotation(int c) {
-        int term;
+    private int parseQuotation(int type) {
+        int closeQuote;
 
-        if (!Character.isLetterOrDigit((char) c)) {
-            term = c;
-            c = 'Q';
+        if (!Character.isLetterOrDigit((char) type)) {
+            closeQuote = type;
+            type = 'Q';
         } else {
-            term = nextc();
+            closeQuote = nextc();
         }
-        if (c == -1 || term == -1) {
+
+        if (type == -1 || closeQuote == -1) {
             ph.rb_compile_error("unterminated quoted string meets end of file");
             return 0;
         }
-        int paren = term;
-        if (term == '(') {
-            term = ')';
-        } else if (term == '[') {
-            term = ']';
-        } else if (term == '{') {
-            term = '}';
-        } else if (term == '<') {
-            term = '>';
+
+        int openQuote = closeQuote;
+        if (closeQuote == '(') {
+            closeQuote = ')';
+        } else if (closeQuote == '[') {
+            closeQuote = ']';
+        } else if (closeQuote == '{') {
+            closeQuote = '}';
+        } else if (closeQuote == '<') {
+            closeQuote = '>';
         } else {
-            paren = 0;
+            openQuote = 0;
         }
 
-        switch (c) {
+        switch (type) {
             case 'Q' :
-                return parse_string('"', term, paren);
+                return parseString('"', closeQuote, openQuote);
             case 'q' :
-                return parse_qstring(term, paren);
+                return parseSingleQuotedString(closeQuote, openQuote);
             case 'w' :
-                return parse_quotedwords(term, paren);
+                return parseQuotedWords(closeQuote, openQuote);
             case 'x' :
-                return parse_string('`', term, paren);
+                return parseString('`', closeQuote, openQuote);
             case 'r' :
-                return parse_regx(term, paren);
+                return parseRegexp(closeQuote, openQuote);
             default :
                 yyerror("unknown type of %string");
                 return 0;
@@ -1847,13 +1853,13 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
     }
 
     /**
-     *  AFAIK this methods expand the #{} in strings.
+     *  This methods parse the #{}, #@ and #$ in strings.
      *
      *@param  list  Description of Parameter
      *@param  term  Description of Parameter
      *@return       Description of the Returned Value
      */
-    private Node str_extend(Node list, int term) {
+    private Node parseExpressionString(Node list, int closeQuote) {
         int c;
         int brace = -1;
         RubyObject ss;
@@ -1924,7 +1930,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             tokadd(c);
                             break fetch_id;
                         default :
-                            if (c == term) {
+                            if (c == closeQuote) {
                                 ph.list_append(list, nf.newStr(RubyString.newString(ruby, "#$")));
                                 pushback(c);
                                 newtok();
@@ -1995,7 +2001,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                     if (c == -1) {
                                         return Node.MINUS_ONE;
                                     }
-                                    if (c == term) {
+                                    if (c == closeQuote) {
                                         tokadd(c);
                                     } else {
                                         tokadd('\\');
@@ -2009,7 +2015,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                                 case '\"' :
                                 case '/' :
                                 case '`' :
-                                    if (c == term) {
+                                    if (c == closeQuote) {
                                         pushback(c);
                                         ph.list_append(list, nf.newStr(RubyString.newString(ruby, "#")));
                                         ph.rb_warning("bad substitution in string");
@@ -2035,7 +2041,6 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
 
         return list;
     }
-    // yylex
 
     // Helper functions....................
 

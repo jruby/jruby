@@ -2,9 +2,8 @@
  * ModuleNode.java - No description
  * Created on 05. November 2001, 21:45
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,7 +26,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.nodes;
 
 import org.jruby.*;
@@ -41,30 +39,30 @@ import org.jruby.runtime.*;
  * @version $Revision$
  */
 public class ModuleNode extends Node {
-    
+
     public ModuleNode(String className, Node bodyNode) {
         super(Constants.NODE_MODULE, className, bodyNode, null);
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no outer class/module");
         }
-        
-        RubyModule module = null;
-        
-        if ((ruby.getRubyClass() == ruby.getClasses().getObjectClass()) && 
-                                    ruby.isAutoloadDefined(getClassNameId())) {
+
+        if ((ruby.getRubyClass() == ruby.getClasses().getObjectClass()) && ruby.isAutoloadDefined(getClassNameId())) {
             // getRuby().rb_autoload_load(node.nd_cname());
         }
+
+        RubyModule module = null;
+
         if (ruby.getRubyClass().isConstantDefined(getClassNameId())) {
-            module = (RubyModule)ruby.getRubyClass().getConstant(getClassNameId());
-        }
-        if (module != null) {
+            module = (RubyModule) ruby.getRubyClass().getConstant(getClassNameId());
+            
             /*if (!(module instanceof RubyModule)) {
                 throw new RubyTypeException(moduleName.toName() + " is not a module");
                 
             }*/
+
             if (ruby.getSafeLevel() >= 4) {
                 throw new RubySecurityException(ruby, "extending module prohibited");
             }
@@ -73,19 +71,19 @@ public class ModuleNode extends Node {
             ruby.getRubyClass().setConstant(getClassNameId(), module);
             module.setClassPath(ruby.getRubyClass(), getClassNameId());
         }
+
         if (ruby.getWrapper() != null) {
             module.getSingletonClass().includeModule(ruby.getWrapper());
             module.includeModule(ruby.getWrapper());
         }
-        
-        return ((ScopeNode)getBodyNode()).setupModule(ruby, module);
+
+        return ((ScopeNode) getBodyNode()).setupModule(ruby, module);
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitModuleNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitModuleNode(this);
+    }
 }

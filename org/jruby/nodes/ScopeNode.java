@@ -66,8 +66,8 @@ public class ScopeNode extends Node implements CallableNode {
     // private RubyPointer vars = null;
     // private RubyPointer localVarsList = null;
 
-    public ScopeNode(List table, CRefNode refValue, Node nextNode) {
-        super(Constants.NODE_SCOPE, table, refValue, nextNode);
+    public ScopeNode(List table, Namespace namespace, Node nextNode) {
+        super(Constants.NODE_SCOPE, table, namespace, nextNode);
     }
 
     /**
@@ -77,15 +77,15 @@ public class ScopeNode extends Node implements CallableNode {
      **/
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        CRefNode savedCRef = null;
+        Namespace savedNamespace = null;
 
         ruby.getRubyFrame().tmpPush();
         ruby.getScope().push();
-        CRefNode lRefValue = getRefValue();
-        if (lRefValue != null) {
-            savedCRef = ruby.getCRef();
-            ruby.setCRef(lRefValue);
-            ruby.getRubyFrame().setCbase(lRefValue);
+
+        if (getNamespace() != null) {
+            savedNamespace = ruby.getNamespace();
+            ruby.setNamespace(getNamespace());
+            ruby.getRubyFrame().setNamespace(getNamespace());
         }
 
         if (getTable() != null) {
@@ -99,11 +99,10 @@ public class ScopeNode extends Node implements CallableNode {
         try {
             return getNextNode().eval(ruby, self);
         } finally {
-
             ruby.getScope().pop();
             ruby.getRubyFrame().tmpPop();
-            if (savedCRef != null) {
-                ruby.setCRef(savedCRef);
+            if (savedNamespace != null) {
+                ruby.setNamespace(savedNamespace);
             }
         }
     }
@@ -131,15 +130,9 @@ public class ScopeNode extends Node implements CallableNode {
             ruby.getScope().setLocalNames(null);
         }
 
-        // +++
-        // if (ruby.getCRef() != null) {
-        ruby.getCRef().push(module);
-        // } else {
-        //    ruby.setCRef(new CRefNode(module, null));
-        // }
-        // ---
+        ruby.setNamespace(new Namespace(module, ruby.getNamespace()));
 
-        ruby.getRubyFrame().setCbase(ruby.getCRef());
+        ruby.getRubyFrame().setNamespace(ruby.getNamespace());
 
         try {
             // if (trace_func) {
@@ -151,7 +144,7 @@ public class ScopeNode extends Node implements CallableNode {
             //        if (trace_func){
             //            call_trace_func("end", file, line, 0, ruby_frame->last_func, ruby_frame->last_class );
             //        }
-            ruby.getCRef().pop();
+            ruby.setNamespace(ruby.getNamespace().getParent());
             RubyVarmap.pop(ruby);
             ruby.getScope().pop();
             ruby.popClass();
@@ -163,16 +156,16 @@ public class ScopeNode extends Node implements CallableNode {
         if (args == null) {
             args = new RubyPointer();
         }
-        CRefNode savedCref = null; // +++ = null;
+        Namespace savedNamespace = null;
 
         List valueList = null;
 
         ruby.getScope().push();
-        CRefNode lRefValue = getRefValue();
-        if (lRefValue != null) {
-            savedCref = ruby.getCRef(); // s.a.
-            ruby.setCRef(lRefValue);
-            ruby.getRubyFrame().setCbase(lRefValue);
+        
+        if (getNamespace() != null) {
+            savedNamespace = ruby.getNamespace(); // s.a.
+            ruby.setNamespace(getNamespace());
+            ruby.getRubyFrame().setNamespace(getNamespace());
         }
 
         if (getTable() != null) {
@@ -269,8 +262,8 @@ public class ScopeNode extends Node implements CallableNode {
 
             ruby.getScope().pop();
 
-            if (savedCref != null) {
-                ruby.setCRef(savedCref);
+            if (savedNamespace != null) {
+                ruby.setNamespace(savedNamespace);
             }
         }
     }

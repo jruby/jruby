@@ -554,7 +554,7 @@ public class RubyObject {
                     RubyBlock oldBlock = ruby.getBlock();
                     RubyBlock block = ruby.getBlock();
                     /* copy the block to avoid modifying global data. */
-                    block.frame.setCbase(ruby.getRubyFrame().getCbase());
+                    block.frame.setNamespace(ruby.getRubyFrame().getNamespace());
                     ruby.setBlock(block);
                     RubyObject result = null;
                     try {
@@ -565,7 +565,7 @@ public class RubyObject {
                     return result;
                 }
                 /* static block, no need to restore */
-                ruby.getBlock().frame.setCbase(ruby.getRubyFrame().getCbase());
+                ruby.getBlock().frame.setNamespace(ruby.getRubyFrame().getNamespace());
                 return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
             }
         }, new RubyObject[] { this });

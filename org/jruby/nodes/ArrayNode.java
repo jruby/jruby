@@ -47,18 +47,17 @@ public class ArrayNode extends Node {
         super(Constants.NODE_ARRAY, headNode, aLength, nextNode);
     }
 
- 	
     public RubyObject eval(Ruby ruby, RubyObject self) {
         return getRubyArray(ruby, self);
     }
-    
+
     public RubyArray getRubyArray(Ruby ruby, RubyObject self) {
         return new RubyArray(ruby, getArrayList(ruby, self), true);
     }
 
     public ArrayList getArrayList(Ruby ruby, RubyObject self) {
         ArrayList ary = new ArrayList(getALength());
-        for (Node node = this; node != null ; node = node.getNextNode()) {
+        for (Node node = this; node != null; node = node.getNextNode()) {
             ary.add(node.getHeadNode().eval(ruby, self));
         }
         return ary;
@@ -66,15 +65,14 @@ public class ArrayNode extends Node {
 
     public RubyObject[] getArray(Ruby ruby, RubyObject self) {
         ArrayList ary = getArrayList(ruby, self);
-        return (RubyObject[])ary.toArray(new RubyObject[ary.size()]);
+        return (RubyObject[]) ary.toArray(new RubyObject[ary.size()]);
     }
 
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitArrayNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitArrayNode(this);
+    }
 }

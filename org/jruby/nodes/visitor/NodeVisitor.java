@@ -54,7 +54,6 @@ public interface NodeVisitor {
     public void visitBreakNode(BreakNode iVisited);
     public void visitCDeclNode(CDeclNode iVisited);
     public void visitCFuncNode(CFuncNode iVisited);
-    public void visitCRefNode(CRefNode iVisited);
     public void visitCVAsgnNode(CVAsgnNode iVisited);
     public void visitCVDeclNode(CVDeclNode iVisited);
     public void visitCVar2Node(CVar2Node iVisited);

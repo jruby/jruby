@@ -2,8 +2,8 @@
  * DefnNode.java - No description
  * Created on 05. November 2001, 21:45
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -27,7 +27,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.nodes;
 
 import org.jruby.*;
@@ -59,48 +58,48 @@ public class DefnNode extends Node {
         super(Constants.NODE_DEFN, noex, mId, defnNode);
     }
 
-	/**
-	 * eval the defnNode.
-	 * creates a method with name mid in the current context
-	 * (the current rubyClass as returned by ruby.getRubyClass) 
-	 * then returns QNil
-	 **/
+    /**
+     * eval the defnNode.
+     * creates a method with name mid in the current context
+     * (the current rubyClass as returned by ruby.getRubyClass) 
+     * then returns QNil
+     **/
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (getDefnNode() != null) {
-			RubyModule rubyClass = ruby.getRubyClass()	;
+            RubyModule rubyClass = ruby.getRubyClass();
             if (rubyClass == null) {
                 throw new TypeError(ruby, "no class to add method");
             }
-            
+
             //if (ruby_class == getRuby().getObjectClass() && node.nd_mid() == init) {
-            // rom.rb_warn("redefining Object#initialize may cause infinite loop");
+            // warn("redefining Object#initialize may cause infinite loop");
             //}
             //if (node.nd_mid() == __id__ || node.nd_mid() == __send__) {
-            // rom.rb_warn("redefining `%s' may cause serious problem", ((RubyId)node.nd_mid()).toName());
+            // warn("redefining `%s' may cause serious problem", ((RubyId)node.nd_mid()).toName());
             //}
             // ruby_class.setFrozen(true);
-            
+
             MethodNode body = rubyClass.searchMethod(getMId());
             // RubyObject origin = body.getOrigin();
-            
-//            if (body != null){
-                // if (ruby_verbose.isTrue() && ruby_class == origin && body.nd_cnt() == 0) {
-                //     rom.rb_warning("discarding old %s", ((RubyId)node.nd_mid()).toName());
-                // }
-                // if (node.nd_noex() != 0) { /* toplevel */
-                            /* should upgrade to rb_warn() if no super was called inside? */
-                //     rom.rb_warning("overriding global function `%s'", ((RubyId)node.nd_mid()).toName());
-                // }
-  //          }
-            
+
+            // if (body != null){
+            // if (ruby_verbose.isTrue() && ruby_class == origin && body.nd_cnt() == 0) {
+            //     rom.rb_warning("discarding old %s", ((RubyId)node.nd_mid()).toName());
+            // }
+            // if (node.nd_noex() != 0) { /* toplevel */
+            /* should upgrade to rb_warn() if no super was called inside? */
+            //     rom.rb_warning("overriding global function `%s'", ((RubyId)node.nd_mid()).toName());
+            // }
+            //          }
+
             int noex;
-            
+
             if (ruby.isScope(Constants.SCOPE_PRIVATE) || getMId().equals("initialize")) {
                 noex = Constants.NOEX_PRIVATE;
             } else if (ruby.isScope(Constants.SCOPE_PROTECTED)) {
                 noex = Constants.NOEX_PROTECTED;
             } else if (rubyClass == ruby.getClasses().getObjectClass()) {
-                noex =  getNoex();
+                noex = getNoex();
             } else {
                 noex = Constants.NOEX_PUBLIC;
             }
@@ -108,11 +107,11 @@ public class DefnNode extends Node {
             if (body != null && body.getOrigin() == rubyClass && (body.getNoex() & Constants.NOEX_UNDEF) != 0) {
                 noex |= Constants.NOEX_UNDEF;
             }
-            
-            Node defn = getDefnNode().copyNodeScope(ruby.getCRef());
+
+            Node defn = getDefnNode().copyNodeScope(ruby.getNamespace());
             ruby.getMethodCache().clearByName(getMId());
             rubyClass.addMethod(getMId(), defn, noex);
-            
+
             if (ruby.getActMethodScope() == Constants.SCOPE_MODFUNC) {
                 rubyClass.getSingletonClass().addMethod(getMId(), defn, Constants.NOEX_PUBLIC);
                 rubyClass.funcall("singleton_method_added", RubySymbol.newSymbol(ruby, getMId()));
@@ -126,8 +125,8 @@ public class DefnNode extends Node {
         }
         return ruby.getNil();
     }
-	public void accept(NodeVisitor iVisitor)
-	{
-		iVisitor.visitDefnNode(this);
-	}
+
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitDefnNode(this);
+    }
 }

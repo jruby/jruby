@@ -2,9 +2,8 @@
  * CDeclNode.java - No description
  * Created on 05. November 2001, 21:45
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,7 +26,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.nodes;
 
 import org.jruby.*;
@@ -42,15 +40,15 @@ import org.jruby.runtime.*;
  * @version $Revision$
  */
 public class CDeclNode extends Node implements AssignableNode {
-    
+
     public CDeclNode(String vid, Node valueNode) {
         super(Constants.NODE_CDECL, vid, valueNode, null);
     }
-    
- 	public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
+
+    public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         ruby.getRubyClass().setConstant(getVId(), value);
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no class/module to define constant");
@@ -60,13 +58,12 @@ public class CDeclNode extends Node implements AssignableNode {
         return result;
     }
 
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitCDeclNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitCDeclNode(this);
+    }
 
 }

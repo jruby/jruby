@@ -71,8 +71,8 @@ public class DefsNode extends Node {
                     rb_warning("redefine %s", rb_id2name(node.nd_mid()));
                 }*/
             }
-            Node defn = getDefnNode().copyNodeScope(ruby.getCRef());
-            defn.setRefValue(ruby.getCRef());
+            Node defn = getDefnNode().copyNodeScope(ruby.getNamespace());
+            defn.setNamespace(ruby.getNamespace());
             ruby.getMethodCache().clearByName(getMId());
             rubyClass.addMethod(getMId(), defn, Constants.NOEX_PUBLIC | 
                     (body != null ? body.getNoex() & Constants.NOEX_UNDEF : 0));

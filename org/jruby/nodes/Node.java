@@ -128,8 +128,8 @@ public class Node {
     /** copy_node_scope
      *
      */
-    public Node copyNodeScope(CRefNode refValue) {
-        Node copy = new ScopeNode(null, refValue.cloneCRefNode(), getNextNode());
+    public Node copyNodeScope(Namespace namespace) {
+        Node copy = new ScopeNode(null, namespace.cloneNamespace(), getNextNode());
 
         if (getTable() != null) {
             List newTable = new ArrayList(getTable().size());
@@ -391,15 +391,15 @@ public class Node {
         return u3 == null ? 0 : ((Integer) u3).intValue();
     }
 
-    /** nd_rval -> getRefValue
-     * RubyObject -> CRefNode
+    /** nd_rval -> getNamespace
+     * RubyObject -> Namespace
      */
-    public CRefNode getRefValue() {
-        return (CRefNode) u2;
+    public Namespace getNamespace() {
+        return (Namespace) u2;
     }
 
-    public void setRefValue(CRefNode newRefValue) {
-        u2 = newRefValue;
+    public void setNamespace(Namespace newNamespace) {
+        u2 = newNamespace;
     }
 
     public int getNth() {

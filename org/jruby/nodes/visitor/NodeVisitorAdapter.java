@@ -156,18 +156,6 @@ public class NodeVisitorAdapter implements NodeVisitor {
         leave(iVisited);
     }
 
-    /**
-     * TODO: delete
-     */
-    public void visitCRefNode(CRefNode iVisited) {
-        visit(iVisited);
-        Node lNext = iVisited.getNextNode();
-        if (lNext != null) {
-            lNext.accept(this);
-        }
-        leave(iVisited);
-    }
-
     public void visitCVAsgnNode(CVAsgnNode iVisited) {
         visit(iVisited);
         iVisited.getValueNode().accept(this);

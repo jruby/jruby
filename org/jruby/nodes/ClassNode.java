@@ -44,80 +44,68 @@ public class ClassNode extends Node {
     public ClassNode(String classNameId, Node bodyNode, Node superNode) {
         super(Constants.NODE_CLASS, classNameId, bodyNode, superNode);
     }
-    
- 	public RubyObject eval(Ruby ruby, RubyObject self) {
+
+    public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
             throw new TypeError(ruby, "no outer class/module");
         }
-        
-        RubyModule superClass = null;
-        
+
+        RubyClass superClass = null;
+
         if (getSuperNode() != null) {
             superClass = getSuperClass(ruby, self, getSuperNode());
         }
-        
+
         RubyClass rubyClass = null;
+
         // if ((ruby_class == getRuby().getObjectClass()) && rb_autoload_defined(node.nd_cname())) {
         //     rb_autoload_load(node.nd_cname());
         // }
+
         if (ruby.getRubyClass().isConstantDefined(getClassNameId())) {
-            rubyClass = (RubyClass)ruby.getRubyClass().getConstant(getClassNameId());
-        }
-        if (rubyClass != null) {
+            rubyClass = (RubyClass) ruby.getRubyClass().getConstant(getClassNameId());
+
             if (!rubyClass.isClass()) {
                 throw new TypeError(ruby, getClassNameId() + " is not a class");
             }
-            if (superClass != null) {
-                RubyModule tmp = rubyClass.getSuperClass();
-                if (tmp.isSingleton()) {
-                    tmp = tmp.getSuperClass();
+
+            if (superClass != null && rubyClass.getSuperClass().getRealClass() != superClass) {
+                rubyClass = ruby.defineClass(getClassNameId(), superClass);
+                ruby.getRubyClass().setConstant(getClassNameId(), rubyClass);
+                rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId());
+            } else {
+                if (ruby.getSafeLevel() >= 4) {
+                    throw new RubySecurityException(ruby, "extending class prohibited");
                 }
-                while (tmp.isIncluded()) {
-                    tmp = tmp.getSuperClass();
-                }
-                if (tmp != superClass) {
-                    superClass = tmp;
-                    //goto override_class;
-                    if (superClass == null) {
-                        superClass = ruby.getClasses().getObjectClass();
-                    }
-                    rubyClass = ruby.defineClass(getClassNameId(), (RubyClass)superClass);
-                    ruby.getRubyClass().setConstant(getClassNameId(), rubyClass);
-                    rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId());
-                    // end goto
-                }
+                // rb_clear_cache();
             }
-            if (ruby.getSafeLevel() >= 4) {
-                throw new RubySecurityException(ruby, "extending class prohibited");
-            }
-            // rb_clear_cache();
         } else {
-            //override_class:
             if (superClass == null) {
                 superClass = ruby.getClasses().getObjectClass();
             }
-            rubyClass = ruby.defineClass(getClassNameId(), (RubyClass)superClass);
+            rubyClass = ruby.defineClass(getClassNameId(), (RubyClass) superClass);
             ruby.getRubyClass().setConstant(getClassNameId(), rubyClass);
             rubyClass.setClassPath(ruby.getRubyClass(), getClassNameId());
         }
+
         if (ruby.getWrapper() != null) {
             rubyClass.extendObject(ruby.getWrapper());
             rubyClass.includeModule(ruby.getWrapper());
         }
-        
-        return ((ScopeNode)getBodyNode()).setupModule(ruby, rubyClass);
+
+        return ((ScopeNode) getBodyNode()).setupModule(ruby, rubyClass);
     }
-    
+
     public RubyClass getSuperClass(Ruby ruby, RubyObject self, Node node) {
         RubyObject obj;
         // int state = 1; // unreachable
-        
+
         // PUSH_TAG(PROT_NONE);
         // if ((state = EXEC_TAG()) == 0 ) {
         obj = node.eval(ruby, self);
         // }
         // POP_TAG();
-        
+
         /*if (state != 0) {
             switch (node.nd_type()) {
                 case NODE_COLON2:
@@ -133,19 +121,17 @@ public class ClassNode extends Node {
             throw new RuntimeException();
             // goto superclass_error;
         }
-        if (((RubyClass)obj).isSingleton()) {
+        if (((RubyClass) obj).isSingleton()) {
             throw new TypeError(ruby, "can't make subclass of virtual class");
         }
-        return (RubyClass)obj;
+        return (RubyClass) obj;
     }
 
-	
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitClassNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitClassNode(this);
+    }
 }

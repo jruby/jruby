@@ -96,7 +96,7 @@ public class RubyRuntime {
      */
     public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
         RubyObject self = ruby.getRubyTopSelf();
-        CRefNode savedCRef = ruby.getCRef();
+        Namespace savedNamespace = ruby.getNamespace();
 
         // TMP_PROTECT;
         if (wrap && ruby.getSafeLevel() >= 4) {
@@ -111,7 +111,7 @@ public class RubyRuntime {
         ruby.pushClass();
 
         RubyModule wrapper = ruby.getWrapper();
-        ruby.setCRef(ruby.getTopCRef());
+        ruby.setNamespace(ruby.getTopNamespace());
 
         if (!wrap) {
             ruby.secure(4); /* should alter global state */
@@ -123,13 +123,13 @@ public class RubyRuntime {
             ruby.setRubyClass(ruby.getWrapper());
             self = ruby.getRubyTopSelf().rbClone();
             self.extendObject(ruby.getRubyClass());
-            ruby.getCRef().push(ruby.getWrapper());
+            ruby.setNamespace(new Namespace(ruby.getWrapper(), ruby.getNamespace()));
         }
         ruby.getRubyFrame().push();
         ruby.getRubyFrame().setLastFunc(null);
         ruby.getRubyFrame().setLastClass(null);
         ruby.getRubyFrame().setSelf(self);
-        ruby.getRubyFrame().setCbase(new CRefNode(ruby.getRubyClass(), null));
+        ruby.getRubyFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
         ruby.getScope().push();
 
         /* default visibility is private at loading toplevel */
@@ -155,7 +155,7 @@ public class RubyRuntime {
                 if (ruby_scope->local_tbl)
                     free(ruby_scope->local_tbl);
             	}*/
-            ruby.setCRef(savedCRef);
+            ruby.setNamespace(savedNamespace);
             ruby.getScope().pop();
             ruby.getRubyFrame().pop();
             ruby.popClass();

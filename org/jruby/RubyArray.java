@@ -383,6 +383,10 @@ public class RubyArray extends RubyObject {
         return new RubyArray(ruby, list);
     }
 
+    public static RubyArray newArray(Ruby ruby, RubyObject[] args) {
+        return new RubyArray(ruby, Arrays.asList(args));
+    }
+
     /** rb_ary_s_new
      *
      */

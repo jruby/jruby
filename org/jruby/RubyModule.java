@@ -510,7 +510,7 @@ public class RubyModule extends RubyObject {
             throw new RubyFrozenException(getRuby(), "class/module");
         }
 
-        Node body = new NodeFactory(getRuby()).newMethod(node, noex);
+        Node body = new MethodNode(node, noex);
         getMethods().put(name, body);
     }
 
@@ -1167,9 +1167,9 @@ public class RubyModule extends RubyObject {
         getRuby().getRubyFrame().setLastClass(frame.getLastClass());
         getRuby().getRubyFrame().setArgs(frame.getArgs());
         if (getRuby().getCBase() != this) {
-            getRuby().getRubyFrame().setCbase(new CRefNode(this, getRuby().getRubyFrame().getCbase()));
+            getRuby().getRubyFrame().setNamespace(new Namespace(this, getRuby().getRubyFrame().getNamespace()));
         }
-        getRuby().getCRef().push(this);
+        getRuby().setNamespace(new Namespace(this, getRuby().getNamespace()));
 
         // mode = scope_vmode;
         // SCOPE_SET(SCOPE_PUBLIC);
@@ -1179,7 +1179,7 @@ public class RubyModule extends RubyObject {
         try {
             result = method.execute(this, args, getRuby());
         } finally {
-            getRuby().getCRef().pop();
+            getRuby().setNamespace(getRuby().getNamespace().getParent());
             getRuby().getRubyFrame().pop();
             getRuby().popClass();
         }

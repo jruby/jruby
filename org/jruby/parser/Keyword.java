@@ -30,10 +30,9 @@
 package org.jruby.parser;
 
 public class Keyword implements Token, LexState {
-
-    String name;
-    int id0, id1;
-    int state;
+	public String name;
+    public int id0, id1;
+    public int state;
 
     private Keyword() {
         this("", 0, 0, 0);

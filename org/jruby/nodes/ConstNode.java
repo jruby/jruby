@@ -43,37 +43,16 @@ public class ConstNode extends Node {
     public ConstNode(String vId) {
         super(Constants.NODE_CONST, vId, null, null);
     }
-    
- 	public RubyObject eval(Ruby ruby, RubyObject self) {
-        return getConstant(ruby, self, ruby.getRubyFrame().getCbase(), getVId());
+
+    public RubyObject eval(Ruby ruby, RubyObject self) {
+        return ruby.getRubyFrame().getNamespace().getConstant(self, getVId());
     }
-    
-    protected RubyObject getConstant(Ruby ruby, RubyObject self, CRefNode cref, String id) {
-        CRefNode cbase = cref;
-        
-        // HACK +++
-//        if (ruby.getClasses().getClassMap().get(id) != null) {
-//            return (RubyObject)ruby.getClasses().getClassMap().get(id);
-//        }
-        // HACK ---
-        
-        while (cbase != null && cbase.getNextNode() != null) {
-            RubyObject rubyClass = cbase.getClassValue();
-            if (rubyClass.isNil()) {
-                return self.getRubyClass().getConstant(id);
-            } else if (rubyClass.getInstanceVariables().get(id) != null) {
-                return (RubyObject)rubyClass.getInstanceVariables().get(id);
-            }
-            cbase = (CRefNode)cbase.getNextNode();
-        }
-        return ((RubyModule)cref.getClassValue()).getConstant(id);
+
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitConstNode(this);
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitConstNode(this);
-	}
 }

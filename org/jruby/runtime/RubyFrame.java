@@ -2,9 +2,8 @@
  * RubyFrame.java - No description
  * Created on 10. September 2001, 17:54
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,7 +26,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.runtime;
 
 import java.util.*;
@@ -49,7 +47,7 @@ public class RubyFrame {
     private List args = null;
     private String lastFunc = null;
     private RubyModule lastClass = null;
-    private CRefNode cbase = null;
+    private Namespace namespace = null;
     private RubyFrame prev = null;
     private RubyFrame tmp = null;
     private String file = null;
@@ -69,7 +67,7 @@ public class RubyFrame {
         List args,
         String lastFunc,
         RubyModule lastClass,
-        CRefNode cbase,
+        Namespace namespace,
         RubyFrame prev,
         RubyFrame tmp,
         String file,
@@ -82,7 +80,7 @@ public class RubyFrame {
         this.args = args;
         this.lastFunc = lastFunc;
         this.lastClass = lastClass;
-        this.cbase = cbase;
+        this.namespace = namespace;
         this.prev = prev;
         this.tmp = tmp;
         this.file = file;
@@ -98,7 +96,7 @@ public class RubyFrame {
             frame.args,
             frame.lastFunc,
             frame.lastClass,
-            frame.cbase,
+            frame.namespace,
             frame.prev,
             frame.tmp,
             frame.file,
@@ -121,18 +119,12 @@ public class RubyFrame {
         this.args = args;
     }
 
-    /** Getter for property cbase.
-     * @return Value of property cbase.
-     */
-    public CRefNode getCbase() {
-        return cbase;
+    public Namespace getNamespace() {
+        return namespace;
     }
 
-    /** Setter for property cbase.
-     * @param cbase New value of property cbase.
-     */
-    public void setCbase(CRefNode cbase) {
-        this.cbase = cbase;
+    public void setNamespace(Namespace namespace) {
+        this.namespace = namespace;
     }
 
     /** Getter for property file.
@@ -261,39 +253,38 @@ public class RubyFrame {
         this.tmp = tmp;
     }
 
-	/**
-	 * pushes a copy of this frame in the tmp stack.
-	 * 
-	 **/
-	public void tmpPush()
-	{
-        RubyFrame tmpFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, cbase, prev, tmp, file, line, iter, flags);
+    /**
+     * pushes a copy of this frame in the tmp stack.
+     * 
+     **/
+    public void tmpPush() {
+        RubyFrame tmpFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, namespace, prev, tmp, file, line, iter, flags);
 
         tmp = tmpFrame;
-	}
-	/**
-	 * pops the top of the tmp stack
-	 **/
-	public void tmpPop()
-	{
-	    self = tmp.self;
+    }
+    /**
+     * pops the top of the tmp stack
+     **/
+    public void tmpPop() {
+        self = tmp.self;
         args = tmp.args;
         lastFunc = tmp.lastFunc;
         lastClass = tmp.lastClass;
-        cbase = tmp.cbase;
-		prev = tmp.prev;
+        namespace = tmp.namespace;
+        prev = tmp.prev;
         file = tmp.file;
         line = tmp.line;
         iter = tmp.iter;
         flags = tmp.flags;
-		ruby = tmp.ruby;	//like it really could be different, maybe with threads...
+        ruby = tmp.ruby; //like it really could be different, maybe with threads...
         tmp = tmp.tmp;
-	}	
+    }
+
     /** Push a new empty frame to the frame stack.
      *
      */
     public void push() {
-        RubyFrame oldFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, cbase, prev, tmp, file, line, iter, flags);
+        RubyFrame oldFrame = new RubyFrame(ruby, self, args, lastFunc, lastClass, namespace, prev, tmp, file, line, iter, flags);
 
         prev = oldFrame;
         tmp = null;
@@ -312,7 +303,7 @@ public class RubyFrame {
         args = prev.args;
         lastFunc = prev.lastFunc;
         lastClass = prev.lastClass;
-        cbase = prev.cbase;
+        namespace = prev.namespace;
         tmp = prev.tmp;
         file = prev.file;
         line = prev.line;

@@ -29,22 +29,13 @@
 
 package org.jruby;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
 import java.io.*;
-import java.util.ArrayList;
+import java.util.*;
 
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.*;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.regexp.*;
-import org.jruby.runtime.RubyGlobalEntry;
-import org.jruby.nodes.Node;
+import org.jruby.javasupport.*;
+import org.jruby.nodes.*;
 import org.jruby.nodes.visitor.*;
-import org.jruby.nodes.visitor.DumpVisitor;
 
 /**
  * Class used to launch the interpreter.
@@ -135,9 +126,9 @@ public class Main {
                                 try {
                                     sRegexpAdapter = Class.forName("org.jruby.regexp." + lRegexpAdapter + "RegexpAdapter");
                                 } catch (ClassNotFoundException cnfExcptn_1) {
-                                	System.err.println("invalid argument " + lIter.idxArg);
-                                	System.err.println("failed to load RegexpAdapter: " + args[lIter.idxArg]);
-                                	System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
+                                    System.err.println("invalid argument " + lIter.idxArg);
+                                    System.err.println("failed to load RegexpAdapter: " + args[lIter.idxArg]);
+                                    System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
                                 }
                             }
                             break FOR;
@@ -277,12 +268,12 @@ public class Main {
             }
         } catch (RaiseException rExcptn) {
             ruby.getRuntime().printError(rExcptn.getActException());
-        } catch (ThrowJump throwJump ) {
+        } catch (ThrowJump throwJump) {
             ruby.getRuntime().printError(throwJump.getNameError());
         }
         // ---
-		// to look nicer
-		ruby.getRuntime().getOutputStream().println("");
+        // to look nicer
+        ruby.getRuntime().getOutputStream().println("");
     }
 
     /**
