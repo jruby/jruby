@@ -466,10 +466,143 @@ public class RubyString extends RubyObject {
         return new RubyBoolean(getRuby(), getString().length() == 0);
     }
 
+    /** rb_str_append
+     *
+     */
+    public RubyString m_append(RubyObject other) {
+        if (other instanceof RubyString) {
+            return m_cat(((RubyString)other).getValue());
+        }
+        return m_cat(get_str(other).getValue());
+    }
+
     /** rb_str_concat
      *
      */
-    public RubyString m_concat(RubyString str) {
-        return m_cat(str.getValue());
+    public RubyString m_concat(RubyObject other) {
+        if ((other instanceof RubyFixnum) && ((RubyFixnum)other).getLongValue() < 256) {
+            char c = (char)((RubyFixnum)other).getLongValue();
+            return m_cat(Character.toString(c));
+        }
+        return m_append(other);
+    }
+
+    private RubyString get_str(RubyObject other) {
+        if (other instanceof RubyString) {
+            return (RubyString)other;
+        } else {
+            try {
+                return (RubyString)other.convertType(RubyString.class, "String", "to_str");
+            } catch (Exception ex) {
+                throw new RubyArgumentException("can't convert arg to String: " + ex.getMessage());
+            }
+        }
+    }
+
+    private RubyRegexp get_pat(RubyObject other) {
+        if (other instanceof RubyRegexp) {
+            return (RubyRegexp)other;
+        } else if (other instanceof RubyString) {
+            return RubyRegexp.m_newRegexp(getRuby(), (RubyString)other, 0);
+        } else {
+            throw new RubyArgumentException("can't convert arg to Regexp");
+        }
+    }
+
+    /** rb_str_sub
+     *
+     */
+    public RubyObject m_sub(RubyObject[] args) {
+        return sub(args, false);
+    }
+
+    /** rb_str_sub_bang
+     *
+     */
+    public RubyObject m_sub_bang(RubyObject[] args) {
+        return sub(args, true);
+    }
+
+    private RubyObject sub(RubyObject[] args, boolean bang) {
+        RubyRegexp pat;
+        RubyObject repl = getRuby().getNil();
+        boolean iter = false;
+        if (args.length == 1 && getRuby().getInterpreter().isBlockGiven()) {
+            pat = get_pat(args[0]);
+            iter = true;
+        } else if (args.length == 2) {
+            pat = get_pat(args[0]);
+            repl = args[1];
+        } else {
+            throw new RubyArgumentException("wrong number of arguments");
+        }
+        if (pat.m_search(this, 0) >= 0) {
+            RubyMatchData match = (RubyMatchData)getRuby().getBackRef();
+            RubyString newStr = (RubyString)match.m_pre_match();
+            newStr.m_append((RubyString)(iter ? getRuby().yield(match.group(0)) 
+                                              : pat.m_regsub(repl, match)));
+            newStr.m_append((RubyString)match.m_post_match());
+            if (bang) {
+                setValue(newStr.getValue());
+                return this;
+            }
+            return newStr;
+        }
+        if (bang) {
+            return getRuby().getNil();
+        }
+        return this;
+    }
+
+    /** rb_str_gsub
+     *
+     */
+    public RubyObject m_gsub(RubyObject[] args) {
+        return gsub(args, false);
+    }
+
+    /** rb_str_gsub_bang
+     *
+     */
+    public RubyObject m_gsub_bang(RubyObject[] args) {
+        return gsub(args, true);
+    }
+
+    private RubyObject gsub(RubyObject[] args, boolean bang) {
+        RubyRegexp pat;
+        RubyObject repl = getRuby().getNil();
+        RubyMatchData match;
+        boolean iter = false;
+        if (args.length == 1 && getRuby().getInterpreter().isBlockGiven()) {
+            pat = get_pat(args[0]);
+            iter = true;
+        } else if (args.length == 2) {
+            pat = get_pat(args[0]);
+            repl = args[1];
+        } else {
+            throw new RubyArgumentException("wrong number of arguments");
+        }
+        int beg = pat.m_search(this, 0);
+        if (beg < 0) {
+            return bang ? getRuby().getNil() : m_dup();
+        }
+        StringBuffer sbuf = new StringBuffer();
+        String str = getValue();
+        RubyObject newStr;
+        int offset = 0;
+        while (beg >= 0) {
+            match = (RubyMatchData)getRuby().getBackRef();
+            sbuf.append(str.substring(offset, beg));
+            newStr = iter ? getRuby().yield(match.group(0)) : pat.m_regsub(repl, match);
+            sbuf.append(((RubyString)newStr).getValue());
+            offset = match.matchEndPosition();
+            beg = pat.m_search(this, (offset == beg ? beg + 1 : offset));
+        }
+        sbuf.append(str.substring(offset, str.length()));
+        if (bang) {
+            setValue(sbuf.toString());
+            return this;
+        }
+        return m_newString(getRuby(), sbuf.toString());
     }
 }

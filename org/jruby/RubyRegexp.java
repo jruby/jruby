@@ -38,13 +38,13 @@ import org.jruby.parser.ReOptions;
  */
 public class RubyRegexp extends RubyObject implements ReOptions {
 
-    private GnuRegexpMatcher matcher;
+    private RegexpAdapter matcher;
     private String pattern;
     private int options;
     
     public RubyRegexp(Ruby ruby) {
         super(ruby, ruby.getRubyClass("Regexp"));
-        matcher = new GnuRegexpMatcher();
+        matcher = new RegexpAdapter();
     }
     
     public void initialize(String pat, int opts) throws RubyException {
@@ -78,6 +78,18 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         }
     }
     
+    private RubyString get_str(RubyObject other) {
+        if (other instanceof RubyString) {
+            return (RubyString)other;
+        } else {
+            try {
+                return (RubyString)other.convertType(RubyString.class, "String", "to_str");
+            } catch (Exception ex) {
+                throw new RubyArgumentException("can't convert arg to String: " + ex.getMessage());
+            }
+        }
+    }
+
     // Methods of the Regexp class (rb_reg_*):
     
     public static RubyRegexp m_newRegexp(Ruby ruby, RubyString str, int options) {
@@ -100,7 +112,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     public RubyObject m_initialize(RubyObject[] args) {
         String pat = (args[0] instanceof RubyRegexp)
                    ? ((RubyRegexp)args[0]).m_source().getValue()
-                   : ((RubyString)args[0]).getValue();
+                   : get_str(args[0]).getValue();
         int opts = 0;
         if (args.length > 1) {
             if (args[1] instanceof RubyFixnum) {
@@ -259,9 +271,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      *
      */
     public int m_search(RubyObject target, int pos) {
-//        RubyString str = RubyString.m_as_str(target);
-        String str = ((RubyString)target).getValue();
-        if (pos >= str.length()) {
+        String str = get_str(target).getValue();
+        if (pos > str.length()) {
             return -1;
         }
         recompileIfNeeded();
@@ -272,7 +283,56 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? 
-                            ((RubyMatchData)result).matchStartPosition() : -1;
+                ((RubyMatchData)result).matchStartPosition() : -1;
+    }
+
+    /** rb_reg_regsub
+     *
+     */
+    public RubyObject m_regsub(RubyObject str, RubyMatchData match) {
+        String repl = get_str(str).getValue();
+        StringBuffer sb = new StringBuffer("");
+        int pos = 0;
+        int end = repl.length();
+        char c;
+        RubyObject ins = getRuby().getNil();
+        while (pos < end) {
+            c = repl.charAt(pos++);
+            if (c == '\\' && pos < end) {
+                c = repl.charAt(pos++);
+                switch(c) {
+                    case '0': case '1': case '2': case '3': case '4': 
+                    case '5': case '6': case '7': case '8': case '9':
+                        ins = match.group(c - '0');
+                        break;
+                    case '&':
+                        ins = match.group(0);
+                        break;
+                    case '`':
+                        ins = match.m_pre_match();
+                        break;
+                    case '\'':
+                        ins = match.m_post_match();
+                        break;
+                    case '+':
+                        ins = m_match_last(match);
+                        break;
+                    case '\\':
+                        sb.append(c);
+                        continue;
+                    default:
+                        sb.append('\\').append(c);
+                        continue;
+                }
+                if (!ins.isNil()) {
+                    sb.append(((RubyString)ins).getValue());
+                    ins = getRuby().getNil();
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return RubyString.m_newString(getRuby(), sb.toString());
     }
 
     public RubyObject m_clone() {
@@ -282,14 +342,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     /**
      * Regexp adapter for gnu.regexp.
      */
-    class GnuRegexpMatcher {
+    class RegexpAdapter {
     
         private RE re;
         private int cflags = 0;
         private int eflags = RE.REG_NOTBOL | RE.REG_NOTEOL;
     
         /**
-         * Set the regex pattern from the String description.
+         * Compile the regex.
          */
         public void compile(String pattern) throws RubyRegexpException {
             try {

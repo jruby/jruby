@@ -85,6 +85,10 @@ public class RubyMatchData extends RubyObject {
         return begin[0];
     }
     
+    public int matchEndPosition() {
+        return end[0];
+    }
+    
     private boolean outOfBounds(RubyFixnum index) {
         long n = index.getLongValue();
         return (n < 0 || n >= size());
