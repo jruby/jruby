@@ -81,6 +81,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
+import org.jruby.runtime.variables.IVariablesService;
+import org.jruby.runtime.variables.VariablesServiceFactory;
 import org.jruby.util.Asserts;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
@@ -169,6 +171,7 @@ public final class Ruby {
     private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
+    private IVariablesService variablesService = VariablesServiceFactory.createVariablesService(this);
     private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
     /**

@@ -231,10 +231,13 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("remove_method", remove_method);
         moduleClass.defineMethod("undef_method", undef_method);
         moduleClass.defineMethod("alias_method", alias_method);
+        
         /*rb_define_private_method(rb_cModule, "define_method", rb_mod_define_method, -1);
         
         rb_define_singleton_method(rb_cModule, "constants", rb_mod_s_constants, 0);*/
         moduleClass.defineSingletonMethod("nesting", CallbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
+
+        moduleClass.defineMethod("constant_missing", CallbackFactory.getMethod(RubyModule.class, "constant_missing", IRubyObject.class));
     }
 
     /** classname
@@ -430,11 +433,15 @@ public class RubyModule extends RubyObject {
             }
             break;
         }
-
+        return callMethod("constant_missing", RubySymbol.newSymbol(runtime, name));
+    }
+    
+    public IRubyObject constant_missing(IRubyObject name) {
+        
         // Now try to load a Java class
-        String javaClassName = getRuntime().getJavaSupport().getJavaName(name);
+        String javaClassName = getRuntime().getJavaSupport().getJavaName(name.toId());
         if (javaClassName == null) {
-            javaClassName = name;
+            javaClassName = name.toId();
         }
 
         try {
@@ -442,15 +449,16 @@ public class RubyModule extends RubyObject {
             return getRuntime().getJavaSupport().loadClass(javaClass, null);
         } catch (NameError excptn) {
         }
-
+        
         /* Uninitialized constant */
         if (this != getRuntime().getClasses().getObjectClass()) {
-            throw new NameError(getRuntime(), "uninitialized constant " + name + " at " + getClassPath());
+            throw new NameError(getRuntime(), "uninitialized constant " + name.toId() + " at " + getClassPath());
         } else {
-            throw new NameError(getRuntime(), "uninitialized constant " + name);
+            throw new NameError(getRuntime(), "uninitialized constant " + name.toId());
         }
 
         // return getRuby().getNil();
+
     }
 
     /** Include a new module in this module or class.
