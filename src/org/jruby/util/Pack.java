@@ -731,6 +731,14 @@ public class Pack {
                             lResult.append(RubyFixnum.newFixnum(ruby, c[lCurCharIdx]));
                     }
                     break;
+                 case 'x':
+                 	{
+                 		if (lLength > (lValueLength - lCurValueIdx))
+                 			lLength = (lValueLength - lCurValueIdx);
+                 		lCurValueIdx+=lLength;
+                 	}
+                 	break;
+                 
             }
         }
         return lResult;
