@@ -29,11 +29,9 @@
  */
 package org.jruby.test;
 
-import java.io.File;
 import java.util.ArrayList;
 
-import org.jruby.*;
-import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.Ruby;
 
 /**
  * Unit test for the ruby class.
@@ -48,7 +46,7 @@ public class TestRuby extends TestRubyBase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(null);
+        ruby = Ruby.getDefaultInstance();
         oldHomeProperty = System.getProperty("jruby.home");
         oldLibProperty = System.getProperty("jruby.lib");
     }
@@ -73,9 +71,5 @@ public class TestRuby extends TestRubyBase {
         assertEquals("dlroW olleH", eval("puts $b"));
         assertEquals("Hello World", eval("puts $d.reverse, $c, $e.reverse"));
         assertEquals("135 20 3", eval("puts $f, \" \", $g, \" \",  $h"));
-    }
-
-    private void assertTrue(IRubyObject iObj) {
-        assertTrue(iObj.isTrue());
     }
 }

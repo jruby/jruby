@@ -45,7 +45,7 @@ public class TestRubyCollect extends TestRubyBase {
  } 
  
  public void setUp() { 
-        ruby = Ruby.getDefaultInstance(null);
+        ruby = Ruby.getDefaultInstance();
  } 
  
  public void tearDown() { 

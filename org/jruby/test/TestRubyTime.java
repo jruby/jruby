@@ -55,7 +55,7 @@ public class TestRubyTime extends TestCase {
 
     public void setUp() {
         if (ruby == null) {
-        	ruby = Ruby.getDefaultInstance(null);
+        	ruby = Ruby.getDefaultInstance();
         }
         rubyTime = ruby.getClasses().getTimeClass();
         IRubyObject[] args = new IRubyObject[1];

@@ -51,7 +51,7 @@ public class TestKernel extends TestRubyBase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(null);
+        ruby = Ruby.getDefaultInstance();
         ruby.getLoadService().init(ruby, new ArrayList());
     }
 

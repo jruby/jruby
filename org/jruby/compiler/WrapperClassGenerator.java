@@ -50,11 +50,17 @@
  */
 package org.jruby.compiler;
 
-import java.io.*;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+
 import java.lang.reflect.Method;
 import java.util.Iterator;
-
-import org.jruby.*;
+import java.io.IOException;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.File;
 
 /**
  *
@@ -64,7 +70,7 @@ import org.jruby.*;
 public class WrapperClassGenerator {
 
     public static void main(String[] args) throws IOException {
-        Ruby ruby = Ruby.getDefaultInstance(null);
+        Ruby ruby = Ruby.getDefaultInstance();
 
         String fc = loadFile(args[0]);
         ruby.evalScript(fc, null);
@@ -120,7 +126,7 @@ public class WrapperClassGenerator {
         pw.close();
     }
 
-    private static void generateMethod(String name, Method method, PrintWriter pw) throws IOException {
+    private static void generateMethod(String name, Method method, PrintWriter pw) {
         pw.print("    public " + method.getReturnType().getName() + " " + name + "(");
         for (int i = 0; i < method.getParameterTypes().length; i++) {
             if (i > 0) {

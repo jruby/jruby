@@ -32,8 +32,10 @@ package org.jruby.test;
 
 import java.util.ArrayList;
 import junit.framework.TestCase;
-import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.Ruby;
+import org.jruby.RubyNil;
+import org.jruby.RubyFixnum;
 
 /**
 * @author chadfowler
@@ -48,7 +50,7 @@ public class TestRubyNil extends TestCase {
     } 
     
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(null);
+        ruby = Ruby.getDefaultInstance();
         rubyNil = ruby.getNil();
     }
     

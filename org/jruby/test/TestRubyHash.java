@@ -30,7 +30,6 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
-import org.jruby.RubyHash;
 
 /**
  * @author chadfowler
@@ -38,7 +37,6 @@ import org.jruby.RubyHash;
  */
 public class TestRubyHash extends TestRubyBase {
 
-    private RubyHash rubyHash;
     private String result;
 
     public TestRubyHash(String name) {
@@ -47,7 +45,7 @@ public class TestRubyHash extends TestRubyBase {
 
     public void setUp() throws Exception {
         if (ruby == null) {
-        	ruby = Ruby.getDefaultInstance(null);
+        	ruby = Ruby.getDefaultInstance();
         }
         eval("$h = {'foo' => 'bar'}");
     }

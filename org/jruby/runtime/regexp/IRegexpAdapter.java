@@ -44,15 +44,34 @@ public abstract class IRegexpAdapter {
             "org.jruby.runtime.regexp.GNURegexpAdapter",
             "org.jruby.runtime.regexp.ORORegexpAdapter" };
 
-    public static Class getAdapterClass() {
-        for (int i = 0; i < REGEXP_ADAPTER.length; i++) {
-            try {
-                return Class.forName(REGEXP_ADAPTER[i]);
-            } catch (ClassNotFoundException cnfExcptn) {
-            } catch (NoClassDefFoundError ncdfError) {
+    private static final String[] SHORT_NAMES =
+        {
+            "JDK",
+            "GNU",
+            "ORO"};
+
+    public static Class getAdapter(String shortName) {
+        if (shortName == null) {
+            for (int i = 0; i < REGEXP_ADAPTER.length; i++) {
+                try {
+                    return Class.forName(REGEXP_ADAPTER[i]);
+                } catch (ClassNotFoundException cnfExcptn) {
+                } catch (NoClassDefFoundError ncdfError) {
+                }
             }
+            throw new RuntimeException("No regexp adapter found.");
         }
-        throw new RuntimeException("No regexp adapter found.");
+        try {
+            shortName = shortName.toUpperCase();
+            for (int i = 0; i < SHORT_NAMES.length; i++) {
+                if (shortName.equals(SHORT_NAMES[i])) {
+                    return Class.forName(REGEXP_ADAPTER[i]);
+                }
+            }
+        } catch (ClassNotFoundException e) {
+        } catch (NoClassDefFoundError e) {
+        }
+        throw new RuntimeException("No regexp adapter found: " + shortName);
     }
 
     /**

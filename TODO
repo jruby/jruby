@@ -12,7 +12,7 @@
 
 * Usability
     * Simplify installation (replace mkconfig.rb?)
-    * Simplify command line interface (regexp engine, etc.)
+    - Simplify command line interface (regexp engine)
 
 * Finish ASTWriterVisitor
 * Implement ASTReader

@@ -31,8 +31,11 @@ package org.jruby.test;
 
 import junit.framework.TestCase;
 
-import org.jruby.*;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyHash;
+import org.jruby.RubyString;
 
 /**
  * @author jpetersen
@@ -46,7 +49,7 @@ public class TestJavaUtil extends TestCase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(null);
+        ruby = Ruby.getDefaultInstance();
     }
 
     public void testConvertJavaToRuby() {

@@ -56,7 +56,7 @@ public class TestObjectSpace extends TestCase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(null);
+        ruby = Ruby.getDefaultInstance();
     }
 
     public void testObjectSpace() {

@@ -126,7 +126,7 @@ public class JRubyEngine extends BSFEngineImpl {
     public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
         
-        ruby = Ruby.getDefaultInstance(org.jruby.runtime.regexp.GNURegexpAdapter.class);
+        ruby = Ruby.getDefaultInstance();
 
         int size = declaredBeans.size();
         for (int i = 0; i < size; i++) {

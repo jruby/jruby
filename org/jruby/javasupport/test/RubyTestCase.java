@@ -48,7 +48,7 @@ public class RubyTestCase extends TestCase {
 
     protected Ruby createRuby(File file) throws IOException {
         String filePath = file.getAbsolutePath();
-        Ruby ruby = Ruby.getDefaultInstance(JDKRegexpAdapter.class);
+        Ruby ruby = Ruby.getDefaultInstance("JDK");
 
         initRuby(ruby);
 

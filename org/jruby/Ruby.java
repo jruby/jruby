@@ -184,16 +184,18 @@ public final class Ruby {
     /**
      * Returns a default instance of the JRuby runtime.
      *
-     * @param regexpAdapterClass The RegexpAdapter class you want to use.
+     * @param regexpEngineName The regexp engine you want to use.
      * @return the JRuby runtime
      */
-    public static Ruby getDefaultInstance(Class regexpAdapterClass) {
-        if (regexpAdapterClass == null) {
-            regexpAdapterClass = IRegexpAdapter.getAdapterClass();
-        }
+    public static Ruby getDefaultInstance(String regexpEngineName) {
+        Class regexpAdapterClass = IRegexpAdapter.getAdapter(regexpEngineName);
         Ruby ruby = new Ruby(regexpAdapterClass);
         ruby.init();
         return ruby;
+    }
+
+    public static Ruby getDefaultInstance() {
+        return getDefaultInstance((String) null);
     }
 
     /**

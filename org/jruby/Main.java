@@ -28,16 +28,21 @@
  */
 package org.jruby;
 
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.io.StringReader;
+import java.io.Reader;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
-import org.ablaf.ast.*;
-import org.jruby.exceptions.*;
-import org.jruby.javasupport.*;
-import org.jruby.ast.visitor.*;
-import org.jruby.parser.*;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThrowJump;
+import org.jruby.javasupport.JavaUtil;
+import org.jruby.parser.ParserSupport;
+import org.ablaf.ast.INode;
 
 /**
  * Class used to launch the interpreter.
@@ -51,7 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Main {
 
-    private static Class sRegexpAdapter;
+    private static String sRegexpAdapter;
 
     private static ArrayList sLoadDirectories = new ArrayList();
     private static String sScript = null;
@@ -120,18 +125,7 @@ public class Main {
                             sBenchmarkMode = true;
                             break;
                         case 'R' :
-                            String lRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate", lIter);
-                            try {
-                                sRegexpAdapter = Class.forName(lRegexpAdapter);
-                            } catch (ClassNotFoundException cnfExcptn_0) {
-                                try {
-                                    sRegexpAdapter = Class.forName("org.jruby.regexp." + lRegexpAdapter + "RegexpAdapter");
-                                } catch (ClassNotFoundException cnfExcptn_1) {
-                                    System.err.println("invalid argument " + lIter.idxArg);
-                                    System.err.println("failed to load RegexpAdapter: " + args[lIter.idxArg]);
-                                    System.err.println("defaulting to default RegexpAdapter: GNURegexpAdapter");
-                                }
-                            }
+                            sRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate", lIter);
                             break FOR;
                         case 'c' :
                             sCheckOnly = true;
@@ -230,8 +224,7 @@ public class Main {
             System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-            System.out.println("    -R 'class'     The adapter class for the regexp engine, for now can be:");
-            System.out.println("                    org.jruby.regexp.GNURegexpAdapter or org.jruby.regexp.JDKRegexpAdapter");
+            System.out.println("    -R 'name'       The regexp engine to use, for now can be JDK, GNU or ORO");
             System.out.println("    -c 				check syntax and dump parse tree");
             System.out.println("    -y 				activate parser traces.");
             sPrintedUsage = true;
@@ -241,7 +234,7 @@ public class Main {
     /**
      * Launch the interpreter on a specific String.
      *
-     * @param iString2Eval the string to evaluate
+     * @param iReader2Eval the string to evaluate
      * @param iFileName the name of the File from which the string comes.
      * @fixme implement the -p and -n options
      */
@@ -263,27 +256,16 @@ public class Main {
         ruby.defineReadonlyVariable("$*", lArgv);
         ruby.defineVariable(new RubyGlobal.StringGlobalVariable(ruby, "$0", RubyString.newString(ruby, iFileName)));
         ruby.getLoadService().init(ruby, sLoadDirectories);
-        //require additional libraries
         int lNbRequire = sRequireFirst.size();
         try {
 			for (int i = 0; i < lNbRequire; i++)
 				KernelModule.require(ruby.getTopSelf(), new RubyString(ruby, (String) sRequireFirst.get(i)));
-        // +++
             INode lScript = ruby.parse(iReader2Eval, iFileName);
-
-            //				DumpVisitor laVisitor = new DumpVisitor();
-            //				lScript.accept(laVisitor);
-            //				ruby.getRuntime().getOutputStream().println(laVisitor.dump());
-
             if (sDoPrint) {
-                // FIXME
                 lScript = new ParserSupport().appendPrintToBlock(lScript);
-                // ruby.getParserHelper().rb_parser_append_print();
             }
             if (sDoLoop) {
-                // FIXME
                 lScript = new ParserSupport().appendWhileLoopToBlock(lScript, sDoLine, sDoSplit);
-                // ruby.getParserHelper().rb_parser_while_loop(sDoLine, sDoSplit);
             }
 
             if (sCheckOnly) {

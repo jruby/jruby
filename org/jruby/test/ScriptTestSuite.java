@@ -83,7 +83,7 @@ public class ScriptTestSuite extends TestSuite {
     }
 
     private static Ruby setupInterpreter() {
-        Ruby result = Ruby.getDefaultInstance(null);
+        Ruby result = Ruby.getDefaultInstance();
         return result;
     }
 

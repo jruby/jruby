@@ -29,19 +29,18 @@
  */
 package org.jruby.test;
 
-import java.io.*;
+import org.jruby.Ruby;
+import org.jruby.RubyIO;
+import org.jruby.RubyString;
+import junit.framework.TestCase;
 
-import junit.framework.*;
-
-import org.jruby.*;
+import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
 
 /**
  * @author Benoit
  */
 public class TestRubyBase extends TestCase {
-    private PipedInputStream pipeIn;
-    private PipedOutputStream pos;
-    private BufferedReader in;
     protected Ruby ruby;
     private PrintStream out;
 
@@ -106,12 +105,7 @@ public class TestRubyBase extends TestCase {
     }
 
     public void tearDown() {
-        try {
-            if (in != null)
-                in.close();
-            if (out != null)
-                out.close();
-        } catch (IOException ex) {
-        }
+        if (out != null)
+            out.close();
     }
 }
