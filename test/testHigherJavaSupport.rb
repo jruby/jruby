@@ -67,6 +67,8 @@ if defined? Java
     array[1] = 1234
     test_equal(10, array[0])
     test_equal(1234, array[1])
+    test_equal([10, 1234], array.entries)
+    test_equal(10, array.min)
 
     # Inner classes
     test_equal("java.lang.Character$UnicodeBlock",

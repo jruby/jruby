@@ -192,6 +192,7 @@ module JavaUtilities
 
     def setup_array_methods(java_class, proxy_class)
       def proxy_class.create_array_methods(java_class)
+        include Enumerable
         define_method(:[]) {|index|
           value = java_object[index]
           value = Java.java_to_primitive(value)
@@ -208,6 +209,16 @@ module JavaUtilities
         define_method(:length) {| |
           java_object.length
         }
+        class_eval(<<END
+          def each()
+            block = Proc.new
+            for index in 0...java_object.length
+              value = self[index]
+              block.call(value)
+            end
+          end
+END
+          )
       end
       proxy_class.create_array_methods(java_class)
     end

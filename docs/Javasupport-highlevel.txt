@@ -56,7 +56,7 @@ following properties:
     types is called.
 
     If the Java object is an array then the following methods are
-    available instead:
+    available instead.
 
     javaarray.length -> aFixnum
 
@@ -70,3 +70,10 @@ following properties:
 
         Sets the value in the given position of the array to the given
         value. The value is also returned.
+
+    javaarray.each {|item| ... }
+
+        Calls the block once for every item in the array, with that
+        item as the parameter.
+
+    The Java arrays also implement Enumerable.
