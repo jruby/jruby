@@ -41,374 +41,376 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public class RubyRuntime {
-    private static final int TRACE_HEAD = 8;
-    private static final int TRACE_TAIL = 5;
-    private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
+	private static final int TRACE_HEAD = 8;
+	private static final int TRACE_TAIL = 5;
+	private static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 5;
 
-    private boolean printBugs = false;
-    
-    private Ruby ruby;
-    
-    private RubyProc traceFunction;
-    private boolean tracing = false;
+	private boolean printBugs = false;
 
-    public RubyRuntime(Ruby ruby) {
-        this.ruby = ruby;
-    }
+	private Ruby ruby;
 
-    /** Print a bug report to the Error stream if bug 
-     * reporting is enabled
-     * 
-     */
-    public void printBug(String description) {
-        if (printBugs) {
-            getErrorStream().println("[BUG] " + description);
-        }
-    }
+	private RubyProc traceFunction;
+	private boolean tracing = false;
 
-    /** Call the current method in the superclass of the current object
-     * 
-     * @matz rb_call_super
-     */
-    public RubyObject callSuper(RubyObject[] args) {
-        if (ruby.getActFrame().getLastClass() == null) {
-            throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' must be enabled by enableSuper().");
-        }
+	public RubyRuntime(Ruby ruby) {
+		this.ruby = ruby;
+	}
 
-        ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+	/** Print a bug report to the Error stream if bug 
+	 * reporting is enabled
+	 * 
+	 */
+	public void printBug(String description) {
+		if (printBugs) {
+			getErrorStream().println("[BUG] " + description);
+		}
+	}
 
-        RubyObject result = ruby.getNil();
+	/** Call the current method in the superclass of the current object
+	 * 
+	 * @matz rb_call_super
+	 */
+	public RubyObject callSuper(RubyObject[] args) {
+		if (ruby.getActFrame().getLastClass() == null) {
+			throw new NameError(ruby, "superclass method '" + ruby.getActFrame().getLastFunc() + "' must be enabled by enableSuper().");
+		}
 
-        try {
-            result =
-                ruby.getActFrame().getLastClass().getSuperClass().call(
-                    ruby.getActFrame().getSelf(),
-                    ruby.getActFrame().getLastFunc(),
-                    new RubyPointer(args),
-                    3);
-        } finally {
-            ruby.getIterStack().pop();
-        }
+		ruby.getIterStack().push(ruby.getActIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
 
-        return result;
-    }
+		RubyObject result = ruby.getNil();
 
-    /** This method compiles and interprets a Ruby script.
-     *
-     *  It can be used if you want to use JRuby as a Macro language.
-     *
-     */
-    public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
-        RubyObject self = ruby.getRubyTopSelf();
-        Namespace savedNamespace = ruby.getNamespace();
+		try {
+			result =
+				ruby.getActFrame().getLastClass().getSuperClass().call(
+						ruby.getActFrame().getSelf(),
+						ruby.getActFrame().getLastFunc(),
+						new RubyPointer(args),
+						3);
+		} finally {
+			ruby.getIterStack().pop();
+		}
 
-        // TMP_PROTECT;
-        if (wrap && ruby.getSafeLevel() >= 4) {
-            // Check_Type(fname, T_STRING);
-        } else {
-            // Check_SafeStr(fname);
-        }
+		return result;
+	}
 
-        // volatile ID last_func;
-        // ruby_errinfo = Qnil; /* ensure */
-        RubyVarmap.push(ruby);
+	/** This method compiles and interprets a Ruby script.
+	 *
+	 *  It can be used if you want to use JRuby as a Macro language.
+	 *
+	 */
+	public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
+		RubyObject self = ruby.getRubyTopSelf();
+		Namespace savedNamespace = ruby.getNamespace();
 
-        RubyModule wrapper = ruby.getWrapper();
-        ruby.setNamespace(ruby.getTopNamespace());
+		// TMP_PROTECT;
+		if (wrap && ruby.getSafeLevel() >= 4) {
+			// Check_Type(fname, T_STRING);
+		} else {
+			// Check_SafeStr(fname);
+		}
 
-        if (!wrap) {
-            ruby.secure(4); /* should alter global state */
-            ruby.pushClass(ruby.getClasses().getObjectClass());
-            ruby.setWrapper(null);
-        } else {
-            /* load in anonymous module as toplevel */
-            ruby.setWrapper(RubyModule.newModule(ruby));
-            ruby.pushClass(ruby.getWrapper());
-            self = ruby.getRubyTopSelf().rbClone();
-            self.extendObject(ruby.getRubyClass());
-            ruby.setNamespace(new Namespace(ruby.getWrapper(), ruby.getNamespace()));
-        }
+		// volatile ID last_func;
+		// ruby_errinfo = Qnil; /* ensure */
+		RubyVarmap.push(ruby);
 
-        String last_func = ruby.getActFrame().getLastFunc();
+		RubyModule wrapper = ruby.getWrapper();
+		ruby.setNamespace(ruby.getTopNamespace());
 
-        ruby.getFrameStack().push();
-        ruby.getActFrame().setLastFunc(null);
-        ruby.getActFrame().setLastClass(null);
-        ruby.getActFrame().setSelf(self);
-        ruby.getActFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
-        ruby.getScope().push();
+		if (!wrap) {
+			ruby.secure(4); /* should alter global state */
+			ruby.pushClass(ruby.getClasses().getObjectClass());
+			ruby.setWrapper(null);
+		} else {
+			/* load in anonymous module as toplevel */
+			ruby.setWrapper(RubyModule.newModule(ruby));
+			ruby.pushClass(ruby.getWrapper());
+			self = ruby.getRubyTopSelf().rbClone();
+			self.extendObject(ruby.getRubyClass());
+			ruby.setNamespace(new Namespace(ruby.getWrapper(), ruby.getNamespace()));
+		}
 
-        /* default visibility is private at loading toplevel */
-        ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
+		String last_func = ruby.getActFrame().getLastFunc();
 
-        try {
-            // RubyId last_func = ruby.getRubyFrame().getLastFunc();
-            // DEFER_INTS;
-            
-  			// FIXME
-            ruby.setInEval(ruby.getInEval() + 1);
+		ruby.getFrameStack().push();
+		ruby.getActFrame().setLastFunc(null);
+		ruby.getActFrame().setLastClass(null);
+		ruby.getActFrame().setSelf(self);
+		ruby.getActFrame().setNamespace(new Namespace(ruby.getRubyClass(), null));
+		ruby.getScope().push();
 
-            INode node = ruby.compile(source.toString(), scriptName.getValue(), 0);
+		/* default visibility is private at loading toplevel */
+		ruby.setActMethodScope(Constants.SCOPE_PRIVATE);
 
-            // ---
-            ruby.setInEval(ruby.getInEval() - 1);
+		try {
+			// RubyId last_func = ruby.getRubyFrame().getLastFunc();
+			// DEFER_INTS;
 
-            self.evalNode(node);
-        } finally {
-            ruby.getActFrame().setLastFunc(last_func);
+			// FIXME
+			ruby.setInEval(ruby.getInEval() + 1);
 
-            /*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
-                if (ruby_scope->local_tbl)
-                    free(ruby_scope->local_tbl);
-            	}*/
-            ruby.setNamespace(savedNamespace);
-            ruby.getScope().pop();
-            ruby.getFrameStack().pop();
-            ruby.popClass();
-            RubyVarmap.pop(ruby);
-            ruby.setWrapper(wrapper);
-        }
+			INode node = ruby.compile(source.toString(), scriptName.getValue(), 0);
 
-        /*if (ruby_nerrs > 0) {
-            ruby_nerrs = 0;
-            rb_exc_raise(ruby_errinfo);
-        }*/
-    }
+			// ---
+			ruby.setInEval(ruby.getInEval() - 1);
 
-    /** This method loads, compiles and interprets a Ruby file.
-    *  It is used by Kernel#require.
-    *
-    *  (matz Ruby: rb_load)
-    */
-    public void loadFile(File iFile, boolean wrap) {
-        if (iFile == null) {
-            throw new RuntimeException("No such file to load");
-        }
+			self.evalNode(node);
+		} finally {
+			ruby.getActFrame().setLastFunc(last_func);
 
-        try {
-            StringBuffer source = new StringBuffer((int) iFile.length());
-            BufferedReader br = new BufferedReader(new FileReader(iFile));
-            String line;
-            while ((line = br.readLine()) != null) {
-                source.append(line).append('\n');
-            }
-            br.close();
+			/*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
+			  if (ruby_scope->local_tbl)
+			  free(ruby_scope->local_tbl);
+			  }*/
+			ruby.setNamespace(savedNamespace);
+			ruby.getScope().pop();
+			ruby.getFrameStack().pop();
+			ruby.popClass();
+			RubyVarmap.pop(ruby);
+			ruby.setWrapper(wrapper);
+		}
 
-            loadScript(new RubyString(ruby, iFile.getPath()), new RubyString(ruby, source.toString()), wrap);
+		/*if (ruby_nerrs > 0) {
+		  ruby_nerrs = 0;
+		  rb_exc_raise(ruby_errinfo);
+		  }*/
+	}
 
-        } catch (IOException ioExcptn) {
-            getErrorStream().println("Cannot read Rubyfile: \"" + iFile.getPath() + "\"");
-            getErrorStream().println("IOEception: " + ioExcptn.getMessage());
-        }
-    }
+	/** This method loads, compiles and interprets a Ruby file.
+	 *  It is used by Kernel#require.
+	 *
+	 *  (matz Ruby: rb_load)
+	 */
+	public void loadFile(File iFile, boolean wrap) {
+		if (iFile == null) {
+			throw new RuntimeException("No such file to load");
+		}
 
-    public void loadFile(RubyString fname, boolean wrap) {
-        loadFile(new File(fname.getValue()), wrap);
-    }
+		try {
+			StringBuffer source = new StringBuffer((int) iFile.length());
+			BufferedReader br = new BufferedReader(new FileReader(iFile));
+			String line;
+			while ((line = br.readLine()) != null) {
+				source.append(line).append('\n');
+			}
+			br.close();
 
-    /** Call the traceFunction
-     * 
-     * MRI: eval.c - call_trace_func
-     * 
-     */
-    public synchronized void callTraceFunction(String event, String file, int line, RubyObject self, String name, RubyObject type) {
-        if (!tracing && traceFunction != null) {
-            tracing = true;
+			loadScript(new RubyString(ruby, iFile.getPath()), new RubyString(ruby, source.toString()), wrap);
 
-            // XXX
-            
-            if (file == null) {
-                file = "(ruby)";
-            }
+		} catch (IOException ioExcptn) {
+			getErrorStream().println("Cannot read Rubyfile: \"" + iFile.getPath() + "\"");
+			getErrorStream().println("IOEception: " + ioExcptn.getMessage());
+		}
+	}
 
-            try {
-                traceFunction.call(new RubyObject[] {
-                                    RubyString.newString(ruby, event),
-                                    RubyString.newString(ruby, file),
-                                    RubyFixnum.newFixnum(ruby, line),
-                                    RubySymbol.newSymbol(ruby, name),
-                                    self, // XXX
-                                    type});
-            } finally {
-                tracing = false;
+	public void loadFile(RubyString fname, boolean wrap) {
+		loadFile(new File(fname.getValue()), wrap);
+	}
 
-                // XXX
-            }
-        }
-    }
+	/** Call the traceFunction
+	 * 
+	 * MRI: eval.c - call_trace_func
+	 * 
+	 */
+	public synchronized void callTraceFunction(String event, String file, int line, RubyObject self, String name, RubyObject type) {
+		if (!tracing && traceFunction != null) {
+			tracing = true;
 
-    /** Prints an error with backtrace to the error stream.
-     * 
-     * MRI: eval.c - error_print()
-     * 
-     */
-    public void printError(RubyException excp) {
-        if (excp == null || excp.isNil()) {
-            return;
-        }
+			// XXX
 
-        RubyArray backtrace = (RubyArray) excp.funcall("backtrace");
+			if (file == null) {
+				file = "(ruby)";
+			}
 
-        if (backtrace.isNil()) {
-            if (ruby.getSourceFile() != null) {
-                getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
-            } else {
-                getErrorStream().print(ruby.getSourceLine());
-            }
-        } else if (backtrace.getLength() == 0) {
-            printErrorPos();
-        } else {
-            RubyObject mesg = backtrace.entry(0);
+			ruby.getFrameStack().push();
+			try {
+				traceFunction.call(new RubyObject[] {
+					RubyString.newString(ruby, event),
+					RubyString.newString(ruby, file),
+					RubyFixnum.newFixnum(ruby, line),
+					RubySymbol.newSymbol(ruby, name),
+					self, // XXX
+					type});
+			} finally {
+				ruby.getFrameStack().pop();
+				tracing = false;
 
-            if (mesg.isNil()) {
-                printErrorPos();
-            } else {
-                getErrorStream().print(mesg);
-            }
-        }
+				// XXX
+			}
+		}
+	}
 
-        RubyClass type = excp.getRubyClass();
-        String info = excp.toString();
+	/** Prints an error with backtrace to the error stream.
+	 * 
+	 * MRI: eval.c - error_print()
+	 * 
+	 */
+	public void printError(RubyException excp) {
+		if (excp == null || excp.isNil()) {
+			return;
+		}
 
-        if (type == ruby.getExceptions().getRuntimeError() && info.length() == 0) {
-            getErrorStream().print(": unhandled exception\n");
-        } else {
-            String path = type.getClassPath().toString();
+		RubyArray backtrace = (RubyArray) excp.funcall("backtrace");
 
-            if (info.length() == 0) {
-                getErrorStream().print(": " + path + '\n');
-            } else {
-                if (path.startsWith("#")) {
-                    path = null;
-                }
+		if (backtrace.isNil()) {
+			if (ruby.getSourceFile() != null) {
+				getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
+			} else {
+				getErrorStream().print(ruby.getSourceLine());
+			}
+		} else if (backtrace.getLength() == 0) {
+			printErrorPos();
+		} else {
+			RubyObject mesg = backtrace.entry(0);
 
-                String tail = null;
-                if (info.indexOf("\n") != -1) {
-                    tail = info.substring(info.indexOf("\n") + 1);
-                    info = info.substring(0, info.indexOf("\n"));
-                }
+			if (mesg.isNil()) {
+				printErrorPos();
+			} else {
+				getErrorStream().print(mesg);
+			}
+		}
 
-                getErrorStream().print(": " + info);
+		RubyClass type = excp.getRubyClass();
+		String info = excp.toString();
 
-                if (path != null) {
-                    getErrorStream().print(" (" + path + ")\n");
-                }
+		if (type == ruby.getExceptions().getRuntimeError() && info.length() == 0) {
+			getErrorStream().print(": unhandled exception\n");
+		} else {
+			String path = type.getClassPath().toString();
 
-                if (tail != null) {
-                    getErrorStream().print(tail + '\n');
-                }
-            }
-        }
+			if (info.length() == 0) {
+				getErrorStream().print(": " + path + '\n');
+			} else {
+				if (path.startsWith("#")) {
+					path = null;
+				}
 
-        if (!backtrace.isNil()) {
-            RubyObject[] elements = backtrace.toJavaArray();
+				String tail = null;
+				if (info.indexOf("\n") != -1) {
+					tail = info.substring(info.indexOf("\n") + 1);
+					info = info.substring(0, info.indexOf("\n"));
+				}
 
-            for (int i = 0; i < elements.length; i++) {
-                if (elements[i] instanceof RubyString) {
-                    getErrorStream().print("\tfrom " + elements[i] + '\n');
-                }
+				getErrorStream().print(": " + info);
 
-                if (i == TRACE_HEAD && elements.length > TRACE_MAX) {
-                    getErrorStream().print("\t ... " + (elements.length - TRACE_HEAD - TRACE_TAIL) + "levels...\n");
-                    i = elements.length - TRACE_TAIL;
-                }
-            }
-        }
-    }
+				if (path != null) {
+					getErrorStream().print(" (" + path + ")\n");
+				}
 
-    private void printErrorPos() {
-        if (ruby.getSourceFile() != null) {
-            if (ruby.getActFrame().getLastFunc() != null) {
-                getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
-                getErrorStream().print(":in '" + ruby.getActFrame().getLastFunc() + '\'');
-            } else if (ruby.getSourceLine() != 0) {
-                getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
-            } else {
-                getErrorStream().print(ruby.getSourceFile());
-            }
-        }
-    }
+				if (tail != null) {
+					getErrorStream().print(tail + '\n');
+				}
+			}
+		}
 
-    /**
-     * Gets the errorStream
-     * @return Returns a PrintStream
-     */
-    public PrintStream getErrorStream() {
-        return new PrintStream(((RubyIO) ruby.getGlobalVar("$stderr")).getOutStream());
-    }
+		if (!backtrace.isNil()) {
+			RubyObject[] elements = backtrace.toJavaArray();
 
-    /**
-     * Sets the errorStream
-     * @param errorStream The errorStream to set
-     */
-    public void setErrorStream(PrintStream errStream) {
-        ruby.setGlobalVar("$stderr", RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), errStream));
-    }
+			for (int i = 0; i < elements.length; i++) {
+				if (elements[i] instanceof RubyString) {
+					getErrorStream().print("\tfrom " + elements[i] + '\n');
+				}
 
-    /**
-     * Gets the inputStream
-     * @return Returns a InputStream
-     */
-    public InputStream getInputStream() {
-        return ((RubyIO) ruby.getGlobalVar("$stdin")).getInStream();
-    }
+				if (i == TRACE_HEAD && elements.length > TRACE_MAX) {
+					getErrorStream().print("\t ... " + (elements.length - TRACE_HEAD - TRACE_TAIL) + "levels...\n");
+					i = elements.length - TRACE_TAIL;
+				}
+			}
+		}
+	}
 
-    /**
-     * Sets the inputStream
-     * @param inputStream The inputStream to set
-     */
-    public void setInputStream(InputStream inStream) {
-        ruby.setGlobalVar("$stdin", RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), inStream));
-    }
+	private void printErrorPos() {
+		if (ruby.getSourceFile() != null) {
+			if (ruby.getActFrame().getLastFunc() != null) {
+				getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
+				getErrorStream().print(":in '" + ruby.getActFrame().getLastFunc() + '\'');
+			} else if (ruby.getSourceLine() != 0) {
+				getErrorStream().print(ruby.getSourceFile() + ':' + ruby.getSourceLine());
+			} else {
+				getErrorStream().print(ruby.getSourceFile());
+			}
+		}
+	}
 
-    /**
-     * Gets the outputStream
-     * @return Returns a PrintStream
-     */
-    public PrintStream getOutputStream() {
-        return new PrintStream(((RubyIO) ruby.getGlobalVar("$stdout")).getOutStream());
-    }
+	/**
+	 * Gets the errorStream
+	 * @return Returns a PrintStream
+	 */
+	public PrintStream getErrorStream() {
+		return new PrintStream(((RubyIO) ruby.getGlobalVar("$stderr")).getOutStream());
+	}
 
-    /**
-     * Sets the outputStream
-     * @param outputStream The outputStream to set
-     */
-    public void setOutputStream(PrintStream outStream) {
-        RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), outStream);
-        if (ruby.getGlobalVar("$stdout") == ruby.getGlobalVar("$>")) {
-            ruby.setGlobalVar("$>", stdout);
-        }
-        ruby.setGlobalVar("$stdout", stdout);
-    }
+	/**
+	 * Sets the errorStream
+	 * @param errorStream The errorStream to set
+	 */
+	public void setErrorStream(PrintStream errStream) {
+		ruby.setGlobalVar("$stderr", RubyIO.stderr(ruby, ruby.getClasses().getIoClass(), errStream));
+	}
 
-    /**
-     * Gets the printBugs
-     * @return Returns a boolean
-     */
-    public boolean getPrintBugs() {
-        return printBugs;
-    }
-    /**
-     * Sets the printBugs
-     * @param printBugs The printBugs to set
-     */
-    public void setPrintBugs(boolean printBugs) {
-        this.printBugs = printBugs;
-    }
+	/**
+	 * Gets the inputStream
+	 * @return Returns a InputStream
+	 */
+	public InputStream getInputStream() {
+		return ((RubyIO) ruby.getGlobalVar("$stdin")).getInStream();
+	}
 
-    /**
-     * Gets the traceFunction.
-     * @return Returns a RubyProc
-     */
-    public RubyProc getTraceFunction() {
-        return traceFunction;
-    }
+	/**
+	 * Sets the inputStream
+	 * @param inputStream The inputStream to set
+	 */
+	public void setInputStream(InputStream inStream) {
+		ruby.setGlobalVar("$stdin", RubyIO.stdin(ruby, ruby.getClasses().getIoClass(), inStream));
+	}
 
-    /**
-     * Sets the traceFunction.
-     * @param traceFunction The traceFunction to set
-     */
-    public void setTraceFunction(RubyProc traceFunction) {
-        this.traceFunction = traceFunction;
-    }
+	/**
+	 * Gets the outputStream
+	 * @return Returns a PrintStream
+	 */
+	public PrintStream getOutputStream() {
+		return new PrintStream(((RubyIO) ruby.getGlobalVar("$stdout")).getOutStream());
+	}
+
+	/**
+	 * Sets the outputStream
+	 * @param outputStream The outputStream to set
+	 */
+	public void setOutputStream(PrintStream outStream) {
+		RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass(), outStream);
+		if (ruby.getGlobalVar("$stdout") == ruby.getGlobalVar("$>")) {
+			ruby.setGlobalVar("$>", stdout);
+		}
+		ruby.setGlobalVar("$stdout", stdout);
+	}
+
+	/**
+	 * Gets the printBugs
+	 * @return Returns a boolean
+	 */
+	public boolean getPrintBugs() {
+		return printBugs;
+	}
+	/**
+	 * Sets the printBugs
+	 * @param printBugs The printBugs to set
+	 */
+	public void setPrintBugs(boolean printBugs) {
+		this.printBugs = printBugs;
+	}
+
+	/**
+	 * Gets the traceFunction.
+	 * @return Returns a RubyProc
+	 */
+	public RubyProc getTraceFunction() {
+		return traceFunction;
+	}
+
+	/**
+	 * Sets the traceFunction.
+	 * @param traceFunction The traceFunction to set
+	 */
+	public void setTraceFunction(RubyProc traceFunction) {
+		this.traceFunction = traceFunction;
+	}
 }

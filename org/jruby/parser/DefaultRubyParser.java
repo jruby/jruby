@@ -2930,7 +2930,7 @@ case 417:
     void yyerrok() {}
 
     private ISourcePosition getPosition() {
-        return lexer.getSupport().getPosition();
+        return lexer.getPosition();
     }
 }
 					// line 6718 "-"

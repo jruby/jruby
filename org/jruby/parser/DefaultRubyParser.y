@@ -1608,6 +1608,6 @@ none          : /* none */ {
     void yyerrok() {}
 
     private ISourcePosition getPosition() {
-        return lexer.getSupport().getPosition();
+        return lexer.getPosition();
     }
 }

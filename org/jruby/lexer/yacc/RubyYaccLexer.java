@@ -734,6 +734,11 @@ public class RubyYaccLexer implements IYaccLexer {
 			errorHandler.handleError(IErrors.WARNING, support.getPosition(), Messages.getString("ambiguous_first_argument")); //$NON-NLS-1$
 		}
 
+		ISourcePosition _curPos;
+		public ISourcePosition getPosition()
+		{
+			return _curPos;
+		}
 		/**
 		 *  Returns the next token. Also sets yyVal is needed.
 		 *
@@ -743,35 +748,43 @@ public class RubyYaccLexer implements IYaccLexer {
 			int c;
 			int space_seen = 0;
 			Keyword kw;
-
-        retry : for (;;) {
+			//first eat as much space as possible then grab the position of the 
+			//beginning of the token
+retry_space : for (;;) {
+				  switch (c = nextc()) {
+					  case '\0' : // NUL
+					  case '\004' : // ^D
+					  case '\032' : // ^Z
+					  case -1 : //end of script.
+						  return 0;
+						  // white spaces
+					  case ' ' :
+					  case '\t' :
+					  case '\f' :
+					  case '\r' :
+					  case '\u0013' : // '\v'
+						  space_seen++;
+						  continue retry_space;
+					  case '#' : // it's a comment
+						  while ((c = nextc()) != '\n') {
+							  if (c == -1) {
+								  return 0;
+							  }
+						  }
+						  // fall through
+					  case '\n' :
+						  if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot()) {
+							  continue retry_space;
+						  }
+						  lexState = LexState.EXPR_BEG;
+						  return '\n';
+				  }
+				  break;
+			  }
+			  pushback(c);
+			  _curPos = support.getPosition();
+retry : for (;;) {
 			switch (c = nextc()) {
-				case '\0' : // NUL
-				case '\004' : // ^D
-				case '\032' : // ^Z
-				case -1 : //end of script.
-					return 0;
-					// white spaces
-				case ' ' :
-				case '\t' :
-				case '\f' :
-				case '\r' :
-				case '\u0013' : // '\v'
-					space_seen++;
-					continue retry;
-				case '#' : // it's a comment
-					while ((c = nextc()) != '\n') {
-						if (c == -1) {
-							return 0;
-						}
-					}
-					// fall through
-				case '\n' :
-					if (lexState.isExprBeg() || lexState.isExprFName() || lexState.isExprDot()) {
-						continue retry;
-					}
-					lexState = LexState.EXPR_BEG;
-					return '\n';
 				case '*' :
 					if ((c = nextc()) == '*') {
 						if (nextc() == '=') {
@@ -1195,7 +1208,7 @@ public class RubyYaccLexer implements IYaccLexer {
 					lexState = LexState.EXPR_BEG;
 					return c;
 				case '{' :
-                    if (!lexState.isExprEnd() && !lexState.isExprArg()) {
+					if (!lexState.isExprEnd() && !lexState.isExprArg()) {
 						c = Token.tLBRACE;
 					}
 					lexState = LexState.EXPR_BEG;
@@ -1482,9 +1495,9 @@ public class RubyYaccLexer implements IYaccLexer {
 
 			if (c == '-') {
 				number.append(c);
-			    c = support.read();
+				c = support.read();
 			} else if (c == '+') {
-			    c = support.read();
+				c = support.read();
 			}
 
 			char nondigit = '\0';
@@ -1731,7 +1744,7 @@ public class RubyYaccLexer implements IYaccLexer {
 			int brace = -1;
 			int nest;
 
-        fetch_id : for (;;) {
+fetch_id : for (;;) {
 			   switch (c) {
 				   case '$' :
 					   token.append('$');
@@ -1777,7 +1790,7 @@ public class RubyYaccLexer implements IYaccLexer {
 						   case '\\' :
 							   //refetch:
 							   token.append(c);
-                            list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
+							   list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
 							   token.newToken(support.getPosition());
 							   return true;
 						   default :
@@ -1791,7 +1804,7 @@ public class RubyYaccLexer implements IYaccLexer {
 								   case '\"' :
 								   case '/' :
 									   token.append(c);
-                                    list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
+									   list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
 									   token.newToken(support.getPosition());
 									   return true;
 
@@ -1812,7 +1825,7 @@ public class RubyYaccLexer implements IYaccLexer {
 						   token.append(c);
 					   }
 					   support.unread();
-                    list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
+					   list.add(new GlobalVarNode(token.getPosition(), token.getToken()));
 					   token.newToken(support.getPosition());
 					   return true;
 				   case '@' :
@@ -1827,9 +1840,9 @@ public class RubyYaccLexer implements IYaccLexer {
 					   }
 					   support.unread();
 					   if (token.getToken().startsWith("@@")) { //$NON-NLS-1$
-                        list.add(new ClassVarNode(token.getPosition(), token.getToken()));
+						   list.add(new ClassVarNode(token.getPosition(), token.getToken()));
 					   } else {
-                        list.add(new InstVarNode(token.getPosition(), token.getToken()));
+						   list.add(new InstVarNode(token.getPosition(), token.getToken()));
 					   }
 					   token.newToken(support.getPosition());
 					   return true;
@@ -1839,7 +1852,7 @@ public class RubyYaccLexer implements IYaccLexer {
 					   }
 					   nest = 0;
 					   do {
-                        loop_again : while (true) {
+loop_again : while (true) {
 				 c = support.read();
 				 switch (c) {
 					 case '\0' :
@@ -1890,7 +1903,7 @@ public class RubyYaccLexer implements IYaccLexer {
 				 }
 				 break loop_again;
 			 }
-					   } while (c != brace);
+			 } while (c != brace);
 			   }
 			   break;
 		   }
@@ -1971,4 +1984,4 @@ public class RubyYaccLexer implements IYaccLexer {
 		public ILexerSupport getSupport() {
 			return support;
 		}
-}
+	}
