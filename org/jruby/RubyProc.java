@@ -46,12 +46,15 @@ public class RubyProc extends RubyObject {
     	RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
     	
     	Callback call = new ReflectionCallbackMethod(RubyProc.class, "call", true);
+    	Callback proc = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
+			RubyObject[].class, true, true);
     	Callback s_new = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
                                                                 RubyObject[].class, true, true);
     	
     	procClass.defineMethod("call", call);
     	
     	procClass.defineSingletonMethod("new", s_new);
+	ruby.defineGlobalFunction("proc", proc);
     	
     	return procClass;
     }
@@ -62,6 +65,9 @@ public class RubyProc extends RubyObject {
         proc.callInit(args);
         
         return proc;
+    }
+    public static RubyProc proc(Ruby ruby, RubyClass rubyClass, RubyObject[] args) {
+	return newProc(ruby, ruby.getClasses().getProcClass());
     }
 
     public static RubyProc newProc(Ruby ruby, RubyClass rubyClass) {
