@@ -51,18 +51,19 @@ public class ArrayNode extends Node {
     }
     
     public RubyArray getRubyArray(Ruby ruby, RubyObject self) {
+        return new RubyArray(ruby, getArrayList(ruby, self), true);
+    }
+
+    public ArrayList getArrayList(Ruby ruby, RubyObject self) {
         ArrayList ary = new ArrayList(getALength());
         for (Node node = this; node != null ; node = node.getNextNode()) {
             ary.add(node.getHeadNode().eval(ruby, self));
         }
-        return RubyArray.m_newArray(ruby, ary);
+        return ary;
     }
 
     public RubyObject[] getArray(Ruby ruby, RubyObject self) {
-        ArrayList ary = new ArrayList(getALength());
-        for (Node node = this; node != null ; node = node.getNextNode()) {
-            ary.add(node.getHeadNode().eval(ruby, self));
-        }
+        ArrayList ary = getArrayList(ruby, self);
         return (RubyObject[])ary.toArray(new RubyObject[ary.size()]);
     }
 }

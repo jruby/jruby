@@ -196,4 +196,32 @@ public class DefaultPointer extends AbstractList implements Pointer {
     public void set(Pointer pointer, int len) {
         set(0, pointer, len);
     }
+    
+    public void setAll(Object element) {
+        int len = delegate.size();
+        for (int i = position; i < len; i++) {
+            delegate.set(i, element);
+        }
+    }
+    
+    public int getPosition() {
+        return position;
+    }
+    
+    public void setPosition(int newPosition) {
+        position = newPosition;
+    }
+    
+    public Object[] toArray() {
+        int len = size();
+        Object[] array = new Object[len];
+        System.arraycopy(super.toArray(), position, array, 0, len);
+        return array;
+    }
+
+    public Object[] toArray(Object[] array) {
+        int len = size();
+        System.arraycopy(super.toArray(), position, array, 0, len);
+        return array;
+    }
 }

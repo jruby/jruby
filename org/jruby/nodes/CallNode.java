@@ -34,6 +34,7 @@ import org.jruby.*;
 import org.jruby.nodes.types.*;
 import org.jruby.nodes.util.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -51,7 +52,7 @@ public class CallNode extends Node implements AssignableNode {
         RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
         
         RubyObject recv = getRecvNode().eval(ruby, self);
-        RubyObject[] args = ArgsUtil.setupArgs(ruby, self, getArgsNode());
+        RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode());
         
         ArgsUtil.endCallArgs(ruby, tmpBlock);
         
@@ -60,13 +61,14 @@ public class CallNode extends Node implements AssignableNode {
     
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
         RubyObject recv = getRecvNode().eval(ruby, self);
+        
         if (getArgsNode() == null) {
             /* attr set */
-            recv.getRubyClass().call(recv, getMId(), new RubyObject[] {value}, 0);
+            recv.getRubyClass().call(recv, getMId(), new RubyPointer(new RubyObject[] {value}), 0);
         } else {
             RubyArray args = (RubyArray)getArgsNode().eval(ruby, self);
             args.push(value);
-            recv.getRubyClass().call(recv, getMId(), args.toJavaArray(), 0);
+            recv.getRubyClass().call(recv, getMId(), new RubyPointer(args.getList()), 0);
         }
     }
 }

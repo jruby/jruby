@@ -35,6 +35,7 @@ import org.jruby.core.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -46,11 +47,11 @@ public class CFuncNode extends Node implements CallableNode {
         super(Constants.NODE_CFUNC, callbackMethod, null, null);
     }
     
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyObject[] args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
         // HACK +++
         try {
         // HACK ---
-            return getCallbackMethod().execute(recv, args, ruby);
+            return getCallbackMethod().execute(recv, args == null ? null : args.toRubyArray(), ruby);
         // HACK +++
         } catch (RaiseException rrExcptn) {
             System.out.print("[BUG] Cannot call method \"" + id.toName() + "\". ");

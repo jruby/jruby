@@ -255,25 +255,33 @@ public class RubyObject {
      *
      */
     public RubyObject funcall(RubyId mid, RubyObject[] args) {
+        return funcall(mid, new RubyPointer(args));
+    }
+    
+    public RubyObject funcall(RubyId mid, RubyPointer args) {
         return getRubyClass().call(this, mid, args, 1);
     }
     
     public RubyObject funcall(RubyId mid) {
-        return funcall(mid, (RubyObject[])null);
+        return funcall(mid, (RubyPointer)null);
     }
     
     /** rb_funcall3
      *
      */
-    public RubyObject funcall3(RubyId mid, RubyObject[] args) {
+    public RubyObject funcall3(RubyId mid, RubyPointer args) {
         return getRubyClass().call(this, mid, args, 0);
+    }
+    
+    public RubyObject funcall3(RubyId mid, RubyObject[] args) {
+        return funcall3(mid, new RubyPointer(args));
     }
     
     /** rb_funcall
      *
      */
     public RubyObject funcall(RubyId mid, RubyObject arg) {
-        return funcall(mid, new RubyObject[] {arg});
+        return funcall(mid, new RubyPointer(new RubyObject[] {arg}));
     }
     
     /** rb_iv_get

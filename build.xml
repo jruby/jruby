@@ -8,16 +8,16 @@
     <property name="build.compiler.fulldepend" value="on"/>
     <!--<property name="build.compiler.emacs" value="on"/>-->
 
-    <property name="build.dir" value="build"/>
-    <property name="build.dest" value="${build.dir}/classes"/>
-    <property name="build.docs" value="${build.dir}/docs"/>
-    <property name="build.tars" value="${build.dir}/tars"/>
-    <property name="src.dir" value="."/>
-    <property name="base.dir" value="."/>
-
     <property name="version" value="0.2.1"/>
     <property name="version.file" value="0_2_1"/>
     <property name="javadoc.title" value="JRuby"/>
+
+    <property name="build.dir" value="build"/>
+    <property name="build.dest" value="${build.dir}/classes"/>
+    <property name="build.docs" value="${build.dir}/docs"/>
+    <property name="build.tars" value="${build.dir}/jruby_${version.file}"/>
+    <property name="src.dir" value="."/>
+    <property name="base.dir" value="."/>
 
     <target name="check_for_optional_packages">
         <available classname="java.lang.CharSequence" property="jdk1.4+"/>
@@ -58,7 +58,11 @@
             </fileset>
         </copy>
         
-        <tar basedir="${build.tars}" tarfile="${build.dir}/jruby.tar"/>
+        <tar basedir="${build.dir}" tarfile="${build.dir}/jruby.tar">
+            <tarfileset dir="${build.tars}">
+                <exclude name="src/**/*"/>
+            </tarfileset>
+        </tar>
 
         <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
 
@@ -67,10 +71,22 @@
         <delete file="${build.dir}/jruby.jar"/>-->
     </target>
 
-    <target name="src-gz">
-        <tar basedir="${base.dir}" tarfile="${build.dir}/jruby-src.tar">
-            <exclude name="${build.dir}/**/*"/>
-            <exclude name="**/*.class"/>
+    <target depends="bin-gz" name="src-gz">
+        <mkdir dir="${build.tars}"/>
+
+        <copy todir="${build.tars}">
+            <fileset dir="${base.dir}">
+                <include name="gnu/**/*.java"/>
+                <include name="org/**/*.java"/>
+                <include name="gnu/**/*.html"/>
+                <include name="org/**/*.html"/>
+            </fileset>
+        </copy>
+        
+        <tar basedir="${build.dir}" tarfile="${build.dir}/jruby-src.tar">
+            <tarfileset dir="${build.tars}">
+            <exclude name="jruby.jar"/>
+            </tarfileset>
         </tar>
 
         <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>

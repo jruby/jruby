@@ -53,10 +53,16 @@ public class RubyArray extends RubyObject {
         this.list = new ArrayList(array);
     }
     
+    public RubyArray(Ruby ruby, ArrayList array, boolean notCopy) {
+        super(ruby, ruby.getRubyClass("Array"));
+        
+        this.list = array;
+    }
+
     /** Getter for property list.
      * @return Value of property list.
      */
-    public List getList() {
+    public ArrayList getList() {
         return list;
     }
     

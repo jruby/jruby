@@ -34,6 +34,7 @@ import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.types.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -54,7 +55,7 @@ public class AttrSetNode extends Node implements CallableNode {
         return self.setInstanceVar(getVId(), (RubyObject)ruby.getRubyFrame().getArgs().get(0));
     }
     
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyObject[] args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
 }

@@ -36,6 +36,7 @@ import org.jruby.*;
 import org.jruby.nodes.types.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -54,20 +55,21 @@ public class ZSuperNode extends Node implements CallableNode {
             throw new RubyNameException("superclass method '" + 
                     ruby.getRubyFrame().getLastFunc().toName() + "' disabled");
         }
-        List argsList = ruby.getRubyFrame().getArgs();
-        RubyObject[] argsObj = (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]);
+        
+        RubyPointer args = (RubyPointer)ruby.getRubyFrame().getArgs();
+        // RubyObject[] argsObj = (RubyObject[])argsList.toArray(new RubyObject[argsList.size()]);
         
         ruby.getIter().push(ruby.getIter().getIter() != RubyIter.ITER_NOT ? 
                                          RubyIter.ITER_PRE : RubyIter.ITER_NOT);
         RubyObject result = ruby.getRubyFrame().getLastClass().getSuperClass().call(
                                 ruby.getRubyFrame().getSelf(), 
-                                ruby.getRubyFrame().getLastFunc(), argsObj, 3);
+                                ruby.getRubyFrame().getLastFunc(), args, 3);
         ruby.getIter().pop();
         
         return result;
     }
     
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyObject[] args, boolean noSuper) {
+    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper) {
         return eval(ruby, recv);
     }
 }

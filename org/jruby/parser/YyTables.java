@@ -36,9 +36,14 @@ package org.jruby.parser;
  * @version 
  */
 public class YyTables {
-    
+    private static final int YYTABLE1_LENGTH = 7811;
+    private static final int YYTABLE2_LENGTH = 8875;
+
+    private static final int YYCHECK1_LENGTH = 7831;
+    private static final int YYCHECK2_LENGTH = 8855;
+
     private static short[] combine(short[] t1, short[] t2) {
-	short[] t = new short[t1.length + t2.length];
+        short[] t = new short[t1.length + t2.length];
 	System.arraycopy(t1, 0, t, 0, t1.length);
 	System.arraycopy(t2, 0, t, t1.length, t2.length);
 	return t;
@@ -53,7 +58,7 @@ public class YyTables {
     }
     
     private static final short[] yyTable1() {
-        return new short[] {            67,
+        return new short[] { 67,
          67,  365,  211,  211,  340,   67,   67,   67,   67,  166,
         166,  197,  488,  165,  318,  227,  210,  210,  178,  190,
         447,  504,  305,   67,  308,  228,  222,  218,  241,  512,
@@ -1732,7 +1737,7 @@ public class YyTables {
     }
     
     private static final short[] yyCheck1() {
-        return new short[] {             2,
+        return new short[] {   2,
           3,  215,   19,   20,  184,    8,    9,   10,   11,    6,
           7,   14,  330,    6,   84,   27,   19,   20,    7,   11,
         301,  341,  123,   26,   46,   10,   21,   10,   53,  346,

@@ -31,6 +31,7 @@
 package org.jruby.nodes.types;
 
 import org.jruby.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -38,5 +39,5 @@ import org.jruby.*;
  * @version 
  */
 public interface CallableNode {
-    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyObject[] args, boolean noSuper);
+    public RubyObject call(Ruby ruby, RubyObject recv, RubyId id, RubyPointer args, boolean noSuper);
 }

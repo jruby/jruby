@@ -34,6 +34,7 @@ import org.jruby.*;
 import org.jruby.nodes.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -54,14 +55,14 @@ public class SuperNode extends Node {
         }
         
         RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyObject[] argsObj = ArgsUtil.setupArgs(ruby, self, getArgsNode());
+        RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
         
         ruby.getIter().push(ruby.getIter().getIter() != RubyIter.ITER_NOT ? 
                                          RubyIter.ITER_PRE : RubyIter.ITER_NOT);
         RubyObject result = ruby.getRubyFrame().getLastClass().getSuperClass().call(
                                 ruby.getRubyFrame().getSelf(), 
-                                ruby.getRubyFrame().getLastFunc(), argsObj, 3);
+                                ruby.getRubyFrame().getLastFunc(), args, 3);
         ruby.getIter().pop();
         
         return result;

@@ -41,6 +41,7 @@ public class RubyIter {
     public static final int ITER_CUR = 2;
     
     private int iter;
+    private int count = 0;
     private RubyIter prev;
 
     public RubyIter() {
@@ -53,26 +54,33 @@ public class RubyIter {
     }
     
     public void push(int newIter) {
-        prev = new RubyIter(iter, prev);
-        iter = newIter;
+        if (newIter == iter) {
+            count ++;
+        } else {
+            prev = new RubyIter(iter, prev);
+            iter = newIter;
+        }
     }
     
     public void pop() {
-        iter = prev.iter;
-        prev = prev.prev;
+        if (count > 0) {
+            count --;
+        } else {
+            iter = prev.iter;
+            prev = prev.prev;
+        }
     }
     
-    /** Getter for property iter.
-     * @return Value of property iter.
-     */
     public int getIter() {
         return iter;
     }
     
-    /** Setter for property iter.
-     * @param iter New value of property iter.
-     */
-    public void setIter(int iter) {
-        this.iter = iter;
+    public void setIter(int newIter) {
+        if (count > 0) {
+            prev = new RubyIter(iter, prev);
+            prev.count --;
+            count = 0;
+        }
+        iter = newIter;
     }
 }

@@ -34,6 +34,7 @@ import org.jruby.*;
 import org.jruby.nodes.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -85,14 +86,14 @@ public class RescueNode extends Node {
         }
 
         RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyObject[] args = ArgsUtil.setupArgs(ruby, self, node.getArgsNode());
+        RubyPointer args = ArgsUtil.setupArgs(ruby, self, node.getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
         
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].m_kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
+        for (int i = 0; i < args.size(); i++) {
+            if (args.getRuby(i).m_kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
                 throw new RubyTypeException("class or module required for rescue clause");
             }
-            if (ruby.getActException().m_kind_of((RubyModule)args[i]).isTrue()) {
+            if (ruby.getActException().m_kind_of((RubyModule)args.getRuby(i)).isTrue()) {
                 return true;
             }
         }

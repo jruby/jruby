@@ -62,14 +62,7 @@ public class RubyVarmap {
      *
      */
     public static void push(Ruby ruby) {
-        // HACK +++
-        if (oldMap.get(ruby) == null) {
-            oldMap.put(ruby, new RubyStack());
-            // throw new RuntimeException("JRuby - BUG: Need Queue for oldMap in RubyVarmap");
-        }
-        // HACK ---
-        
-        ((RubyStack)oldMap.get(ruby)).push(ruby.getDynamicVars());
+        ruby.varMapStack.push(ruby.getDynamicVars());
         ruby.setDynamicVars(null);
     }
     
@@ -77,7 +70,7 @@ public class RubyVarmap {
      *
      */
     public static void pop(Ruby ruby) {
-        ruby.setDynamicVars((RubyVarmap)((RubyStack)oldMap.get(ruby)).pop());
+        ruby.setDynamicVars((RubyVarmap)ruby.varMapStack.pop());
     }
     
     /*public void push() {

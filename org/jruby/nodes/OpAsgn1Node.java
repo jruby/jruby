@@ -51,11 +51,11 @@ public class OpAsgn1Node extends Node {
         RubyObject recv = getRecvNode().eval(ruby, self);
         Node rval = getArgsNode().getHeadNode();
         
-        RubyObject[] args = ArgsUtil.setupArgs(ruby, self, getArgsNode().getNextNode());
-        RubyList argsList = new RubyList(args);
-        argsList.remove(args.length - 1);
-        RubyObject val = recv.funcall(ruby.intern("[]"), argsList.toRubyArray());
-        
+        RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode().getNextNode());
+        args.remove(args.size() - 1);
+
+        RubyObject val = recv.funcall(ruby.intern("[]"), args);
+
         switch (getMId().intValue()) {
             case 0: /* OR */
                 if (val.isTrue()) {
@@ -75,7 +75,7 @@ public class OpAsgn1Node extends Node {
                 val = val.funcall(getMId(), rval.eval(ruby, self));
         }
 
-        args[args.length - 1] = val;
+        args.set(args.size() - 1, val);
         return recv.funcall(ruby.intern("[]="), args);
     }
 }

@@ -667,6 +667,8 @@ public class RubyModule extends RubyObject {
             result.setRecvClass(methodNode.getMethodOrigin());
         }
         
+        RubyMethodCacheEntry.saveEntry(getRuby(), this, id, ent);
+        
         result.setNoex(ent.getNoex());
         result.setBody(body);
         return result;
@@ -675,7 +677,7 @@ public class RubyModule extends RubyObject {
     /** rb_call
      *
      */
-    public RubyObject call(RubyObject recv, RubyId mid, RubyObject[] args, int scope) {
+    public RubyObject call(RubyObject recv, RubyId mid, RubyPointer args, int scope) {
         RubyMethodCacheEntry ent = RubyMethodCacheEntry.getEntry(getRuby(), this, mid);
         
         RubyModule klass = this;
@@ -730,156 +732,24 @@ public class RubyModule extends RubyObject {
     /** rb_call0
      *
      */
-    public RubyObject call0(RubyObject recv, RubyId id, RubyObject[] args, Node body, boolean noSuper) {
+    public RubyObject call0(RubyObject recv, RubyId id, RubyPointer args, Node body, boolean noSuper) {
         
         // ...
         
-        getRuby().getRubyFrame().push();
-        
-        // HACK +++
-        getRuby().getIter().push(RubyIter.ITER_NOT);
-        // HACK ---
-        
-        getRuby().getRubyFrame().setLastFunc(id);
-        getRuby().getRubyFrame().setLastClass(noSuper ? null : this);
-        getRuby().getRubyFrame().setSelf(recv);
-        getRuby().getRubyFrame().setArgs(new RubyPointer(args));
-        
-        RubyObject result = getRuby().getNil();
-        
-        if (body instanceof CallableNode) {
-            result = ((CallableNode)body).call(getRuby(), recv, id, args, noSuper);
+        if (getRuby().getIter().getIter() == RubyIter.ITER_PRE) {
+            getRuby().getIter().push(RubyIter.ITER_CUR);
         } else {
-            System.out.println("{BUG] Not implemented yet (method call): " + id.toName() + ", node_type:" + body.getType());
+            getRuby().getIter().push(RubyIter.ITER_NOT);
         }
-        /*switch (body.nd_type()) {
-            case NODE_ZSUPER:
-            case NODE_ATTRSET:
-            case NODE_IVAR: {
-                result = body.interpreter.eval(recv, body);
-                break;
-            }
-            case NODE_SCOPE: {
-                NODE savedCref = null;
-                // VALUE[] localVars = null;
-         
-                ShiftableList argsList = new ShiftableList(args);
-                ShiftableList localVarsList = null;
-         
-                getRuby().getRubyScope().push();
-         
-                if (body.nd_rval() != null) {
-                    savedCref = getRuby().getRubyCRef();
-                    getRuby().setRubyCRef((NODE)body.nd_rval());
-                    getRuby().getRubyFrame().setCbase(body.nd_rval());
-                }
-                if (body.nd_tbl() != null) {
-                    // ? +++
-                    List tmpList = Collections.nCopies(body.nd_tbl()[0].intValue() + 1, getRuby().getNil());
-                    // ? ---
-                    localVarsList = new ShiftableList(new ArrayList(tmpList));
-                    localVarsList.set(0, body);
-                    localVarsList.shift(1);
-         
-                    getRuby().getRubyScope().setLocalTbl(body.nd_tbl());
-                    getRuby().getRubyScope().setLocalVars(localVarsList.getList());
-                } else {
-                    localVarsList = getRuby().getRubyScope().getLocalVars();
-         
-                    getRuby().getRubyScope().setLocalVars(null);
-                    getRuby().getRubyScope().setLocalTbl(null);
-                }
-         
-                body = body.nd_next();
-         
-                RubyVarmap.push(getRuby());
-                // PUSH_TAG(PROT_FUNC);
-         
-                try {
-                    NODE node = null;
-                    int i;
-         
-                    if (body.nd_type() == NODE_ARGS) {
-                        node = body;
-                        body = null;
-                    } else if (body.nd_type() == NODE_BLOCK) {
-                        node = body.nd_head();
-                        body = body.nd_next();
-                    }
-         
-                    if (node != null) {
-                        if (node.nd_type() != NODE_ARGS) {
-                            // rb_bug("no argument-node");
-                        }
-         
-                        i = node.nd_cnt();
-                        if (i > (args != null ? args.length : 0)) {
-                            throw new RubyArgumentException("wrong # of arguments(" + args.length + " for " + i + ")");
-                        }
-                        if (node.nd_rest() == -1) {
-                            int opt = i;
-                            NODE optnode = node.nd_opt();
-         
-                            while (optnode != null) {
-                                opt++;
-                                optnode = optnode.nd_next();
-                            }
-                            if (opt < (args != null ? args.length : 0)) {
-                                throw new RubyArgumentException("wrong # of arguments(" + args.length + " for " + opt + ")");
-                            }
-         
-                            getRuby().getRubyFrame().setArgs(localVarsList != null ? localVarsList.getList(2) : null);
-                        }
-         
-                        if (localVarsList != null) {
-                            if (i > 0) {
-                                localVarsList.shift(2);
-                                for (int j = 0; j < i; j++ ) {
-                                    localVarsList.set(j, argsList.get(j));
-                                }
-                                localVarsList.shiftLeft(2);
-                            }
-         
-                            argsList.shift(i);
-         
-                            if (node.nd_opt() != null) {
-                                NODE opt = node.nd_opt();
-         
-                                while (opt != null && argsList.size() != 0) {
-                                    interpreter.assign(recv, opt.nd_head(), (RubyObject)argsList.get(0), true);
-                                    argsList.shift(1);
-                                    opt = opt.nd_next();
-                                }
-                                interpreter.eval(recv, opt);
-                            }
-                            if (node.nd_rest() >= 0) {
-                                RubyArray array = null;
-                                if (argsList.size() > 0) {
-                                    array = RubyArray.m_newArray(getRuby(), argsList);
-                                } else {
-                                    array = RubyArray.m_newArray(getRuby(), 0);
-                                }
-                                localVarsList.set(node.nd_rest(), array);
-                            }
-                        }
-                    }
-         
-                    result = interpreter.eval(recv, body);
-                } catch (ReturnException rExcptn) {
-                }
-         
-                RubyVarmap.pop(getRuby());
-         
-                getRuby().getRubyScope().pop();
-                getRuby().setRubyCRef(savedCref);
-         
-                break;
-            }
-            default: {
-                System.out.println("Not implemented yet (method call): " + id.toName() + ", node_type:" + body.nd_type());
-            }
-        }
-         */
+        
+        RubyFrame frame = getRuby().getRubyFrame();
+        frame.push();
+        frame.setLastFunc(id);
+        frame.setLastClass(noSuper ? null : this);
+        frame.setSelf(recv);
+        frame.setArgs(args);
+        
+        RubyObject result = ((CallableNode)body).call(getRuby(), recv, id, args, noSuper);
         
         getRuby().getRubyFrame().pop();
         getRuby().getIter().pop();

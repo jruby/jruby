@@ -74,6 +74,10 @@ public class RubyMethodCacheEntry {
     public static void saveEmptyEntry(Ruby ruby, RubyModule recvClass, RubyId id) {
         ruby.getMethodCache().put(getCacheHash(recvClass, id), new RubyMethodCacheEntry(recvClass, id));
     }
+
+    public static void saveEntry(Ruby ruby, RubyModule recvClass, RubyId id, RubyMethodCacheEntry entry) {
+        ruby.getMethodCache().put(getCacheHash(recvClass, id), entry);
+    }
     
     public static RubyMethodCacheEntry getEntry(Ruby ruby, RubyModule recvClass, RubyId id) {
         RubyMethodCacheEntry entry = (RubyMethodCacheEntry)ruby.getMethodCache().get(getCacheHash(recvClass, id));

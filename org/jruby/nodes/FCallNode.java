@@ -33,6 +33,7 @@ package org.jruby.nodes;
 import org.jruby.*;
 import org.jruby.nodes.util.*;
 import org.jruby.runtime.*;
+import org.jruby.util.*;
 
 /**
  *
@@ -48,9 +49,9 @@ public class FCallNode extends Node {
         // TMP_PROTECT;
         
         RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
-        RubyObject[] argsObj = ArgsUtil.setupArgs(ruby, self, getArgsNode());
+        RubyPointer args = ArgsUtil.setupArgs(ruby, self, getArgsNode());
         ArgsUtil.endCallArgs(ruby, tmpBlock);
         
-        return self.getRubyClass().call(self, getMId(), argsObj, 1);
+        return self.getRubyClass().call(self, getMId(), args, 1);
     }
 }

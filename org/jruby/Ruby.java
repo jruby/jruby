@@ -115,6 +115,7 @@ public final class Ruby {
     private RubyModule wrapper;
     
     private RubyStack classStack = new RubyStack(new LinkedList());
+    public RubyStack varMapStack = new RubyStack(new LinkedList());
     
     // ID
     private Map symbolTable = new HashMap(200);

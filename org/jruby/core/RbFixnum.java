@@ -43,6 +43,7 @@ public class RbFixnum {
         
         fixnumClass.defineMethod("to_i", getMethod("m_to_i"));
         fixnumClass.defineMethod("to_s", getMethod("m_to_s"));
+        fixnumClass.defineMethod("to_str", getMethod("m_to_s"));
         
         fixnumClass.defineMethod("+", getMethod("op_plus", RubyNumeric.class));
         fixnumClass.defineMethod("-", getMethod("op_minus", RubyNumeric.class));
