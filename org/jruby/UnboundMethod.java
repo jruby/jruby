@@ -90,21 +90,21 @@ public class UnboundMethod extends Method {
         }
     }
     /**
-     * @see org.jruby.RubyMethod#call(IRubyObject[])
+     * @see org.jruby.Method#call(IRubyObject[])
      */
     public IRubyObject call(IRubyObject[] args) {
         throw new TypeError(runtime, "you cannot call unbound method; bind first");
     }
 
     /**
-     * @see org.jruby.RubyMethod#to_proc()
+     * @see org.jruby.Method#to_proc()
      */
     public IRubyObject to_proc() {
         return super.to_proc();
     }
 
     /**
-     * @see org.jruby.RubyMethod#unbind()
+     * @see org.jruby.Method#unbind()
      */
     public UnboundMethod unbind() {
         return this;

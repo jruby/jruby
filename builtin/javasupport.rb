@@ -49,8 +49,6 @@ class Module
       proxy_class.class_eval("@java_class = java_class")
       proxy_class.class_eval("def runtime_self; self; end")
 
-      p proxy_class.instance_methods
-
       # FIXME: take types into consideration, like the old javasupport,
       #        and do the searching long before call-time.
       def proxy_class.new(*args)
@@ -68,6 +66,9 @@ class Module
         toString_method = java_class.java_method(:toString)
         define_method(:to_s) {
           toString_method.invoke(runtime_self)
+        }
+        java_class.java_instance_methods.each {|method_name|
+          # ...
         }
       end
       proxy_class.create_methods(java_class)
@@ -89,5 +90,8 @@ if __FILE__ == $0
   r = Froboz::Random.new
 
   p r.to_s
+  p r.nextInt
+  p r.nextInt
+  p r.nextInt
 
 end

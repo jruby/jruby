@@ -124,8 +124,6 @@ public class RubyClasses {
     private RubyClass hashClass;
     private RubyClass integerClass;
     private RubyClass ioClass;
-    private RubyClass javaClassClass;
-    private RubyClass javaInterfaceClass;
     private RubyClass javaObjectClass;
     private RubyClass matchDataClass;
     private RubyClass methodClass;
@@ -262,7 +260,7 @@ public class RubyClasses {
 
     public void initBuiltinClasses() {
         loadBuiltin("Enumerable");
-        //loadBuiltin("javasupport");
+        loadBuiltin("javasupport");
     }
 
     /**
@@ -711,18 +709,6 @@ public class RubyClasses {
             javaModule = RubyJava.createJavaModule(runtime);
         }
         return javaModule;
-    }
-
-    /**
-     * Returns the reference to the JavaInterface class.
-     *
-     * @return The JavaInterface class.
-     */
-    public RubyClass getJavaInterfaceClass() {
-        if (javaInterfaceClass == null) {
-            javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(runtime);
-        }
-        return javaInterfaceClass;
     }
 
     /**
