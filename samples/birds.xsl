@@ -3,9 +3,9 @@
   <xsl:output method="xml" indent="yes"/>
 
 <xsl:template match="Class">
-<BirdInfo>
+<html><body><pre>
 	<xsl:apply-templates select="Order"/>
-</BirdInfo>
+</pre></body></html>
 </xsl:template>
 
 <xsl:template match="Order">

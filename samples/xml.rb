@@ -11,13 +11,13 @@ JavaObject.load_class "javax.xml.transform.stream.StreamSource"
 JavaObject.load_class "javax.xml.transform.Transformer"
 JavaObject.load_class "javax.xml.transform.TransformerFactory"
 
-$xml = "./samples/birds.xml"
-$xslt = "./samples/birds.xsl"
-$ouput = "./samples/birds.html"
+xml = "./samples/birds.xml"
+xslt = "./samples/birds.xsl"
+output = "./samples/birds.html"
 
-xml_file = File.new $xml
-xslt_file = File.new $xslt
-output_file = File.new $output
+xml_file = File.new xml
+xslt_file = File.new xslt
+output_file = File.new output
 
 xml_source = StreamSource.new xml_file
 xslt_source = StreamSource.new xslt_file

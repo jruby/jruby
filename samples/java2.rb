@@ -2,7 +2,7 @@ JavaObject.load_class "java.io.File"
 JavaObject.load_class "java.io.FileReader"
 JavaObject.load_class "java.io.BufferedReader"
 
-filename = "java2.rb"
+filename = "./samples/java2.rb"
 
 file = File.new filename
 
