@@ -827,7 +827,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         ArgsUtil.endCallArgs(runtime, tmpBlock);
                     }
 
-                    result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
+                    result = recv.getInternalClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
 
                     return;
                 } catch (RetryJump rExcptn) {
@@ -1140,7 +1140,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
     public void visitOptNNode(OptNNode iVisited) {
-        while (KernelModule.gets(runtime.getTopSelf(), new IRubyObject[0]).isTrue()) {
+        while (KernelModule.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
                     eval(iVisited.getBodyNode());
@@ -1380,7 +1380,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
-        result = self.getInternalClass().call(self, iVisited.getMethodName(), null, CallType.VARIABLE);
+        result = self.getInternalClass().call(self, iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE);
     }
 
     /**

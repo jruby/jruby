@@ -100,7 +100,7 @@ public class Method extends RubyObject {
      */
     public IRubyObject call(IRubyObject[] args) {
         if (args == null) {
-            args = new IRubyObject[0];
+            args = IRubyObject.NULL_ARRAY;
         }
         getRuntime().getIterStack().push(getRuntime().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {

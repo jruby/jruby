@@ -13,7 +13,7 @@ import org.jruby.KernelModule;
 import org.jruby.RubyString;
 
 public class RubyTestCase extends TestCase {
-    private static final IRubyObject[] EMPTY_ARRAY = new IRubyObject[0];
+    private static final IRubyObject[] EMPTY_ARRAY = IRubyObject.NULL_ARRAY;
 
     public RubyTestCase(String name) {
         super(name);

@@ -84,7 +84,7 @@ public final class DefaultMethod extends AbstractMethod {
 
     private void prepareArguments(Ruby ruby, IRubyObject receiver, IRubyObject[] args) {
         if (args == null) {
-            args = new IRubyObject[0];
+            args = IRubyObject.NULL_ARRAY;
         }
 
         int expectedArgsCount = argsNode.getArgsCount();

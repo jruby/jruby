@@ -707,7 +707,7 @@ public final class Ruby {
     }
 
     public void setPosition(String file, int line) {
-        setPosition(new DefaultLexerPosition(file, line, 0));
+        getCurrentContext().setPosition(file, line);
     }
 
     public void setPosition(ISourcePosition position) {

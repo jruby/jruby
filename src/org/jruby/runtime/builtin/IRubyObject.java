@@ -40,6 +40,8 @@ import org.jruby.runtime.marshal.MarshalStream;
  * @version $Revision$
  */
 public interface IRubyObject {
+    public static final IRubyObject[] NULL_ARRAY = new IRubyObject[0];
+    
     /**
      * Method getInstanceVar.
      * @param string

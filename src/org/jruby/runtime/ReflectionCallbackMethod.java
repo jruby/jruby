@@ -150,7 +150,7 @@ public final class ReflectionCallbackMethod implements Callback {
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-        args = (args != null) ? args : new IRubyObject[0];
+        args = (args != null) ? args : IRubyObject.NULL_ARRAY;
         testArgsCount(recv.getRuntime(), args);
         // testArgsClass(args);
         return invokeMethod(recv, args);

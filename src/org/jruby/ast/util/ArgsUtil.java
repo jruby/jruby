@@ -61,7 +61,7 @@ public final class ArgsUtil {
 
     public static IRubyObject[] setupArgs(Ruby runtime, EvaluateVisitor visitor, INode node) {
         if (node == null) {
-            return new IRubyObject[0];
+            return IRubyObject.NULL_ARRAY;
         }
         final ISourcePosition position = runtime.getPosition();
 

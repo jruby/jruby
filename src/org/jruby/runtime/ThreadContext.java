@@ -61,7 +61,7 @@ public class ThreadContext {
     private FrameStack frameStack;
     private IStack iterStack;
 
-    private ISourcePosition sourcePosition = new DefaultLexerPosition(null, 0, 0);
+    private ISourcePosition sourcePosition = DefaultLexerPosition.getInstance("", 0, 0);
 
     /**
      * Constructor for Context.
@@ -142,7 +142,7 @@ public class ThreadContext {
     }
 
     public void setPosition(String file, int line) {
-        setPosition(new DefaultLexerPosition(file, line, 0));
+        setPosition(DefaultLexerPosition.getInstance(file, line, 0));
     }
 
     public void setPosition(ISourcePosition position) {

@@ -318,7 +318,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public IRubyObject callMethod(String name) {
-        return callMethod(name, new IRubyObject[0]);
+        return callMethod(name, IRubyObject.NULL_ARRAY);
     }
 
     /** rb_funcall3

@@ -608,7 +608,7 @@ public class RubyIO extends RubyObject {
             }
             separatorArgument = new IRubyObject[] { args[0] };
         } else {
-            separatorArgument = new IRubyObject[0];
+            separatorArgument = IRubyObject.NULL_ARRAY;
         }
 
         RubyArray result = RubyArray.newArray(runtime);

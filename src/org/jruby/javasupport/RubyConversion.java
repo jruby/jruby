@@ -17,8 +17,8 @@ public class RubyConversion {
     }
 
     public IRubyObject[] convertJavaToRuby(Object[] obj) {
-        if (obj == null)
-            return new IRubyObject[0];
+        if (obj == null || obj.length == 0)
+            return IRubyObject.NULL_ARRAY;
 
         IRubyObject[] ret = new IRubyObject[obj.length];
 

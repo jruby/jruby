@@ -199,7 +199,7 @@ public class RubyHash extends RubyObject {
     // Hash methods
 
     public static RubyHash newHash(Ruby ruby) {
-        return newInstance(ruby.getClass("Hash"), new IRubyObject[0]);
+        return newInstance(ruby.getClass("Hash"), IRubyObject.NULL_ARRAY);
     }
 
 	public static RubyHash newHash(Ruby ruby, Map valueMap, IRubyObject defaultValue) {

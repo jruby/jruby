@@ -712,7 +712,7 @@ public class RubyModule extends RubyObject {
      */
     public final IRubyObject call(IRubyObject recv, String name, IRubyObject[] args, CallType callType) {
         if (args == null) {
-            args = new IRubyObject[0];
+            args = IRubyObject.NULL_ARRAY;
         }
 
         CacheEntry entry = getRuntime().getMethodCache().getEntry(this, name);

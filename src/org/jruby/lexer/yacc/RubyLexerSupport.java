@@ -26,9 +26,10 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.common.*;
-import org.ablaf.internal.lexer.*;
-import org.ablaf.lexer.*;
+import org.ablaf.common.ISourcePosition;
+import org.ablaf.internal.lexer.DefaultLexerPosition;
+import org.ablaf.internal.lexer.DefaultLexerSupport;
+import org.ablaf.lexer.ILexerSource;
 
 /**
  *
@@ -61,10 +62,10 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
      * @see ILexerSupport#getPosition()
      */
     public ISourcePosition getPosition() {
-        if (bufferPos == -1) {
-            return super.getPosition();
+        if (bufferPos <= 0) {
+            return DefaultLexerPosition.getInstance(source.getSourceName(), line + 1, 0);
         } else {
-            return new DefaultLexerPosition(startPosition.getFile(), startPosition.getLine(), startPosition.getColumn() + bufferPos);
+            return DefaultLexerPosition.getInstance(startPosition.getFile(), startPosition.getLine(), startPosition.getColumn() + bufferPos);
         }
     }
 
@@ -91,6 +92,7 @@ public class RubyLexerSupport extends DefaultLexerSupport implements IRubyLexerS
         } else if (bufferPos > 0) {
             return buffer.charAt(--bufferPos);
         } else {
+            // Should we discard the buffer also during unread?
             return '\0';
         }
     }

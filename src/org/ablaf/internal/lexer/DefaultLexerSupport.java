@@ -52,8 +52,9 @@
  */
 package org.ablaf.internal.lexer;
 
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
+import org.ablaf.common.ISourcePosition;
+import org.ablaf.lexer.ILexerSource;
+import org.ablaf.lexer.ILexerSupport;
 
 /**
  *
@@ -61,9 +62,9 @@ import org.ablaf.lexer.*;
  * @version $Revision$
  */
 public class DefaultLexerSupport implements ILexerSupport {
-    private ILexerSource source;
+    protected ILexerSource source;
     
-    private int line = 0;
+    protected int line = 0;
     private int[] lineOffset = new int[100];
 
     public DefaultLexerSupport(ILexerSource source) {
@@ -192,7 +193,7 @@ public class DefaultLexerSupport implements ILexerSupport {
             col -= lineOffset[line - 1];
         }
         
-        return new DefaultLexerPosition(source.getSourceName(), line + 1, col);
+        return DefaultLexerPosition.getInstance(source.getSourceName(), line + 1, col);
     }
 
     /**
