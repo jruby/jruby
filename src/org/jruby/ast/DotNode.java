@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a range literal.
  *
@@ -37,13 +37,12 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class DotNode extends AbstractNode {
-    private INode beginNode;
-    private INode endNode;
-    private boolean exclusive;
+    private final INode beginNode;
+    private final INode endNode;
+    private final boolean exclusive;
 
     public DotNode(ISourcePosition position, INode beginNode, INode endNode, boolean exclusive) {
         super(position);
-
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
@@ -66,14 +65,6 @@ public class DotNode extends AbstractNode {
     }
 
     /**
-     * Sets the beginNode.
-     * @param beginNode The beginNode to set
-     */
-    public void setBeginNode(INode beginNode) {
-        this.beginNode = beginNode;
-    }
-
-    /**
      * Gets the endNode.
      * @return Returns a INode
      */
@@ -82,26 +73,10 @@ public class DotNode extends AbstractNode {
     }
 
     /**
-     * Sets the endNode.
-     * @param endNode The endNode to set
-     */
-    public void setEndNode(INode endNode) {
-        this.endNode = endNode;
-    }
-
-    /**
      * Gets the exclusive.
      * @return Returns a boolean
      */
     public boolean isExclusive() {
         return exclusive;
-    }
-
-    /**
-     * Sets the exclusive.
-     * @param exclusive The exclusive to set
-     */
-    public void setExclusive(boolean exclusive) {
-        this.exclusive = exclusive;
     }
 }

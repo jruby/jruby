@@ -41,13 +41,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ForNode extends AbstractNode {
-    private INode varNode;
-    private INode bodyNode;
-    private INode iterNode;
+    private final INode varNode;
+    private final INode bodyNode;
+    private final INode iterNode;
 
     public ForNode(ISourcePosition position, INode varNode, INode bodyNode, INode iterNode) {
         super(position);
-
         this.varNode = varNode;
         this.bodyNode = bodyNode;
         this.iterNode = iterNode;
@@ -71,15 +70,6 @@ public class ForNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-	 * bodyNode is the expression after the in, it is the expression which will have its each() method called.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the iterNode.
 	 * iterNode is the block which will be executed when the each() method of the bodyNode will yield.
 	 * 
@@ -90,15 +80,6 @@ public class ForNode extends AbstractNode {
     }
 
     /**
-     * Sets the iterNode.
-	 * iterNode is the block which will be executed when the each() method of the bodyNode will yield.
-     * @param iterNode The iterNode to set
-     */
-    public void setIterNode(INode iterNode) {
-        this.iterNode = iterNode;
-    }
-
-    /**
      * Gets the varNode.
 	 * varNode is the equivalent of the block variable in a regular method call with block type of iteration
      * @return Returns a INode
@@ -106,14 +87,4 @@ public class ForNode extends AbstractNode {
     public INode getVarNode() {
         return varNode;
     }
-
-    /**
-     * Sets the varNode.
-	 * varNode is the equivalent of the block variable in a regular method call with block type of iteration
-     * @param varNode The varNode to set
-     */
-    public void setVarNode(INode varNode) {
-        this.varNode = varNode;
-    }
-
 }

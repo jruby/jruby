@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a singleton method definition.
  *
@@ -37,14 +37,13 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class DefsNode extends AbstractNode {
-    private INode receiverNode;
-    private String name;
-    private INode argsNode;
-    private ScopeNode bodyNode;
+    private final INode receiverNode;
+    private final String name;
+    private final INode argsNode;
+    private final ScopeNode bodyNode;
 
     public DefsNode(ISourcePosition position, INode receiverNode, String name, INode argsNode, ScopeNode bodyNode) {
         super(position);
-
         this.receiverNode = receiverNode;
         this.name = name;
         this.argsNode = argsNode;
@@ -68,27 +67,11 @@ public class DefsNode extends AbstractNode {
     }
 
     /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(INode argsNode) {
-        this.argsNode = argsNode;
-    }
-
-    /**
      * Gets the bodyNode.
      * @return Returns a ScopeNode
      */
     public ScopeNode getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(ScopeNode bodyNode) {
-        this.bodyNode = bodyNode;
     }
 
     /**
@@ -100,27 +83,10 @@ public class DefsNode extends AbstractNode {
     }
 
     /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Gets the receiverNode.
      * @return Returns a INode
      */
     public INode getReceiverNode() {
         return receiverNode;
     }
-
-    /**
-     * Sets the receiverNode.
-     * @param receiverNode The receiverNode to set
-     */
-    public void setReceiverNode(INode receiverNode) {
-        this.receiverNode = receiverNode;
-    }
-
 }

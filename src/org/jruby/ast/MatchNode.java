@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -37,11 +37,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class MatchNode extends AbstractNode {
-    private INode regexpNode;
+    private final INode regexpNode;
 
     public MatchNode(ISourcePosition position, INode regexpNode) {
         super(position);
-
         this.regexpNode = regexpNode;
     }
 
@@ -59,13 +58,5 @@ public class MatchNode extends AbstractNode {
      */
     public INode getRegexpNode() {
         return regexpNode;
-    }
-
-    /**
-     * Sets the regexpNode.
-     * @param regexpNode The regexpNode to set
-     */
-    public void setRegexpNode(INode regexpNode) {
-        this.regexpNode = regexpNode;
     }
 }

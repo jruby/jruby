@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Begin/End block.
  *  A Begin ... End block without rescue.
@@ -38,11 +38,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class BeginNode extends AbstractNode {
-    private INode bodyNode;
+    private final INode bodyNode;
 
     public BeginNode(ISourcePosition position, INode bodyNode) {
         super(position);
-
         this.bodyNode = bodyNode;
     }
 
@@ -60,13 +59,5 @@ public class BeginNode extends AbstractNode {
      */
     public INode getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
     }
 }

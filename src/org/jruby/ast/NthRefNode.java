@@ -36,11 +36,10 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class NthRefNode extends AbstractNode {
-    private int matchNumber;
+    private final int matchNumber;
 
     public NthRefNode(ISourcePosition position, int matchNumber) {
         super(position);
-
         this.matchNumber = matchNumber;
     }
 
@@ -58,13 +57,5 @@ public class NthRefNode extends AbstractNode {
      */
     public int getMatchNumber() {
         return matchNumber;
-    }
-
-    /**
-     * Sets the matchNumber.
-     * @param matchNumber The matchNumber to set
-     */
-    public void setMatchNumber(int matchNumber) {
-        this.matchNumber = matchNumber;
     }
 }

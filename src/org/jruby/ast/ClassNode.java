@@ -42,13 +42,12 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ClassNode extends AbstractNode {
-    private String className;
-    private ScopeNode bodyNode;
-    private INode superNode;
+    private final String className;
+    private final ScopeNode bodyNode;
+    private final INode superNode;
     
     public ClassNode(ISourcePosition position, String className, ScopeNode bodyNode, INode superNode) {
         super(position);
-        
         this.className = className;
         this.bodyNode = bodyNode;
         this.superNode = superNode;
@@ -70,14 +69,6 @@ public class ClassNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(ScopeNode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the className.
      * @return Returns a String
      */
@@ -86,26 +77,10 @@ public class ClassNode extends AbstractNode {
     }
 
     /**
-     * Sets the className.
-     * @param className The className to set
-     */
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    /**
      * Gets the superNode.
      * @return Returns a INode
      */
     public INode getSuperNode() {
         return superNode;
-    }
-
-    /**
-     * Sets the superNode.
-     * @param superNode The superNode to set
-     */
-    public void setSuperNode(INode superNode) {
-        this.superNode = superNode;
     }
 }

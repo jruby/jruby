@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -37,8 +37,8 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class Match2Node extends AbstractNode {
-    private INode receiverNode;
-    private INode valueNode;
+    private final INode receiverNode;
+    private final INode valueNode;
 
     public Match2Node(ISourcePosition position, INode receiverNode, INode valueNode) {
         super(position);
@@ -64,27 +64,10 @@ public class Match2Node extends AbstractNode {
     }
 
     /**
-     * Sets the receiverNode.
-     * @param receiverNode The receiverNode to set
-     */
-    public void setReceiverNode(INode receiverNode) {
-        this.receiverNode = receiverNode;
-    }
-
-    /**
      * Gets the valueNode.
      * @return Returns a INode
      */
     public INode getValueNode() {
         return valueNode;
     }
-
-    /**
-     * Sets the valueNode.
-     * @param valueNode The valueNode to set
-     */
-    public void setValueNode(INode valueNode) {
-        this.valueNode = valueNode;
-    }
-
 }

@@ -37,12 +37,11 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class EnsureNode extends AbstractNode {
-    private INode bodyNode;
-    private INode ensureNode;
+    private final INode bodyNode;
+    private final INode ensureNode;
 
     public EnsureNode(ISourcePosition position, INode bodyNode, INode ensureNode) {
         super(position);
-
         this.bodyNode = bodyNode;
         this.ensureNode = ensureNode;
     }
@@ -64,26 +63,10 @@ public class EnsureNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the ensureNode.
      * @return Returns a INode
      */
     public INode getEnsureNode() {
         return ensureNode;
-    }
-
-    /**
-     * Sets the ensureNode.
-     * @param ensureNode The ensureNode to set
-     */
-    public void setEnsureNode(INode ensureNode) {
-        this.ensureNode = ensureNode;
     }
 }

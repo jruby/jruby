@@ -37,12 +37,11 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class OpAsgnAndNode extends AbstractNode {
-    private INode firstNode;
-    private INode secondNode;
+    private final INode firstNode;
+    private final INode secondNode;
 
     public OpAsgnAndNode(ISourcePosition position, INode headNode, INode valueNode) {
         super(position);
-
         firstNode = headNode;
         secondNode = valueNode;
     }
@@ -64,27 +63,10 @@ public class OpAsgnAndNode extends AbstractNode {
     }
 
     /**
-     * Sets the firstNode.
-     * @param firstNode The firstNode to set
-     */
-    public void setFirstNode(INode firstNode) {
-        this.firstNode = firstNode;
-    }
-
-    /**
      * Gets the secondNode.
      * @return Returns a INode
      */
     public INode getSecondNode() {
         return secondNode;
     }
-
-    /**
-     * Sets the secondNode.
-     * @param secondNode The secondNode to set
-     */
-    public void setSecondNode(INode secondNode) {
-        this.secondNode = secondNode;
-    }
-
 }

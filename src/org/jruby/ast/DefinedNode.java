@@ -37,11 +37,10 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class DefinedNode extends AbstractNode {
-    private INode expressionNode;
+    private final INode expressionNode;
 
     public DefinedNode(ISourcePosition position, INode expressionNode) {
         super(position);
-
         this.expressionNode = expressionNode;
     }
 
@@ -59,13 +58,5 @@ public class DefinedNode extends AbstractNode {
      */
     public INode getExpressionNode() {
         return expressionNode;
-    }
-
-    /**
-     * Sets the expressionNode.
-     * @param expressionNode The expressionNode to set
-     */
-    public void setExpressionNode(INode expressionNode) {
-        this.expressionNode = expressionNode;
     }
 }

@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -38,13 +38,12 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class IterNode extends AbstractNode {
-    private INode varNode;
-    private INode bodyNode;
+    private final INode varNode;
+    private final INode bodyNode;
     private INode iterNode;
 
     public IterNode(ISourcePosition position, INode varNode, INode bodyNode, INode iterNode) {
         super(position);
-
         this.varNode = varNode;
         this.bodyNode = bodyNode;
         this.iterNode = iterNode;
@@ -64,14 +63,6 @@ public class IterNode extends AbstractNode {
      */
     public INode getBodyNode() {
         return bodyNode;
-    }
-
-    /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
     }
 
     /**
@@ -97,13 +88,4 @@ public class IterNode extends AbstractNode {
     public INode getVarNode() {
         return varNode;
     }
-
-    /**
-     * Sets the varNode.
-     * @param varNode The varNode to set
-     */
-    public void setVarNode(INode varNode) {
-        this.varNode = varNode;
-    }
-
 }

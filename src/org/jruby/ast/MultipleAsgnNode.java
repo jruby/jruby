@@ -26,11 +26,12 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *
@@ -38,13 +39,12 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class MultipleAsgnNode extends AbstractNode implements IAssignableNode {
-    private IListNode headNode;
-    private INode argsNode;
+    private final IListNode headNode;
+    private final INode argsNode;
     private INode valueNode;
 
     public MultipleAsgnNode(ISourcePosition position, IListNode headNode, INode argsNode) {
         super(position);
-
         this.headNode = headNode;
         this.argsNode = argsNode;
     }
@@ -66,27 +66,11 @@ public class MultipleAsgnNode extends AbstractNode implements IAssignableNode {
     }
 
     /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(INode argsNode) {
-        this.argsNode = argsNode;
-    }
-
-    /**
      * Gets the headNode.
      * @return Returns a IListNode
      */
     public IListNode getHeadNode() {
         return headNode;
-    }
-
-    /**
-     * Sets the headNode.
-     * @param headNode The headNode to set
-     */
-    public void setHeadNode(IListNode headNode) {
-        this.headNode = headNode;
     }
 
     /**

@@ -26,9 +26,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a module definition.
  *
@@ -36,12 +36,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ModuleNode extends AbstractNode {
-    private String name;
-    private ScopeNode bodyNode;
+    private final String name;
+    private final ScopeNode bodyNode;
 
     public ModuleNode(ISourcePosition position, String name, ScopeNode bodyNode) {
         super(position);
-
         this.name = name;
         this.bodyNode = bodyNode;
     }
@@ -63,26 +62,10 @@ public class ModuleNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(ScopeNode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the name.
      * @return Returns a String
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

@@ -26,11 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * a Literal Hash.
@@ -40,7 +39,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class HashNode extends AbstractNode {
-    private IListNode listNode;
+    private final IListNode listNode;
     
     public HashNode(IListNode listNode) {
         this(null, listNode);
@@ -48,7 +47,6 @@ public class HashNode extends AbstractNode {
 
     public HashNode(ISourcePosition position, IListNode listNode) {
         super(position);
-
         this.listNode = listNode;
     }
 
@@ -66,13 +64,5 @@ public class HashNode extends AbstractNode {
      */
     public IListNode getListNode() {
         return listNode;
-    }
-
-    /**
-     * Sets the listNode.
-     * @param listNode The listNode to set
-     */
-    public void setListNode(IListNode listNode) {
-        this.listNode = listNode;
     }
 }
