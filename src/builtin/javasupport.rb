@@ -90,7 +90,7 @@ module JavaUtilities
             raise NameError.new("wrong # of arguments for constructor")
           end
           args = JavaProxy.convert_arguments(args)
-          java_object = constructor.new_instance(JavaObject, *args)
+          java_object = constructor.new_instance(*args)
           result = new_proxy
           result.extend(JavaProxy) # FIXME: do on class level instead
           result.java_class = @java_class
@@ -118,9 +118,6 @@ module JavaUtilities
           if methods.length == 1
             m = methods.first
             return_type = m.return_type
-#            unless return_type.nil?
-#              m.proxy_class = JavaUtilities.new_proxy_class(return_type)
-#            end
             define_method(m.name) {|*args|
               args = JavaProxy.convert_arguments(args)
               result = m.invoke(self.java_object, *args)
@@ -138,10 +135,6 @@ module JavaUtilities
                 define_method(name) {|*args|
                   m = methods_by_arity[args.length].first
                   return_type = m.return_type
-#                  unless return_type.nil?
-#                    # FIXME: don't need to set this *every* time...
-#                    m.proxy_class = JavaUtilities.new_proxy_class(return_type)
-#                  end
                   args = convert_arguments(args)
                   result = Java.java_to_primitive(m.invoke(self.java_object, *args))
                   if Java.type_of(result)
@@ -173,9 +166,6 @@ module JavaUtilities
                                "methods = @class_methods['" + name + "'];" +
                                "method = methods.first;" +
                                "return_type = method.return_type;" +
-#                               "unless return_type.nil?;" +
-#                               "  method.proxy_class = JavaUtilities.new_proxy_class(return_type);" +
-#                               "end;" +
                                "result = Java.java_to_primitive(method.invoke_static(*args));" +
                                "if Java.type_of(result);" +
                                "  result = JavaUtilities.wrap(result, method.return_type);" +

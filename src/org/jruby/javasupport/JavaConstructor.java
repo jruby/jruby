@@ -48,7 +48,7 @@ public class JavaConstructor extends JavaCallable implements IndexCallable {
                 javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
 
         javaConstructorClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
-        javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE, 1));
+        javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE));
         javaConstructorClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
         javaConstructorClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
 
@@ -65,21 +65,17 @@ public class JavaConstructor extends JavaCallable implements IndexCallable {
     }
 
     public IRubyObject new_instance(IRubyObject[] args) {
-        if (args.length != getArity() + 1) {
-            throw new ArgumentError(getRuntime(), args.length, getArity() + 1);
+        if (args.length != getArity()) {
+            throw new ArgumentError(getRuntime(), args.length, getArity());
         }
-        if (! (args[0] instanceof RubyClass)) {
-            throw new TypeError(getRuntime(), args[0], getRuntime().getClasses().getClassClass());
-        }
-        RubyClass returnType = (RubyClass) args[0];
-        Object[] constructorArguments = new Object[args.length - 1];
+        Object[] constructorArguments = new Object[args.length];
         Class[] types = constructor.getParameterTypes();
-        for (int i = 1; i < args.length; i++) {
-            constructorArguments[i - 1] = JavaUtil.convertArgument(args[i], types[i - 1]);
+        for (int i = 0; i < args.length; i++) {
+            constructorArguments[i] = JavaUtil.convertArgument(args[i], types[i]);
         }
         try {
             Object result = constructor.newInstance(constructorArguments);
-            return new JavaObject(getRuntime(), returnType, result);
+            return new JavaObject(getRuntime(), result);
 
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect() +

@@ -124,8 +124,6 @@ Java::JavaMethod:
         Invokes the corresponding Java instance method on the Java object
         given as first arguments. The remaining arguments are passed as
         arguments in the invokation.
-        The returned object is a Java object, instance of the class given
-        by proxy_class().
 
         Example:
             meth.name    # -> "indexOf"
@@ -136,8 +134,6 @@ Java::JavaMethod:
     meth.invoke_static( [anObject]* ) -> aJavaObject
         Invokes the corresponding Java class ("static") method. All
         arguments are passed as arguments in the invokation.
-        The returned object is a Java object, instance of the class given
-        by proxy_class().
 
         Example:
             meth = string_class.java_method("valueOf", "int")
@@ -165,36 +161,6 @@ Java::JavaMethod:
             meth = java_obj.java_method("toString")
             meth.return_type                        # -> "java.lang.String"
 
-    meth.proxy_class -> aClass
-        Returns the proxy class, that is, the class that all returned Java
-        objects of this JavaMethod will be instances of. Defaults to
-        JavaObject.
-
-        Example:
-            meth = string_class.java_method("hashCode")
-            meth.proxy_class                     # -> JavaObject
-            result =  meth.invoke(java_string)
-            result.type                          # -> JavaObject
-            
-            meth.proxy_class = MyStringProxy
-            result = meth.invoke(java_string)
-            result.type                          # -> MyStringProxy
-
-    meth.proxy_class = aClass -> aClass
-        Sets the proxy class, that is, the class that all returned Java
-        objects of this JavaMethod will be instances of. Defaults to
-        JavaObject.
-
-        Example:
-            meth = string_class.java_method("hashCode")
-            meth.proxy_class                     # -> JavaObject
-            result =  meth.invoke(java_string)
-            result.type                          # -> JavaObject
-            
-            meth.proxy_class = MyStringProxy
-            result = meth.invoke(java_string)
-            result.type                          # -> MyStringProxy
-
 
 Java::JavaConstructor:
 
@@ -203,16 +169,15 @@ Java::JavaConstructor:
     cons.arity -> aFixnum
         Returns the number of arguments on this constructor.
 
-    cons.new_instance( aClass, [anObject]* ) -> aJavaObject
+    cons.new_instance( [anObject]* ) -> aJavaObject
         Creates a new instance of the Java class this constructor belongs
-        to, with the given arguments. The returned instance will be of the
-        class given as the first argument, usually a proxy class.
+        to, with the given arguments.
 
         Example:
 
             cons = integer_class.constructor("int")
-            result = cons.new_instance(MyIntegerProxy, java_integer_ten)
-            result.type     # -> MyIntegerProxy
+            result = cons.new_instance(java_integer_ten)
+            result.java_type     # -> "java.lang.Integer"
 
 
     cons.inspect -> aString

@@ -78,7 +78,7 @@ if defined? Java
   test_equal([0, 1], constructors.collect {|c| c.arity }.sort)
   constructor = random_class.constructor(:long)
   test_equal(1, constructor.arity)
-  random = constructor.new_instance(Object, Java.primitive_to_java(2002))
+  random = constructor.new_instance(Java.primitive_to_java(2002))
   result = method.invoke(random)
   test_equal("java.lang.Integer", result.java_type)
   test_equal("java.lang.Integer", Java.type_of(result))
@@ -101,12 +101,7 @@ if defined? Java
   # Control over return types and values
   test_equal("java.lang.String", method.return_type)
   test_equal(nil, string_class.java_method("notifyAll").return_type)
-  test_equal(JavaObject, method.proxy_class)
   test_equal(JavaObject,
-             method.invoke_static(Java.primitive_to_java(101)).type)
-  method.proxy_class = Object
-  test_equal(Object, method.proxy_class)
-  test_equal(Object,
              method.invoke_static(Java.primitive_to_java(101)).type)
 
   # Arrays

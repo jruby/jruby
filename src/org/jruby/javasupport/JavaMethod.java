@@ -53,8 +53,6 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
     private static final int INSPECT = 8;
     private static final int STATIC_P = 9;
     private static final int RETURN_TYPE = 10;
-    private static final int PROXY_CLASS = 11;
-    private static final int SET_PROXY_CLASS = 12;
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaMethodClass =
@@ -69,8 +67,6 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
         javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
         javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
         javaMethodClass.defineMethod("return_type", IndexedCallback.create(RETURN_TYPE, 0));
-        javaMethodClass.defineMethod("proxy_class", IndexedCallback.create(PROXY_CLASS, 0));
-        javaMethodClass.defineMethod("proxy_class=", IndexedCallback.create(SET_PROXY_CLASS, 1));
 
         return javaMethodClass;
     }
@@ -148,18 +144,6 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
         return RubyString.newString(getRuntime(), result);
     }
 
-    public RubyClass proxy_class() {
-        return proxyClass;
-    }
-
-    public RubyClass set_proxy_class(IRubyObject proxyClass) {
-        if (! (proxyClass instanceof RubyClass)) {
-            throw new TypeError(getRuntime(), proxyClass, getRuntime().getClasses().getClassClass());
-        }
-        this.proxyClass = (RubyClass) proxyClass;
-        return this.proxyClass;
-    }
-
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
         try {
             Object result = method.invoke(javaInvokee, arguments);
@@ -220,10 +204,10 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
                 return static_p();
             case RETURN_TYPE :
                 return return_type();
-            case PROXY_CLASS :
-                return proxy_class();
-            case SET_PROXY_CLASS :
-                return set_proxy_class(args[0]);
+//            case PROXY_CLASS :
+//                return proxy_class();
+//            case SET_PROXY_CLASS :
+//                return set_proxy_class(args[0]);
             default :
                 return super.callIndexed(index, args);
         }
