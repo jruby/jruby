@@ -804,11 +804,22 @@ public class RubyObject implements Cloneable, IRubyObject {
         return RubyBoolean.newBoolean(runtime, isKindOf((RubyModule)type));
     }
 
+    // For cglib....why does it need this though?
+    public IRubyObject methods() {
+    	return methods(new IRubyObject[] { getRuntime().getTrue() });
+    }
+    
     /** rb_obj_methods
      *
      */
-    public IRubyObject methods() {
-        return getMetaClass().public_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+    public IRubyObject methods(IRubyObject[] args) {
+    	argCount(args, 0, 1);
+    	
+    	if (args.length == 0) {
+    		args = new IRubyObject[] { getRuntime().getTrue() };
+    	}
+
+        return getMetaClass().public_instance_methods(args);
     }
 
     /** rb_obj_protected_methods
@@ -1021,8 +1032,8 @@ public class RubyObject implements Cloneable, IRubyObject {
         module.defineMethod("instance_of?", callbackFactory.getMethod(RubyObject.class, "instance_of", IRubyObject.class));
         module.defineMethod("instance_variables", callbackFactory.getMethod(RubyObject.class, "instance_variables"));
         module.defineMethod("method", callbackFactory.getMethod(RubyObject.class, "method", IRubyObject.class));
-        module.defineMethod("methods", callbackFactory.getMethod(RubyObject.class, "methods"));
-        module.defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
+        module.defineMethod("methods", callbackFactory.getOptMethod(RubyObject.class, "methods"));
+        //module.defineMethod("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
         module.defineMethod("private_methods", callbackFactory.getMethod(RubyObject.class, "private_methods"));
         module.defineMethod("protected_methods", callbackFactory.getMethod(RubyObject.class, "protected_methods"));
         module.defineMethod("public_methods", callbackFactory.getMethod(RubyObject.class, "methods"));

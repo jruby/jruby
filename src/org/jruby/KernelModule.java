@@ -36,6 +36,7 @@ package org.jruby;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
@@ -43,9 +44,11 @@ import org.jruby.exceptions.ThreadError;
 import org.jruby.exceptions.ThrowJump;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
+import org.jruby.util.PrintfFormat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -59,59 +62,80 @@ import java.util.Iterator;
  */
 public class KernelModule {
     public static RubyModule createKernelModule(Ruby ruby) {
-        RubyModule kernelModule = ruby.defineModule("Kernel");
+        RubyModule module = ruby.defineModule("Kernel");
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
-        kernelModule.defineMethod("Array", callbackFactory.getSingletonMethod(KernelModule.class, "new_array", IRubyObject.class));
-        kernelModule.defineMethod("at_exit", callbackFactory.getSingletonMethod(KernelModule.class, "at_exit"));
-        kernelModule.defineMethod("autoload", callbackFactory.getSingletonMethod(KernelModule.class, "autoload", IRubyObject.class, IRubyObject.class));
-        kernelModule.defineMethod("`", callbackFactory.getSingletonMethod(KernelModule.class, "backquote", IRubyObject.class));
-        kernelModule.defineMethod("block_given?", callbackFactory.getSingletonMethod(KernelModule.class, "block_given"));
-        kernelModule.defineMethod("iterator?", callbackFactory.getSingletonMethod(KernelModule.class, "block_given"));
-        kernelModule.defineMethod("caller", callbackFactory.getOptSingletonMethod(KernelModule.class, "caller"));
-        kernelModule.defineMethod("catch", callbackFactory.getSingletonMethod(KernelModule.class, "rbCatch", IRubyObject.class));
-        kernelModule.defineMethod("chomp", callbackFactory.getOptSingletonMethod(KernelModule.class, "chomp"));
-        kernelModule.defineMethod("chomp!", callbackFactory.getOptSingletonMethod(KernelModule.class, "chomp_bang"));
-        kernelModule.defineMethod("chop", callbackFactory.getSingletonMethod(KernelModule.class, "chop"));
-        kernelModule.defineMethod("chop!", callbackFactory.getSingletonMethod(KernelModule.class, "chop_bang"));
-        kernelModule.defineMethod("eval", callbackFactory.getOptSingletonMethod(KernelModule.class, "eval"));
-        kernelModule.defineMethod("exit", callbackFactory.getOptSingletonMethod(KernelModule.class, "exit"));
-        kernelModule.defineMethod("Float", callbackFactory.getSingletonMethod(KernelModule.class, "new_float", IRubyObject.class));
-        kernelModule.defineMethod("format", callbackFactory.getOptSingletonMethod(KernelModule.class, "sprintf"));
-        kernelModule.defineMethod("gets", callbackFactory.getOptSingletonMethod(KernelModule.class, "gets"));
-        kernelModule.defineMethod("global_variables", callbackFactory.getSingletonMethod(KernelModule.class, "global_variables"));
-        kernelModule.defineMethod("gsub", callbackFactory.getOptSingletonMethod(KernelModule.class, "gsub"));
-        kernelModule.defineMethod("gsub!", callbackFactory.getOptSingletonMethod(KernelModule.class, "gsub_bang"));
-        kernelModule.defineMethod("Integer", callbackFactory.getSingletonMethod(KernelModule.class, "new_integer", IRubyObject.class));
-        kernelModule.defineMethod("lambda", callbackFactory.getSingletonMethod(KernelModule.class, "proc"));
-        kernelModule.defineMethod("load", callbackFactory.getOptSingletonMethod(KernelModule.class, "load"));
-        kernelModule.defineMethod("local_variables", callbackFactory.getSingletonMethod(KernelModule.class, "local_variables"));
-        kernelModule.defineMethod("loop", callbackFactory.getSingletonMethod(KernelModule.class, "loop"));
-        kernelModule.defineMethod("open", callbackFactory.getOptSingletonMethod(KernelModule.class, "open"));
-        kernelModule.defineMethod("p", callbackFactory.getOptSingletonMethod(KernelModule.class, "p"));
-        kernelModule.defineMethod("puts", callbackFactory.getOptSingletonMethod(KernelModule.class, "puts"));
-        kernelModule.defineMethod("print", callbackFactory.getOptSingletonMethod(KernelModule.class, "print"));
-        kernelModule.defineMethod("printf", callbackFactory.getOptSingletonMethod(KernelModule.class, "printf"));
-        kernelModule.defineMethod("proc", callbackFactory.getSingletonMethod(KernelModule.class, "proc"));
-        kernelModule.defineMethod("raise", callbackFactory.getOptSingletonMethod(KernelModule.class, "raise"));
-        kernelModule.defineMethod("rand", callbackFactory.getOptSingletonMethod(KernelModule.class, "rand"));
-        kernelModule.defineMethod("readline", callbackFactory.getOptSingletonMethod(KernelModule.class, "readline"));
-        kernelModule.defineMethod("readlines", callbackFactory.getOptSingletonMethod(KernelModule.class, "readlines"));
-        kernelModule.defineMethod("require", callbackFactory.getSingletonMethod(KernelModule.class, "require", IRubyObject.class));
-        kernelModule.defineMethod("scan", callbackFactory.getSingletonMethod(KernelModule.class, "scan", IRubyObject.class));
-        kernelModule.defineMethod("set_trace_func", callbackFactory.getSingletonMethod(KernelModule.class, "set_trace_func", IRubyObject.class));
-        kernelModule.defineMethod("singleton_method_added", callbackFactory.getSingletonMethod(KernelModule.class, "singleton_method_added", IRubyObject.class));
-        kernelModule.defineMethod("sleep", callbackFactory.getSingletonMethod(KernelModule.class, "sleep", RubyNumeric.class));
-        kernelModule.defineMethod("split", callbackFactory.getOptSingletonMethod(KernelModule.class, "split"));
-        kernelModule.defineMethod("sprintf", callbackFactory.getOptSingletonMethod(KernelModule.class, "sprintf"));
-        kernelModule.defineMethod("srand", callbackFactory.getOptSingletonMethod(KernelModule.class, "srand"));
-        kernelModule.defineMethod("String", callbackFactory.getSingletonMethod(KernelModule.class, "new_string", IRubyObject.class));
-        kernelModule.defineMethod("sub", callbackFactory.getOptSingletonMethod(KernelModule.class, "sub"));
-        kernelModule.defineMethod("sub!", callbackFactory.getOptSingletonMethod(KernelModule.class, "sub_bang"));
-        kernelModule.defineMethod("system", callbackFactory.getOptSingletonMethod(KernelModule.class, "system"));
-        kernelModule.defineMethod("throw", callbackFactory.getOptSingletonMethod(KernelModule.class, "rbThrow"));
+        module.defineModuleFunction("Array", callbackFactory.getSingletonMethod(KernelModule.class, "new_array", IRubyObject.class));
+        module.defineModuleFunction("Float", callbackFactory.getSingletonMethod(KernelModule.class, "new_float", IRubyObject.class));
+        module.defineModuleFunction("Integer", callbackFactory.getSingletonMethod(KernelModule.class, "new_integer", IRubyObject.class));
+        module.defineModuleFunction("String", callbackFactory.getSingletonMethod(KernelModule.class, "new_string", IRubyObject.class));
+        module.defineModuleFunction("`", callbackFactory.getSingletonMethod(KernelModule.class, "backquote", IRubyObject.class));
+        // TODO: Implement Kernel#abort
+        module.defineModuleFunction("at_exit", callbackFactory.getSingletonMethod(KernelModule.class, "at_exit"));
+        module.defineModuleFunction("autoload", callbackFactory.getSingletonMethod(KernelModule.class, "autoload", IRubyObject.class, IRubyObject.class));
+        // TODO: Implement Kernel#autoload?
+        // TODO: Implement Kernel#binding
+        module.defineModuleFunction("block_given?", callbackFactory.getSingletonMethod(KernelModule.class, "block_given"));
+        // TODO: Implement Kernel#callcc
+        module.defineModuleFunction("caller", callbackFactory.getOptSingletonMethod(KernelModule.class, "caller"));
+        module.defineModuleFunction("catch", callbackFactory.getSingletonMethod(KernelModule.class, "rbCatch", IRubyObject.class));
+        module.defineModuleFunction("chomp", callbackFactory.getOptSingletonMethod(KernelModule.class, "chomp"));
+        module.defineModuleFunction("chomp!", callbackFactory.getOptSingletonMethod(KernelModule.class, "chomp_bang"));
+        module.defineModuleFunction("chop", callbackFactory.getSingletonMethod(KernelModule.class, "chop"));
+        module.defineModuleFunction("chop!", callbackFactory.getSingletonMethod(KernelModule.class, "chop_bang"));
+        module.defineModuleFunction("eval", callbackFactory.getOptSingletonMethod(KernelModule.class, "eval"));
+        // TODO: Implement Kernel#exec
+        module.defineModuleFunction("exit", callbackFactory.getOptSingletonMethod(KernelModule.class, "exit"));
+        // TODO: Implement Kernel#exit!
+        module.defineModuleFunction("fail", callbackFactory.getOptSingletonMethod(KernelModule.class, "raise"));
+        // TODO: Implement Kernel#fork
+        module.defineModuleFunction("format", callbackFactory.getOptSingletonMethod(KernelModule.class, "sprintf"));
+        module.defineModuleFunction("gets", callbackFactory.getOptSingletonMethod(KernelModule.class, "gets"));
+        module.defineModuleFunction("global_variables", callbackFactory.getSingletonMethod(KernelModule.class, "global_variables"));
+        module.defineModuleFunction("gsub", callbackFactory.getOptSingletonMethod(KernelModule.class, "gsub"));
+        module.defineModuleFunction("gsub!", callbackFactory.getOptSingletonMethod(KernelModule.class, "gsub_bang"));
+        // TODO: Add deprecation to Kernel#iterator? (maybe formal deprecation mech.)
+        module.defineAlias("iterator?", "block_given?");
+        module.defineModuleFunction("lambda", callbackFactory.getSingletonMethod(KernelModule.class, "proc"));
+        module.defineModuleFunction("load", callbackFactory.getOptSingletonMethod(KernelModule.class, "load"));
+        module.defineModuleFunction("local_variables", callbackFactory.getSingletonMethod(KernelModule.class, "local_variables"));
+        module.defineModuleFunction("loop", callbackFactory.getSingletonMethod(KernelModule.class, "loop"));
+        // Note: method_missing is documented as being in Object, but ruby appears to stick it in Kernel.
+        module.defineModuleFunction("method_missing", callbackFactory.getOptMethod(RubyObject.class, "method_missing"));
+        module.defineModuleFunction("open", callbackFactory.getOptSingletonMethod(KernelModule.class, "open"));
+        module.defineModuleFunction("p", callbackFactory.getOptSingletonMethod(KernelModule.class, "p"));
+        module.defineModuleFunction("print", callbackFactory.getOptSingletonMethod(KernelModule.class, "print"));
+        module.defineModuleFunction("printf", callbackFactory.getOptSingletonMethod(KernelModule.class, "printf"));
+        module.defineModuleFunction("proc", callbackFactory.getSingletonMethod(KernelModule.class, "proc"));
+        // TODO: implement Kernel#putc
+        module.defineModuleFunction("puts", callbackFactory.getOptSingletonMethod(KernelModule.class, "puts"));
+        module.defineAlias("raise", "fail");
+        module.defineModuleFunction("rand", callbackFactory.getOptSingletonMethod(KernelModule.class, "rand"));
+        module.defineModuleFunction("readline", callbackFactory.getOptSingletonMethod(KernelModule.class, "readline"));
+        module.defineModuleFunction("readlines", callbackFactory.getOptSingletonMethod(KernelModule.class, "readlines"));
+        module.defineModuleFunction("require", callbackFactory.getSingletonMethod(KernelModule.class, "require", IRubyObject.class));
+        module.defineModuleFunction("scan", callbackFactory.getSingletonMethod(KernelModule.class, "scan", IRubyObject.class));
+        // TODO: Implement Kernel#select
+        module.defineModuleFunction("set_trace_func", callbackFactory.getSingletonMethod(KernelModule.class, "set_trace_func", IRubyObject.class));
+        module.defineModuleFunction("sleep", callbackFactory.getSingletonMethod(KernelModule.class, "sleep", RubyNumeric.class));
+        module.defineModuleFunction("split", callbackFactory.getOptSingletonMethod(KernelModule.class, "split"));
+        module.defineAlias("sprintf", "format");
+        module.defineModuleFunction("srand", callbackFactory.getOptSingletonMethod(KernelModule.class, "srand"));
+        module.defineModuleFunction("sub", callbackFactory.getOptSingletonMethod(KernelModule.class, "sub"));
+        module.defineModuleFunction("sub!", callbackFactory.getOptSingletonMethod(KernelModule.class, "sub_bang"));
+        // Skipping: Kernel#syscall (too system dependent)
+        module.defineModuleFunction("system", callbackFactory.getOptSingletonMethod(KernelModule.class, "system"));
+        // TODO: Implement Kernel#test (partial impl)
+        module.defineModuleFunction("throw", callbackFactory.getOptSingletonMethod(KernelModule.class, "rbThrow"));
+        // TODO: Implement Kernel#trace_var
+        // TODO: Implement Kernel#trap
+        // TODO: Implement Kernel#untrace_var
+        // TODO: Implement Kernel#warn
+        
+        // Defined p411 Pickaxe 2nd ed.
+        module.defineModuleFunction("singleton_method_added", callbackFactory.getSingletonMethod(KernelModule.class, "singleton_method_added", IRubyObject.class));
 
-        return kernelModule;
+        return module;
     }
 
     public static IRubyObject at_exit(IRubyObject recv) {
@@ -130,6 +154,37 @@ public class KernelModule {
             }
         });
         return recv;
+    }
+
+    public IRubyObject method_missing(IRubyObject recv, IRubyObject[] args) {
+        if (args.length == 0) {
+            throw new ArgumentError(recv.getRuntime(), "no id given");
+        }
+
+        String name = args[0].asSymbol();
+
+        String description = recv.callMethod("inspect").toString();
+        boolean noClass = description.charAt(0) == '#';
+        if (recv.isNil()) {
+            noClass = true;
+            description = "nil";
+        } else if (recv == recv.getRuntime().getTrue()) {
+            noClass = true;
+            description = "true";
+        } else if (recv == recv.getRuntime().getFalse()) {
+            noClass = true;
+            description = "false";
+        }
+
+        LastCallStatus lastCallStatus = recv.getRuntime().getLastCallStatus();
+
+        String format = lastCallStatus.errorMessageFormat(name);
+
+        String msg =
+            new PrintfFormat(format).sprintf(
+                new Object[] { name, description, noClass ? "" : ":", noClass ? "" : recv.getType().getName()});
+
+        throw new NoMethodError(recv.getRuntime(), msg);
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
@@ -343,6 +398,7 @@ public class KernelModule {
 
         throw new SystemExit(recv.getRuntime(), status);
     }
+
 
     /** Returns an Array with the names of all global variables.
      *
