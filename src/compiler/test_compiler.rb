@@ -33,4 +33,10 @@ test_equal("hello", code[1].value)
 test_equal("puts", code[2].name)
 test_equal(1, code[2].arity)
 
+code = compile("self")
+test_equal([PushSelf], code.collect {|c| c.class })
+test_equal([178, 0x12, 0x34], code.jvm_bytecode)
+
+
+
 test_print_report

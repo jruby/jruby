@@ -33,6 +33,43 @@ end
 module JRuby
   module Compiler
 
+    require 'bcel.rb'
+
+    class BytecodeSequence
+      include Enumerable
+
+      def initialize
+        @bytecodes = []
+      end
+
+      def <<(bytecode)
+        @bytecodes << bytecode
+      end
+
+      def each
+        @bytecodes.each {|b| yield(b) }
+      end
+
+      def [](index)
+        @bytecodes[index]
+      end
+
+      def jvm_bytecode
+        list = BCEL::InstructionList.new
+        @bytecodes.each {|b| b.emit_jvm_bytecode(list) }
+        code = list.getByteCode
+        result = []
+        for i in 0...code.length
+          if code[i] >= 0
+            result << code[i]
+          else
+            result << code[i] + 256
+          end
+        end
+        result
+      end
+    end
+
     module CompilingVisitor
       include JRuby::Compiler::Bytecode
 
@@ -41,7 +78,7 @@ module JRuby
       end
 
       def compile(tree)
-        @bytecodes = []
+        @bytecodes = BytecodeSequence.new
         emit_bytecodes(tree)
         @bytecodes
       end
@@ -78,6 +115,9 @@ module JRuby
         @bytecodes << PushString.new(node.getValue)
       end
 
+      def visitSelfNode(node)
+        @bytecodes << PushSelf.new
+      end
     end
 
     # Since we can't subclass Java interfaces properly we have

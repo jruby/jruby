@@ -24,6 +24,8 @@ module JRuby
   module Compiler
     module Bytecode
 
+      SELF_INDEX = 0x1234
+
       class AssignLocal
         attr_reader :index
 
@@ -41,6 +43,10 @@ module JRuby
       end
 
       class PushSelf
+
+        def emit_jvm_bytecode(list)
+          list.append(BCEL::GETSTATIC.new(SELF_INDEX))
+        end
       end
 
       class Call
