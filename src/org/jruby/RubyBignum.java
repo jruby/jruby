@@ -3,7 +3,7 @@
  * Created on 15.03.2002, 16:53:36
  *
  * Copyright (C) 2001-2002 Jan Arne Petersen, Benoit Cerrina
- * Copyright (C) 2002 Thomas E Enebo
+ * Copyright (C) 2002-2003 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Thomas E Enebo <enebo@acm.org>
@@ -32,11 +32,7 @@ package org.jruby;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.io.IOException;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.RangeError;
-import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
