@@ -22,20 +22,26 @@
  */
 package org.jruby;
 
-import org.jruby.runtime.IndexCallable;
+import java.io.File;
+
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.builtin.definitions.FileStatDefinition;
-
-import java.io.File;
 
 /**
  * Implements File::Stat
  */
-public class FileStatClass extends RubyObject implements IndexCallable {
+public class FileStatClass extends RubyObject {
     private File file;
 
-    public static RubyClass createFileStatClass(Ruby runtime) {
-        RubyClass fileStatClass = new FileStatDefinition(runtime).getType();
+    public static RubyClass createFileStatClass(Ruby ruby) {
+        RubyClass fileStatClass = ruby.defineClass("FileStat", ruby.getClasses().getObjectClass());
+    	
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+        fileStatClass.defineMethod("directory?", 
+        		callbackFactory.getMethod(FileStatClass.class, "directory_p"));
+    	
         return fileStatClass;
     }
 
@@ -46,14 +52,5 @@ public class FileStatClass extends RubyObject implements IndexCallable {
 
     public RubyBoolean directory_p() {
         return RubyBoolean.newBoolean(runtime, file.isDirectory());
-    }
-
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case FileStatDefinition.DIRECTORY_P :
-                return directory_p();
-        }
-        return super.callIndexed(index, args);
     }
 }
