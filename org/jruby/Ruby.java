@@ -392,11 +392,11 @@ public final class Ruby {
     }
 
     public boolean isGlobalVarDefined(String name) {
-        return getGlobalEntry(name).isDefined();
+        return globalMap.containsKey(name);
     }
 
     public void undefineGlobalVar(String name) {
-        getGlobalEntry(name).undefine();
+        globalMap.remove(name);
     }
 
     public RubyObject setGlobalVar(String name, RubyObject value) {
@@ -408,7 +408,18 @@ public final class Ruby {
     }
 
     public void aliasGlobalVar(String oldName, String newName) {
-        getGlobalEntry(oldName).alias(newName);
+        RubyGlobalEntry oldEntry = getGlobalEntry(oldName);
+
+        if (getSafeLevel() >= 4) {
+            throw new RubySecurityException(this, "Insecure: can't alias global variable");
+        }
+
+        RubyGlobalEntry entry = getGlobalEntry(newName);
+
+        RubyGlobalEntry.AliasAccessor aliasAccesor = new RubyGlobalEntry.AliasAccessor(oldEntry);
+
+        entry.setGetter(aliasAccesor);
+        entry.setSetter(aliasAccesor);
     }
 
     public RubyObject yield(RubyObject value) {

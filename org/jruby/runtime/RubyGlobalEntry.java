@@ -132,22 +132,6 @@ public final class RubyGlobalEntry {
         this.setter = undefMethods;
     }
 
-    /** rb_alias_variable
-     *
-     */
-    public void alias(String newName) {
-        if (ruby.getSafeLevel() >= 4) {
-            throw new RubySecurityException(ruby, "Insecure: can't alias global variable");
-        }
-
-        RubyGlobalEntry entry = ruby.getGlobalEntry(newName);
-
-		AliasAccessor aliasAccesor = new AliasAccessor(this);
-
-        entry.getter = aliasAccesor;
-        entry.setter = aliasAccesor;
-    }
-
     public interface GetterMethod {
         public RubyObject get(Ruby ruby, RubyGlobalEntry entry);
     }
@@ -183,7 +167,7 @@ public final class RubyGlobalEntry {
         }
     }
 
-    private static class AliasAccessor implements GetterMethod, SetterMethod {
+    public static class AliasAccessor implements GetterMethod, SetterMethod {
         private RubyGlobalEntry originalEntry;
         
         public AliasAccessor(RubyGlobalEntry originalEntry) {
