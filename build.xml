@@ -82,7 +82,7 @@
                 <include name="README"/>
                 <include name="test.rb"/>
                 <include name="jruby.bat"/>
-                <include name="jruby.sh"/>
+		<include name="jruby.sh"/>
                 <include name="samples/**/*"/>
             </fileset>
             <fileset dir="${build.dir}">
@@ -107,17 +107,8 @@
 
         <copy todir="${build.tars}">
             <fileset dir="${base.dir}">
-            	<include name="build.xml"/>
-            	<include name="COPYING"/>
-            	<include name="jruby.mf"/>
-            	<include name="README"/>
-            	<include name="README.test"/>
-                <include name="*.rb"/>
-                <include name="samples/**/*"/>
-                <include name="gnu/**/*.java"/>
-                <include name="org/**/*.java"/>
-                <include name="gnu/**/*.html"/>
-                <include name="org/**/*.html"/>
+		    <exclude name="**/*.class"/>
+		    <exclude name="**/*.jar"/>
             </fileset>
         </copy>
         

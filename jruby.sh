@@ -103,7 +103,7 @@ echo "Using JRUBY_BASE: $JRUBY_BASE"
 echo "Using JRUBY_HOME: $JRUBY_HOME"
 echo "Using JAVA_HOME:  $JAVA_HOME"
 
-shift
+# shift
 #  touch $JRUBY_BASE/logs/jruby.out
   $JAVA_HOME/bin/java -classpath $CP \
   -Djruby.base=$JRUBY_BASE \
