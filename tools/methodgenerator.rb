@@ -84,6 +84,8 @@ end
 
 class Alias
 
+  attr :name
+
   def initialize(name, original)
     @name, @original = name, original
   end
@@ -185,9 +187,15 @@ class MethodGenerator
       output.write("protected RubyClass createType(Ruby runtime) {\n")
       output.write('return runtime.defineClass("')
       output.write(@name)
-      output.write('", (RubyClass) runtime.getClasses().getClass("')
-      output.write(@superclass)
-      output.write('"));' + "\n")
+      output.write('", ')
+      if @superclass == :none
+        output.write('(RubyClass) null')
+      else
+        output.write('(RubyClass) runtime.getClasses().getClass("')
+        output.write(@superclass)
+        output.write('")')
+      end
+      output.write(');' + "\n")
       output.write("}\n")
     end
     output.write("\n")
@@ -244,7 +252,11 @@ class MethodGenerator
       @name = text
     }
     parser.listen(:characters, ['^superclass$']) {|text|
-      @superclass = text
+      if text == 'none'
+        @superclass = :none
+      else
+        @superclass = text
+      end
     }
     parser.listen(:characters, ['^implementation$']) {|text|
       @implementation = text

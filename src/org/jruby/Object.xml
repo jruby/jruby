@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+
+<module type="class">
+  <name>Object</name>
+  <superclass>none</superclass>
+  <implementation>org.jruby.RubyObject</implementation>
+
+  <instance-methods>
+    <method name="==">
+      <arity>1</arity>
+      <java>equal</java>
+    </method>
+    <method-alias name="===" original="=="/>
+    <method name="=~">
+      <arity>1</arity>
+      <java>match</java>
+    </method>
+    <method name="class">
+      <arity>0</arity>
+      <java>rbClass</java>
+    </method>
+    <method name="clone">
+      <java>rbClone</java>
+    </method>
+    <method name="dup">
+    </method>
+    <method-alias name="eql?" original="=="/>
+    <method-alias name="equal?" original="=="/>
+    <method name="extend">
+      <arity optional="true">1</arity>
+    </method>
+    <method name="freeze">
+    </method>
+    <method name="frozen?">
+      <java>frozen_p</java>
+    </method>
+    <method name="hash">
+    </method>
+    <method name="id"/>
+    <method-alias name="__id__" original="id"/>
+    <method name="inspect">
+    </method>
+    <method name="instance_eval">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="instance_of?">
+      <arity>1</arity>
+      <java>instance_of</java>
+    </method>
+    <method name="instance_variables">
+    </method>
+    <method name="kind_of?">
+      <arity>1</arity>
+      <java>kind_of</java>
+    </method>
+    <method-alias name="is_a?" original="kind_of?"/>
+    <method name="method">
+      <arity>1</arity>
+    </method>
+    <method name="methods"/>
+    <method name="method_missing">
+      <arity optional="true">0</arity>
+    </method>
+    <method name="nil?">
+      <java>nil</java>
+    </method>
+    <method name="private_methods">
+    </method>
+    <method name="protected_methods">
+    </method>
+    <method-alias name="public_methods" original="methods"/>
+    <method name="respond_to?">
+      <arity optional="true">1</arity>
+      <java>respond_to</java>
+    </method>
+    <method name="send">
+      <arity optional="true">1</arity>
+    </method>
+    <method-alias name="__send__" original="send"/>
+    <method name="singleton_method"/>
+    <method name="taint"/>
+    <method name="tainted?">
+      <java>tainted</java>
+    </method>
+    <method name="to_a">
+    </method>
+    <method name="to_s">
+    </method>
+    <method name="type">
+    </method>
+    <method name="untaint">
+    </method>
+  </instance-methods>
+</module>
