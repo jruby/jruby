@@ -75,3 +75,7 @@ class TCPServer < TCPSocket
     @javaServerSocket.close()
   end
 end
+
+TCPsocket = TCPSocket
+TCPserver = TCPServer
+IPsocket = IPSocket
