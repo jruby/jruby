@@ -218,7 +218,7 @@ public class RubyYaccLexer implements IYaccLexer {
      * and backquoted strings.
      * If the string is a SingleQuoted String the parsing is delegated to parseSingleQuotedString.
      * SubExpression (introduced by #) are parsed by the parseExpressionString method.
-     * 
+     *
      * @param func the type of String being parsed (single, double or back quoted)
      * @param closeQuote the closing quote to look for
      * @param openQuote the opening quote (used when there is a potential nesting problem),
@@ -305,7 +305,7 @@ public class RubyYaccLexer implements IYaccLexer {
     }
 
     /** Parse a single quoted string (', or %q).
-     * 
+     *
      *  @param closeQuote the closing quote (what should be looked for)
      *  @param openQuote the opening quote (in case there is some possible nesting)
      *  @return the type of token parsed (0 for an error).
@@ -857,9 +857,9 @@ public class RubyYaccLexer implements IYaccLexer {
                         }
                         lexState = LexState.EXPR_BEG;
                         support.unread();
-                        if (Character.isDigit((char) c)) {
+                        if (Character.isDigit(c)) {
                             c = '+';
-                            return parseNumber((char) c);
+                            return parseNumber(c);
                         }
                         return Token.tUPLUS;
                     }
@@ -889,9 +889,9 @@ public class RubyYaccLexer implements IYaccLexer {
                         }
                         lexState = LexState.EXPR_BEG;
                         support.unread();
-                        if (Character.isDigit((char) c)) {
+                        if (Character.isDigit(c)) {
                             c = '-';
-                            return parseNumber((char) c);
+                            return parseNumber(c);
                         }
                         return Token.tUMINUS;
                     }
@@ -908,7 +908,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         return Token.tDOT2;
                     }
                     support.unread();
-                    if (!Character.isDigit((char) c)) {
+                    if (!Character.isDigit(c)) {
                         lexState = LexState.EXPR_DOT;
                         return '.';
                     }
@@ -1117,7 +1117,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         case '`' : // $`: string before last match
                         case '\'' : // $': string after last match
                         case '+' : // $+: string matches last paren.
-                            yaccValue = new BackRefNode(support.getPosition(), (char) c);
+                            yaccValue = new BackRefNode(support.getPosition(), c);
                             return Token.tBACK_REF;
                         case '1' :
                         case '2' :
@@ -1129,7 +1129,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         case '8' :
                         case '9' :
                             tokenBuffer.append('$');
-                            while (Character.isDigit((char) c)) {
+                            while (Character.isDigit(c)) {
                                 tokenBuffer.append(c);
                                 c = support.read();
                             }
@@ -1156,11 +1156,11 @@ public class RubyYaccLexer implements IYaccLexer {
                         tokenBuffer.append('@');
                         c = support.read();
                     }
-                    if (Character.isDigit((char) c)) {
+                    if (Character.isDigit(c)) {
                         errorHandler.handleError(
                             IErrors.COMPILE_ERROR,
                             support.getPosition(),
-                            Messages.getString("invalid_instance_variable_name", String.valueOf((char) c)));
+                            Messages.getString("invalid_instance_variable_name", String.valueOf(c)));
                         //$NON-NLS-1$
                     }
                     if (!isIdentifierChar(c)) {
@@ -1169,11 +1169,11 @@ public class RubyYaccLexer implements IYaccLexer {
                     }
                     break;
                 default :
-                    if (!isIdentifierChar(c) || Character.isDigit((char) c)) {
+                    if (!isIdentifierChar(c) || Character.isDigit(c)) {
                         errorHandler.handleError(
                             IErrors.COMPILE_ERROR,
                             support.getPosition(),
-                            Messages.getString("invalid_char_in_expression", String.valueOf((char) c)));
+                            Messages.getString("invalid_char_in_expression", String.valueOf(c)));
                         //$NON-NLS-1$
                         continue retry;
                     }
@@ -1781,7 +1781,7 @@ public class RubyYaccLexer implements IYaccLexer {
     }
 
     private static final boolean isHexDigit(char c) {
-        return Character.isDigit((char) c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
+        return Character.isDigit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F';
     }
 
     public void setErrorHandler(IErrorHandler errorHandler) {

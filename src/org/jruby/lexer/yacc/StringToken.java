@@ -26,14 +26,14 @@
  */
 package org.jruby.lexer.yacc;
 
-import java.io.*;
+import org.ablaf.common.ISourcePosition;
+import org.ablaf.common.IErrorHandler;
+import org.ablaf.lexer.ILexerSupport;
+import org.jruby.common.IErrors;
 
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
+import java.io.EOFException;
 
-import org.jruby.common.*;
-
-/** Represents a token which is actually lexed.
+/** Represents a token which is currently lexed.
  *
  * @author  jpetersen
  * @version $Revision$
