@@ -38,6 +38,7 @@ import org.jruby.evaluator.EvaluateVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
@@ -349,7 +350,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public IRubyObject instance_variable_get(IRubyObject var) {
-    	return getInstanceVariable(var.asSymbol());
+    	String varName = var.asSymbol();
+    	
+    	if (!varName.startsWith("@")) {
+    		throw new NameError(runtime, "`" + varName + "' is not allowable as an instance variable name");
+    	}
+    	
+    	return getInstanceVariable(varName);
     }
 
     /** rb_iv_get / rb_ivar_get
@@ -364,8 +371,13 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
     
     public IRubyObject instance_variable_set(IRubyObject var, IRubyObject value) {
-    	setInstanceVariable(var.asSymbol(), value);
-    	return value;
+    	String varName = var.asSymbol();
+    	
+    	if (!varName.startsWith("@")) {
+    		throw new NameError(runtime, "`" + varName + "' is not allowable as an instance variable name");
+    	}
+    	
+    	return setInstanceVariable(var.asSymbol(), value);
     }
 
     public IRubyObject setInstanceVariable(String name, IRubyObject value,
