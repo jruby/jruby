@@ -132,7 +132,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean m_equal(RubyObject other) {
-        return other.m_equal(this);
+        return super.m_equal(other);
     }
     
     /** num_eql
@@ -144,5 +144,76 @@ public abstract class RubyNumeric extends RubyObject {
         } else {
             return super.m_equal(other);
         }
+    }
+    
+    /** num_abs
+     *
+     */
+    public RubyNumeric m_abs() {
+        if (((RubyBoolean)funcall(getRuby().intern("<"), RubyFixnum.m_newFixnum(getRuby(), 0))).isTrue()) {
+            return (RubyNumeric)funcall(getRuby().intern("-@"));
+        } else {
+            return this;
+        }
+    }
+    
+    /** num_int_p
+     *
+     */
+    public RubyBoolean m_int_p() {
+        return getRuby().getFalse();
+    }
+    
+    /** num_zero_p
+     *
+     */
+    public RubyBoolean m_zero_p() {
+        return m_equal(RubyFixnum.m_newFixnum(getRuby(), 0));
+    }
+    
+    /** num_nonzero_p
+     *
+     */
+    public RubyObject m_nonzero_p() {
+        if (((RubyBoolean)funcall(getRuby().intern("zero?"))).isTrue()) {
+            return getRuby().getNil();
+        }
+        return this;
+    }
+    
+    /** num_floor
+     *
+     */
+    public RubyNumeric m_floor() {
+        // HACK +++
+        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        // HACK ---
+    }
+    
+    /** num_ceil
+     *
+     */
+    public RubyNumeric m_ceil() {
+        // HACK +++
+        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        // HACK ---
+    }
+    
+    /** num_round
+     *
+     */
+    public RubyNumeric m_round() {
+        // HACK +++
+        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        // HACK ---
+    }
+    
+    /** num_truncate
+     *
+     */
+    public RubyNumeric m_truncate() {
+        // HACK +++
+        return RubyFixnum.m_newFixnum(getRuby(), 0);
+        // HACK ---
     }
 }

@@ -53,7 +53,7 @@ public class RbFixnum {
     public static RubyClass createFixnum(Ruby ruby) {
         // HACK +++
         // todo: change Numeric to Integer
-        RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getRubyClass("Numeric"));
+        RubyClass fixnumClass = ruby.defineClass("Fixnum", (RubyClass)ruby.getRubyClass("Numeric"));
         // HACK ---
         
         fixnumClass.defineMethod("to_i", getMethodToI());

@@ -88,5 +88,6 @@ hello.sayHelloWorld
 
 # number test
 
-# puts 25.eql? 25
-# puts 20 === 20
+puts 25.eql? 25
+puts 20.between? 15, 25
+puts 20.between? 10, 15

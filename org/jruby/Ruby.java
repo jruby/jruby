@@ -136,8 +136,8 @@ public final class Ruby implements token {
      * @param name The name of the class.
      * @return The class.
      */    
-    public RubyClass getRubyClass(String name) {
-        return (RubyClass)classMap.get(intern(name));
+    public RubyModule getRubyClass(String name) {
+        return (RubyModule)classMap.get(intern(name));
     }
     
     /** rb_define_boot?
@@ -207,6 +207,9 @@ public final class Ruby implements token {
         nilClass = RbNilClass.createNilClass(this);
         
         falseClass = RbFalseClass.createFalseClass(this);
+        trueClass = RbTrueClass.createTrueClass(this);
+        
+        RbComparable.createComparable(this);
         
         RbNumeric.createNumericClass(this);
         fixnumClass = RbFixnum.createFixnum(this);
@@ -249,7 +252,7 @@ public final class Ruby implements token {
     public RubyModule defineModule(String name) {
         RubyModule newModule = defineModuleId(intern(name));
         
-        classMap.put(name, newModule);
+        classMap.put(intern(name), newModule);
         
         return newModule;
     }

@@ -45,12 +45,22 @@ public class RbNumeric {
     private static RubyCallbackMethod methodDivmod = null;
     private static RubyCallbackMethod methodModulo = null;
     private static RubyCallbackMethod methodRemainder = null;
-    // private static RubyCallbackMethod methodAbs = null;
+    private static RubyCallbackMethod methodAbs = null;
 
+    private static RubyCallbackMethod methodIntP = null;
+    private static RubyCallbackMethod methodZeroP = null;
+    private static RubyCallbackMethod methodNonzeroP = null;
+
+    private static RubyCallbackMethod methodFloor = null;
+    private static RubyCallbackMethod methodCeil = null;
+    private static RubyCallbackMethod methodRound = null;
+    private static RubyCallbackMethod methodTruncate = null;
+    
     public static RubyClass createNumericClass(Ruby ruby) {
         RubyClass numericClass = ruby.defineClass("Numeric", ruby.getObjectClass());
      
-        // rb_include_module(rb_cNumeric, rb_mComparable);
+        numericClass.includeModule(ruby.getRubyClass("Comparable"));
+        
         numericClass.defineMethod("coerce", getMethodCoerce());
         numericClass.defineMethod("clone", getMethodClone());
         
@@ -61,16 +71,16 @@ public class RbNumeric {
         numericClass.defineMethod("divmod", getMethodDivmod());
         numericClass.defineMethod("modulo", getMethodModulo());
         numericClass.defineMethod("remainder", getMethodRemainder());
-        // rb_define_method(rb_cNumeric, "abs", num_abs, 0);
-
-        // rb_define_method(rb_cNumeric, "integer?", num_int_p, 0);
-        // rb_define_method(rb_cNumeric, "zero?", num_zero_p, 0);
-        // rb_define_method(rb_cNumeric, "nonzero?", num_nonzero_p, 0);
-
-        // rb_define_method(rb_cNumeric, "floor", num_floor, 0);
-        // rb_define_method(rb_cNumeric, "ceil", num_ceil, 0);
-        // rb_define_method(rb_cNumeric, "round", num_round, 0);
-        // rb_define_method(rb_cNumeric, "truncate", num_truncate, 0);
+        numericClass.defineMethod("abs", getMethodAbs());
+        
+        numericClass.defineMethod("integer?", getMethodIntP());
+        numericClass.defineMethod("zero?", getMethodZeroP());
+        numericClass.defineMethod("nonzero?", getMethodNonzeroP());
+        
+        numericClass.defineMethod("floor", getMethodFloor());
+        numericClass.defineMethod("ceil", getMethodCeil());
+        numericClass.defineMethod("round", getMethodRound());
+        numericClass.defineMethod("truncate", getMethodTruncate());
 
         return numericClass;
     }
@@ -201,19 +211,99 @@ public class RbNumeric {
         return methodRemainder;
     }
 
-    /*public static RubyCallbackMethod getMethodAbs() {
-        if (method == null) {
-            method = new RubyCallbackMethod() {
+    public static RubyCallbackMethod getMethodAbs() {
+        if (methodAbs == null) {
+            methodAbs = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    if (args.length < 1) {
-                        throw new RubyArgumentException();
-                    }
-                    
-                    return ((RubyNumeric)recv).m_((RubyNumeric)args[0]);
+                    return ((RubyNumeric)recv).m_abs();
                 }
             };
         }
         
-        return method;
-    }*/
+        return methodAbs;
+    }
+
+    public static RubyCallbackMethod getMethodIntP() {
+        if (methodIntP == null) {
+            methodIntP = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_int_p();
+                }
+            };
+        }
+        
+        return methodIntP;
+    }
+
+    public static RubyCallbackMethod getMethodZeroP() {
+        if (methodZeroP == null) {
+            methodZeroP = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_zero_p();
+                }
+            };
+        }
+        
+        return methodZeroP;
+    }
+
+    public static RubyCallbackMethod getMethodNonzeroP() {
+        if (methodNonzeroP == null) {
+            methodNonzeroP = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_nonzero_p();
+                }
+            };
+        }
+        
+        return methodNonzeroP;
+    }
+
+    public static RubyCallbackMethod getMethodFloor() {
+        if (methodFloor == null) {
+            methodFloor = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_floor();
+                }
+            };
+        }
+        
+        return methodFloor;
+    }
+
+    public static RubyCallbackMethod getMethodCeil() {
+        if (methodCeil == null) {
+            methodCeil = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_ceil();
+                }
+            };
+        }
+        
+        return methodCeil;
+    }
+    
+    public static RubyCallbackMethod getMethodRound() {
+        if (methodRound == null) {
+            methodRound = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_round();
+                }
+            };
+        }
+        
+        return methodRound;
+    }
+
+    public static RubyCallbackMethod getMethodTruncate() {
+        if (methodTruncate == null) {
+            methodTruncate = new RubyCallbackMethod() {
+                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                    return ((RubyNumeric)recv).m_truncate();
+                }
+            };
+        }
+        
+        return methodTruncate;
+    }
 }

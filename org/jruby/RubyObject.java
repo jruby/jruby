@@ -326,8 +326,9 @@ public class RubyObject implements VALUE {
     public RubyBoolean m_equal(RubyObject obj) {
         if (this == obj) {
             return getRuby().getTrue();
+        } else {
+            return (RubyBoolean)funcall(getRuby().intern("=="), obj);
         }
-        return getRuby().getFalse();
     }
     
     /** rb_obj_id
