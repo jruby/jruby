@@ -610,7 +610,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
         }
         getRuby().pushClass(ruby.getCBase());
-        ruby.setInEval(ruby.getInEval() + 1);
         if (ruby.getRubyClass().isIncluded()) {
             ruby.setRubyClass(((RubyIncludedClass) ruby.getRubyClass()).getDelegate());
         }
@@ -650,7 +649,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             */
         } finally {
             ruby.popClass();
-            ruby.setInEval(ruby.getInEval());
             if (!scope.isNil()) {
                 /*
                 int dont_recycle = ruby_scope->flag & SCOPE_DONT_RECYCLE;

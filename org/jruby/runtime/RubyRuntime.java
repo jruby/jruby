@@ -141,25 +141,11 @@ public class RubyRuntime {
 		ruby.setCurrentMethodScope(Constants.SCOPE_PRIVATE);
 
 		try {
-			// RubyId last_func = ruby.getRubyFrame().getLastFunc();
-			// DEFER_INTS;
-
-			// FIXME
-			ruby.setInEval(ruby.getInEval() + 1);
-
 			INode node = ruby.parse(source.toString(), scriptName.getValue());
-
-			// ---
-			ruby.setInEval(ruby.getInEval() - 1);
-
 			self.eval(node);
+
 		} finally {
 			ruby.getCurrentFrame().setLastFunc(last_func);
-
-			/*if (ruby.getRubyScope().getFlags() == SCOPE_ALLOCA && ruby.getRubyClass() == ruby.getClasses().getObjectClass()) {
-			  if (ruby_scope->local_tbl)
-			  free(ruby_scope->local_tbl);
-			  }*/
 			ruby.setNamespace(savedNamespace);
 			ruby.getScope().pop();
 			ruby.getFrameStack().pop();
@@ -167,11 +153,6 @@ public class RubyRuntime {
 			RubyVarmap.pop(ruby);
 			ruby.setWrapper(wrapper);
 		}
-
-		/*if (ruby_nerrs > 0) {
-		  ruby_nerrs = 0;
-		  rb_exc_raise(ruby_errinfo);
-		  }*/
 	}
 
 	/** This method loads, compiles and interprets a Ruby file.

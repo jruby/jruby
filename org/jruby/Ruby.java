@@ -41,18 +41,9 @@ import java.util.Random;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
-import org.ablaf.lexer.LexerFactory;
-import org.ablaf.parser.IParser;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.ZeroArgNode;
-import org.jruby.common.RubyErrorHandler;
 import org.jruby.evaluator.*;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LoadError;
-import org.jruby.exceptions.NextJump;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnException;
 import org.jruby.exceptions.RubyBugException;
@@ -63,14 +54,12 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.*;
 import org.jruby.runtime.AliasGlobalVariable;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.Namespace;
 import org.jruby.runtime.ObjectSpace;
@@ -157,11 +146,8 @@ public final class Ruby {
     private String sourceFile;
     private int sourceLine;
 
-    private int inEval;
+    private boolean isVerbose;
 
-    private boolean verbose;
-
-    //
     private BlockStack block = new BlockStack(this);
 
     private int currentMethodScope;
@@ -170,9 +156,6 @@ public final class Ruby {
 
     private RubyStack classStack = new RubyStack(new LinkedList());
     public RubyStack varMapStack = new RubyStack(new LinkedList());
-
-    // init
-    private boolean initialized = false;
 
     // Java support
     private JavaSupport javaSupport;
@@ -359,18 +342,7 @@ public final class Ruby {
      *
      */
     public RubyObject getTopConstant(String id) {
-        if (getClasses().getClass(id) != null) {
-            return (RubyObject) getClasses().getClass(id);
-        }
-
-        /* autoload */
-        // if (autoload_tbl && st_lookup(autoload_tbl, id, 0)) {
-        //    rb_autoload_load(id);
-        //    *klassp = rb_const_get(rb_cObject, id);
-        //    return Qtrue;
-        //}
-
-        return null;
+        return getClasses().getClass(id);
     }
 
     /**
@@ -383,13 +355,6 @@ public final class Ruby {
     public boolean isClassDefined(String name) {
         return classes.getClass(name) != null;
     }
-
-    /* public RubyInterpreter getInterpreter() {
-        if (rubyInterpreter == null) {
-            rubyInterpreter = new RubyInterpreter(this);
-        }
-        return rubyInterpreter;
-    }*/
 
     public Iterator globalVariableNames() {
         return globalMap.keySet().iterator();
@@ -558,11 +523,11 @@ public final class Ruby {
         this.sourceLine = sourceLine;
     }
 
-    /** Getter for property verbose.
-     * @return Value of property verbose.
+    /** Getter for property isVerbose.
+     * @return Value of property isVerbose.
      */
     public boolean isVerbose() {
-        return verbose;
+        return isVerbose;
     }
 
     public boolean isBlockGiven() {
@@ -582,11 +547,11 @@ public final class Ruby {
         setRubyClass((RubyModule) classStack.pop());
     }
 
-    /** Setter for property verbose.
-     * @param verbose New value of property verbose.
+    /** Setter for property isVerbose.
+     * @param verbose New value of property isVerbose.
      */
     public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
+        this.isVerbose = verbose;
     }
 
     /** Getter for property dynamicVars.
@@ -615,20 +580,6 @@ public final class Ruby {
      */
     public void setRubyClass(org.jruby.RubyModule rubyClass) {
         this.rubyClass = rubyClass;
-    }
-
-    /** Getter for property inEval.
-     * @return Value of property inEval.
-     */
-    public int getInEval() {
-        return inEval;
-    }
-
-    /** Setter for property inEval.
-     * @param inEval New value of property inEval.
-     */
-    public void setInEval(int inEval) {
-        this.inEval = inEval;
     }
 
     public final FrameStack getFrameStack() {
