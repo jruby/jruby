@@ -227,6 +227,14 @@ public class LoadService implements ILoadService {
             // otherwise, try to load from classpath
             URL loc = Thread.currentThread().getContextClassLoader().getResource(name);
             
+            // libraries is a name in a jar file to allow jar files to include modules into the
+            // distribution classpath.  We should perhaps kill this in favor of moving src/library
+            // files into top of jar file via ant build process?
+            if (loc == null) {
+            	loc = 
+            		Thread.currentThread().getContextClassLoader().getResource("libraries/" + name);
+            }
+            
             // make sure resource URL has something available or return null
             if (loc != null) {
 	            try {
