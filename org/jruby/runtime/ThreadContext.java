@@ -163,6 +163,24 @@ public class ThreadContext {
         return getScopeStack().current().getVisibility();
     }
 
+    public IRubyObject callSuper(IRubyObject[] args) {
+        if (getCurrentFrame().getLastClass() == null) {
+            throw new NameError(
+                ruby,
+                "superclass method '" + getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
+        }
+        getIterStack().push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
+        try {
+            RubyClass superClass = getCurrentFrame().getLastClass().getSuperClass();
+            return superClass.call(getCurrentFrame().getSelf(),
+                                   getCurrentFrame().getLastFunc(),
+                                   args,
+                                   CallType.SUPER);
+        } finally {
+            getIterStack().pop();
+        }
+    }
+
     public IRubyObject yield(IRubyObject value, IRubyObject self, RubyModule klass, boolean checkArguments) {
         if (! ruby.isBlockGiven()) {
             throw new RaiseException(ruby, ruby.getExceptions().getLocalJumpError(), "yield called out of block");

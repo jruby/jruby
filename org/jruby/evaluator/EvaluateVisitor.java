@@ -1359,14 +1359,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
-
-        threadContext.getIterStack().push(threadContext.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
-        try {
-            RubyClass superClass = threadContext.getCurrentFrame().getLastClass().getSuperClass();
-            result = superClass.call(threadContext.getCurrentFrame().getSelf(), threadContext.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
-        } finally {
-            threadContext.getIterStack().pop();
-        }
+        threadContext.callSuper(args);
     }
 
     /**
@@ -1485,16 +1478,8 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (threadContext.getCurrentFrame().getLastClass() == null) {
             throw new NameError(runtime, "superclass method '" + runtime.getCurrentFrame().getLastFunc() + "' disabled");
         }
-
         IRubyObject[] args = threadContext.getCurrentFrame().getArgs();
-
-        threadContext.getIterStack().push(threadContext.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
-        try {
-            RubyClass superClass = threadContext.getCurrentFrame().getLastClass().getSuperClass();
-            result = superClass.call(threadContext.getCurrentFrame().getSelf(), threadContext.getCurrentFrame().getLastFunc(), args, CallType.SUPER);
-        } finally {
-            threadContext.getIterStack().pop();
-        }
+        threadContext.callSuper(args);
     }
 
     /**

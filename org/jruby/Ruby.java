@@ -53,7 +53,6 @@ import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.IOError;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
@@ -77,7 +76,6 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
@@ -784,23 +782,7 @@ public final class Ruby {
     }
 
     public IRubyObject callSuper(IRubyObject[] args) {
-        if (getCurrentFrame().getLastClass() == null) {
-            throw new NameError(
-                this,
-                "superclass method '" + getCurrentFrame().getLastFunc() + "' must be enabled by enableSuper().");
-        }
-
-        getIterStack().push(getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
-
-        try {
-            return getCurrentFrame().getLastClass().getSuperClass().call(
-                getCurrentFrame().getSelf(),
-                getCurrentFrame().getLastFunc(),
-                args,
-                CallType.SUPER);
-        } finally {
-            getIterStack().pop();
-        }
+        return getCurrentContext().callSuper(args);
     }
 
     public PrintStream getErrorStream() {
