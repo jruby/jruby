@@ -393,7 +393,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     /** rb_to_id
      *
      */
-    public String toId() {
+    public String asSymbol() {
         throw new TypeError(getRuntime(), inspect().getValue() + " is not a symbol");
     }
 
@@ -588,7 +588,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     public RubyBoolean respond_to(IRubyObject[] args) {
         argCount(args, 1, 2);
 
-        String name = args[0].toId();
+        String name = args[0].asSymbol();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
         return RubyBoolean.newBoolean(runtime, getInternalClass().isMethodBound(name, !includePrivate));
@@ -638,6 +638,18 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         } catch (CloneNotSupportedException cnsExcptn) {
             Asserts.notReached(cnsExcptn.getMessage());
             return null;
+        }
+    }
+    
+    protected void copyObjectTo(IRubyObject destination) {
+        if (destination.isFrozen()) {
+            throw new TypeError(runtime, "[bug] frozen object (" + destination.getType().toName() + ") allocated");
+        }
+        destination.setTaint(destination.isTaint() || isTaint());
+        destination.callMethod("become", this);
+        destination.setInstanceVariables(null);
+        if (getInstanceVariables() != null) {
+            destination.setInstanceVariables(new RubyHashMap(getInstanceVariables()));
         }
     }
 
@@ -818,7 +830,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public IRubyObject method(IRubyObject symbol) {
-        return getInternalClass().newMethod(this, symbol.toId(), true);
+        return getInternalClass().newMethod(this, symbol.asSymbol(), true);
     }
 
     public RubyArray to_a() {
@@ -857,7 +869,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             throw new ArgumentError(getRuntime(), "no id given");
         }
 
-        String name = args[0].toId();
+        String name = args[0].asSymbol();
 
         String description = callMethod("inspect").toString();
         boolean noClass = description.charAt(0) == '#';
@@ -907,7 +919,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         if (args.length < 1) {
             throw new ArgumentError(runtime, "no method name given");
         }
-        String name = args[0].toId();
+        String name = args[0].asSymbol();
 
         IRubyObject[] newArgs = new IRubyObject[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);

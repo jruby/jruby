@@ -90,7 +90,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     }
 
     public static JavaClassClass for_name(IRubyObject recv, IRubyObject name) {
-        return new JavaClassClass(recv.getRuntime(), name.toId());
+        return new JavaClassClass(recv.getRuntime(), name.asSymbol());
     }
 
     public RubyBoolean public_p() {
@@ -164,7 +164,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
         if (args.length < 1) {
             throw new ArgumentError(getRuntime(), args.length, 1);
         }
-        String methodName = args[0].toId();
+        String methodName = args[0].asSymbol();
         Class[] argumentTypes = new Class[args.length - 1];
         for (int i = 1; i < args.length; i++) {
             JavaClassClass type = for_name(this, args[i]);
@@ -185,7 +185,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
     public JavaConstructorClass constructor(IRubyObject[] args) {
         Class[] parameterTypes = new Class[args.length];
         for (int i = 0; i < args.length; i++) {
-            String name = args[i].toId();
+            String name = args[i].asSymbol();
             parameterTypes[i] = getRuntime().getJavaSupport().loadJavaClass(name);
         }
         Constructor constructor;

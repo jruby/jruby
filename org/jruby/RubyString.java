@@ -350,7 +350,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	/** rb_to_id
 	 *
 	 */
-	public String toId() {
+	public String asSymbol() {
 		return getValue();
 	}
 

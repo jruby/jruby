@@ -66,15 +66,7 @@ public class RubyBoolean extends RubyObject {
     public static RubyClass createFalseClass(Ruby ruby) {
         RubyClass falseClass = ruby.defineClass("FalseClass", ruby.getClasses().getObjectClass());
 
-        falseClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBoolean.class, "to_s"));
         falseClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
-
-        falseClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", IRubyObject.class));
-        falseClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", IRubyObject.class));
-        falseClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", IRubyObject.class));
-        falseClass.defineMethod("id", CallbackFactory.getMethod(RubyBoolean.class, "id"));
-
-        falseClass.getInternalClass().undefMethod("new");
 
         ruby.defineGlobalConstant("FALSE", ruby.getFalse());
 
@@ -84,15 +76,7 @@ public class RubyBoolean extends RubyObject {
     public static RubyClass createTrueClass(Ruby ruby) {
         RubyClass trueClass = ruby.defineClass("TrueClass", ruby.getClasses().getObjectClass());
 
-        trueClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBoolean.class, "to_s"));
         trueClass.defineMethod("type", CallbackFactory.getMethod(RubyBoolean.class, "type"));
-
-        trueClass.defineMethod("&", CallbackFactory.getMethod(RubyBoolean.class, "op_and", IRubyObject.class));
-        trueClass.defineMethod("|", CallbackFactory.getMethod(RubyBoolean.class, "op_or", IRubyObject.class));
-        trueClass.defineMethod("^", CallbackFactory.getMethod(RubyBoolean.class, "op_xor", IRubyObject.class));
-        trueClass.defineMethod("id", CallbackFactory.getMethod(RubyBoolean.class, "id"));
-
-        trueClass.getInternalClass().undefMethod("new");
 
         ruby.defineGlobalConstant("TRUE", ruby.getTrue());
 
@@ -107,66 +91,12 @@ public class RubyBoolean extends RubyObject {
         }
     }
 
-    // Methods of the False class (false_*)
-
-    /** false_to_s
-     *  true_to_s
-     *
-     */
-    public RubyString to_s() {
-        if (value) {
-            return RubyString.newString(getRuntime(), "true");
-        } else {
-            return RubyString.newString(getRuntime(), "false");
-        }
-    }
-
-    /** false_type
+        /** false_type
      *  true_type
      *
      */
     public RubyClass type() {
         return getInternalClass();
-    }
-
-    /** false_and
-     *  true_and
-     *
-     */
-    public RubyBoolean op_and(IRubyObject obj) {
-        if (isTrue() && obj.isTrue()) {
-            return getRuntime().getTrue();
-        } else {
-            return getRuntime().getFalse();
-        }
-    }
-
-    /** false_or
-     *  true_or
-     *
-     */
-    public RubyBoolean op_or(IRubyObject obj) {
-        if (isFalse() && !obj.isTrue()) {
-            return getRuntime().getFalse();
-        } else {
-            return getRuntime().getTrue();
-        }
-    }
-
-    /** false_xor
-     *  true_xor
-     *
-     */
-    public RubyBoolean op_xor(IRubyObject obj) {
-        if ((isTrue() && !obj.isTrue()) || (isFalse() && obj.isTrue())) {
-            return getRuntime().getTrue();
-        } else {
-            return getRuntime().getFalse();
-        }
-    }
-
-    public RubyFixnum id() {
-        return RubyFixnum.newFixnum(getRuntime(), (value ? 2 : 0));
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

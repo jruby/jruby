@@ -175,7 +175,7 @@ public class UnmarshalStream extends FilterInputStream {
 
         // ... FIXME: handle if class doesn't exist ...
 
-        RubyClass type = (RubyClass) runtime.getClasses().getClassFromPath(className.toId());
+        RubyClass type = (RubyClass) runtime.getClasses().getClassFromPath(className.asSymbol());
 
         Asserts.assertNotNull(type, "type shouldn't be null.");
 
@@ -183,14 +183,14 @@ public class UnmarshalStream extends FilterInputStream {
         registerLinkTarget(result);
 
         for (int i = 0, count = unmarshalInt(); i < count; i++) {
-            result.setInstanceVariable(unmarshalObject().toId(), unmarshalObject());
+            result.setInstanceVariable(unmarshalObject().asSymbol(), unmarshalObject());
         }
 
         return result;
     }
 
     private IRubyObject userUnmarshal() throws IOException {
-        String className = ((RubySymbol) unmarshalObject()).toId();
+        String className = ((RubySymbol) unmarshalObject()).asSymbol();
         String marshaled = unmarshalString();
         RubyModule classInstance = runtime.getRubyModule(className);
         IRubyObject result = classInstance.callMethod(

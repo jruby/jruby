@@ -318,7 +318,7 @@ public class RubyHash extends RubyObject {
             realKey.setFrozen(true);
             valueMap.put(realKey, value);
         }
-        return this;
+        return value;
     }
 
     public IRubyObject aref(IRubyObject key) {

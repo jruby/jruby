@@ -169,10 +169,11 @@ public interface IRubyObject {
     void extendObject(RubyModule rubyModule);
 
     /**
-     * Method toId.
-     * @return String
+     * Convert the object into a symbol name if possible.
+     * 
+     * @return String the symbol name
      */
-    String toId();
+    String asSymbol();
 
     /**
      * Method convertToType.
@@ -275,4 +276,6 @@ public interface IRubyObject {
      * @param callback
      */
     void defineSingletonMethod(String name, Callback callback);
+
+    void setInstanceVariables(RubyMap map);
 }

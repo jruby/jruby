@@ -270,4 +270,18 @@ public class RubyClass extends RubyModule {
     public static RubyModule unmarshalFrom(UnmarshalStream output) throws java.io.IOException {
         return (RubyClass) RubyModule.unmarshalFrom(output);
     }
+    
+    /**
+     * Creates a new object of this class by calling the 'allocate' method.
+     * This class must be the type of the new object.
+     * 
+     * @return the new allocated object.
+     */
+    public IRubyObject allocateObject() {
+        IRubyObject newObject = callMethod("allocate");
+        if (newObject.getType() != getRealClass()) {
+            throw new TypeError(runtime, "wrong instance allocation");
+        }
+        return newObject;
+    }
 }

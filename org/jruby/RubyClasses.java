@@ -259,6 +259,8 @@ public class RubyClasses {
     }
 
     public void initBuiltinClasses() {
+        loadBuiltin("FalseClass");
+        loadBuiltin("TrueClass");
         loadBuiltin("Enumerable");
         loadBuiltin("javasupport");
     }

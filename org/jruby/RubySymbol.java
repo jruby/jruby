@@ -61,7 +61,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
     /** rb_to_id
      *
      */
-    public String toId() {
+    public String asSymbol() {
         return symbol;
     }
 
@@ -212,7 +212,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
 
         public void store(RubySymbol symbol) {
             clean();
-            table.put(symbol.toId(), new WeakSymbolEntry(symbol));
+            table.put(symbol.asSymbol(), new WeakSymbolEntry(symbol));
         }
 
         private void clean() {
@@ -227,7 +227,7 @@ public class RubySymbol extends RubyObject implements IndexCallable {
 
             public WeakSymbolEntry(RubySymbol symbol) {
                 super(symbol, unusedSymbols);
-                this.name = symbol.toId();
+                this.name = symbol.asSymbol();
             }
 
             private String name() {

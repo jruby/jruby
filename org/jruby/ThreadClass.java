@@ -213,7 +213,7 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     private String keyName(IRubyObject key) {
         String name;
         if (key instanceof RubySymbol) {
-            name = ((RubySymbol) key).toId();
+            name = ((RubySymbol) key).asSymbol();
         } else if (key instanceof RubyString) {
             name = ((RubyString) key).getValue();
         } else {

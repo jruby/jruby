@@ -122,7 +122,7 @@ public class RubyStruct extends RubyObject {
         modify();
 
         for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).toId().equals(name)) {
+            if (member.entry(i).asSymbol().equals(name)) {
                 return values[i] = value;
             }
         }
@@ -136,7 +136,7 @@ public class RubyStruct extends RubyObject {
         Asserts.assertTrue(!member.isNil(), "uninitialized struct");
 
         for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).toId().equals(name)) {
+            if (member.entry(i).asSymbol().equals(name)) {
                 return values[i];
             }
         }
@@ -161,7 +161,7 @@ public class RubyStruct extends RubyObject {
         RubyArray member = RubyArray.newArray(recv.getRuntime());
 
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            member.append(RubySymbol.newSymbol(recv.getRuntime(), args[i].toId()));
+            member.append(RubySymbol.newSymbol(recv.getRuntime(), args[i].asSymbol()));
         }
 
         RubyClass newStruct;
@@ -184,7 +184,7 @@ public class RubyStruct extends RubyObject {
 
         // define access methods.
         for (int i = name == null ? 0 : 1; i < args.length; i++) {
-            String memberName = args[i].toId();
+            String memberName = args[i].asSymbol();
             newStruct.defineMethod(memberName, CallbackFactory.getMethod(RubyStruct.class, "get"));
             newStruct.defineMethod(memberName + "=", CallbackFactory.getMethod(RubyStruct.class, "set", IRubyObject.class));
         }
@@ -236,7 +236,7 @@ public class RubyStruct extends RubyObject {
 
         RubyArray result = RubyArray.newArray(recv.getRuntime(), member.getLength());
         for (int i = 0; i < member.getLength(); i++) {
-            result.append(RubyString.newString(recv.getRuntime(), member.entry(i).toId()));
+            result.append(RubyString.newString(recv.getRuntime(), member.entry(i).asSymbol()));
         }
 
         return result;
@@ -259,7 +259,7 @@ public class RubyStruct extends RubyObject {
         modify();
 
         for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).toId().equals(name)) {
+            if (member.entry(i).asSymbol().equals(name)) {
                 return values[i] = value;
             }
         }
@@ -275,7 +275,7 @@ public class RubyStruct extends RubyObject {
         Asserts.assertTrue(!member.isNil(), "uninitialized struct");
 
         for (int i = 0; i < member.getLength(); i++) {
-            if (member.entry(i).toId().equals(name)) {
+            if (member.entry(i).asSymbol().equals(name)) {
                 return values[i];
             }
         }
@@ -327,7 +327,7 @@ public class RubyStruct extends RubyObject {
                 sb.append(", ");
             }
 
-            sb.append(member.entry(i).toId()).append("=");
+            sb.append(member.entry(i).asSymbol()).append("=");
             sb.append(values[i].callMethod("inspect"));
         }
 
@@ -354,7 +354,7 @@ public class RubyStruct extends RubyObject {
 
     public IRubyObject aref(IRubyObject key) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
-            return getByName(key.toId());
+            return getByName(key.asSymbol());
         }
 
         int idx = RubyFixnum.fix2int(key);
@@ -372,7 +372,7 @@ public class RubyStruct extends RubyObject {
 
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         if (key instanceof RubyString || key instanceof RubySymbol) {
-            return setByName(key.toId(), value);
+            return setByName(key.asSymbol(), value);
         }
 
         int idx = RubyFixnum.fix2int(key);
@@ -412,7 +412,7 @@ public class RubyStruct extends RubyObject {
         Ruby ruby = input.getRuntime();
 
         RubySymbol className = (RubySymbol) input.unmarshalObject();
-        RubyClass rbClass = pathToClass(ruby, className.toId());
+        RubyClass rbClass = pathToClass(ruby, className.asSymbol());
         if (rbClass == null) {
             throw new NameError(ruby, "uninitialized constant " + className);
         }

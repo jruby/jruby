@@ -217,7 +217,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if (!re.source().getValue().equals(pattern)) {
             return getRuntime().getFalse();
         }
-        if (re.casefold().op_xor(casefold()).isTrue()) {
+        if (matcher.getCasefold() ^ re.matcher.getCasefold()) {
             return getRuntime().getFalse();
         }
         return getRuntime().getTrue();

@@ -228,8 +228,8 @@ public class ThreadContext {
             }
         } catch (NextJump nExcptn) {
             return ruby.getNil();
-        } catch (BreakJump rExcptn) {
-            throw new ReturnJump(ruby.getNil());
+        /*} catch (BreakJump rExcptn) {
+            return ruby.getNil(); */
         } finally {
             getIterStack().pop();
             ruby.popClass();

@@ -59,7 +59,7 @@ public class KernelModule {
 
     public static IRubyObject autoload(IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         final ILoadService loadService = recv.getRuntime().getLoadService();
-        loadService.addAutoload(symbol.toId(), new IAutoloadMethod() {
+        loadService.addAutoload(symbol.asSymbol(), new IAutoloadMethod() {
             /**
              * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
              */
@@ -415,7 +415,7 @@ public class KernelModule {
         try {
             return recv.getRuntime().yield(tag);
         } catch (ThrowJump throwJump) {
-            if (throwJump.getTag().equals(tag.toId())) {
+            if (throwJump.getTag().equals(tag.asSymbol())) {
                 return throwJump.getValue();
             } else {
                 throw throwJump;
@@ -424,7 +424,7 @@ public class KernelModule {
     }
 
     public static IRubyObject rbThrow(IRubyObject recv, IRubyObject[] args) {
-        throw new ThrowJump(args[0].toId(), args.length > 1 ? args[1] : recv.getRuntime().getNil());
+        throw new ThrowJump(args[0].asSymbol(), args.length > 1 ? args[1] : recv.getRuntime().getNil());
     }
 
     public static IRubyObject set_trace_func(IRubyObject recv, IRubyObject trace_func) {

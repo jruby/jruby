@@ -437,9 +437,9 @@ public class RubyModule extends RubyObject {
     public IRubyObject constant_missing(IRubyObject name) {
         
         // Now try to load a Java class
-        String javaClassName = getRuntime().getJavaSupport().getJavaName(name.toId());
+        String javaClassName = getRuntime().getJavaSupport().getJavaName(name.asSymbol());
         if (javaClassName == null) {
-            javaClassName = name.toId();
+            javaClassName = name.asSymbol();
         }
 
         try {
@@ -450,9 +450,9 @@ public class RubyModule extends RubyObject {
         
         /* Uninitialized constant */
         if (this != getRuntime().getClasses().getObjectClass()) {
-            throw new NameError(getRuntime(), "uninitialized constant " + name.toId() + " at " + getClassPath());
+            throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol() + " at " + getClassPath());
         } else {
-            throw new NameError(getRuntime(), "uninitialized constant " + name.toId());
+            throw new NameError(getRuntime(), "uninitialized constant " + name.asSymbol());
         }
     }
 
@@ -892,16 +892,15 @@ public class RubyModule extends RubyObject {
      *
      */
     public String toName() {
+        // REMOVE +++ in 1.7
         if (this == getRuntime().getClasses().getNilClass()) {
-            return "NilClass";
+            return "nil";
+        } else if (this == getRuntime().getClasses().getTrueClass()) {
+            return "true";
+        } else if (this == getRuntime().getClasses().getFalseClass()) {
+            return "false";
         }
-        if (this == getRuntime().getClasses().getTrueClass()) {
-            return "TrueClass";
-        }
-        if (this == getRuntime().getClasses().getFalseClass()) {
-            return "FalseClass";
-        }
-
+        // REMOVE ---
         return getClassPath();
     }
 
@@ -924,8 +923,8 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject removeCvar(IRubyObject name) { // Wrong Parameter ?
-        if (!IdUtil.isClassVariable(name.toId())) {
-            throw new NameError(getRuntime(), "wrong class variable name " + name.toId());
+        if (!IdUtil.isClassVariable(name.asSymbol())) {
+            throw new NameError(getRuntime(), "wrong class variable name " + name.asSymbol());
         }
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
@@ -936,17 +935,17 @@ public class RubyModule extends RubyObject {
             throw new FrozenError(getRuntime(), "class/module");
         }
 
-        IRubyObject value = removeInstanceVariable(name.toId());
+        IRubyObject value = removeInstanceVariable(name.asSymbol());
 
         if (value != null) {
             return value;
         }
 
-        if (isClassVarDefined(name.toId())) {
-            throw new NameError(getRuntime(), "cannot remove " + name.toId() + " for " + toName());
+        if (isClassVarDefined(name.asSymbol())) {
+            throw new NameError(getRuntime(), "cannot remove " + name.asSymbol() + " for " + toName());
         }
 
-        throw new NameError(getRuntime(), "class variable " + name.toId() + " not defined for " + toName());
+        throw new NameError(getRuntime(), "class variable " + name.asSymbol() + " not defined for " + toName());
     }
 
     private void addAttribute(String name, boolean read, boolean write, boolean ex) {
@@ -1009,7 +1008,7 @@ public class RubyModule extends RubyObject {
         }
 
         for (int i = 0; i < methods.length; i++) {
-            exportMethod(methods[i].toId(), visibility);
+            exportMethod(methods[i].asSymbol(), visibility);
         }
     }
 
@@ -1099,7 +1098,7 @@ public class RubyModule extends RubyObject {
         if (args.length < 1 || args.length > 2) {
             throw new ArgumentError(runtime, "wrong # of arguments(" + args.length + " for 1)");
         }
-        String name = args[0].toId();
+        String name = args[0].asSymbol();
 
         IRubyObject body;
         if (args.length == 1) {
@@ -1420,7 +1419,7 @@ public class RubyModule extends RubyObject {
             writeable = args[0].isTrue();
         }
 
-        addAttribute(symbol.toId(), true, writeable, true);
+        addAttribute(symbol.asSymbol(), true, writeable, true);
 
         return getRuntime().getNil();
     }
@@ -1430,7 +1429,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_reader(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol) args[i]).toId(), true, false, true);
+            addAttribute(((RubySymbol) args[i]).asSymbol(), true, false, true);
         }
 
         return getRuntime().getNil();
@@ -1441,7 +1440,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_writer(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol) args[i]).toId(), false, true, true);
+            addAttribute(((RubySymbol) args[i]).asSymbol(), false, true, true);
         }
 
         return getRuntime().getNil();
@@ -1452,7 +1451,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject attr_accessor(IRubyObject[] args) {
         for (int i = 0; i < args.length; i++) {
-            addAttribute(((RubySymbol) args[i]).toId(), true, true, true);
+            addAttribute(((RubySymbol) args[i]).asSymbol(), true, true, true);
         }
 
         return getRuntime().getNil();
@@ -1462,7 +1461,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject const_get(IRubyObject symbol) {
-        String name = symbol.toId();
+        String name = symbol.asSymbol();
 
         if (!IdUtil.isConstant(name)) {
             throw new NameError(getRuntime(), "wrong constant name " + name);
@@ -1475,7 +1474,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        String name = symbol.toId();
+        String name = symbol.asSymbol();
 
         if (!IdUtil.isConstant(name)) {
             throw new NameError(getRuntime(), "wrong constant name " + name);
@@ -1490,7 +1489,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyBoolean const_defined(IRubyObject symbol) {
-        String name = symbol.toId();
+        String name = symbol.asSymbol();
 
         if (!IdUtil.isConstant(name)) {
             throw new NameError(getRuntime(), "wrong constant name " + name);
@@ -1540,7 +1539,7 @@ public class RubyModule extends RubyObject {
     }
     
     public IRubyObject instance_method(IRubyObject symbol) {
-        return newMethod(null, symbol.toId(), false);
+        return newMethod(null, symbol.asSymbol(), false);
     }
 
     /** rb_class_protected_instance_methods
@@ -1576,7 +1575,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public IRubyObject remove_class_variable(IRubyObject name) {
-        String id = name.toId();
+        String id = name.asSymbol();
 
         if (!IdUtil.isClassVariable(id)) {
             throw new NameError(getRuntime(), "wrong class variable name " + id);
@@ -1688,7 +1687,7 @@ public class RubyModule extends RubyObject {
             setMethodVisibility(args, Visibility.PRIVATE);
 
             for (int i = 0; i < args.length; i++) {
-                String name = args[i].toId();
+                String name = args[i].asSymbol();
                 ICallable method = searchMethod(name);
                 Asserts.assertTrue(!method.isUndefined(), "undefined method '" + name + "'");
                 getSingletonClass().addMethod(name, new WrapperCallable(method, Visibility.PUBLIC));
@@ -1699,7 +1698,7 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyBoolean method_defined(IRubyObject symbol) {
-        return isMethodBound(symbol.toId(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return isMethodBound(symbol.asSymbol(), true) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public RubyModule public_class_method(IRubyObject[] args) {
@@ -1713,12 +1712,12 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule alias_method(IRubyObject newId, IRubyObject oldId) {
-        aliasMethod(newId.toId(), oldId.toId());
+        aliasMethod(newId.asSymbol(), oldId.asSymbol());
         return this;
     }
 
     public RubyModule undef_method(IRubyObject name) {
-        undef(name.toId());
+        undef(name.asSymbol());
         return this;
     }
 
@@ -1727,7 +1726,7 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule remove_method(IRubyObject name) {
-        removeMethod(name.toId());
+        removeMethod(name.asSymbol());
         return this;
     }
 
