@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path=""/>
+    <classpathentry kind="lib" path="/opt/apps/j2sdk1.4.0/jre/lib/rt.jar"/>
+    <classpathentry kind="var" path="JRE_LIB" rootpath="JRE_SRCROOT" sourcepath="JRE_SRC"/>
+    <classpathentry kind="lib" path="/home/jpetersen/development/bsf/lib/bsf.jar"/>
+    <classpathentry kind="output" path=""/>
+</classpath>
