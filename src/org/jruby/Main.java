@@ -83,7 +83,12 @@ public class Main {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
         
-        System.exit(status);
+        // Only do an explicit exit if the interpreter has had an error.  We
+        // do not want to exit on non-errors since the interpreter may have
+        // started background threads (ala samples/swing2.rb)
+        if (status != 0) {
+        	System.exit(status);
+        }
     }
 
     private static void showVersion() {
