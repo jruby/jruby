@@ -20,7 +20,7 @@
 * FIX build.xml (use a filtered copying to fill constants)
 
 * Marshalling
-    * Reading links
+    - Reading links
     - Don't link to special variables
     * Make bignum marshaling work for all bignum values
     - Don't store fixnums bigger than MRI's limit

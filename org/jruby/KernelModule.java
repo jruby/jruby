@@ -307,19 +307,25 @@ public class KernelModule {
     }
 
     public static IRubyObject raise(IRubyObject recv, IRubyObject args[]) {
+        Ruby runtime = recv.getRuntime();
         switch (args.length) {
         case 0 :
+            IRubyObject defaultException = runtime.getGlobalVar("$!");
+            if (defaultException.isNil()) {
+                throw new RaiseException(runtime, runtime.getExceptions().getRuntimeError(), "");
+            }
+            throw new RaiseException((RubyException) defaultException);
         case 1 :
             if (args[0] instanceof RubyException) {
                 throw new RaiseException((RubyException) args[0]);
             } else {
-                throw new RaiseException(RubyException.newInstance(recv.getRuntime().getExceptions().getRuntimeError(), args));
+                throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
             }
         case 2 :
             RubyException excptn = (RubyException) args[0].callMethod("exception", args[1]);
             throw new RaiseException(excptn);
         default :
-            throw new ArgumentError(recv.getRuntime(), "wrong # of arguments");
+            throw new ArgumentError(runtime, "wrong # of arguments");
         }
     }
 
