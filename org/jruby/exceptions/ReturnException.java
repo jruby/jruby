@@ -36,7 +36,7 @@ import org.jruby.*;
  * @author  jpetersen
  * @version $Revision$
  */
-public class ReturnException extends RuntimeException {
+public class ReturnException extends JumpException {
     private RubyObject returnValue;
 
 	/** Creates a new ReturnException with a return value.
