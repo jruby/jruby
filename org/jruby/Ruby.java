@@ -47,9 +47,9 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public final class Ruby {
-    public static final int FIXNUM_CACHE_MAX = 0xff;
-
     public static final String RUBY_VERSION = "1.6";
+    
+    public static final int FIXNUM_CACHE_MAX = 0xff;
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
 
     private HashMap methodCache = new HashMap();
@@ -82,7 +82,6 @@ public final class Ruby {
     private RubyObject rubyTopSelf;
 
     // Eval
-
     private RubyScope rubyScope = new RubyScope(this);
     private RubyScope topScope = null;
     private RubyVarmap dynamicVars = null;
@@ -882,13 +881,22 @@ public final class Ruby {
      */
     public RubyExceptions getExceptions() {
         return exceptions;
-    } /** defines a readonly global variable
-    	  * 
-    	  */
+    }
+
+    /** defines a readonly global variable
+     * 
+     */
     public void defineReadonlyVariable(String name, RubyObject value) {
         RubyGlobalEntry.defineReadonlyVariable(this, name, value);
     }
 
+    /** defines a readonly global variable
+     * 
+     */
+    public void defineHookedVariable(String name, RubyObject value, RubyGlobalEntry.GetterMethod getter, RubyGlobalEntry.SetterMethod setter) {
+        RubyGlobalEntry.defineHookedVariable(this, name, value, getter, setter);
+    }
+    
     /**
      * Init the LOAD_PATH variable.
      * MRI: eval.c:void Init_load()
@@ -909,27 +917,32 @@ public final class Ruby {
 
         //in MRI the ruby installation path is determined from the place where the ruby lib is found
         //of course we can't do that, let's just use the org.jruby.HOME property
-        String lRubyHome = System.getProperty("org.jruby.HOME");
-        String lRubyLib = System.getProperty("org.jruby.LIB");
-        for (int i = ioAdditionalDirectory.size() - 1; i >= 0; i--)
+        String lRubyHome = System.getProperty("jruby.home");
+        String lRubyLib = System.getProperty("jruby.lib");
+        
+        for (int i = ioAdditionalDirectory.size() - 1; i >= 0; i--) {
             ioAdditionalDirectory.set(i, new RubyString(this, (String) ioAdditionalDirectory.get(i)));
+        }
 
-        if (lRubyLib != null && lRubyLib.length() != 0)
+        if (lRubyLib != null && lRubyLib.length() != 0) {
             ioAdditionalDirectory.add(new RubyString(this, lRubyLib));
+        }
+        
         if (lRubyHome != null && lRubyHome.length() != 0) {
             //FIXME: use the version number in some other way than hardcoded here
-            String lRuby =
-                lRubyHome + java.io.File.separatorChar + "lib" + java.io.File.separatorChar + "ruby" + java.io.File.separatorChar;
+            String lRuby = lRubyHome + File.separatorChar + "lib" + File.separatorChar + "ruby" + File.separatorChar;
             String lSiteRuby = lRuby + "site_ruby";
-            String lSiteRubyVersion = lSiteRuby + java.io.File.separatorChar + RUBY_VERSION;
+            String lSiteRubyVersion = lSiteRuby + File.separatorChar + RUBY_VERSION;
+            String lArch = File.separatorChar + "JAVA";
+            String lRubyVersion = lRuby + RUBY_VERSION;
+
             ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion));
-            String lArch = java.io.File.separatorChar + "JAVA";
             ioAdditionalDirectory.add(new RubyString(this, lSiteRubyVersion + lArch));
             ioAdditionalDirectory.add(new RubyString(this, lSiteRuby));
-            String lRubyVersion = lRuby + RUBY_VERSION;
             ioAdditionalDirectory.add(new RubyString(this, lRubyVersion));
             ioAdditionalDirectory.add(new RubyString(this, lRubyVersion + lArch));
         }
+        
         //FIXME: safe level pb here
         ioAdditionalDirectory.add(new RubyString(this, "."));
         RubyArray rb_load_path = new RubyArray(this, ioAdditionalDirectory);

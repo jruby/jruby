@@ -3,6 +3,8 @@ package org.jruby;
 import java.io.*;
 
 import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
+import org.jruby.runtime.*;
 
 public class RubyIO extends RubyObject {
     private InputStream inStream = null;
@@ -19,6 +21,41 @@ public class RubyIO extends RubyObject {
 
 	public RubyIO(Ruby ruby, RubyClass type) {
 	    super(ruby, type);
+	}
+	
+	public static RubyClass createIOClass(Ruby ruby) {
+	    RubyClass ioClass = ruby.defineClass("IO", ruby.getClasses().getObjectClass());
+	    ioClass.includeModule(ruby.getClasses().getEnumerableModule());
+	    
+	    ioClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyIO.class, "newInstance"));
+	    ioClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyIO.class, "initialize"));
+	    
+	    ioClass.defineMethod("write", CallbackFactory.getMethod(RubyIO.class, "write", RubyObject.class));
+	    
+	    ioClass.defineMethod("<<", CallbackFactory.getMethod(RubyIO.class, "addString", RubyObject.class));
+	    
+	    ruby.defineHookedVariable("$stdin", stdin(ruby, ioClass), null, new StdInSetter());
+	    ruby.defineHookedVariable("$stdout", stdout(ruby, ioClass), null, new StdOutSetter());
+	    
+	    return ioClass;
+	}
+	
+	private static RubyObject stdin(Ruby ruby, RubyClass rubyClass) {
+	    RubyIO io = new RubyIO(ruby, rubyClass);
+
+	    io.inStream = ruby.getRuntime().getInputStream();
+	    io.readable = true;
+
+	    return io;
+	}
+	
+	private static RubyObject stdout(Ruby ruby, RubyClass rubyClass) {
+	    RubyIO io = new RubyIO(ruby, rubyClass);
+
+	    io.outStream = ruby.getRuntime().getOutputStream();
+	    io.writeable = true;
+
+	    return io;
 	}
 
 	protected void checkWriteable() {
@@ -116,7 +153,7 @@ public class RubyIO extends RubyObject {
 		    	outStream = getRuby().getRuntime().getErrorStream();
 		    	break;
 			default:
-				throw new IOError(getRuby(), "file descriptor " + fd + " is not supported by JRuby.");
+				throw new IOError(getRuby(), "Bad file descriptor");
 		}
 	}
 
@@ -187,5 +224,43 @@ public class RubyIO extends RubyObject {
 	    callWrite(anObject);
 	    
 	    return this;
+	}
+	
+	private static class StdInSetter implements RubyGlobalEntry.SetterMethod {
+        /*
+         * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            if (value == data) {
+                return;
+            } else if (!(value instanceof RubyIO)) {
+                entry.setData(value);
+                return;
+            } else {
+                ((RubyIO)value).checkReadable();
+                // ((RubyIO)value).fileno = 0;
+                
+                entry.setData(value);
+            }
+        }
+	}
+	
+	private static class StdOutSetter implements RubyGlobalEntry.SetterMethod {
+        /*
+         * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            if (value == data) {
+                return;
+            } else if (!(value instanceof RubyIO)) {
+                entry.setData(value);
+                return;
+            } else {
+                ((RubyIO)value).checkWriteable();
+                // ((RubyIO)value).fileno = 0;
+                
+                entry.setData(value);
+            }
+        }
 	}
 }

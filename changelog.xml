@@ -1,5 +1,7 @@
 <changelog>
 	<release version="0.3.1">
+		<change type="new" description="Add $stdin, $stdout global variables." author="jpetersen" date="26  Dec  2001 17:33:00 +0100"/>
+		<change type="new" description="Add methods new, initialize, write and << to IOClass." author="jpetersen" date="26  Dec  2001 17:33:00 +0100"/>
 		<change type="new" description="Start to implement IO class, add IOError and EOFError." author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
 		<change type="api" description="Add org.jruby.runtime.RubyOptions class" author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>
 		<change type="api" description="Add org.jruby.javasupport.JavaSupport class. Move some fields and methods from RubyObject and Ruby to this class. Update some classes to use is class." author="jpetersen" date="25  Dec  2001 23:43:19 +0100"/>

@@ -251,6 +251,8 @@ public class RubyClasses {
         javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
         javaIObjectClass = RubyJavaIObject.createJavaInterfaceObjectClass(ruby);
         javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
+        
+        ioClass = RubyIO.createIOClass(ruby);
 
         exceptionClass = RubyException.createExceptionClass(ruby);
 
