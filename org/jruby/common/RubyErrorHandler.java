@@ -26,10 +26,9 @@
  */
 package org.jruby.common;
 
-import org.ablaf.common.*;
 import org.ablaf.common.ISourcePosition;
-
-import org.jruby.*;
+import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.parser.SyntaxErrorState;
 
 /** 
@@ -37,16 +36,15 @@ import org.jruby.parser.SyntaxErrorState;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyErrorHandler implements IErrorHandler {
-    private Ruby ruby;
-    private boolean verbose;
+public class RubyErrorHandler implements IRubyErrorHandler {
+    private Ruby runtime;
+    private boolean verbose = false;
 
     /**
      * Constructor for RubyErrorHandler.
      */
-    public RubyErrorHandler(Ruby ruby, boolean verbose) {
-        this.ruby = ruby;
-        this.verbose = verbose;
+    public RubyErrorHandler(Ruby runtime) {
+        this.runtime = runtime;
     }
 
     /**
@@ -72,10 +70,10 @@ public class RubyErrorHandler implements IErrorHandler {
                 message = position.getFile() + ": [" + position.getLine() + ", " + position.getColumn() + "] " + message;
             }
 
-            ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, message + "\n"));
+            runtime.getGlobalVar("$stderr").callMethod("write", RubyString.newString(runtime, message + "\n"));
 
             if (type == IErrors.SYNTAX_ERROR) {
-                ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, "\tExpecting:"));
+                runtime.getGlobalVar("$stderr").callMethod("write", RubyString.newString(runtime, "\tExpecting:"));
 				String[] lExpected = {};
 				String lFound = "";
                 if (args instanceof String[]) {
@@ -89,9 +87,9 @@ public class RubyErrorHandler implements IErrorHandler {
 				}
 				for (int i = 0; i < lExpected.length; i++) {
 					String msg = lExpected[i];
-					ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, " " + msg));
+					runtime.getGlobalVar("$stderr").callMethod("write", RubyString.newString(runtime, " " + msg));
 				}
-				ruby.getGlobalVar("$stderr").callMethod("write", RubyString.newString(ruby, " but found " + lFound + " instead\n"));
+				runtime.getGlobalVar("$stderr").callMethod("write", RubyString.newString(runtime, " but found " + lFound + " instead\n"));
             }
         }
     }
@@ -114,7 +112,7 @@ public class RubyErrorHandler implements IErrorHandler {
      * Gets the verbose.
      * @return Returns a boolean
      */
-    public boolean getVerbose() {
+    public boolean isVerbose() {
         return verbose;
     }
 
@@ -125,4 +123,18 @@ public class RubyErrorHandler implements IErrorHandler {
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
+    /**
+     * @see org.jruby.common.IRubyErrorHandler#warn(String)
+     */
+    public void warn(String message) {
+        handleError(IErrors.WARN, runtime.getPosition(), message);
+    }
+
+    /**
+     * @see org.jruby.common.IRubyErrorHandler#warning(String)
+     */
+    public void warning(String message) {
+        handleError(IErrors.WARNING, runtime.getPosition(), message);
+    }
+
 }

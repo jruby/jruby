@@ -45,7 +45,7 @@ public class Parser {
 
     public Parser(Ruby ruby) {
         this.ruby = ruby;
-        internalParser.setErrorHandler(new RubyErrorHandler(ruby, ruby.isVerbose()));
+        internalParser.setErrorHandler(ruby.getErrorHandler());
     }
 
     public INode parse(String file, String content) {

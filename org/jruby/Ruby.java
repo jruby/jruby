@@ -40,6 +40,8 @@ import java.util.Random;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.ablaf.internal.lexer.DefaultLexerPosition;
+import org.jruby.common.IRubyErrorHandler;
+import org.jruby.common.RubyErrorHandler;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnJump;
@@ -143,8 +145,7 @@ public final class Ruby {
 
     private ISourcePosition sourcePosition = new DefaultLexerPosition(null, 0, 0);
 
-
-    private boolean isVerbose;
+    private boolean isVerbose = false;
 
     private RubyModule wrapper;
 
@@ -159,7 +160,9 @@ public final class Ruby {
     private Parser parser = new Parser(this);
 
     private LastCallStatus lastCallStatus = new LastCallStatus();
+
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
+    private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
     /**
      * Create and initialize a new jruby Runtime.
@@ -532,6 +535,7 @@ public final class Ruby {
      */
     public void setVerbose(boolean verbose) {
         this.isVerbose = verbose;
+        errorHandler.setVerbose(verbose);
     }
 
     /** Getter for property dynamicVars.
@@ -759,6 +763,14 @@ public final class Ruby {
      */
     public ILoadService getLoadService() {
         return loadService;
+    }
+
+    /**
+     * Returns the errorHandler.
+     * @return IRubyErrorHandler
+     */
+    public IRubyErrorHandler getErrorHandler() {
+        return errorHandler;
     }
 
 }
