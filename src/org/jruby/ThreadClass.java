@@ -104,6 +104,8 @@ public class ThreadClass extends RubyObject {
                 callbackFactory.getSingletonMethod(ThreadClass.class, "pass"));
         threadClass.defineSingletonMethod("start",
                 callbackFactory.getOptSingletonMethod(ThreadClass.class, "start"));
+        threadClass.defineSingletonMethod("critical=", 
+                callbackFactory.getSingletonMethod(ThreadClass.class, "critical_set", RubyBoolean.class));
 
         ThreadClass currentThread = new ThreadClass(ruby, threadClass);
         currentThread.jvmThread = Thread.currentThread();
@@ -294,6 +296,12 @@ public class ThreadClass extends RubyObject {
     public RubyBoolean has_key(IRubyObject key) {
         String name = keyName(key);
         return RubyBoolean.newBoolean(getRuntime(), threadLocalVariables.containsKey(name));
+    }
+    
+    // TODO: Determine overhead in implementing this
+    public static IRubyObject critical_set(IRubyObject receiver, RubyBoolean value) {
+    	// Useless implementation to satisfy tempfile.rb
+    	return value;
     }
 
     public RubyFixnum priority() {
