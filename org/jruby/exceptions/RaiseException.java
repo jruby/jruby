@@ -26,10 +26,14 @@
  */
 package org.jruby.exceptions;
 
-import java.util.*;
+import org.jruby.RubyException;
+import org.jruby.RubyClass;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyString;
+import org.jruby.runtime.Frame;
 
-import org.jruby.*;
-import org.jruby.runtime.*;
+import java.util.Iterator;
 
 /**
  *
@@ -69,24 +73,24 @@ public class RaiseException extends JumpException {
     public static RubyArray createBacktrace(Ruby ruby, int level) {
         RubyArray backtrace = RubyArray.newArray(ruby);
 
-        Iterator iter = ruby.getFrameStack().iterator();
+        Iterator frames = ruby.getFrameStack().iterator();
         while (level-- > 0) {
-            if (!iter.hasNext()) {
+            if (!frames.hasNext()) {
                 return RubyArray.nilArray(ruby);
             }
-            iter.next();
+            frames.next();
         }
 
         Frame frame = null;
-        if (iter.hasNext()) {
-            frame = (Frame)iter.next();
+        if (frames.hasNext()) {
+            frame = (Frame)frames.next();
         }
 
         while (frame != null && frame.getFile() != null) {
             StringBuffer sb = new StringBuffer(100);
 
             Frame previous = null;
-            if (iter.hasNext() && (previous = (Frame)iter.next()).getLastFunc() != null) {
+            if (frames.hasNext() && (previous = (Frame)frames.next()).getLastFunc() != null) {
                 sb.append(frame.getFile()).append(':').append(frame.getLine());
                 sb.append(":in '").append(previous.getLastFunc()).append('\'');
             } else {

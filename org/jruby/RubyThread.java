@@ -159,14 +159,14 @@ public class RubyThread extends RubyObject {
         if (! runtime.isBlockGiven()) {
             throw new ThreadError(runtime, "must be called with a block");
         }
-        final RubyThread result = new RubyThread(runtime, (RubyClass) recv);
+        final RubyThread thread = new RubyThread(runtime, (RubyClass) recv);
         if (callInit) {
-            result.callInit(args);
+            thread.callInit(args);
         }
 
         final RubyProc proc = RubyProc.newProc(runtime, runtime.getClasses().getProcClass());
 
-        result.jvmThread = new Thread(new Runnable() {
+        thread.jvmThread = new Thread(new Runnable() {
             public void run() {
                 Frame currentFrame = runtime.getCurrentFrame();
                 Block currentBlock = runtime.getBlockStack().getCurrent();
@@ -175,19 +175,19 @@ public class RubyThread extends RubyObject {
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
                 context.getBlockStack().setCurrent(currentBlock);
-                context.setCurrentThread(result);
+                context.setCurrentThread(thread);
 
                 // Call the thread's code
                 try {
                     proc.call(args);
                 } catch (RaiseException e) {
-                    result.exitingException = e;
+                    thread.exitingException = e;
                 }
             }
         });
 
-        result.jvmThread.start();
-        return result;
+        thread.jvmThread.start();
+        return thread;
     }
 
     protected RubyThread(Ruby ruby) {

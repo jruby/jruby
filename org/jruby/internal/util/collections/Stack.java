@@ -26,11 +26,11 @@
  */
 package org.jruby.internal.util.collections;
 
-import java.util.*;
-
-import org.jruby.internal.util.*;
-import org.jruby.util.collections.*;
 import org.jruby.util.collections.IStack;
+import org.jruby.util.collections.StackEmptyException;
+import org.jruby.internal.util.Utils;
+
+import java.util.Iterator;
 
 /**
  *

@@ -36,9 +36,12 @@ t = Thread.new {
 }
 test_equal("run", v)
 
+#def thread_foo()
+#  raise "hello"
+#end
 #e = nil
 #t = Thread.new {
-#  raise "hello"
+#  thread_foo()
 #}
 #begin
 #  t.join
