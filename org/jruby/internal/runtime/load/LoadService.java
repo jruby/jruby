@@ -16,7 +16,7 @@ import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
 
 /**
- * 
+ *
  * @author jpetersen
  * @version $Revision$
  */
@@ -25,7 +25,7 @@ public class LoadService implements ILoadService {
     private ArrayList loadedFeatures = new ArrayList();
 
     private Map autoloadMap = new HashMap();
-    
+
     private Ruby runtime;
 
     /**
@@ -128,11 +128,11 @@ public class LoadService implements ILoadService {
     public void addAutoload(String name, IAutoloadMethod loadMethod) {
         autoloadMap.put(name, loadMethod);
     }
-    
+
     /**
      * this method uses the appropriate lookup strategy to find a file.
      * It is used by Kernel#require.
-     * 
+     *
      * @mri rb_find_file
      * @param name the file to find, this is a path name
      * @return the correct file

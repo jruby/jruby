@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -915,6 +916,10 @@ public final class Ruby {
      *
      */
     public void loadScript(RubyString scriptName, RubyString source, boolean wrap) {
+        loadScript(scriptName.getValue(), new StringReader(source.getValue()), wrap);
+    }
+
+    public void loadScript(String scriptName, Reader source, boolean wrap) {
         IRubyObject self = getTopSelf();
         Namespace savedNamespace = getNamespace();
 
@@ -949,7 +954,7 @@ public final class Ruby {
         setCurrentVisibility(Visibility.PRIVATE);
 
         try {
-            INode node = parse(source.toString(), scriptName.getValue());
+            INode node = parse(source, scriptName);
             self.eval(node);
 
         } finally {
@@ -969,26 +974,18 @@ public final class Ruby {
      *
      *  @mri rb_load
      */
-    public void loadFile(File iFile, boolean wrap) {
-        Asserts.assertNotNull(iFile, "No such file to load");
-
+    public void loadFile(File file, boolean wrap) {
+        Asserts.assertNotNull(file, "No such file to load");
         try {
-            StringBuffer source = new StringBuffer((int) iFile.length());
-            BufferedReader br = new BufferedReader(new FileReader(iFile));
-            String line;
-            while ((line = br.readLine()) != null) {
-                source.append(line).append('\n');
-            }
-            br.close();
-
-            loadScript(new RubyString(this, iFile.getPath()), new RubyString(this, source.toString()), wrap);
-
+            BufferedReader source = new BufferedReader(new FileReader(file));
+            loadScript(file.getPath(), source, wrap);
+            source.close();
         } catch (IOException ioExcptn) {
             throw IOError.fromException(this, ioExcptn);
         }
     }
 
-        /** Call the traceFunction
+    /** Call the trace function
      *
      * MRI: eval.c - call_trace_func
      *

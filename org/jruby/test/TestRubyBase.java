@@ -31,11 +31,11 @@ package org.jruby.test;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
-import org.jruby.RubyString;
 import junit.framework.TestCase;
 
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
 
 /**
  * @author Benoit
@@ -71,7 +71,7 @@ public class TestRubyBase extends TestCase {
         lStream.initIO(null, out, null);
         ruby.setGlobalVar("$stderr", lStream);
         
-        ruby.loadScript(RubyString.newString(ruby, "test"), RubyString.newString(ruby, script), false);
+        ruby.loadScript("test", new StringReader(script), false);
         
         /*new EvalThread("test", script).start();*/
         /*while ((output = in.readLine()) != null) {
@@ -84,24 +84,6 @@ public class TestRubyBase extends TestCase {
         }
         
         return sb.toString();
-    }
-
-    class EvalThread extends Thread {
-        private RubyString name;
-        private RubyString script;
-
-        EvalThread(String name, String script) {
-            this.name = RubyString.newString(ruby, name);
-            this.script = RubyString.newString(ruby, script);
-        }
-
-        public void run() {
-            try {
-                ruby.loadScript(name, script, false);
-            } finally {
-                out.close();
-            }
-        }
     }
 
     public void tearDown() {
