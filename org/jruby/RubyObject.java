@@ -354,6 +354,8 @@ public class RubyObject implements Cloneable {
     protected void setupClone(RubyObject obj) {
         setRubyClass(obj.getRubyClass().getSingletonClassClone());
         getRubyClass().attachSingletonClass(this);
+		frozen = obj.frozen;
+		taint = obj.taint;
     }
 
     /** OBJ_INFECT
@@ -812,8 +814,8 @@ public class RubyObject implements Cloneable {
         }
 
         dup.setRubyClass(type());
-        dup.infectObject(this);
-
+//        dup.infectObject(this);  //Benoit done by clone
+		dup.frozen = false;
         return dup;
     }
 

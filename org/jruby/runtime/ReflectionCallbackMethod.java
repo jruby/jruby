@@ -215,7 +215,7 @@ public class ReflectionCallbackMethod implements Callback {
         } catch (IllegalAccessException iaExcptn) {
             throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
         } catch (IllegalArgumentException iaExcptn) {
-            throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
+            throw new RaiseException(ruby, "TypeError", iaExcptn.getMessage());
         }
     }
 
