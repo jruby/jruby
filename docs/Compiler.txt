@@ -1,58 +1,66 @@
 
-Writing a Java bytecode compiler for JRuby
-==========================================
+Writing a Java byte-code compiler for JRuby
+===========================================
 $Id$
 Copyright (c) Anders Bengtsson 2002
+
+0. About
+--------
+
+I'm writing this document at the same time as we are implementing the
+compiler, so not everything here is necessarily correct or even
+remotely true.
 
 1. Introduction
 ---------------
 
-The transformation of Ruby code into Java bytecodes is done in several
+The transformation of Ruby code into Java byte-codes is done in several
 steps. The first step is to transform Ruby source into an AST, which
 was already done as part of the interpreter.
 
-The compilation of the AST to Java bytecodes is done in two steps,
+The compilation of the AST to Java byte-codes is done in two steps,
 since we don't want to deal with the horrors of the JVM at the same
 time as the horrors of the AST.
 
-2. AST -> Ruby bytecode
------------------------
+2. AST -> Ruby byte-code
+------------------------
 
 The first step in compilation is translating the AST into custom
-high-level bytecodes. The bytecodes assume a VM with an "operand
-stack", which is the same model as the Java VM uses. These bytecodes
-serve two purposes. They are intended to be easy to translate to JVM
-bytecode and they can also possibly be interpreted directly.
+high-level byte-codes. The byte-codes assume a VM with an "operand
+stack", which is the same model as the Java VM uses. These byte-codes
+serve many purposes. They are intended to be easy to translate to JVM
+byte-code and they can also possibly be interpreted directly. Ideally
+the byte-codes should also be on a slightly higher abstraction level
+than the syntax-oriented AST tree.
 
-We flatten out the AST and extract some information not directly
-available in the AST, like the number of arguments a certain method
-call is using.
+We flatten out the AST and extract some information hidden in the AST,
+like the number of arguments a certain method call is using.
 
-For example "x = 10" in AST form is a tree like this:
+A simple example, "x = 10", is in AST form a tree like this:
 
     newline-node
         local-assignment-node (variable-index = 3)
             fixnum-node (value = 10)
 
-Which is transformed into two bytecodes like this:
+When transformed to byte-codes it looks like this:
 
     push-fixnum (value = 10)
     assign-local (variable-index = 3)
 
-An interpreter working on these bytecodes would probably be faster
+An interpreter working on these byte-codes would probably be faster
 than the AST-walking interpreter. But since we already have a working
-interpreter we instead focus on getting to JVM bytecodes.
+interpreter we instead focus on getting to JVM byte codes.
 
-3. Ruby bytecode -> JVM bytecode
---------------------------------
+3. Ruby byte-code -> JVM byte-code
+----------------------------------
 
 3.1 Calling compiled code
 -------------------------
 
 This is where it gets interesting. The big question is maybe not how
-to do the compilation, but how to use the resulting bytecode. ASTs and
-Ruby bytecode can be passed around as objects and used in many
-different ways, but Java bytecode has to be neatly placed in methods
+to do the compilation, but how to use the resulting byte-code. ASTs and
+Ruby byte-code can be passed around as objects and used in many
+different ways, but Java byte-code has to be neatly placed in methods
 within classes. How do we integrate that in our Ruby runtime?
 
 We can always use reflection callbacks to reach our generated code,

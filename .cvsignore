@@ -1,3 +1,4 @@
-TEST-org.jruby.test.MainTestSuite.txt
 .tmp
 release
+JRuby.ipr
+JRuby.iws

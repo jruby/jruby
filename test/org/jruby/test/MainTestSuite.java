@@ -33,6 +33,7 @@ package org.jruby.test;
 import junit.framework.TestSuite;
 import junit.framework.Test;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
+import org.jruby.test.compiler.TestCompiler;
 
 /**
  *
@@ -57,6 +58,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(JavaSupportTestSuite.suite());
         suite.addTest(new TestSuite(TestIdentitySet.class));
         suite.addTest(new TestSuite(TestCommandlineParser.class));
+        suite.addTest(new TestSuite(TestCompiler.class));
         return suite;
     }
 }
