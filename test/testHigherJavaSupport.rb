@@ -32,6 +32,12 @@ if defined? Java
     s1 = Short.new(1234)
     test_ok(s1.compareTo(l2) > 0)
 
+    # Dispatching on nil
+    sb = StringBuffer.new
+    sb.append(nil)
+    sb.append("x")
+    test_equal("nullx", sb.toString)
+
     # FIXME: easy method for importing java class with colliding name
     # (Since String would be nice to test on)
 
