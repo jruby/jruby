@@ -39,11 +39,11 @@ if defined? Java
     test_equal(Fixnum, r.nextInt(10).type)
 
     # Instance methods differing only on argument type
-#    l1 = Long.new(1234)
-#    l2 = Long.new(1000)
-#    test_ok(l1.compareTo(l2) > 0)
-#    s1 = Short.new(1234)
-#    test_ok(s1.compareTo(l2) > 0)
+    l1 = Long.new(1234)
+    l2 = Long.new(1000)
+    test_ok(l1.compareTo(l2) > 0)
+    s1 = Short.new(1234)
+    test_ok(s1.compareTo(l2) > 0)
 
     # Dispatching on nil
     include_package "org.jruby.util"
