@@ -265,9 +265,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return -1;
         }
         recompileIfNeeded();
-        RubyMatchData result = (RubyMatchData)matcher.search(getRuby(), str, pos);
+        
+        // If nothing match then nil will be returned
+        RubyObject result = matcher.search(getRuby(), str, pos);
         getRuby().setBackRef(result);
-        return result.matchStartPosition();
+        
+        // If nothing match then -1 will be returned
+        return result instanceof RubyMatchData ? 
+                            ((RubyMatchData)result).matchStartPosition() : -1;
     }
 
     public RubyObject m_clone() {
