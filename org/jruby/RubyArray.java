@@ -309,7 +309,7 @@ public class RubyArray extends RubyObject {
         if (repl instanceof RubyArray) {
             List repList = ((RubyArray) repl).getList();
             list.ensureCapacity(length + repList.size());
-            list.addAll((int) beg, repList);
+            list.addAll((int) beg, new ArrayList(repList));
         } else if (!repl.isNil()) {
             list.add((int) beg, repl);
         }

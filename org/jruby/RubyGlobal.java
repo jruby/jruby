@@ -113,6 +113,7 @@ public class RubyGlobal {
         ruby.defineGlobalFunction("global_variables", CallbackFactory.getSingletonMethod(RubyGlobal.class, "global_variables"));
         ruby.defineGlobalFunction("local_variables", CallbackFactory.getSingletonMethod(RubyGlobal.class, "local_variables"));
         ruby.defineGlobalFunction("block_given?", CallbackFactory.getSingletonMethod(RubyGlobal.class, "block_given"));
+        ruby.defineGlobalFunction("iterator?", CallbackFactory.getSingletonMethod(RubyGlobal.class, "block_given"));
 
         ruby.defineGlobalFunction("lambda", CallbackFactory.getSingletonMethod(RubyGlobal.class, "lambda"));
         ruby.defineGlobalFunction("proc", CallbackFactory.getSingletonMethod(RubyGlobal.class, "proc"));

@@ -364,10 +364,8 @@ public final class Ruby {
     }
 
     public RubyObject yield0(RubyObject value, RubyObject self, RubyModule klass, boolean acheck) {
-        RubyObject result = getNil();
-
-        if (!(isBlockGiven() || isFBlockGiven()) || (block == null)) {
-            throw new RuntimeException("yield called out of block");
+        if (!isBlockGiven()) {
+            throw new RaiseException(this, "LocalJumpError", "yield called out of block");
         }
 
         RubyVarmap.push(this);
@@ -383,7 +381,8 @@ public final class Ruby {
 
         RubyScope oldScope = getScope();
         setScope(tmpBlock.scope);
-        block.pop();
+        // block.pop();
+        block = block.prev;
 
         if ((block.flags & RubyBlock.BLOCK_D_SCOPE) != 0) {
             setDynamicVars(new RubyVarmap(null, null, tmpBlock.dynamicVars));
@@ -426,60 +425,46 @@ public final class Ruby {
         }
 
         iter.push(tmpBlock.iter);
-        while (true) {
-            try {
-                if (node == null) {
-                    result = getNil();
-                } else if (node instanceof ExecutableNode) {
-                    if (value == null) {
-                        value = RubyArray.newArray(this, 0);
+        try {
+            while (true) {
+                try {
+                    if (node == null) {
+                        return getNil();
+                    } else if (node instanceof ExecutableNode) {
+                        if (value == null) {
+                            value = RubyArray.newArray(this, 0);
+                        }
+                        return ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
+                    } else {
+                        return node.eval(this, self);
                     }
-                    result = ((ExecutableNode) node).execute(value, new RubyObject[] { node.getTValue(), self }, this);
-                } else {
-                    result = node.eval(this, self);
+                } catch (RedoException rExcptn) {
                 }
-                break;
-            } catch (RedoException rExcptn) {
-            } catch (NextException nExcptn) {
-                result = getNil();
-                break;
-            } catch (BreakException bExcptn) {
-                break;
-            } catch (ReturnException rExcptn) {
-                break;
             }
+            //break;
+
+        } catch (NextException nExcptn) {
+            return getNil();
+            /*            } catch (BreakException bExcptn) {
+                            throw bExcptn;*/
+        } catch (ReturnException rExcptn) {
+            // break;
+            return rExcptn.getReturnValue();
+        } finally {
+            iter.pop();
+            popClass();
+            RubyVarmap.pop(this);
+
+            block.setTmp(tmpBlock);
+            setRubyFrame(getRubyFrame().getPrev());
+
+            setCRef(oldCRef);
+
+            // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
+            //    scope_dup(old_scope);
+            setScope(oldScope);
+
         }
-
-        // pop_state:
-
-        iter.pop();
-        popClass();
-        RubyVarmap.pop(this);
-
-        block.setTmp(tmpBlock);
-        setRubyFrame(getRubyFrame().getPrev());
-
-        setCRef(oldCRef);
-
-        // if (ruby_scope->flag & SCOPE_DONT_RECYCLE)
-        //    scope_dup(old_scope);
-        setScope(oldScope);
-
-        /*
-         * if (state) {
-         *    if (!block->tag) {
-         *       switch (state & TAG_MASK) {
-         *          case TAG_BREAK:
-         *          case TAG_RETURN:
-         *             jump_tag_but_local_jump(state & TAG_MASK);
-         *             break;
-         *       }
-         *    }
-         *    JUMP_TAG(state);
-         * }
-         */
-
-        return result;
     }
 
     /** Getter for property rubyTopSelf.

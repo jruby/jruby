@@ -115,7 +115,7 @@ public class RubyHash extends RubyObject {
 		hashClass.defineMethod("keys", CallbackFactory.getMethod(RubyHash.class, "keys"));
 		hashClass.defineMethod("values", CallbackFactory.getMethod(RubyHash.class, "values"));
 
-        //    rb_define_method(rb_cHash,"shift", rb_hash_shift, 0);
+		hashClass.defineMethod("shift", CallbackFactory.getMethod(RubyHash.class, "shift"));
         //    rb_define_method(rb_cHash,"delete", rb_hash_delete, 1);
         //    rb_define_method(rb_cHash,"delete_if", rb_hash_delete_if, 0);
         //    rb_define_method(rb_cHash,"reject", rb_hash_reject, 0);
@@ -197,7 +197,7 @@ public class RubyHash extends RubyObject {
         final String sep = ", ";
         final String arrow = "=>";
         
-        final StringBuffer sb = new StringBuffer('{');
+        final StringBuffer sb = new StringBuffer("{");
 
         valueMap.foreach(new RubyMapMethod() {
             boolean firstEntry = true;
@@ -325,4 +325,13 @@ public class RubyHash extends RubyObject {
         return ruby.getTrue();
         // ---
     }
+
+    public RubyArray shift() {
+        Iterator iter = valueMap.entrySet().iterator();
+        Map.Entry entry = (Map.Entry)iter.next();
+        iter.remove();
+        
+        return RubyArray.newArray(ruby, (RubyObject)entry.getKey(), (RubyObject)entry.getValue());
+    }
+
 }

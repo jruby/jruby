@@ -190,7 +190,7 @@ public class ScopeNode extends Node implements CallableNode {
 			ruby.getScope().setLocalValues(valueList);
 			ruby.getScope().setLocalNames(getTable());
 		} else {
-			valueList = ruby.getScope().getLocalValues();
+			valueList = null; //ruby.getScope().getLocalValues();
 
 			ruby.getScope().setLocalValues(null);
 			ruby.getScope().setLocalNames(null);

@@ -44,46 +44,45 @@ public class ForNode extends Node {
     public ForNode(Node varNode, Node bodyNode, Node iterNode) {
         super(Constants.NODE_FOR, varNode, bodyNode, iterNode);
     }
-    
+
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result;
-        
+
         ruby.getBlock().push(getVarNode(), getBodyNode(), self);
         ruby.getIter().push(RubyIter.ITER_PRE);
-        while (true) {
-            try {
-                String file = ruby.getSourceFile();
-                int line = ruby.getSourceLine();
-                
-                ruby.getBlock().flags &= ~RubyBlock.BLOCK_D_SCOPE;
-                
-                RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
-                RubyObject recv = getIterNode().eval(ruby, self);
-                ArgsUtil.endCallArgs(ruby, tmpBlock);
-                
-                ruby.setSourceFile(file);
-                ruby.setSourceLine(line);
-                result = recv.getRubyClass().call(recv, "each", null, 0);
-                break;
-            } catch (RetryException rExcptn) {
-            } catch (ReturnException rExcptn) {
-                result = rExcptn.getReturnValue();
-                break;
-            } catch (BreakException bExcptn) {
-                result = ruby.getNil();
-                break;
+
+        try {
+            while (true) {
+                try {
+                    String file = ruby.getSourceFile();
+                    int line = ruby.getSourceLine();
+
+                    ruby.getBlock().flags &= ~RubyBlock.BLOCK_D_SCOPE;
+
+                    RubyBlock tmpBlock = ArgsUtil.beginCallArgs(ruby);
+                    RubyObject recv = getIterNode().eval(ruby, self);
+                    ArgsUtil.endCallArgs(ruby, tmpBlock);
+
+                    ruby.setSourceFile(file);
+                    ruby.setSourceLine(line);
+                    return recv.getRubyClass().call(recv, "each", null, 0);
+                } catch (RetryException rExcptn) {
+                }
             }
+        } catch (ReturnException rExcptn) {
+            return rExcptn.getReturnValue();
+        } catch (BreakException bExcptn) {
+            return ruby.getNil();
+        } finally {
+            ruby.getIter().pop();
+            ruby.getBlock().pop();
         }
-        ruby.getIter().pop();
-        ruby.getBlock().pop();
-        return result;
     }
-	/**
-	 * Accept for the visitor pattern.
-	 * @param iVisitor the visitor
-	 **/
-	public void accept(NodeVisitor iVisitor)	
-	{
-		iVisitor.visitForNode(this);
-	}
+    /**
+     * Accept for the visitor pattern.
+     * @param iVisitor the visitor
+     **/
+    public void accept(NodeVisitor iVisitor) {
+        iVisitor.visitForNode(this);
+    }
 }

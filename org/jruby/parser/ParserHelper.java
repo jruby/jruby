@@ -1075,10 +1075,11 @@ public class ParserHelper {
         List lLocalNames = ruby.getScope().getLocalNames();
         int lcnt = lLocalNames != null ? lLocalNames.size() : 0;
         if (lcnt > 0) {
-            lvtbl.tbl = new ArrayList();
+            // lvtbl.tbl = new ArrayList();
             //ruby.getRubyScope().setLocalNames(lvtbl.tbl);   //it should be the other way around, don't understand how it works
-            for (int i = 0; i < lcnt; i++)
-                registerLocal((String) lLocalNames.get(i));
+            /*for (int i = 0; i < lcnt; i++)
+                registerLocal((String) lLocalNames.get(i));*/
+            lvtbl.tbl = new ArrayList(lLocalNames);
         } else {
             lvtbl.tbl = null;
         }
