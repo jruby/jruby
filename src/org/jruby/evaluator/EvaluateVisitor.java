@@ -539,7 +539,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitConstNode(ConstNode)
      */
     public void visitConstNode(ConstNode iVisited) {
-        result = threadContext.getCurrentFrame().getNamespace().getConstant(self, iVisited.getName());
+        result = threadContext.getConstant(self, iVisited.getName());
     }
 
     /**

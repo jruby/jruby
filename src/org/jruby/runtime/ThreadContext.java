@@ -327,6 +327,18 @@ public class ThreadContext {
         return result;
     }
 
+    public IRubyObject getConstant(IRubyObject self, String name) {
+        Namespace initial = getCurrentFrame().getNamespace();
+        for (Namespace ns = initial; ns != null && ns.getParent() != null; ns = ns.getParent()) {
+            if (ns.getModule() == null) {
+                return self.getMetaClass().getConstant(name);
+            } else if (ns.getModule().hasInstanceVariable(name)) {
+                return ns.getModule().getInstanceVariable(name);
+            }
+        }
+        return initial.getModule().getConstant(name);
+    }
+
 
     public RubyArray moduleNesting() {
          ArrayStack tmpStack = (ArrayStack) classStack.clone();
