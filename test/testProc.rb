@@ -15,3 +15,19 @@ test_equal(-3, Proc.new {|a, b, *c|}.arity)
 j = 0; for i in 1..3 do j += i end; test_equal(6, j)
 j = 0; for $i in 1..3 do j += $i end; test_equal(6, j)
 j = 0; for i, k in {1=>2, 3=>4} do j += i + k end; test_equal(10, j)
+
+def argument_test(state, proc, *args)
+  x = state
+  begin
+    proc.call(*args)
+  rescue ArgumentError
+    x = !x
+  end
+  test_ok(x)
+end
+
+argument_test(true, lambda{||})
+argument_test(false, lambda{||}, 1)
+argument_test(true, lambda{|a,|}, 1)
+argument_test(false, lambda{|a,|})
+argument_test(false, lambda{|a,|}, 1,2)

@@ -114,7 +114,9 @@ public class RubyProc extends RubyObject {
         RubyModule oldWrapper = context.getWrapper();
         context.setWrapper(wrapper);
         try {
-            return block.call(args, self);
+        	block.arity().checkArity(getRuntime(), args);
+        	
+        	return block.call(args, self);
         } catch (ReturnJump e) {
         	if (block.isLambda) {
         		return e.getReturnValue();
