@@ -99,13 +99,10 @@ module JRuby
 
           # ..., receiver, arg1, arg2, args_array
 
-          # WARNING: the following line destroys the 'self' variable!!!!...
-
+          args_array_variable.setStart(list.getEnd())
 
           list.append(BCEL::InstructionFactory.createStore(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
                                                            args_array_variable.getIndex))
-
-          args_array_variable.setStart(list.getEnd())
 
           for i in 0...arity
             list.append(BCEL::InstructionFactory.createLoad(BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1),
@@ -118,7 +115,7 @@ module JRuby
             list.append(BCEL::SWAP.new)
             # ..., receiver, arg1, ..., args_array, index, argN
             list.append(BCEL::AASTORE.new())
-            # ..., receiver, arg1, ... argN-1
+            # ..., receiver, arg1, ..., argN-1
           end
 
           # ..., receiver
@@ -200,6 +197,20 @@ module JRuby
         def initialize(target)
           @target = target
         end
+
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+
+          list.append(factory.createInvoke(IRUBYOBJECT_TYPE.getClassName,
+                                           "isFalse",
+                                           BCEL::Type::BOOLEAN,
+                                           BCEL::Type[].new(0),
+                                           BCEL::Constants::INVOKEINTERFACE))
+          # If call was sucessful we have a 0 on the stack
+          branch = BCEL::IFEQ.new(nil)
+          @target.add_listener(branch)
+          list.append(branch)
+        end
       end
 
       class Goto
@@ -208,10 +219,35 @@ module JRuby
         def initialize(target)
           @target = target
         end
+
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+          goto = BCEL::GOTO.new(nil)
+          @target.add_listener(goto)
+          list.append(goto)
+        end
       end
 
       class Label
+        def initialize
+          @handle = nil
+          @listeners = []
+        end
+
+        def add_listener(listener)
+          @listeners << listener
+          unless @handle.nil?
+            listener.setTarget(@handle)
+          end
+        end
+
+        def emit_jvm_bytecode(methodgen, factory)
+          list = methodgen.getInstructionList
+          @handle = list.append(BCEL::NOP.new)
+          @listeners.each {|l| l.setTarget(@handle) }
+        end
       end
+
     end
   end
 end
