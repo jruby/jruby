@@ -27,9 +27,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import org.apache.oro.io.GlobFilenameFilter;
 import org.jruby.runtime.SelectorUtils;
@@ -41,7 +39,6 @@ import org.jruby.runtime.SelectorUtils;
  */
 public class Glob {
     private File pattern;
-    private String newPattern;
     private boolean patternEndsWithPathDelimeter = false;
     private boolean patternIsRelative = false;
 
@@ -65,8 +62,6 @@ public class Glob {
        		patternIsRelative = true;
        		this.pattern = new File(cwd, pattern);
        	}
-       	
-        this.newPattern = pattern;
     }
     
     private String[] splitPattern() {
@@ -96,8 +91,6 @@ public class Glob {
 
     /**
      * Get file objects for glob; made private to prevent it being used directly in the future
-     * 
-     * @return
      */
     private File[] getFiles() {
         String[] dirs = splitPattern();

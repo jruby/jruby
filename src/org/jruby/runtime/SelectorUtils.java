@@ -203,14 +203,13 @@ public final class SelectorUtils {
                 }
             }
             return true;
-        } else {
-            if (patIdxStart > patIdxEnd) {
-                // String not exhausted, but pattern is. Failure.
-                patDirs = null;
-                strDirs = null;
-                return false;
-            }
         }
+		if (patIdxStart > patIdxEnd) {
+		    // String not exhausted, but pattern is. Failure.
+		    patDirs = null;
+		    strDirs = null;
+		    return false;
+		}
 
         // up to last '**'
         while (patIdxStart <= patIdxEnd && strIdxStart <= strIdxEnd) {
@@ -508,7 +507,7 @@ public final class SelectorUtils {
     }
 
     /**
-     * Same as {@link #tokenizePath tokenizePath} but hopefully faster.
+     * Same as {@link #tokenizePath(String) tokenizePath} but hopefully faster.
      */
     private static String[] tokenizePathAsArray(String path) {
         char sep = File.separatorChar;
