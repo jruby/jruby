@@ -98,10 +98,12 @@ public class JavaMethod implements RubyCallbackMethod {
             Object obj = !singleton ? ((RubyJavaObject)recv).getValue() : null;
             Object result = method.invoke(obj, newArgs);
             return JavaUtil.convertJavaToRuby(ruby, result, method.getReturnType());
-        } catch (IllegalAccessException iaExcptn) {
-        } catch (IllegalArgumentException iaExcptn) {
-        } catch (InvocationTargetException itExcptn) {
+        } catch (IllegalAccessException ex) {
+            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+        } catch (IllegalArgumentException ex) {
+            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+        } catch (InvocationTargetException ex) {
+            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
         }
-        return ruby.getNil();
     }
 }

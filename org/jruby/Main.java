@@ -117,7 +117,7 @@ public class Main {
      *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
      *           -e 'command'   one line of script. Several -e's allowed. Omit [programfile]
      *           -b             benchmark mode
-     *           -rx 'adapter'	used to select a regexp engine
+     *           -rx 'adapter'  used to select a regexp engine
      */ 
     protected static void printUsage() {
         System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
@@ -151,13 +151,13 @@ public class Main {
 
         ruby.defineGlobalConstant("ARGV", JavaUtil.convertJavaToRuby(ruby, args, String[].class));
 
-		// +++
-		try {
-			ruby.getRubyTopSelf().eval(ruby.getRubyParser().compileString(iFileName, rs, 0));
-		} catch (RaiseException rExcptn) {
-			System.out.println(rExcptn.getActException().m_to_s().getValue());
-		}
-		// ---
+        // +++
+        try {
+            ruby.getRubyTopSelf().eval(ruby.getRubyParser().compileString(iFileName, rs, 0));
+        } catch (RaiseException rExcptn) {
+            System.out.println(rExcptn.getActException().m_to_s().getValue());
+        }
+        // ---
     }
 
     /**

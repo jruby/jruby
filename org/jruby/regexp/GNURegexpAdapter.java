@@ -42,77 +42,77 @@ import org.jruby.exceptions.RubyRegexpException;
  */
 public class GNURegexpAdapter extends IRegexpAdapter {
 
-	private RE re;
-	private int cflags = 0;
-	private int eflags = RE.REG_NOTBOL | RE.REG_NOTEOL;
-	private boolean extended;
+    private RE re;
+    private int cflags = 0;
+    private int eflags = RE.REG_NOTBOL | RE.REG_NOTEOL;
+    private boolean extended;
 
-	/**
-	 * Compile the regex.
-	 */
-	public void compile(Ruby ruby, String pattern) throws RubyRegexpException {
-		if (extended) {
-			pattern = unextend(pattern);
-		}
+    /**
+     * Compile the regex.
+     */
+    public void compile(Ruby ruby, String pattern) throws RubyRegexpException {
+        if (extended) {
+            pattern = unextend(pattern);
+        }
 
-		try {
-			this.re = new RE(pattern, cflags);
-		} catch (REException e) {
-			throw new RubyRegexpException(ruby, e.getMessage());
-		}
-	}
+        try {
+            this.re = new RE(pattern, cflags);
+        } catch (REException e) {
+            throw new RubyRegexpException(ruby, e.getMessage());
+        }
+    }
 
-	/**
-	 * Set whether matches should be case-insensitive or not
-	 */
-	public void setCasefold(boolean set) {
-		if (set) {
-			cflags |= RE.REG_ICASE;
-		} else {
-			cflags &= ~RE.REG_ICASE;
-		}
-	}
+    /**
+     * Set whether matches should be case-insensitive or not
+     */
+    public void setCasefold(boolean set) {
+        if (set) {
+            cflags |= RE.REG_ICASE;
+        } else {
+            cflags &= ~RE.REG_ICASE;
+        }
+    }
 
-	/**
-	 * Get whether matches are case-insensitive or not
-	 */
-	public boolean getCasefold() {
-		return (cflags & RE.REG_ICASE) > 0;
-	}
+    /**
+     * Get whether matches are case-insensitive or not
+     */
+    public boolean getCasefold() {
+        return (cflags & RE.REG_ICASE) > 0;
+    }
 
-	/**
-	 * Set whether patterns can contain comments and extra whitespace
-	 */
-	public void setExtended(boolean set) {
-		extended = set;
-	}
+    /**
+     * Set whether patterns can contain comments and extra whitespace
+     */
+    public void setExtended(boolean set) {
+        extended = set;
+    }
 
-	/**
-	 * Set whether the dot metacharacter should match newlines
-	 */
-	public void setMultiline(boolean set) {
-		if (set) {
-			cflags |= RE.REG_DOT_NEWLINE;
-		} else {
-			cflags &= ~RE.REG_DOT_NEWLINE;
-		}
-	}
+    /**
+     * Set whether the dot metacharacter should match newlines
+     */
+    public void setMultiline(boolean set) {
+        if (set) {
+            cflags |= RE.REG_DOT_NEWLINE;
+        } else {
+            cflags &= ~RE.REG_DOT_NEWLINE;
+        }
+    }
 
-	/**
-	 * Does the given argument match the pattern?
-	 */
-	public RubyObject search(Ruby ruby, String target, int startPos) {
-		REMatch match = re.getMatch(target, startPos, eflags);
-		if (match != null) {
-			int count = re.getNumSubs() + 1;
-			int[] begin = new int[count];
-			int[] end = new int[count];
-			for (int i = 0; i < count; i++) {
-				begin[i] = match.getStartIndex(i);
-				end[i] = match.getEndIndex(i);
-			}
-			return new RubyMatchData(ruby, target, begin, end);
-		}
-		return ruby.getNil();
-	}
+    /**
+     * Does the given argument match the pattern?
+     */
+    public RubyObject search(Ruby ruby, String target, int startPos) {
+        REMatch match = re.getMatch(target, startPos, eflags);
+        if (match != null) {
+            int count = re.getNumSubs() + 1;
+            int[] begin = new int[count];
+            int[] end = new int[count];
+            for (int i = 0; i < count; i++) {
+                begin[i] = match.getStartIndex(i);
+                end[i] = match.getEndIndex(i);
+            }
+            return new RubyMatchData(ruby, target, begin, end);
+        }
+        return ruby.getNil();
+    }
 }

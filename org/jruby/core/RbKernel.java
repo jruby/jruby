@@ -108,18 +108,18 @@ public class RbKernel {
     }
     
     public static RubyObject m_raise(Ruby ruby, RubyObject recv, RubyObject args[]) {
-    	int argsLength = args != null? args.length : 0;
-    	
-    	switch (argsLength) {
-    		case 0:
-    		case 1:
-    			throw new RaiseException(RubyException.s_new(ruby, ruby.getExceptions().getRuntimeError(), args));
-    		case 2:
-    			RubyException excptn = (RubyException)args[0].funcall(ruby.intern("exception"), args[1]);
-    			throw new RaiseException(excptn);
-   			default:
-   				throw new RubyArgumentException(ruby, "wrong # of arguments");
-    	}
+        int argsLength = args != null? args.length : 0;
+    
+        switch (argsLength) {
+            case 0:
+            case 1:
+                throw new RaiseException(RubyException.s_new(ruby, ruby.getExceptions().getRuntimeError(), args));
+            case 2:
+                RubyException excptn = (RubyException)args[0].funcall(ruby.intern("exception"), args[1]);
+                throw new RaiseException(excptn);
+            default:
+                throw new RubyArgumentException(ruby, "wrong # of arguments");
+        }
     }
     
     public static RubyObject m_print(Ruby ruby, RubyObject recv, RubyObject args[]) {
@@ -189,9 +189,9 @@ public class RbKernel {
                 }
             }
         } else {
-        	if (!arg1.getValue().endsWith(".rb")) {
-        		arg1 = RubyString.m_newString(ruby, arg1.getValue() + ".rb");
-        	}
+            if (!arg1.getValue().endsWith(".rb")) {
+                arg1 = RubyString.m_newString(ruby, arg1.getValue() + ".rb");
+            }
             ruby.getRuntime().loadFile(arg1, false);
         }
         return ruby.getNil();

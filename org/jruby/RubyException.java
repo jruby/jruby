@@ -1,7 +1,31 @@
 /*
- * RubyException.java
- *
+ * RubyException.java - No description
  * Created on 18. Oktober 2001, 23:31
+ *
+ * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <japetersen@web.de>
+ * Stefan Matthias Aust <sma@3plus4.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ *
+ * JRuby - http://jruby.sourceforge.net
+ *
+ * This file is part of JRuby
+ *
+ * JRuby is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * JRuby is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with JRuby; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  */
 
 package org.jruby;
@@ -16,71 +40,71 @@ import org.jruby.exceptions.RubyArgumentException;
  */
 public class RubyException extends RubyObject {
 
-	public RubyException(Ruby ruby, RubyClass rubyClass) {
-		super(ruby, rubyClass);
-	}
+    public RubyException(Ruby ruby, RubyClass rubyClass) {
+        super(ruby, rubyClass);
+    }
 
-	public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
-		RubyException newException = new RubyException(ruby, excptnClass);
-		newException.setInstanceVar("mesg", RubyString.m_newString(ruby, msg));
-		return newException;
-	}
+    public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
+        RubyException newException = new RubyException(ruby, excptnClass);
+        newException.setInstanceVar("mesg", RubyString.m_newString(ruby, msg));
+        return newException;
+    }
 
-	public static RubyException s_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
-		RubyException newException = new RubyException(ruby, (RubyClass)recv);
-		if (args.length == 1) {
-			newException.setInstanceVar("mesg", args[0]);
-		}
-		return newException;
-	}
+    public static RubyException s_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        RubyException newException = new RubyException(ruby, (RubyClass)recv);
+        if (args.length == 1) {
+            newException.setInstanceVar("mesg", args[0]);
+        }
+        return newException;
+    }
 
-	public static RubyException m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
-		return s_new(ruby, recv.getRubyClass(), args);
-	}
+    public static RubyException m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        return s_new(ruby, recv.getRubyClass(), args);
+    }
 
-	public RubyException m_exception(RubyObject[] args) {
-		switch (args.length) {
-			case 0 :
-				return this;
-			case 1 :
-				return (RubyException) m_new(getRuby(), this, args);
-			default :
-				throw new RubyArgumentException(getRuby(), "Wrong argument count");
-		}
+    public RubyException m_exception(RubyObject[] args) {
+        switch (args.length) {
+            case 0 :
+                return this;
+            case 1 :
+                return (RubyException) m_new(getRuby(), this, args);
+            default :
+                throw new RubyArgumentException(getRuby(), "Wrong argument count");
+        }
 
-	}
+    }
 
-	public RubyString m_to_s() {
-		RubyObject message = getInstanceVar("mesg");
+    public RubyString m_to_s() {
+        RubyObject message = getInstanceVar("mesg");
 
-		if (message.isNil()) {
-			return getRubyClass().getClassPath();
-		} else {
-			message.setTaint(isTaint());
+        if (message.isNil()) {
+            return getRubyClass().getClassPath();
+        } else {
+            message.setTaint(isTaint());
 
-			return (RubyString) message;
-		}
-	}
+            return (RubyString) message;
+        }
+    }
 
-	/** inspects an object and return a kind of debug information
-	 * 
-	 *@return A RubyString containing the debug information.
-	 */
-	public RubyString m_inspect() {
-		RubyModule rubyClass = getRubyClass();
+    /** inspects an object and return a kind of debug information
+     * 
+     *@return A RubyString containing the debug information.
+     */
+    public RubyString m_inspect() {
+        RubyModule rubyClass = getRubyClass();
 
-		RubyString exception = RubyString.stringValue(this);
+        RubyString exception = RubyString.stringValue(this);
 
-		if (exception.getValue().length() == 0) {
-			return rubyClass.getClassPath();
-		} else {
-			StringBuffer sb = new StringBuffer();
-			sb.append("#<");
-			sb.append(rubyClass.getClassPath().getValue());
-			sb.append(": ");
-			sb.append(exception.getValue());
-			sb.append(">");
-			return RubyString.m_newString(getRuby(), sb.toString());
-		}
-	}
+        if (exception.getValue().length() == 0) {
+            return rubyClass.getClassPath();
+        } else {
+            StringBuffer sb = new StringBuffer();
+            sb.append("#<");
+            sb.append(rubyClass.getClassPath().getValue());
+            sb.append(": ");
+            sb.append(exception.getValue());
+            sb.append(">");
+            return RubyString.m_newString(getRuby(), sb.toString());
+        }
+    }
 }

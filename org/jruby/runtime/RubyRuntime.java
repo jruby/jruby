@@ -63,7 +63,7 @@ public class RubyRuntime {
         }
         
         // volatile ID last_func;
-        // ruby_errinfo = Qnil;	/* ensure */
+        // ruby_errinfo = Qnil; /* ensure */
         RubyVarmap.push(ruby);
         ruby.pushClass();
         
@@ -71,7 +71,7 @@ public class RubyRuntime {
         ruby.setCRef(ruby.getTopCRef());
         
         if (!wrap) {
-            ruby.secure(4);		/* should alter global state */
+            ruby.secure(4); /* should alter global state */
             ruby.setRubyClass(ruby.getClasses().getObjectClass());
             ruby.setWrapper(null);
         } else {

@@ -746,6 +746,71 @@ public class RubyArray extends RubyObject {
         return this;
     }
 
+    /** rb_ary_index
+     *
+     */
+    public RubyObject m_index(RubyObject obj) {
+        for (int i = 0; i < length(); i++) {
+            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+                return RubyFixnum.m_newFixnum(getRuby(), i);
+            }
+        }
+        return getRuby().getNil();
+    }
+    
+    /** rb_ary_rindex
+     *
+     */
+    public RubyObject m_rindex(RubyObject obj) {
+        for (int i = length()-1; i >= 0; i--) {
+            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+                return RubyFixnum.m_newFixnum(getRuby(), i);
+            }
+        }
+        return getRuby().getNil();
+    }
+    
+    /** rb_ary_indexes
+     *
+     */
+    public RubyArray m_indexes(RubyObject[] args) {
+        RubyObject[] result = new RubyObject[args.length];
+        boolean taint = false;
+        for (int i = 0; i < args.length; i++) {
+            result[i] = entry(RubyNumeric.fix2int(args[i]));
+            taint |= result[i].isTaint();
+        }
+        RubyArray ary = m_create(getRuby(), result);
+        ary.setTaint(taint);
+        return ary;
+    }
+    
+    /** rb_ary_clone
+     *
+     */
+    public RubyObject m_clone() {
+        RubyArray ary = m_newArray(getRuby(), list);
+        ary.infectObject(this);
+        return ary;
+    }
+    
+    /** rb_ary_reverse_bang
+     *
+     */
+    public RubyObject m_reverse_bang() {
+        Collections.reverse(list);
+        return this;
+    }
+    
+    /** rb_ary_reverse_m
+     *
+     */
+    public RubyObject m_reverse() {
+        RubyArray ary = (RubyArray)m_dup();
+        ary.m_reverse_bang();
+        return ary;
+    }
+    
     /** rb_ary_sort
      *
      */
@@ -753,6 +818,86 @@ public class RubyArray extends RubyObject {
         RubyArray rubyArray = (RubyArray)m_dup();
         rubyArray.m_sort_bang();
         return rubyArray;
+    }
+    
+    /** rb_ary_collect
+     *
+     */
+    public RubyArray m_collect() {
+        if (!getRuby().isBlockGiven()) {
+            return (RubyArray)m_dup();
+        }
+        ArrayList ary = new ArrayList();
+        for (int i = 0; i < length(); i++) {
+            ary.add(getRuby().yield(entry(i)));
+        }
+        return new RubyArray(getRuby(), ary);
+    }
+    
+    /** rb_ary_collect_bang
+     *
+     */
+    public RubyArray m_collect_bang() {
+        modify();
+        for (int i = 0; i < length(); i++) {
+            list.set(i, getRuby().yield(entry(i)));
+        }
+        return this;
+    }
+    
+    /** rb_ary_delete
+     *
+     */
+    public RubyObject m_delete(RubyObject obj) {
+        modify();
+        RubyObject retVal = getRuby().getNil();
+        for (int i = length() - 1; i >= 0; i--) {
+            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+                retVal = (RubyObject)list.remove(i);
+            }
+        }
+        if (retVal.isNil() && getRuby().isBlockGiven()) {
+            retVal = getRuby().yield(entry(0));
+        }
+        return retVal;
+    }
+    
+    /** rb_ary_delete_at
+     *
+     */
+    public RubyObject m_delete_at(RubyObject obj) {
+        modify();
+        int pos = (int)RubyNumeric.num2long(obj);
+        int len = length();
+        if (pos >= len) {
+            return getRuby().getNil();
+        }
+        if (pos < 0 && (pos += len) < 0) {
+            return getRuby().getNil();
+        }
+        return (RubyObject)list.remove(pos);
+    }
+    
+    /** rb_ary_reject_bang
+     *
+     */
+    public RubyObject m_reject_bang() {
+        modify();
+        RubyObject retVal = getRuby().getNil();
+        for (int i = length() - 1; i >= 0; i--) {
+            if (getRuby().yield(entry(i)).isTrue()) {
+                retVal = (RubyObject)list.remove(i);
+            }
+        }
+        return retVal.isNil() ? (RubyObject)retVal : (RubyObject)this;
+    }
+    
+    /** rb_ary_delete_if
+     *
+     */
+    public RubyObject m_delete_if() {
+        m_reject_bang();
+        return this;
     }
     
     /** rb_ary_sort_bang

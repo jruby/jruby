@@ -60,7 +60,7 @@ public class RubyOperatorEntry {
             new RubyOperatorEntry(ruby, Token.tPOW,     "**"),
             new RubyOperatorEntry(ruby, Token.tUPLUS,   "+@"),
             new RubyOperatorEntry(ruby, Token.tUMINUS,  "-@"),
-            new RubyOperatorEntry(ruby, Token.tUPLUS,	"+(unary)"),
+            new RubyOperatorEntry(ruby, Token.tUPLUS,   "+(unary)"),
             new RubyOperatorEntry(ruby, Token.tUMINUS,  "-(unary)"),
             new RubyOperatorEntry(ruby, '|',            "|"),
             new RubyOperatorEntry(ruby, '^',            "^"),

@@ -146,8 +146,8 @@ public class JavaUtil {
             } else if (cName == "char") {
             	return RubyFixnum.m_newFixnum(ruby, ((Character)object).charValue());
             } else {
-	            // else it's one of the integral types
-				return RubyFixnum.m_newFixnum(ruby, ((Number)object).longValue());
+                // else it's one of the integral types
+                return RubyFixnum.m_newFixnum(ruby, ((Number)object).longValue());
             }
         }
         if (javaClass == String.class) {

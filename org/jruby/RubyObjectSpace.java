@@ -36,62 +36,62 @@ import org.jruby.core.*;
 
 public class RubyObjectSpace {
 
-	/** Create the ObjectSpace module and add it to the Ruby runtime.
-	 * 
-	 */
-	public static RubyModule createObjectSpaceModule(Ruby ruby) {
-		RubyCallbackMethod each_object =
-			new ReflectionCallbackMethod(RubyObjectSpace.class, "each_object", true, true);
+    /** Create the ObjectSpace module and add it to the Ruby runtime.
+     * 
+     */
+    public static RubyModule createObjectSpaceModule(Ruby ruby) {
+        RubyCallbackMethod each_object =
+            new ReflectionCallbackMethod(RubyObjectSpace.class, "each_object", true, true);
 
-		RubyModule objectSpaceModule = ruby.defineModule("ObjectSpace");
+        RubyModule objectSpaceModule = ruby.defineModule("ObjectSpace");
 
-		objectSpaceModule.defineModuleFunction("each_object", each_object);
+        objectSpaceModule.defineModuleFunction("each_object", each_object);
 
-		return objectSpaceModule;
-	}
+        return objectSpaceModule;
+    }
 
-	public static RubyObject each_object(
-		Ruby ruby,
-		RubyObject recv,
-		RubyObject[] args) {
-		if (args.length == 1) {
-			Iterator iter = new LinkedList(ruby.objectSpace).iterator();
+    public static RubyObject each_object(
+        Ruby ruby,
+        RubyObject recv,
+        RubyObject[] args) {
+        if (args.length == 1) {
+            Iterator iter = new LinkedList(ruby.objectSpace).iterator();
 
-			while (iter.hasNext()) {
-				SoftReference ref = (SoftReference) iter.next();
-				RubyObject obj = (RubyObject) ref.get();
-				if (obj != null) {
-					if (obj instanceof RubyModule
-						&& (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
-						continue;
-					} else {
-						if (obj.m_kind_of((RubyModule)args[0]).isTrue()) {
-							ruby.yield(obj);
-						}
-					}
-				} else {
-					ruby.objectSpace.remove(ref);
-				}
-			}
-			return ruby.getNil();
-		} else {
-			Iterator iter = new LinkedList(ruby.objectSpace).iterator();
+            while (iter.hasNext()) {
+                SoftReference ref = (SoftReference) iter.next();
+                RubyObject obj = (RubyObject) ref.get();
+                if (obj != null) {
+                    if (obj instanceof RubyModule
+                        && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
+                        continue;
+                    } else {
+                        if (obj.m_kind_of((RubyModule)args[0]).isTrue()) {
+                            ruby.yield(obj);
+                        }
+                    }
+                } else {
+                    ruby.objectSpace.remove(ref);
+                }
+            }
+            return ruby.getNil();
+        } else {
+            Iterator iter = new LinkedList(ruby.objectSpace).iterator();
 
-			while (iter.hasNext()) {
-				SoftReference ref = (SoftReference) iter.next();
-				RubyObject obj = (RubyObject) ref.get();
-				if (obj != null) {
-					if (obj instanceof RubyModule
-						&& (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
-						continue;
-					} else {
-						ruby.yield(obj);
-					}
-				} else {
-					ruby.objectSpace.remove(ref);
-				}
-			}
-			return ruby.getNil();
-		}
-	}
+            while (iter.hasNext()) {
+                SoftReference ref = (SoftReference) iter.next();
+                RubyObject obj = (RubyObject) ref.get();
+                if (obj != null) {
+                    if (obj instanceof RubyModule
+                        && (((RubyModule) obj).isIncluded() || ((RubyModule) obj).isSingleton())) {
+                        continue;
+                    } else {
+                        ruby.yield(obj);
+                    }
+                } else {
+                    ruby.objectSpace.remove(ref);
+                }
+            }
+            return ruby.getNil();
+        }
+    }
 }

@@ -18,13 +18,13 @@ import com.ibm.bsf.BSFDeclaredBean;
  * @author  jpetersen
  */
 public class DeclaredBeanGetMethod implements RubyCallbackMethod {
-	private BSFDeclaredBean bean;
+    private BSFDeclaredBean bean;
 
-	public DeclaredBeanGetMethod(BSFDeclaredBean bean) {
-		this.bean = bean;
-	}
+    public DeclaredBeanGetMethod(BSFDeclaredBean bean) {
+        this.bean = bean;
+    }
 
-	public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-		return JavaUtil.convertJavaToRuby(ruby, bean.bean, bean.type);
-	}
+    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+        return JavaUtil.convertJavaToRuby(ruby, bean.bean, bean.type);
+    }
 }

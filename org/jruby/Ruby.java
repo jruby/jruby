@@ -127,7 +127,7 @@ public final class Ruby {
     // Java support
     private ClassLoader javaClassLoader = ClassLoader.getSystemClassLoader();
  
-    // pluggable Regexp engine	
+    // pluggable Regexp engine
     private Class regexpAdapterClass;
 
     /**
@@ -150,7 +150,7 @@ public final class Ruby {
     public void setRegexpAdapterClass(Class iRegexpAdapterClass) {
         regexpAdapterClass = iRegexpAdapterClass;
     }
-	
+
     public RubyClasses getClasses() {
         return classes;
     }
@@ -949,11 +949,11 @@ public final class Ruby {
         this.runtime = runtime;
     }
     
-	/**
-	 * Gets the exceptions
-	 * @return Returns a RubyExceptions
-	 */
-	public RubyExceptions getExceptions() {
-		return exceptions;
-	}
+    /**
+     * Gets the exceptions
+     * @return Returns a RubyExceptions
+     */
+    public RubyExceptions getExceptions() {
+        return exceptions;
+    }
 }

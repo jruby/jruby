@@ -103,6 +103,8 @@ public class JDKRegexpAdapter extends IRegexpAdapter {
     public RubyObject search(Ruby ruby, String target, int startPos) {
         if (matcher == null) {
             matcher = pattern.matcher(target);
+        } else {
+            matcher.reset(target);
         }
         if (matcher.find(startPos)) {
             int count = matcher.groupCount() + 1;

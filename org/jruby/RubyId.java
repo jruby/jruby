@@ -54,7 +54,7 @@ public final class RubyId {
     private RubyId(Ruby ruby, int value) {
         super();
         this.ruby = ruby;
-	this.value = value;
+        this.value = value;
     }
     
     public static RubyId newId(Ruby ruby) {
@@ -75,7 +75,7 @@ public final class RubyId {
     }
     
     public int intValue() {
-	return value;
+        return value;
     }
     
     public int hashCode() {
@@ -125,14 +125,14 @@ public final class RubyId {
                     return opTable[i].name;
                 }
             }
-	}
-
-	String name = (String)ruby.getSymbolReverseTable().get(this);
-	if (name != null) {
-	    return name;
         }
 
-	if (isAttrSetId()) {
+        String name = (String)ruby.getSymbolReverseTable().get(this);
+        if (name != null) {
+            return name;
+        }
+
+        if (isAttrSetId()) {
             RubyId id2 = newId(ruby, (value & ~ID_SCOPE_MASK) | ID_LOCAL);
             while (true) {
                 name = id2.toName();
@@ -144,9 +144,9 @@ public final class RubyId {
                     continue;
                 }
                 break;
-	    }
-	}
-	return null;
+            }
+        }
+        return null;
     }
     
     public RubySymbol toSymbol() {
@@ -212,11 +212,11 @@ public final class RubyId {
     private static RubyId registerId(Ruby ruby, RubyId rubyId, String name) {
         ruby.getSymbolTable().put(name, rubyId);
         ruby.getSymbolReverseTable().put(rubyId, name);
-	return rubyId;
+        return rubyId;
     }
 
     public static final boolean isIdentChar(char ch) {
-	return Character.isLetterOrDigit(ch) || ch == '_';
+        return Character.isLetterOrDigit(ch) || ch == '_';
     }
     
     // deprecated methods

@@ -113,17 +113,17 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         return method;
     }
     
-	protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
-		if (restArgs) {
-			if (methodArgs.length < (args.length -1)) {
-				throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
-			}
-		} else {
-			if (methodArgs.length != args.length) {
-				throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
-			}
-		}
-	}
+    protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
+        if (restArgs) {
+            if (methodArgs.length < (args.length -1)) {
+                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+            }
+        } else {
+            if (methodArgs.length != args.length) {
+                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
+            }
+        }
+    }
     
     protected String getExceptedArgsString(RubyObject[] methodArgs) {
         StringBuffer sb = new StringBuffer();
@@ -201,9 +201,9 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
             	return ruby.getNil();
             }
         } catch  (IllegalAccessException iaExcptn) {
-        	throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
+            throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
         } catch  (IllegalArgumentException iaExcptn) {
-        	throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
+            throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
         }
     }
     
