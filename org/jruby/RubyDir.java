@@ -1,31 +1,31 @@
 /*
  * RubyDir.java - No description
  * Created on 18.03.2002, 15:19:50
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Chad Fowler <chadfowler@yahoo.com>
- * 
+ *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby;
 
@@ -43,7 +43,7 @@ import org.jruby.util.Glob;
 
 /**
  * .The Ruby built-in class Dir.
- * 
+ *
  * @author  jvoegele
  * @version $Revision$
  */
@@ -75,7 +75,7 @@ public class RubyDir extends RubyObject {
         dirClass.defineSingletonMethod("pwd", CallbackFactory.getSingletonMethod(RubyDir.class, "getwd"));
         // dirClass.defineAlias("pwd", "getwd");
         dirClass.defineSingletonMethod("mkdir", CallbackFactory.getOptSingletonMethod(RubyDir.class, "mkdir"));
-        dirClass.defineSingletonMethod("open", CallbackFactory.getOptSingletonMethod(RubyDir.class, "open", RubyString.class));
+        dirClass.defineSingletonMethod("open", CallbackFactory.getSingletonMethod(RubyDir.class, "open", RubyString.class));
         dirClass.defineSingletonMethod("rmdir", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
         dirClass.defineSingletonMethod("unlink", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
         dirClass.defineSingletonMethod("delete", CallbackFactory.getSingletonMethod(RubyDir.class, "rmdir", RubyString.class));
@@ -86,7 +86,7 @@ public class RubyDir extends RubyObject {
         dirClass.defineMethod("each", CallbackFactory.getMethod(RubyDir.class, "each"));
         dirClass.defineMethod("tell", CallbackFactory.getMethod(RubyDir.class, "tell"));
         dirClass.defineAlias("pos", "tell");
-        dirClass.defineMethod("seek", CallbackFactory.getMethod(RubyDir.class, "seek", RubyInteger.class));
+        dirClass.defineMethod("seek", CallbackFactory.getMethod(RubyDir.class, "seek", RubyFixnum.class));
         dirClass.defineAlias("pos=", "seek");
         dirClass.defineMethod("read", CallbackFactory.getMethod(RubyDir.class, "read"));
         dirClass.defineMethod("rewind", CallbackFactory.getMethod(RubyDir.class, "rewind"));
@@ -134,17 +134,8 @@ public class RubyDir extends RubyObject {
      * <code>pat</code>.
      */
     public static RubyArray glob(IRubyObject recv, RubyString pat) {
-        // FIXME this is only a small subset of the functionallity of this function
-        
         String pattern = pat.toString();
-        
-        /*if (pattern.indexOf("**") != -1 || pattern.indexOf("?") != -1) {
-            throw new NotImplementedError();
-        }*/
-        
         String[] files = new Glob(pattern).getNames();
-        // new File(".").list(new GlobFilenameFilter(pattern));
-
         return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }
 
@@ -262,7 +253,11 @@ public class RubyDir extends RubyObject {
 
     /** Returns the next entry from this directory. */
     public RubyString read() {
-        return new RubyString(getRuntime(), snapshot[pos++]);
+        pos++;
+        if (pos >= snapshot.length) {
+            return RubyString.nilString(runtime);
+        }
+        return new RubyString(getRuntime(), snapshot[pos]);
     }
 
     /** Moves position in this directory to the first entry. */
