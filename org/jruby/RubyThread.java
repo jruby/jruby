@@ -47,27 +47,13 @@ import java.util.Arrays;
  * @version $Revision$
  */
 public class RubyThread extends RubyObject {
-    /**
-     * The JVM thread mapped to this Ruby thread instance
-     */
+    /** Underlying JVM thread */
     protected Thread jvmThread;
 
-    /**
-     * Description of the Field
-     */
     protected static boolean static_abort_on_exception;
 
-    /**
-     * Description of the Field
-     */
     protected boolean abort_on_exception;
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @return Description of the Return Value
-     */
     public static RubyClass createThreadClass(Ruby ruby) {
         RubyClass threadClass = ruby.defineClass("Thread", ruby.getClasses().getObjectClass());
 
@@ -145,11 +131,6 @@ public class RubyThread extends RubyObject {
      * a.join # main thread exits...
      * </pre>
      * <i>produces:</i> abxyzc
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @param args Description of the Parameter
-     * @return Description of the Return Value
      */
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
         return startThread(recv, args, true);
@@ -159,25 +140,11 @@ public class RubyThread extends RubyObject {
      * Basically the same as Thread.new . However, if class Thread is
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @param args Description of the Parameter
-     * @return Description of the Return Value
      */
     public static RubyThread start(IRubyObject recv, IRubyObject[] args) {
         return startThread(recv, args, false);
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @param args Description of the Parameter
-     * @param callInit Description of the Parameter
-     * @return Description of the Return Value
-     */
     protected static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         if (! recv.getRuntime().isBlockGiven()) {
             throw new ThreadError(recv.getRuntime(), "must be called with a block");
@@ -208,21 +175,10 @@ public class RubyThread extends RubyObject {
         return result;
     }
 
-    /**
-     *Constructor for the RubyThread object
-     *
-     * @param ruby Description of the Parameter
-     */
     protected RubyThread(Ruby ruby) {
         this(ruby, ruby.getClasses().getThreadClass());
     }
 
-    /**
-     *Constructor for the RubyThread object
-     *
-     * @param ruby Description of the Parameter
-     * @param type Description of the Parameter
-     */
     protected RubyThread(Ruby ruby, RubyClass type) {
         super(ruby, type);
     }
@@ -232,69 +188,28 @@ public class RubyThread extends RubyObject {
      * default is false. When set to true, will cause all threads to abort (the
      * process will exit(0)) if an exception is raised in any thread. See also
      * Thread.abort_on_exception= .
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @return Description of the Return Value
      */
     public static RubyBoolean abort_on_exception(IRubyObject recv) {
         return static_abort_on_exception ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @param val Description of the Parameter
-     * @return Description of the Return Value
-     */
     public static RubyBoolean abort_on_exception_set(IRubyObject recv, RubyBoolean val) {
         static_abort_on_exception = val.isTrue();
         return val;
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @return Description of the Return Value
-     */
     public static RubyBoolean critical(IRubyObject recv) {
         throw new NotImplementedError();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @param val Description of the Parameter
-     * @return Description of the Return Value
-     */
     public static RubyBoolean critical_set(IRubyObject recv, RubyBoolean val) {
         throw new NotImplementedError();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @return Description of the Return Value
-     */
     public static RubyThread current(IRubyObject recv) {
         return recv.getRuntime().getCurrentContext().getCurrentThread();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param ruby Description of the Parameter
-     * @param recv Description of the Parameter
-     * @return Description of the Return Value
-     */
     public static RubyArray list(IRubyObject recv) {
         ArrayList list = new ArrayList();
         Iterator iter = recv.getRuntime().objectSpace.iterator(recv.getRuntime().getClasses().getThreadClass());
@@ -304,12 +219,6 @@ public class RubyThread extends RubyObject {
         return RubyArray.newArray(recv.getRuntime(), list);
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param key Description of the Parameter
-     * @return Description of the Return Value
-     */
     public IRubyObject aref(IRubyObject key) {
         if (!(key instanceof RubySymbol) || !(key instanceof RubyString)) {
             throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
@@ -322,13 +231,6 @@ public class RubyThread extends RubyObject {
         return result;
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param key Description of the Parameter
-     * @param val Description of the Parameter
-     * @return Description of the Return Value
-     */
     public IRubyObject aset(IRubyObject key, IRubyObject val) {
         if (!(key instanceof RubySymbol) || !(key instanceof RubyString)) {
             throw new ArgumentError(getRuntime(), key.inspect() + " is not a symbol");
@@ -338,40 +240,19 @@ public class RubyThread extends RubyObject {
         return val;
     }
 
-    /**
-     * Description of the Method
-     *
-     * @return Description of the Return Value
-     */
     public RubyBoolean abort_on_exception() {
         return abort_on_exception ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param val Description of the Parameter
-     * @return Description of the Return Value
-     */
     public RubyBoolean abort_on_exception_set(RubyBoolean val) {
         abort_on_exception = val.isTrue();
         return val;
     }
 
-    /**
-     * Description of the Method
-     *
-     * @return Description of the Return Value
-     */
     public RubyBoolean is_alive() {
         return jvmThread.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @return Description of the Return Value
-     */
     public RubyThread join() {
         try {
             jvmThread.join();
@@ -380,43 +261,21 @@ public class RubyThread extends RubyObject {
         return this;
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param key Description of the Parameter
-     * @return Description of the Return Value
-     */
     public RubyBoolean has_key(IRubyObject key) {
         return runtime.getCurrentContext().getLocalVariables().containsKey(key)
             ? getRuntime().getTrue()
             : getRuntime().getFalse();
     }
 
-    /**
-     * Description of the Method
-     *
-     * @return Description of the Return Value
-     */
     public RubyFixnum priority() {
         return RubyFixnum.newFixnum(getRuntime(), jvmThread.getPriority());
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param priority Description of the Parameter
-     * @return Description of the Return Value
-     */
     public RubyFixnum priority_set(RubyFixnum priority) {
         jvmThread.setPriority((int) priority.getLongValue());
         return priority;
     }
 
-    /**
-     * Description of the Method
-     *
-     * @param exc Description of the Parameter
-     */
     public void raise(RubyException exc) {
         throw new NotImplementedError();
     }
