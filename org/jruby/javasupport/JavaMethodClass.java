@@ -86,7 +86,11 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
     }
 
     public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), method.getParameterTypes().length);
+        return RubyFixnum.newFixnum(getRuntime(), getArity());
+    }
+
+    private int getArity() {
+        return method.getParameterTypes().length;
     }
 
     public RubyBoolean public_p() {
@@ -98,8 +102,8 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
     }
 
     public IRubyObject invoke(IRubyObject[] args) {
-        if (args.length < 1) {
-            throw new ArgumentError(getRuntime(), args.length, 1);
+        if (args.length != getArity() + 1) {
+            throw new ArgumentError(getRuntime(), args.length, getArity() + 1);
         }
         IRubyObject invokee = args[0];
         if (! (invokee instanceof RubyJavaObject)) {

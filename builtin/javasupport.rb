@@ -23,11 +23,28 @@
 
 module JavaProxy
   attr :java_class, true
+end
 
-  def runtime_self
-    self
+# Extensions to existing classes and modules
+
+module Java
+  class JavaClass
+
+    def grouped_instance_methods(&block)
+      methods = java_instance_methods.select {|m| m.public? }
+      by_name = {}
+      methods.each {|m|
+        if by_name.has_key?(m.name)
+          by_name[m.name] << m
+        else
+          by_name[m.name] = [m]
+        end
+      }
+      by_name.each(&block)
+    end
   end
 end
+
 
 class Module
   private
@@ -56,7 +73,6 @@ class Module
       self.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(self.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
-      proxy_class.class_eval("def runtime_self; self; end")
 
       # FIXME: take types into consideration, like the old javasupport,
       #        and do the searching long before call-time.
@@ -72,14 +88,16 @@ class Module
       end
 
       def proxy_class.create_methods(java_class)
-        # FIXME: look though all the public methods and create suitable
-        # proxy methods for them.
-        methods = java_class.java_instance_methods
-        methods = methods.select {|m| m.public? }
-        methods.each {|m|
-          define_method(m.name) {|*args|
-            m.invoke(self, *args)
-          }
+        # FIXME: deal with overloaded methods
+        java_class.grouped_instance_methods {|name, methods|
+          if methods.length == 1
+            m = methods[0]
+            define_method(m.name) {|*args|
+              m.invoke(self, *args)
+            }
+          else
+            raise "Didn't think you would get away with overloading, now did you!"
+          end
         }
       end
       proxy_class.create_methods(java_class)
@@ -90,7 +108,7 @@ class Module
 
   def remove_package(package)
     if defined? @included_packages
-      @included_packages.delete package
+      @included_packages.delete(package)
     end
   end
 end
@@ -105,7 +123,7 @@ if __FILE__ == $0
   p Froboz::Random
 
   r = Froboz::Random.new
-  
+
   p r.to_s
   p r.type.instance_methods
 
