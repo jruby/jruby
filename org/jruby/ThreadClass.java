@@ -147,7 +147,6 @@ public class ThreadClass extends RubyObject implements IndexCallable {
         }
     }
 
-
     public void pollThreadEvents() {
         Asserts.assertExpression(isCurrent());
         pollReceivedExceptions();
