@@ -34,4 +34,4 @@ test_equal(1, h.index(2))
 test_equal(nil, h.index(10))
 h.default = :hello
 test_equal(1, h.index(2))
-test_equal(:hello, h.index(10))
+test_equal(nil, h.index(10))

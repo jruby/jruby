@@ -436,7 +436,7 @@ public class RubyHash extends RubyObject {
                 return (IRubyObject) key;
             }
         }
-        return getDefaultValue();
+        return runtime.getNil();
     }
 
     public RubyArray indices(IRubyObject[] indices) {
