@@ -244,9 +244,7 @@ public class JavaSupport {
         }
     }
 
-    public Class loadJavaClass(RubyString name) {
-        String className = name.getValue();
-
+    public Class loadJavaClass(String className) {
         try {
             return javaClassLoader.loadClass(className);
         } catch (ClassNotFoundException cnfExcptn) {
@@ -259,20 +257,20 @@ public class JavaSupport {
                 }
             }
         }
-        throw new NameError(ruby, "cannot load Java class: " + name.getValue());
+        throw new NameError(ruby, "cannot load Java class: " + className);
     }
 
     public void addImportPackage(String packageName) {
         importedPackages.add(packageName);
     }
 
-    /**
-     * Gets the renamedJavaClasses.
-     * @return Returns a Map
-     */
-    public Map getRenamedJavaClasses() {
-        return renamedJavaClasses;
-    }
+	public String getJavaName(String rubyName) {
+		return (String) renamedJavaClasses.get(rubyName);
+	}
+
+	public void rename(String rubyName, String javaName) {
+		renamedJavaClasses.put(rubyName, javaName);
+	}
 
     public Class getJavaClass(RubyClass type) {
         Iterator iter = loadedJavaClasses.entrySet().iterator();

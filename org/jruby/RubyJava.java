@@ -15,13 +15,11 @@ public class RubyJava {
 	// Java methods
     public static RubyObject rbImport(Ruby ruby, RubyObject recv, RubyString packageName) {
 		ruby.getJavaSupport().addImportPackage(packageName.getValue());
-		
         return recv;
     }
 
     public static RubyObject name(Ruby ruby, RubyObject recv, RubyString javaName, RubyString rubyName) {
-		ruby.getJavaSupport().getRenamedJavaClasses().put(rubyName.getValue(), javaName.getValue());
-		
+		ruby.getJavaSupport().rename(rubyName.getValue(), javaName.getValue());
         return recv;
     }
 }

@@ -426,13 +426,13 @@ public class RubyModule extends RubyObject {
         }
 
         // Now try to load a Java class
-        String javaClassName = (String) getRuby().getJavaSupport().getRenamedJavaClasses().get(name);
+        String javaClassName = getRuby().getJavaSupport().getJavaName(name);
         if (javaClassName == null) {
             javaClassName = name;
         }
 
         try {
-            Class javaClass = getRuby().getJavaSupport().loadJavaClass(RubyString.newString(getRuby(), javaClassName));
+            Class javaClass = getRuby().getJavaSupport().loadJavaClass(javaClassName);
             return getRuby().getJavaSupport().loadClass(javaClass, null);
         } catch (NameError excptn) {
         }
