@@ -18,6 +18,8 @@ public final class Visibility implements Serializable {
 
     private final byte restore;
 
+    static final long serialVersionUID = 2002102900L;
+
     /**
      * Constructor for MethodScope.
      */
@@ -55,5 +57,21 @@ public final class Visibility implements Serializable {
     
     public boolean isModuleFunction() {
         return this == MODULE_FUNCTION;
+    }
+
+    public String toString() {
+        switch (restore) {
+            case 0:
+                return "public";
+            case 1:
+                return "protected";
+            case 2:
+                return "private";
+            case 3:
+                return "module_function";
+            default:
+                Asserts.notReached();
+                return null;
+        }
     }
 }
