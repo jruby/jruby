@@ -34,12 +34,10 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.util.Asserts;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DAsgnCurrNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.InstAsgnNode;
@@ -52,6 +50,7 @@ import org.jruby.common.IErrors;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 /**
  *
@@ -128,13 +127,6 @@ public class AssignmentVisitor extends AbstractVisitor {
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
         ruby.getRubyClass().defineConstant(iVisited.getName(), value);
-    }
-
-    /**
-     * @see AbstractVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
-     */
-    public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        ruby.setDynamicVariable(iVisited.getName(), value);
     }
 
     /**

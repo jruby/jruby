@@ -29,21 +29,21 @@
  */
 package org.jruby;
 
-import java.io.Reader;
-import java.io.PrintStream;
-import java.io.InputStream;
-import java.io.File;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.HashMap;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
@@ -51,10 +51,10 @@ import org.ablaf.internal.lexer.DefaultLexerPosition;
 import org.jruby.common.IRubyErrorHandler;
 import org.jruby.common.RubyErrorHandler;
 import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.SecurityError;
-import org.jruby.exceptions.IOError;
 import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
@@ -64,9 +64,11 @@ import org.jruby.parser.Parser;
 import org.jruby.runtime.AliasGlobalVariable;
 import org.jruby.runtime.BlockStack;
 import org.jruby.runtime.Callback;
+import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.FrameStack;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.IGlobalVariables;
 import org.jruby.runtime.Iter;
 import org.jruby.runtime.LastCallStatus;
 import org.jruby.runtime.Namespace;
@@ -77,14 +79,11 @@ import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
-import org.jruby.runtime.DynamicVariableSet;
 import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
 import org.jruby.runtime.regexp.IRegexpAdapter;
-import org.jruby.runtime.variables.IVariablesService;
-import org.jruby.runtime.variables.VariablesServiceFactory;
 import org.jruby.util.Asserts;
 import org.jruby.util.RubyStack;
 import org.jruby.util.collections.IStack;
@@ -187,7 +186,7 @@ public final class Ruby {
     private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
-    private IVariablesService variablesService = VariablesServiceFactory.createVariablesService(this);
+    private IGlobalVariables globalVariables = null;
     private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
 
     /**

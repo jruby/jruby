@@ -41,7 +41,6 @@ import org.jruby.ast.ClassVarNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
-import org.jruby.ast.DAsgnCurrNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.FCallNode;
@@ -263,13 +262,6 @@ public class DefinedVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitConstDeclNode(ConstDeclNode)
      */
     public void visitConstDeclNode(ConstDeclNode iVisited) {
-        definition = "assignment";
-    }
-
-    /**
-     * @see AbstractVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
-     */
-    public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
         definition = "assignment";
     }
 

@@ -208,13 +208,6 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     /**
-     * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
-     */
-    public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        visitNode(iVisited);
-    }
-
-    /**
      * @see NodeVisitor#visitDAsgnNode(DAsgnNode)
      */
     public void visitDAsgnNode(DAsgnNode iVisited) {

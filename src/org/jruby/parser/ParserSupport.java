@@ -152,37 +152,34 @@ public class ParserSupport {
      *@return A Node representing the assignment.
 	 * @fixme need to handle positions
      */
-    public INode getAssignmentNode(String id, INode valueNode, ISourcePosition iPosition) {
+    public INode getAssignmentNode(String name, INode valueNode, ISourcePosition position) {
         checkExpression(valueNode);
 
-        if (IdUtil.isLocal(id)) {
-            if (blockNames.isCurrent(id)) {
-                return new DAsgnCurrNode(iPosition, id, valueNode);
-            } else if (blockNames.isDefined(id)) {
-                return new DAsgnNode(iPosition, id, valueNode);
-            } else if (getLocalNames().isLocalRegistered(id) || !blockNames.isInBlock()) {
-                return new LocalAsgnNode(iPosition, getLocalNames().getLocalIndex(id), valueNode);
+        if (IdUtil.isLocal(name)) {
+            if (blockNames.isDefined(name)) {
+                return new DAsgnNode(position, name, valueNode);
+            } else if (getLocalNames().isLocalRegistered(name) || !blockNames.isInBlock()) {
+                return new LocalAsgnNode(position, getLocalNames().getLocalIndex(name), valueNode);
             } else {
-                blockNames.add(id);
-                return new DAsgnCurrNode(iPosition, id, valueNode);
+                blockNames.add(name);
+                return new DAsgnNode(position, name, valueNode);
             }
-        } else if (IdUtil.isGlobal(id)) {
-            return new GlobalAsgnNode(iPosition, id, valueNode);
-        } else if (IdUtil.isInstanceVariable(id)) {
-            return new InstAsgnNode(iPosition, id, valueNode);
-        } else if (IdUtil.isConstant(id)) {
+        } else if (IdUtil.isGlobal(name)) {
+            return new GlobalAsgnNode(position, name, valueNode);
+        } else if (IdUtil.isInstanceVariable(name)) {
+            return new InstAsgnNode(position, name, valueNode);
+        } else if (IdUtil.isConstant(name)) {
             if (isInDef() || isInSingle()) {
-                //FIXME: postition
-                errorHandler.handleError(IErrors.SYNTAX_ERROR, "Dynamic constant assignment.");
+                errorHandler.handleError(IErrors.SYNTAX_ERROR, position, "Dynamic constant assignment.");
             }
-            return new ConstDeclNode(iPosition, id, valueNode);
-        } else if (IdUtil.isClassVariable(id)) {
+            return new ConstDeclNode(position, name, valueNode);
+        } else if (IdUtil.isClassVariable(name)) {
             if (isInDef() || isInSingle()) {
-                return new ClassVarAsgnNode(iPosition, id, valueNode);
+                return new ClassVarAsgnNode(position, name, valueNode);
             }
-            return new ClassVarDeclNode(iPosition, id, valueNode);
+            return new ClassVarDeclNode(position, name, valueNode);
         } else {
-            // BUG: "Id '" + id + "' not allowed for variable.";
+            Asserts.notReached("Id '" + name + "' not allowed for variable.");
             return null;
         }
     }

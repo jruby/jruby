@@ -173,11 +173,6 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         iVisited.accept(_Payload);
     }
 
-    public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        iVisited.accept(_Payload);
-        iVisited.getValueNode().accept(this);
-    }
-
     public void visitDAsgnNode(DAsgnNode iVisited) {
         iVisited.accept(_Payload);
         iVisited.getValueNode().accept(this);

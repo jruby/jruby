@@ -47,10 +47,6 @@ public class BlockNamesStack extends AbstractStack {
         return getTop() != null ? ((BlockNamesElement)getTop()).isDefined(name) : false;
     }
  
-    public boolean isCurrent(String name) {
-        return getTop() != null ? ((BlockNamesElement)getTop()).isCurrent(name) : false;
-    }
-
     public void add(String name) {
         ((BlockNamesElement)getTop()).add(name);
     }

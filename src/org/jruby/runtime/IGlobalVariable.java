@@ -1,4 +1,4 @@
-package org.jruby.runtime.variables;
+package org.jruby.runtime;
 
 import org.jruby.runtime.builtin.IRubyObject;
 

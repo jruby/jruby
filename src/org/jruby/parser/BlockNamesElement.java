@@ -54,12 +54,8 @@ public class BlockNamesElement implements StackElement {
         next = (BlockNamesElement)newNext;
     }
     
-    public boolean isCurrent(String name) {
-        return blockNames != null ? blockNames.contains(name) : false;
-    }
-
     public boolean isDefined(String name) {
-        return isCurrent(name) || (next != null && next.isDefined(name));
+        return blockNames != null ? blockNames.contains(name) : false || (next != null && next.isDefined(name));
     }
     
     public void add(String name) {

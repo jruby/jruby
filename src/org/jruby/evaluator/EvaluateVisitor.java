@@ -32,6 +32,8 @@ import java.util.Iterator;
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.Builtins;
+import org.jruby.KernelModule;
+import org.jruby.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -40,8 +42,6 @@ import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
-import org.jruby.KernelModule;
-import org.jruby.Method;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
@@ -69,7 +69,6 @@ import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
-import org.jruby.ast.DAsgnCurrNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
@@ -143,26 +142,26 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RedoJump;
 import org.jruby.exceptions.RetryJump;
 import org.jruby.exceptions.ReturnJump;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Iter;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.ICallable;
+import org.jruby.runtime.Iter;
 import org.jruby.runtime.Namespace;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
@@ -577,14 +576,6 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitConstNode(ConstNode iVisited) {
         result = threadContext.getCurrentFrame().getNamespace().getConstant(self, iVisited.getName());
-    }
-
-    /**
-     * @see NodeVisitor#visitDAsgnCurrNode(DAsgnCurrNode)
-     */
-    public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-        eval(iVisited.getValueNode());
-        runtime.setDynamicVariable(iVisited.getName(), result);
     }
 
     /**
