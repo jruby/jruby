@@ -263,7 +263,7 @@ public class RubyClasses {
         mathModule = RubyMath.createMathModule(ruby);
         timeClass = RubyTime.createTimeClass(ruby);
         
-        RubyVariables.createVariables(ruby);
+        RubyGlobal.createGlobals(ruby);
     }
 
     /** Returns the reference to the Binding class.

@@ -142,6 +142,11 @@ public final class RubyGlobalEntry {
     public boolean isDefined() {
         return !(getter instanceof UndefMethods);
     }
+    
+    public void undefine() {
+        this.getter = undefMethods;
+        this.setter = undefMethods;
+    }
 
     /** rb_alias_variable
      *
@@ -167,11 +172,9 @@ public final class RubyGlobalEntry {
 
     private static class UndefMethods implements GetterMethod, SetterMethod {
         public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
-            // +++ jpetersen
-            /*if (ruby.isVerbose()) {
-            	ruby.warn("global variable '" + id.toName() + "' not initialized");
-            }*/
-            // ---
+            if (entry.getRuby().isVerbose()) {
+            	// entry.getRuby().warn("global variable '" + id + "' not initialized");
+            }
 
             return entry.ruby.getNil();
         }

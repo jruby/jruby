@@ -191,7 +191,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public static RubyObject last_match(Ruby ruby, RubyObject recv) {
-        return ruby.getBackRef();
+        return ruby.getParserHelper().getBackref();
     }
 
     /** rb_reg_equal
@@ -219,7 +219,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public RubyObject match2() {
-        RubyObject target = getRuby().getLastLine();
+        RubyObject target = getRuby().getParserHelper().getLastline();
         if (!(target instanceof RubyString)) {
             return getRuby().getNil();
         }
@@ -323,7 +323,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
         // If nothing match then nil will be returned
         RubyObject result = matcher.search(getRuby(), str, pos);
-        getRuby().setBackRef(result);
+        getRuby().getParserHelper().setBackref(result);
 
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;

@@ -683,7 +683,7 @@ public class RubyString extends RubyObject {
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
         if (pat.search(this, 0) >= 0) {
-            RubyMatchData match = (RubyMatchData) getRuby().getBackRef();
+            RubyMatchData match = (RubyMatchData) getRuby().getParserHelper().getBackref();
             RubyString newStr = (RubyString) match.pre_match();
             newStr.append((RubyString) (iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match)));
             newStr.append((RubyString) match.post_match());
@@ -736,7 +736,7 @@ public class RubyString extends RubyObject {
         RubyObject newStr;
         int offset = 0;
         while (beg >= 0) {
-            match = (RubyMatchData) getRuby().getBackRef();
+            match = (RubyMatchData) getRuby().getParserHelper().getBackref();
             sbuf.append(str.substring(offset, beg));
             newStr = iter ? getRuby().yield(match.group(0)) : pat.regsub(repl, match);
             taint |= newStr.isTaint();
@@ -856,7 +856,7 @@ public class RubyString extends RubyObject {
         }
         if (args[0] instanceof RubyRegexp) {
             if (RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0) {
-                return RubyRegexp.last_match(getRuby().getBackRef());
+                return RubyRegexp.last_match(getRuby().getParserHelper().getBackref());
             }
             return getRuby().getNil();
         }
@@ -1150,7 +1150,7 @@ public class RubyString extends RubyObject {
         if (pat != null) {
             while ((beg = pat.search(this, pos)) > -1) {
                 hits++;
-                int end = ((RubyMatchData) getRuby().getBackRef()).matchEndPosition();
+                int end = ((RubyMatchData) getRuby().getParserHelper().getBackref()).matchEndPosition();
                 result.push(substr(pos, (beg == pos && end == beg) ? 1 : beg - pos));
                 pos = (end == beg) ? beg + 1 : end;
                 if (hits + 1 == limit) {
@@ -1189,7 +1189,7 @@ public class RubyString extends RubyObject {
         if (!getRuby().isBlockGiven()) {
             RubyArray ary = RubyArray.newArray(getRuby());
             while (pat.search(this, start) != -1) {
-                RubyMatchData md = (RubyMatchData) getRuby().getBackRef();
+                RubyMatchData md = (RubyMatchData) getRuby().getParserHelper().getBackref();
                 if (md.getSize() == 1) {
                     ary.push(md.group(0));
                 } else {
@@ -1205,7 +1205,7 @@ public class RubyString extends RubyObject {
         }
 
         while (pat.search(this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) getRuby().getBackRef();
+            RubyMatchData md = (RubyMatchData) getRuby().getParserHelper().getBackref();
             if (md.getSize() == 1) {
                 getRuby().yield(md.group(0));
             } else {
@@ -1639,7 +1639,7 @@ public class RubyString extends RubyObject {
         RubyRegexp pat = RubyRegexp.newRegexp(getRuby(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE);
         int start = 0;
         while (pat.search(this, start) != -1) {
-            RubyMatchData md = (RubyMatchData) getRuby().getBackRef();
+            RubyMatchData md = (RubyMatchData) getRuby().getParserHelper().getBackref();
             getRuby().yield(md.group(0));
             start = md.matchEndPosition();
         }

@@ -47,16 +47,16 @@ public class BackRefNode extends Node {
  	public RubyObject eval(Ruby ruby, RubyObject self) {
         switch ((char)getNth()) {
             case '&':
-                return RubyRegexp.last_match(ruby.getBackRef());
+                return RubyRegexp.last_match(ruby.getParserHelper().getBackref());
                 
             case '`':
-                return RubyRegexp.match_pre(ruby.getBackRef());
+                return RubyRegexp.match_pre(ruby.getParserHelper().getBackref());
                 
             case '\'':
-                return RubyRegexp.match_post(ruby.getBackRef());
+                return RubyRegexp.match_post(ruby.getParserHelper().getBackref());
                 
             case '+':
-                return RubyRegexp.match_last(ruby.getBackRef());
+                return RubyRegexp.match_last(ruby.getParserHelper().getBackref());
                 
             default:
                 throw new RubyBugException("unexpected back-ref");

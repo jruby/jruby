@@ -1,10 +1,12 @@
 /*
  * JRubyEngine.java - No description
- * Created on 12. Oktober 2001, 00:11
+ * Created on 11.01.2002, 14:33:37
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Alan Moore <alan_moore@gmx.net>
+ * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -25,14 +27,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.javasupport.bsf;
 
 import java.util.*;
 
 import org.jruby.*;
+import org.jruby.*;
 import org.jruby.javasupport.*;
 
+import org.jruby.runtime.*;
+
+import org.jruby.runtime.*;
 import com.ibm.bsf.*;
 import com.ibm.bsf.util.*;
 
@@ -43,15 +48,18 @@ import com.ibm.bsf.util.*;
  */
 public class JRubyEngine extends BSFEngineImpl {
     private Ruby ruby;
-    private RubyObject topSelf;
 
-    public Object apply(String source, int lineNo, int columnNo, Object funcBody,
-                      Vector paramNames, Vector args) {
+    public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
+        String oldFile = ruby.getSourceFile();
+        int oldLine = ruby.getSourceLine();
 
-        StringBuffer sb = new StringBuffer(((String)funcBody).length() + 100);
-        
-        sb.append("def jruby_bsf_anonymous (");
-        
+        ruby.setSourceFile(file);
+        ruby.setSourceLine(line);
+
+        StringBuffer sb = new StringBuffer(((String) funcBody).length() + 100);
+
+        sb.append("def __jruby_bsf_anonymous (");
+
         int paramLength = paramNames.size();
         for (int i = 0; i < paramLength; i++) {
             if (i > 0) {
@@ -60,39 +68,54 @@ public class JRubyEngine extends BSFEngineImpl {
             sb.append(paramNames.elementAt(i));
         }
         sb.append(") \n");
-        
+
         sb.append(funcBody);
-        
+
         sb.append("\nend\n");
-        
-        topSelf.eval(ruby.getRubyParser().compileJavaString(source, 
-              (String)sb.toString(), ((String)sb.toString()).length(), lineNo));
+
+        ruby.evalScript((String) sb.toString(), null);
 
         RubyObject[] rubyArgs = new RubyObject[args.size()];
         for (int i = args.size(); i >= 0; i--) {
-            rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args.elementAt(i), 
-                                                  args.elementAt(i).getClass());
+            rubyArgs[i] = JavaUtil.convertJavaToRuby(ruby, args.elementAt(i), args.elementAt(i).getClass());
         }
-        
-        RubyObject result = topSelf.funcall("jruby_bsf_anonymous", rubyArgs);
 
-        return JavaUtil.convertRubyToJava(ruby, result, Object.class);
-    }
-    
-    public Object eval(String source, int lineNo, int columnNo, Object expr) throws BSFException {
-        RubyObject result = topSelf.eval(ruby.getRubyParser().compileJavaString(
-                        source, (String)expr, ((String)expr).length(), lineNo));
+        Object result = JavaUtil.convertRubyToJava(ruby, ruby.getRubyTopSelf().funcall("__jruby_bsf_anonymous", rubyArgs));
 
-        return JavaUtil.convertRubyToJava(ruby, result, Object.class);
+        ruby.setSourceFile(oldFile);
+        ruby.setSourceLine(oldLine);
+
+        return result;
     }
-    
-    public void exec(String source, int lineNo, int columnNo, Object expr) throws BSFException {
-        
-        
-        topSelf.eval(ruby.getRubyParser().compileJavaString(source, 
-                            (String)expr, ((String)expr).length(), lineNo));
+
+    public Object eval(String file, int line, int col, Object expr) throws BSFException {
+        String oldFile = ruby.getSourceFile();
+        int oldLine = ruby.getSourceLine();
+
+        ruby.setSourceFile(file);
+        ruby.setSourceLine(line);
+
+        Object result = ruby.evalScript((String) expr, Object.class);
+
+        ruby.setSourceFile(oldFile);
+        ruby.setSourceLine(oldLine);
+
+        return result;
     }
-    
+
+    public void exec(String file, int line, int col, Object expr) throws BSFException {
+        String oldFile = ruby.getSourceFile();
+        int oldLine = ruby.getSourceLine();
+
+        ruby.setSourceFile(file);
+        ruby.setSourceLine(line);
+
+        ruby.evalScript((String) expr, Object.class);
+
+        ruby.setSourceFile(oldFile);
+        ruby.setSourceLine(oldLine);
+    }
+
     public Object call(Object recv, String method, Object[] args) throws BSFException {
         RubyObject rubyRecv = JavaUtil.convertJavaToRuby(ruby, recv, recv.getClass());
 
@@ -102,34 +125,55 @@ public class JRubyEngine extends BSFEngineImpl {
         }
 
         RubyObject result = rubyRecv.funcall(method, rubyArgs);
-        
+
         return JavaUtil.convertRubyToJava(ruby, result, Object.class);
     }
- 
-    public void initialize(BSFManager mgr, String lang, Vector declaredBeans)  throws BSFException {
+
+    public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
-        
-        ruby = new Ruby();
-        ruby.setRegexpAdapterClass(org.jruby.regexp.GNURegexpAdapter.class);
-        ruby.init();
-        
-        topSelf = ruby.getRubyTopSelf();
-        
+
+        ruby = Ruby.getDefaultInstance(org.jruby.regexp.GNURegexpAdapter.class);
+
         int size = declaredBeans.size();
         for (int i = 0; i < size; i++) {
-            BSFDeclaredBean bean = (BSFDeclaredBean)declaredBeans.elementAt(i);
-            topSelf.getSingletonClass().defineMethod(bean.name, new DeclaredBeanGetMethod(bean));
-            topSelf.getSingletonClass().defineMethod(bean.name + "=", new DeclaredBeanSetMethod(bean));
+            BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
+            BeanAccessor accessor = new BeanAccessor(ruby, bean);
+            ruby.defineVirtualVariable(bean.name, accessor, accessor);
         }
+        
+        // ruby.defineGlobalFunction("declareBean", method);
     }
-    
+
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
-        topSelf.getSingletonClass().defineMethod(bean.name, new DeclaredBeanGetMethod(bean));
-        topSelf.getSingletonClass().defineMethod(bean.name + "=", new DeclaredBeanSetMethod(bean));
+        BeanAccessor accessor = new BeanAccessor(ruby, bean);
+        ruby.defineVirtualVariable(bean.name, accessor, accessor);
     }
-    
+
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
-        topSelf.getSingletonClass().undefMethod(bean.name);
-        topSelf.getSingletonClass().undefMethod(bean.name + "=");
+        ruby.getGlobalEntry(bean.name).undefine();
+    }
+
+    private static class BeanAccessor implements RubyGlobalEntry.GetterMethod, RubyGlobalEntry.SetterMethod {
+        private Ruby ruby;
+        private BSFDeclaredBean bean;
+
+        protected BeanAccessor(Ruby ruby, BSFDeclaredBean bean) {
+            this.ruby = ruby;
+            this.bean = bean;
+        }
+
+        /*
+         * @see GetterMethod#get(String, RubyObject, RubyGlobalEntry)
+         */
+        public RubyObject get(String id, RubyObject value, RubyGlobalEntry entry) {
+            return JavaUtil.convertJavaToRuby(ruby, bean.bean, bean.type);
+        }
+
+        /*
+         * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            bean.bean = JavaUtil.convertRubyToJava(ruby, value, bean.type);
+        }
     }
 }

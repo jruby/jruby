@@ -260,11 +260,11 @@ public class ParserHelper {
     }
 
     /**
-     *  Description of the Method
+     * Gets the value of the last-match variable, $~
      *
-     *@return    Description of the Returned Value
+     *@return Contents of $~, or Nil if $~ hasn't been set in this scope.
      */
-    RubyObject rb_backref_get() {
+    public RubyObject getBackref() {
         if (ruby.getRubyScope().getLocalValues() != null) {
             return ruby.getRubyScope().getValue(1);
         }
@@ -272,11 +272,11 @@ public class ParserHelper {
     }
 
     /**
-     *  Description of the Method
+     * Sets the value of the last-match variable, $~.
      *
-     *@param  val  Description of Parameter
+     *@param val The new value of $~
      */
-    void rb_backref_set(RubyObject val) {
+    public void setBackref(RubyObject val) {
         if (ruby.getRubyScope().getLocalValues() != null) {
             ruby.getRubyScope().setValue(1, val);
         } else {
@@ -285,11 +285,11 @@ public class ParserHelper {
     }
 
     /**
-     *  Description of the Method
+     * Gets the value of the last_line variable, $_
      *
-     *@return    Description of the Returned Value
+     *@return Contents of $_, or Nil if $_ hasn't been set in this scope.
      */
-    RubyObject rb_lastline_get() {
+    public RubyObject getLastline() {
         if (ruby.getRubyScope().getLocalValues() != null) {
             return ruby.getRubyScope().getValue(0);
         }
@@ -297,11 +297,11 @@ public class ParserHelper {
     }
 
     /**
-     *  Description of the Method
+     * Sets the value of the last_line variable, $_
      *
-     *@param  val  Description of Parameter
+     *@param val The new value of $_
      */
-    void rb_lastline_set(RubyObject val) {
+    public void setLastline(RubyObject val) {
         if (ruby.getRubyScope().getLocalValues() != null) {
             ruby.getRubyScope().setValue(0, val);
         } else {

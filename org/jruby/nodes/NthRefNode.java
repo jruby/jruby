@@ -44,7 +44,7 @@ public class NthRefNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return RubyRegexp.nth_match(getNth(), ruby.getBackRef());
+        return RubyRegexp.nth_match(getNth(), ruby.getParserHelper().getBackref());
     }
 	/**
 	 * Accept for the visitor pattern.

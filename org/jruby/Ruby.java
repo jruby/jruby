@@ -779,27 +779,6 @@ public final class Ruby {
         this.topCRef = topCRef;
     }
 
-    /** Gets the value of the last_line variable, $_
-     * @return Contents of $_, or Nil if $_ hasn't been set in this scope.
-     */
-    public RubyObject getLastLine() {
-        return getRubyScope().getValue(0);
-    }
-
-    /** Gets the value of the last-match variable, $~
-     * @return Contents of $~, or Nil if $~ hasn't been set in this scope.
-     */
-    public RubyObject getBackRef() {
-        return getRubyScope().getValue(1);
-    }
-
-    /** Sets the value of the last-match variable, $~.
-     * @param match  The new value of $~
-     */
-    public void setBackRef(RubyObject match) {
-        getRubyScope().setValue(1, match);
-    }
-
     public JavaSupport getJavaSupport() {
         return javaSupport;
     }
@@ -909,8 +888,6 @@ public final class Ruby {
         RubyGlobalEntry.GetterMethod getter,
         RubyGlobalEntry.SetterMethod setter) {
 
-        name = name.charAt(0) == '$' ? name : "$" + name;
-
         RubyGlobalEntry globalEntry = getGlobalEntry(name);
 
         globalEntry.setData(value);
@@ -946,6 +923,8 @@ public final class Ruby {
      *
      */
     public RubyGlobalEntry getGlobalEntry(String name) {
+        name = name.charAt(0) == '$' ? name : "$" + name;
+
         //Ruby ruby = id.getRuby();
 
         RubyGlobalEntry entry = (RubyGlobalEntry) getGlobalMap().get(name);
