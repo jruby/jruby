@@ -4,6 +4,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import org.jruby.*;
 import org.jruby.exceptions.*;
+import org.jruby.runtime.*;
 
 public class JavaSupport {
     private Ruby ruby;
@@ -59,6 +60,8 @@ public class JavaSupport {
             
             newInterface.defineModuleFunction((String)entry.getKey(), new JavaInterfaceMethod((String)entry.getKey(), (Set)entry.getValue()));
         }
+
+        newInterface.defineModuleFunction("new" + rubyName, new JavaInterfaceConstructor(javaInterface));
 
         return newInterface;
     }
