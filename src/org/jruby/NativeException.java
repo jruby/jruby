@@ -34,12 +34,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class NativeException extends RubyException {
 
-    private final JavaObject cause;
+    private final Throwable cause;
     public static final String CLASS_NAME = "NativeException";
 
     public NativeException(Ruby runtime, RubyClass rubyClass, Throwable cause) {
-        super(runtime, rubyClass);
-        this.cause = JavaObject.wrap(runtime, cause);
+        super(runtime, rubyClass, cause.getClass().getName()+": "+cause.getMessage());
+        this.cause = cause;
     }
     
     public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
@@ -53,6 +53,21 @@ public class NativeException extends RubyException {
     }
     
     public IRubyObject cause() {
-        return cause;
+        return JavaObject.wrap(getRuntime(), cause);
+    }
+    
+    public IRubyObject backtrace() {
+        IRubyObject rubyTrace = super.backtrace();
+        if (rubyTrace.isNil())
+            return rubyTrace;
+        RubyArray array = (RubyArray) rubyTrace;
+        StackTraceElement[] stackTrace = cause.getStackTrace();
+        for (int i=stackTrace.length-1; i>=0; i--) {
+            StackTraceElement element = stackTrace[i];
+            String line = element.toString();
+            RubyString string = new RubyString(getRuntime(), line);
+            array.unshift(string);
+        }
+        return rubyTrace;
     }
 }
