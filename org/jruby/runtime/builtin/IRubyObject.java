@@ -45,9 +45,6 @@ import org.jruby.util.RubyMap;
  * @version $Revision$
  */
 public interface IRubyObject {
-    /** SHOULD REMOVED */
-    RubyObject toRubyObject();
-
     /**
      * Method getInstanceVar.
      * @param string
@@ -102,6 +99,11 @@ public interface IRubyObject {
      * Method getRubyClass.
      */
     RubyClass getInternalClass();
+    
+    /**
+     * Method setRubyClass.
+     */
+    void setInternalClass(RubyClass internalClass);
 
     /**
      * Method getSingletonClass.
@@ -268,4 +270,7 @@ public interface IRubyObject {
      * @return Object
      */
     RubyMap getInstanceVariables();
+    
+    public void callInit(IRubyObject[] args);
+    
 }

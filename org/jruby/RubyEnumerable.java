@@ -133,7 +133,7 @@ public class RubyEnumerable {
         RubyArray resultArray = (RubyArray) ((RubyArray) arg1).entry(1);
 
         if (matcher.callMethod("===", blockArg).isTrue()) {
-            resultArray.append(self.getRuntime().yield(blockArg).toRubyObject());
+            resultArray.append(self.getRuntime().yield(blockArg));
         }
 
         return self.getRuntime().getNil();
@@ -158,7 +158,7 @@ public class RubyEnumerable {
 
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, maxItem)).toRubyObject()) > 0) {
+        } else if (RubyFixnum.fix2int(self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, maxItem))) > 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);
@@ -193,7 +193,7 @@ public class RubyEnumerable {
         IRubyObject maxItem = ((RubyArray) arg1).pop();
         if (maxItem.isNil()) {
             ((RubyArray) arg1).append(blockArg);
-        } else if (RubyFixnum.fix2int(self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, maxItem)).toRubyObject()) < 0) {
+        } else if (RubyFixnum.fix2int(self.getRuntime().yield(RubyArray.newArray(self.getRuntime(), blockArg, maxItem))) < 0) {
             ((RubyArray) arg1).append(blockArg);
         } else {
             ((RubyArray) arg1).append(maxItem);

@@ -36,14 +36,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
-import org.jruby.util.RubyHashMap;
-import org.jruby.util.RubyMap;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marsal format.
@@ -52,12 +49,12 @@ import org.jruby.util.RubyMap;
  * $Revision$
  */
 public class UnmarshalStream extends FilterInputStream {
-    protected final Ruby ruby;
+    protected final Ruby runtime;
 
     public UnmarshalStream(Ruby ruby, InputStream in) throws IOException {
         super(in);
 
-        this.ruby = ruby;
+        this.runtime = ruby;
         in.read(); // Major
         in.read(); // Minor
     }
@@ -66,11 +63,11 @@ public class UnmarshalStream extends FilterInputStream {
         int type = readUnsignedByte();
         switch (type) {
             case '0' :
-                return ruby.getNil();
+                return runtime.getNil();
             case 'T' :
-                return RubyBoolean.newBoolean(ruby, true);
+                return RubyBoolean.newBoolean(runtime, true);
             case 'F' :
-                return RubyBoolean.newBoolean(ruby, false);
+                return RubyBoolean.newBoolean(runtime, false);
             case '"' :
                 return RubyString.unmarshalFrom(this);
             case 'i' :
@@ -99,8 +96,8 @@ public class UnmarshalStream extends FilterInputStream {
         }
     }
 
-    public Ruby getRuby() {
-        return ruby;
+    public Ruby getRuntime() {
+        return runtime;
     }
 
     public int readUnsignedByte() throws IOException {
@@ -158,29 +155,26 @@ public class UnmarshalStream extends FilterInputStream {
 
     private IRubyObject defaultObjectUnmarshal() throws IOException {
         RubySymbol className = (RubySymbol) unmarshalObject();
-        int variableCount = unmarshalInt();
-
-        RubyMap variables = new RubyHashMap(variableCount);
-        for (int i = 0; i < variableCount; i++) {
-            RubySymbol name = (RubySymbol) unmarshalObject();
-            IRubyObject value = unmarshalObject();
-            variables.put(name.toId(), value);
-        }
 
         // ... FIXME: handle if class doesn't exist ...
 
-        RubyClass rubyClass = (RubyClass) ruby.getRubyClass(className.toId());
-        RubyObject result = new RubyObject(ruby, rubyClass);
-        result.setInstanceVariables(variables);
+        RubyClass type = (RubyClass) runtime.getRubyClass(className.toId());
+        
+        IRubyObject result = runtime.getFactory().newObject(type);
+
+        for (int i = 0, count = unmarshalInt(); i < count; i++) {
+            result.setInstanceVariable(unmarshalObject().toId(), unmarshalObject());
+        }
+
         return result;
     }
 
     private IRubyObject userUnmarshal() throws IOException {
         String className = ((RubySymbol) unmarshalObject()).toId();
         String marshaled = unmarshalString();
-        RubyModule classInstance = ruby.getRubyModule(className);
+        RubyModule classInstance = runtime.getRubyModule(className);
         return classInstance.callMethod(
             "_load",
-            RubyString.newString(ruby, marshaled));
+            RubyString.newString(runtime, marshaled));
     }
 }

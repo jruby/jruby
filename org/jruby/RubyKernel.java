@@ -153,7 +153,7 @@ public class RubyKernel {
     public static IRubyObject puts(IRubyObject recv, IRubyObject args[]) {
         IRubyObject defout = recv.getRuntime().getGlobalVar("$>");
 
-        RubyIO.puts(defout.toRubyObject(), args);
+        RubyIO.puts(defout, args);
 
         return recv.getRuntime().getNil();
     }
@@ -161,7 +161,7 @@ public class RubyKernel {
     public static IRubyObject print(IRubyObject recv, IRubyObject args[]) {
         IRubyObject defout = recv.getRuntime().getGlobalVar("$>");
 
-        RubyIO.print(defout.toRubyObject(), args);
+        RubyIO.print(defout, args);
 
         return recv.getRuntime().getNil();
     }
@@ -178,7 +178,7 @@ public class RubyKernel {
                 args = newArgs;
             }
 
-            RubyIO.printf(defout.toRubyObject(), args);
+            RubyIO.printf(defout, args);
         }
 
         return recv.getRuntime().getNil();

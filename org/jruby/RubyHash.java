@@ -218,7 +218,7 @@ public class RubyHash extends RubyObject {
 
     public static RubyHash newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyHash hash = new RubyHash(recv.getRuntime());
-        hash.setRubyClass((RubyClass) recv);
+        hash.setInternalClass((RubyClass) recv);
 
         hash.callInit(args);
 
@@ -528,7 +528,7 @@ public class RubyHash extends RubyObject {
 	}
 
     public static RubyHash unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyHash result = newHash(input.getRuby());
+        RubyHash result = newHash(input.getRuntime());
         int size = input.unmarshalInt();
         for (int i = 0; i < size; i++) {
             IRubyObject key = input.unmarshalObject();

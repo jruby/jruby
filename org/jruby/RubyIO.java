@@ -579,7 +579,7 @@ public class RubyIO extends RubyObject {
 
         for (int i = 0; i < args.length; i++) {
             if (i > 0 && !fs.isNil()) {
-                recv.callMethod("write", fs.toRubyObject());
+                recv.callMethod("write", fs);
             }
             if (args[i].isNil()) {
                 recv.callMethod("write", RubyString.newString(recv.getRuntime(), "nil"));
@@ -588,7 +588,7 @@ public class RubyIO extends RubyObject {
             }
         }
         if (!rs.isNil()) {
-            recv.callMethod("write", rs.toRubyObject());
+            recv.callMethod("write", rs);
         }
 
         return recv.getRuntime().getNil();

@@ -426,7 +426,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        return RubyFixnum.newFixnum(input.getRuby(),
+        return RubyFixnum.newFixnum(input.getRuntime(),
                                     input.unmarshalInt());
     }
 }

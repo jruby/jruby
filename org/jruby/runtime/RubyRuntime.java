@@ -77,7 +77,7 @@ public class RubyRuntime {
 
 		try {
 			return ruby.getCurrentFrame().getLastClass().getSuperClass().call(
-						ruby.getCurrentFrame().getSelf().toRubyObject(),
+						ruby.getCurrentFrame().getSelf(),
 						ruby.getCurrentFrame().getLastFunc(),
 						args,
 						3);
@@ -200,9 +200,9 @@ public class RubyRuntime {
                         RubyString.newString(ruby, file),
                         RubyFixnum.newFixnum(ruby, line),
                         RubySymbol.newSymbol(ruby, name),
-                        self.toRubyObject(),
+                        self,
                     // XXX
-                    type.toRubyObject() });
+                    type });
             } finally {
                 ruby.getFrameStack().pop();
                 tracing = false;

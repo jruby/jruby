@@ -389,6 +389,6 @@ public class RubyBignum extends RubyInteger {
             value = value.negate();
         }
 
-        return newBignum(input.getRuby(), value);
+        return newBignum(input.getRuntime(), value);
     }
 }

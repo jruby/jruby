@@ -206,7 +206,7 @@ public class RubyClass extends RubyModule {
             throw new TypeError(getRuntime(), "can't create instance of virtual class");
         }
 
-        RubyObject obj = new RubyObject(getRuntime(), this);
+        IRubyObject obj = getRuntime().getFactory().newObject(this);
 
         obj.callInit(args);
 

@@ -206,7 +206,7 @@ public class RubyStruct extends RubyObject {
 
         int size = RubyFixnum.fix2int(getInstanceVariable((RubyClass) recv, "__size__"));
 
-        struct.values = new RubyObject[size];
+        struct.values = new IRubyObject[size];
 
         struct.callInit(args);
 
@@ -296,7 +296,7 @@ public class RubyStruct extends RubyObject {
     public IRubyObject rbClone() {
         RubyStruct clone = new RubyStruct(ruby, getInternalClass());
 
-        clone.values = new RubyObject[values.length];
+        clone.values = new IRubyObject[values.length];
         System.arraycopy(values, 0, clone.values, 0, values.length);
 
         return clone;
@@ -420,7 +420,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        Ruby ruby = input.getRuby();
+        Ruby ruby = input.getRuntime();
 
         RubySymbol className = (RubySymbol) input.unmarshalObject();
         RubyClass rbClass = pathToClass(ruby, className.toId());

@@ -67,7 +67,7 @@ public class RubyObject implements Cloneable, IRubyObject {
     protected transient Ruby ruby;
 
     // The class of this object
-    private RubyClass rubyClass;
+    private RubyClass internalClass;
 
     // The instance variables of this object.
     private RubyMap instanceVariables;
@@ -86,7 +86,7 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public RubyObject(Ruby ruby, RubyClass rubyClass, boolean useObjectSpace) {
         this.ruby = ruby;
-        this.rubyClass = rubyClass;
+        this.internalClass = rubyClass;
         this.frozen = false;
         this.taint = false;
 
@@ -116,7 +116,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      */
     public RubyClass makeMetaClass(RubyClass type) {
         type = type.newSingletonClass();
-        setRubyClass(type);
+        setInternalClass(type);
         type.attachSingletonClass(this);
         return type;
     }
@@ -161,15 +161,15 @@ public class RubyObject implements Cloneable, IRubyObject {
         if (isNil()) {
             return getRuntime().getClasses().getNilClass();
         }
-        return rubyClass;
+        return internalClass;
     }
 
     /**
      * Sets the rubyClass.
      * @param rubyClass The rubyClass to set
      */
-    public void setRubyClass(RubyClass rubyClass) {
-        this.rubyClass = rubyClass;
+    public void setInternalClass(RubyClass rubyClass) {
+        this.internalClass = rubyClass;
     }
 
     /**
@@ -319,7 +319,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public void setupClone(IRubyObject obj) {
-        setRubyClass(obj.getInternalClass().getSingletonClassClone());
+        setInternalClass(obj.getInternalClass().getSingletonClassClone());
         getInternalClass().attachSingletonClass(this);
 		frozen = obj.isFrozen();
 		taint = obj.isTaint();
@@ -539,7 +539,7 @@ public class RubyObject implements Cloneable, IRubyObject {
                 /* copy the block to avoid modifying global data. */
                 ruby.getBlockStack().getCurrent().getFrame().setNamespace(ruby.getCurrentFrame().getNamespace());
                 try {
-                    return ruby.yield(args[0], args[0], ruby.getRubyClass(), false).toRubyObject();
+                    return ruby.yield(args[0], args[0], ruby.getRubyClass(), false);
                 } finally {
                     ruby.getBlockStack().setCurrent(oldBlock);
                 }
@@ -660,9 +660,9 @@ public class RubyObject implements Cloneable, IRubyObject {
     public IRubyObject rbClone() {
         try {
             IRubyObject clone = (IRubyObject)clone();
-            clone.toRubyObject().setupClone(this);
+            clone.setupClone(this);
             if (getInstanceVariables() != null) {
-                clone.toRubyObject().setInstanceVariables(getInstanceVariables().cloneRubyMap());
+                ((RubyObject)clone).setInstanceVariables(getInstanceVariables().cloneRubyMap());
             }
             return clone;
         } catch (CloneNotSupportedException cnsExcptn) {
@@ -680,9 +680,8 @@ public class RubyObject implements Cloneable, IRubyObject {
             throw new TypeError(getRuntime(), "duplicated object must be same type");
         }
 
-        dup.toRubyObject().setRubyClass(type());
-//        dup.infectObject(this);  //Benoit done by clone
-		dup.toRubyObject().frozen = false;
+        dup.setInternalClass(type());
+		dup.setFrozen(false);
         return dup;
     }
 
@@ -920,15 +919,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
         }
     }
-    /**
-     * REMOVE THIS METHOD
-     * 
-     * @see org.jruby.runtime.classes.IRubyObject#cast()
-     */
-    public RubyObject toRubyObject() {
-        return this;
-    }
-
     /**
      * @see org.jruby.runtime.classes.IRubyObject#getType()
      */

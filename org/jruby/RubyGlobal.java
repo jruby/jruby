@@ -104,7 +104,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            ((RubyArgsFile) ruby.getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value.toRubyObject()));
+            ((RubyArgsFile) ruby.getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
             return super.set(value);
         }
     }
@@ -146,7 +146,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            int level = RubyFixnum.fix2int(value.toRubyObject());
+            int level = RubyFixnum.fix2int(value);
             if (level < ruby.getSafeLevel()) {
                 throw new SecurityException("tried to downgrade level from " + ruby.getSafeLevel() + " to " + level);
             }
@@ -170,7 +170,7 @@ public class RubyGlobal {
             if (ruby.getGlobalVar("$!").isNil()) {
                 throw new ArgumentError(ruby, "$! not set.");
             }
-            ruby.getGlobalVar("$!").callMethod("set_backtrace", value.toRubyObject());
+            ruby.getGlobalVar("$!").callMethod("set_backtrace", value);
             return value;
         }
     }
@@ -185,7 +185,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject set(IRubyObject value) {
-            ruby.setLastline(value.toRubyObject());
+            ruby.setLastline(value);
             return value;
         }
     }

@@ -457,7 +457,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public static RubyString newInstance(IRubyObject recv, IRubyObject[] args) {
 		RubyString newString = newString(recv.getRuntime(), "");
-		newString.setRubyClass((RubyClass) recv);
+		newString.setInternalClass((RubyClass) recv);
 
 		newString.callInit(args);
 
@@ -732,7 +732,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 		if (anObject instanceof RubyString) {
 			return (RubyString) anObject;
 		} else {
-			return (RubyString) anObject.toRubyObject().convertType(RubyString.class, "String", "to_str");
+			return (RubyString) anObject.convertType(RubyString.class, "String", "to_str");
 		}
 	}
 
@@ -1762,7 +1762,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	}
 
 	public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-		return RubyString.newString(input.getRuby(), input.unmarshalString());
+		return RubyString.newString(input.getRuntime(), input.unmarshalString());
 	}
 
     /**

@@ -178,7 +178,7 @@ public class ThreadContext {
         try {
             while (true) {
                 try {
-                    return method.call(ruby, self.toRubyObject(), null, args, false);
+                    return method.call(ruby, self, null, args, false);
                 } catch (RedoJump rExcptn) {
                 }
             }
@@ -239,7 +239,7 @@ public class ThreadContext {
                 }
             }
         }
-        new AssignmentVisitor(ruby, self.toRubyObject()).assign(blockVariableNode, value.toRubyObject(), checkArguments);
+        new AssignmentVisitor(ruby, self).assign(blockVariableNode, value, checkArguments);
         return value;
     }
 }

@@ -41,7 +41,7 @@ public class TestRubyObject extends TestCase {
 
     public void setUp() {
         ruby = Ruby.getDefaultInstance(null);
-        rubyObject = new RubyObject(ruby, ruby.getClasses().getObjectClass());
+        rubyObject = ruby.getFactory().newObject(ruby.getClasses().getObjectClass());
     }
 
     public void testNil() {

@@ -71,7 +71,7 @@ public class RubyProxyFactory {
         IRubyObject obj = getRuby().getGlobalVar(globalVar);
 
         if (obj != null && !obj.isNil())
-            return getProxyForObject(obj.toRubyObject(), javaInterface);
+            return getProxyForObject(obj, javaInterface);
 
         return null;
     }

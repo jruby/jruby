@@ -532,7 +532,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public static RubyArray newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyArray array = newArray(recv.getRuntime());
-        array.setRubyClass((RubyClass) recv);
+        array.setInternalClass((RubyClass) recv);
 
         array.callInit(args);
 
@@ -545,7 +545,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     public static RubyArray create(IRubyObject recv, IRubyObject[] args) {
         RubyArray array = newArray(recv.getRuntime(), args);
 
-        array.setRubyClass((RubyClass) recv);
+        array.setInternalClass((RubyClass) recv);
 
         return array;
     }
@@ -1405,7 +1405,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     }
 
     public static RubyArray unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
-        RubyArray result = newArray(input.getRuby());
+        RubyArray result = newArray(input.getRuntime());
         int size = input.unmarshalInt();
         for (int i = 0; i < size; i++) {
             result.append(input.unmarshalObject());

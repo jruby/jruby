@@ -65,7 +65,7 @@ public final class RubyIncludedClass extends RubyClass {
     /*
      * @see RubyObject#setRubyClass(RubyClass)
      */
-    public void setRubyClass(RubyClass newRubyClass) {
+    public void setInternalClass(RubyClass newRubyClass) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 

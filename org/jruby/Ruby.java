@@ -47,6 +47,7 @@ import org.jruby.exceptions.RetryException;
 import org.jruby.exceptions.ReturnJump;
 import org.jruby.exceptions.RubyBugException;
 import org.jruby.exceptions.RubySecurityException;
+import org.jruby.internal.runtime.builtin.ObjectFactory;
 import org.jruby.internal.runtime.methods.IterateMethod;
 import org.jruby.internal.runtime.methods.RubyMethodCache;
 import org.jruby.javasupport.JavaSupport;
@@ -68,6 +69,7 @@ import org.jruby.runtime.RubyRuntime;
 import org.jruby.runtime.Scope;
 import org.jruby.runtime.ScopeStack;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IObjectFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 import org.jruby.util.RubyHashMap;
@@ -115,6 +117,8 @@ public final class Ruby {
     		4 - no global (non-tainted) variable modification/no direct output
     */
     private int safeLevel = 0;
+
+    private IObjectFactory factory = new ObjectFactory(this);
 
     // Default objects
     private IRubyObject nilObject;
@@ -196,7 +200,7 @@ public final class Ruby {
      */
     public Object evalScript(String script, Class returnClass) {
         IRubyObject result = evalScript(script);
-        return JavaUtil.convertRubyToJava(this, result.toRubyObject(), returnClass);
+        return JavaUtil.convertRubyToJava(this, result, returnClass);
     }
 
     /**
@@ -452,7 +456,7 @@ public final class Ruby {
             exceptions = new RubyExceptions(this);
             exceptions.initDefaultExceptionClasses();
 
-            rubyTopSelf = new RubyObject(this, classes.getObjectClass());
+            rubyTopSelf = getFactory().newObject(classes.getObjectClass());
 
             classStack.push(getClasses().getObjectClass());
             getCurrentFrame().setSelf(rubyTopSelf);
@@ -835,4 +839,12 @@ public final class Ruby {
     public List getDynamicNames() {
         return new ArrayList(getDynamicVars().keySet());
     }
+    /**
+     * Returns the factory.
+     * @return IObjectFactory
+     */
+    public IObjectFactory getFactory() {
+        return factory;
+    }
+
 }

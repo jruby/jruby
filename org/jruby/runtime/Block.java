@@ -52,7 +52,7 @@ public class Block implements StackElement {
     private Block next;
 
     public static Block createBlock(INode var, ICallable method, IRubyObject self) {
-        Ruby ruby = self.toRubyObject().getRuntime();
+        Ruby ruby = self.getRuntime();
         return new Block(var, method, self, ruby.getCurrentFrame(), ruby.currentScope(), ruby.getRubyClass(), ruby.getCurrentIter(), ruby.getDynamicVars()/*, null*/);
     }
 

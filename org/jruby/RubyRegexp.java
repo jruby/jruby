@@ -161,7 +161,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     public static RubyRegexp newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyRegexp re = new RubyRegexp(recv.getRuntime());
-        re.setRubyClass((RubyClass) recv);
+        re.setInternalClass((RubyClass) recv);
         re.initialize(args);
         return re;
     }

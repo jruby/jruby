@@ -1250,7 +1250,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject dup() {
         RubyModule dup = (RubyModule) rbClone();
-        dup.setRubyClass(getInternalClass());
+        dup.setInternalClass(getInternalClass());
 
         // +++ jpetersen
         // dup.setSingleton(isSingleton());
@@ -1393,7 +1393,7 @@ public class RubyModule extends RubyObject {
     public static RubyModule newModule(IRubyObject recv) {
         RubyModule mod = RubyModule.newModule(recv.getRuntime());
 
-        mod.setRubyClass((RubyClass) recv);
+        mod.setInternalClass((RubyClass) recv);
         recv.getRuntime().getClasses().getModuleClass().callInit(null);
 
         return mod;
@@ -1757,7 +1757,7 @@ public class RubyModule extends RubyObject {
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = input.unmarshalString();
-        Ruby ruby = input.getRuby();
+        Ruby ruby = input.getRuntime();
         RubyModule result = ruby.getClasses().getClassFromPath(name);
         if (result == null) {
             throw new NameError(ruby, "uninitialized constant " + name);

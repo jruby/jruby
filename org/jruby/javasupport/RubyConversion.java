@@ -37,7 +37,7 @@ public class RubyConversion {
 
         Class type = JavaUtil.getCanonicalJavaClass(obj.getClass());
 
-        return JavaUtil.convertJavaToRuby(getRuby(), obj, type).toRubyObject();
+        return JavaUtil.convertJavaToRuby(getRuby(), obj, type);
     }
 
     public Object[] convertRubyToJava(IRubyObject[] obj) {
