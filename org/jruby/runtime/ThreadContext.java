@@ -9,7 +9,6 @@ import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.evaluator.AssignmentVisitor;
 import org.jruby.evaluator.Evaluator;
-import org.jruby.evaluator.IEvaluator;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NextJump;
 import org.jruby.exceptions.RaiseException;
