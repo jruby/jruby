@@ -34,7 +34,6 @@ package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 public class GlobalVariable {
     protected final Ruby runtime;
@@ -47,7 +46,8 @@ public class GlobalVariable {
     }
 
     public GlobalVariable(Ruby runtime, String name, IRubyObject value) {
-        Asserts.isTrue(name.startsWith("$"));
+        assert name.startsWith("$");
+
         this.runtime = runtime;
         this.name = name;
         this.value = value;

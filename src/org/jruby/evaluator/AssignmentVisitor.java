@@ -44,7 +44,6 @@ import org.jruby.ast.visitor.AbstractVisitor;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  *
@@ -79,7 +78,7 @@ public class AssignmentVisitor extends AbstractVisitor {
      * @see AbstractVisitor#visitNode(Node)
      */
     protected void visitNode(Node iVisited) {
-        Asserts.notReached();
+        assert false;
     }
 
     /**

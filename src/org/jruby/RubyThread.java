@@ -38,7 +38,6 @@ import org.jruby.internal.runtime.NativeThread;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * Implementation of Ruby's <code>Thread</code> class.  Each Ruby thread is
@@ -230,7 +229,7 @@ public class RubyThread extends RubyObject {
 		}
 	}
     public void notifyStarted() {
-        Asserts.isTrue(isCurrent());
+        assert isCurrent();
         synchronized (hasStartedLock) {
             hasStarted = true;
             hasStartedLock.notifyAll();
@@ -352,7 +351,7 @@ public class RubyThread extends RubyObject {
         try {
             threadImpl.join();
         } catch (InterruptedException iExcptn) {
-            Asserts.notReached();
+            assert false : iExcptn;
         }
         if (exitingException != null) {
             throw exitingException;
@@ -556,7 +555,7 @@ public class RubyThread extends RubyObject {
                 try {
                     hasStartedLock.wait();
                 } catch (InterruptedException iExcptn) {
-                    Asserts.notReached();
+                    assert false : iExcptn;
                 }
             }
         }
@@ -564,7 +563,7 @@ public class RubyThread extends RubyObject {
     }
 
     public void exceptionRaised(RaiseException exception) {
-        Asserts.isTrue(isCurrent());
+        assert isCurrent();
 
         if (abortOnException()) {
             // FIXME: printError explodes on some nullpointer

@@ -41,7 +41,6 @@ import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * Unmarshals objects from strings or streams in Ruby's marsal format.
@@ -203,7 +202,7 @@ public class UnmarshalStream extends FilterInputStream {
 
         RubyClass type = (RubyClass) runtime.getClasses().getClassFromPath(className.asSymbol());
 
-        Asserts.notNull(type, "type shouldn't be null.");
+        assert type != null : "type shouldn't be null.";
 
         IRubyObject result = new RubyObject(runtime, type);
         registerLinkTarget(result);

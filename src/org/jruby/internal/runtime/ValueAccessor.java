@@ -24,7 +24,6 @@ package org.jruby.internal.runtime;
 
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -35,7 +34,7 @@ public class ValueAccessor implements IAccessor {
     private IRubyObject value;
 
     public ValueAccessor(IRubyObject value) {
-        Asserts.notNull(value);
+        assert value != null;
 
         this.value = value;
     }

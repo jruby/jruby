@@ -37,7 +37,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
 import org.jruby.util.PrintfFormat;
 import org.jruby.util.Split;
@@ -52,26 +51,16 @@ public class RubyString extends RubyObject {
 
 	private String value;
 	
-	private RubyString(Ruby runtime) {
-		this(runtime, runtime.getClasses().getStringClass(), null);
+	public RubyString(Ruby runtime, String value) {
+		this(runtime, runtime.getClasses().getStringClass(), value);
 	}
 
-	public RubyString(Ruby runtime, String str) {
-		this(runtime, runtime.getClasses().getStringClass(), str);
-        Asserts.notNull(str);
-	}
-
-	public RubyString(Ruby runtime, RubyClass rubyClass, String str) {
+	public RubyString(Ruby runtime, RubyClass rubyClass, String value) {
 		super(runtime, rubyClass);
-		this.value = str;
-	}
 
-	public static RubyString nilString(Ruby runtime) {
-		return new RubyString(runtime) {
-			public boolean isNil() {
-				return true;
-			}
-		};
+        assert value != null;
+
+		this.value = value;
 	}
 
 	public Class getJavaClass() {
@@ -94,7 +83,7 @@ public class RubyString extends RubyObject {
 		try {
 			return new String(bytes, encoding);
 		} catch (java.io.UnsupportedEncodingException e) {
-			Asserts.notReached("unsupported encoding " + e);
+			assert false : "unsupported encoding " + e;
             return null;
 		}
 	}
@@ -103,7 +92,7 @@ public class RubyString extends RubyObject {
 		try {
 			return string.getBytes(encoding);
 		} catch (java.io.UnsupportedEncodingException e) {
-			Asserts.notReached("unsupported encoding " + e);
+			assert false : "unsupported encoding " + e;
             return null;
 		}
 	}
@@ -455,16 +444,18 @@ public class RubyString extends RubyObject {
 	/** rb_str_capitalize
 	 *
 	 */
-	public RubyString capitalize() {
-        return ((RubyString) rbClone()).capitalize_bang();
+	public IRubyObject capitalize() {
+        RubyString result = (RubyString) dup();
+        result.capitalize_bang();
+        return result;
 	}
 
 	/** rb_str_capitalize_bang
 	 *
 	 */
-	public RubyString capitalize_bang() {
+	public IRubyObject capitalize_bang() {
         if (isEmpty()) {
-            return nilString(getRuntime());
+            return getRuntime().getNil();
         }
         StringBuffer buffer = new StringBuffer(getValue().toLowerCase());
         char capital = buffer.charAt(0);
@@ -473,7 +464,7 @@ public class RubyString extends RubyObject {
         }
         String result = buffer.toString();
         if (result.equals(getValue())) {
-            return nilString(getRuntime());
+            return getRuntime().getNil();
         }
         setValue(result);
         return this;
@@ -489,10 +480,10 @@ public class RubyString extends RubyObject {
 	/** rb_str_upcase_bang
 	 *
 	 */
-	public RubyString upcase_bang() {
+	public IRubyObject upcase_bang() {
 		String result = getValue().toUpperCase();
         if (result.equals(getValue())) {
-            return nilString(getRuntime());
+            return getRuntime().getNil();
         }
         setValue(result);
 		return this;
@@ -508,10 +499,10 @@ public class RubyString extends RubyObject {
 	/** rb_str_downcase_bang
 	 *
 	 */
-	public RubyString downcase_bang() {
+	public IRubyObject downcase_bang() {
         String result = getValue().toLowerCase();
         if (result.equals(getValue())) {
-            return nilString(getRuntime());
+            return getRuntime().getNil();
         }
 		setValue(result);
 		return this;
@@ -1293,9 +1284,9 @@ public class RubyString extends RubyObject {
 	/** rb_str_chomp_bang
 	 *
 	 */
-	public RubyString chomp_bang(IRubyObject[] args) {
+	public IRubyObject chomp_bang(IRubyObject[] args) {
         if (isEmpty()) {
-            return nilString(getRuntime());
+            return getRuntime().getNil();
         }
         String separator = getRuntime().getGlobalVariables().get("$/").asSymbol();
         if (args.length > 0) {
@@ -1305,7 +1296,7 @@ public class RubyString extends RubyObject {
             setValue(getValue().substring(0, getValue().length() - separator.length()));
             return this;
         }
-		return nilString(getRuntime());
+		return getRuntime().getNil();
 	}
 
 	public IRubyObject lstrip() {

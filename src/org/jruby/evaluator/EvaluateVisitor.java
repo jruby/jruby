@@ -168,7 +168,6 @@ import org.jruby.runtime.Iter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 // TODO this visitor often leads to very deep stacks.  If it happens to be a
 // real problem, the trampoline method of tail call elimination could be used.
@@ -254,7 +253,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitArgsNode(ArgsNode)
      */
     public void visitArgsNode(ArgsNode iVisited) {
-        Asserts.notReached();
+        assert false;
     }
 
     /**
@@ -325,7 +324,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitBlockArgNode(BlockArgNode)
      */
     public void visitBlockArgNode(BlockArgNode iVisited) {
-        Asserts.notReached();
+        assert false;
     }
 
     /**
@@ -439,7 +438,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
-        Asserts.notNull(receiver.getMetaClass(), receiver.getClass().getName());
+        assert receiver.getMetaClass() != null : receiver.getClass().getName();
         
         result = receiver.getMetaClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
@@ -1416,7 +1415,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitWhenNode(WhenNode)
      */
     public void visitWhenNode(WhenNode iVisited) {
-        Asserts.notReached();
+        assert false;
     }
 
     /**

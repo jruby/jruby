@@ -37,7 +37,6 @@ import org.jruby.exceptions.RangeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 
 /**
  *
@@ -120,9 +119,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static BigInteger bigIntValue(RubyNumeric other) {
-        if (other instanceof RubyFloat) {
-            Asserts.notReached("argument must be an integer");
-        }
+        assert !(other instanceof RubyFloat) : "argument must be an integer";
 
         return (other instanceof RubyBignum) ? ((RubyBignum) other).getValue() : BigInteger.valueOf(other.getLongValue());
     }

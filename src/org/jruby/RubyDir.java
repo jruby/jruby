@@ -321,13 +321,13 @@ public class RubyDir extends RubyObject {
     }
 
     /** Returns the next entry from this directory. */
-    public RubyString read() {
+    public IRubyObject read() {
 	if (!isOpen) {
 	    throw new IOError(getRuntime(), "Directory already closed");
 	}
 
         if (pos >= snapshot.length) {
-            return RubyString.nilString(getRuntime());
+            return getRuntime().getNil();
         }
         RubyString result = new RubyString(getRuntime(), snapshot[pos]);
         pos++;

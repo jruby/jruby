@@ -29,7 +29,6 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 public class UnmarshalCache {
     private final Ruby runtime;
@@ -54,13 +53,10 @@ public class UnmarshalCache {
 
     public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
         if (type == '@') {
-          return linkedByIndex(input.unmarshalInt());
-        } else if (type == ';') {
-            return symbolByIndex(input.unmarshalInt());
-        } else {
-            Asserts.notReached();
-            return null;
+            return linkedByIndex(input.unmarshalInt());
         }
+        assert type == ';';
+        return symbolByIndex(input.unmarshalInt());
     }
 
     private IRubyObject linkedByIndex(int index) {

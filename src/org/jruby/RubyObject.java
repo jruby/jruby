@@ -63,7 +63,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.util.PrintfFormat;
 
 /**
@@ -678,7 +677,7 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
             return clone;
         } catch (CloneNotSupportedException e) {
-            Asserts.notReached(e.getMessage());
+            assert false : e;
             return null;
         }
     }

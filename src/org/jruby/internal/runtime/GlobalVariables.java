@@ -31,7 +31,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -47,24 +46,24 @@ public class GlobalVariables {
     }
 
     public void define(String name, IAccessor accessor) {
-        Asserts.notNull(name);
-        Asserts.notNull(accessor);
-        Asserts.isTrue(name.startsWith("$"));
+        assert name != null;
+        assert accessor != null;
+        assert name.startsWith("$");
 
         globalVariables.put(name, new GlobalVariable(accessor));
     }
     
     public void defineReadonly(String name, IAccessor accessor) {
-        Asserts.notNull(name);
-        Asserts.notNull(accessor);
-        Asserts.isTrue(name.startsWith("$"));
+        assert name != null;
+        assert accessor != null;
+        assert name.startsWith("$");
 
         globalVariables.put(name, new GlobalVariable(new ReadonlyAccessor(name, accessor)));
     }
 
     public boolean isDefined(String name) {
-        Asserts.notNull(name);
-        Asserts.isTrue(name.startsWith("$"));
+        assert name != null;
+        assert name.startsWith("$");
         
         GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
         return variable != null && !(variable.getAccessor() instanceof UndefinedAccessor);
@@ -76,10 +75,10 @@ public class GlobalVariables {
      * <b>WANRING</b> we are already using the 1.7.1 behaviour.
      */
     public void alias(String name, String oldName) {
-        Asserts.notNull(name);
-        Asserts.notNull(oldName);
-        Asserts.isTrue(name.startsWith("$"));
-        Asserts.isTrue(oldName.startsWith("$"));
+        assert name != null;
+        assert oldName != null;
+        assert name.startsWith("$");
+        assert oldName.startsWith("$");
 
         if (runtime.getSafeLevel() >= 4) {
             throw new SecurityError(runtime, "Insecure: can't alias global variable");
@@ -96,8 +95,8 @@ public class GlobalVariables {
     }
 
     public IRubyObject get(String name) {
-	    Asserts.notNull(name);
-	    Asserts.isTrue(name.startsWith("$"));
+	    assert name != null;
+	    assert name.startsWith("$");
 	
 	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
 	    if (variable != null) {
@@ -108,8 +107,8 @@ public class GlobalVariables {
 	}
 
     public IRubyObject set(String name, IRubyObject value) {
-        Asserts.notNull(name);
-        Asserts.isTrue(name.startsWith("$"));
+        assert name != null;
+        assert name.startsWith("$");
 
         if (runtime.getSafeLevel() >= 4) {
             throw new SecurityError(runtime, "Insecure: can't change global variable value");

@@ -62,7 +62,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 
 /**
@@ -223,10 +222,8 @@ public class RubyModule extends RubyObject {
         StringBuffer result = new StringBuffer(classId);
         RubyClass objectClass = getRuntime().getClasses().getObjectClass();
         
-        for (RubyModule current = this.parentModule; 
-        current != objectClass && current != this;
-        current = current.parentModule) {
-            Asserts.notNull(current);
+        for (RubyModule current = this.parentModule; current != objectClass && current != this; current = current.parentModule) {
+            assert current != null;
             result.insert(0, "::").insert(0, current.classId);
         }
 
@@ -726,7 +723,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public void defineConstant(String name, IRubyObject value) {
-        Asserts.notNull(value);
+        assert value != null;
 
         if (this == getRuntime().getClasses().getClassClass()) {
             getRuntime().secure(4);
@@ -1445,7 +1442,7 @@ public class RubyModule extends RubyObject {
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asSymbol();
                 ICallable method = searchMethod(name);
-                Asserts.isTrue(!method.isUndefined(), "undefined method '" + name + "'");
+                assert !method.isUndefined() : "undefined method '" + name + "'";
                 getSingletonClass().addMethod(name, new WrapperCallable(method, Visibility.PUBLIC));
                 callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }

@@ -33,7 +33,6 @@ import org.ablaf.ast.IAstDecoder;
 import org.ablaf.ast.IAstEncoder;
 import org.ablaf.ast.IAstMarshal;
 import org.jruby.ast.Node;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -55,7 +54,7 @@ public class SerializationAstMarshal implements IAstMarshal {
                     try {
                         oout.writeObject(node);
                     } catch (IOException e) {
-                        Asserts.notReached("IOException: " + e.getMessage());
+                        assert false : "IOException: " + e.getMessage();
                     }
                 }
             
@@ -66,12 +65,12 @@ public class SerializationAstMarshal implements IAstMarshal {
                     try {
                         oout.close();
                     } catch (IOException e) {
-                        Asserts.notReached("IOException: " + e.getMessage());
+                        assert false : "IOException: " + e.getMessage();
                     }
                 }
             };
         } catch (IOException e) {
-            Asserts.notReached("IOException: " + e.getMessage());
+            assert false : "IOException: " + e.getMessage();
             return null;
         }
     }
@@ -90,10 +89,10 @@ public class SerializationAstMarshal implements IAstMarshal {
                     try {
                         return (Node)oin.readObject();
                     } catch (IOException e) {
-                        Asserts.notReached("IOException: " + e.getMessage());
+                        assert false : "IOException: " + e.getMessage();
                         return null;
                     } catch (ClassNotFoundException e) {
-                        Asserts.notReached("ClassNotFoundException: " + e.getMessage());
+                        assert false : "ClassNotFoundException: " + e.getMessage();
                         return null;
                     }
                 }
@@ -105,12 +104,12 @@ public class SerializationAstMarshal implements IAstMarshal {
                     try {
                         oin.close();
                     } catch (IOException e) {
-                        Asserts.notReached("IOException: " + e.getMessage());
+                        assert false : "IOException: " + e.getMessage();
                     }
                 }
             };
         } catch (IOException e) {
-            Asserts.notReached("IOException: " + e.getMessage());
+            assert false : "IOException: " + e.getMessage();
             return null;
         }
     }

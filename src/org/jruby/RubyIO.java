@@ -44,7 +44,6 @@ import org.jruby.exceptions.SystemCallError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 import org.jruby.util.IOHandler;
 import org.jruby.util.IOHandlerProcess;
 import org.jruby.util.IOHandlerSeekable;
@@ -356,7 +355,7 @@ public class RubyIO extends RubyObject {
      */
     // TODO: Most things loop over this and always pass it the same arguments
     // meaning they are an invariant of the loop.  Think about fixing this.
-    public RubyString internalGets(IRubyObject[] args) {
+    public IRubyObject internalGets(IRubyObject[] args) {
         checkReadable();
 
         IRubyObject sepVal = getRuntime().getGlobalVariables().get("$/");
@@ -381,7 +380,7 @@ public class RubyIO extends RubyObject {
 		    result.taint();
 		    return result;
 		}
-        return RubyString.nilString(getRuntime());
+        return getRuntime().getNil();
     }
 
     // IO class methods.
@@ -404,7 +403,7 @@ public class RubyIO extends RubyObject {
                 new IRubyObject[] { filename }, false);
         
         if (!io.isNil() && io.isOpen()) {
-            RubyString nextLine = io.internalGets(args);
+            IRubyObject nextLine = io.internalGets(args);
 
             while (!nextLine.isNil()) {
                 recv.getRuntime().yield(nextLine);
@@ -694,8 +693,8 @@ public class RubyIO extends RubyObject {
     /** Read a line.
      * 
      */
-    public RubyString gets(IRubyObject[] args) {
-        RubyString result = internalGets(args);
+    public IRubyObject gets(IRubyObject[] args) {
+        IRubyObject result = internalGets(args);
 
         if (!result.isNil()) {
             getRuntime().setLastline(result);
@@ -707,8 +706,8 @@ public class RubyIO extends RubyObject {
     /** Read a line.
      * 
      */
-    public RubyString readline(IRubyObject[] args) {
-        RubyString line = gets(args);
+    public IRubyObject readline(IRubyObject[] args) {
+        IRubyObject line = gets(args);
 
         if (line.isNil()) {
             throw new EOFError(getRuntime());
@@ -773,7 +772,7 @@ public class RubyIO extends RubyObject {
      */
     public IRubyObject each_byte() {
         for (int c = handler.getc(); c != -1; c = handler.getc()) {
-            Asserts.isTrue(c < 256);
+            assert c < 256;
             getRuntime().yield(getRuntime().newFixnum(c));
         }
 
@@ -784,7 +783,7 @@ public class RubyIO extends RubyObject {
      * <p>Invoke a block for each line.</p>
      */
     public RubyIO each_line(IRubyObject[] args) {
-        for (RubyString line = internalGets(args); !line.isNil(); 
+        for (IRubyObject line = internalGets(args); !line.isNil(); 
         	line = internalGets(args)) {
             getRuntime().yield(line);
         }

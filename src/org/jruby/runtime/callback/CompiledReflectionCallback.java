@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import org.jruby.Ruby;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 public class CompiledReflectionCallback implements Callback {
     private Ruby runtime;
@@ -26,7 +25,7 @@ public class CompiledReflectionCallback implements Callback {
     }
 
     public IRubyObject execute(IRubyObject recv, IRubyObject[] args) {
-        Asserts.isTrue(arity == args.length);
+        assert arity == args.length;
         Object[] arguments = new Object[2 + args.length];
         arguments[0] = runtime;
         arguments[1] = recv;
@@ -34,13 +33,13 @@ public class CompiledReflectionCallback implements Callback {
         try {
             return (IRubyObject) getMethod().invoke(null, arguments);
         } catch (IllegalAccessException e) {
-            Asserts.notReached(e.toString());
+            assert false : e;
             return null;
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             }
-			Asserts.notReached(e.getCause().toString());
+			assert false : e.getCause();
 			return null;
         }
     }
@@ -65,7 +64,7 @@ public class CompiledReflectionCallback implements Callback {
             return method;
 
         } catch (NoSuchMethodException e) {
-            Asserts.notReached("method not found: " + methodName);
+            assert false : "method not found: " + methodName;
             return null;
         }
     }
@@ -74,7 +73,7 @@ public class CompiledReflectionCallback implements Callback {
         try {
             return classLoader.loadClass(className);
         } catch (ClassNotFoundException e) {
-            Asserts.notReached("class not found: " + className);
+            assert false : "class not found: " + className;
             return null;
         }
     }

@@ -23,14 +23,13 @@
 package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 public class MetaClass extends RubyClass {
     public RubyClass type;
 
     public MetaClass(Ruby runtime, RubyClass type) {
         super(runtime, runtime.getClasses().getClassClass(), type);
-        Asserts.notNull(type);
+        assert type != null;
 
         this.type = type;
     }

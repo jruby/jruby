@@ -25,7 +25,6 @@ package org.jruby.internal.runtime;
 import org.jruby.exceptions.NameError;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -37,9 +36,9 @@ public class ReadonlyAccessor implements IAccessor {
     private IAccessor accessor;
 
     public ReadonlyAccessor(String name, IAccessor accessor) {
-        Asserts.notNull(name);
-        Asserts.notNull(accessor);
-        
+        assert name != null;
+        assert accessor != null;
+
         this.name = name;
         this.accessor = accessor;
     }
@@ -49,7 +48,7 @@ public class ReadonlyAccessor implements IAccessor {
     }
 
     public IRubyObject setValue(IRubyObject newValue) {
-        Asserts.notNull(newValue);
+        assert newValue != null;
 
         throw new NameError(newValue.getRuntime(), "can't set variable " + name);
     }

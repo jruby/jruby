@@ -32,7 +32,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 import org.jruby.util.collections.StackElement;
 
 /**
@@ -144,7 +143,7 @@ public class Block implements StackElement {
      * @see StackElement#setNext(StackElement)
      */
     public void setNext(StackElement newNext) {
-        Asserts.isTrue(this != newNext);
+        assert this != newNext;
         this.next = (Block) newNext;
     }
 

@@ -39,7 +39,6 @@ import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.Asserts;
 import org.jruby.util.IdUtil;
 
 /**
@@ -115,7 +114,7 @@ public class RubyStruct extends RubyObject {
     private IRubyObject setByName(String name, IRubyObject value) {
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
-        Asserts.isTrue(!member.isNil(), "uninitialized struct");
+        assert !member.isNil() : "uninitialized struct";
 
         modify();
 
@@ -131,7 +130,7 @@ public class RubyStruct extends RubyObject {
     private IRubyObject getByName(String name) {
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
-        Asserts.isTrue(!member.isNil(), "uninitialized struct");
+        assert !member.isNil() : "uninitialized struct";
 
         for (int i = 0; i < member.getLength(); i++) {
             if (member.entry(i).asSymbol().equals(name)) {
@@ -231,7 +230,7 @@ public class RubyStruct extends RubyObject {
     public static RubyArray members(IRubyObject recv) {
         RubyArray member = (RubyArray) getInstanceVariable((RubyClass) recv, "__member__");
 
-        Asserts.isTrue(!member.isNil(), "uninitialized struct");
+        assert !member.isNil() : "uninitialized struct";
 
         RubyArray result = recv.getRuntime().newArray(member.getLength());
         for (int i = 0; i < member.getLength(); i++) {
@@ -253,7 +252,7 @@ public class RubyStruct extends RubyObject {
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
-        Asserts.isTrue(!member.isNil(), "uninitialized struct");
+        assert !member.isNil() : "uninitialized struct";
 
         modify();
 
@@ -271,7 +270,7 @@ public class RubyStruct extends RubyObject {
 
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
-        Asserts.isTrue(!member.isNil(), "uninitialized struct");
+        assert !member.isNil() : "uninitialized struct";
 
         for (int i = 0; i < member.getLength(); i++) {
             if (member.entry(i).asSymbol().equals(name)) {
@@ -318,7 +317,7 @@ public class RubyStruct extends RubyObject {
     public RubyString inspect() {
         RubyArray member = (RubyArray) getInstanceVariable(classOf(), "__member__");
 
-        Asserts.isTrue(!member.isNil(), "uninitialized struct");
+        assert !member.isNil() : "uninitialized struct";
 
         StringBuffer sb = new StringBuffer(100);
 

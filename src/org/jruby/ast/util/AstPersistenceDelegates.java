@@ -34,7 +34,6 @@ import java.util.Map;
 
 import org.jruby.ast.ListNode;
 import org.jruby.runtime.Visibility;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -217,10 +216,10 @@ public final class AstPersistenceDelegates {
                             return new Expression(fields[i], "get", new Object[] {null});
                         }
                     } catch (IllegalAccessException e) {
-                        Asserts.notReached("IllegalAccessException: " + e.getMessage());
+                        assert false : "IllegalAccessException: " + e.getMessage();
                     }
                 }
-                Asserts.notReached();
+                assert false;
                 return null;
             }
         });
@@ -234,7 +233,7 @@ public final class AstPersistenceDelegates {
         try {
             return cl.loadClass(name);
         } catch (ClassNotFoundException cnfExcptn) {
-            Asserts.notReached("ClassNotFoundException: " + cnfExcptn);
+            assert false : "ClassNotFoundException: " + cnfExcptn;
             return null;
         }
     }

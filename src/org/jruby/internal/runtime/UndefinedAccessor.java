@@ -25,7 +25,6 @@ package org.jruby.internal.runtime;
 import org.jruby.Ruby;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -41,9 +40,9 @@ public class UndefinedAccessor implements IAccessor {
      * Constructor for UndefinedAccessor.
      */
     public UndefinedAccessor(Ruby runtime, GlobalVariable globalVariable, String name) {
-        Asserts.notNull(runtime);
-        Asserts.notNull(globalVariable);
-        Asserts.notNull(name);
+        assert runtime != null;
+        assert globalVariable != null;
+        assert name != null;
 
         this.runtime = runtime;
         this.globalVariable = globalVariable;
@@ -62,7 +61,7 @@ public class UndefinedAccessor implements IAccessor {
      * @see org.jruby.runtime.IAccessor#setValue(IRubyObject)
      */
     public IRubyObject setValue(IRubyObject newValue) {
-        Asserts.notNull(newValue);
+        assert newValue != null;
         globalVariable.setAccessor(new ValueAccessor(newValue));
         return newValue;
     }

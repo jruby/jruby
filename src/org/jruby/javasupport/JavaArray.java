@@ -30,13 +30,12 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 public class JavaArray extends JavaObject {
 
     public JavaArray(Ruby runtime, Object array) {
         super(runtime, runtime.getClasses().getJavaArrayClass(), array);
-        Asserts.isTrue(array.getClass().isArray());
+        assert array.getClass().isArray();
     }
 
     public static RubyClass createJavaArrayClass(Ruby runtime) {

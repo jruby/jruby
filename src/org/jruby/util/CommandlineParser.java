@@ -189,7 +189,7 @@ public class CommandlineParser {
                 System.exit(1);
             }
         }
-        Asserts.notReached();
+        assert false;
         return null;
     }
 

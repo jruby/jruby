@@ -32,7 +32,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 public class JavaConstructor extends JavaCallable {
     private Constructor constructor;
@@ -84,7 +83,8 @@ public class JavaConstructor extends JavaCallable {
             throw getRuntime().newTypeError("illegal access");
         } catch (InvocationTargetException ite) {
             getRuntime().getJavaSupport().handleNativeException(ite.getTargetException());
-            Asserts.notReached();
+            // not reached
+            assert false;
             return null;
         } catch (InstantiationException ie) {
             throw getRuntime().newTypeError("can't make instance of " + constructor.getDeclaringClass().getName());

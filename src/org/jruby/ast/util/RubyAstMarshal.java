@@ -24,7 +24,6 @@ package org.jruby.ast.util;
 
 import org.ablaf.ast.IAstMarshal;
 import org.ablaf.internal.ast.SerializationAstMarshal;
-import org.jruby.util.Asserts;
 
 /**
  * 
@@ -35,7 +34,7 @@ public final class RubyAstMarshal {
     private static IAstMarshal instance = null;
 
     private RubyAstMarshal() {
-        Asserts.notReached();
+        assert false;
     }
 
     public static synchronized IAstMarshal getInstance() {

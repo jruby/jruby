@@ -221,10 +221,10 @@ public class RubyKernel {
         return RubyFile.open(recv.getRuntime().getClass("File"), args);
     }
 
-    public static RubyString gets(IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject gets(IRubyObject recv, IRubyObject[] args) {
         RubyArgsFile argsFile = (RubyArgsFile) recv.getRuntime().getGlobalVariables().get("$<");
 
-        RubyString line = argsFile.internalGets(args);
+        IRubyObject line = argsFile.internalGets(args);
 
         recv.getRuntime().setLastline(line);
 
@@ -294,8 +294,8 @@ public class RubyKernel {
         return recv.getRuntime().getNil();
     }
 
-    public static RubyString readline(IRubyObject recv, IRubyObject[] args) {
-        RubyString line = gets(recv, args);
+    public static IRubyObject readline(IRubyObject recv, IRubyObject[] args) {
+        IRubyObject line = gets(recv, args);
 
         if (line.isNil()) {
             throw new EOFError(recv.getRuntime());
@@ -309,7 +309,7 @@ public class RubyKernel {
 
         RubyArray lines = recv.getRuntime().newArray();
 
-        RubyString line = argsFile.internalGets(args);
+        IRubyObject line = argsFile.internalGets(args);
         while (!line.isNil()) {
             lines.append(line);
 

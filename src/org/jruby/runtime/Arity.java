@@ -27,7 +27,6 @@ import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.Asserts;
 
 /**
  * The arity of a method is the number of arguments it takes.
@@ -54,7 +53,7 @@ public final class Arity {
     }
 
     public static Arity fixed(int arity) {
-        Asserts.isTrue(arity >= 0);
+        assert arity >= 0;
         return createArity(arity);
     }
 
@@ -63,7 +62,7 @@ public final class Arity {
     }
 
     public static Arity required(int minimum) {
-        Asserts.isTrue(minimum >= 0);
+        assert minimum >= 0;
         return createArity(-(1 + minimum));
     }
 

@@ -81,7 +81,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.load.ILoadService;
 import org.jruby.runtime.load.LoadServiceFactory;
-import org.jruby.util.Asserts;
 
 /**
  * The jruby runtime.
@@ -795,7 +794,7 @@ public final class Ruby {
      *  @mri rb_load
      */
     public void loadFile(File file, boolean wrap) {
-        Asserts.notNull(file, "No such file to load");
+        assert file != null : "No such file to load";
         try {
             BufferedReader source = new BufferedReader(new FileReader(file));
             loadScript(file.getPath(), source, wrap);

@@ -33,8 +33,6 @@ import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.AssertError;
-import org.jruby.util.Asserts;
 
 /**
  * A wrapper for <code>java.lang.reflect.Method</code> objects which implement Ruby methods.
@@ -194,11 +192,11 @@ public abstract class AbstractCallback implements Callback {
                 message.append(' ');
             }
             message.append(']');
-            Asserts.notReached(message.toString());
+            assert false : message.toString();
+            return null;
         } catch (final IllegalArgumentException e) {
             throw new RaiseException(recv.getRuntime(), "TypeError", e.getMessage());
         }
-        throw new AssertError("[BUG] Run again with Asserts.ENABLE_ASSERT=true");
     }
 
 	protected abstract IRubyObject invokeMethod0(IRubyObject recv, Object[] methodArgs)

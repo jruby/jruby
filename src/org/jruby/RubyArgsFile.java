@@ -102,9 +102,9 @@ public class RubyArgsFile extends RubyObject {
         return true;
     }
     
-    public RubyString internalGets(IRubyObject[] args) {
+    public IRubyObject internalGets(IRubyObject[] args) {
         if (currentFile == null && !nextArgsFile()) {
-            return RubyString.nilString(getRuntime());
+            return getRuntime().getNil();
         }
         
         RubyString line = (RubyString)currentFile.callMethod("gets", args);
@@ -130,7 +130,7 @@ public class RubyArgsFile extends RubyObject {
      * 
      */
     public IRubyObject each_line(IRubyObject[] args) {
-        RubyString nextLine = internalGets(args);
+        IRubyObject nextLine = internalGets(args);
         
         while (!nextLine.isNil()) {
         	getRuntime().yield(nextLine);
