@@ -70,6 +70,15 @@ end
 
 module JavaUtilities
   @proxy_classes = {}
+  @proxy_extenders = []
+  
+  def JavaUtilities.add_proxy_extender extender
+    @proxy_extenders << extender
+  end
+  
+  def JavaUtilities.extend_proxy(proxy_class, java_class)
+    @proxy_extenders.each {|e| e.extend_proxy(proxy_class, java_class)}
+  end
 
   def JavaUtilities.valid_constant_name?(name)
     return false if name.empty?
@@ -93,6 +102,7 @@ END
       @proxy_classes[class_id] = proxy_class
 
       setup_proxy_class(java_class, proxy_class)
+      extend_proxy(proxy_class, java_class)
     end
 
     @proxy_classes[class_id]
@@ -169,7 +179,6 @@ END
   end
 
   class << self
-
     def create_class_constructor(java_class, proxy_class)
       class << proxy_class
         def new(*args)
@@ -266,100 +275,8 @@ END
     end
 
     def setup_instance_methods(java_class, proxy_class)
-      # TODO: Come up with cleaner way for defining methods for a particular interface
       # TODO: Default and Block Comparator should only get defined once
       def proxy_class.create_instance_methods(java_class)
-        if Java::JavaClass.for_name('java.lang.Exception').assignable_from? java_class
-          class <<self
-            def ===(rhs)
-              (NativeException == rhs.class) && (java_class.assignable_from?(rhs.cause.java_class))
-            end
-          end
-        end
-        if Java::JavaClass.for_name('java.util.Map').assignable_from? java_class
-          class_eval(<<END
-            def each(&block)
-              entrySet.each { |pair| block.call(pair.key, pair.value) }
-            end
-END
-          )
-        elsif Java::JavaClass.for_name('java.util.List').assignable_from? java_class
-          class_eval(<<END
-            include Enumerable
-
-            def each(&block)
-              0.upto(size-1) { |index| block.call(get(index)) }
-            end
-            def <<(a); add(a); end
-            def sort()
-              include_class 'java.util.ArrayList'
-              include_class 'java.util.Collections'
-              include_class 'java.util.Comparator'
-
-              comparator = Comparator.new
-
-              if block_given?
-                class << comparator
-                  def compare(o1, o2); yield(o1, o2); end
-                end
-              else
-                class << comparator
-                  def compare(o1, o2); o1 <=> o2; end
-                end
-              end
-
-              list = ArrayList.new
-              list.addAll(self)
-
-              Collections.sort(list, comparator)
-
-              list
-            end
-            def sort!()
-              include_class 'java.util.Collections'
-              include_class 'java.util.Comparator'
-
-              comparator = Comparator.new
-
-              if block_given?
-                class << comparator
-                  def compare(o1, o2); yield(o1, o2); end
-                end
-              else
-                class << comparator
-                  def compare(o1, o2); o1 <=> o2; end;
-                end
-              end
-
-              Collections.sort(java_object, comparator)
-
-              self
-            end
-            def construct()
-              include_class 'java.util.ArrayList'
-      
-              ArrayList.new
-            end
-            def _wrap_yield(*args)
-              p = yield(*args)
-              p p
-            end
-END
-          )
-        elsif Java::JavaClass.for_name('java.util.Set').assignable_from? java_class
-          class_eval(<<END
-            def each(&block)
-              iter = iterator
-              while iter.hasNext
-                block.call(iter.next)
-              end
-            end
-END
-          )
-        end
-        if Java::JavaClass.for_name('java.lang.Comparable').assignable_from? java_class
-          class_eval('include Comparable; def <=>(a); compareTo(a); end')
-        end
         java_class.java_instance_methods.select { |m| 
           m.public? 
         }.group_by { |m| 
@@ -376,37 +293,6 @@ END
               result = JavaUtilities.wrap(result, m.return_type)
             end
             result
-	      end
-	      
-	      # Lets treat javabean properties like ruby attributes
-	      case name[0,4]
-	      when /get./
-	        newName = name[3..-1].downcase!
-            next if instance_methods.member?(newName)
-
-	        define_method(newName) do |*args|
-              args = convert_arguments(args)
-              m = JavaUtilities.matching_method(methods.find_all {|m|
-                m.arity == args.length}, args)
-              result = m.invoke(self.java_object, *args)
-              result = Java.java_to_primitive(result)
-              if result.kind_of?(JavaObject)
-                result = JavaUtilities.wrap(result, m.return_type)
-              end
-              result
-	        end
-	      when /set./
-	      	define_method(name[3..-1].downcase!.concat('=')) do |*args|
-              args = convert_arguments(args)
-              m = JavaUtilities.matching_method(methods.find_all {|m|
-                m.arity == args.length}, args)
-              result = m.invoke(self.java_object, *args)
-              result = Java.java_to_primitive(result)
-              if result.kind_of?(JavaObject)
-                result = JavaUtilities.wrap(result, m.return_type)
-              end
-              result
-	        end
 	      end
 	    }
       end
@@ -634,3 +520,22 @@ class Object
     end
   end
 end
+
+
+class JavaInterfaceExtender
+  def initialize(javaClassName, &defBlock)
+    @java_class = Java::JavaClass.for_name(javaClassName)
+    @defBlock = defBlock
+  end
+  
+  def extend_proxy(proxy_class, java_class)
+    if @java_class.assignable_from? java_class
+        proxy_class.class_eval &@defBlock
+    end
+  end
+end
+
+
+require 'builtin/java/beans'
+require 'builtin/java/exceptions'
+require 'builtin/java/collections'

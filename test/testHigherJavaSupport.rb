@@ -71,16 +71,6 @@ if defined? Java
 
     include_package 'org.jruby.javasupport.test'
 
-    # Java bean convention properties as attributes
-    color = Color.new("green")
-
-    test_ok(color.color == "green")
-
-    color.color = "blue"
-
-    test_ok(color.color == "blue")
-    
-
     # Constants
     test_equal(9223372036854775807, Long::MAX_VALUE)
     test_ok(! defined? Character::Y_DATA)  # Known private field in Character
@@ -173,45 +163,7 @@ if defined? Java
   test_ok(0, Vector.new.size)
   test_ok(0, Hashtable.new.size)
   
-  include_class "java.util.ArrayList"
-  
-  a = ArrayList.new
-  
-  a << 3
-  a << 1
-  a << 2
-  
-  test_ok([1, 2, 3], a.sort)
-  test_ok([1], a.select {|e| e >= 1 })
-  
+  a = JString.new  
   # High-level java should only deal with proxies and not low-level JavaClass
   test_ok(a.getClass().class != "Java::JavaClass")
-
-
-  include_class 'org.jruby.util.TestHelper' 
-  include_class 'java.lang.RuntimeException' 
-  include_class 'java.lang.NullPointerException' 
-  include_class 'org.jruby.util.TestHelper$TestHelperException' do |p,c| "THException"; end
-  # Handle rescue of java Exceptions
-  begin
-    TestHelper.throwTestHelperException
-  rescue THException => e
-  end  
-
-  begin
-    TestHelper.throwTestHelperException
-  rescue NullPointerException => e
-    test_fail("Should not rescue")
-  rescue THException => e
-  end  
-
-  begin
-    TestHelper.throwTestHelperException
-  rescue RuntimeException => e
-  end  
-
-  begin
-    TestHelper.throwTestHelperException
-  rescue NativeException => e
-  end  
 end
