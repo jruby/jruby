@@ -69,21 +69,25 @@ module JavaUtilities
       setup_proxy_class(java_class, proxy_class)
     end
 
-    def setup_proxy_class(java_class, proxy_class)
-      # FIXME: take types into consideration, like the old javasupport,
-      #        and do the searching long before call-time.
-      unless java_class.interface?
-        def proxy_class.new(*args)
-          arity = args.length
-          constructor = @java_class.constructors.detect {|c| c.arity == arity }
-          if constructor.nil?
-            raise NameError.new("wrong # of arguments for constructor")
-          end
-          args = JavaProxy.convert_arguments(args)
-          result = constructor.new_instance(self, *args)
-          result.java_class = @java_class
-          result
+    def create_constructor(java_class, proxy_class)
+      def proxy_class.new(*args)
+        # FIXME: take types into consideration, like the old javasupport,
+        #        and do the searching long before call-time.
+        arity = args.length
+        constructor = @java_class.constructors.detect {|c| c.arity == arity }
+        if constructor.nil?
+          raise NameError.new("wrong # of arguments for constructor")
         end
+        args = JavaProxy.convert_arguments(args)
+        result = constructor.new_instance(self, *args)
+        result.java_class = @java_class
+        result
+      end
+    end
+
+    def setup_proxy_class(java_class, proxy_class)
+      unless java_class.interface?
+        create_constructor(java_class, proxy_class)
       end
 
       def proxy_class.create_instance_methods(java_class)
@@ -212,29 +216,4 @@ class Module
       return nil
     end
   end
-end
-
-
-if __FILE__ == $0
-
-  class JavaUtil
-    include_package "java.util"
-  end
-
-  p JavaUtil::Random
-
-  r = JavaUtil::Random.new
-
-  p r.to_s
-  p r.type.instance_methods
-
-  p r.nextInt
-  p r.nextInt(10)
-  p r.nextInt
-
-  class JavaLang
-    include_package "java.lang"
-  end
-
-  p JavaLang::Character::UnicodeBlock
 end
