@@ -25,16 +25,43 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
-
-/** Add some special Ruby  stuff.
- *
- * @author  jpetersen
+/**
+ * 
+ * @author jpetersen
  * @version $Revision$
  */
-public interface IRubyLexerSupport extends ILexerSupport {
-    public void setBuffer(String buffer, ISourcePosition startPosition);
+public class StackState implements Cloneable {
+    private long stack = 0;
 
-    public char readEscape() throws LexerException;
+    public void reset() {
+        reset(0);
+    }
+
+    public void reset(long backup) {
+        stack = backup;
+    }
+
+    public long begin() {
+        long old = stack;
+        stack <<= 1;
+        stack |= 1;
+        return old;
+    }
+
+    public void end() {
+        stack >>= 1;
+    }
+
+    public void stop() {
+        stack <<= 1;
+    }
+
+    public void restart() {
+        stack |= ((stack & 1) << 1);
+        stack >>= 1;
+    }
+    
+    public boolean isInState() {
+        return (stack & 1) != 0;
+    }
 }

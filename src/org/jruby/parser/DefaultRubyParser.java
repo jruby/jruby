@@ -1330,13 +1330,13 @@ case 212:
 case 213:
 					// line 817 "DefaultRubyParser.y"
   { 
-                    lexer.CMDARG_PUSH();
+		    yyVal = new Long(lexer.getCmdArgumentState().begin());
 		}
   break;
 case 214:
 					// line 819 "DefaultRubyParser.y"
   {
-                    lexer.CMDARG_POP();
+                    lexer.getCmdArgumentState().reset(((Long)yyVals[-1+yyTop]).longValue());
                     yyVal = ((INode)yyVals[0+yyTop]);
                 }
   break;
@@ -1597,13 +1597,13 @@ case 254:
 case 255:
 					// line 991 "DefaultRubyParser.y"
   { 
-	            lexer.COND_PUSH();
+	            lexer.getConditionState().begin();
 		}
   break;
 case 256:
 					// line 993 "DefaultRubyParser.y"
   {
-		    lexer.COND_POP();
+		    lexer.getConditionState().end();
 		}
   break;
 case 257:
@@ -1616,13 +1616,13 @@ case 257:
 case 258:
 					// line 999 "DefaultRubyParser.y"
   {
-                    lexer.COND_PUSH();
+                    lexer.getConditionState().begin();
                 }
   break;
 case 259:
 					// line 1001 "DefaultRubyParser.y"
   {
-                    lexer.COND_POP();
+                    lexer.getConditionState().end();
                 }
   break;
 case 260:
@@ -1648,13 +1648,13 @@ case 262:
 case 263:
 					// line 1014 "DefaultRubyParser.y"
   {
-                    lexer.COND_PUSH();
+                    lexer.getConditionState().begin();
                 }
   break;
 case 264:
 					// line 1016 "DefaultRubyParser.y"
   {
-                    lexer.COND_POP();
+                    lexer.getConditionState().end();
                 }
   break;
 case 265:

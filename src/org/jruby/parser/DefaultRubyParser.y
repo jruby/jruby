@@ -815,9 +815,9 @@ call_args     : command {
 	        }
 
 command_args  : { 
-                    lexer.CMDARG_PUSH();
+		    $$ = new Long(lexer.getCmdArgumentState().begin());
 		} call_args {
-                    lexer.CMDARG_POP();
+                    lexer.getCmdArgumentState().reset($<Long>1.longValue());
                     $$ = $2;
                 }
 
@@ -989,17 +989,17 @@ primary       : literal
                     $$ = new IfNode(getPosition(), support.getConditionNode($2), $5, $4);
                 }
               | kWHILE { 
-	            lexer.COND_PUSH();
+	            lexer.getConditionState().begin();
 		} expr do {
-		    lexer.COND_POP();
+		    lexer.getConditionState().end();
 		} compstmt kEND {
                     support.checkExpression($3);
                     $$ = new WhileNode(getPosition(), support.getConditionNode($3), $6);
                 }
               | kUNTIL {
-                    lexer.COND_PUSH();
+                    lexer.getConditionState().begin();
                 } expr do {
-                    lexer.COND_POP();
+                    lexer.getConditionState().end();
                 } compstmt kEND {
                     support.checkExpression($3);
                     $$ = new UntilNode(getPosition(), support.getConditionNode($3), $6);
@@ -1012,9 +1012,9 @@ primary       : literal
                     $$ = new CaseNode(getPosition(), null, $3, $4);
                 }
               | kFOR block_var kIN {
-                    lexer.COND_PUSH();
+                    lexer.getConditionState().begin();
                 } expr do {
-                    lexer.COND_POP();
+                    lexer.getConditionState().end();
                 } compstmt kEND {
                     support.checkExpression($5);
                     $$ = new ForNode(getPosition(), $2, $8, $5);

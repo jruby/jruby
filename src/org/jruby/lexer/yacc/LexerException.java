@@ -25,16 +25,6 @@
  */
 package org.jruby.lexer.yacc;
 
-import org.ablaf.common.*;
-import org.ablaf.lexer.*;
+public class LexerException extends Exception {
 
-/** Add some special Ruby  stuff.
- *
- * @author  jpetersen
- * @version $Revision$
- */
-public interface IRubyLexerSupport extends ILexerSupport {
-    public void setBuffer(String buffer, ISourcePosition startPosition);
-
-    public char readEscape() throws LexerException;
 }
