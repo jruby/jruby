@@ -50,17 +50,22 @@ public class RubyArgsFile extends RubyObject {
     //private RubyString currentFilename;
     private int currentLineNumber;
     
+    public void setCurrentLineNumber(int newLineNumber) {
+        this.currentLineNumber = newLineNumber;
+    }
+    
     public void initArgsFile() {
         extendObject(ruby.getClasses().getEnumerableModule());
         
         ruby.defineReadonlyVariable("$<", this);
         ruby.defineGlobalConstant("ARGF", this);
 
+		defineSingletonMethod("gets", CallbackFactory.getOptSingletonMethod(RubyArgsFile.class, "gets"));
+		defineSingletonMethod("filename", CallbackFactory.getMethod(RubyArgsFile.class, "filename"));
+		defineSingletonMethod("to_s", CallbackFactory.getMethod(RubyArgsFile.class, "filename"));
+
         ruby.defineReadonlyVariable("$FILENAME", RubyString.newString(ruby, "-"));
         currentFile = (RubyIO) ruby.getGlobalVar("$stdin");
-        
-        // Global functions
-        ruby.defineGlobalFunction("gets", CallbackFactory.getOptSingletonMethod(RubyArgsFile.class, "gets"));
     }
 
     protected boolean nextArgsFile() {
@@ -210,9 +215,15 @@ public class RubyArgsFile extends RubyObject {
         }
         
         currentLineNumber++;
-        ruby.getGlobalEntry("$.").setData(RubyFixnum.newFixnum(ruby, currentLineNumber));
+        ruby.setGlobalVar("$.", RubyFixnum.newFixnum(ruby, currentLineNumber));
         
         return line;
+    }
+    
+    // ARGF methods
+    
+    public RubyString filename() {
+        return (RubyString)ruby.getGlobalVar("$FILENAME");
     }
     
     // Global functions

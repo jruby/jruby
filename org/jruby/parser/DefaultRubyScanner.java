@@ -1526,7 +1526,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                             c = '_';
                             // fall through
                         case '~' : // $~: match-data
-                            ph.local_cnt(String.valueOf(c));
+                            ph.getLocalIndex(String.valueOf(c));
                             // fall through
                         case '*' : // $*: argv
                         case '$' : // $$: pid

@@ -198,7 +198,7 @@ public class RubyArray extends RubyObject {
             throw new RubyFrozenException(getRuby(), "Array");
         }
         if (isTmpLock()) {
-            throw new RubyTypeException(getRuby(), "can't modify array during sort");
+            throw new TypeError(getRuby(), "can't modify array during sort");
         }
         if (isTaint() && getRuby().getSafeLevel() >= 4) {
             throw new RubySecurityException(getRuby(), "Insecure: can't modify array");

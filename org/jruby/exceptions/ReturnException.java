@@ -1,12 +1,12 @@
 /*
  * ReturnException.java - No description
- * Created on 10. September 2001, 17:54
+ * Created on 13.01.2002, 22:24:10
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,12 +27,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.exceptions;
 
 import org.jruby.*;
 
-/**
+/** The ReturnException is thrown if a 'return' statement is interpreted.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -40,11 +39,16 @@ import org.jruby.*;
 public class ReturnException extends RuntimeException {
     private RubyObject returnValue;
 
+	/** Creates a new ReturnException with a return value.
+	 * 
+	 * @param returnValue The return value.
+	 */
     public ReturnException(RubyObject returnValue) {
         this.returnValue = returnValue;
     }
     
-    /** Getter for property returnValue.
+    /** Returns the return value.
+     * 
      * @return Value of property returnValue.
      */
     public RubyObject getReturnValue() {

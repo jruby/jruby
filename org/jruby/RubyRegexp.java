@@ -126,7 +126,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     private void checkInitialized() {
         if (matcher == null) {
-            throw new RubyTypeException(getRuby(), "uninitialized Regexp");
+            throw new TypeError(getRuby(), "uninitialized Regexp");
         }
     }
 

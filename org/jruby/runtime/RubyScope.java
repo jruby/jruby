@@ -57,8 +57,8 @@ public class RubyScope {
     
     private int flags = 0;
     
-    private ExtendedList localNames = null;
-	private ExtendedList localValues = null;
+    private List localNames = null;
+	private List localValues = null;
     
     private int oldActMethodScope = Constants.NOEX_PRIVATE; // Same as default for top level...just in case
     private Ruby ruby = null;
@@ -130,7 +130,7 @@ public class RubyScope {
      * Gets the localNames.
      * @return Returns a NameList
      */
-    public ExtendedList getLocalNames() {
+    public List getLocalNames() {
         return localNames;
     }
 
@@ -138,7 +138,7 @@ public class RubyScope {
      * Sets the localNames.
      * @param localNames The localNames to set
      */
-    public void setLocalNames(ExtendedList localName) {
+    public void setLocalNames(List localName) {
         this.localNames = localName;
     }
 
@@ -146,7 +146,7 @@ public class RubyScope {
      * Gets the localValues.
      * @return Returns a ArrayList
      */
-    public ExtendedList getLocalValues() {
+    public List getLocalValues() {
         return localValues;
     }
 
@@ -154,7 +154,7 @@ public class RubyScope {
      * Sets the localValues.
      * @param localValues The localValues to set
      */
-    public void setLocalValues(ExtendedList localValue) {
+    public void setLocalValues(List localValue) {
         this.localValues = localValue;
     }
 

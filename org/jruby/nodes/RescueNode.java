@@ -47,6 +47,7 @@ public class RescueNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
+        // RubyObject previousException = ruby.getGlobalVar("$!");
         RescuedBlock: while (true) {
             try {
                 // Execute recued Block
@@ -59,7 +60,7 @@ public class RescueNode extends Node {
 
                 return result;
             } catch (RaiseException raExcptn) {
-                ruby.defineReadonlyVariable("$!", raExcptn.getActException());
+                ruby.setGlobalVar("$!", raExcptn.getActException());
                 
                 ruby.setSourceLine(getLine());
 
@@ -69,13 +70,15 @@ public class RescueNode extends Node {
                         try {
                             return body.eval(ruby, self);
                         } catch (RetryException rExcptn) {
-                            ruby.defineReadonlyVariable("$!", ruby.getNil());
+                            ruby.setGlobalVar("$!", ruby.getNil());
                             continue RescuedBlock;
                         }
                     }
                     body = body.getHeadNode();
                 }
                 throw raExcptn;
+            } finally {
+                ruby.setGlobalVar("$!", ruby.getNil());
             }
         }
     }
@@ -93,7 +96,7 @@ public class RescueNode extends Node {
         
         for (int i = 0; i < args.size(); i++) {
             if (args.getRuby(i).kind_of(ruby.getClasses().getModuleClass()).isFalse()) {
-                throw new RubyTypeException(ruby, "class or module required for rescue clause");
+                throw new TypeError(ruby, "class or module required for rescue clause");
             }
             if (actExcptn.kind_of((RubyModule)args.getRuby(i)).isTrue()) {
                 return true;

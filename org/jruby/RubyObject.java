@@ -461,7 +461,7 @@ public class RubyObject {
      *
      */
     public String toId() {
-        throw new RubyTypeException(getRuby(), inspect().getValue() + " is not a symbol");
+        throw new TypeError(getRuby(), inspect().getValue() + " is not a symbol");
     }
 
     /** rb_convert_type
@@ -475,11 +475,11 @@ public class RubyObject {
         try {
             result = funcall(method);
         } catch (RubyNameException rnExcptn) {
-            throw new RubyTypeException(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
+            throw new TypeError(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
             //        } catch (RubyS rnExcptn) {
         }
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new RubyTypeException(getRuby(), getRubyClass().toName() + "#" + method + " should return " + className);
+            throw new TypeError(getRuby(), getRubyClass().toName() + "#" + method + " should return " + className);
         }
         return result;
     }
@@ -494,7 +494,7 @@ public class RubyObject {
         }
         getRuby().secure(4);
         if (!(this instanceof RubyString)) {
-            throw new RubyTypeException(getRuby(), "wrong argument type " + getRubyClass().toName() + " (expected String)");
+            throw new TypeError(getRuby(), "wrong argument type " + getRubyClass().toName() + " (expected String)");
         }
     }
 
@@ -755,7 +755,7 @@ public class RubyObject {
     public RubyObject dup() {
         RubyObject dup = funcall("clone");
         if (!dup.getClass().equals(getClass())) {
-            throw new RubyTypeException(getRuby(), "duplicated object must be same type");
+            throw new TypeError(getRuby(), "duplicated object must be same type");
         }
         if (!dup.isSpecialConst()) {
             dup.setRubyClass(type());

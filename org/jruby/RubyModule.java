@@ -1334,7 +1334,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyBoolean op_le(RubyObject obj) {
         if (!(obj instanceof RubyModule)) {
-            throw new RubyTypeException(getRuby(), "compared with non class/module");
+            throw new TypeError(getRuby(), "compared with non class/module");
         }
 
         RubyModule mod = this;
@@ -1363,7 +1363,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyBoolean op_ge(RubyObject obj) {
         if (!(obj instanceof RubyModule)) {
-            throw new RubyTypeException(getRuby(), "compared with non class/module");
+            throw new TypeError(getRuby(), "compared with non class/module");
         }
 
         return ((RubyModule) obj).op_le(this);
@@ -1388,7 +1388,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(obj instanceof RubyModule)) {
-            throw new RubyTypeException(getRuby(), "<=> requires Class or Module (" + getRubyClass().toName() + " given)");
+            throw new TypeError(getRuby(), "<=> requires Class or Module (" + getRubyClass().toName() + " given)");
         }
 
         if (op_le(obj).isTrue()) {

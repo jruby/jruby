@@ -32,7 +32,7 @@ package org.jruby;
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 
-/**
+/** This class initializes all global functions, variables and constants.
  * 
  * @author jpetersen
  * @version $Revision$
@@ -44,12 +44,62 @@ public class RubyGlobal {
         SafeAccessor safeAccessor = new SafeAccessor();
 
         ruby.defineHookedVariable("$/", RubyString.newString(ruby, "\n"), null, stringSetter);
+
+        ruby.defineHookedVariable("$.", RubyFixnum.one(ruby), null, new LineNumberSetter());
         ruby.defineVirtualVariable("$_", lastlineAccessor, lastlineAccessor);
-        
+
+        ruby.defineHookedVariable("$!", ruby.getNil(), null, new ErrorInfoSetter());
+
+        ruby.defineVirtualVariable("$SAFE", safeAccessor, safeAccessor);
+
+		RubyObject stdin = RubyIO.stdin(ruby, ruby.getClasses().getIoClass());
+		RubyObject stdout = RubyIO.stdout(ruby, ruby.getClasses().getIoClass());
+
+        ruby.defineHookedVariable("$stdin", stdin, null, new StdInSetter());
+        ruby.defineHookedVariable("$stdout", stdout, null, new StdOutSetter());
+
+        ruby.defineGlobalConstant("STDIN", stdin);
+        ruby.defineGlobalConstant("STDOUT", stdout);
+
+        // ARGF, $< object
         RubyArgsFile argsFile = new RubyArgsFile(ruby);
         argsFile.initArgsFile();
-        
-        ruby.defineVirtualVariable("$SAFE", safeAccessor, safeAccessor);
+
+        // Global functions
+
+        ruby.defineGlobalFunction("open", CallbackFactory.getOptSingletonMethod(RubyGlobal.class, "open"));
+        ruby.defineGlobalFunction("gets", CallbackFactory.getOptSingletonMethod(RubyArgsFile.class, "gets"));
+    }
+
+    public static RubyObject open(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        if (args.length > 0 && args[0].toString().startsWith("|")) {
+            // +++
+            return ruby.getNil();
+            // ---
+        }
+        return RubyFile.open(ruby, ruby.getClasses().getFileClass(), args);
+    }
+
+    private static class LineNumberSetter implements RubyGlobalEntry.SetterMethod {
+        /*
+         * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            ((RubyArgsFile) entry.getRuby().getGlobalVar("$<")).setCurrentLineNumber(RubyFixnum.fix2int(value));
+            entry.setData(value);
+        }
+    }
+
+    private static class ErrorInfoSetter implements RubyGlobalEntry.SetterMethod {
+        /*
+         * @see SetterMethod#set(RubyObject, String, RubyObject, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            if (!value.isNil() && value.kind_of(entry.getRuby().getClasses().getExceptionClass()).isTrue()) {
+                throw new TypeError(entry.getRuby(), "assigning non-exception to $!");
+            }
+            entry.setData(value);
+        }
     }
 
     private static class StringSetter implements RubyGlobalEntry.SetterMethod {
@@ -58,7 +108,7 @@ public class RubyGlobal {
          */
         public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
             if (!(value instanceof RubyString)) {
-                throw new RubyTypeException(entry.getRuby(), "value of " + id + " must be a String");
+                throw new TypeError(entry.getRuby(), "value of " + id + " must be a String");
             }
             entry.setData(value);
         }
@@ -102,6 +152,44 @@ public class RubyGlobal {
          */
         public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
             entry.getRuby().getParserHelper().setLastline(value);
+        }
+    }
+    
+    private static class StdInSetter implements RubyGlobalEntry.SetterMethod {
+        /*
+         * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            if (value == data) {
+                return;
+            } else if (!(value instanceof RubyIO)) {
+                entry.setData(value);
+                return;
+            } else {
+                ((RubyIO) value).checkReadable();
+                // ((RubyIO)value).fileno = 0;
+
+                entry.setData(value);
+            }
+        }
+    }
+
+    private static class StdOutSetter implements RubyGlobalEntry.SetterMethod {
+        /*
+         * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
+         */
+        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
+            if (value == data) {
+                return;
+            } else if (!(value instanceof RubyIO)) {
+                entry.setData(value);
+                return;
+            } else {
+                ((RubyIO) value).checkWriteable();
+                // ((RubyIO)value).fileno = 0;
+
+                entry.setData(value);
+            }
         }
     }
 }

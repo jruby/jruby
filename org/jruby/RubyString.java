@@ -940,7 +940,7 @@ public class RubyString extends RubyObject {
             replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
             return args[1];
         }
-        throw new RubyTypeException(getRuby(), "wrong argument type");
+        throw new TypeError(getRuby(), "wrong argument type");
     }
 
     /** rb_str_slice_bang

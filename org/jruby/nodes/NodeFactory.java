@@ -203,7 +203,7 @@ public class NodeFactory {
 	}
 
 	public Node newLAsgn(String vid, Node valueNode) {
-		return setFileNLine(new LAsgnNode(valueNode, ph.local_cnt(vid)));
+		return setFileNLine(new LAsgnNode(valueNode, ph.getLocalIndex(vid)));
 	}
 
 	public Node newDAsgn(String vid, Node valueNode) {
@@ -255,7 +255,7 @@ public class NodeFactory {
 	}
 
 	public Node newLVar(String vid) {
-		return setFileNLine(new LVarNode(ph.local_cnt(vid)));
+		return setFileNLine(new LVarNode(ph.getLocalIndex(vid)));
 	}
 
 	public Node newDVar(String vid) {
@@ -359,7 +359,7 @@ public class NodeFactory {
 	}
 
 	public Node newBlockArg(String vid) {
-		return setFileNLine(new BlockArgNode(ph.local_cnt(vid)));
+		return setFileNLine(new BlockArgNode(ph.getLocalIndex(vid)));
 	}
 
 	public Node newBlockPass(Node bodyNode) {

@@ -45,7 +45,7 @@ public class AliasNode extends Node {
     }
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
-            throw new RubyTypeException(ruby, "no class to make alias");
+            throw new TypeError(ruby, "no class to make alias");
         }
         ruby.getRubyClass().aliasMethod(getNewId(), getOldId());
         ruby.getRubyClass().funcall("method_added", RubySymbol.newSymbol(ruby, getNewId()));

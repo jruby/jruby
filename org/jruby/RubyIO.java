@@ -83,14 +83,12 @@ public class RubyIO extends RubyObject {
         ioClass.defineMethod("sync=", CallbackFactory.getMethod(RubyIO.class, "sync_set", RubyBoolean.class));
         
         ioClass.defineMethod("close", CallbackFactory.getMethod(RubyIO.class, "close"));
-
-        ruby.defineHookedVariable("$stdin", stdin(ruby, ioClass), null, new StdInSetter());
-        ruby.defineHookedVariable("$stdout", stdout(ruby, ioClass), null, new StdOutSetter());
+        ioClass.defineMethod("flush", CallbackFactory.getMethod(RubyIO.class, "flush"));
 
         return ioClass;
     }
 
-    private static RubyObject stdin(Ruby ruby, RubyClass rubyClass) {
+    public static RubyObject stdin(Ruby ruby, RubyClass rubyClass) {
         RubyIO io = new RubyIO(ruby, rubyClass);
 
         io.inStream = new RubyInputStream(ruby.getRuntime().getInputStream());
@@ -99,7 +97,7 @@ public class RubyIO extends RubyObject {
         return io;
     }
 
-    private static RubyObject stdout(Ruby ruby, RubyClass rubyClass) {
+    public static RubyObject stdout(Ruby ruby, RubyClass rubyClass) {
         RubyIO io = new RubyIO(ruby, rubyClass);
 
         io.outStream = ruby.getRuntime().getOutputStream();
@@ -372,6 +370,22 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
+    /** Flushes the IO output stream.
+     * 
+     * @return The IO.
+     */
+    public RubyIO flush() {
+        checkWriteable();
+        
+        try {
+        	outStream.flush();
+        } catch (IOException ioExcptn) {
+            throw new IOError(ruby, ioExcptn.getMessage());
+        }
+
+        return this;
+    }
+
     /** Read a line.
      * 
      */
@@ -397,43 +411,5 @@ public class RubyIO extends RubyObject {
         }
         
         return this;
-    }
-
-    private static class StdInSetter implements RubyGlobalEntry.SetterMethod {
-        /*
-         * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
-         */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            if (value == data) {
-                return;
-            } else if (!(value instanceof RubyIO)) {
-                entry.setData(value);
-                return;
-            } else {
-                ((RubyIO) value).checkReadable();
-                // ((RubyIO)value).fileno = 0;
-
-                entry.setData(value);
-            }
-        }
-    }
-
-    private static class StdOutSetter implements RubyGlobalEntry.SetterMethod {
-        /*
-         * @see SetterMethod#set(RubyObject, String, Object, RubyGlobalEntry)
-         */
-        public void set(RubyObject value, String id, RubyObject data, RubyGlobalEntry entry) {
-            if (value == data) {
-                return;
-            } else if (!(value instanceof RubyIO)) {
-                entry.setData(value);
-                return;
-            } else {
-                ((RubyIO) value).checkWriteable();
-                // ((RubyIO)value).fileno = 0;
-
-                entry.setData(value);
-            }
-        }
     }
 }

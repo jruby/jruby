@@ -2,8 +2,8 @@
  * ParserHelper.java - No description
  * Created on 05. November 2001, 21:49
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -29,6 +29,7 @@
  */
 package org.jruby.parser;
 
+import java.util.*;
 import org.jruby.*;
 import org.jruby.nodes.*;
 import org.jruby.runtime.*;
@@ -69,27 +70,23 @@ public class ParserHelper {
     // XXX is this really needed?
     private RubyArray rubyDebugLines; // separate a Ruby string into lines...
 
-	private int _line;
+    private int _line;
 
-	public String getFile()
-	{
-		return ruby.getSourceFile();
-	}
+    public String getFile() {
+        return ruby.getSourceFile();
+    }
 
-	public void setLine(int iLine)
-	{
-		_line = iLine;
-	}
-	public int getLine()
-	{
-		return _line;
-	}
-	
-	public void incrementLine()
-	{
-		_line++;
-	}
-	
+    public void setLine(int iLine) {
+        _line = iLine;
+    }
+    public int getLine() {
+        return _line;
+    }
+
+    public void incrementLine() {
+        _line++;
+    }
+
     public ParserHelper(Ruby ruby) {
         this.ruby = ruby;
     }
@@ -115,14 +112,14 @@ public class ParserHelper {
 
         rb_errmess(message);
     }
-    
+
     /**
      * prints an error message on the error stream.
      * puts an error message on the error stream with the line and file where it occured.
      * @param message the specific message
      **/
     public void rb_errmess(String message) {
-		ruby.getRuntime().getErrorStream().println(ruby.getSourceFile() + ":" + getLine() + " " + message);
+        ruby.getRuntime().getErrorStream().println(ruby.getSourceFile() + ":" + getLine() + " " + message);
     }
 
     public void rb_warn(String message) {
@@ -141,42 +138,22 @@ public class ParserHelper {
     // here the parser methods start....
     // ---------------------------------------------------------------------------
 
-    public String getOperatorId(int id) {
-        switch (id) {
+    public String getOperatorId(int operatorId) {
+        switch (operatorId) {
             case Token.tDOT2 :
                 return "..";
             case Token.tDOT3 :
                 return "...";
-            case '+' :
-                return "+";
-            case '-' :
-                return "-";
-            case '*' :
-                return "*";
-            case '/' :
-                return "/";
-            case '%' :
-                return "%";
             case Token.tPOW :
                 return "**";
             case Token.tUPLUS :
                 return "+@";
             case Token.tUMINUS :
                 return "-@";
-            case '|' :
-                return "|";
-            case '^' :
-                return "^";
-            case '&' :
-                return "&";
             case Token.tCMP :
                 return "<=>";
-            case '>' :
-                return ">";
             case Token.tGEQ :
                 return ">=";
-            case '<' :
-                return "<";
             case Token.tLEQ :
                 return "<=";
             case Token.tEQ :
@@ -189,10 +166,6 @@ public class ParserHelper {
                 return "=~";
             case Token.tNMATCH :
                 return "!~";
-            case '!' :
-                return "!";
-            case '~' :
-                return "~";
             case Token.tAREF :
                 return "[]";
             case Token.tASET :
@@ -203,31 +176,21 @@ public class ParserHelper {
                 return ">>";
             case Token.tCOLON2 :
                 return "::";
-            case '`' :
-                return "`";
-            default :
-                rb_bug("Operator: \"" + id + "\" not known.");
-                return null;
+            default: {
+                // '<', '!', '~', '+', '-', '*', '/', '%', '|', '^', '&', '>', '`'
+                return String.valueOf((char)operatorId);
+            }
         }
     }
 
     /**
      *  Copies position info (added to reduce the need for casts).
      *
-     *@param  n1  Description of Parameter
-     *@param  n2  Description of Parameter
      */
     public void fixpos(Object n1, Node n2) {
         fixpos((Node) n1, n2);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node1  Description of Parameter
-     *@param  node2  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     public Node arg_blk_pass(Node node1, Node node2) {
         if (node2 != null) {
             node2.setHeadNode(node1);
@@ -236,19 +199,10 @@ public class ParserHelper {
         return node1;
     }
 
-    /**
-     *  Description of the Method
-     */
-	public void rb_parser_append_print() {
+    public void rb_parser_append_print() {
         evalTree = block_append(evalTree, nf.newFCall("print", nf.newArray(nf.newGVar("$_"))));
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  chop   Description of Parameter
-     *@param  split  Description of Parameter
-     */
     public void rb_parser_while_loop(boolean chop, boolean split) {
         if (split) {
             evalTree = block_append(nf.newGAsgn("$F", nf.newCall(nf.newGVar("$_"), "split", null)), evalTree);
@@ -310,31 +264,35 @@ public class ParserHelper {
     }
 
     /**
-     *  Description of the Method
+     * Returns a Node representing the access of the 
+     * variable or constant named id.
      *
-     *@param  id  Description of Parameter
-     *@return     Description of the Returned Value
+     *@param id The name of the variable or constant.
+     *@return   A node representing the access.
      */
-    public Node gettable(String id) {
-        if (id.startsWith("~~")) {
-            if (id.endsWith("SELF")) {
+    public Node getAccessNode(String id) {
+        id = id.intern();
+        if (id.charAt(0) == '#') {
+            // Special variable or constant
+            id = id.substring(1).intern();
+            if (id == "self") {
                 return nf.newSelf();
-            } else if (id.endsWith("NIL")) {
+            } else if (id == "nil") {
                 return nf.newNil();
-            } else if (id.endsWith("TRUE")) {
+            } else if (id == "true") {
                 return nf.newTrue();
-            } else if (id.endsWith("FALSE")) {
+            } else if (id == "false") {
                 return nf.newFalse();
-            } else if (id.endsWith("__FILE__")) {
+            } else if (id == "__FILE__") {
                 return nf.newStr(RubyString.newString(ruby, ruby.getSourceFile()));
-            } else if (id.endsWith("__LINE__")) {
+            } else if (id == "__LINE__") {
                 return nf.newLit(RubyFixnum.newFixnum(ruby, ruby.getSourceLine()));
             }
         } else {
             if (IdUtil.isLocal(id)) {
                 if (dyna_in_block() && RubyVarmap.isDefined(ruby, id)) {
                     return nf.newDVar(id);
-                } else if (local_id(id)) {
+                } else if (isLocalRegistered(id)) {
                     return nf.newLVar(id);
                 }
                 /*
@@ -354,7 +312,61 @@ public class ParserHelper {
                 return nf.newCVar(id);
             }
         }
-        rb_bug("invalid id for gettable. id = " + id);
+        rb_bug("Invalid id '" + id + "' for getAccessNode.");
+        return null;
+    }
+
+    /**
+     * Returns a Node representing the assignment of value to
+     * the variable or constant named id.
+     *
+     *@param id The name of the variable or constant.
+     *@param valueNode A Node representing the value which should be assigned.
+     *@return A Node representing the assignment.
+     */
+    public Node getAssignmentNode(String id, Node valueNode) {
+        value_expr(valueNode);
+
+        id = id.intern();
+        if (id.charAt(0) == '#') {
+            // Special variable or constant.
+            id = id.substring(1).intern();
+            if (id == "self") {
+                yyerror("Can't change the value of self");
+            } else {
+                // nil, true, false, __FILE__, __LINE__
+                yyerror("Can't assign to " + id);
+            }
+        } else {
+            if (IdUtil.isLocal(id)) {
+                if (RubyVarmap.isCurrent(ruby, id)) {
+                    return nf.newDAsgnCurr(id, valueNode);
+                } else if (RubyVarmap.isDefined(ruby, id)) {
+                    return nf.newDAsgn(id, valueNode);
+                } else if (isLocalRegistered(id) || !dyna_in_block()) {
+                    return nf.newLAsgn(id, valueNode);
+                } else {
+                    RubyVarmap.push(ruby, id, ruby.getNil());
+                    return nf.newDAsgnCurr(id, valueNode);
+                }
+            } else if (IdUtil.isGlobal(id)) {
+                return nf.newGAsgn(id, valueNode);
+            } else if (IdUtil.isInstanceVariable(id)) {
+                return nf.newIAsgn(id, valueNode);
+            } else if (IdUtil.isConstant(id)) {
+                if (isInDef() || isInSingle()) {
+                    yyerror("dynamic constant assignment");
+                }
+                return nf.newCDecl(id, valueNode);
+            } else if (IdUtil.isClassVariable(id)) {
+                if (isInSingle()) {
+                    return nf.newCVAsgn(id, valueNode);
+                }
+                return nf.newCVDecl(id, valueNode);
+            } else {
+                rb_bug("Id '" + id + "' not allowed for variable.");
+            }
+        }
         return null;
     }
 
@@ -384,18 +396,11 @@ public class ParserHelper {
         if (node != null) {
             nl = nf.newNewline(node);
             fixpos(nl, node);
-//			nl.setNth(node.getLine());		not needed anymore Benoit
+            //			nl.setNth(node.getLine());		not needed anymore Benoit
         }
         return nl;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  head  Description of Parameter
-     *@param  tail  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node block_append(Node head, Node tail) {
         if (tail == null) {
             return head;
@@ -408,7 +413,7 @@ public class ParserHelper {
             end = ((BlockNode) head).getEndNode();
         } else {
             end = nf.newBlock(head);
-//            end.setEndNode(end);  not needed anymore Benoit
+            //            end.setEndNode(end);  not needed anymore Benoit
             fixpos(end, head);
             head = end;
         }
@@ -436,20 +441,13 @@ public class ParserHelper {
 
         if (!(tail instanceof BlockNode)) {
             tail = nf.newBlock(tail);
-//            tail.setEndNode(tail);    not needed anymore Benoit
+            //            tail.setEndNode(tail);    not needed anymore Benoit
         }
         end.setNextNode(tail);
         head.setEndNode(tail.getEndNode());
         return head;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  head  Description of Parameter
-     *@param  tail  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node list_append(Node head, Node tail) {
         if (head == null) {
             return nf.newList(tail);
@@ -465,13 +463,6 @@ public class ParserHelper {
         return head;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  head  Description of Parameter
-     *@param  tail  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node list_concat(Node head, Node tail) {
         Node last = head;
 
@@ -485,28 +476,10 @@ public class ParserHelper {
         return head;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  recv  Description of Parameter
-     *@param  op    Description of Parameter
-     *@param  narg  Description of Parameter
-     *@param  arg1  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node call_op(Node recv, int op, int narg, Node arg1) {
         return call_op(recv, getOperatorId(op), narg, arg1);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  recv  Description of Parameter
-     *@param  id    Description of Parameter
-     *@param  narg  Description of Parameter
-     *@param  arg1  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node call_op(Node recv, String id, int narg, Node arg1) {
         value_expr(recv);
         if (narg == 1) {
@@ -515,15 +488,8 @@ public class ParserHelper {
         return nf.newCall(recv, id, narg == 1 ? nf.newList(arg1) : null);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node1  Description of Parameter
-     *@param  node2  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     public Node match_gen(Node node1, Node node2) {
-        local_cnt("~");
+        getLocalIndex("~");
 
         switch (node1.getType()) {
             case Constants.NODE_DREGX :
@@ -548,92 +514,17 @@ public class ParserHelper {
         return nf.newCall(node1, "=~", nf.newList(node2));
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  id   Description of Parameter
-     *@param  val  Description of Parameter
-     *@return      Description of the Returned Value
-     */
-    public Node assignable(String id, Node val) {
-        value_expr(val);
-        if (id.startsWith("~~")) {
-            if (id.endsWith("SELF")) {
-                yyerror("Can't change the value of self");
-            } else if (id.endsWith("NIL")) {
-                yyerror("Can't assign to nil");
-            } else if (id.endsWith("TRUE")) {
-                yyerror("Can't assign to true");
-            } else if (id.endsWith("FALSE")) {
-                yyerror("Can't assign to false");
-            } else if (id.endsWith("__FILE__")) {
-                yyerror("Can't assign to __FILE__");
-            } else if (id.endsWith("__LINE__")) {
-                yyerror("Can't assign to __LINE__");
-            }
-        } else {
-            if (IdUtil.isLocal(id)) {
-                if (RubyVarmap.isCurrent(ruby, id)) {
-                    return nf.newDAsgnCurr(id, val);
-                } else if (RubyVarmap.isDefined(ruby, id)) {
-                    return nf.newDAsgn(id, val);
-                } else if (local_id(id) || !dyna_in_block()) {
-                    return nf.newLAsgn(id, val);
-                } else {
-                    RubyVarmap.push(ruby, id, ruby.getNil());
-                    return nf.newDAsgnCurr(id, val);
-                }
-            } else if (IdUtil.isGlobal(id)) {
-                return nf.newGAsgn(id, val);
-            } else if (IdUtil.isInstanceVariable(id)) {
-                return nf.newIAsgn(id, val);
-            } else if (IdUtil.isConstant(id)) {
-                if (isInDef() || isInSingle()) {
-                    yyerror("dynamic constant assignment");
-                }
-                return nf.newCDecl(id, val);
-            } else if (IdUtil.isClassVariable(id)) {
-                if (isInSingle()) {
-                    return nf.newCVAsgn(id, val);
-                }
-                return nf.newCVDecl(id, val);
-            } else {
-                rb_bug("bad id for variable");
-            }
-        }
-        return null;
-    }
-
-    /**
-     *  Description of the Method
-     *
-     *@param  recv  Description of Parameter
-     *@param  idx   Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node aryset(Node recv, Node idx) {
         value_expr(recv);
         return nf.newCall(recv, "[]=", idx);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  recv  Description of Parameter
-     *@param  id    Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node attrset(Node recv, String id) {
         value_expr(recv);
 
         return nf.newCall(recv, id + "=", null);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     */
     public void rb_backref_error(Node node) {
         switch (node.getType()) {
             case Constants.NODE_NTH_REF :
@@ -645,13 +536,6 @@ public class ParserHelper {
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node1  Description of Parameter
-     *@param  node2  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     public Node arg_concat(Node node1, Node node2) {
         if (node2 == null) {
             return node1;
@@ -659,13 +543,6 @@ public class ParserHelper {
         return nf.newArgsCat(node1, node2);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node1  Description of Parameter
-     *@param  node2  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private Node arg_add(Node node1, Node node2) {
         if (node1 == null) {
             return nf.newList(node2);
@@ -678,13 +555,6 @@ public class ParserHelper {
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  lhs  Description of Parameter
-     *@param  rhs  Description of Parameter
-     *@return      Description of the Returned Value
-     */
     public Node node_assign(Node lhs, Node rhs) {
         if (lhs == null) {
             return null;
@@ -719,12 +589,6 @@ public class ParserHelper {
         return lhs;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public boolean value_expr(Node node) {
         if (node == null) {
             return true;
@@ -760,11 +624,6 @@ public class ParserHelper {
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     */
     public void void_expr(Node node) {
         String useless = null;
 
@@ -781,26 +640,26 @@ public class ParserHelper {
                                 node = node.getNext();
                                 continue;*/
             case Constants.NODE_CALL :
-                if (node.getMId().equals("+") ||
-                    node.getMId().equals("-") ||
-                    node.getMId().equals("*") ||
-                    node.getMId().equals("/") ||
-                    node.getMId().equals("%") ||
-                    node.getMId().equals("**") ||
-                    node.getMId().equals("+@") ||
-                    node.getMId().equals("-@") ||
-                    node.getMId().equals("|") ||
-                    node.getMId().equals("^") ||
-                    node.getMId().equals("&") ||
-                    node.getMId().equals("<=>") ||
-                    node.getMId().equals(">") ||
-                    node.getMId().equals(">=") ||
-                    node.getMId().equals("<") ||
-                    node.getMId().equals("<=") ||
-                    node.getMId().equals("==") ||
-                    node.getMId().equals("!=")) {
-                        useless = node.getMId();
-                        break;
+                if (node.getMId().equals("+")
+                    || node.getMId().equals("-")
+                    || node.getMId().equals("*")
+                    || node.getMId().equals("/")
+                    || node.getMId().equals("%")
+                    || node.getMId().equals("**")
+                    || node.getMId().equals("+@")
+                    || node.getMId().equals("-@")
+                    || node.getMId().equals("|")
+                    || node.getMId().equals("^")
+                    || node.getMId().equals("&")
+                    || node.getMId().equals("<=>")
+                    || node.getMId().equals(">")
+                    || node.getMId().equals(">=")
+                    || node.getMId().equals("<")
+                    || node.getMId().equals("<=")
+                    || node.getMId().equals("==")
+                    || node.getMId().equals("!=")) {
+                    useless = node.getMId();
+                    break;
                 }
                 break;
             case Constants.NODE_LVAR :
@@ -861,11 +720,6 @@ public class ParserHelper {
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     */
     public void void_stmts(Node node) {
         if (!ruby.isVerbose()) {
             return;
@@ -886,12 +740,6 @@ public class ParserHelper {
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     private boolean assign_in_cond(Node node) {
         switch (node.getType()) {
             case Constants.NODE_MASGN :
@@ -929,44 +777,22 @@ public class ParserHelper {
         return true;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private boolean e_option_supplied() {
         return ruby.getSourceFile().equals("-e");
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  str  Description of Parameter
-     */
     private void warn_unless_e_option(String str) {
         if (!e_option_supplied()) {
             rb_warn(str);
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  str  Description of Parameter
-     */
     private void warning_unless_e_option(String str) {
         if (!e_option_supplied()) {
             rb_warning(str);
         }
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node   Description of Parameter
-     *@param  logop  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private Node range_op(Node node, int logop) {
         int type; // enum node_type
 
@@ -990,13 +816,6 @@ public class ParserHelper {
         return node;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node   Description of Parameter
-     *@param  logop  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private Node cond0(Node node, int logop) {
         int type = node.getType(); // enum node_type
 
@@ -1012,17 +831,17 @@ public class ParserHelper {
             case Constants.NODE_DREGX :
             case Constants.NODE_DREGX_ONCE :
                 warning_unless_e_option("regex literal in condition");
-                local_cnt("_");
-                local_cnt("~");
+                getLocalIndex("_");
+                getLocalIndex("~");
                 return nf.newMatch2(node, nf.newGVar("$_"));
             case Constants.NODE_DOT2 :
             case Constants.NODE_DOT3 :
                 node.setBeginNode(range_op(node.getBeginNode(), logop));
                 node.setEndNode(range_op(node.getEndNode(), logop));
-                
-                ((DotNode)node).setFlip(true);
-                
-                node.setCount(local_append(null));
+
+                ((DotNode) node).setFlip(true);
+
+                node.setCount(registerLocal(null));
                 warning_unless_e_option("range literal in condition");
                 break;
             case Constants.NODE_LIT :
@@ -1030,9 +849,9 @@ public class ParserHelper {
                     warning_unless_e_option("regex literal in condition");
                     // +++
                     // node.nd_set_type(Constants.NODE_MATCH);
-                    
+
                     throw new RuntimeException("[BUG] node.nd_set_type(Constants.NODE_MATCH)");
-                    
+
                     // local_cnt("_");
                     // local_cnt("~");
                     // ---
@@ -1041,13 +860,6 @@ public class ParserHelper {
         return node;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node   Description of Parameter
-     *@param  logop  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     private Node cond1(Node node, int logop) {
         if (node == null) {
             return null;
@@ -1059,24 +871,10 @@ public class ParserHelper {
         return cond0(node, logop);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node cond(Node node) {
         return cond1(node, 0);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  type   Description of Parameter
-     *@param  left   Description of Parameter
-     *@param  right  Description of Parameter
-     *@return        Description of the Returned Value
-     */
     public Node logop(int type, Node left, Node right) {
         value_expr(left);
 
@@ -1091,12 +889,6 @@ public class ParserHelper {
         // return nf.newDefaultNode(type, cond1(left, 1), cond1(right, 1), null);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  node  Description of Parameter
-     *@return       Description of the Returned Value
-     */
     public Node ret_args(Node node) {
         if (node != null) {
             if (node.getType() == Constants.NODE_BLOCK_PASS) {
@@ -1123,14 +915,6 @@ public class ParserHelper {
      *  }
      */
 
-    /**
-     *  Description of the Method
-     *
-     *@param  r  Description of Parameter
-     *@param  m  Description of Parameter
-     *@param  a  Description of Parameter
-     *@return    Description of the Returned Value
-     */
     public Node new_call(Node r, String m, Node args) {
         if (args != null && args instanceof BlockPassNode) {
             args.setIterNode(nf.newCall(r, m, args.getHeadNode()));
@@ -1139,13 +923,6 @@ public class ParserHelper {
         return nf.newCall(r, m, args);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  m  Description of Parameter
-     *@param  a  Description of Parameter
-     *@return    Description of the Returned Value
-     */
     public Node new_fcall(String mid, Node args) {
         if (args != null && args instanceof BlockPassNode) {
             args.setIterNode(nf.newFCall(mid, args.getHeadNode()));
@@ -1154,12 +931,6 @@ public class ParserHelper {
         return nf.newFCall(mid, args);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  a  Description of Parameter
-     *@return    Description of the Returned Value
-     */
     public Node new_super(Node args) {
         if (args != null && args instanceof BlockPassNode) {
             args.setIterNode(nf.newSuper(args.getHeadNode()));
@@ -1168,112 +939,99 @@ public class ParserHelper {
         return nf.newSuper(args);
     }
 
-    /**
-     *  Description of the Method
-     */
     public void local_push() {
         LocalVars local = new LocalVars();
-        
+
         local.prev = lvtbl;
-        //local.nofree = false;
-        //local.cnt = 0;
         local.tbl = null;
         local.dlev = 0;
-        
+
         lvtbl = local;
     }
 
-    /**
-     *  Description of the Method
-     */
     public void local_pop() {
         LocalVars local = lvtbl.prev;
 
-        /*if (lvtbl.tbl != null) {
-            if (lvtbl.nofree) {
-                lvtbl.tbl.setCount(lvtbl.cnt);
-            }
-        }*/
         lvtbl = local;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
-    public ExtendedList local_tbl() {
-        //lvtbl.nofree = true;
+    public List local_tbl() {
         return lvtbl.tbl;
     }
 
     /**
-     *  Description of the Method
+     * Register the local variable name 'name' in the table 
+     * of registered variable names. Returns the index of the
+     * added local variable name in the table.
      *
-     *@param  id  Description of Parameter
-     *@return     Description of the Returned Value
+     *@param name The name of the local variable.
+     *@return The index of the local variable name in the table.
      */
-    private int local_append(String id) {
+    private int registerLocal(String name) {
+        name = name.intern();
+        
         if (lvtbl.tbl == null) {
-            lvtbl.tbl = new ExtendedList();
-            // lvtbl.tbl.setCount(0);
+            lvtbl.tbl = new ArrayList();
             lvtbl.tbl.add("_");
             lvtbl.tbl.add("~");
-            //lvtbl.cnt = 2;
-            if (id.equals("_")) {
+
+            if (name == "_") {
                 return 0;
-            } else if (id.equals("~")) {
+            } else if (name == "~") {
                 return 1;
             }
-        } else {
-            /*RubyId[] ntbl = new RubyId[lvtbl.cnt + 2];
-            System.arraycopy(lvtbl.tbl, 0, ntbl, 0, lvtbl.tbl.length);
-            lvtbl.tbl = ntbl;*/
         }
 
-        lvtbl.tbl.add(id);
-//		System.out.println("append " + id + " count = " + (lvtbl.cnt()-1) );
-        return lvtbl.cnt()-1;
+        lvtbl.tbl.add(name);
+
+        return lvtbl.cnt() - 1;
     }
 
     /**
-     *  Description of the Method
+     * Returns the index of the local variable 'name' in the table
+     * of registered variable names.
+     * 
+     * If name is not registered yet, register the variable name.
+     * 
+     * If name == null returns the count of registered variable names.
      *
-     *@param  id  Description of Parameter
-     *@return     Description of the Returned Value
+     *@param name The name of the local variable
+     *@return The index in the table of registered variable names.
      */
-    public int local_cnt(String id) {
-        if (id == null) {
-			return lvtbl.cnt();
+    public int getLocalIndex(String name) {
+        if (name == null) {
+            return lvtbl.cnt();
         } else if (lvtbl.tbl == null) {
-            return local_append(id);
+            return registerLocal(name);
         }
 
-        for (int i = 0; i < lvtbl.tbl.size(); i++) {
-            if (id.equals(lvtbl.tbl.get(i))) {
+        name = name.intern();
+        for (int i = 0; i < lvtbl.cnt(); i++) {
+            if (name == lvtbl.tbl.get(i)) {
                 return i;
             }
         }
 
-        return local_append(id);
+        return registerLocal(name);
     }
 
-    public boolean local_id(String id) {
-        // int i;
-        // int max;
+    /**
+     * Returns true if there was already an assignment to a local
+     * variable named id, false otherwise.
+     * 
+     * @param id The name of the local variable.
+     * @return true if there was already an assignment to a local
+     * variable named id.
+     */
+    public boolean isLocalRegistered(String id) {
+        id = id.intern();
 
         if (lvtbl == null || lvtbl.tbl == null) {
             return false;
         }
-        /*
-        for (i = 3, max = lvtbl.cnt + 1; i < max; i++) {
-            if (lvtbl.tbl.get(i).equals(id)) {
-                return true;
-            }
-        }
-        */
+
         for (int i = 0; i < lvtbl.tbl.size(); i++) {
-            if (id.equals(lvtbl.tbl.get(i))) {
+            if (id == lvtbl.tbl.get(i)) {
                 return true;
             }
         }
@@ -1285,13 +1043,13 @@ public class ParserHelper {
      */
     public void top_local_init() {
         local_push();
-		ExtendedList lLocalNames = ruby.getRubyScope().getLocalNames();
+        List lLocalNames = ruby.getRubyScope().getLocalNames();
         int lcnt = lLocalNames != null ? lLocalNames.size() : 0;
         if (lcnt > 0) {
-            lvtbl.tbl = new ExtendedList();
+            lvtbl.tbl = new ArrayList();
             //ruby.getRubyScope().setLocalNames(lvtbl.tbl);   //it should be the other way around, don't understand how it works
-		for(int i= 0; i < lcnt; i ++)
-			local_append((String)lLocalNames.get(i))	;
+            for (int i = 0; i < lcnt; i++)
+                registerLocal((String) lLocalNames.get(i));
         } else {
             lvtbl.tbl = null;
         }
@@ -1307,7 +1065,7 @@ public class ParserHelper {
      */
     public void top_local_setup() {
         int len = lvtbl.cnt();
-		//System.out.println("count = " +  len);
+        //System.out.println("count = " +  len);
         int i;
 
         if (len > 0) {
@@ -1315,21 +1073,18 @@ public class ParserHelper {
 
             if (i < len) {
                 if (i == 0 || (ruby.getRubyScope().getFlags() & RubyScope.SCOPE_MALLOC) == 0) {
-                    ExtendedList values = new ExtendedList(len + 1, ruby.getNil());
                     //int vi = 0;
+                    List values = new ArrayList(len); // len + 1
                     if (ruby.getRubyScope().getLocalValues() != null) {
-                        // vars.set(0, ruby.getRubyScope().getLocalVars(-1));
-                        // vars.inc();
-                        values.copy(ruby.getRubyScope().getLocalValues(), i);
-                    } /*else {
-                        vars.set(0, null);
-                        vars.inc(1);
-                    }*/
+                        values.addAll(ruby.getRubyScope().getLocalValues().subList(0, i));
+                    }
+                    values.addAll(Collections.nCopies(len - values.size(), ruby.getNil()));
                     ruby.getRubyScope().setLocalValues(values);
                     ruby.getRubyScope().setFlags(ruby.getRubyScope().getFlags() | RubyScope.SCOPE_MALLOC);
                 } else {
-                    ExtendedList values = new ExtendedList(len/* + 1*/, ruby.getNil());
-                    values.copy(ruby.getRubyScope().getLocalValues(), values.size());
+                    List values = new ArrayList(len); // Collections.nCopies(len /* + 1*/, ruby.getNil()));
+                    values.addAll(ruby.getRubyScope().getLocalValues()); // copy(ruby.getRubyScope().getLocalValues(), values.size());
+                    values.addAll(Collections.nCopies(len - values.size(), ruby.getNil()));
                     ruby.getRubyScope().setLocalValues(values);
                 }
 
@@ -1344,11 +1099,6 @@ public class ParserHelper {
         local_pop();
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     public RubyVarmap dyna_push() {
         RubyVarmap vars = ruby.getDynamicVars();
 
@@ -1357,35 +1107,19 @@ public class ParserHelper {
         return vars;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  vars  Description of Parameter
-     */
     public void dyna_pop(RubyVarmap vars) {
         lvtbl.dlev--;
 
         ruby.setDynamicVars(vars);
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@return    Description of the Returned Value
-     */
     private boolean dyna_in_block() {
         return lvtbl.dlev > 0;
     }
 
-    /**
-     *  Description of the Method
-     *
-     *@param  c    Description of Parameter
-     *@param  val  Description of Parameter
-     */
     private void special_local_set(String c, RubyObject val) {
         top_local_init();
-        int cnt = local_cnt(c);
+        int cnt = getLocalIndex(c);
         top_local_setup();
         ruby.getRubyScope().setValue(cnt, val);
     }
@@ -1610,15 +1344,14 @@ public class ParserHelper {
      *@author     jpetersen
      *@created    4. Oktober 2001
      */
-    private class LocalVars {
-        ExtendedList tbl;
-        //boolean nofree;
-//        int cnt;
+    private static class LocalVars {
+        List tbl;
         int dlev;
+
+        int cnt() {
+            return (tbl == null ? 0 : tbl.size());
+        }
+
         LocalVars prev;
-		int cnt()
-		{
-			return (tbl==null ? 0 : tbl.size());
-		}
     }
 }

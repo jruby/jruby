@@ -1,6 +1,6 @@
 /*
- * RetryException.java - No description
- * Created on 13.01.2002, 22:22:50
+ * JumpException.java - No description
+ * Created on 13.01.2002, 22:13:44
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
@@ -29,14 +29,52 @@
  */
 package org.jruby.exceptions;
 
-/** The RetryException is thrown if a 'retry' statement is interpreted.
- *
- * @author  jpetersen
+/**
+ * This class should be used for performance reasons if the 
+ * Exception don't need a stack trace.
+ * 
+ * @author jpetersen
  * @version $Revision$
  */
-public class RetryException extends JumpException {
+public abstract class JumpException extends RuntimeException {
 
-    /** Creates new RetryException */
-    public RetryException() {
+    /**
+     * Constructor for JumpException.
+     */
+    public JumpException() {
+        super();
     }
+
+    /**
+     * Constructor for JumpException.
+     * @param msg
+     */
+    public JumpException(String msg) {
+        super(msg);
+    }
+
+    /**
+     * Constructor for JumpException.
+     * @param msg
+     * @param throwable
+     */
+    public JumpException(String msg, Throwable throwable) {
+        super(msg, throwable);
+    }
+
+    /**
+     * Constructor for JumpException.
+     * @param throwable
+     */
+    public JumpException(Throwable throwable) {
+        super(throwable);
+    }
+
+    /** This method don't do anything for performance reasons.
+     * 
+     * @see Throwable#fillInStackTrace()
+     */
+    public Throwable fillInStackTrace() {
+        return this;
+    }    
 }

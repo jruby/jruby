@@ -171,7 +171,7 @@ public class RubyClass extends RubyModule {
      */
     public RubyObject newInstance(RubyObject[] args) {
         if (isSingleton()) {
-            throw new RubyTypeException(getRuby(), "can't create instance of virtual class");
+            throw new TypeError(getRuby(), "can't create instance of virtual class");
         }
 
         RubyObject obj = new RubyObject(getRuby(), this);
@@ -192,7 +192,7 @@ public class RubyClass extends RubyModule {
         }
 
         if (superClass.isSingleton()) {
-            throw new RubyTypeException(ruby, "can't make subclass of virtual class");
+            throw new TypeError(ruby, "can't make subclass of virtual class");
         }
 
         RubyClass newClass = newClass(ruby, superClass);
@@ -228,6 +228,6 @@ public class RubyClass extends RubyModule {
      *
      */
     public static RubyObject inherited(Ruby ruby, RubyClass subClass) {
-        throw new RubyTypeException(ruby, "can't make subclass of Class");
+        throw new TypeError(ruby, "can't make subclass of Class");
     }
 }

@@ -30,6 +30,7 @@
 
 package org.jruby.nodes;
 
+import java.util.*;
 import org.jruby.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
@@ -119,11 +120,8 @@ public class Node {
 		Node copy = new ScopeNode(null, refValue.cloneCRefNode(), getNextNode());
 
 		if (getTable() != null) {
-			// ExtendedList newTable = new ExtendedList(getTable().size() + 1, null);
-			// newTable.copy(getTable(), getTable().size() + 1);
-
-			ExtendedList newTable = new ExtendedList(getTable().size(), null);
-			newTable.copy(getTable(), getTable().size());
+			List newTable = new ArrayList(getTable().size());
+			newTable.addAll(getTable());
 
 			copy.setTable(newTable);
 		}
@@ -221,11 +219,11 @@ public class Node {
 		u3 = newCount == 0 ? null : new Integer(newCount);
 	}
 
-	public ExtendedList getTable() {
-		return (ExtendedList)u1;
+	public List getTable() {
+		return (List)u1;
 	}
 
-	public void setTable(ExtendedList newTable) {
+	public void setTable(List newTable) {
 		u1 = newTable;
 	}
 

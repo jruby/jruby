@@ -92,27 +92,27 @@ public abstract class RubyNumeric extends RubyObject {
         if (arg instanceof RubyNumeric) {
             return ((RubyNumeric)arg).getLongValue();
         }
-        throw new RubyTypeException(arg.getRuby(), "argument is not numeric");
+        throw new TypeError(arg.getRuby(), "argument is not numeric");
     }
         
     public static long fix2long(RubyObject arg) {
         if (arg instanceof RubyFixnum) {
             return ((RubyFixnum)arg).getLongValue();
         }
-        throw new RubyTypeException(arg.getRuby(), "argument is not a Fixnum");
+        throw new TypeError(arg.getRuby(), "argument is not a Fixnum");
     }
         
     public static int fix2int(RubyObject arg) {
         long val = fix2long(arg);
         if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
-            throw new RubyTypeException(arg.getRuby(), "argument value is too big to convert to int");
+            throw new TypeError(arg.getRuby(), "argument value is too big to convert to int");
         }
         return (int)val;
     }
 
     public static RubyNumeric numericValue(RubyObject arg) {
         if (!(arg instanceof RubyNumeric)) {
-            throw new RubyTypeException(arg.getRuby(), "argument not numeric");
+            throw new TypeError(arg.getRuby(), "argument not numeric");
         }
         return (RubyNumeric)arg;
     }

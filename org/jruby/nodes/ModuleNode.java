@@ -47,7 +47,7 @@ public class ModuleNode extends Node {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
-            throw new RubyTypeException(ruby, "no outer class/module");
+            throw new TypeError(ruby, "no outer class/module");
         }
         
         RubyModule module = null;

@@ -47,7 +47,7 @@ public class UndefNode extends Node {
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
         if (ruby.getRubyClass() == null) {
-            throw new RubyTypeException(ruby, "no class to undef method");
+            throw new TypeError(ruby, "no class to undef method");
         }
         ruby.getRubyClass().undef(getMId());
         

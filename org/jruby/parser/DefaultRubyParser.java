@@ -704,7 +704,7 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 					 case 58:
 						 // line 462 "parse.y"
 						 {
-							 yyVal = ph.assignable(((String)yyVals[0+yyTop]), null);
+							 yyVal = ph.getAssignmentNode(((String)yyVals[0+yyTop]), null);
 						 }
 						 break;
 					 case 59:
@@ -741,7 +741,7 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 					 case 64:
 						 // line 488 "parse.y"
 						 {
-							 yyVal = ph.assignable(((String)yyVals[0+yyTop]), null);
+							 yyVal = ph.getAssignmentNode(((String)yyVals[0+yyTop]), null);
 						 }
 						 break;
 					 case 65:
@@ -924,24 +924,24 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 break;
 					 case 150:
 						 // line 585 "parse.y"
-						 {yyVal = ph.assignable(((String)yyVals[-1+yyTop]), null);}
+						 {yyVal = ph.getAssignmentNode(((String)yyVals[-1+yyTop]), null);}
 						 break;
 					 case 151:
 						 // line 586 "parse.y"
 						 {
 							 if (((String)yyVals[-2+yyTop]).equals("||")) {
 								 ((Node)yyVals[-1+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-								 yyVal = nf.newOpAsgnOr(ph.gettable(((String)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
+								 yyVal = nf.newOpAsgnOr(ph.getAccessNode(((String)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
 								 if (IdUtil.isInstanceVariable(((String)yyVals[-3+yyTop]))) {
 									 ((Node)yyVal).setAId(((String)yyVals[-3+yyTop]));
 								 }
 							 } else if (((String)yyVals[-2+yyTop]).equals("&&")) {
 								 ((Node)yyVals[-1+yyTop]).setValueNode(((Node)yyVals[0+yyTop]));
-								 yyVal = nf.newOpAsgnAnd(ph.gettable(((String)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
+								 yyVal = nf.newOpAsgnAnd(ph.getAccessNode(((String)yyVals[-3+yyTop])), ((Node)yyVals[-1+yyTop]));
 							 } else {
 								 yyVal = ((Node)yyVals[-1+yyTop]);
 								 if (yyVal != null) {
-									 ((Node)yyVal).setValueNode(ph.call_op(ph.gettable(((String)yyVals[-3+yyTop])),((String)yyVals[-2+yyTop]),1,((Node)yyVals[0+yyTop])));
+									 ((Node)yyVal).setValueNode(ph.call_op(ph.getAccessNode(((String)yyVals[-3+yyTop])),((String)yyVals[-2+yyTop]),1,((Node)yyVals[0+yyTop])));
 								 }
 							 }
 							 ph.fixpos(yyVal, ((Node)yyVals[0+yyTop]));
@@ -2036,32 +2036,32 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 break;
 					 case 344:
 						 // line 1496 "parse.y"
-						 {yyVal = "~~NIL";}
+						 {yyVal = "#nil";}
 						 break;
 					 case 345:
 						 // line 1497 "parse.y"
-						 {yyVal = "~~SELF";}
+						 {yyVal = "#self";}
 						 break;
 					 case 346:
 						 // line 1498 "parse.y"
-						 {yyVal = "~~TRUE";}
+						 {yyVal = "#true";}
 						 break;
 					 case 347:
 						 // line 1499 "parse.y"
-						 {yyVal = "~~FALSE";}
+						 {yyVal = "#false";}
 						 break;
 					 case 348:
 						 // line 1500 "parse.y"
-						 {yyVal = "~~__FILE__";}
+						 {yyVal = "#__FILE__";}
 						 break;
 					 case 349:
 						 // line 1501 "parse.y"
-						 {yyVal = "~~__LINE__";}
+						 {yyVal = "#__LINE__";}
 						 break;
 					 case 350:
 						 // line 1504 "parse.y"
 						 {
-							 yyVal = ph.gettable(((String)yyVals[0+yyTop]));
+							 yyVal = ph.getAccessNode(((String)yyVals[0+yyTop]));
 						 }
 						 break;
 					 case 353:
@@ -2182,9 +2182,9 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 {
 							 if (!IdUtil.isLocal(((String)yyVals[0+yyTop])))
 								 yyerror("formal argument must be local variable");
-							 else if (ph.local_id(((String)yyVals[0+yyTop])))
+							 else if (ph.isLocalRegistered(((String)yyVals[0+yyTop])))
 								 yyerror("duplicate argument name");
-							 ph.local_cnt(((String)yyVals[0+yyTop]));
+							 ph.getLocalIndex(((String)yyVals[0+yyTop]));
 							 yyVal = new Integer(1);
 						 }
 						 break;
@@ -2199,9 +2199,9 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 {
 							 if (!IdUtil.isLocal(((String)yyVals[-2+yyTop])))
 								 yyerror("formal argument must be local variable");
-							 else if (ph.local_id(((String)yyVals[-2+yyTop])))
+							 else if (ph.isLocalRegistered(((String)yyVals[-2+yyTop])))
 								 yyerror("duplicate optional argument name");
-							 yyVal = ph.assignable(((String)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+							 yyVal = ph.getAssignmentNode(((String)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
 						 }
 						 break;
 					 case 376:
@@ -2222,9 +2222,9 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 {
 							 if (!IdUtil.isLocal(((String)yyVals[0+yyTop])))
 								 yyerror("rest argument must be local variable");
-							 else if (ph.local_id(((String)yyVals[0+yyTop])))
+							 else if (ph.isLocalRegistered(((String)yyVals[0+yyTop])))
 								 yyerror("duplicate rest argument name");
-							 yyVal = new Integer(ph.local_cnt(((String)yyVals[0+yyTop])));
+							 yyVal = new Integer(ph.getLocalIndex(((String)yyVals[0+yyTop])));
 						 }
 						 break;
 					 case 379:
@@ -2238,7 +2238,7 @@ yyDiscarded: for (;;) {	// discarding a token does not change stack
 						 {
 							 if (!IdUtil.isLocal(((String)yyVals[0+yyTop])))
 								 yyerror("block argument must be local variable");
-							 else if (ph.local_id(((String)yyVals[0+yyTop])))
+							 else if (ph.isLocalRegistered(((String)yyVals[0+yyTop])))
 								 yyerror("duplicate block argument name");
 							 yyVal = nf.newBlockArg(((String)yyVals[0+yyTop]));
 						 }

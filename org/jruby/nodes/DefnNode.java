@@ -68,7 +68,7 @@ public class DefnNode extends Node {
         if (getDefnNode() != null) {
 			RubyModule rubyClass = ruby.getRubyClass()	;
             if (rubyClass == null) {
-                throw new RubyTypeException(ruby, "no class to add method");
+                throw new TypeError(ruby, "no class to add method");
             }
             
             //if (ruby_class == getRuby().getObjectClass() && node.nd_mid() == init) {

@@ -1,12 +1,12 @@
 /*
- * RubyTypeException.java - No description
- * Created on 04. Juli 2001, 22:53
+ * TypeError.java - No description
+ * Created on 13.01.2002, 23:40:35
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
- * Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,7 +27,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.exceptions;
 
 import org.jruby.*;
@@ -36,15 +35,13 @@ import org.jruby.*;
  *
  * @author  jpetersen
  */
-public class RubyTypeException extends RaiseException {
+public class TypeError extends RaiseException {
 
     /**
      * Constructs an <code>RubyTypeException</code> with the specified detail message.
      * @param msg the detail message.
      */
-    public RubyTypeException(Ruby ruby, String msg) {
+    public TypeError(Ruby ruby, String msg) {
         super(ruby, ruby.getExceptions().getTypeError(), msg);
     }
 }
-
-
