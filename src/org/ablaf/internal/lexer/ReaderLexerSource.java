@@ -72,6 +72,8 @@ public class ReaderLexerSource extends AbstractLexerSource {
         super(sourceName);
         this.reader = reader;
     }
+    
+    private boolean lastCharWasCR = false;
 
     /**
      * @see AbstractLexerSource#internalRead()
@@ -79,6 +81,24 @@ public class ReaderLexerSource extends AbstractLexerSource {
     protected char internalRead() {
         try {
         	int c = reader.read();
+        	
+        	// newline substitution logic (normalize to single LF):
+        	// for LF, do nothing special (UNIX)
+        	// for CR, treat CR as LF (Mac)
+        	// for CRLF, treat CR as LF and skip subsequent LF (Windows)
+        	
+        	switch (c) {
+				case '\r':
+					c = '\n';
+					lastCharWasCR = true;
+					break;
+				case '\n':
+					if (lastCharWasCR) c = reader.read();
+					// fall through
+				default:
+					lastCharWasCR = false;
+        	}
+        	
         	return c != -1 ? (char) c : '\0';
         } catch (IOException ioExcptn) {
             return 0;
