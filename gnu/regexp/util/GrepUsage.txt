@@ -1,0 +1,46 @@
+Usage: java gnu.regexp.util.Grep [OPTION]... PATTERN [FILE] ...
+Search for PATTERN in each FILE or standard input.
+
+Regexp selection and interpretation:
+  -E, --extended-regexp     PATTERN is an extended regular expression
+  -G, --basic-regexp        PATTERN is a basic regular expression
+  -i, --ignore-case         ignore case distinctions
+Unsupported (may be available in a future release):
+  -e, --regexp=PATTERN      use PATTERN as a regular expression
+  -f, --file=FILE           obtain PATTERN from FILE
+  -F, --fixed-regexp        PATTERN is a fixed string separated by newlines
+  -w, --word-regexp         force PATTERN to match only whole words
+  -x, --line-regexp         force PATTERN to match only whole lines
+
+Miscellaneous:
+  -s, --no-messages         suppress error messages
+  -v, --revert-match        select non-matching lines
+  -V, --version             print version information and exit
+  -N, --encoding	    use the specified file encoding
+      --help                display this help and exit
+
+Output control:
+  -b, --byte-offset         print the byte offset with output lines
+  -n, --line-number         print line number with output lines
+  -h, --no-filename         suppress the prefixing filename on output
+  -q, --quiet, --silent     suppress all normal output
+  -L, --files-without-match only print FILE names containing no match
+  -l, --files-with-matches  only print FILE names containing matches
+  -c, --count               only print a count of matching lines per FILE
+Unsupported (may be available in a future release):
+  -H, --with-filename       print the filename for each match
+
+Context control:
+Unsupported (may be available in a future release):
+  -B, --before-context=NUM  print NUM lines of leading context
+  -A, --after-context=NUM   print NUM lines of trailing context
+  -NUM                      same as both -B NUM and -A NUM
+  -C, --context             same as -2
+  -U, --binary              do not strip CR characters at EOL (MSDOS)
+  -u, --unix-byte-offsets   report offsets as if CRs were not there (MSDOS)
+
+With no FILE, or when FILE is -, read standard input. If less than
+two FILEs given, assume -h. Exit with 0 if matches, with 1 if none.
+Exit with 2 if syntax errors or system errors.
+
+Report bugs to <wes@cacas.org>.
