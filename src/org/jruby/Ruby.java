@@ -925,6 +925,10 @@ public final class Ruby {
     	return RubyString.newString(this, string);
     }
     
+    public RubySymbol newSymbol(String string) {
+    	return RubySymbol.newSymbol(this, string);
+    }
+    
     public ArgumentError newArgumentError(String message) {
     	return new ArgumentError(this, message);
     }

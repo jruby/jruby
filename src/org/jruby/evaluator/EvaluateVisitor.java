@@ -32,7 +32,6 @@ package org.jruby.evaluator;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.jruby.Builtins;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -179,7 +178,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public final class EvaluateVisitor implements NodeVisitor {
     private Ruby runtime;
     private ThreadContext threadContext;
-    private Builtins builtins;
 
     private IRubyObject self;
     private IRubyObject result;
@@ -188,8 +186,6 @@ public final class EvaluateVisitor implements NodeVisitor {
         this.runtime = runtime;
         this.threadContext = runtime.getCurrentContext();
         this.self = self;
-
-        builtins = new Builtins(runtime);
     }
 
     public static EvaluateVisitor createVisitor(IRubyObject self) {
@@ -237,7 +233,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         threadContext.getRubyClass().aliasMethod(iVisited.getNewName(), iVisited.getOldName());
-        threadContext.getRubyClass().callMethod("method_added", builtins.toSymbol(iVisited.getNewName()));
+        threadContext.getRubyClass().callMethod("method_added", runtime.newSymbol(iVisited.getNewName()));
     }
 
     /**
@@ -617,7 +613,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             sb.append(eval(node));
         }
 
-        result = builtins.toString(sb.toString());
+        result = runtime.newString(sb.toString());
     }
     
     /**
@@ -632,7 +628,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             sb.append(eval(node));
         }
 
-        result = builtins.toSymbol(sb.toString());
+        result = runtime.newSymbol(sb.toString());
     }
 
 
@@ -655,7 +651,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             sb.append(eval(node));
         }
 
-        result = self.callMethod("`", builtins.toString(sb.toString()));
+        result = self.callMethod("`", runtime.newString(sb.toString()));
     }
 
     /**
@@ -664,7 +660,7 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitDefinedNode(DefinedNode iVisited) {
         String def = new DefinedVisitor(runtime, self).getDefinition(iVisited.getExpressionNode());
         if (def != null) {
-            result = builtins.toString(def);
+            result = runtime.newString(def);
         }
     }
 
@@ -707,16 +703,16 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         if (threadContext.getCurrentVisibility().isModuleFunction()) {
             containingClass.getSingletonClass().addMethod(name, new WrapperCallable(newMethod, Visibility.PUBLIC));
-            containingClass.callMethod("singleton_method_added", builtins.toSymbol(name));
+            containingClass.callMethod("singleton_method_added", runtime.newSymbol(name));
         }
         
         if (singletonClass != null) {
         	threadContext.pushClass(singletonClass);
         	singletonClass.addMethod(iVisited.getName(), newMethod);
         	// FIXME: need to call someone's singleton_method_added (receiver is lost at this point)!
-        	//.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
+        	//.callMethod("singleton_method_added", runtime.toSymbol(iVisited.getName()));
         } else {
-        	containingClass.callMethod("method_added", builtins.toSymbol(name));
+        	containingClass.callMethod("method_added", runtime.newSymbol(name));
         }
     }
 
@@ -758,7 +754,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
 
         rubyClass.addMethod(iVisited.getName(), newMethod);
-        receiver.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
+        receiver.callMethod("singleton_method_added", runtime.newSymbol(iVisited.getName()));
 
         result = runtime.getNil();
     }
@@ -1336,7 +1332,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitStrNode(StrNode)
      */
     public void visitStrNode(StrNode iVisited) {
-        result = builtins.toString(iVisited.getValue());
+        result = runtime.newString(iVisited.getValue());
     }
 
     /**
@@ -1465,7 +1461,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitXStrNode(XStrNode)
      */
     public void visitXStrNode(XStrNode iVisited) {
-        result = self.callMethod("`", builtins.toString(iVisited.getValue()));
+        result = self.callMethod("`", runtime.newString(iVisited.getValue()));
     }
 
     /**
@@ -1481,7 +1477,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitZArrayNode(ZArrayNode)
      */
     public void visitZArrayNode(ZArrayNode iVisited) {
-        result = builtins.newArray();
+        result = runtime.newArray();
     }
 
     /**
@@ -1520,14 +1516,14 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRegexpNode(RegexpNode)
      */
     public void visitRegexpNode(RegexpNode iVisited) {
-        result = RubyRegexp.newRegexp(builtins.toString(iVisited.getValue()), iVisited.getOptions(), null);
+        result = RubyRegexp.newRegexp(runtime.newString(iVisited.getValue()), iVisited.getOptions(), null);
     }
 
     /**
      * @see NodeVisitor#visitSymbolNode(SymbolNode)
      */
     public void visitSymbolNode(SymbolNode iVisited) {
-        result = builtins.toSymbol(iVisited.getName());
+        result = runtime.newSymbol(iVisited.getName());
     }
 
     /** Evaluates the body in a class or module definition statement.
