@@ -1,0 +1,95 @@
+
+Javasupport Low-level API
+-------------------------
+$Revision$
+
+
+Java:
+
+    class methods:
+
+    java_to_primitive(obj) -> ruby primitive or obj
+        If obj is a Java object and either a boolean, numeric type or
+        string, a corresponding instance of a primitive(*) Ruby type is
+        returned.
+        Otherwise obj is returned.
+
+    primitive_to_java(obj) -> java primitive or obj
+        If obj is of a primitive Ruby type(*) a corresponding Java object is
+        returned. Otherwise obj is returned.
+
+
+Java::JavaClass:
+
+    class methods:
+
+    for_name( aString ) -> aJavaClass
+        A JavaClass corresponding to the named class is returned.
+        If no matching Java class is available a NameError is raised.
+
+        Example:
+            Java::JavaClass.for_name("java.util.Random")
+
+    instance methods:
+
+    public? -> true or false
+        Returns true if the Java class is public.
+
+    final? -> true or false
+        Returns true if the Java class is final.
+
+    interface? -> true or false
+        Returns true if the Java class is an Interface.
+
+    array? -> true or false
+        Returns true if the Java class represents a Java array.
+
+    name -> aString
+        Returns the name of the Java class, i.e "package.name.ClassName".
+
+    to_s -> aString
+        Synonym for Java::JavaClass#name.
+
+    superclass -> aJavaClass
+        Returns a JavaClass corresponding to the Java super-class of the
+        current JavaClass.
+
+    jc <=> aJavaClass -> -1, 0, +1
+        Returns -1, 0, +1 depending on whether this class is a subclass,
+        the same class, or neither, as aJavaClass.
+
+    java_instance_methods -> anArray
+        Returns a list of Java::JavaMethod's for the instance methods
+        available on this Java class.
+
+    java_class_methods -> anArray
+        Returns a list of Java::JavaMethod instances for the class (or
+        "static") methods available on this Java class.
+
+    constants -> anArray
+        Returns a list of the names of all constant ("static final")
+        variables on this Java class.
+
+    java_method( aString, [aString]* ) -> aJavaMethod
+        Returns a Java::JavaMethod for the method with the given name (first
+        argument) and parameter types (remaining arguments).
+
+        Raises NameError if there isn't a matching method.
+
+        Example:
+            string_class = Java::JavaClass.for_name("java.lang.String")
+            string_class.method("valueOf", "int")
+
+    constructors -> anArray
+        Returns a list of Java::JavaConstructor instances for the
+        constructors on this Java class.
+
+    constructor( [aString]* ) -> aJavaConstructor
+        Returns a Java::JavaConstructor with parameter types given.
+
+        Raises NameError if there isn't a matching constructor.
+
+
+
+
+*) Primitive types are in this case booleans, numeric types and strings.
