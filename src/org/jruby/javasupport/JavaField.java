@@ -28,6 +28,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,6 +42,8 @@ public class JavaField extends RubyObject implements IndexCallable {
     private static final int VALUE_TYPE = 1;
     private static final int PUBLIC_P = 2;
     private static final int STATIC_P = 3;
+    private static final int VALUE = 4;
+    private static final int SET_VALUE = 5;
 
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaFieldClass =
@@ -49,6 +52,8 @@ public class JavaField extends RubyObject implements IndexCallable {
         javaFieldClass.defineMethod("value_type", IndexedCallback.create(VALUE_TYPE, 0));
         javaFieldClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
         javaFieldClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
+        javaFieldClass.defineMethod("value", IndexedCallback.create(VALUE, 1));
+        javaFieldClass.defineMethod("set_value", IndexedCallback.create(SET_VALUE, 2));
 
         return javaFieldClass;
     }
@@ -70,6 +75,41 @@ public class JavaField extends RubyObject implements IndexCallable {
         return RubyBoolean.newBoolean(getRuntime(), Modifier.isStatic(field.getModifiers()));
     }
 
+    public JavaObject value(IRubyObject object) {
+        if (! (object instanceof JavaObject)) {
+            throw new TypeError(getRuntime(), "not a java object");
+        }
+        Object javaObject = ((JavaObject) object).getValue();
+        try {
+            return new JavaObject(getRuntime(), field.get(javaObject));
+        } catch (IllegalAccessException iae) {
+            throw new TypeError(getRuntime(), "illegal access");
+        }
+    }
+
+    public JavaObject set_value(IRubyObject object, IRubyObject value) {
+         if (! (object instanceof JavaObject)) {
+            throw new TypeError(getRuntime(), "not a java object: " + object);
+        }
+        if (! (value instanceof JavaObject)) {
+            throw new TypeError(getRuntime(), "not a java object:" + value);
+        }
+        Object javaObject = ((JavaObject) object).getValue();
+        try {
+            Object convertedValue = JavaUtil.convertArgument(((JavaObject) value).getValue(),
+                                                             field.getType());
+
+            field.set(javaObject, convertedValue);
+        } catch (IllegalAccessException iae) {
+            throw new TypeError(getRuntime(), "illegal access");
+        } catch (IllegalArgumentException iae) {
+            throw new TypeError(getRuntime(),
+                                "wrong type for " + field.getType().getName() + ": " +
+                                ((JavaObject) value).getValue().getClass().getName());
+        }
+        return (JavaObject) value;
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case VALUE_TYPE :
@@ -78,6 +118,10 @@ public class JavaField extends RubyObject implements IndexCallable {
                 return public_p();
             case STATIC_P :
                 return static_p();
+            case VALUE :
+                return value(args[0]);
+            case SET_VALUE :
+                return set_value(args[0], args[1]);
             default :
                 return super.callIndexed(index, args);
         }

@@ -65,7 +65,23 @@ if defined? Java
   test_equal("int", field.value_type)
   test_ok(field.public?)
   test_ok(! field.static?)
-  # ... to be continued ...
+  integer_ten = Java.primitive_to_java(10)
+  integer_two = Java.primitive_to_java(2)
+  constructor = rectangle_class.constructor(:int, :int, :int, :int)
+  rectangle = constructor.new_instance(integer_two,
+                                       integer_ten,
+                                       integer_two,
+                                       integer_two)
+  value = field.value(rectangle)
+  test_equal("java.lang.Integer", value.java_type)
+  test_equal(2, Java.java_to_primitive(value))
+  field.set_value(rectangle, integer_ten)
+  value = field.value(rectangle)
+  test_equal("java.lang.Integer", value.java_type)
+  test_equal(10, Java.java_to_primitive(value))
+  test_exception(TypeError) {
+    field.set_value(rectangle, Java.primitive_to_java("hello"))
+  }
 
   # Constants
   integer_class = Java::JavaClass.for_name("java.lang.Integer")
