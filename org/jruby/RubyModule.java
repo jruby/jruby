@@ -560,10 +560,11 @@ public class RubyModule extends RubyObject {
      *
      */
     public void undef(String name) {
-        if (this == getRuby().getClasses().getObjectClass()) {
-            getRuby().secure(4);
+		Ruby ruby = getRuby();
+        if (this == ruby.getClasses().getObjectClass()) {
+            ruby.secure(4);
         }
-        if (getRuby().getSecurityLevel() >= 4 && !isTaint()) {
+        if (ruby.getSecurityLevel() >= 4 && !isTaint()) {
             throw new SecurityException("Insecure: can't undef");
         }
         testFrozen();
@@ -586,7 +587,8 @@ public class RubyModule extends RubyObject {
             } else if (c.isModule()) {
                 s0 = " module";
             }
-            throw new RubyNameException(getRuby(), "undefined method " + name + " for" + s0 + " '" + c.toName() + "'");
+
+            throw new RubyNameException(ruby, ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method " + name + " for" + s0 + " '" + c.toName() + "'");
         }
         addMethod(name, null, Constants.NOEX_PUBLIC);
     }
@@ -1731,7 +1733,7 @@ public class RubyModule extends RubyObject {
                 String id = args[i].toId();
                 MethodNode body = searchMethod(id);
                 if (body == null || body.getBodyNode() == null) {
-                    throw new RubyBugException("undefined method '" + id + "'; can't happen");
+					throw new RubyBugException("undefined method '" + id + "'; can't happen");
                 }
                 getSingletonClass().addMethod(id, body.getBodyNode(), Constants.NOEX_PUBLIC);
                 // rb_clear_cache_by_id(id);

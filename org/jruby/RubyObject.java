@@ -941,6 +941,7 @@ public class RubyObject {
 	    // IMPLEMENT THIS METHOD
 	    // ---
 	    
-		throw new RubyNameException(getRuby(), "undefined method '" + symbol.toId() + "' for " + type().toName());
+	    Ruby ruby = getRuby();
+	    throw new RubyNameException(ruby, ruby.getSourceFile() + ":" + ruby.getSourceLine() + " undefined method '" + symbol.toId() + "' for " + type().toName());
     }
 }
