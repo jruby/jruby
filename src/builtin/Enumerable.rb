@@ -172,6 +172,8 @@ module Enumerable
   end
 
   def all?
+    return all? {|obj| obj} unless block_given?
+
     each do |item|
       return false unless yield(item)
     end
@@ -179,6 +181,8 @@ module Enumerable
   end
 
   def any?
+    return any? {|obj| obj} unless block_given?
+
     each do |item|
       return true if yield(item)
     end
