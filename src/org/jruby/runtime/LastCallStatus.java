@@ -70,7 +70,7 @@ public class LastCallStatus {
     }
 
     public String errorMessageFormat(String name) {
-        String format = "Undefined method '%s' for %s%s%s";
+        String format = "undefined method `%s' for %s%s%s";
         if (status == PRIVATE) {
             format = "private method '%s' called for %s%s%s";
         } else if (status == PROTECTED) {
