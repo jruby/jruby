@@ -60,11 +60,11 @@ module JRuby
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = RUBY_TYPE
           arg_types[1] = BCEL::Type::LONG
-          generator.append(factory.createInvoke("org.jruby.RubyFixnum",
-                                                "newFixnum",
-                                                BCEL::ObjectType.new("org.jruby.RubyFixnum"),
-                                                arg_types,
-                                                BCEL::Constants::INVOKESTATIC))
+          generator.appendInvoke("org.jruby.RubyFixnum",
+                                 "newFixnum",
+                                 BCEL::ObjectType.new("org.jruby.RubyFixnum"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKESTATIC)
         end
       end
 
@@ -87,11 +87,11 @@ module JRuby
                                      @index))
           arg_types = BCEL::Type[].new(1)
           arg_types[0] = BCEL::Type::INT
-          generator.append(factory.createInvoke("org.jruby.runtime.ScopeStack",
-                                           "getValue",
-                                           IRUBYOBJECT_TYPE,
-                                           arg_types,
-                                           BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke("org.jruby.runtime.ScopeStack",
+                                 "getValue",
+                                 IRUBYOBJECT_TYPE,
+                                 arg_types,
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 
@@ -102,21 +102,21 @@ module JRuby
       def push_scope_stack(generator)
         factory = generator.factory
         push_runtime(generator)
-        generator.append(factory.createInvoke(RUBY_TYPE.getClassName,
-                                              "getScope",
-                                              BCEL::ObjectType.new("org.jruby.runtime.ScopeStack"),
-                                              BCEL::Type[].new(0),
-                                              BCEL::Constants::INVOKEVIRTUAL))
+        generator.appendInvoke(RUBY_TYPE.getClassName,
+                               "getScope",
+                               BCEL::ObjectType.new("org.jruby.runtime.ScopeStack"),
+                               BCEL::Type[].new(0),
+                               BCEL::Constants::INVOKEVIRTUAL)
       end
 
       def push_frame_stack(generator)
         factory = generator.factory
         push_runtime(generator)
-        generator.append(factory.createInvoke(RUBY_TYPE.getClassName,
-                                              "getFrameStack",
-                                              BCEL::ObjectType.new("org.jruby.runtime.FrameStack"),
-                                              BCEL::Type[].new(0),
-                                              BCEL::Constants::INVOKEVIRTUAL))
+        generator.appendInvoke(RUBY_TYPE.getClassName,
+                               "getFrameStack",
+                               BCEL::ObjectType.new("org.jruby.runtime.FrameStack"),
+                               BCEL::Type[].new(0),
+                               BCEL::Constants::INVOKEVIRTUAL)
       end
 
       class Call
@@ -168,11 +168,11 @@ module JRuby
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = BCEL::Type::STRING
           arg_types[1] = BCEL::ArrayType.new(IRUBYOBJECT_TYPE, 1)
-          generator.append(factory.createInvoke(IRUBYOBJECT_TYPE.getClassName,
-                                                "callMethod",
-                                                IRUBYOBJECT_TYPE,
-                                                arg_types,
-                                                BCEL::Constants::INVOKEINTERFACE))
+          generator.appendInvoke(IRUBYOBJECT_TYPE.getClassName,
+                                 "callMethod",
+                                 IRUBYOBJECT_TYPE,
+                                 arg_types,
+                                 BCEL::Constants::INVOKEINTERFACE)
         end
       end
 
@@ -191,11 +191,11 @@ module JRuby
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = RUBY_TYPE
           arg_types[1] = BCEL::Type::STRING
-          generator.append(factory.createInvoke("org.jruby.RubyString",
-                                                "newString",
-                                                BCEL::ObjectType.new("org.jruby.RubyString"),
-                                                arg_types,
-                                                BCEL::Constants::INVOKESTATIC))
+          generator.appendInvoke("org.jruby.RubyString",
+                                 "newString",
+                                 BCEL::ObjectType.new("org.jruby.RubyString"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKESTATIC)
         end
       end
 
@@ -212,11 +212,11 @@ module JRuby
           arg_types = BCEL::Type[].new(2)
           arg_types[0] = RUBY_TYPE
           arg_types[1] = BCEL::Type::STRING
-          generator.append(factory.createInvoke("org.jruby.RubySymbol",
-                                                "newSymbol",
-                                                BCEL::ObjectType.new("org.jruby.RubySymbol"),
-                                                arg_types,
-                                                BCEL::Constants::INVOKESTATIC))
+          generator.appendInvoke("org.jruby.RubySymbol",
+                                 "newSymbol",
+                                 BCEL::ObjectType.new("org.jruby.RubySymbol"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKESTATIC)
         end
       end
 
@@ -228,11 +228,11 @@ module JRuby
         def emit_jvm_bytecode(generator)
           factory = generator.factory
           push_runtime(generator)
-          generator.append(factory.createInvoke(RUBY_TYPE.getClassName,
-                                                "getNil",
-                                                IRUBYOBJECT_TYPE,
-                                                BCEL::Type[].new(0),
-                                                BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke(RUBY_TYPE.getClassName,
+                                 "getNil",
+                                 IRUBYOBJECT_TYPE,
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 
@@ -250,11 +250,11 @@ module JRuby
           else
             methodname = "getFalse"
           end
-          generator.append(factory.createInvoke(RUBY_TYPE.getClassName,
-                                                methodname,
-                                                BCEL::ObjectType.new("org.jruby.RubyBoolean"),
-                                                BCEL::Type[].new(0),
-                                                BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke(RUBY_TYPE.getClassName,
+                                 methodname,
+                                 BCEL::ObjectType.new("org.jruby.RubyBoolean"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 
@@ -272,11 +272,11 @@ module JRuby
           args_array = BCEL::Type[].new(2)
           args_array[0] = RUBY_TYPE
           args_array[1] = BCEL::Type::LONG
-          generator.append(factory.createInvoke("org.jruby.RubyArray",
-                                                "newArray",
-                                                BCEL::ObjectType.new("org.jruby.RubyArray"),
-                                                args_array,
-                                                BCEL::Constants::INVOKESTATIC))
+          generator.appendInvoke("org.jruby.RubyArray",
+                                 "newArray",
+                                 BCEL::ObjectType.new("org.jruby.RubyArray"),
+                                 args_array,
+                                 BCEL::Constants::INVOKESTATIC)
         end
       end
 
@@ -296,18 +296,15 @@ module JRuby
         def emit_jvm_bytecode(generator)
           factory = generator.factory
 
-          generator.append(factory.createInvoke(IRUBYOBJECT_TYPE.getClassName,
-                                                "isTrue",
-                                                BCEL::Type::BOOLEAN,
-                                                BCEL::Type[].new(0),
-                                                BCEL::Constants::INVOKEINTERFACE))
+          generator.appendInvoke(IRUBYOBJECT_TYPE.getClassName,
+                                 "isTrue",
+                                 BCEL::Type::BOOLEAN,
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEINTERFACE)
           # If value on stack was false we should have a 0 now
           branch = BCEL::IFEQ.new(nil)
           @target.add_listener(branch)
-
           generator.append(branch)
-
-
         end
       end
 
@@ -321,11 +318,11 @@ module JRuby
 
           # runtime.getFrameStack().pushCopy()
           push_frame_stack(generator)
-          generator.append(factory.createInvoke("org.jruby.runtime.FrameStack",
-                                                "pushCopy",
-                                                BCEL::Type::VOID,
-                                                BCEL::Type[].new(0),
-                                                BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke("org.jruby.runtime.FrameStack",
+                                 "pushCopy",
+                                 BCEL::Type::VOID,
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
 
           # runtime.getScopeStack().push(localnames)
           push_scope_stack(generator)
@@ -349,11 +346,11 @@ module JRuby
           # Stack: ..., scopestack, namesarray
           arg_types = BCEL::Type[].new(1)
           arg_types[0] = BCEL::ArrayType.new(BCEL::Type::STRING, 1)
-          generator.append(factory.createInvoke("org.jruby.runtime.ScopeStack",
-                                                "push",
-                                                BCEL::Type::VOID,
-                                                arg_types,
-                                                BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke("org.jruby.runtime.ScopeStack",
+                                 "push",
+                                 BCEL::Type::VOID,
+                                 arg_types,
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 
@@ -363,18 +360,18 @@ module JRuby
 
           # getScopeStack.pop()
           push_scope_stack(generator)
-          generator.append(factory.createInvoke("org.jruby.runtime.ScopeStack",
-                                                "pop",
-                                                BCEL::ObjectType.new("org.jruby.util.collections.StackElement"),
-                                                BCEL::Type[].new(0),
-                                                BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke("org.jruby.runtime.ScopeStack",
+                                 "pop",
+                                 BCEL::ObjectType.new("org.jruby.util.collections.StackElement"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
           # getFrameStack.pop()
           push_frame_stack(generator)
-          generator.append(factory.createInvoke("org.jruby.runtime.FrameStack",
-                                                "pop",
-                                                BCEL::ObjectType.new("java.lang.Object"),
-                                                BCEL::Type[].new(0),
-                                                BCEL::Constants::INVOKEVIRTUAL))
+          generator.appendInvoke("org.jruby.runtime.FrameStack",
+                                 "pop",
+                                 BCEL::ObjectType.new("java.lang.Object"),
+                                 BCEL::Type[].new(0),
+                                 BCEL::Constants::INVOKEVIRTUAL)
         end
       end
 
@@ -404,11 +401,11 @@ module JRuby
           arg_types[1] = IRUBYOBJECT_TYPE
           arg_types[2] = IRUBYOBJECT_TYPE
           arg_types[3] = BCEL::Type::BOOLEAN
-          generator.append(factory.createInvoke("org.jruby.RubyRange",
-                                                "newRange",
-                                                BCEL::ObjectType.new("org.jruby.RubyRange"),
-                                                arg_types,
-                                                BCEL::Constants::INVOKESTATIC))
+          generator.appendInvoke("org.jruby.RubyRange",
+                                 "newRange",
+                                 BCEL::ObjectType.new("org.jruby.RubyRange"),
+                                 arg_types,
+                                 BCEL::Constants::INVOKESTATIC)
         end
       end
 

@@ -58,6 +58,10 @@ module JRuby
         end
       end
 
+      def appendInvoke(*invoke_arguments)
+        append(factory.createInvoke(*invoke_arguments))
+      end
+
       def getInstructionList
         method.getInstructionList
       end
