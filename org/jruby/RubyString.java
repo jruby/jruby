@@ -142,8 +142,8 @@ public class RubyString extends RubyObject {
 		stringClass.defineMethod("to_i", CallbackFactory.getMethod(RubyString.class, "to_i"));
 		stringClass.defineMethod("to_f", CallbackFactory.getMethod(RubyString.class, "to_f"));
 
-		stringClass.defineMethod("to_s", CallbackFactory.getSelfMethod());
-		stringClass.defineMethod("to_str", CallbackFactory.getSelfMethod());
+		stringClass.defineMethod("to_s", CallbackFactory.getSelfMethod(0));
+		stringClass.defineMethod("to_str", CallbackFactory.getSelfMethod(0));
 		stringClass.defineMethod("inspect", CallbackFactory.getMethod(RubyString.class, "inspect"));
 		stringClass.defineMethod("dump", CallbackFactory.getMethod(RubyString.class, "dump"));
 

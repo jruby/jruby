@@ -48,6 +48,10 @@ public class JavaConstructor implements Callback {
     public JavaConstructor(Constructor[] constructors) {
         this.constructors = constructors;
     }
+    
+    public int getArity() {
+        return -1;
+    }
 
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
         LinkedList executeConstructors = new LinkedList(Arrays.asList(constructors));

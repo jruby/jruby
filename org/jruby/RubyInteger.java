@@ -49,12 +49,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
         integerClass.defineMethod("chr", CallbackFactory.getMethod(RubyInteger.class, "chr"));
         integerClass.defineMethod("integer?", CallbackFactory.getMethod(RubyInteger.class, "int_p"));
-        integerClass.defineMethod("to_i", CallbackFactory.getSelfMethod());
-        integerClass.defineMethod("to_int", CallbackFactory.getSelfMethod());
-        integerClass.defineMethod("ceil", CallbackFactory.getSelfMethod());
-        integerClass.defineMethod("floor", CallbackFactory.getSelfMethod());
-        integerClass.defineMethod("round", CallbackFactory.getSelfMethod());
-        integerClass.defineMethod("truncate", CallbackFactory.getSelfMethod());
+        integerClass.defineMethod("to_i", CallbackFactory.getSelfMethod(0));
+        integerClass.defineMethod("to_int", CallbackFactory.getSelfMethod(0));
+        integerClass.defineMethod("ceil", CallbackFactory.getSelfMethod(0));
+        integerClass.defineMethod("floor", CallbackFactory.getSelfMethod(0));
+        integerClass.defineMethod("round", CallbackFactory.getSelfMethod(0));
+        integerClass.defineMethod("truncate", CallbackFactory.getSelfMethod(0));
 
         integerClass.defineMethod("next", CallbackFactory.getMethod(RubyInteger.class, "succ"));
         integerClass.defineMethod("succ", CallbackFactory.getMethod(RubyInteger.class, "succ"));

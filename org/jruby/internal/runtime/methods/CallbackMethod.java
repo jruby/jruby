@@ -66,4 +66,13 @@ public class CallbackMethod extends AbstractMethod {
             return callback.execute(receiver, args, ruby);
         }
     }
+
+    /**
+     * Gets the callback.
+     * @return Returns a Callback
+     */
+    public Callback getCallback() {
+        return callback;
+    }
+
 }

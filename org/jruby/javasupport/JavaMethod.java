@@ -57,6 +57,10 @@ public class JavaMethod implements Callback {
         this.callSuper = callSuper;
         this.singleton = singleton;
     }
+    
+    public int getArity() {
+        return -1;
+    }
 
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
         LinkedList executeMethods = new LinkedList(Arrays.asList(methods));

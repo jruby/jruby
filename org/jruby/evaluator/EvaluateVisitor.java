@@ -252,9 +252,8 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (block.isNil()) {
             eval(iVisited.getIterNode());
             return;
-        } else if (block.kind_of(ruby.getClasses().getMethodClass()).isTrue()) {
-            // XXX
-            // block = methodProc(ruby, (RubyMethod)block);
+        } else if (block instanceof RubyMethod) {
+            block = ((RubyMethod)block).to_proc();
         } else if (!(block instanceof RubyProc)) {
             throw new TypeError(ruby, "wrong argument type " + block.getRubyClass().toName() + " (expected Proc)");
         }

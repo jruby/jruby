@@ -49,7 +49,7 @@ public class RubyNil {
         nilClass.defineMethod("&", CallbackFactory.getSingletonMethod(RubyNil.class, "op_and", RubyObject.class));
         nilClass.defineMethod("|", CallbackFactory.getSingletonMethod(RubyNil.class, "op_or", RubyObject.class));
         nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", RubyObject.class));
-        nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod());
+        nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod(0));
         
         nilClass.getRubyClass().undefMethod("new");
         

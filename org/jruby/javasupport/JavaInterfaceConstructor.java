@@ -15,6 +15,10 @@ public class JavaInterfaceConstructor implements Callback {
     public JavaInterfaceConstructor(Class javaInterface) {
         this.javaInterface = javaInterface;
     }
+    
+    public int getArity() {
+        return 1;
+    }
 
     /*
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)

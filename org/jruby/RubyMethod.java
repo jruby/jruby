@@ -66,23 +66,16 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public static RubyClass createMethodClass(Ruby ruby) {
-        Callback arity =
-            new ReflectionCallbackMethod(RubyMethod.class, "arity");
-        Callback call =
-            new ReflectionCallbackMethod(RubyMethod.class, "call", true);
+        RubyClass methodClass = ruby.defineClass("Method", ruby.getClasses().getObjectClass());
 
-        RubyClass methodClass =
-            ruby.defineClass("Method", ruby.getClasses().getObjectClass());
-
-        methodClass.defineMethod("arity", arity);
-        methodClass.defineMethod("[]", call);
-        methodClass.defineMethod("call", call);
+        methodClass.defineMethod("arity", CallbackFactory.getMethod(RubyMethod.class, "arity"));
+        methodClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyMethod.class, "call"));
+        methodClass.defineMethod("call", CallbackFactory.getOptMethod(RubyMethod.class, "call"));
+        methodClass.defineMethod("to_proc", CallbackFactory.getMethod(RubyMethod.class, "to_proc"));
 
         return methodClass;
     }
 
-    
-    
     /**
      * Gets the methodId
      * @return Returns a RubyId
@@ -167,47 +160,39 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public RubyObject call(RubyObject[] args) {
-        getRuby().getIterStack().push(
-            getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-        RubyObject result =
-            getReceiverClass().call0(
-                getReceiver(),
-                getMethodId(),
-                new RubyPointer(args),
-                getMethod(),
-                false);
+        getRuby().getIterStack().push(getRuby().isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
+        RubyObject result = getReceiverClass().call0(getReceiver(), getMethodId(), new RubyPointer(args), getMethod(), false);
         getRuby().getIterStack().pop();
 
         return result;
     }
-    
+
     /**Returns the number of arguments a method accepted.
      * 
      * @return the number of arguments of a method.
      */
     public RubyFixnum arity() {
         if (method instanceof EvaluateMethod) {
-            if (((EvaluateMethod)method).getNode() instanceof AttrSetNode) {
+            if (((EvaluateMethod) method).getNode() instanceof AttrSetNode) {
                 return RubyFixnum.one(getRuby());
-            } else if (((EvaluateMethod)method).getNode() instanceof InstVarNode) {
+            } else if (((EvaluateMethod) method).getNode() instanceof InstVarNode) {
                 return RubyFixnum.zero(getRuby());
             }
-/*        } else if (method instanceof RubyMethod) {
-        		// FIXME
-                INode body = bodyNode.getNextNode(); 
-                if (body instanceof BlockNode) {
-                    body = body.getHeadNode();
-                }
-                if (body == null) {
-                    return RubyFixnum.zero(getRuby());
-                }
-                int n = body.getCount();
-                if (body.getOptNode() != null || body.getRest() != -1) {
-                    n = -n-1;
-                }
-                return RubyFixnum.newFixnum(getRuby(), n);
-                */
+        } else if (method instanceof DefaultMethod) {
+            ArgsNode args = ((DefaultMethod) method).getArgsNode();
+
+            if (args == null) {
+                return RubyFixnum.zero(getRuby());
+            }
+            int n = args.getArgsCount();
+            if (args.getOptArgs() != null || args.getRestArg() >= 0) {
+                n = -n - 1;
+            }
+            return RubyFixnum.newFixnum(getRuby(), n);
+        } else if (method instanceof CallbackMethod) {
+            return RubyFixnum.newFixnum(getRuby(), ((CallbackMethod) method).getCallback().getArity());
         }
+
         return RubyFixnum.newFixnum(getRuby(), -1);
     }
 
@@ -225,5 +210,45 @@ public class RubyMethod extends RubyObject {
      */
     public void setMethod(IMethod method) {
         this.method = method;
+    }
+
+    /** Create a Proc object.
+     * 
+     */
+    public RubyObject to_proc() {
+        return ruby.iterate(
+            CallbackFactory.getSingletonMethod(RubyMethod.class, "mproc"),
+            null,
+            CallbackFactory.getBlockMethod(RubyMethod.class, "bmcall"),
+            this);
+    }
+
+    /** Create a Proc object which is called like a ruby method.
+     * 
+     * Used by the RubyMethod#to_proc method.
+     *
+     */
+    public static RubyObject mproc(Ruby ruby, RubyObject recv) {
+        try {
+            ruby.getIterStack().push(Iter.ITER_CUR);
+            ruby.getFrameStack().push();
+            return RubyKernel.proc(ruby, null);
+        } finally {
+            ruby.getFrameStack().pop();
+            ruby.getIterStack().pop();
+        }
+    }
+
+    /** Delegate a block call to a method call.
+     * 
+     * Used by the RubyMethod#to_proc method.
+     *
+     */
+    public static RubyObject bmcall(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
+        if (blockArg instanceof RubyArray) {
+            return ((RubyMethod) arg1).call(((RubyArray) blockArg).toJavaArray());
+        } else {
+            return ((RubyMethod) arg1).call(new RubyObject[] { blockArg });
+        }
     }
 }

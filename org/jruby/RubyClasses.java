@@ -207,8 +207,8 @@ public class RubyClasses {
         kernelModule = RubyKernel.createKernelModule(ruby);
         objectClass.includeModule(kernelModule);
 
-        objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod());
-        classClass.definePrivateMethod("inherited", CallbackFactory.getNilMethod());
+        objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod(-1));
+        classClass.definePrivateMethod("inherited", CallbackFactory.getNilMethod(1));
 
         RubyObject.createObjectClass(objectClass);
 

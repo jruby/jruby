@@ -82,7 +82,7 @@ public class RubyKernel {
         kernelModule.defineMethod("caller", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "caller"));
         kernelModule.defineMethod("catch", CallbackFactory.getSingletonMethod(RubyKernel.class, "rbCatch", RubyObject.class));
         kernelModule.defineMethod("throw", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "rbThrow", RubyObject.class));
-        kernelModule.defineMethod("singleton_method_added", CallbackFactory.getNilMethod());
+        kernelModule.defineMethod("singleton_method_added", CallbackFactory.getNilMethod(1));
         kernelModule.defineMethod("set_trace_func", CallbackFactory.getSingletonMethod(RubyKernel.class, "set_trace_func", RubyObject.class));
         kernelModule.defineMethod("`", CallbackFactory.getSingletonMethod(RubyKernel.class, "backquote", RubyString.class));
         kernelModule.defineMethod("exit", CallbackFactory.getOptSingletonMethod(RubyKernel.class, "exit"));

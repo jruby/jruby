@@ -43,6 +43,10 @@ public class JavaFieldReader implements Callback {
     public JavaFieldReader(Field field) {
         this.field = field;
     }
+    
+    public int getArity() {
+        return 0;
+    }
 
     /**
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)

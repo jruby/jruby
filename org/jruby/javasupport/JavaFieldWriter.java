@@ -43,6 +43,10 @@ public class JavaFieldWriter implements Callback {
     public JavaFieldWriter(Field field) {
         this.field = field;
     }
+    
+    public int getArity() {
+        return 1;
+    }
 
     /**
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)

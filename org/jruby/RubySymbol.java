@@ -77,8 +77,8 @@ public class RubySymbol extends RubyObject {
         symbolClass.defineMethod("hash", CallbackFactory.getMethod(RubySymbol.class, "hash"));
         symbolClass.defineMethod("dup", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
         symbolClass.defineMethod("clone", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
-        symbolClass.defineMethod("freeze", CallbackFactory.getSelfMethod());
-        symbolClass.defineMethod("taint", CallbackFactory.getSelfMethod());
+        symbolClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
+        symbolClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
 
         return symbolClass;
     }

@@ -18,6 +18,10 @@ public class JavaInterfaceMethod implements Callback {
         this.methodName = methodName;
         this.methodList = methodList;
     }
+    
+    public int getArity() {
+        return -1;
+    }
 
     /*
      * @see Callback#execute(RubyObject, RubyObject[], Ruby)

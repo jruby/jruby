@@ -37,6 +37,8 @@ import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
+import org.apache.oro.io.*;
+
 /**
  * .The Ruby built-in class Dir.
  * 
@@ -131,19 +133,11 @@ public class RubyDir extends RubyObject {
         
         String pattern = pat.toString();
         
-        if (pattern.indexOf("**") != -1 || pattern.indexOf("?") != -1) {
+        /*if (pattern.indexOf("**") != -1 || pattern.indexOf("?") != -1) {
             throw new NotImplementedError();
-        }
+        }*/
 
-        final File patternFile = new File(pattern);
-
-        String[] files = patternFile.getParentFile().list(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                String patternName = patternFile.getName();
-                return name.startsWith(patternName.substring(0, patternName.indexOf('*'))) &&
-                       name.endsWith(patternName.substring(patternName.indexOf('*') + 1));
-            }
-        });
+        String[] files = new File(".").list(new GlobFilenameFilter(pattern));
 
         return RubyArray.newArray(ruby, JavaUtil.convertJavaArrayToRuby(ruby, files));
     }

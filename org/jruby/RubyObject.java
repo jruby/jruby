@@ -218,16 +218,16 @@ public class RubyObject implements Cloneable {
     }
 
     public boolean respondsTo(String methodName) {
-        return respond_to(RubySymbol.newSymbol(getRuby(), methodName)).isTrue();
+        return respond_to(new RubyObject[]{RubySymbol.newSymbol(getRuby(), methodName)}).isTrue();
     }
 
     public static void createObjectClass(RubyModule objectClass) {
         objectClass.defineMethod("==", CallbackFactory.getMethod(RubyObject.class, "equal", RubyObject.class));
-        objectClass.defineMethod("=~", CallbackFactory.getFalseMethod());
+        objectClass.defineMethod("=~", CallbackFactory.getFalseMethod(1));
         objectClass.defineMethod("clone", CallbackFactory.getMethod(RubyObject.class, "rbClone"));
         objectClass.defineMethod("dup", CallbackFactory.getMethod(RubyObject.class, "dup"));
         objectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyObject.class, "equal", RubyObject.class));
-        objectClass.defineMethod("respond_to?", CallbackFactory.getMethod(RubyObject.class, "respond_to", RubyObject.class));
+        objectClass.defineMethod("respond_to?", CallbackFactory.getOptMethod(RubyObject.class, "respond_to"));
         objectClass.defineMethod("extend", CallbackFactory.getOptMethod(RubyObject.class, "extend"));
         objectClass.defineMethod("freeze", CallbackFactory.getMethod(RubyObject.class, "freeze"));
         objectClass.defineMethod("frozen?", CallbackFactory.getMethod(RubyObject.class, "frozen"));
@@ -242,7 +242,7 @@ public class RubyObject implements Cloneable {
         objectClass.defineMethod("kind_of?", CallbackFactory.getMethod(RubyObject.class, "kind_of", RubyModule.class));
         objectClass.defineMethod("method", CallbackFactory.getMethod(RubyObject.class, "method", RubyObject.class));
         objectClass.defineMethod("methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
-        objectClass.defineMethod("nil?", CallbackFactory.getFalseMethod());
+        objectClass.defineMethod("nil?", CallbackFactory.getFalseMethod(0));
         objectClass.defineMethod("private_methods", CallbackFactory.getMethod(RubyObject.class, "private_methods"));
         objectClass.defineMethod("protected_methods", CallbackFactory.getMethod(RubyObject.class, "protected_methods"));
         objectClass.defineMethod("public_methods", CallbackFactory.getMethod(RubyObject.class, "methods"));
@@ -552,6 +552,10 @@ public class RubyObject implements Cloneable {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
                 return args[0].eval(args[1], ruby.getNil(), ((RubyString) args[2]).getValue(), RubyNumeric.fix2int(args[3]));
             }
+            
+            public int getArity() {
+                return -1;
+            }
         }, new RubyObject[] { this, src, file, line });
     }
 
@@ -574,6 +578,10 @@ public class RubyObject implements Cloneable {
                 /* static block, no need to restore */
                 // ruby.getBlock().frame.setNamespace(ruby.getRubyFrame().getNamespace());
                 // return ruby.yield0(args[0], args[0], ruby.getRubyClass(), false);
+            }
+            
+            public int getArity() {
+                return -1;
             }
         }, new RubyObject[] { this });
     }
@@ -722,15 +730,10 @@ public class RubyObject implements Cloneable {
      * @fixme ...Need to change this to support the optional boolean arg
      * And the associated access control on methods
      */
-    public RubyBoolean respond_to(RubyObject methodName) {
-        String name;
-        if (methodName instanceof RubySymbol) {
-            name = ((RubySymbol) methodName).toId();
-        } else if (methodName instanceof RubyString) {
-            name = ((RubyString) methodName).getValue();
-        } else {
-            throw new ArgumentError(getRuby(), "not a symbol");
-        }
+    public RubyBoolean respond_to(RubyObject[] args) {
+        argCount(args, 1, 2);
+
+        String name = args[0].toId();
 
         //Look in cache
         CacheEntry ent = getRuby().getMethodCache().getEntry(getRubyClass(), name);

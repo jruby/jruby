@@ -38,7 +38,7 @@ import org.jruby.marshal.*;
  */
 public class RubyFixnum extends RubyInteger {
     private long value;
-    private static int BIT_SIZE = 64;
+    private static int BIT_SIZE = 63;
 
     public RubyFixnum(Ruby ruby) {
         this(ruby, 0);
@@ -59,8 +59,8 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("to_str", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("hash", CallbackFactory.getMethod(RubyFixnum.class, "hash"));
-        fixnumClass.defineMethod("taint", CallbackFactory.getSelfMethod());
-        fixnumClass.defineMethod("freeze", CallbackFactory.getSelfMethod());
+        fixnumClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
+        fixnumClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
 
         fixnumClass.defineMethod("<<", CallbackFactory.getMethod(RubyFixnum.class, "op_lshift", RubyObject.class));
         fixnumClass.defineMethod(">>", CallbackFactory.getMethod(RubyFixnum.class, "op_rshift", RubyObject.class));

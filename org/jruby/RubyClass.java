@@ -94,7 +94,7 @@ public class RubyClass extends RubyModule {
         classClass.defineMethod("new", CallbackFactory.getOptMethod(RubyClass.class, "newInstance"));
         classClass.defineMethod("superclass", CallbackFactory.getMethod(RubyClass.class, "superclass"));
 
-        classClass.defineSingletonMethod("inherited", CallbackFactory.getNilMethod());
+        classClass.defineSingletonMethod("inherited", CallbackFactory.getNilMethod(1));
 
         classClass.undefMethod("module_function");
     }

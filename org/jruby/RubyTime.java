@@ -46,7 +46,7 @@ public class RubyTime extends RubyObject {
 
     public static RubyClass createTimeClass(Ruby ruby) {
         RubyClass timeClass = ruby.defineClass("Time", ruby.getClasses().getObjectClass());
-        Callback s_new = new ReflectionCallbackMethod(RubyTime.class, "s_new", false, true);
+        Callback s_new = CallbackFactory.getSingletonMethod(RubyTime.class, "s_new");
 
         timeClass.defineSingletonMethod("new", s_new);
         timeClass.defineSingletonMethod("now", s_new);

@@ -27,4 +27,8 @@ public class JavaEachMethod implements Callback {
 
         return ruby.getNil();
     }
+    
+    public int getArity() {
+        return 0;
+    }
 }

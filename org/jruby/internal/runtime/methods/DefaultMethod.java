@@ -175,4 +175,12 @@ public class DefaultMethod extends AbstractMethod {
             }
         }
     }
+
+    /**
+     * Gets the argsNode.
+     * @return Returns a ArgsNode
+     */
+    public ArgsNode getArgsNode() {
+        return argsNode;
+    }
 }

@@ -39,4 +39,6 @@ import org.jruby.*;
  */
 public interface Callback {
     public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby);
+
+    public int getArity();
 }

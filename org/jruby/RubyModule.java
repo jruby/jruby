@@ -137,7 +137,7 @@ public class RubyModule extends RubyObject {
 
         Callback constants = CallbackFactory.getMethod(RubyModule.class, "constants");
         Callback const_get = CallbackFactory.getMethod(RubyModule.class, "const_get", RubyObject.class);
-        Callback const_set = new ReflectionCallbackMethod(RubyModule.class, "const_set", new Class[] { RubyObject.class, RubyObject.class });
+        Callback const_set = CallbackFactory.getMethod(RubyModule.class, "const_set", RubyObject.class, RubyObject.class);
         Callback const_defined = CallbackFactory.getMethod(RubyModule.class, "const_defined", RubyObject.class);
         Callback class_variables = CallbackFactory.getMethod(RubyModule.class, "class_variables");
         Callback remove_class_variable = CallbackFactory.getMethod(RubyModule.class, "remove_class_variable", RubyObject.class);
@@ -157,7 +157,7 @@ public class RubyModule extends RubyObject {
         Callback module_eval = CallbackFactory.getOptMethod(RubyModule.class, "module_eval");
         Callback remove_method = CallbackFactory.getMethod(RubyModule.class, "remove_method", RubyObject.class);
         Callback undef_method = CallbackFactory.getMethod(RubyModule.class, "undef_method", RubyObject.class);
-        Callback alias_method = new ReflectionCallbackMethod(RubyModule.class, "alias_method", new Class[] { RubyObject.class, RubyObject.class });
+        Callback alias_method = CallbackFactory.getMethod(RubyModule.class, "alias_method", RubyObject.class, RubyObject.class);
 
         moduleClass.defineMethod("===", op_eqq);
         moduleClass.defineMethod("<=>", op_cmp);
@@ -190,7 +190,7 @@ public class RubyModule extends RubyObject {
         moduleClass.defineMethod("const_get", const_get);
         moduleClass.defineMethod("const_set", const_set);
         moduleClass.defineMethod("const_defined?", const_defined);
-        moduleClass.definePrivateMethod("method_added", CallbackFactory.getNilMethod());
+        moduleClass.definePrivateMethod("method_added", CallbackFactory.getNilMethod(1));
         moduleClass.defineMethod("class_variables", class_variables);
         moduleClass.definePrivateMethod("remove_class_variable", remove_class_variable);
 
