@@ -24,53 +24,28 @@ package org.jruby.runtime.marshal;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubySymbol;
-import org.jruby.Ruby;
-import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.TypeError;
 
 import java.util.Map;
 import java.util.HashMap;
 
 public class MarshalCache {
-    private final Ruby runtime;
     private Map linkCache = new HashMap();
     private Map symbolCache = new HashMap();
-
-    public MarshalCache(Ruby runtime) {
-        this.runtime = runtime;
-    }
 
     public boolean isRegistered(IRubyObject value) {
         return selectCache(value).containsKey(value);
     }
 
     public void register(IRubyObject value) {
-        selectCache(value).put(value, key(selectCache(value).size()));
+        Map cache = selectCache(value);
+        cache.put(value, new Integer(cache.size()));
     }
 
     public int registeredIndex(IRubyObject value) {
         return ((Integer) selectCache(value).get(value)).intValue();
     }
 
-    public IRubyObject linkedByIndex(int index) {
-        if (! linkCache.containsKey(key(index))) {
-            throw new ArgumentError(runtime, "dump format error (unlinked: " + index + ")");
-        }
-        return (IRubyObject) linkCache.get(key(index));
-    }
-
-    public IRubyObject symbolByIndex(int index) {
-        if (! symbolCache.containsKey(key(index))) {
-            throw new TypeError(runtime, "bad symbol");
-        }
-        return (RubySymbol) symbolCache.get(key(index));
-    }
-
     private Map selectCache(IRubyObject value) {
         return (value instanceof RubySymbol) ? symbolCache : linkCache;
-    }
-
-    private Integer key(int index) {
-        return new Integer(index);
     }
 }

@@ -2,38 +2,34 @@
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.runtime.builtin;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.ablaf.ast.INode;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.TopSelfFactory;
 import org.jruby.runtime.Callback;
-import org.jruby.runtime.ICallable;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.util.RubyMap;
 
@@ -71,7 +67,7 @@ public interface IRubyObject {
      * @return boolean
      */
     boolean isNil();
-    
+
     boolean isTrue();
 
     /**
@@ -98,7 +94,7 @@ public interface IRubyObject {
      * Method getRubyClass.
      */
     RubyClass getInternalClass();
-    
+
     /**
      * Method setRubyClass.
      */
@@ -205,7 +201,7 @@ public interface IRubyObject {
 
     /**
      * Method convertType.
-     * @param class
+     * @param type
      * @param string
      * @param string1
      */
@@ -227,7 +223,7 @@ public interface IRubyObject {
      * @param b
      */
     void setFrozen(boolean b);
-    
+
     /**
      * Method inspect.
      * @return String
@@ -261,9 +257,9 @@ public interface IRubyObject {
      * @return Object
      */
     RubyMap getInstanceVariables();
-    
+
     public void callInit(IRubyObject[] args);
-    
+
     /**
      * Method method_missing.
      * @param args
@@ -273,8 +269,8 @@ public interface IRubyObject {
 
     /**
      * Method defineSingletonMethod.
-     * @param string
-     * @param object
+     * @param name
+     * @param callback
      */
     void defineSingletonMethod(String name, Callback callback);
 }
