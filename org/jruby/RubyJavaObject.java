@@ -75,6 +75,7 @@ public class RubyJavaObject extends RubyObject {
         javaObjectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
         javaObjectClass.defineMethod("==", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
 		javaObjectClass.defineMethod("hash", CallbackFactory.getMethod(RubyJavaObject.class, "hash"));
+        javaObjectClass.defineMethod("java_type", CallbackFactory.getMethod(RubyJavaObject.class, "java_type"));
 
         javaObjectClass.getInternalClass().undefMethod("new");
 
@@ -97,5 +98,9 @@ public class RubyJavaObject extends RubyObject {
                 : getRuntime().getFalse();
         }
         return getRuntime().getFalse();
+    }
+
+    public RubyString java_type() {
+        return RubyString.newString(getRuntime(), getJavaClass().getName());
     }
 }

@@ -83,7 +83,7 @@ class Module
       def proxy_class.create_methods(java_class)
         java_class.grouped_instance_methods {|name, methods|
           if methods.length == 1
-            m = methods[0]
+            m = methods.first
             define_method(m.name) {|*args|
               m.invoke(self, *args)
             }
@@ -98,7 +98,7 @@ class Module
                 }
               else
                 # overloaded on same length
-                raise "java methods just differing on argument types not supported yet: #{name}"
+                raise "java methods only differing on argument types not supported yet: #{name}"
               end
             }
           end

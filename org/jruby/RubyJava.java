@@ -5,6 +5,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.JavaClassClass;
 import org.jruby.javasupport.JavaMethodClass;
 import org.jruby.javasupport.JavaConstructorClass;
+import org.jruby.javasupport.JavaUtil;
 
 public class RubyJava {
     public static RubyModule createJavaModule(Ruby runtime) {
@@ -13,6 +14,7 @@ public class RubyJava {
         javaModule.defineModuleFunction("import", CallbackFactory.getSingletonMethod(RubyJava.class, "rbImport", RubyString.class));
         javaModule.defineModuleFunction("name", CallbackFactory.getSingletonMethod(RubyJava.class, "name", RubyString.class, RubyString.class));
         javaModule.defineModuleFunction("define_exception_handler", CallbackFactory.getOptSingletonMethod(RubyJava.class, "define_exception_handler"));
+        javaModule.defineModuleFunction("primitive_to_java", CallbackFactory.getSingletonMethod(RubyJava.class, "primitive_to_java", IRubyObject.class));
 
         JavaClassClass.createJavaClassClass(runtime, javaModule);
         JavaMethodClass.createJavaMethodClass(runtime, javaModule);
@@ -43,5 +45,11 @@ public class RubyJava {
         recv.getRuntime().getJavaSupport().defineExceptionHandler(name, handler);
 
         return recv;
+    }
+
+    public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object) {
+        Ruby runtime = recv.getRuntime();
+        Object javaObject = JavaUtil.convertRubyToJava(runtime, object);
+        return new RubyJavaObject(runtime, runtime.getClasses().getJavaObjectClass(), javaObject);
     }
 }
