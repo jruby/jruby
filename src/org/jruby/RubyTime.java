@@ -3,8 +3,10 @@
  * Created on 1. Dec 2001, 15:53
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Chad Fowler
+ * Copyright (C) 2004 Charles O Nutter
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Chad Fowler <chadfowler@chadfowler.com>
+ * Charles O Nutter <headius@headius.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
