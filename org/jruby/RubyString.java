@@ -2002,7 +2002,7 @@ public class RubyString extends RubyObject {
 							lResult.push(newString(lElem.toString()));
 						}
 						break;
-						
+
 					case 'B':
 						{
 							if (lFmt[i-1] == '*' || lLength > (lValueLength - lCurValueIdx) * 8) lLength = (lValueLength - lCurValueIdx)*8;
@@ -2048,6 +2048,43 @@ public class RubyString extends RubyObject {
 							lResult.push(newString(lElem.toString()));
 						}
 						break;
+					case 'c':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx) ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx);
+								lLength = (lValueLength - lCurValueIdx);
+							}
+							for (;lLength-- > 0;)	
+							{
+								int c = value.charAt(lCurValueIdx++);
+								if (c > (char)127) c-=256;
+								lResult.push(RubyFixnum.newFixnum(ruby, c));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+
+						break;
+					case 'C':
+						{
+							int lPadLength = 0;
+							if (lLength > (lValueLength - lCurValueIdx) ) {
+								if (lFmt[i-1] != '*')
+									lPadLength = lLength - (lValueLength - lCurValueIdx);
+								lLength = (lValueLength - lCurValueIdx);
+							}
+							for (;lLength-- > 0;)	
+							{
+								int c = value.charAt(lCurValueIdx++);
+								lResult.push(RubyFixnum.newFixnum(ruby, c));
+							}
+							for (;lPadLength-- > 0;)
+								lResult.push(ruby.getNil());
+						}
+						break;
+
 				}
 			}
 			return lResult;
