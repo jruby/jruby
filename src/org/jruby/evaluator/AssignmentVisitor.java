@@ -34,7 +34,6 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.IErrorHandler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ClassVarDeclNode;

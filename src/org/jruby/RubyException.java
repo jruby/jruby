@@ -3,7 +3,8 @@
  * Created on 18. Oktober 2001, 23:31
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Copyright (C) 2002 Anders Bengtsson, Thomas E Enebo
+ * Copyright (C) 2002 Anders Bengtsson
+ * Copyright (C) 2002-2003 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -34,7 +35,6 @@
 package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.builtin.definitions.ExceptionDefinition;
