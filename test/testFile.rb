@@ -94,3 +94,5 @@ test_ok(! File.file?('test'))
 
 stat = File.stat('test');
 test_ok(!stat.file?)
+
+test_ok(File.exist?('test'))
