@@ -1,5 +1,6 @@
 
 require 'rexml/sax2parser'
+require 'rexml/text'
 
 INCLUDES = %w(
 org.jruby.Ruby
@@ -377,6 +378,11 @@ class LowlevelParser
     name.gsub!(/\-/, '\-')
     @saxparser.listen(:start_element, ['^' + name + '$']) {
       |uri, localname, qname, attributes|
+
+      attributes.each_key { |key|
+         attributes[key] = REXML::Text::unnormalize(attributes[key]) 
+      }
+
       block.call(localname, attributes)
     }
   end
