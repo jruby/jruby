@@ -88,6 +88,14 @@ public class DefaultPointer extends AbstractList implements Pointer {
         autoResize(position);
     }
     
+    public ArrayList getDelegate() {
+        if (position == 0) {
+            return delegate;
+        } else {
+            return new ArrayList(delegate.subList(position, delegate.size() - 1));
+        }
+    }
+    
     protected void autoResize(int index) {
         if (!autoResize) {
             return;
