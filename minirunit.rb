@@ -42,7 +42,7 @@ def test_ok(cond, msg="")
     print "."
   else
     where = caller.reject {|where| where =~ /minirunit/}[0]
-    $failed.push(MiniRunit::Failure.new($what, $testnum, msg, where))
+    $failed.push(MiniRUnit::Failure.new($what, $testnum, msg, where))
     print "F"
     $curtestOK=false
   end
