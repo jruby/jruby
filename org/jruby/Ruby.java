@@ -28,7 +28,9 @@
 
 package org.jruby;
 
+import java.lang.reflect.*;
 import java.util.*;
+import java.io.*;
 
 import org.jruby.core.*;
 import org.jruby.original.*;
@@ -41,6 +43,7 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public final class Ruby implements token {
+    
     /** rb_class_tbl
      *
      */
@@ -108,7 +111,6 @@ public final class Ruby implements token {
         initializeCoreClasses();
     }
     
-    /** Returns an in
     /** Returns the "true" instance from the instance pool.
      * @return The "true" instance.
      */    
@@ -222,6 +224,8 @@ public final class Ruby implements token {
                 return RubyString.m_newString(ruby, "main");
             }
         });
+        
+        
         
         symbolClass = RbSymbol.createSymbolClass(this);
         

@@ -48,7 +48,7 @@ public class RubyString extends RubyObject {
         this.value = str;
     }
     
-    public Class getJavaString() {
+    public Class getJavaClass() {
         return String.class;
     }
 

@@ -97,7 +97,7 @@ public class JavaUtil {
             return new Double(((RubyFloat)rubyObject).getDoubleValue());
         }
         if (javaClass == String.class) {
-            return ((RubyString)rubyObject).getString();
+            return ((RubyString)rubyObject).getValue();
         }
         return ((RubyJavaObject)rubyObject).getValue();
     }
@@ -129,6 +129,6 @@ public class JavaUtil {
             }
             return RubyArray.m_create(ruby, items);
         }
-        return new RubyJavaObject(ruby, RubyJavaObject.getRubyClass(ruby, javaClass), object);
+        return new RubyJavaObject(ruby, RubyJavaObject.loadClass(ruby, javaClass, null), object);
     }
 }

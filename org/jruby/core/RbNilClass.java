@@ -40,7 +40,7 @@ public class RbNilClass {
         RubyClass nilClass = ruby.defineClass("NilClass", ruby.getObjectClass());
         
         nilClass.defineMethod("type", getMethod("m_type"));
-        nilClass.defineMethod("to_i", getMethod("m_to_"));
+        nilClass.defineMethod("to_i", getMethod("m_to_i"));
         nilClass.defineMethod("to_s", getMethod("m_to_s"));
         nilClass.defineMethod("to_a", getMethod("m_to_a"));
         nilClass.defineMethod("inspect", getMethod("m_inspect"));

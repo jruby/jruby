@@ -43,6 +43,15 @@ public class RbRange {
 
         rangeClass.includeModule(ruby.getRubyClass("Enumerable"));
 
+        rangeClass.defineMethod("first", getMethod("m_first"));
+        rangeClass.defineMethod("begin", getMethod("m_first"));
+        rangeClass.defineMethod("last", getMethod("m_last"));
+        rangeClass.defineMethod("end", getMethod("m_last"));
+        rangeClass.defineMethod("to_s", getMethod("m_inspect"));
+        rangeClass.defineMethod("inspect", getMethod("m_inspect"));
+        rangeClass.defineMethod("exclude_end?", getMethod("m_exclude_end_p"));
+        rangeClass.defineMethod("length", getMethod("m_length"));
+        rangeClass.defineMethod("size", getMethod("m_length"));
         rangeClass.defineMethod("each", getMethod("m_each"));
         rangeClass.defineMethod("initialize", getRestArgsMethod("m_initialize"));
 

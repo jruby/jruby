@@ -108,6 +108,36 @@ public class RubyRange extends RubyObject {
         return getRuby().getNil();
     }
     
+    public RubyObject m_first() {
+        return getInstanceVar("begin");
+    }
+    
+    public RubyObject m_last() {
+        return getInstanceVar("end");
+    }
+    
+    public RubyString m_inspect() {
+        String str =
+            ((RubyString)getInstanceVar("begin").funcall(getRuby().intern("to_s"))).getString();
+        String str2 =
+            ((RubyString)getInstanceVar("end").funcall(getRuby().intern("to_s"))).getString();
+
+        str += "..";
+        if (getInstanceVar("excl").isTrue())
+            str += ".";                
+        str += str2;
+        //FIXME: what's OBJ_INFECT for???
+
+        return new RubyString(getRuby(), str);
+    }
+    
+    public RubyBoolean m_exclude_end_p() {
+        if (getInstanceVar("excl").isTrue())
+            return getRuby().getTrue();
+        else
+            return getRuby().getFalse();
+    }
+
     public RubyObject m_each() {
         RubyObject begin = getInstanceVar("begin");
         RubyObject end = getInstanceVar("end");

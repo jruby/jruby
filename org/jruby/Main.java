@@ -48,42 +48,39 @@ public class Main {
     * @param args the command line arguments
     */
     public static void main (String args[]) {
-        System.out.println("WARNING this is an ALPHA version of JRuby!!!");
-        System.out.println("--------------------------------------------");
         System.out.println();
+        System.out.println("----------------------------------------------------");
+        System.out.println("--- WARNING this is an ALPHA version of JRuby!!! ---");
+        System.out.println("----------------------------------------------------");
+        System.out.println();
+        
         if (args.length == 0) {
             printUsage();
         } else {
-            int lNbArg = args.length;
-            for (int i = 0; i < lNbArg; i++)
-            {
-                if (args[i].equals("-h") || args[i].equals("-help"))
-                printUsage();
-                else if (args[i].equals("-e"))
-                {
-                    if (i++ >= lNbArg)
-                    {
+            int lenArg = args.length;
+            for (int i = 0; i < lenArg; i++) {
+                if (args[i].equals("-h") || args[i].equals("-help")) {
+                    printUsage();
+                } else if (args[i].equals("-e")) {
+                    if (i++ >= lenArg) {
                         System.err.println("invalid argument " + i);
                         System.err.println(" -e must be followed by an expression to evaluate");
                         printUsage();
-                    }
-                    else
+                    } else {
                         runInterpreter(args[i], "command line " + i);
-                }
-                else
-                {
+                    }
+                } else {
                     runInterpreterOnFile(args[0]);
+                }
             }
-        }
-
         }
     }
     
     /**
      * Prints the usage for the class.
-    *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
-    *           -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
-    */ 
+     *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
+     *           -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
+     */ 
     protected static void printUsage() {
         System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
         System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
@@ -96,8 +93,7 @@ public class Main {
      * @param iFileName
      * the name of the File from which the string comes.
      */
-    protected static void runInterpreter(String iString2Eval, String iFileName)
-    {
+    protected static void runInterpreter(String iString2Eval, String iFileName) {
         // Initialize Runtime
         Ruby ruby = new Ruby();
 

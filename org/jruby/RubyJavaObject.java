@@ -76,10 +76,9 @@ public class RubyJavaObject extends RubyObject {
     public static RubyModule getRubyClass(Ruby ruby, Class javaClass) {
         Map classMap = (Map)loadedClassMap.get(ruby);
         if (classMap != null) {
-            RubyModule rubyClass = (RubyModule)classMap.get(javaClass);
-            return rubyClass != null ? rubyClass : ruby.getRubyClass("JavaObject");
+            return (RubyModule)classMap.get(javaClass);
         }
-        return ruby.getRubyClass("JavaObject");
+        return null;
     }
     
     public static void putRubyClass(Ruby ruby, Class javaClass, RubyModule rubyClass) {
@@ -91,67 +90,72 @@ public class RubyJavaObject extends RubyObject {
         classMap.put(javaClass, rubyClass);
     }
     
+    public static RubyModule loadClass(Ruby ruby, Class javaClass, String rubyName) {
+        RubyModule newRubyClass = getRubyClass(ruby, javaClass);
+        if (newRubyClass != null) {
+            return newRubyClass;
+        }
+        if (rubyName == null) {
+            String javaName = javaClass.getName();
+            rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
+        }
+        Map methodMap = new HashMap();
+        Map singletonMethodMap = new HashMap();
+        
+        Method[] methods = javaClass.getMethods();
+        
+        for (int i = 0; i < methods.length; i++) {
+            String methodName = methods[i].getName();
+            if (methods[i].getDeclaringClass() != Object.class) {
+                if (Modifier.isStatic(methods[i].getModifiers())) {
+                    if (singletonMethodMap.get(methods[i].getName()) == null) {
+                        singletonMethodMap.put(methods[i].getName(), new LinkedList());
+                    }
+                    ((List)singletonMethodMap.get(methods[i].getName())).add(methods[i]);
+                } else {
+                    if (methodMap.get(methods[i].getName()) == null) {
+                        methodMap.put(methods[i].getName(), new LinkedList());
+                    }
+                    ((List)methodMap.get(methods[i].getName())).add(methods[i]);
+                }
+            }
+        }
+        
+        newRubyClass = ruby.defineClass(rubyName, (RubyClass)ruby.getRubyClass("JavaObject"));
+        
+        newRubyClass.defineSingletonMethod("new", new JavaConstructor(javaClass.getConstructors()));
+        
+        Iterator iter = methodMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry)iter.next();
+            methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
+            newRubyClass.defineMethod((String)entry.getKey(), new JavaMethod(methods));
+        }
+        
+        iter = singletonMethodMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry)iter.next();
+            methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
+            newRubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, true));
+        }
+        
+        putRubyClass(ruby, javaClass, newRubyClass);
+        
+        return newRubyClass;
+    }
+    
     // JavaObject methods
     
     public static RubyObject m_load_class(Ruby ruby, RubyObject recv, RubyString className, RubyObject[] args) {
-        String javaName = className.getString();
-        String rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
-        if (args.length > 0) {
-            rubyName = ((RubyString)args[0]).getString();
-        }
+        String javaName = className.getValue();
+        String rubyName = (args.length > 0) ? ((RubyString)args[0]).getValue() : null;
         
         try {
             Class c = Class.forName(javaName);
-            
-            Map methodMap = new HashMap();
-            Map singletonMethodMap = new HashMap();
-            
-            Method[] methods = c.getMethods();
-            
-            for (int i = 0; i < methods.length; i++) {
-                String methodName = methods[i].getName();
-                if (methods[i].getDeclaringClass() != Object.class) {
-                    if (Modifier.isStatic(methods[i].getModifiers())) {
-                        if (singletonMethodMap.get(methods[i].getName()) == null) {
-                            singletonMethodMap.put(methods[i].getName(), new LinkedList());
-                        }
-                        ((List)singletonMethodMap.get(methods[i].getName())).add(methods[i]);
-                    } else {
-                        if (methodMap.get(methods[i].getName()) == null) {
-                            methodMap.put(methods[i].getName(), new LinkedList());
-                        }
-                        ((List)methodMap.get(methods[i].getName())).add(methods[i]);
-                    }
-                }
-            }
-            
-            RubyClass newRubyClass = ruby.defineClass(rubyName, (RubyClass)ruby.getRubyClass("JavaObject"));
-            
-            newRubyClass.defineSingletonMethod("new", new JavaConstructor(c.getConstructors()));
-            
-            Iterator iter = methodMap.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
-                newRubyClass.defineMethod((String)entry.getKey(), new JavaMethod(methods));
-            }
-            
-            iter = singletonMethodMap.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry)iter.next();
-                methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
-                newRubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, true));
-            }
-            
-            putRubyClass(ruby, c, newRubyClass);
-            
-            return newRubyClass;
+            return loadClass(ruby, c, rubyName);
         } catch (ClassNotFoundException cnfExcptn) {
-            throw new RubyNameException("cannot found Java class: " + javaName);
-        } catch (SecurityException sExcptn) {
+            throw new RubyNameException("cannot find Java class: " + javaName);
         }
-        
-        return ruby.getNil();
     }
     
     public RubyString m_to_s() {

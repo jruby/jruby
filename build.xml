@@ -55,9 +55,9 @@
 
         <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
 
-        <delete dir="${build.tars}"/>
+        <!--<delete dir="${build.tars}"/>
         <delete file="${build.dir}/jruby.tar"/>
-        <delete file="${build.dir}/jruby.jar"/>
+        <delete file="${build.dir}/jruby.jar"/> -->
     </target>
 
     <target depends="init" name="src-gz">
@@ -67,7 +67,8 @@
         </tar>
 
         <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
-        <delete file="${build.dir}/jruby-src.tar"/>
+
+        <!-- <delete file="${build.dir}/jruby-src.tar"/> -->
     </target>
 
     <target depends="init" name="javadocs">
