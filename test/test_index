@@ -18,7 +18,6 @@ testBlock.rb
 testRange.rb
 testString.rb
 testException.rb
-##testSpecialVar.rb
 testFile.rb
 #testThread.rb
 testMarshal.rb

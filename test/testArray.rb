@@ -24,7 +24,6 @@ array.each {		# this should not generate an exception
 	|test|
 	true
 }
-test_ok(true)		#this is always true but it is used to count the iteration on ARGV as a test
 test_equal(array.length,  4)
 
 
