@@ -44,6 +44,9 @@ public class JavaField extends RubyObject implements IndexCallable {
     private static final int STATIC_P = 3;
     private static final int VALUE = 4;
     private static final int SET_VALUE = 5;
+    private static final int FINAL_P = 6;
+    private static final int STATIC_VALUE = 7;
+    private static final int NAME = 8;
 
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         RubyClass javaFieldClass =
@@ -54,6 +57,9 @@ public class JavaField extends RubyObject implements IndexCallable {
         javaFieldClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
         javaFieldClass.defineMethod("value", IndexedCallback.create(VALUE, 1));
         javaFieldClass.defineMethod("set_value", IndexedCallback.create(SET_VALUE, 2));
+        javaFieldClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
+        javaFieldClass.defineMethod("static_value", IndexedCallback.create(STATIC_VALUE, 0));
+        javaFieldClass.defineMethod("name", IndexedCallback.create(NAME, 0));
 
         return javaFieldClass;
     }
@@ -110,6 +116,22 @@ public class JavaField extends RubyObject implements IndexCallable {
         return (JavaObject) value;
     }
 
+    public RubyBoolean final_p() {
+        return RubyBoolean.newBoolean(getRuntime(), Modifier.isFinal(field.getModifiers()));
+    }
+
+    public JavaObject static_value() {
+        try {
+            return new JavaObject(getRuntime(), field.get(null));
+        } catch (IllegalAccessException iae) {
+            throw new TypeError(getRuntime(), "illegal access");
+        }
+    }
+
+    public RubyString name() {
+        return RubyString.newString(getRuntime(), field.getName());
+    }
+
     public IRubyObject callIndexed(int index, IRubyObject[] args) {
         switch (index) {
             case VALUE_TYPE :
@@ -122,6 +144,12 @@ public class JavaField extends RubyObject implements IndexCallable {
                 return value(args[0]);
             case SET_VALUE :
                 return set_value(args[0], args[1]);
+            case FINAL_P :
+                return final_p();
+            case STATIC_VALUE :
+                return static_value();
+            case NAME :
+                return name();
             default :
                 return super.callIndexed(index, args);
         }

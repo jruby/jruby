@@ -30,7 +30,7 @@ testRandom.rb
 testStruct.rb
 testGC.rb
 testLowerJavaSupport.rb
-testJavaSupport.rb
+testHigherJavaSupport.rb
 testDir.rb
 testVisibility.rb
 testModule.rb

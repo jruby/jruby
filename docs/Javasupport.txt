@@ -67,10 +67,6 @@ Java::JavaClass:
         Returns a list of Java::JavaMethod instances for the class (or
         "static") methods available on this Java class.
 
-    constants -> anArray
-        Returns a list of the names of all constant ("static final")
-        variables on this Java class.
-
     java_method( aString, [aString]* ) -> aJavaMethod
         Returns a Java::JavaMethod for the method with the given name (first
         argument) and parameter types (remaining arguments).
@@ -100,11 +96,14 @@ Java::JavaClass:
             array_cls.array?                # -> true
             array_cls.name                  # -> "[Ljava.lang.String;"
 
-    cls.get_constant( aName ) -> aJavaObject
-        Returns the value of the named constant.
+    cls.fields -> anArray
+        Returns a list of the names of the fields on this Java class.
 
-        Raises NameError if this Java class doesn't have a constant by that
-        name.
+    cls.field( aString ) -> aJavaField
+        Returns a Java::JavaField for the named field.
+
+        Raises NameError if there is no field by that name.
+
 
 Java::JavaMethod:
 
@@ -190,3 +189,36 @@ Java::JavaConstructor:
 
     cons.argument_types -> anArray
         Returns a list of the names of the Java argument types.
+
+
+Java::JavaField:
+
+    field.static? -> true or false
+       Returns true if this is a class ("static") field, false otherwise.
+
+    field.public? -> true or false
+       Returns true if this field is public, false otherwise.
+
+    field.final? -> true or false
+       Returns true if this field is final, false otherwise.
+
+    field.value( anInstance ) -> aJavaObject
+       Returns the value of the instance field on the object given as argument.
+        The instance argument must be a JavaObject of the class that this
+        field belongs to.
+
+       Example:
+           width_field = rectangle_class.field(:width)
+           a_rectangle.java_type            # -> "java.awt.Rectangle"
+           width_field.value(a_rectangle)   # -> some java.lang.Integer value
+
+    field.set_value( anInstance, aValue ) -> aValue
+        Sets the value of this field in the given instance to the given
+        value.
+        The instance argument must be a JavaObject of the class that this
+        field belongs to. The value argument must be a JavaObject of the
+        same type as this field.
+        The value argument is returned.
+
+    field.name -> aString
+        Returns the name of the field.

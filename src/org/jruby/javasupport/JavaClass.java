@@ -66,13 +66,11 @@ public class JavaClass extends RubyObject implements IndexCallable {
     private static final int OP_CMP = 8;
     private static final int JAVA_INSTANCE_METHODS = 11;
     private static final int JAVA_CLASS_METHODS = 12;
-    private static final int CONSTANTS = 13;
     private static final int JAVA_METHOD = 14;
     private static final int CONSTRUCTORS = 15;
     private static final int CONSTRUCTOR = 16;
     private static final int ARRAY_CLASS = 17;
     private static final int NEW_ARRAY = 18;
-    private static final int GET_CONSTANT = 19;
     private static final int FIELDS = 20;
     private static final int FIELD = 21;
 
@@ -92,13 +90,11 @@ public class JavaClass extends RubyObject implements IndexCallable {
         javaClassClass.defineMethod("<=>", IndexedCallback.create(OP_CMP, 1));
         javaClassClass.defineMethod("java_instance_methods", IndexedCallback.create(JAVA_INSTANCE_METHODS, 0));
         javaClassClass.defineMethod("java_class_methods", IndexedCallback.create(JAVA_CLASS_METHODS, 0));
-        javaClassClass.defineMethod("constants", IndexedCallback.create(CONSTANTS, 0));
         javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
         javaClassClass.defineMethod("constructors", IndexedCallback.create(CONSTRUCTORS, 0));
         javaClassClass.defineMethod("constructor", IndexedCallback.createOptional(CONSTRUCTOR));
         javaClassClass.defineMethod("array_class", IndexedCallback.create(ARRAY_CLASS, 0));
         javaClassClass.defineMethod("new_array", IndexedCallback.create(NEW_ARRAY, 1));
-        javaClassClass.defineMethod("get_constant", IndexedCallback.create(GET_CONSTANT, 1));
         javaClassClass.defineMethod("fields", IndexedCallback.create(FIELDS, 0));
         javaClassClass.defineMethod("field", IndexedCallback.create(FIELD, 1));
 
@@ -177,23 +173,6 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return result;
     }
 
-
-    public RubyArray constants() {
-        Field[] fields = javaClass.getFields();
-        RubyArray result = RubyArray.newArray(runtime, fields.length);
-        for (int i = 0; i < fields.length; i++) {
-            if (isConstant(fields[i])) {
-                result.append(RubyString.newString(runtime, fields[i].getName()));
-            }
-        }
-        return result;
-    }
-
-    private static boolean isConstant(Field field) {
-        int modifiers = field.getModifiers();
-        return Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers);
-    }
-
     public JavaMethod java_method(IRubyObject[] args) {
         if (args.length < 1) {
             throw new ArgumentError(getRuntime(), args.length, 1);
@@ -243,19 +222,6 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return new JavaArray(getRuntime(), Array.newInstance(javaClass, length));
     }
 
-    public JavaObject get_constant(IRubyObject name) {
-        String nameString = name.asSymbol();
-        Object result;
-        try {
-            result = javaClass.getField(nameString).get(null);
-        } catch (NoSuchFieldException nsfe) {
-            throw new NameError(getRuntime(), "undefined constant '" + nameString + "' for " + this);
-        } catch (IllegalAccessException iae) {
-            throw new TypeError(getRuntime(), "illegal access: " + iae.getMessage());
-        }
-        return new JavaObject(getRuntime(), result);
-    }
-
     public RubyArray fields() {
         Field[] fields = javaClass.getFields();
         RubyArray result = RubyArray.newArray(getRuntime(), fields.length);
@@ -299,8 +265,6 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return java_instance_methods();
             case JAVA_CLASS_METHODS :
                 return java_class_methods();
-            case CONSTANTS :
-                return constants();
             case JAVA_METHOD :
                 return java_method(args);
             case CONSTRUCTORS :
@@ -311,8 +275,6 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return array_class();
             case NEW_ARRAY :
                 return new_array(args[0]);
-            case GET_CONSTANT :
-                return get_constant(args[0]);
             case FIELDS :
                 return fields();
             case FIELD :

@@ -63,8 +63,10 @@ if defined? Java
   test_ok(rectangle_class.fields.include?("y"))
   field = rectangle_class.field(:x)
   test_equal("int", field.value_type)
+  test_equal("x", field.name)
   test_ok(field.public?)
   test_ok(! field.static?)
+  test_ok(! field.final?)
   integer_ten = Java.primitive_to_java(10)
   integer_two = Java.primitive_to_java(2)
   constructor = rectangle_class.constructor(:int, :int, :int, :int)
@@ -83,13 +85,13 @@ if defined? Java
     field.set_value(rectangle, Java.primitive_to_java("hello"))
   }
 
-  # Constants
+  # Class variables
   integer_class = Java::JavaClass.for_name("java.lang.Integer")
-  integer_constants = integer_class.constants
-  test_ok(integer_constants.include?("MAX_VALUE"))
-  max_value = integer_class.get_constant(:MAX_VALUE)
-  test_ok(max_value.kind_of?(JavaObject))
-  test_equal(2147483647, Java.java_to_primitive(max_value))
+  test_ok(integer_class.fields.include?("MAX_VALUE"))
+  field = integer_class.field(:MAX_VALUE)
+  test_ok(field.final?)
+  test_ok(field.static?)
+  test_equal(2147483647, Java.java_to_primitive(field.static_value))
 
   method = string_class.java_method(:toString)
   test_ok(method.kind_of?(Java::JavaMethod))

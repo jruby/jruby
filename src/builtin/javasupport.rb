@@ -176,9 +176,13 @@ module JavaUtilities
                                "end")
       }
 
-      java_class.constants.each {|name|
+      fields = java_class.fields.collect {|name| java_class.field(name) }
+      constants = fields.select {|field| field.static? and field.final? }
+      constants.each {|field|
+        name = field.name
         proxy_class.class_eval("def self. " + name + ";" +
-                               "result = @java_class.get_constant('" + name + "');" +
+                               "field = @java_class.field('" + name + "');" +
+                               "result = field.static_value;" +
                                "result = Java.java_to_primitive(result);" +
                                "if result.kind_of?(JavaObject);" +
                                "  result = JavaUtilities.wrap(result, method.return_type);" +
