@@ -233,7 +233,7 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public RubyNumeric op_mul(IRubyObject num) {
-        return multiplyWith(numericValue(num));
+        return numericValue(num).multiplyWith(this);
     }
 
     public RubyNumeric multiplyWith(RubyNumeric other) {

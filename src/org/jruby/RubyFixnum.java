@@ -235,6 +235,9 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
 
     public RubyNumeric multiplyWith(RubyFixnum other) {
         long otherValue = other.getLongValue();
+        if (otherValue == 0) {
+            return RubyFixnum.zero(getRuntime());
+        }
         long result = value * otherValue;
         if (result > MAX || result < MIN || result / otherValue != value) {
             return RubyBignum.newBignum(getRuntime(), getLongValue()).op_mul(other);
