@@ -165,15 +165,18 @@ public class RubyThread extends RubyObject {
 
         final RubyProc proc = RubyProc.newProc(runtime, runtime.getClasses().getProcClass());
 
-        final Frame currentFrame = runtime.getCurrentFrame();
-        final Block currentBlock = runtime.getBlockStack().getCurrent();
-
         result.jvmThread = new Thread(new Runnable() {
             public void run() {
+                Frame currentFrame = runtime.getCurrentFrame();
+                Block currentBlock = runtime.getBlockStack().getCurrent();
+                // Now create and initialize the own thread context
+                runtime.registerNewContext();
                 ThreadContext context = runtime.getCurrentContext();
                 context.getFrameStack().push(currentFrame);
                 context.getBlockStack().setCurrent(currentBlock);
                 context.setCurrentThread(result);
+
+                // Call the thread's code
                 proc.call(args);
             }
         });

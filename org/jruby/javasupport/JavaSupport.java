@@ -240,10 +240,13 @@ public class JavaSupport {
     private void addDefaultModules(RubyClass rubyClass) {
         if (rubyClass.isMethodDefined("hasNext") && rubyClass.isMethodDefined("next")) {
             rubyClass.includeModule(ruby.getClasses().getEnumerableModule());
-            rubyClass.defineMethod("each", new JavaEachMethod("hasNext", "next"));
+            rubyClass.defineMethod("each", new JavaEachMethod(null, "hasNext", "next"));
         } else if (rubyClass.isMethodDefined("hasNext") && rubyClass.isMethodDefined("next")) {
             rubyClass.includeModule(ruby.getClasses().getEnumerableModule());
-            rubyClass.defineMethod("each", new JavaEachMethod("hasMoreElements", "nextElement"));
+            rubyClass.defineMethod("each", new JavaEachMethod(null, "hasMoreElements", "nextElement"));
+        } else if (rubyClass.isMethodDefined("iterator")) {
+            rubyClass.includeModule(ruby.getClasses().getEnumerableModule());
+            rubyClass.defineMethod("each", new JavaEachMethod("iterator", "hasNext", "next"));
         }
 
         if (rubyClass.isMethodDefined("compareTo")) {

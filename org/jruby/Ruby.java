@@ -89,11 +89,13 @@ import org.jruby.util.collections.IStack;
  */
 public final class Ruby {
     private ThreadLocal threadContext = new ThreadLocal() {
+        private ThreadContext mainContext = new ThreadContext(Ruby.this);
+
         /**
          * @see java.lang.ThreadLocal#initialValue()
          */
         protected Object initialValue() {
-            return new ThreadContext(Ruby.this);
+            return mainContext;
         }
     };
 
@@ -708,6 +710,10 @@ public final class Ruby {
 
     public ThreadContext getCurrentContext() {
         return (ThreadContext)threadContext.get();
+    }
+    
+    public void registerNewContext() {
+        threadContext.set(new ThreadContext(this));
     }
 
     public ISourcePosition getPosition() {
