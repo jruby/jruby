@@ -68,6 +68,10 @@
 				<include name="org/**/*.properties"/>
             </fileset>
         </copy>
+		<copy todir="${build.dir}" >
+			<fileset dir="${src.dir}" includes="lib/**/*"/>
+		</copy>
+        <mkdir dir="${build.dir}/lib/ruby/1.6/java"/>
         <!-- Create jar in build dir -->
         <jar basedir="${build.dest}" compress="true" jarfile="${jar.file}" manifest="jruby.mf"/>
     </target>

@@ -45,6 +45,7 @@ test_load('test/testSpecialVar.rb')
 test_load('test/testFile.rb')
 test_load('test/testThread.rb')
 test_load('test/testMarshal.rb')
+test_load('test/testRequire.rb')
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

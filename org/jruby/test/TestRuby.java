@@ -109,14 +109,14 @@ public class TestRuby extends TestRubyBase {
         list.clear();
         File testFile = new File("fib.rb");
         try {
-            ruby.findFile(testFile);
+            ruby.findFile(ruby, testFile);
             fail("should have thrown an exception, the file fib.rb is not 					in the search path");
         } catch (Exception e) {
         }
         list.add("./samples");
         //now we valuate the path 
         ruby.initLoad(list);
-        assertEquals(new File("./samples/fib.rb"), ruby.findFile(testFile));
+        assertEquals(new File("./samples/fib.rb"), ruby.findFile(ruby, testFile));
     }
 
     public void testVarAndMet() {

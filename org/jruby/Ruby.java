@@ -979,7 +979,7 @@ public final class Ruby {
      *  @param i2find the file to find, this is a path name
      *  @return the correct file
      */
-    public File findFile(File i2find) {
+    public File findFile(Ruby ruby, File i2find) {
         RubyArray lLoadPath = (RubyArray) getGlobalVar("$:");
         int lPathNb = lLoadPath.getLength();
         String l2Find = i2find.getPath();
@@ -994,7 +994,8 @@ public final class Ruby {
         if (i2find.exists()) {
             return i2find;
         } else {
-            throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
+				throw new LoadError(ruby, "No such file to load -- " + i2find.getPath());
+//            throw new RuntimeException("file " + i2find.getPath() + " can't be found!");
         }
     }
     

@@ -77,6 +77,8 @@ public class RubyHash extends RubyObject {
 	/**
 	 * gets an iterator on a copy of the keySet.
 	 * modifying the iterator will NOT modify the map.
+	 * if the map is modified while iterating on this iterator, the iterator 
+	 * will not be invalidated but the content will be the same as the old one.
 	 * @return the iterator
 	 **/
 	private Iterator keyIterator() {
@@ -86,6 +88,7 @@ public class RubyHash extends RubyObject {
 	/**
 	 * gets an iterator on the keySet.
 	 * modifying the iterator WILL modify the map.
+	 * the iterator will be invalidated if the map is modified.
 	 * @return the iterator
 	 **/
 	private Iterator modifiableKeyIterator() {
@@ -96,14 +99,28 @@ public class RubyHash extends RubyObject {
 		return new ArrayList(valueMap.values()).iterator();
 	}
 
+
 	/**
 	 * gets an iterator on the entries.
 	 * modifying this iterator WILL modify the map.
+	 * the iterator will be invalidated if the map is modified.
+	 * @return the iterator
+	 */
+	private Iterator modifiableEntryIterator() {
+		return valueMap.entrySet().iterator();
+	}
+
+    
+	
+	/**
+	 * gets an iterator on a copy of the entries.
+	 * modifying this iterator will NOT modify the map.
+	 * if the map is modified while iterating on this iterator, the iterator 
+	 * will not be invalidated but the content will be the same as the old one.
 	 * @return the iterator
 	 */
 	private Iterator entryIterator() {
-		//return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
-		return valueMap.entrySet().iterator();
+		return new ArrayList(valueMap.entrySet()).iterator();		//in general we either want to modify the map or make sure we don't when we use this, so skip the copy
 	}
 
     public static RubyClass createHashClass(Ruby ruby) {
@@ -327,7 +344,7 @@ public class RubyHash extends RubyObject {
 	}
 
 	public RubyHash each_key() {
-		Iterator iter = keyIterator();
+		Iterator iter = keyIterator();		//the block may modify the hash so we need the iterator on a copy
 		while (iter.hasNext()) {
 			RubyObject key = (RubyObject) iter.next();
 			ruby.yield(key);
@@ -369,7 +386,7 @@ public class RubyHash extends RubyObject {
         }
 
         // +++
-        Iterator iter = entryIterator();
+        Iterator iter = modifiableEntryIterator();		//Benoit: this is ok, nobody is modifying the map
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             
@@ -384,7 +401,7 @@ public class RubyHash extends RubyObject {
 
     public RubyArray shift() {
 		modify();
-        Iterator iter = entryIterator();
+        Iterator iter = modifiableEntryIterator();		//we want to modify the map so we need this iterator
         Map.Entry entry = (Map.Entry)iter.next();
         iter.remove();
 		return RubyArray.newArray(ruby, (RubyObject)entry.getKey(), (RubyObject)entry.getValue());
@@ -418,13 +435,13 @@ public class RubyHash extends RubyObject {
 	public RubyObject reject_bang() {
 		modify();
 		boolean isModified = false;
-		Iterator iter = modifiableKeyIterator();
+		Iterator iter = keyIterator();
 		while (iter.hasNext()) {
 			RubyObject key = (RubyObject) iter.next();
 			RubyObject value = (RubyObject) valueMap.get(key);
 			RubyObject shouldDelete = ruby.yield(RubyArray.newArray(ruby, key, value));
 			if (shouldDelete.isTrue()) {
-				iter.remove();
+				valueMap.remove(key);
 				isModified = true;
 			}
 		}
@@ -443,7 +460,7 @@ public class RubyHash extends RubyObject {
 
 	public RubyHash invert() {
 		RubyHash result = newHash(ruby);
-		Iterator iter = entryIterator();
+		Iterator iter = modifiableEntryIterator();		//this is ok since nobody will modify the map
 		while (iter.hasNext()) {
 			Map.Entry entry = (Map.Entry) iter.next();
 			RubyObject key = (RubyObject) entry.getKey();
