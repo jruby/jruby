@@ -1,12 +1,5 @@
 /*
- * JRubyEngine.java - No description
- * Created on 11.01.2002, 14:33:37
- *
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Chad Fowler <chadfowler@yahoo.com>
+ * Copyright (C) 2002 Jan Arne Petersen  <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -31,21 +24,27 @@ package org.jruby.javasupport.bsf;
 
 import java.util.Vector;
 
-import org.jruby.*;
-import org.jruby.exceptions.*;
+import org.ablaf.ast.INode;
+import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.exceptions.BreakJump;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ReturnJump;
+import org.jruby.exceptions.ThrowJump;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.ablaf.ast.INode;
-import org.ablaf.common.ISourcePosition;
 
-import com.ibm.bsf.*;
+import com.ibm.bsf.BSFDeclaredBean;
+import com.ibm.bsf.BSFException;
+import com.ibm.bsf.BSFManager;
 import com.ibm.bsf.util.BSFEngineImpl;
+import com.ibm.bsf.util.BSFFunctions;
 
-/**
+/** An implementation of a JRuby BSF implementation.
  *
  * @author  jpetersen
  * @version $Revision$
@@ -143,7 +142,7 @@ public class JRubyEngine extends BSFEngineImpl {
                 new BeanGlobalVariable(runtime, bean));
         }
         
-        // ruby.defineGlobalFunction("declareBean", method);
+        runtime.getGlobalVariables().defineReadonly("$bsf", new FunctionsGlobalVariable(runtime, new BSFFunctions(mgr, this)));
     }
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
@@ -206,6 +205,32 @@ public class JRubyEngine extends BSFEngineImpl {
             }
             value = Java.primitive_to_java(value, value);
             bean.bean = JavaUtil.convertArgument(value, bean.type);
+            return value;
+        }
+    }
+    
+    private static class FunctionsGlobalVariable implements IAccessor {
+        private Ruby runtime;
+        private BSFFunctions functions;
+
+        public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
+            this.runtime = runtime;
+            this.functions = functions;
+        }
+
+        public IRubyObject getValue() {
+            IRubyObject result = JavaUtil.convertJavaToRuby(runtime, functions, BSFFunctions.class);
+            if (result instanceof JavaObject) {
+                runtime.getLoadService().require("java");
+                result =
+                    runtime.getClasses().getObjectClass().getConstant("JavaUtilities").callMethod(
+                        "wrap",
+                        new IRubyObject[] { result, RubyString.newString(runtime, BSFFunctions.class.getName())});
+            }
+            return result;
+        }
+        
+        public IRubyObject setValue(IRubyObject value) {
             return value;
         }
     }

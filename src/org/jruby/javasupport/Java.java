@@ -74,6 +74,13 @@ public class Java {
 
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                if (method.getName().equals("toString") && method.getParameterTypes().length == 0) {
+                    return proxy.getClass().getName();
+                } else if (method.getName().equals("hashCode") && method.getParameterTypes().length == 0) {
+                    return new Integer(proxy.getClass().hashCode());
+                } else if (method.getName().equals("equals") && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].equals(Object.class)) {
+                    return Boolean.valueOf(proxy == args[1]);
+                }
                 int length = args == null ? 0 : args.length;
                 IRubyObject rubyArgs[] = new IRubyObject[length + 2];
                 rubyArgs[0] = JavaObject.wrap(recv.getRuntime(), proxy);

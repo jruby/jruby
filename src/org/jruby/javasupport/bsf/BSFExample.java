@@ -39,15 +39,37 @@ import javax.swing.JTextPane;
 import com.ibm.bsf.BSFException;
 import com.ibm.bsf.BSFManager;
 
+/** An example demonstrating the use of JRuby and BSF.
+ * 
+ */
 public class BSFExample {
     private BSFManager manager;
 
+    public static void main(String[] args) {
+        /*
+         * First we need to register the JRuby engine.
+         */
+        BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
+
+        /*
+         * Now we create a new BSFManager.
+         */
+        new BSFExample(new BSFManager());
+    }
+
     public BSFExample(BSFManager manager) {
         this.manager = manager;
+        
+        /*
+         * Initialize a simple Frame. 
+         */
         initUI();
     }
 
     private void initUI() {
+        /*
+         * Initialize some components.
+         */
         final JFrame frame = new JFrame("A sample BSF application");
         final JMenuBar menubar = new JMenuBar();
         final JTextArea input = new JTextArea("$frame.setTitle(\"A new title\")");
@@ -55,6 +77,11 @@ public class BSFExample {
         final JButton eval = new JButton("Eval");
 
         try {
+            /*
+             * Declare those components as beans in BSF. Then it will be
+             * possible to access those components in Ruby as global
+             * variables ($frame, $menubar, ...)
+             */
             manager.declareBean("frame", frame, JFrame.class);
             manager.declareBean("menubar", menubar, JMenuBar.class);
             manager.declareBean("input", input, JTextArea.class);
@@ -74,6 +101,9 @@ public class BSFExample {
         buttonPane.add(eval, BorderLayout.EAST);
 
         try {
+            /* 
+             * Execute a Ruby script (add the menubar to the frame).
+             */
             manager.exec("ruby", "initUI", 1, 1, "$frame.setJMenuBar($menubar)");
         } catch (BSFException excptn) {
             excptn.printStackTrace();
@@ -83,6 +113,9 @@ public class BSFExample {
         execute.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
+                    /*
+                     * Execute Ruby statements.
+                     */
                     manager.exec("ruby", "initUI", 1, 1, input.getText());
                 } catch (BSFException excptn) {
                     excptn.printStackTrace();
@@ -94,6 +127,9 @@ public class BSFExample {
         eval.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
+                    /*
+                     * Evaluates a Ruby expression and display the result.
+                     */
                     String expression = JOptionPane.showInputDialog(frame, "Please enter a Ruby expression:");
                     input.setText(String.valueOf(manager.eval("ruby", "initUI", 1, 1, expression)));
                 } catch (BSFException excptn) {
@@ -106,11 +142,5 @@ public class BSFExample {
         frame.pack();
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    }
-
-    public static void main(String[] args) {
-        BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
-
-        new BSFExample(new BSFManager());
     }
 }
