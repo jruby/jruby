@@ -6,11 +6,11 @@ module JavaSwing
   include_package "java.awt.event"
 end
 
-# Create a frame with the title "HelloWorldSwing"
-frame = JavaSwing::JFrame.new()
+# Create a frame with the title "Hello Swing"
+frame = JavaSwing::JFrame.new("Hello Swing")
 
 # Create a button with the text "Klick Me!"
-button = JavaSwing::JButton.new("Klick Me!", nil)
+button = JavaSwing::JButton.new("Klick Me!")
 
 # Add an action to the button
 action = JavaSwing::ActionListener.new

@@ -4,7 +4,7 @@ module Swing
   include_package "javax.swing"
 end
 
-frame = Swing::JFrame.new()
+frame = Swing::JFrame.new("Hello Swing")
 label = Swing::JLabel.new("Hello World")
 
 frame.getContentPane().add(label)
