@@ -20,7 +20,7 @@ Frame:
     A Frame is used to represent the actual method (or block) context. For each
     method (or block) call a new Frame is created.
     The Frame consists of the name of the method, the class in which the
-    method is implemented and the arguments. It is pushed on the the current
+    method is implemented and the arguments. It is pushed on to the current
     FrameStack.
 
 FrameStack:
