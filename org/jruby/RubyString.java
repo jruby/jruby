@@ -853,8 +853,8 @@ public class RubyString extends RubyObject {
                     break;
                 } else {
                     pos = i;
-                    n = 1;
-                    sbuf.setCharAt(i, n);
+                    n = '\u0001';
+                    sbuf.setCharAt(i, '\u0000');
                 }
             }
         }

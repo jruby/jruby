@@ -93,7 +93,7 @@ public class RbString {
 
 //    rb_define_method(rb_cString, "hex", rb_str_hex, 0);
 //    rb_define_method(rb_cString, "oct", rb_str_oct, 0);
-//    rb_define_method(rb_cString, "split", rb_str_split_m, -1);*/
+//    rb_define_method(rb_cString, "split", rb_str_split_m, -1);
         stringClass.defineMethod("reverse", getMethod("m_reverse", false));
         stringClass.defineMethod("reverse!", getMethod("m_reverse_bang", false));
         stringClass.defineMethod("concat", getMethod("m_concat", RubyObject.class));
@@ -107,13 +107,13 @@ public class RbString {
 
 //    rb_define_method(rb_cString, "ljust", rb_str_ljust, 1);
 //    rb_define_method(rb_cString, "rjust", rb_str_rjust, 1);
-//    rb_define_method(rb_cString, "center", rb_str_center, 1);*/
+//    rb_define_method(rb_cString, "center", rb_str_center, 1);
 
         stringClass.defineMethod("sub", getMethod("m_sub", true));
         stringClass.defineMethod("gsub", getMethod("m_gsub", true));
 //    rb_define_method(rb_cString, "chop", rb_str_chop, 0);
 //    rb_define_method(rb_cString, "chomp", rb_str_chomp, -1);
-//    rb_define_method(rb_cString, "strip", rb_str_strip, 0);*/
+//    rb_define_method(rb_cString, "strip", rb_str_strip, 0);
 
         stringClass.defineMethod("sub!", getMethod("m_sub_bang", true));
         stringClass.defineMethod("gsub!", getMethod("m_gsub_bang", true));
