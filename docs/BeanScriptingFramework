@@ -7,29 +7,28 @@ $Id$
 INTRODUCTION
 ------------
 
-To include BSF into your Java code you should first need to register the JRuby
-engine:
+To include BSF into your Java code you first need to register the JRuby engine:
 
 BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
 
-Now you need to create a new BSFManager:
+Now you have to create a new BSFManager:
 
 BSFManager manager = new BSFManager();
 
-After you have some Java objects you can declare them as "beans" in BSF:
+After you have some Java objects you can declare (export) them as "beans" in BSF:
 
 manager.declareBean("frame", aFrame, JFrame.class);
 
-these beans can be accessed from Ruby as global variables (in this case `$frame');
+These beans can be accessed from Ruby as global variables (in this case `$frame').
 You can also register objects:
 
 manager.registerBean("frame", aFrame);
 
-this registered bean can be accessed by calling the
+this registered object can be accessed by calling the
 
 $bsf.lookupBean("frame")
 
-method. Now you can execute Ruby scripts:
+method in Ruby. Now you can execute Ruby scripts:
 
 manager.exec("ruby", "(java)", 1, 1, "$frame.setTitle(\"A Frame\")");
 
