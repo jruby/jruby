@@ -151,8 +151,6 @@ module JavaUtilities
     def create_class_constructor(java_class, proxy_class)
       class << proxy_class
         def new(*args)
-          # FIXME: take types into consideration, like the old javasupport,
-          #        and do the searching long before call-time.
           arity = args.length
           constructor = @java_class.constructors.detect {|c| c.arity == arity }
           if constructor.nil?
@@ -292,16 +290,10 @@ module JavaUtilities
                           argument_types.inspect)
     end
 
-    def setup_class_methods(java_class, proxy_class)
-      public_methods =
-        java_class.java_class_methods.select {|m| m.public? }
-      grouped_methods = public_methods.group_by {|m| m.name }
-      proxy_class.class_eval("@class_methods = grouped_methods")
-      # FIXME: error handling, arity awareness, ...
-      grouped_methods.each {|name, methods|
-        if methods.length == 1
-          proxy_class.class_eval("def self." + name + "(*args);" +
-                                 <<END
+
+    def create_single_class_method(proxy_class, name, method)
+      proxy_class.class_eval("def self." + name + "(*args);" +
+                             <<END
                                  args = JavaProxy.convert_arguments(args)
                                  methods = @class_methods['#{name}']
                                  method = methods.first
@@ -313,11 +305,12 @@ module JavaUtilities
                                  result
                                  end
 END
-                                 )
-        else
-          # Overloaded on same length
-          proxy_class.class_eval("def self." + name + "(*args);" +
-                                 <<END
+                             )
+    end
+
+    def create_matched_class_methods(proxy_class, name, methods)
+      proxy_class.class_eval("def self." + name + "(*args);" +
+                             <<END
             methods = @class_methods['#{name}']
             args = JavaProxy.convert_arguments(args)
             m = JavaUtilities.matching_method(methods, args)
@@ -329,7 +322,20 @@ END
             result
           end
 END
-                                 )
+                             )
+    end
+
+    def setup_class_methods(java_class, proxy_class)
+      public_methods =
+        java_class.java_class_methods.select {|m| m.public? }
+      grouped_methods = public_methods.group_by {|m| m.name }
+      proxy_class.class_eval("@class_methods = grouped_methods")
+      # FIXME: error handling, arity awareness, ...
+      grouped_methods.each {|name, methods|
+        if methods.length == 1
+          create_single_class_method(proxy_class, name, methods.first)
+        else
+          create_matched_class_methods(proxy_class, name, methods)
         end
       }
     end

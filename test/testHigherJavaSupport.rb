@@ -12,6 +12,8 @@ if defined? Java
     r = Random.new
     test_equal(Random, r.type)
     r = Random.new(1001)
+#    include_package "javax.swing"
+#    frame = JFrame.new("hello")
 
     # Instance methods
     test_equal(Random, r.type)
