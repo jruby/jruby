@@ -154,7 +154,7 @@ public class RubyVarmap {
             if (vars.id == null) {
                 break;
             }
-            if (vars.id == rubyId) {
+            if (vars.id.equals(rubyId)) {
                 return true;
             }
             vars = vars.next;
