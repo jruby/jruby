@@ -42,4 +42,4 @@ Example
 -------
 
 There is a simple BSF example in the JRuby source distribution (src/org/jruby/javasupport/bsf/BSFExample.java). Which is also avaibale at:
-http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/jruby/jruby/src/org/jruby/javasupport/bsf/BSFExample.java?rev=1.1&content-type=text/vnd.viewcvs-markup
+http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/jruby/jruby/src/org/jruby/javasupport/bsf/BSFExample.java?rev=1.2&content-type=text/vnd.viewcvs-markup
