@@ -12,6 +12,8 @@ Items marked '-' are done and will be available in the next release.
     * Embedding/BSF doc
     * Embedding API docs (first determine what that API *is*)
     * Javasupport API docs
+        - Low-level API docs
+        * High-level API docs
 
 * Internal class restructuring
     * Move Ruby class creation and method init into classes separate from
