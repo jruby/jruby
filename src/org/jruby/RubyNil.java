@@ -55,7 +55,7 @@ public class RubyNil {
         nilClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
         nilClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
 
-        nilClass.getInternalClass().undefMethod("new");
+        nilClass.getMetaClass().undefMethod("new");
         
         ruby.defineGlobalConstant("NIL", ruby.getNil());
         

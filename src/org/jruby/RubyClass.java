@@ -39,6 +39,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.Asserts;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
 import org.jruby.runtime.IndexCallable;
@@ -121,7 +122,7 @@ public class RubyClass extends RubyModule implements IndexCallable {
             return this;
         }
 
-        MetaClass clone = new MetaClass(getRuntime(), getInternalClass(), getSuperClass());
+        MetaClass clone = new MetaClass(getRuntime(), getMetaClass(), getSuperClass());
         clone.setupClone(this);
         clone.setInstanceVariables(new HashMap(getInstanceVariables()));
 
@@ -145,34 +146,24 @@ public class RubyClass extends RubyModule implements IndexCallable {
         return false;
     }
 
-    public RubyClass getInternalClass() {
-        RubyClass type = super.getInternalClass();
+    public RubyClass getMetaClass() {
+        RubyClass type = super.getMetaClass();
 
         return type != null ? type : getRuntime().getClasses().getClassClass();
     }
 
     public RubyClass getRealClass() {
-        if (isSingleton() || isIncluded()) {
-            return getSuperClass().getRealClass();
-        }
         return this;
     }
 
-    /** rb_singleton_class_attached
-     *
-     */
-    public void attachSingletonClass(IRubyObject object) {
-        // Asserts.assertTrue(isSingleton(), "attachSingletonClass called on a non singleton class.");
-
-        if (isSingleton()) {
-            setInstanceVariable("__attached__", object);
-        }
+    public void attachToObject(IRubyObject object) {
+        // Don't do anything, because a class cannot attached to an object.
     }
 
     /** 
      *
      */
-    public RubyClass newSingletonClass() {
+    public MetaClass newSingletonClass() {
         MetaClass newClass = new MetaClass(getRuntime(), this);
         newClass.infectBy(this);
         return newClass;
@@ -224,7 +215,7 @@ public class RubyClass extends RubyModule implements IndexCallable {
 
         RubyClass newClass = superClass.subclass();
 
-        newClass.makeMetaClass(superClass.getInternalClass());
+        newClass.makeMetaClass(superClass.getMetaClass());
 
         // call "initialize" method
         newClass.callInit(args);

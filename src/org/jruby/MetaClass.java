@@ -24,6 +24,7 @@ package org.jruby;
 
 import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
 public class MetaClass extends RubyClass implements IMetaClass {
@@ -53,4 +54,19 @@ public class MetaClass extends RubyClass implements IMetaClass {
         }
     }
 
+    public void attachToObject(IRubyObject object) {
+        setInstanceVariable("__attached__", object);
+    }
+    
+    public RubyClass getRealClass() {
+        return getSuperClass().getRealClass();
+    }
+    
+    public void methodAdded(RubySymbol symbol) {
+        getAttachedObject().callMethod("singleton_method_added", symbol);
+    }
+
+    public IRubyObject getAttachedObject() {
+        return getInstanceVariable("__attached__");
+    }
 }

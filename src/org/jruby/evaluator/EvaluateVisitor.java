@@ -340,7 +340,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } else if (block instanceof Method) {
             block = ((Method)block).to_proc();
         } else if (!(block instanceof RubyProc)) {
-            throw new TypeError(runtime, "wrong argument type " + block.getInternalClass().toName() + " (expected Proc)");
+            throw new TypeError(runtime, "wrong argument type " + block.getMetaClass().toName() + " (expected Proc)");
         }
 
         Block oldBlock = threadContext.getBlockStack().getCurrent();
@@ -399,7 +399,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitClassVarNode(ClassVarNode iVisited) {
         if (threadContext.getCBase() == null) {
-            result = self.getInternalClass().getClassVar(iVisited.getName());
+            result = self.getMetaClass().getClassVar(iVisited.getName());
         } else if (! threadContext.getCBase().isSingleton()) {
             result = threadContext.getCBase().getClassVar(iVisited.getName());
         } else {
@@ -421,9 +421,9 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
-        Asserts.notNull(receiver.getInternalClass(), receiver.getClass().getName());
+        Asserts.notNull(receiver.getMetaClass(), receiver.getClass().getName());
 
-        result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
+        result = receiver.getMetaClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
 
     /**
@@ -680,11 +680,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             rubyClass.callMethod("singleton_method_added", builtins.toSymbol(name));
         }
 
-        if (rubyClass.isSingleton()) {
-            rubyClass.getInstanceVariable("__attached__").callMethod("singleton_method_added", builtins.toSymbol(name));
-        } else {
-            rubyClass.callMethod("method_added", builtins.toSymbol(name));
-        }
+        rubyClass.methodAdded(builtins.toSymbol(name));
     }
 
     /**
@@ -763,7 +759,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             ArgsUtil.endCallArgs(runtime, tmpBlock);
         }
 
-        result = self.getInternalClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
+        result = self.getMetaClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
     }
 
     /**
@@ -827,7 +823,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                         ArgsUtil.endCallArgs(runtime, tmpBlock);
                     }
 
-                    result = recv.getInternalClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
+                    result = recv.getMetaClass().call(recv, "each", IRubyObject.NULL_ARRAY, CallType.NORMAL);
 
                     return;
                 } catch (RetryJump rExcptn) {
@@ -1262,7 +1258,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 throw new SecurityError(runtime, "Insecure: can't extend object.");
             }
 
-            if (receiver.getInternalClass().isSingleton()) {
+            if (receiver.getMetaClass().isSingleton()) {
                 runtime.getMethodCache().clear();
             }
 
@@ -1376,7 +1372,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitVCallNode(VCallNode)
      */
     public void visitVCallNode(VCallNode iVisited) {
-        result = self.getInternalClass().call(self, iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE);
+        result = self.getMetaClass().call(self, iVisited.getMethodName(), IRubyObject.NULL_ARRAY, CallType.VARIABLE);
     }
 
     /**

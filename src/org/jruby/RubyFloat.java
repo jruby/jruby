@@ -144,7 +144,7 @@ public class RubyFloat extends RubyNumeric {
         } else if (number instanceof RubyInteger) {
             return (RubyFloat) number.callMethod("to_f");
         } else {
-            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getInternalClass() + "into Float");
+            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getMetaClass() + "into Float");
         }
     }
 

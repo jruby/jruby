@@ -208,7 +208,7 @@ public class RubyHash extends RubyObject {
 
     public static RubyHash newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyHash hash = new RubyHash(recv.getRuntime());
-        hash.setInternalClass((RubyClass) recv);
+        hash.setMetaClass((RubyClass) recv);
 
         hash.callInit(args);
 

@@ -111,11 +111,11 @@ public class UnboundMethod extends Method {
     }
 
     public Method bind(IRubyObject receiver) {
-        RubyClass receiverClass = receiver.getInternalClass();
+        RubyClass receiverClass = receiver.getMetaClass();
         if (originModule != receiverClass) {
-            if (originModule.isSingleton()) {
+            if (originModule instanceof MetaClass) {
                 throw new TypeError(runtime, "singleton method called for a different object");
-            } else if (receiverClass.isSingleton() && receiverClass.getMethods().containsKey(originName)) {
+            } else if (receiverClass instanceof MetaClass && receiverClass.getMethods().containsKey(originName)) {
                 throw new TypeError(runtime, "method `" + originName + "' overridden");
             } else if (
                 !(originModule.isModule() ? receiver.isKindOf(originModule) : receiver.getType() == originModule)) {

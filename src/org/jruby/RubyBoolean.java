@@ -51,7 +51,7 @@ public class RubyBoolean extends RubyObject {
         return Boolean.TYPE;
     }
 
-    public RubyClass getInternalClass() {
+    public RubyClass getMetaClass() {
         return value ? getRuntime().getClasses().getTrueClass() : getRuntime().getClasses().getFalseClass();
     }
 
@@ -96,7 +96,7 @@ public class RubyBoolean extends RubyObject {
      *
      */
     public RubyClass type() {
-        return getInternalClass();
+        return getMetaClass();
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

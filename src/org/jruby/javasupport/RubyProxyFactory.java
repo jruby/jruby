@@ -85,7 +85,7 @@ public class RubyProxyFactory {
 
     public RubyProxy getProxyForObject(IRubyObject obj, Class javaInterface) {
         if (javaInterface == null)
-            javaInterface = getJavaClassForRubyClass(obj.getInternalClass());
+            javaInterface = getJavaClassForRubyClass(obj.getMetaClass());
 
         return (RubyProxy) Proxy.newProxyInstance(
             getClass().getClassLoader(),

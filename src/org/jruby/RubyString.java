@@ -361,12 +361,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 *
 	 */
 	public RubyString newString(String s) {
-		RubyClass type = getInternalClass();
-		while (type.isIncluded() || type.isSingleton()) {
-			type = type.getSuperClass();
-		}
-
-		return new RubyString(getRuntime(), type, s);
+		return new RubyString(getRuntime(), getType(), s);
 	}
 
 	// Methods of the String class (rb_str_*):
@@ -467,7 +462,7 @@ public class RubyString extends RubyObject implements IndexCallable {
 	 */
 	public static RubyString newInstance(IRubyObject recv, IRubyObject[] args) {
 		RubyString newString = newString(recv.getRuntime(), "");
-		newString.setInternalClass((RubyClass) recv);
+		newString.setMetaClass((RubyClass) recv);
 
 		newString.callInit(args);
 

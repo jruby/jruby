@@ -172,7 +172,7 @@ public class KernelModule {
         if (line.isNil()) {
             throw new TypeError(ruby, "$_ value need to be String (nil given).");
         } else if (!(line instanceof RubyString)) {
-            throw new TypeError(ruby, "$_ value need to be String (" + line.getInternalClass().toName() + " given).");
+            throw new TypeError(ruby, "$_ value need to be String (" + line.getMetaClass().toName() + " given).");
         } else {
             return (RubyString) line;
         }

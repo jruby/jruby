@@ -82,7 +82,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (number instanceof RubyNumeric) {
             return (RubyInteger) number.callMethod("to_i");
         } else {
-            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getInternalClass() + " into Integer");
+            throw new TypeError(recv.getRuntime(), "failed to convert " + number.getMetaClass() + " into Integer");
         }
     }
 

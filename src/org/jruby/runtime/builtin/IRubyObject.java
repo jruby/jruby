@@ -95,12 +95,9 @@ public interface IRubyObject {
     /**
      * Method getRubyClass.
      */
-    RubyClass getInternalClass();
+    RubyClass getMetaClass();
 
-    /**
-     * Method setRubyClass.
-     */
-    void setInternalClass(RubyClass internalClass);
+    void setMetaClass(RubyClass metaClass);
 
     /**
      * Method getSingletonClass.

@@ -542,7 +542,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      */
     public static RubyArray newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyArray array = newArray(recv.getRuntime());
-        array.setInternalClass((RubyClass) recv);
+        array.setMetaClass((RubyClass) recv);
 
         array.callInit(args);
 
@@ -555,7 +555,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
     public static RubyArray create(IRubyObject recv, IRubyObject[] args) {
         RubyArray array = newArray(recv.getRuntime(), args);
 
-        array.setInternalClass((RubyClass) recv);
+        array.setMetaClass((RubyClass) recv);
 
         return array;
     }
@@ -1024,7 +1024,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
             result[i] = entry(RubyNumeric.fix2int(args[i]));
             taint |= result[i].isTaint();
         }
-        RubyArray ary = create(getInternalClass(), result);
+        RubyArray ary = create(getMetaClass(), result);
         ary.setTaint(taint);
         return ary;
     }

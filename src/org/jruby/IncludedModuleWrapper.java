@@ -8,10 +8,10 @@ import java.util.Map;
  * 
  * @author jpetersen
  */
-public final class RubyIncludedClass extends RubyClass {
+public final class IncludedModuleWrapper extends RubyClass {
     private RubyModule delegate;
 
-    public RubyIncludedClass(Ruby ruby, RubyClass superClass, RubyModule delegate) {
+    public IncludedModuleWrapper(Ruby ruby, RubyClass superClass, RubyModule delegate) {
         super(ruby, superClass);
 
         this.delegate = delegate;
@@ -20,8 +20,8 @@ public final class RubyIncludedClass extends RubyClass {
     /** include_class_new
      *
      */
-    public RubyIncludedClass newIncludeClass(RubyClass superClass) {
-        return new RubyIncludedClass(getRuntime(), superClass, getDelegate());
+    public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
+        return new IncludedModuleWrapper(getRuntime(), superClass, getDelegate());
     }
 
     public boolean isModule() {
@@ -42,52 +42,26 @@ public final class RubyIncludedClass extends RubyClass {
         }
     }
 
-    /** rb_cvar_singleton
-     * 
-     *@deprecated since Ruby 1.6.7
-     */
-    public RubyModule getClassVarSingleton() {
-        return getDelegate();
+    public RubyClass getMetaClass() {
+		return delegate.getMetaClass();
     }
 
-    /*
-     * @see RubyObject#getRubyClass()
-     */
-    public RubyClass getInternalClass() {
-		return delegate.getInternalClass();
-    }
-
-    /*
-     * @see RubyObject#setRubyClass(RubyClass)
-     */
-    public void setInternalClass(RubyClass newRubyClass) {
+    public void setMetaClass(RubyClass newRubyClass) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    /*
-     * @see RubyModule#getMethods()
-     */
     public Map getMethods() {
         return delegate.getMethods();
     }
 
-    /*
-     * @see RubyModule#setMethods(RubyMap)
-     */
     public void setMethods(Map newMethods) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
 
-    /*
-     * @see RubyObject#getInstanceVariables()
-     */
     public Map getInstanceVariables() {
         return delegate.getInstanceVariables();
     }
 
-    /*
-     * @see RubyObject#setInstanceVariables(RubyMap)
-     */
     public void setInstanceVariables(Map newMethods) {
         throw new UnsupportedOperationException("An included class is only a wrapper for a module");
     }
@@ -96,11 +70,11 @@ public final class RubyIncludedClass extends RubyClass {
 		return delegate.getClassname();
     }
 
-    /**
-     * Gets the delegateModule.
-     * @return Returns a RubyModule
-     */
     public RubyModule getDelegate() {
         return delegate;
+    }
+    
+    public RubyClass getRealClass() {
+        return getSuperClass().getRealClass();
     }
 }

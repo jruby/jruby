@@ -109,7 +109,7 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userMarshal(IRubyObject value) throws IOException {
         out.write('u');
-        dumpObject(RubySymbol.newSymbol(runtime, value.getInternalClass().getClassname()));
+        dumpObject(RubySymbol.newSymbol(runtime, value.getMetaClass().getClassname()));
 
         RubyInteger depth = RubyFixnum.newFixnum(runtime, depthLimit);
         RubyString marshaled = (RubyString) value.callMethod("_dump", depth);

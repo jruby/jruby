@@ -42,7 +42,7 @@ public final class Asserts {
         }
     }
 
-    public static void assertTrue(boolean condition, String message) {
+    public static void isTrue(boolean condition, String message) {
         if (ENABLE_ASSERTS && ! condition) {
             throw new AssertError(message);
         }

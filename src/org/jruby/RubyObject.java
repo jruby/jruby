@@ -69,7 +69,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     protected transient Ruby runtime;
 
     // The class of this object
-    private RubyClass internalClass;
+    private RubyClass metaClass;
 
     // The instance variables of this object.
     private Map instanceVariables;
@@ -88,7 +88,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
 
     public RubyObject(Ruby ruby, RubyClass rubyClass, boolean useObjectSpace) {
         this.runtime = ruby;
-        this.internalClass = rubyClass;
+        this.metaClass = rubyClass;
         this.frozen = false;
         this.taint = false;
 
@@ -116,10 +116,11 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      * @since Ruby 1.6.7
      */
-    public RubyClass makeMetaClass(RubyClass type) {
-        setInternalClass(type.newSingletonClass());
-        getInternalClass().attachSingletonClass(this);
-        return getInternalClass();
+    public MetaClass makeMetaClass(RubyClass type) {
+        MetaClass metaClass = type.newSingletonClass();
+        setMetaClass(metaClass);
+        metaClass.attachToObject(this);
+        return metaClass;
     }
 
     public Class getJavaClass() {
@@ -169,22 +170,17 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     /**
-     * Gets the rubyClass.
-     * @return Returns a RubyClass
+     * if exist return the meta-class else return the type of the object.
+     * 
      */
-    public RubyClass getInternalClass() {
+    public RubyClass getMetaClass() {
         if (isNil()) {
             return getRuntime().getClasses().getNilClass();
         }
-        return internalClass;
+        return metaClass;
     }
-
-    /**
-     * Sets the rubyClass.
-     * @param rubyClass The rubyClass to set
-     */
-    public void setInternalClass(RubyClass rubyClass) {
-        this.internalClass = rubyClass;
+    public void setMetaClass(RubyClass metaClass) {
+        this.metaClass = metaClass;
     }
 
     /**
@@ -232,7 +228,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public boolean respondsTo(String name) {
-        return getInternalClass().isMethodBound(name, false);
+        return getMetaClass().isMethodBound(name, false);
     }
 
     public static void createObjectClass(RubyModule objectClass) {
@@ -252,18 +248,18 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public boolean isKindOf(RubyModule type) {
-        return getInternalClass().ancestors().includes(type);
+        return getMetaClass().ancestors().includes(type);
     }
 
     /** SPECIAL_SINGLETON(x,c)
      *
      */
     private RubyClass getNilSingletonClass() {
-        RubyClass rubyClass = getInternalClass();
+        RubyClass rubyClass = getMetaClass();
 
         if (!rubyClass.isSingleton()) {
             rubyClass = rubyClass.newSingletonClass();
-            rubyClass.attachSingletonClass(this);
+            rubyClass.attachToObject(this);
         }
 
         return rubyClass;
@@ -277,8 +273,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             return getNilSingletonClass();
         }
 
-        RubyClass type = getInternalClass().isSingleton() ?
-            getInternalClass() : makeMetaClass(getInternalClass());
+        RubyClass type = getMetaClass() instanceof MetaClass ? getMetaClass() : makeMetaClass(getMetaClass());
 
         type.setTaint(isTaint());
         type.setFrozen(isFrozen());
@@ -297,8 +292,8 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public void setupClone(IRubyObject obj) {
-        setInternalClass(obj.getInternalClass().getSingletonClassClone());
-        getInternalClass().attachSingletonClass(this);
+        setMetaClass(obj.getMetaClass().getSingletonClassClone());
+        getMetaClass().attachToObject(this);
         frozen = obj.isFrozen();
         taint = obj.isTaint();
     }
@@ -314,7 +309,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public IRubyObject callMethod(String name, IRubyObject[] args) {
-        return getInternalClass().call(this, name, args, CallType.FUNCTIONAL);
+        return getMetaClass().call(this, name, args, CallType.FUNCTIONAL);
     }
 
     public IRubyObject callMethod(String name) {
@@ -325,7 +320,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public IRubyObject funcall3(String name, IRubyObject[] args) {
-        return getInternalClass().call(this, name, args, CallType.NORMAL);
+        return getMetaClass().call(this, name, args, CallType.NORMAL);
     }
 
     /** rb_funcall
@@ -410,7 +405,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             if (raise) {
                 throw new TypeError(
                     runtime,
-                    "Failed to convert " + getInternalClass().toName() + " into " + targetType + ".");
+                    "Failed to convert " + getMetaClass().toName() + " into " + targetType + ".");
                 // FIXME nil, true and false instead of NilClass, TrueClass, FalseClass;
             } else {
                 return runtime.getNil();
@@ -436,7 +431,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         if (!type.isAssignableFrom(result.getClass())) {
             throw new TypeError(
                 runtime,
-                getInternalClass().toName() + "#" + convertMethod + " should return " + targetType + ".");
+                getMetaClass().toName() + "#" + convertMethod + " should return " + targetType + ".");
         }
 
         return result;
@@ -456,7 +451,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         if (!(this instanceof RubyString)) {
             throw new TypeError(
                 getRuntime(),
-                "wrong argument type " + getInternalClass().toName() + " (expected String)");
+                "wrong argument type " + getMetaClass().toName() + " (expected String)");
         }
     }
 
@@ -592,7 +587,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
         String name = args[0].asSymbol();
         boolean includePrivate = args.length > 1 ? args[1].isTrue() : false;
 
-        return RubyBoolean.newBoolean(runtime, getInternalClass().isMethodBound(name, !includePrivate));
+        return RubyBoolean.newBoolean(runtime, getMetaClass().isMethodBound(name, !includePrivate));
     }
 
     /** Return the internal id of an object.
@@ -622,7 +617,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public RubyClass type() {
-        return getInternalClass().getRealClass();
+        return getMetaClass().getRealClass();
     }
 
     /** rb_obj_clone
@@ -663,7 +658,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
             throw new TypeError(getRuntime(), "duplicated object must be same type");
         }
 
-        dup.setInternalClass(type());
+        dup.setMetaClass(type());
         dup.setFrozen(false);
         return dup;
     }
@@ -782,21 +777,21 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      *
      */
     public IRubyObject methods() {
-        return getInternalClass().instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+        return getMetaClass().instance_methods(new IRubyObject[] { getRuntime().getTrue()});
     }
 
     /** rb_obj_protected_methods
      *
      */
     public IRubyObject protected_methods() {
-        return getInternalClass().protected_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+        return getMetaClass().protected_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
     }
 
     /** rb_obj_private_methods
      *
      */
     public IRubyObject private_methods() {
-        return getInternalClass().private_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+        return getMetaClass().private_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
     }
 
     /** rb_obj_singleton_methods
@@ -804,8 +799,8 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
      */
     public RubyArray singleton_methods() {
         RubyArray result = RubyArray.newArray(getRuntime());
-        RubyClass type = getInternalClass();
-        while (type != null && type.isSingleton()) {
+        RubyClass type = getMetaClass();
+        while (type != null && type instanceof MetaClass) {
             Iterator iter = type.getMethods().entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry entry = (Map.Entry) iter.next();
@@ -832,7 +827,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public IRubyObject method(IRubyObject symbol) {
-        return getInternalClass().newMethod(this, symbol.asSymbol(), true);
+        return getMetaClass().newMethod(this, symbol.asSymbol(), true);
     }
 
     public RubyArray to_a() {
@@ -840,7 +835,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
     }
 
     public RubyString to_s() {
-        String cname = getInternalClass().toName();
+        String cname = getMetaClass().toName();
         RubyString str = RubyString.newString(getRuntime(), "");
         /* 6:tags 16:addr 1:eos */
         str.setValue("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(this)) + ">");
@@ -928,7 +923,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
 
         runtime.getIterStack().push(runtime.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
         try {
-            return getInternalClass().call(this, name, newArgs, CallType.FUNCTIONAL);
+            return getMetaClass().call(this, name, newArgs, CallType.FUNCTIONAL);
         } finally {
             getRuntime().getIterStack().pop();
         }
@@ -936,7 +931,7 @@ public class RubyObject implements Cloneable, IRubyObject, IndexCallable {
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('o');
-        RubySymbol classname = RubySymbol.newSymbol(runtime, getInternalClass().getClassname());
+        RubySymbol classname = RubySymbol.newSymbol(runtime, getMetaClass().getClassname());
         output.dumpObject(classname);
 
         if (getInstanceVariables() == null) {

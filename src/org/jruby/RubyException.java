@@ -124,7 +124,7 @@ public class RubyException extends RubyObject {
                 if (args[0] == this) {
                     return this;
                 } else {
-                    return newInstance(getInternalClass(), args);
+                    return newInstance(getMetaClass(), args);
                 }
             default :
                 throw new ArgumentError(getRuntime(), "Wrong argument count");
@@ -134,7 +134,7 @@ public class RubyException extends RubyObject {
 
     public RubyString to_s() {
         if (message.isNil()) {
-            return RubyString.newString(getRuntime(), getInternalClass().getClassPath());
+            return RubyString.newString(getRuntime(), getMetaClass().getClassPath());
         } else {
             message.setTaint(isTaint());
             return (RubyString) message.callMethod("to_s");
@@ -146,7 +146,7 @@ public class RubyException extends RubyObject {
      *@return A RubyString containing the debug information.
      */
     public RubyString inspect() {
-        RubyModule rubyClass = getInternalClass();
+        RubyModule rubyClass = getMetaClass();
 
         RubyString exception = RubyString.stringValue(this);
 

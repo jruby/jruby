@@ -124,7 +124,7 @@ public class Namespace {
     public IRubyObject getConstant(IRubyObject self, String name) {
         for (Namespace ns = this; ns != null && ns.getParent() != null; ns = ns.getParent()) {
             if (ns.getNamespaceModule() == null) {
-                return self.getInternalClass().getConstant(name);
+                return self.getMetaClass().getConstant(name);
             } else if (ns.getNamespaceModule().hasInstanceVariable(name)) {
                 return ns.getNamespaceModule().getInstanceVariable(name);
             }

@@ -296,8 +296,8 @@ public class RubyModule extends RubyObject {
     /** include_class_new
      *
      */
-    public RubyIncludedClass newIncludeClass(RubyClass superClass) {
-        return new RubyIncludedClass(getRuntime(), superClass, this);
+    public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
+        return new IncludedModuleWrapper(getRuntime(), superClass, this);
     }
 
     /** rb_set_class_path
@@ -459,7 +459,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (!(arg instanceof RubyModule)) {
-            throw new TypeError(runtime, "Wrong argument type " + arg.getInternalClass().toName() + " (expected Module).");
+            throw new TypeError(runtime, "Wrong argument type " + arg.getMetaClass().toName() + " (expected Module).");
         }
 
         RubyModule module = (RubyModule) arg;
@@ -547,18 +547,8 @@ public class RubyModule extends RubyObject {
      *
      */
     protected void testFrozen() {
-        String desc = "something(?!)";
         if (isFrozen()) {
-            if (isSingleton()) {
-                desc = "object";
-            } else {
-                if (isIncluded() || isModule()) {
-                    desc = "module";
-                } else if (isClass()) {
-                    desc = "class";
-                }
-            }
-            throw new FrozenError(getRuntime(), desc);
+            throw new FrozenError(getRuntime(), "module");
         }
     }
 
@@ -737,7 +727,7 @@ public class RubyModule extends RubyObject {
             } else if (method.getVisibility().isProtected()) {
                 RubyModule defined = klass;
                 while (defined.isIncluded()) {
-                    defined = defined.getInternalClass();
+                    defined = defined.getMetaClass();
                 }
                 if (!runtime.getCurrentFrame().getSelf().isKindOf(defined)) {
                     lastCallStatus.setProtected();
@@ -1096,13 +1086,13 @@ public class RubyModule extends RubyObject {
             callMethod("singleton_method_added", symbol);
         }
 
-        if (isSingleton()) {
-            getInstanceVariable("__attached__").callMethod("singleton_method_added", symbol);
-        } else {
-            callMethod("method_added", symbol);
-        }
+        methodAdded(symbol);
 
         return body;
+    }
+
+    public void methodAdded(RubySymbol symbol) {
+        callMethod("method_added", symbol);
     }
 
     public IRubyObject executeUnder(Callback method, IRubyObject[] args) {
@@ -1205,7 +1195,7 @@ public class RubyModule extends RubyObject {
      */
     public IRubyObject dup() {
         RubyModule dup = (RubyModule) rbClone();
-        dup.setInternalClass(getInternalClass());
+        dup.setMetaClass(getMetaClass());
 
         // +++ jpetersen
         // dup.setSingleton(isSingleton());
@@ -1222,7 +1212,7 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isIncluded()) {
-                ary.append(((RubyIncludedClass) p).getDelegate());
+                ary.append(((IncludedModuleWrapper) p).getDelegate());
             }
         }
 
@@ -1241,7 +1231,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (p.isIncluded()) {
-                ary.append(((RubyIncludedClass) p).getDelegate());
+                ary.append(((IncludedModuleWrapper) p).getDelegate());
             } else {
                 ary.append(p);
             }
@@ -1325,7 +1315,7 @@ public class RubyModule extends RubyObject {
         if (!(obj instanceof RubyModule)) {
             throw new TypeError(
                 getRuntime(),
-                "<=> requires Class or Module (" + getInternalClass().toName() + " given)");
+                "<=> requires Class or Module (" + getMetaClass().toName() + " given)");
         }
 
         if (op_le(obj).isTrue()) {
@@ -1348,7 +1338,7 @@ public class RubyModule extends RubyObject {
     public static RubyModule newModule(IRubyObject recv) {
         RubyModule mod = RubyModule.newModule(recv.getRuntime());
 
-        mod.setInternalClass((RubyClass) recv);
+        mod.setMetaClass((RubyClass) recv);
         recv.getRuntime().getClasses().getModuleClass().callInit(null);
 
         return mod;
@@ -1671,7 +1661,7 @@ public class RubyModule extends RubyObject {
             for (int i = 0; i < args.length; i++) {
                 String name = args[i].asSymbol();
                 ICallable method = searchMethod(name);
-                Asserts.assertTrue(!method.isUndefined(), "undefined method '" + name + "'");
+                Asserts.isTrue(!method.isUndefined(), "undefined method '" + name + "'");
                 getSingletonClass().addMethod(name, new WrapperCallable(method, Visibility.PUBLIC));
                 callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }
@@ -1684,12 +1674,12 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule public_class_method(IRubyObject[] args) {
-        getInternalClass().setMethodVisibility(args, Visibility.PUBLIC);
+        getMetaClass().setMethodVisibility(args, Visibility.PUBLIC);
         return this;
     }
 
     public RubyModule private_class_method(IRubyObject[] args) {
-        getInternalClass().setMethodVisibility(args, Visibility.PRIVATE);
+        getMetaClass().setMethodVisibility(args, Visibility.PRIVATE);
         return this;
     }
 

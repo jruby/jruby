@@ -234,7 +234,7 @@ public abstract class RubyNumeric extends RubyObject {
      */
     public RubyArray coerce(IRubyObject num) {
         RubyNumeric other = numericValue(num);
-        if (getInternalClass() == other.getInternalClass()) {
+        if (getMetaClass() == other.getMetaClass()) {
             return RubyArray.newArray(getRuntime(), other, this);
         } else {
             return RubyArray.newArray(
@@ -248,7 +248,7 @@ public abstract class RubyNumeric extends RubyObject {
      * !!!
      */
     public RubyNumeric[] getCoerce(RubyNumeric other) {
-        if (getInternalClass() == other.getInternalClass()) {
+        if (getMetaClass() == other.getMetaClass()) {
             return new RubyNumeric[] { this, other };
         } else {
             return new RubyNumeric[] { RubyFloat.newFloat(getRuntime(), getDoubleValue()), RubyFloat.newFloat(getRuntime(), other.getDoubleValue())};
@@ -334,7 +334,7 @@ public abstract class RubyNumeric extends RubyObject {
      *
      */
     public RubyBoolean eql(IRubyObject other) {
-        if (getInternalClass() != other.getInternalClass()) {
+        if (getMetaClass() != other.getMetaClass()) {
             return getRuntime().getFalse();
         } else {
             return super.equal(other); // +++ rb_equal

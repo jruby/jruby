@@ -162,7 +162,7 @@ public class Pack {
 
     private static String convert2String(IRubyObject l2Conv) {
         Ruby ruby = l2Conv.getRuntime();
-        if (l2Conv.getInternalClass() != ruby.getClasses().getStringClass()) {
+        if (l2Conv.getMetaClass() != ruby.getClasses().getStringClass()) {
             l2Conv = l2Conv.convertToType("String", "to_s", true); //we may need a false here, not sure
         }
         return ((RubyString) l2Conv).getValue();

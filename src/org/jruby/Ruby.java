@@ -307,7 +307,7 @@ public final class Ruby {
 
         RubyClass newClass = RubyClass.newClass(this, superClass, name);
 
-        newClass.makeMetaClass(superClass.getInternalClass());
+        newClass.makeMetaClass(superClass.getMetaClass());
 
         newClass.inheritedBy(superClass);
 
@@ -318,7 +318,7 @@ public final class Ruby {
 
     public RubyClass defineClass(String name, String superName) {
         RubyClass superClass = getClass(superName);
-        Asserts.assertTrue(superClass != null, "can't find superclass '" + superName + "'");
+        Asserts.isTrue(superClass != null, "can't find superclass '" + superName + "'");
         return defineClass(name, superClass);
     }
 
@@ -534,7 +534,7 @@ public final class Ruby {
     public RubyModule getRubyClass() {
         RubyModule rubyClass = (RubyModule) classStack.peek();
         if (rubyClass.isIncluded()) {
-            return ((RubyIncludedClass) rubyClass).getDelegate();
+            return ((IncludedModuleWrapper) rubyClass).getDelegate();
         }
         return rubyClass;
     }
@@ -808,7 +808,7 @@ public final class Ruby {
             }
         }
 
-        RubyClass type = excp.getInternalClass();
+        RubyClass type = excp.getMetaClass();
         String info = excp.toString();
 
         if (type == getExceptions().getRuntimeError() && (info == null || info.length() == 0)) {
