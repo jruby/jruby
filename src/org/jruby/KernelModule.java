@@ -412,8 +412,13 @@ public class KernelModule {
                 throw new RaiseException(RubyException.newInstance(runtime.getExceptions().getRuntimeError(), args));
             }
         case 2 :
-            RubyException excptn = (RubyException) args[0].callMethod("exception", args[1]);
-            throw new RaiseException(excptn);
+            if (args[0] == runtime.getClasses().getExceptionClass()) {
+                throw new RaiseException((RubyException) args[0].callMethod("exception", args[1]));
+            } else {
+                RubyString string = (RubyString) args[1];
+                RubyException excptn = RubyException.newException(runtime, (RubyClass)args[0], string.getValue()); 
+                throw new RaiseException(excptn);
+            }
         default :
             throw new ArgumentError(runtime, "wrong # of arguments");
         }
