@@ -836,10 +836,17 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitModuleNode(ModuleNode)
      */
     public void visitModuleNode(ModuleNode iVisited) {
-        if (threadContext.getRubyClass() == null) {
+        RubyModule enclosingModule = threadContext.getRubyClass();
+        if (enclosingModule == null) {
             throw new TypeError(runtime, "no outer class/module");
         }
-        RubyModule module = new ClassFactory(runtime).getOrCreateModule(iVisited.getName());
+
+        RubyModule module;
+        if (enclosingModule == runtime.getClasses().getObjectClass()) {
+            module = new ClassFactory(runtime).getOrCreateModule(iVisited.getName());
+        } else {
+            module = enclosingModule.defineModuleUnder(iVisited.getName());
+        }
         evalClassDefinitionBody(iVisited.getBodyNode(), module);
     }
 

@@ -270,21 +270,22 @@ public final class Ruby {
      * MRI: rb_define_class / rb_define_class_id
      *
      */
+    public RubyClass defineClassUnder(String name, RubyClass superClass, RubyModule parentClass) {
+        return new ClassFactory(this).defineClass(superClass, parentClass, name);
+    }
     public RubyClass defineClass(String name, RubyClass superClass) {
-        return new ClassFactory(this).defineClass(superClass, name);
+        return new ClassFactory(this).defineClass(superClass, getClasses().getObjectClass(), name);
     }
-
-    public RubyClass defineClass(String name, String superName) {
-        RubyClass superClass = getClass(superName);
-        Asserts.isTrue(superClass != null, "can't find superclass '" + superName + "'");
-        return defineClass(name, superClass);
-    }
-
+    
     /** rb_define_module / rb_define_module_id
      *
      */
     public RubyModule defineModule(String name) {
-        return new ClassFactory(this).defineModule(name);
+        return new ClassFactory(this).defineModule(name, getClasses().getObjectClass());
+    }
+    
+    public RubyModule defineModuleUnder(String name, RubyModule parentModule) {
+        return new ClassFactory(this).defineModule(name, parentModule);
     }
 
     /** Getter for property securityLevel.
@@ -728,7 +729,7 @@ public final class Ruby {
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
-            context.setWrapper(RubyModule.newModule(this));
+            context.setWrapper(RubyModule.newModule(this, null));
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());
@@ -774,7 +775,7 @@ public final class Ruby {
             context.setWrapper(null);
         } else {
             /* load in anonymous module as toplevel */
-            context.setWrapper(RubyModule.newModule(this));
+            context.setWrapper(RubyModule.newModule(this, null));
             context.pushClass(context.getWrapper());
             self = getTopSelf().rbClone();
             self.extendObject(context.getRubyClass());

@@ -52,21 +52,21 @@ public class RubyClass extends RubyModule {
      * @mri rb_boot_class
      */
     protected RubyClass(RubyClass superClass) {
-        this(superClass.getRuntime(), superClass.getRuntime().getClasses().getClassClass(), superClass);
+        super(superClass.getRuntime(), superClass.getRuntime().getClasses().getClassClass(), superClass, null, null);
 
         infectBy(superClass);
     }
 
     protected RubyClass(Ruby ruby, RubyClass superClass) {
-        this(ruby, null, superClass);
+        super(ruby, null, superClass, null, null);
     }
 
     protected RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
-        super(ruby, rubyClass, superClass);
+        super(ruby, rubyClass, superClass, null, null);
     }
-
-    private RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass, String name) {
-        super(ruby, rubyClass, superClass, name);
+    
+    protected RubyClass(Ruby ruby, RubyClass rubyClass, RubyClass superClass, RubyModule parentClass, String name) {
+        super(ruby, rubyClass, superClass, parentClass, name);
     }
 
     protected void testFrozen() {
@@ -104,13 +104,6 @@ public class RubyClass extends RubyModule {
             superType = runtime.getClasses().getObjectClass();
         }
         superType.callMethod("inherited", this);
-    }
-    
-    public RubyClass defineSubclass(String name) {
-        RubyClass subclass = subclass();
-        subclass.setName(name);
-        subclass.makeMetaClass(getMetaClass());
-        return subclass;
     }
 
     /** rb_singleton_class_clone
@@ -168,8 +161,8 @@ public class RubyClass extends RubyModule {
         return newClass;
     }
 
-    public static RubyClass newClass(Ruby ruby, RubyClass superClass, String name) {
-        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass, name);
+    public static RubyClass newClass(Ruby ruby, RubyClass superClass, RubyModule parentClass, String name) {
+        return new RubyClass(ruby, ruby.getClasses().getClassClass(), superClass, parentClass, name);
     }
 
     /** Create a new subclass of this class.

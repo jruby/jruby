@@ -76,29 +76,37 @@ public class RubyModule extends RubyObject {
         "Insecure: can't modify class variable";
     private static final String CVAR_FREEZE_ERROR = "class/module";
     
+    // superClass may be null.
     private RubyClass superClass;
+    
+    // Containing class...It is guaranteed to never be null.  And will always
+    // end up at RubyObject if you follow it up.
     public RubyModule parentModule;
 
+    // ClassId is the name of the class/module sans where it is located.
+    // If it is null, then it an anonymous class.
     private String classId;
-    private String classPath;
 
     private Map methods = new HashMap();
 
     private Map methodCache = new TreeMap();
 
-    private RubyModule(Ruby ruby, RubyClass rubyClass) {
-        this(ruby, rubyClass, null);
-    }
-
-    protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass, String name) {
-        this(ruby, rubyClass, superClass);
-        this.classId = name;
-    }
-
-    protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass) {
+    protected RubyModule(Ruby ruby, RubyClass rubyClass, RubyClass superClass, RubyModule parentModule, String name) {
         super(ruby, rubyClass);
+        
         this.superClass = superClass;
-        this.parentModule = ruby.getRubyClass();
+        this.parentModule = parentModule;
+        this.classId = name;
+
+        // If no parent is passed in, it is safe to assume Object.
+        if (this.parentModule == null) {
+            this.parentModule = (RubyModule) ruby.getClasses().getObjectClass();
+
+            // We are constructing object itself...Set its parent to itself.
+            if (this.parentModule == null) {
+                this.parentModule = this;
+            }
+        }
     }
 
     /** Getter for property superClass.
@@ -192,44 +200,57 @@ public class RubyModule extends RubyObject {
         moduleClass.defineSingletonMethod("nesting", callbackFactory.getSingletonMethod(RubyModule.class, "nesting"));
     }
 
+    public String getBaseName() {
+        return classId;
+    }
+    
+    public void setBaseName(String name) {
+        classId = name;
+    }
+    
     /** classname
      *
      */
-    public String getClassname() {
+    public String getName() {
         RubyModule module = this;
         while (module.isIncluded() || module.isSingleton()) {
             module = module.getSuperClass();
         }
 
-        // A get function which has a side-effect?
-        if (classPath == null && classId != null) {
-            classPath = classId;
-            classId = null;
+        if (classId == null) {
+            return "<" + (isClass() ? "Class" : "Module") + " 01x" + 
+            Integer.toHexString(System.identityHashCode(this)) + ">";
         }
-
-        return classPath == null ? module.findClassPath() : classPath;
-    }
-
-    /** findclasspath
-     *
-     */
-    private String findClassPath() {
-        ArrayList path = new ArrayList();
-        RubyModule topSelfType = runtime.getTopSelf().getType();
         
-        for (RubyModule current = this; current != topSelfType;
-             current = current.parentModule) {
+        StringBuffer result = new StringBuffer(classId);
+        RubyClass objectClass = runtime.getClasses().getObjectClass();
+        
+        for (RubyModule current = this.parentModule; 
+        current != objectClass && current != this;
+        current = current.parentModule) {
             Asserts.notNull(current);
-            path.add(current);
+            result.insert(0, "::").insert(0, current.classId);
         }
-        StringBuffer result = new StringBuffer();
-        for (int i = path.size() - 1; i >= 0; i--) {
-            result.append(((RubyModule) path.get(i)).classId);
-            if (i > 0) {
-                result.append("::");
-            }
-        }
+
         return result.toString();
+    }
+    
+    // Added until I can land changes for parentModule/classPath stuff
+    // Makes smaller diff
+    public String getClassname() {
+        return getName();
+    }
+    
+    // Added until I can land changes for parentModule/classPath stuff
+    // Makes smaller diff
+    public String toName() {
+        return getName();
+    }
+    
+    // Added until I can land changes for parentModule/classPath stuff
+    // Makes smaller diff
+    public String getClassPath() {
+        return getName();
     }
 
     /** include_class_new
@@ -237,33 +258,6 @@ public class RubyModule extends RubyObject {
      */
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         return new IncludedModuleWrapper(getRuntime(), superClass, this);
-    }
-
-    /** rb_set_class_path
-     *
-     */
-    public void setClassPath(RubyModule outer, String name) {
-        if (outer == getRuntime().getClasses().getObjectClass()) {
-            classPath = name;
-        } else {
-            classPath = outer.getClassPath();
-            classPath += "::" + name;
-        }
-    }
-
-    /** rb_class_path
-     *
-     */
-    public String getClassPath() {
-        String path = getClassname();
-
-        if (path != null) {
-            return path;
-        }
-
-        return "<" + (isClass() ? "Class" : "Module") + " 01x" + 
-        	Integer.toHexString(System.identityHashCode(this)) + ">";
-        // 0 = pointer
     }
     
     private RubyModule getModuleWithInstanceVar(String name) {
@@ -338,6 +332,7 @@ public class RubyModule extends RubyObject {
             }
             break;
         }
+        
         return callMethod("const_missing", RubySymbol.newSymbol(runtime, name));
     }
 
@@ -716,9 +711,8 @@ public class RubyModule extends RubyObject {
                 return (RubyClass) type;
             }
         } else {
-            RubyClass newClass = getRuntime().defineClass(name, superClass);
+            RubyClass newClass = getRuntime().defineClassUnder(name, superClass, this);
 
-            newClass.setClassPath(this, name);
             setConstant(name, newClass);
 
             return newClass;
@@ -735,33 +729,31 @@ public class RubyModule extends RubyObject {
                 throw new TypeError(runtime, name + " is not a class.");
             } else if (((RubyClass) type).getSuperClass().getRealClass() != superClass) {
                 throw new NameError(runtime, name + " is already defined.");
-            } else {
-                return (RubyClass) type;
-            }
-        } else {
-            RubyClass newClass = getRuntime().defineClass(name, superClass);
-
-            newClass.setClassPath(this, name);
-            setConstant(name, newClass);
-
-            return newClass;
+            } 
+            
+            return (RubyClass) type;
         }
+        
+        RubyClass newClass = getRuntime().defineClassUnder(name, superClass, this);
+        setConstant(name, newClass);
+
+        return newClass;
     }
 
-    /** rb_class2name
-     *
-     */
-    public String toName() {
-        // REMOVE +++ in 1.7
-        if (this == getRuntime().getClass("NilClass")) {
-            return "nil";
-        } else if (this == getRuntime().getClass("TrueClass")) {
-            return "true";
-        } else if (this == getRuntime().getClass("FalseClass")) {
-            return "false";
+    public RubyModule defineModuleUnder(String name) {
+        if (isConstantDefinedAt(name)) {
+            IRubyObject type = getConstant(name);
+            if (!(type instanceof RubyModule)) {
+                throw new TypeError(runtime, name + " is not a module.");
+            } 
+
+            return (RubyModule) type;
         }
-        // REMOVE ---
-        return getClassPath();
+        
+        RubyModule newModule = getRuntime().defineModuleUnder(name, this);
+        setConstant(name, newModule);
+
+        return newModule;
     }
 
     /** rb_define_const
@@ -981,29 +973,19 @@ public class RubyModule extends RubyObject {
 
     // Methods of the Module Class (rb_mod_*):
 
-    /** rb_mod_new
-     *
-     */
-    public static RubyModule newModule(Ruby ruby) {
-        RubyModule newModule = new RubyModule(ruby, ruby.getClass("Module"));
-        return newModule;
-    }
-
     public static RubyModule newModule(Ruby ruby, String name) {
-        RubyModule result = newModule(ruby);
-        result.classId = name;
-        return result;
+        return newModule(ruby, name, null);
     }
 
+    public static RubyModule newModule(Ruby ruby, String name, RubyModule parentModule) {
+        return new RubyModule(ruby, ruby.getClasses().getModuleClass(), null, parentModule, name);
+    }
+    
     /** rb_mod_name
      *
      */
     public RubyString name() {
-        String path = getClassname();
-        if (path != null) {
-            return RubyString.newString(runtime, path);
-        }
-        return RubyString.newString(runtime, "");
+        return RubyString.newString(runtime, toName());
     }
 
     /** rb_mod_class_variables
@@ -1103,7 +1085,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyString to_s() {
-        return RubyString.newString(runtime, getClassPath());
+        return RubyString.newString(runtime, toName());
     }
 
     /** rb_mod_eqq
@@ -1187,7 +1169,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule newModule(IRubyObject recv) {
-        RubyModule mod = RubyModule.newModule(recv.getRuntime());
+        RubyModule mod = RubyModule.newModule(recv.getRuntime(), null);
         mod.setMetaClass((RubyClass) recv);
         recv.getRuntime().getClasses().getModuleClass().callInit(null);
         return mod;
@@ -1401,8 +1383,11 @@ public class RubyModule extends RubyObject {
                 
             Map map = tmp.getInstanceVariables();
                 
+            // We try and keep going when we find a module with no instance
+            // variables, because it may include another module which has
+            // some.
             if (map == null) {
-                break;
+                continue;
             }
             
             Iterator variables = map.keySet().iterator();
@@ -1600,9 +1585,5 @@ public class RubyModule extends RubyObject {
         }
         input.registerLinkTarget(result);
         return result;
-    }
-
-    public void setName(String name) {
-        this.classId = name;
     }
 }
