@@ -418,6 +418,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     support.unreadMany(2); // c2,c
                     break;
                 }
+                support.unread();
             }
             else if (c == '\\') {
                 c = support.read();
@@ -1018,8 +1019,14 @@ public class RubyYaccLexer implements IYaccLexer {
                             // In case last next was the newline.
                             support.unread();
                             for (;;) {
-                                support.readLine();
                                 c = support.read();
+
+                                // If a line is followed by a blank line put
+                                // it back.
+                                while (c == '\n') {
+				    c = support.read();
+                                }
+
                                 if (c == EOF) {
                                     errorHandler.handleError(IErrors.COMPILE_ERROR, support.getPosition(), 
                                     	"embedded document meets end of file");
@@ -1664,7 +1671,7 @@ public class RubyYaccLexer implements IYaccLexer {
                 break;
 
             case '_':
-                if (was_bol() && whole_match_p("__END__", false)) {
+                if (was_bol() && whole_match_p("_END__", false)) {
                     return 0;
                 }
                 newToken();
