@@ -308,51 +308,23 @@ public class RubyBignum extends RubyInteger {
         BigInteger absValue = value.abs();
 
         byte[] digits = absValue.toByteArray();
-        int byteCount = digits.length - 1; // exclude sign byte
-        boolean oddByteCount = byteCount % 2 == 1;
 
-        int shortLength = byteCount / 2;
-        if (oddByteCount) {
-			shortLength++;
-		}
-        output.dumpInt(shortLength);
-        
-        // write all bytes except sign
-        for (int i = digits.length - 1; i > 0; i--) {
-        	output.write(digits[i]);
-        }
-        
-        // pad to short with 0
-        if (oddByteCount) {
-            output.write(0);
-        }
-    }
-
-    public void marshalTo2(MarshalStream output) throws IOException {
-        output.write('l');
-        output.write(value.signum() >= 0 ? '+' : '-');
-
-        BigInteger absValue = value.abs();
-
-        byte[] digits = absValue.toByteArray();
-
+        boolean oddLengthNonzeroStart = (digits.length % 2 != 0 && digits[0] != 0);
         int shortLength = digits.length / 2;
-        if (digits.length % 2 != 0) {
+        if (oddLengthNonzeroStart) {
 			shortLength++;
 		}
         output.dumpInt(shortLength);
         
-        // TODO: This works now, but make sure it complies with Ruby
-        for (int i = digits.length - 1; i >= 0; i--) {
-            output.write(digits[i]);
+        for (int i = 1; i <= shortLength * 2 && i <= digits.length; i++) {
+        	output.write(digits[digits.length - i]);
         }
         
-        if (digits.length % 2 != 0) {
-            // Pad with a 0 if we've written all bytes and have an odd length.
+        if (oddLengthNonzeroStart) {
+            // Pad with a 0
             output.write(0);
         }
     }
-
     public static RubyBignum unmarshalFrom(UnmarshalStream input) throws IOException {
         boolean positive = input.readUnsignedByte() == '+';
         int shortLength = input.unmarshalInt();
