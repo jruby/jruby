@@ -33,21 +33,20 @@ import org.jruby.RubyModule;
  * @author Anders
  */
 public final class ObjectSpace {
+    // Set too low and time is wasted checking an empty queue. Set too
+    // high and performance will be uneven and memory wasted.
+    private static final int CLEANUP_FREQUENCY = 100;
+
     private HashMap references = new HashMap();
     private ReferenceQueue deadReferences = new ReferenceQueue();
-    
-    public ObjectSpace() {
-        /* Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            public void run() {
-                cleanup();
-            }
-        }, 8000, 2000);
-        */
-    }
+    private int cleanupCounter = CLEANUP_FREQUENCY;
 
     public void add(RubyObject object) {
-		//cleanup();
+        cleanupCounter--;
+        if (cleanupCounter <= 0) {
+            cleanup();
+            cleanupCounter = CLEANUP_FREQUENCY;
+        }
         references.put(new WeakReference(object, deadReferences), null);
     }
 
