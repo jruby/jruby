@@ -59,9 +59,12 @@ public class JavaObject extends RubyObject implements IndexCallable {
     }
 
     public static synchronized JavaObject wrap(Ruby runtime, Object value) {
+        if (value == null) {
+            return new NullJavaObject(runtime);
+        }
         JavaObject wrapper = runtime.getJavaSupport().getJavaObjectFromCache(value);
         if (wrapper == null) {
-            if (value != null && value.getClass().isArray()) {
+            if (value.getClass().isArray()) {
                 wrapper = new JavaArray(runtime, value);
             } else {
                 wrapper = new JavaObject(runtime, value);
@@ -69,6 +72,10 @@ public class JavaObject extends RubyObject implements IndexCallable {
             runtime.getJavaSupport().putJavaObjectIntoCache(wrapper);
         }
         return wrapper;
+    }
+
+    public boolean isJavaNull() {
+        return false;
     }
 
     public Class getJavaClass() {
@@ -114,7 +121,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
     }
 
     public RubyString to_s() {
-        return RubyString.newString(getRuntime(), getValue() != null ? getValue().toString() : "null");
+        return RubyString.newString(getRuntime(), getValue().toString());
     }
 
     public RubyBoolean equal(IRubyObject other) {
