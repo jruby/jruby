@@ -186,6 +186,14 @@ public class JavaUtil {
         return convertJavaToRuby(ruby, object, null);
     }
 
+    public static RubyObject[] convertJavaToRuby(Ruby ruby, Object[] objects) {
+        RubyObject[] rubyObjects = new RubyObject[objects.length];
+        for (int i = 0; i < objects.length; i++) {
+            rubyObjects[i] = convertJavaToRuby(ruby, objects[i]);
+        }
+        return rubyObjects;
+    }
+
     public static RubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {
         if (object == null) {
             return ruby.getNil();

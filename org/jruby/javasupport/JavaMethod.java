@@ -44,14 +44,16 @@ import org.jruby.runtime.*;
  */
 public class JavaMethod implements Callback {
     private Method[] methods = null;
+    private boolean callSuper = false;
     private boolean singleton = false;
 
-    public JavaMethod(Method[] methods) {
-        this(methods, false);
+    public JavaMethod(Method[] methods, boolean callSuper) {
+        this(methods, callSuper, false);
     }
 
-    public JavaMethod(Method[] methods, boolean singleton) {
+    public JavaMethod(Method[] methods, boolean callSuper, boolean singleton) {
         this.methods = methods;
+        this.callSuper = callSuper;
         this.singleton = singleton;
     }
 
@@ -82,7 +84,11 @@ public class JavaMethod implements Callback {
         }
         
         if (executeMethods.isEmpty()) {
-            throw new RubyArgumentException(ruby, "wrong arguments.");
+            if (callSuper) {
+            	ruby.getRuntime().callSuper(args);
+            } else {
+            	throw new RubyArgumentException(ruby, "wrong argument count or types.");
+            }
         }
         
         // take the first method.
@@ -95,15 +101,13 @@ public class JavaMethod implements Callback {
         }
 
         try {
-            Object obj = !singleton ? ((RubyJavaObject)recv).getValue() : null;
-            Object result = method.invoke(obj, newArgs);
+            Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
+            
+            Object result = method.invoke(receiver, newArgs);
+            
             return JavaUtil.convertJavaToRuby(ruby, result, method.getReturnType());
-        } catch (IllegalAccessException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
-        } catch (IllegalArgumentException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
-        } catch (InvocationTargetException ex) {
-            throw new RaiseException(ruby, "RuntimeError", ex.getMessage());
+        } catch (Exception excptn) {
+            throw new RaiseException(ruby, "RuntimeError", excptn.getMessage());
         }
     }
 }
