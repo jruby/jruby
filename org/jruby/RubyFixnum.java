@@ -43,7 +43,8 @@ import org.jruby.util.Asserts;
  */
 public class RubyFixnum extends RubyInteger implements IndexCallable {
     private long value;
-    private static final int BIT_SIZE = 63;
+    private static final int BIT_SIZE = 64;
+    private static final long MAX_MARSHAL_FIXNUM = (1L << 30) - 1;
 
     public RubyFixnum(Ruby ruby) {
         this(ruby, 0);
@@ -411,7 +412,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public RubyFixnum size() {
-        return newFixnum(4);
+        return newFixnum((long) Math.ceil(BIT_SIZE / 8.0));
     }
 
     public RubyFixnum aref(RubyInteger pos) {
@@ -428,7 +429,7 @@ public class RubyFixnum extends RubyInteger implements IndexCallable {
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
-        if (value <= Integer.MAX_VALUE) {
+        if (value <= MAX_MARSHAL_FIXNUM) {
             output.write('i');
             output.dumpInt((int) value);
         } else {
