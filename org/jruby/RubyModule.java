@@ -45,14 +45,7 @@ import org.jruby.internal.runtime.methods.CallbackMethod;
 import org.jruby.internal.runtime.methods.EvaluateMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperCallable;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.Callback;
-import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.Frame;
-import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Iter;
-import org.jruby.runtime.Namespace;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -752,30 +745,25 @@ public class RubyModule extends RubyObject {
             args = new IRubyObject[0];
         }
 
-        CacheEntry ent = getRuntime().getMethodCache().getEntry(this, name);
+        CacheEntry entry = getRuntime().getMethodCache().getEntry(this, name);
 
-        if (ent == null) {
-            ent = getMethodBody(name);
+        if (entry == null) {
+            entry = getMethodBody(name);
         }
 
-        if (ent == null || ent.getMethod().isUndefined()) {
-            if (callType.isSuper()) {
-                throw new NameError(runtime, "super: no superclass method '" + name + "'");
-            } else if (callType.isVariable()) {
-                runtime.getLastCallStatus().setVariable();
-            } else {
-                runtime.getLastCallStatus().setNormal();
-            }
+        final LastCallStatus lastCallStatus = runtime.getLastCallStatus();
+        if (entry == null || entry.getMethod().isUndefined()) {
+            callType.registerCallStatus(lastCallStatus, name);
             return callMethodMissing(recv, name, args);
         }
 
-        RubyModule klass = ent.getOrigin();
-        name = ent.getOriginalName();
-        ICallable method = ent.getMethod();
+        RubyModule klass = entry.getOrigin();
+        name = entry.getOriginalName();
+        ICallable method = entry.getMethod();
 
         if (!name.equals("method_missing")) {
             if (method.getVisibility().isPrivate() && callType.isNormal()) {
-                runtime.getLastCallStatus().setPrivate();
+                lastCallStatus.setPrivate();
                 return callMethodMissing(recv, name, args);
             } else if (method.getVisibility().isProtected()) {
                 RubyModule defined = klass;
@@ -783,7 +771,7 @@ public class RubyModule extends RubyObject {
                     defined = defined.getInternalClass();
                 }
                 if (!runtime.getCurrentFrame().getSelf().isKindOf(defined)) {
-                    runtime.getLastCallStatus().setProtected();
+                    lastCallStatus.setProtected();
                     return callMethodMissing(recv, name, args);
                 }
             }
@@ -791,7 +779,7 @@ public class RubyModule extends RubyObject {
 
         return klass.call0(recv, name, args, method, false);
     }
-    
+
     private IRubyObject callMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
         if (name == "method_missing") {
             runtime.getFrameStack().push();

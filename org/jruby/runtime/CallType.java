@@ -1,5 +1,7 @@
 package org.jruby.runtime;
 
+import org.jruby.exceptions.NameError;
+
 /**
  * 
  * @author jpetersen
@@ -13,20 +15,18 @@ public final class CallType {
 
     private CallType() {
     }
-    
-    public boolean isSuper() {
-        return this == SUPER;
-    }
-
-    public boolean isVariable() {
-        return this == VARIABLE;
-    }
-
-    public boolean isFunctional() {
-        return this == FUNCTIONAL;
-    }
 
     public boolean isNormal() {
         return this == NORMAL;
+    }
+
+    public void registerCallStatus(LastCallStatus lastCallStatus, String name) {
+        if (this == SUPER) {
+            throw new NameError(lastCallStatus.getRuntime(), "super: no superclass method '" + name + "'");
+        } else if (this == VARIABLE) {
+            lastCallStatus.setVariable();
+        } else {
+            lastCallStatus.setNormal();
+        }
     }
 }

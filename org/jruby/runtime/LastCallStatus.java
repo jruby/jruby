@@ -1,9 +1,10 @@
 package org.jruby.runtime;
 
 import org.jruby.util.IdUtil;
+import org.jruby.Ruby;
 
 /**
- * 
+ *
  * @author jpetersen
  * @version $Revision$
  */
@@ -12,10 +13,12 @@ public class LastCallStatus {
     private static final Object PRIVATE = new Object();
     private static final Object PROTECTED = new Object();
     private static final Object VARIABLE = new Object();
-    
+
+    private final Ruby runtime;
     private Object status = NORMAL;
 
-    public LastCallStatus() {
+    public LastCallStatus(Ruby runtime) {
+        this.runtime = runtime;
     }
 
     public void setNormal() {
@@ -32,6 +35,10 @@ public class LastCallStatus {
 
     public void setVariable() {
         status = VARIABLE;
+    }
+
+    public Ruby getRuntime() {
+        return runtime;
     }
 
     public String errorMessageFormat(String name) {

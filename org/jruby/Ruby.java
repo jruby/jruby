@@ -159,7 +159,7 @@ public final class Ruby {
 
     private Parser parser = new Parser(this);
 
-    private LastCallStatus lastCallStatus = new LastCallStatus();
+    private LastCallStatus lastCallStatus = new LastCallStatus(this);
 
     private ILoadService loadService = LoadServiceFactory.createLoadService(this);
     private IRubyErrorHandler errorHandler = new RubyErrorHandler(this);
