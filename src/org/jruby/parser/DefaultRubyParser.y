@@ -342,7 +342,8 @@ stmt          : kALIAS fitem {
                 }
               | mlhs '=' command_call {
                     support.checkExpression($3);
-                    if ($1 instanceof MultipleAsgnNode) {
+		    if ($1 instanceof MultipleAsgnNode && 
+			((MultipleAsgnNode) $1).getHeadNode() == null) {
 		        $<IAssignableNode>1.setValueNode(new ArrayNode(getPosition()).add($3));
 		    } else {
                         $<IAssignableNode>1.setValueNode($3);
@@ -396,7 +397,8 @@ stmt          : kALIAS fitem {
                     $$ = support.node_assign($1, $3);
                 }
  	      | mlhs '=' arg_value {
-                    if ($1 instanceof MultipleAsgnNode) {
+                    if ($1 instanceof MultipleAsgnNode && 
+			((MultipleAsgnNode) $1).getHeadNode() == null) {
 		        $<IAssignableNode>1.setValueNode(new ArrayNode(getPosition()).add($3));
 		    } else {
                         $<IAssignableNode>1.setValueNode($3);
