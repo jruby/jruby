@@ -31,3 +31,5 @@ test_ok("(?-mix:pattern)" == /pattern/.to_s)
 test_ok("(?m-ix:pattern)" == /pattern/m.to_s)
 test_ok("(?mix:pattern)" == /pattern/mix.to_s)
 
+#########    test8   #################
+test_ok(/ab (?# comment )c/ =~ 'ab c')

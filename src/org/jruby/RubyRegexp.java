@@ -17,6 +17,7 @@
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -51,6 +52,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	 * 
 	 * Warning: THIS IS NOT REALLY SUPPORTED BY JRUBY. 
 	 */
+    private static String COMMENT_PATTERN = "\\(\\?#[^)]*\\)";
+    
 	private static final class Code {
 		private static final Code NIL = new Code(null);
 		private static final Code NONE = new Code("none");
@@ -140,6 +143,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if ((options & RE_OPTION_MULTILINE) > 0) {
         	flags |= Pattern.DOTALL;
         }
+        regex = regex.replaceAll(COMMENT_PATTERN, "");
         pattern = Pattern.compile(regex, flags | this.code.flags());
     }
 
