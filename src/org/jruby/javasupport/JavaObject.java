@@ -111,8 +111,7 @@ public class JavaObject extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(runtime, 
-           value == null ? 0 : value.hashCode());
+        return RubyFixnum.newFixnum(runtime, value == null ? 0 : value.hashCode());
     }
 
     public RubyString to_s() {
@@ -121,23 +120,35 @@ public class JavaObject extends RubyObject {
     }
 
     public IRubyObject equal(IRubyObject other) {
-    	if (!(other instanceof JavaObject)) {
-    		return getRuntime().getFalse();
-    	}
+        if (!(other instanceof JavaObject)) {
+            other = other.getInstanceVariable("@java_object");
+            if (!(other instanceof JavaObject)) {
+                return getRuntime().getFalse();
+            }
+        }
     	
-    	if (getValue() == null && ((JavaObject) other).getValue() == null) {
-    		return getRuntime().getTrue();
-    	}
+        if (getValue() == null && ((JavaObject) other).getValue() == null) {
+            return getRuntime().getTrue();
+        }
     	
-    	return (getValue().equals(((JavaObject) other).getValue())) ? getRuntime().getTrue() : getRuntime().getFalse();
+        boolean isEqual = getValue().equals(((JavaObject) other).getValue());
+        return isEqual ? getRuntime().getTrue() : getRuntime().getFalse();
     }
     
     public IRubyObject same(IRubyObject other) {
-    	if (other instanceof JavaObject && 
-    			value == ((JavaObject) other).value) {
-    		return getRuntime().getTrue();
-    	}
-		return getRuntime().getFalse();
+        if (!(other instanceof JavaObject)) {
+            other = other.getInstanceVariable("@java_object");
+            if (!(other instanceof JavaObject)) {
+              return getRuntime().getFalse();
+            }
+        }
+      
+        if (getValue() == null && ((JavaObject) other).getValue() == null) {
+            return getRuntime().getTrue();
+        }
+      
+        boolean isSame = getValue() == ((JavaObject) other).getValue();
+        return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public RubyString java_type() {

@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
 # Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+# Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
 #
 # JRuby - http://jruby.sourceforge.net
 #
@@ -26,6 +27,26 @@
 module JavaProxy
   attr :java_class, true
   attr :java_object, true
+
+  def ==(rhs)
+    return @java_object == rhs
+  end
+  
+  def to_s
+    @java_object.to_s
+  end
+
+  def eql?(rhs)
+    self == rhs
+  end
+  
+  def equal?(rhs)
+    @java_object.equal?(rhs)
+  end
+  
+  def hash()
+    @java_object.hash()
+  end
 
   def JavaProxy.convert_arguments(arguments)
     arguments.collect {|v|
@@ -291,17 +312,6 @@ END
               result
             end
           end
-        end
-	
-	# All ruby objects allow to_s.  Make sure our proxy maps to the
-	# Java objects toString method.
-	define_method('to_s') do |*args|
-	  method = java_class.java_method('toString')
-	  result = Java.java_to_primitive(method.invoke(java_object))
-	  if result.kind_of?(JavaObject)
-              result = JavaUtilities.wrap(result, method.return_type)
-	  end
-          result
         end
       end
       proxy_class.create_instance_methods(java_class)
