@@ -132,7 +132,7 @@ public class Main {
     }
 
     private static void initializeRuntime(Ruby runtime, String filename) {
-        IRubyObject argumentArray = JavaUtil.convertJavaToRuby(runtime, commandline.scriptArguments);
+        IRubyObject argumentArray = RubyArray.newArray(runtime, JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
         runtime.setVerbose(commandline.verbose);
         defineGlobal(runtime, "$VERBOSE", commandline.verbose);
         runtime.defineGlobalConstant("ARGV", argumentArray);
@@ -140,7 +140,7 @@ public class Main {
         defineGlobal(runtime, "$-n", commandline.assumeLoop);
         defineGlobal(runtime, "$-a", commandline.sDoSplit);
         defineGlobal(runtime, "$-l", commandline.processLineEnds);
-        runtime.defineReadonlyVariable("$*", argumentArray);
+        runtime.getGlobalVariables().defineReadonly("$*", new ValueAccessor(argumentArray));
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
         runtime.getLoadService().init(runtime, commandline.loadPaths());
 

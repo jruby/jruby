@@ -88,9 +88,6 @@ public class RubyGlobal {
 
         ruby.defineVariable(new LoadedFeatures(ruby, "$\""));
 
-        // FIXME: add an argv accessor
-        ruby.getGlobalVariables().defineReadonly("$*", new ValueAccessor(RubyArray.newArray(ruby)));
-
         ruby.defineVariable(new LoadPath(ruby, "$:"));
         ruby.defineVariable(new LoadPath(ruby, "$-I"));
         ruby.defineVariable(new LoadPath(ruby, "$LOAD_PATH"));

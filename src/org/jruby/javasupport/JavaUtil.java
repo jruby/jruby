@@ -92,10 +92,6 @@ public class JavaUtil {
                 }
             }
             return true;
-        } else if (List.class.isAssignableFrom(javaClass)) {
-            return arg instanceof RubyArray;
-        } else if (Map.class.isAssignableFrom(javaClass)) {
-            return arg instanceof RubyHash;
         } else {
             return javaClass.isAssignableFrom(arg.getJavaClass());
         }
@@ -134,49 +130,37 @@ public class JavaUtil {
                 return new Boolean(rubyObject.isTrue());
             } else if (cName == "float") {
                 if (rubyObject.respondsTo("to_f")) {
-                    return new Float(
-                        ((RubyNumeric) rubyObject.callMethod("to_f"))
-                            .getDoubleValue());
+                    return new Float(((RubyNumeric) rubyObject.callMethod("to_f")).getDoubleValue());
                 } else {
                     return new Float(0.0);
                 }
             } else if (cName == "double") {
                 if (rubyObject.respondsTo("to_f")) {
-                    return new Double(
-                        ((RubyNumeric) rubyObject.callMethod("to_f"))
-                            .getDoubleValue());
+                    return new Double(((RubyNumeric) rubyObject.callMethod("to_f")).getDoubleValue());
                 } else {
                     return new Double(0.0);
                 }
             } else if (cName == "long") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Long(
-                        ((RubyNumeric) rubyObject.callMethod("to_i"))
-                            .getLongValue());
+                    return new Long(((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
                 } else {
                     return new Long(0);
                 }
             } else if (cName == "int") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Integer(
-                        (int) ((RubyNumeric) rubyObject.callMethod("to_i"))
-                            .getLongValue());
+                    return new Integer((int) ((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
                 } else {
                     return new Integer(0);
                 }
             } else if (cName == "short") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Short(
-                        (short) ((RubyNumeric) rubyObject.callMethod("to_i"))
-                            .getLongValue());
+                    return new Short((short) ((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
                 } else {
                     return new Short((short) 0);
                 }
             } else if (cName == "byte") {
                 if (rubyObject.respondsTo("to_i")) {
-                    return new Byte(
-                        (byte) ((RubyNumeric) rubyObject.callMethod("to_i"))
-                            .getLongValue());
+                    return new Byte((byte) ((RubyNumeric) rubyObject.callMethod("to_i")).getLongValue());
                 } else {
                     return new Byte((byte) 0);
                 }
@@ -196,9 +180,7 @@ public class JavaUtil {
         }
     }
 
-    public static IRubyObject[] convertJavaArrayToRuby(
-        Ruby ruby,
-        Object[] objects) {
+    public static IRubyObject[] convertJavaArrayToRuby(Ruby ruby, Object[] objects) {
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
             rubyObjects[i] = convertJavaToRuby(ruby, objects[i]);
@@ -217,10 +199,7 @@ public class JavaUtil {
         return convertJavaToRuby(ruby, object, returnedObjectType(object, returningMethod));
     }
 
-    public static IRubyObject convertJavaToRuby(
-        Ruby ruby,
-        Object object,
-        Class javaClass) {
+    public static IRubyObject convertJavaToRuby(Ruby ruby, Object object, Class javaClass) {
         if (object == null) {
             return ruby.getNil();
         }
@@ -228,27 +207,17 @@ public class JavaUtil {
         if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return RubyBoolean.newBoolean(
-                    ruby,
-                    ((Boolean) object).booleanValue());
+                return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
             } else if (cName == "float" || cName == "double") {
-                return RubyFloat.newFloat(
-                    ruby,
-                    ((Number) object).doubleValue());
+                return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
             } else if (cName == "char") {
-                return RubyFixnum.newFixnum(
-                    ruby,
-                    ((Character) object).charValue());
+                return RubyFixnum.newFixnum(ruby, ((Character) object).charValue());
             } else {
                 // else it's one of the integral types
-                return RubyFixnum.newFixnum(
-                    ruby,
-                    ((Number) object).longValue());
+                return RubyFixnum.newFixnum(ruby, ((Number) object).longValue());
             }
         } else if (javaClass == Boolean.class) {
-            return RubyBoolean.newBoolean(
-                ruby,
-                ((Boolean) object).booleanValue());
+            return RubyBoolean.newBoolean(ruby, ((Boolean) object).booleanValue());
         } else if (javaClass == Float.class || javaClass == Double.class) {
             return RubyFloat.newFloat(ruby, ((Number) object).doubleValue());
         } else if (javaClass == Character.class) {
@@ -263,8 +232,7 @@ public class JavaUtil {
             return ((RubyProxy) object).getRubyObject();
         } else {
             // Look if a RubyObject exists which already represents object.
-            Iterator iter =
-                ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
+            Iterator iter = ruby.objectSpace.iterator(ruby.getClasses().getObjectClass());
             while (iter.hasNext()) {
                 IRubyObject rubyObject = (IRubyObject) iter.next();
                 if (rubyObject instanceof JavaObject) {
@@ -300,21 +268,6 @@ public class JavaUtil {
         if (type == Boolean.class)
             return Boolean.TYPE;
 
-        // Replace each common interface with a concrete class that
-        // can implement it.
-        if (type == Collection.class)
-            return ArrayList.class;
-        if (type == List.class)
-            return ArrayList.class;
-        if (type == Map.class)
-            return HashMap.class;
-        if (type == Set.class)
-            return HashSet.class;
-        if (type == SortedSet.class)
-            return TreeSet.class;
-        if (type == SortedMap.class)
-            return TreeMap.class;
-
         return type;
     }
 
@@ -348,7 +301,7 @@ public class JavaUtil {
         List widestClassInterfaces = Arrays.asList(widestClass.getInterfaces());
         while (narrowestClassInterfaces.hasNext()) {
             Class iface = (Class) narrowestClassInterfaces.next();
-            if (! widestClassInterfaces.contains(iface)) {
+            if (!widestClassInterfaces.contains(iface)) {
                 return iface;
             }
         }
