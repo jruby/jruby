@@ -34,10 +34,10 @@
 
 package org.jruby;
 
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.internal.runtime.builtin.definitions.ExceptionDefinition;
 
 /**
  *
@@ -63,7 +63,30 @@ public class RubyException extends RubyObject implements IndexCallable {
     }
 
     public static RubyClass createExceptionClass(Ruby ruby) {
-        return new ExceptionDefinition(ruby).getType();
+		RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
+    	
+		CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+		exceptionClass.defineSingletonMethod("new", 
+			callbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));		
+		exceptionClass.defineMethod("initialize",
+			callbackFactory.getOptMethod(RubyException.class, "initialize"));
+		exceptionClass.defineMethod("exception", 
+			callbackFactory.getOptMethod(RubyException.class, "exception"));
+		exceptionClass.defineMethod("to_s", 
+			callbackFactory.getMethod(RubyException.class, "to_s"));
+		exceptionClass.defineMethod("to_str", 
+			callbackFactory.getMethod(RubyException.class, "to_s"));
+		exceptionClass.defineMethod("message", 
+			callbackFactory.getMethod(RubyException.class, "to_s"));
+		exceptionClass.defineMethod("inspect", 
+			callbackFactory.getMethod(RubyException.class, "inspect"));
+		exceptionClass.defineMethod("backtrace", 
+			callbackFactory.getMethod(RubyException.class, "backtrace"));		
+		exceptionClass.defineMethod("set_backtrace", 
+			callbackFactory.getMethod(RubyException.class, "set_backtrace", IRubyObject.class));		
+
+		return exceptionClass;
     }
 
     public static RubyException newException(Ruby ruby, RubyClass excptnClass, String msg) {
@@ -143,25 +166,6 @@ public class RubyException extends RubyObject implements IndexCallable {
             sb.append(exception.getValue());
             sb.append(">");
             return RubyString.newString(getRuntime(), sb.toString());
-        }
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-        case ExceptionDefinition.INITIALIZE :
-            return initialize(args);
-        case ExceptionDefinition.EXCEPTION :
-            return initialize(args);
-        case ExceptionDefinition.TO_S :
-            return to_s();
-        case ExceptionDefinition.INSPECT :
-            return inspect();
-        case ExceptionDefinition.BACKTRACE :
-            return backtrace();
-        case ExceptionDefinition.SET_BACKTRACE :
-            return set_backtrace(args[0]);
-        default :
-            return super.callIndexed(index, args);
         }
     }
 }
