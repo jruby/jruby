@@ -48,6 +48,8 @@ load('test/mri/testIfUnless.rb')
 load('test/mri/testWhileUntil')
 load('test/mri/testException')
 load('test/mri/testArray')
+load('test/mri/testHash')
+load('test/mri/testIterator')
 
 #Output result
 puts

@@ -1146,27 +1146,28 @@ public class RubyArray extends RubyObject {
         return new RubyArray(getRuby(), newList);
     }
 
-    private ArrayList uniq(ArrayList ary1) {
-        int len1 = ary1.size();
-        ArrayList ary2 = new ArrayList(len1);
-        int len2 = 0;
-        boolean found = false;
-        for (int i = 0; i < len1; i++) {
-            RubyObject obj = (RubyObject) ary1.get(i);
-            len2 = ary2.size();
-            found = false;
-            for (int j = 0; j < len2; j++) {
-                if (obj.funcall("==", (RubyObject) ary1.get(j)).isTrue()) {
+    private ArrayList uniq(List oldList) {
+        int oldLength = oldList.size();
+        ArrayList newList = new ArrayList(oldLength);
+
+        for (int i = 0; i < oldLength; i++) {
+            RubyObject obj = (RubyObject)oldList.get(i);
+
+            boolean found = false;
+            int newLength = newList.size();
+            for (int j = 0; j < newLength; j++) {
+                if (obj.funcall("==", (RubyObject)newList.get(j)).isTrue()) {
                     found = true;
                     break;
                 }
             }
             if (!found) {
-                ary2.add(obj);
+                newList.add(obj);
             }
         }
-        ary2.trimToSize();
-        return ary2;
+
+        newList.trimToSize();
+        return newList;
     }
 
     /** rb_ary_uniq_bang

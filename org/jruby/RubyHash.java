@@ -2,9 +2,8 @@
  * RubyHash.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -30,13 +29,16 @@
 
 package org.jruby;
 
+import java.util.*;
+
 import org.jruby.exceptions.*;
 import org.jruby.runtime.*;
 import org.jruby.util.*;
 
-/**
+/** Implementation of the Hash class.
  *
  * @author  jpetersen
+ * @version $Revision$
  */
 public class RubyHash extends RubyObject {
     private RubyMap valueMap;
@@ -71,63 +73,64 @@ public class RubyHash extends RubyObject {
     public void setValueMap(RubyMap valueMap) {
         this.valueMap = valueMap;
     }
-    
-	public static RubyClass createHashClass(Ruby ruby) {
-        RubyClass hashClass = ruby.defineClass("Hash", ruby.getClasses().getObjectClass());
 
-//    rb_include_module(rb_cHash, rb_mEnumerable);
+    public static RubyClass createHashClass(Ruby ruby) {
+        RubyClass hashClass = ruby.defineClass("Hash", ruby.getClasses().getObjectClass());
+        hashClass.includeModule(ruby.getClasses().getEnumerableModule());
 
         hashClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyHash.class, "newInstance"));
         hashClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyHash.class, "create"));
         hashClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyHash.class, "initialize"));
-     
-//    rb_define_method(rb_cHash,"clone", rb_hash_clone, 0);
-//    rb_define_method(rb_cHash,"rehash", rb_hash_rehash, 0);
+
+        //    rb_define_method(rb_cHash,"clone", rb_hash_clone, 0);
+        //    rb_define_method(rb_cHash,"rehash", rb_hash_rehash, 0);
 
         hashClass.defineMethod("to_hash", CallbackFactory.getMethod(RubyHash.class, "to_hash"));
         hashClass.defineMethod("to_a", CallbackFactory.getMethod(RubyHash.class, "to_a"));
         hashClass.defineMethod("to_s", CallbackFactory.getMethod(RubyHash.class, "to_s"));
         hashClass.defineMethod("inspect", CallbackFactory.getMethod(RubyHash.class, "inspect"));
 
-//    rb_define_method(rb_cHash,"==", rb_hash_equal, 1);
+        hashClass.defineMethod("==", CallbackFactory.getMethod(RubyHash.class, "equal", RubyObject.class));
         hashClass.defineMethod("[]", CallbackFactory.getMethod(RubyHash.class, "aref", RubyObject.class));
-//    rb_define_method(rb_cHash,"fetch", rb_hash_fetch, -1);
+        //    rb_define_method(rb_cHash,"fetch", rb_hash_fetch, -1);
         hashClass.defineMethod("[]=", CallbackFactory.getMethod(RubyHash.class, "aset", RubyObject.class, RubyObject.class));
         hashClass.defineMethod("store", CallbackFactory.getMethod(RubyHash.class, "aset", RubyObject.class, RubyObject.class));
-//    rb_define_method(rb_cHash,"default", rb_hash_default, 0);
-//    rb_define_method(rb_cHash,"default=", rb_hash_set_default, 1);
-//    rb_define_method(rb_cHash,"index", rb_hash_index, 1);
-//    rb_define_method(rb_cHash,"indexes", rb_hash_indexes, -1);
-//    rb_define_method(rb_cHash,"indices", rb_hash_indexes, -1);
+        //    rb_define_method(rb_cHash,"default", rb_hash_default, 0);
+        //    rb_define_method(rb_cHash,"default=", rb_hash_set_default, 1);
+        //    rb_define_method(rb_cHash,"index", rb_hash_index, 1);
+        hashClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyHash.class, "indexes"));
+        hashClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyHash.class, "indexes"));
         hashClass.defineMethod("size", CallbackFactory.getMethod(RubyHash.class, "size"));
         hashClass.defineMethod("length", CallbackFactory.getMethod(RubyHash.class, "size"));
         hashClass.defineMethod("empty?", CallbackFactory.getMethod(RubyHash.class, "empty_p"));
 
-//    rb_define_method(rb_cHash,"each", rb_hash_each_pair, 0);
-//    rb_define_method(rb_cHash,"each_value", rb_hash_each_value, 0);
-//    rb_define_method(rb_cHash,"each_key", rb_hash_each_key, 0);
-//    rb_define_method(rb_cHash,"each_pair", rb_hash_each_pair, 0);
-//    rb_define_method(rb_cHash,"sort", rb_hash_sort, 0);
+		hashClass.defineMethod("each", CallbackFactory.getMethod(RubyHash.class, "each"));
+		hashClass.defineMethod("each_pair", CallbackFactory.getMethod(RubyHash.class, "each"));
+        //    rb_define_method(rb_cHash,"each", rb_hash_each_pair, 0);
+        //    rb_define_method(rb_cHash,"each_value", rb_hash_each_value, 0);
+        //    rb_define_method(rb_cHash,"each_key", rb_hash_each_key, 0);
+        //    rb_define_method(rb_cHash,"each_pair", rb_hash_each_pair, 0);
+        //    rb_define_method(rb_cHash,"sort", rb_hash_sort, 0);
 
-//    rb_define_method(rb_cHash,"keys", rb_hash_keys, 0);
-//    rb_define_method(rb_cHash,"values", rb_hash_values, 0);
+		hashClass.defineMethod("keys", CallbackFactory.getMethod(RubyHash.class, "keys"));
+		hashClass.defineMethod("values", CallbackFactory.getMethod(RubyHash.class, "values"));
 
-//    rb_define_method(rb_cHash,"shift", rb_hash_shift, 0);
-//    rb_define_method(rb_cHash,"delete", rb_hash_delete, 1);
-//    rb_define_method(rb_cHash,"delete_if", rb_hash_delete_if, 0);
-//    rb_define_method(rb_cHash,"reject", rb_hash_reject, 0);
-//    rb_define_method(rb_cHash,"reject!", rb_hash_reject_bang, 0);
-//    rb_define_method(rb_cHash,"clear", rb_hash_clear, 0);
-//    rb_define_method(rb_cHash,"invert", rb_hash_invert, 0);
-//    rb_define_method(rb_cHash,"update", rb_hash_update, 1);
-//    rb_define_method(rb_cHash,"replace", rb_hash_replace, 1);
+        //    rb_define_method(rb_cHash,"shift", rb_hash_shift, 0);
+        //    rb_define_method(rb_cHash,"delete", rb_hash_delete, 1);
+        //    rb_define_method(rb_cHash,"delete_if", rb_hash_delete_if, 0);
+        //    rb_define_method(rb_cHash,"reject", rb_hash_reject, 0);
+        //    rb_define_method(rb_cHash,"reject!", rb_hash_reject_bang, 0);
+        //    rb_define_method(rb_cHash,"clear", rb_hash_clear, 0);
+        //    rb_define_method(rb_cHash,"invert", rb_hash_invert, 0);
+        //    rb_define_method(rb_cHash,"update", rb_hash_update, 1);
+        //    rb_define_method(rb_cHash,"replace", rb_hash_replace, 1);
 
-//    rb_define_method(rb_cHash,"include?", rb_hash_has_key, 1);
-//    rb_define_method(rb_cHash,"member?", rb_hash_has_key, 1);
-//    rb_define_method(rb_cHash,"has_key?", rb_hash_has_key, 1);
-//    rb_define_method(rb_cHash,"has_value?", rb_hash_has_value, 1);
-//    rb_define_method(rb_cHash,"key?", rb_hash_has_key, 1);
-//    rb_define_method(rb_cHash,"value?", rb_hash_has_value, 1);
+        hashClass.defineMethod("include?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
+        hashClass.defineMethod("member?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
+        hashClass.defineMethod("has_key?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
+        hashClass.defineMethod("has_value?", CallbackFactory.getMethod(RubyHash.class, "has_value", RubyObject.class));
+        hashClass.defineMethod("key?", CallbackFactory.getMethod(RubyHash.class, "has_key", RubyObject.class));
+        hashClass.defineMethod("value?", CallbackFactory.getMethod(RubyHash.class, "has_value", RubyObject.class));
 
         return hashClass;
     }
@@ -188,30 +191,31 @@ public class RubyHash extends RubyObject {
 
     public RubyString inspect() {
         //FIXME this two strings should be built only once, at leas only once
-		//per instance no matter how many calls to inspect and maybe better once
-		//per ruby interpreter.
-		//Benoit
-        final RubyString sep = RubyString.newString(getRuby(), ", ");
-        final RubyString arrow = RubyString.newString(getRuby(), "=>");
-        RubyString result = RubyString.newString(getRuby(), "{");
+        //per instance no matter how many calls to inspect and maybe better once
+        //per ruby interpreter.
+        //Benoit
+        final String sep = ", ";
+        final String arrow = "=>";
+        
+        final StringBuffer sb = new StringBuffer('{');
 
         valueMap.foreach(new RubyMapMethod() {
             boolean firstEntry = true;
             public int execute(Object key, Object value, Object arg) {
-                RubyString str = RubyString.stringValue((RubyObject) arg);
+                // RubyString str = RubyString.stringValue((RubyObject) arg);
                 if (!firstEntry) {
-                    str.append(sep);
+                    sb.append(sep);
                 }
-                str.append(((RubyObject) key).funcall("inspect"));
-                str.append(arrow);
-                str.append(((RubyObject) value).funcall("inspect"));
+                sb.append(((RubyObject) key).funcall("inspect"));
+                sb.append(arrow);
+                sb.append(((RubyObject) value).funcall("inspect"));
                 firstEntry = false;
                 return RubyMapMethod.CONTINUE;
             }
-        }, result);
+        }, null);
 
-        result.append(RubyString.newString(getRuby(), "}"));
-        return result;
+        sb.append("}");
+        return RubyString.newString(ruby, sb.toString());
     }
 
     public RubyFixnum size() {
@@ -259,5 +263,66 @@ public class RubyHash extends RubyObject {
         RubyObject value = (RubyObject) valueMap.get(key);
 
         return value != null ? value : getDefaultValue();
+    }
+    
+    public RubyBoolean has_key(RubyObject key) {
+        return RubyBoolean.newBoolean(ruby, valueMap.containsKey(key));
+    }
+
+    public RubyBoolean has_value(RubyObject value) {
+        return RubyBoolean.newBoolean(ruby, valueMap.containsValue(value));
+    }
+    
+    public RubyObject each() {
+        // +++
+        Iterator iter = valueMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            
+            ruby.yield(RubyArray.newArray(ruby, (RubyObject)entry.getKey(), (RubyObject)entry.getValue()));
+        }
+        return ruby.getNil();
+        // ---
+    }
+    
+    public RubyArray indexes(RubyObject[] indices) {
+        ArrayList values = new ArrayList(indices.length);
+        
+        for (int i = 0; i < indices.length; i++) {
+            values.add(aref(indices[i]));
+        }
+        
+        return RubyArray.newArray(ruby, values);
+    }
+
+    public RubyArray keys() {
+        return RubyArray.newArray(ruby, new ArrayList(valueMap.keySet()));
+    }
+
+    public RubyArray values() {
+        return RubyArray.newArray(ruby, new ArrayList(valueMap.values()));
+    }
+
+    public RubyBoolean equal(RubyObject other) {
+        if (this == other) {
+            return ruby.getTrue();
+        } else if (!(other instanceof RubyHash)) {
+            return ruby.getFalse();
+        } else if (length() != ((RubyHash)other).length()) {
+            return ruby.getFalse();
+        }
+
+        // +++
+        Iterator iter = valueMap.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            
+            Object value = ((RubyHash)other).valueMap.get(entry.getKey());
+            if (value == null || !entry.getValue().equals(value)) {
+                return ruby.getFalse();
+            }
+        }
+        return ruby.getTrue();
+        // ---
     }
 }

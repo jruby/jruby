@@ -43,24 +43,27 @@ public class MAsgnNode extends Node implements AssignableNode {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return massign(ruby, self, getValueNode().eval(ruby, self), false);
+        return massign(ruby, self, toArray(ruby, self.eval(getValueNode())), false);
     }
-
-    public RubyObject massign(Ruby ruby, RubyObject self, RubyObject val, boolean check) {
-        if (val == null) {
-            val = RubyArray.newArray(ruby);
-        } else if (!(val instanceof RubyArray)) {
-            if (val.respond_to(RubySymbol.newSymbol(ruby, "to_ary")).isTrue()) {
-                val = val.funcall("to_ary");
+    
+    private static RubyArray toArray(Ruby ruby, RubyObject value) {
+        if (value == null) {
+            return RubyArray.newArray(ruby);
+        } else if (!(value instanceof RubyArray)) {
+            if (value.respond_to(RubySymbol.newSymbol(ruby, "to_ary")).isTrue()) {
+                return (RubyArray)value.funcall("to_ary");
             } else {
-                val = RubyArray.newArray(ruby, val);
+                return RubyArray.newArray(ruby, value);
             }
         }
+        return (RubyArray)value;
+    }
 
+    public RubyObject massign(Ruby ruby, RubyObject self, RubyArray value, boolean check) {
         Node list = getHeadNode();
         int i = 0;
-        for (; list != null && i < ((RubyArray) val).getLength(); i++) {
-            ((AssignableNode) list.getHeadNode()).assign(ruby, self, ((RubyArray) val).entry(i), check);
+        for (; list != null && i < value.getLength(); i++) {
+            ((AssignableNode) list.getHeadNode()).assign(ruby, self, value.entry(i), check);
             list = list.getNextNode();
         }
 
@@ -70,16 +73,13 @@ public class MAsgnNode extends Node implements AssignableNode {
 
         if (getArgsNode() != null) {
             if (getArgsNode() == MINUS_ONE) {
-            } else if (list == null && i < ((RubyArray) val).getLength()) {
-                ((AssignableNode) getArgsNode()).assign(
-                    ruby,
-                    self,
-                    ((RubyArray) val).subseq(((RubyArray) val).getLength() - i, i),
-                    check);
+            } else if (list == null && i < value.getLength()) {
+                ((AssignableNode) getArgsNode()).assign(ruby, self,
+                    value.subseq(i, value.getLength() - i), check);
             } else {
                 ((AssignableNode) getArgsNode()).assign(ruby, self, RubyArray.newArray(ruby), check);
             }
-        } else if (check && i < ((RubyArray) val).getLength()) {
+        } else if (check && i < value.getLength()) {
             // error
         }
 
@@ -88,11 +88,11 @@ public class MAsgnNode extends Node implements AssignableNode {
             ((AssignableNode) list.getHeadNode()).assign(ruby, self, ruby.getNil(), check);
             list = list.getNextNode();
         }
-        return val;
+        return value;
     }
 
     public void assign(Ruby ruby, RubyObject self, RubyObject value, boolean check) {
-        massign(ruby, self, value, check);
+        massign(ruby, self, toArray(ruby, value), check);
     }
 
     /**
