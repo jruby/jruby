@@ -149,7 +149,7 @@ public class Main {
 			System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
 		}
 	}
-
+	static boolean sPrintedUsage = false;
 	/**
 	 * Prints the usage for the class.
 	 *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
@@ -159,12 +159,16 @@ public class Main {
 	 *           -rx 'adapter'  used to select a regexp engine
 	 */
 	protected static void printUsage() {
-		System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
-		System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
-		System.out.println("    -b              benchmark mode, times the script execution");
-		System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
-		System.out.println("    -rx 'class'     The adapter class for the regexp engine, for now can be:");
-		System.out.println("                    org.jruby.regexp.GNURegexpAdapter or org.jruby.regexp.JDKRegexpAdapter");
+		if (!sPrintedUsage)
+		{
+			System.out.println("Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]");
+			System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
+			System.out.println("    -b              benchmark mode, times the script execution");
+			System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
+			System.out.println("    -rx 'class'     The adapter class for the regexp engine, for now can be:");
+			System.out.println("                    org.jruby.regexp.GNURegexpAdapter or org.jruby.regexp.JDKRegexpAdapter");
+
+		}
 	}
 
 	/**
