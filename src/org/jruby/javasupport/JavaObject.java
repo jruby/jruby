@@ -72,7 +72,7 @@ public class JavaObject extends RubyObject implements IndexCallable {
     }
 
     public Class getJavaClass() {
-        return value.getClass();
+        return value != null ? value.getClass() : Object.class;
     }
 
     /** Getter for property value.
