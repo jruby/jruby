@@ -253,11 +253,12 @@ public class RubyDir extends RubyObject {
 
     /** Returns the next entry from this directory. */
     public RubyString read() {
-        pos++;
         if (pos >= snapshot.length) {
             return RubyString.nilString(runtime);
         }
-        return new RubyString(getRuntime(), snapshot[pos]);
+        RubyString result = new RubyString(getRuntime(), snapshot[pos]);
+        pos++;
+        return result;
     }
 
     /** Moves position in this directory to the first entry. */
