@@ -516,11 +516,7 @@ public class RubyModule extends RubyObject {
             //getRuby().warn("already initialized " + dest + " " + name);
         }
 
-        if (getInstanceVariables() == null) {
-            setInstanceVariables(new RubyHashMap());
-        }
-
-        getInstanceVariables().put(name, value);
+        setInstanceVar(name, value);
     }
 
     /** rb_add_method
@@ -652,7 +648,7 @@ public class RubyModule extends RubyObject {
      */
     public boolean isConstantDefined(String name) {
         for (RubyModule tmp = this; tmp != null; tmp = tmp.getSuperClass()) {
-            if (tmp.getInstanceVariables() != null && tmp.getInstanceVariables().get(name) != null) {
+            if (! tmp.getInstanceVar(name).isNil()) {
                 return true;
             }
         }

@@ -40,8 +40,8 @@ import org.jruby.exceptions.TypeError;
  * @author  jpetersen
  */
 public class RubyFloat extends RubyNumeric {
-    private static NumberFormat usFormat = NumberFormat.getInstance(Locale.US);
-    
+    private static final NumberFormat usFormat = NumberFormat.getInstance(Locale.US);
+
     private double value;
 
     public RubyFloat(Ruby ruby) {

@@ -44,8 +44,6 @@ public class RubyString extends RubyObject {
 
 	private static final String encoding = "iso8859-1";
 
-	private static RubyModule pfClass;
-
 	private String value;
 
 	public RubyString(Ruby ruby) {
