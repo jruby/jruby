@@ -1,12 +1,5 @@
 /*
- * RubyGC.java
- * Created on 27 May 2002
- * 
- * Copyright (C) 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Anders Bengtsson
- * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Alan Moore <alan_moore@gmx.net>
- * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,7 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import org.jruby.runtime.CallbackFactory;
