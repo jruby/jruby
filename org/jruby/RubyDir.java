@@ -41,6 +41,7 @@ import org.jruby.exceptions.NotImplementedError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Glob;
 
 /**
  * .The Ruby built-in class Dir.
@@ -142,8 +143,9 @@ public class RubyDir extends RubyObject {
         /*if (pattern.indexOf("**") != -1 || pattern.indexOf("?") != -1) {
             throw new NotImplementedError();
         }*/
-
-        String[] files = new File(".").list(new GlobFilenameFilter(pattern));
+        
+        String[] files = new Glob(pattern).getNames();
+        // new File(".").list(new GlobFilenameFilter(pattern));
 
         return RubyArray.newArray(recv.getRuntime(), JavaUtil.convertJavaArrayToRuby(recv.getRuntime(), files));
     }

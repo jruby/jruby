@@ -72,7 +72,7 @@ fi
 
 # ----- Set Up The System Classpath -------------------------------------------
 
-CP="$JRUBY_HOME/jruby.jar:$JRUBY_HOME"
+CP="$JRUBY_HOME/jruby.jar:$JRUBY_HOME:$JRUBY_HOME/build/classes"
 
 if [ -f "$JAVA_HOME/lib/tools.jar" ] ; then
   CP=$CP:"$JAVA_HOME/lib/tools.jar"
