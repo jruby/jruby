@@ -1258,9 +1258,13 @@ public class RubyArray extends RubyObject {
         }
         modify();
         setTmpLock(true);
-        Collections.sort(
-            list,
-            getRuby().isBlockGiven() ? (Comparator) new BlockComparator() : (Comparator) new DefaultComparator());
+
+        if (getRuby().isBlockGiven()) {
+        	Collections.sort(list, new BlockComparator());
+        } else {
+            Collections.sort(list, new DefaultComparator());
+        }
+
         setTmpLock(false);
         return this;
     }
