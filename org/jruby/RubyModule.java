@@ -124,7 +124,7 @@ public class RubyModule extends RubyObject {
         Callback newModule = new ReflectionCallbackMethod(RubyModule.class, "newModule", false, true);
         Callback initialize = new ReflectionCallbackMethod(RubyModule.class, "initialize", true);
         Callback instance_methods = new ReflectionCallbackMethod(RubyModule.class, "instance_methods", true);
-        Callback public_instance_methods = new ReflectionCallbackMethod(RubyModule.class, "public_instance_methods", true);
+        Callback public_instance_methods = new ReflectionCallbackMethod(RubyModule.class, "instance_methods", true);
         Callback protected_instance_methods =
             new ReflectionCallbackMethod(RubyModule.class, "protected_instance_methods", true);
         Callback private_instance_methods = new ReflectionCallbackMethod(RubyModule.class, "private_instance_methods", true);
