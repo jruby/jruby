@@ -108,12 +108,12 @@ public class RubySymbol extends RubyObject {
         return false;
     }
 
-    public static IRubyObject getSymbol(Ruby runtime, long id) {
+    public static String getSymbol(Ruby runtime, long id) {
         RubySymbol result = runtime.symbolTable.lookup(id);
-        if (result == null) {
-            return runtime.getNil();
+        if (result != null) {
+            return result.symbol;
         }
-        return result;
+        return null;
     }
 
     /* Symbol class methods.

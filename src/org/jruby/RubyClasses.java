@@ -41,6 +41,7 @@ import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.meta.IOMetaClass;
 import org.jruby.runtime.builtin.meta.StringMetaClass;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.BuiltinScript;
@@ -351,7 +352,7 @@ public class RubyClasses {
      */
     public RubyClass getIoClass() {
         if (ioClass == null) {
-            ioClass = RubyIO.createIOClass(runtime);
+            ioClass = new IOMetaClass(runtime);
         }
         return ioClass;
     }

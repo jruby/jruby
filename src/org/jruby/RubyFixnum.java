@@ -30,8 +30,10 @@
  */
 package org.jruby;
 
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.ReflectionCallback;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -64,7 +66,6 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("to_f", callbackFactory.getMethod("to_f"));
         fixnumClass.defineMethod("to_i", callbackFactory.getMethod("to_i"));
         fixnumClass.defineMethod("to_s", callbackFactory.getMethod("to_s"));
-        fixnumClass.defineMethod("to_str", callbackFactory.getMethod("to_s"));
         fixnumClass.defineMethod("taint", callbackFactory.getMethod("taint"));
         fixnumClass.defineMethod("freeze", callbackFactory.getMethod("freeze"));
         fixnumClass.defineMethod("<<", callbackFactory.getMethod("op_lshift", RubyNumeric.class));
@@ -79,7 +80,7 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("|", callbackFactory.getMethod("op_or", RubyNumeric.class));
         fixnumClass.defineMethod("^", callbackFactory.getMethod("op_xor", RubyNumeric.class));
         fixnumClass.defineMethod("size", callbackFactory.getMethod("size"));
-        fixnumClass.defineMethod("[]", callbackFactory.getMethod("aref", RubyNumeric.class));
+        fixnumClass.defineMethod("[]", new ReflectionCallback(RubyFixnum.class, "aref", Arity.fixed(1)));
         fixnumClass.defineMethod("hash", callbackFactory.getMethod("hash"));
         fixnumClass.defineMethod("id2name", callbackFactory.getMethod("id2name"));
         fixnumClass.defineMethod("~", callbackFactory.getMethod("invert"));
@@ -346,14 +347,14 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum((long) Math.ceil(BIT_SIZE / 8.0));
     }
 
-    public RubyFixnum aref(RubyNumeric other) {
-        long position = other.getLongValue();
+    public RubyFixnum aref(IRubyObject other) {
+        long position = num2long(other);
 
         // Seems mighty expensive to keep creating over and over again.
         // How else can this be done though?
         if (position > BIT_SIZE) {
             RubyBignum bignum = RubyBignum.newBignum(getRuntime(), value);
-            
+
             return bignum.aref(other);
         }
 
@@ -361,7 +362,11 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject id2name() {
-        return RubySymbol.getSymbol(getRuntime(), value).convertToString();
+        String symbol = RubySymbol.getSymbol(getRuntime(), value);
+        if (symbol != null) {
+            return getRuntime().newString(symbol);
+        }
+        return getRuntime().getNil();
     }
 
     public RubyFixnum invert() {

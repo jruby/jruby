@@ -190,6 +190,8 @@ public interface IRubyObject {
 
     IRubyObject convertToString();
 
+    IRubyObject convertToFloat();
+
     /**
      * RubyMethod setTaint.
      * @param b

@@ -460,7 +460,11 @@ public class RubyObject implements Cloneable, IRubyObject {
     }
 
     public IRubyObject convertToString() {
-        return (RubyString) convertToType("String", "to_s", true);
+        return convertToType("String", "to_str", true);
+    }
+
+    public IRubyObject convertToFloat() {
+        return convertToType("Float", "to_f", true);
     }
 
     /** rb_convert_type

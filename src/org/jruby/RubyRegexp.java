@@ -128,7 +128,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     }
 
     public void initialize(String regex, int options) {
-    	int flags = 0;
+    	int flags = Pattern.MULTILINE;
         if ((options & RE_OPTION_IGNORECASE) > 0) {
             flags |= Pattern.CASE_INSENSITIVE;
         }
@@ -553,6 +553,17 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 	public void marshalTo(MarshalStream output) throws java.io.IOException {
         output.write('/');
         output.dumpString(pattern.pattern());
-        output.dumpInt(pattern.flags());
+
+        int flags = 0;
+        if ((pattern.flags() & Pattern.DOTALL) > 0) {
+            flags |= RE_OPTION_MULTILINE;
+        }
+        if ((pattern.flags() & Pattern.CASE_INSENSITIVE) > 0) {
+            flags |= RE_OPTION_IGNORECASE;
+        }
+        if ((pattern.flags() & Pattern.COMMENTS) > 0) {
+            flags |= RE_OPTION_EXTENDED;
+        }
+        output.dumpInt(flags);
     }
 }

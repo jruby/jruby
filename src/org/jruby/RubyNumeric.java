@@ -36,8 +36,10 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.ReflectionCallback;
 
 /**
  *
@@ -71,7 +73,7 @@ public abstract class RubyNumeric extends RubyObject {
         result.defineMethod("===", callbackFactory.getMethod("equal", IRubyObject.class));
         result.defineMethod("abs", callbackFactory.getMethod("abs"));
         result.defineMethod("ceil", callbackFactory.getMethod("ceil"));
-        result.defineMethod("coerce", callbackFactory.getMethod("coerce", RubyNumeric.class));
+        result.defineMethod("coerce", new ReflectionCallback(RubyNumeric.class, "coerce", Arity.fixed(1)));
         result.defineMethod("clone", callbackFactory.getMethod("rbClone"));
         result.defineMethod("divmod", callbackFactory.getMethod("divmod", RubyNumeric.class));
         result.defineMethod("eql?", callbackFactory.getMethod("eql", IRubyObject.class));
@@ -264,14 +266,12 @@ public abstract class RubyNumeric extends RubyObject {
     /** num_coerce
      *
      */
-    public RubyArray coerce(RubyNumeric other) {
+    public IRubyObject coerce(IRubyObject other) {
         if (getMetaClass() == other.getMetaClass()) {
             return getRuntime().newArray(other, this);
         } 
-          
-        return getRuntime().newArray(
-                RubyFloat.newFloat(getRuntime(), other.getDoubleValue()),
-                RubyFloat.newFloat(getRuntime(), getDoubleValue()));
+
+        return getRuntime().newArray(other.convertToFloat(), convertToFloat());
     }
 
     /**
@@ -467,4 +467,8 @@ public abstract class RubyNumeric extends RubyObject {
     public abstract RubyNumeric multiplyWith(RubyFloat value);
 
     public abstract RubyNumeric multiplyWith(RubyBignum value);
+
+    public IRubyObject convertToFloat() {
+        return getRuntime().newFloat(getDoubleValue());
+    }
 }

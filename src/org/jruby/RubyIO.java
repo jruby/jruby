@@ -41,7 +41,6 @@ import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.SystemCallError;
-import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandler;
@@ -157,7 +156,7 @@ public class RubyIO extends RubyObject {
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
-    protected RubyIO(Ruby runtime, RubyClass type) {
+    public RubyIO(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -195,70 +194,6 @@ public class RubyIO extends RubyObject {
         registerIOHandler(handler);
     }
     
-    public static RubyClass createIOClass(Ruby runtime) {
-        RubyClass result = 
-            runtime.defineClass("IO", runtime.getClasses().getObjectClass());
-        
-        result.includeModule(runtime.getClasses().getEnumerableModule());
-        
-        // TODO: Implement tty? and isatty.  We have no real capability to 
-        // determine this from java, but if we could set tty status, then
-        // we could invoke jruby differently to allow stdin to return true
-        // on this.  This would allow things like cgi.rb to work properly.
-        
-        CallbackFactory callbackFactory = runtime.callbackFactory(RubyIO.class);
-        result.defineMethod("<<", callbackFactory.getMethod("addString", IRubyObject.class));
-        result.defineMethod("clone", callbackFactory.getMethod("clone_IO"));
-        result.defineMethod("close", callbackFactory.getMethod("close"));
-        result.defineMethod("closed?", callbackFactory.getMethod("closed"));
-        result.defineMethod("each", callbackFactory.getOptMethod("each_line"));
-        result.defineMethod("each_byte", callbackFactory.getMethod("each_byte"));
-        result.defineMethod("each_line", callbackFactory.getOptMethod("each_line"));
-        result.defineMethod("eof", callbackFactory.getMethod("eof"));
-        result.defineMethod("eof?", callbackFactory.getMethod("eof"));
-        result.defineMethod("fileno", callbackFactory.getMethod("fileno"));
-        result.defineMethod("flush", callbackFactory.getMethod("flush"));
-        result.defineMethod("fsync", callbackFactory.getMethod("fsync"));
-        result.defineMethod("getc", callbackFactory.getMethod("getc"));
-        result.defineMethod("gets", callbackFactory.getOptMethod("gets"));
-        result.defineMethod("initialize", callbackFactory.getOptMethod("initialize", RubyFixnum.class));
-        result.defineMethod("lineno", callbackFactory.getMethod("lineno"));
-        result.defineMethod("lineno=", callbackFactory.getMethod("lineno_set", RubyFixnum.class));
-        result.defineMethod("pid", callbackFactory.getMethod("pid"));
-        result.defineMethod("pos", callbackFactory.getMethod("pos"));
-        result.defineMethod("pos=", callbackFactory.getMethod("pos_set", RubyFixnum.class));
-        result.defineMethod("print", callbackFactory.getOptSingletonMethod("print"));
-        result.defineMethod("printf", callbackFactory.getOptSingletonMethod("printf"));
-        result.defineMethod("putc", callbackFactory.getMethod("putc", IRubyObject.class));
-        result.defineMethod("puts", callbackFactory.getOptSingletonMethod("puts"));
-        result.defineMethod("read", callbackFactory.getOptMethod("read"));
-        result.defineMethod("readchar", callbackFactory.getMethod("readchar"));
-        result.defineMethod("readline", callbackFactory.getOptMethod("readline"));
-        result.defineMethod("readlines", callbackFactory.getOptMethod("readlines"));
-        result.defineMethod("reopen", callbackFactory.getOptMethod("reopen", IRubyObject.class));
-        result.defineMethod("rewind", callbackFactory.getMethod("rewind"));        
-        result.defineMethod("seek", callbackFactory.getOptMethod("seek"));
-        result.defineMethod("sync", callbackFactory.getMethod("sync"));
-        result.defineMethod("sync=", callbackFactory.getMethod("sync_set", RubyBoolean.class));
-        result.defineMethod("sysread", callbackFactory.getMethod("sysread", RubyFixnum.class));
-        result.defineMethod("syswrite", callbackFactory.getMethod("syswrite", IRubyObject.class));
-        result.defineMethod("tell", callbackFactory.getMethod("pos"));
-        result.defineMethod("to_i", callbackFactory.getMethod("fileno"));
-        result.defineMethod("ungetc", callbackFactory.getMethod("ungetc", RubyFixnum.class));
-        result.defineMethod("write", callbackFactory.getMethod("write", IRubyObject.class));
-
-        result.defineSingletonMethod("new", callbackFactory.getOptSingletonMethod("newInstance"));
-        result.defineSingletonMethod("foreach", callbackFactory.getOptSingletonMethod("foreach", IRubyObject.class));
-        result.defineSingletonMethod("readlines", callbackFactory.getOptSingletonMethod("readlines"));
-        
-        // Constants for seek
-        result.setConstant("SEEK_SET", runtime.newFixnum(IOHandler.SEEK_SET));
-        result.setConstant("SEEK_CUR", runtime.newFixnum(IOHandler.SEEK_CUR));
-        result.setConstant("SEEK_END", runtime.newFixnum(IOHandler.SEEK_END));
-        
-        return result;
-    }
-    
     /**
      * <p>Open a file descriptor, unless it is already open, then return
      * it.</p> 
@@ -291,7 +226,7 @@ public class RubyIO extends RubyObject {
         }
     }
     
-    protected boolean isOpen() {
+    public boolean isOpen() {
         return isOpen;
     }
 
@@ -385,48 +320,18 @@ public class RubyIO extends RubyObject {
 
     // IO class methods.
 
-    /** rb_io_s_new
-     * 
-     */
-    public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyIO newObject = new RubyIO(recv.getRuntime(), (RubyClass) recv);
-        newObject.callInit(args);
-        return newObject;
-    }
-
-    /** rb_io_s_foreach
-     * 
-     */
-    public static IRubyObject foreach(IRubyObject recv, IRubyObject filename, IRubyObject[] args) {
-        filename.checkSafeString();
-        RubyIO io = (RubyIO) RubyFile.open(recv.getRuntime().getClass("File"),
-                new IRubyObject[] { filename }, false);
-        
-        if (!io.isNil() && io.isOpen()) {
-            IRubyObject nextLine = io.internalGets(args);
-
-            while (!nextLine.isNil()) {
-                recv.getRuntime().yield(nextLine);
-                nextLine = io.internalGets(args);
-            }
-
-            io.close();
-        }
-        
-        return recv.getRuntime().getNil();
-    }
-
     /** rb_io_initialize
      * 
      */
-    public IRubyObject initialize(RubyFixnum descriptor, IRubyObject[] args) {
-        int fileno = RubyNumeric.fix2int(descriptor);
+    public IRubyObject initialize(IRubyObject[] args) {
+        int count = checkArgumentCount(args, 1, 2);
+        int fileno = RubyNumeric.fix2int(args[0]);
         String mode = null;
         
-        if (args.length > 0) {
-            mode = ((RubyString) args[0]).getValue();
+        if (count > 1) {
+            mode = ((RubyString)args[1].convertToString()).getValue();
         }
-        
+
         // See if we already have this descriptor open.
         // If so then we can mostly share the handler (keep open
         // file, but possibly change the mode).
@@ -869,23 +774,6 @@ public class RubyIO extends RubyObject {
         return result;
     }
 
-    public static RubyArray readlines(IRubyObject recv, IRubyObject[] args) {
-        if (args.length < 1) {
-            throw recv.getRuntime().newArgumentError(args.length, 1);
-        }
-        
-        if (! args[0].isKindOf(recv.getRuntime().getClasses().getStringClass())) {
-            throw new TypeError(recv.getRuntime(), args[0], 
-                recv.getRuntime().getClasses().getStringClass());
-        }
-        
-        IRubyObject[] fileArguments = new IRubyObject[] {(RubyString) args[0]};
-        IRubyObject[] separatorArguments = args.length >= 2 ? new IRubyObject[]{args[1]} : IRubyObject.NULL_ARRAY;
-        RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments);
-
-        return file.readlines(separatorArguments);
-    }
-    
     public String toString() {
         return "RubyIO(" + modes + ", " + fileno + ")";
     }

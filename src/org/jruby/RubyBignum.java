@@ -34,7 +34,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.jruby.exceptions.RangeError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -97,8 +99,8 @@ public class RubyBignum extends RubyInteger {
         result.defineMethod("|", callbackFactory.getMethod("op_or", RubyNumeric.class));
         result.defineMethod("^", callbackFactory.getMethod("op_xor", RubyNumeric.class));
         result.defineMethod("-@", callbackFactory.getMethod("op_uminus"));
-        result.defineMethod("[]", callbackFactory.getMethod("aref", RubyNumeric.class));
-        result.defineMethod("coerce", callbackFactory.getMethod("coerce", RubyNumeric.class));
+        result.defineMethod("[]", callbackFactory.getMethod("aref", IRubyObject.class));
+        result.defineMethod("coerce", callbackFactory.getMethod("coerce", IRubyObject.class));
         result.defineMethod("remainder", callbackFactory.getMethod("remainder", RubyNumeric.class));
         result.defineMethod("hash", callbackFactory.getMethod("hash"));
         result.defineMethod("size", callbackFactory.getMethod("size"));
@@ -254,8 +256,9 @@ public class RubyBignum extends RubyInteger {
         return new RubyBignum(getRuntime(), value.xor(bigIntValue(other)));
     }
 
-    public RubyFixnum aref(RubyNumeric pos) {
-        boolean isSet = getValue().testBit((int) pos.getLongValue());
+    public RubyFixnum aref(IRubyObject other) {
+        long pos = num2long(other);
+        boolean isSet = getValue().testBit((int) pos);
         return getRuntime().newFixnum(isSet ? 1 : 0);
     }
 
@@ -341,5 +344,12 @@ public class RubyBignum extends RubyInteger {
         RubyBignum result = newBignum(input.getRuntime(), value);
         input.registerLinkTarget(result);
         return result;
+    }
+
+    public IRubyObject coerce(IRubyObject other) {
+        if (other instanceof RubyFixnum) {
+            return getRuntime().newArray(newBignum(getRuntime(), ((RubyFixnum)other).getLongValue()), this);
+        }
+        throw getRuntime().newTypeError("Can't coerce " + other.getMetaClass().getName() + " to Bignum");
     }
 }
