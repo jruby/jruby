@@ -34,19 +34,50 @@ import org.jruby.*;
 import org.jruby.runtime.*;
 
 /**
- *
+ * A structuring node (linked list of other nodes).
+ * This type of node is used to structure the AST.
+ * It is used to build a linked list
+ * the meaning of the Node fields for BlockNodes is:
+ * <ul>
+ * <li>
+ * u1 ==&gt; head the node in this link
+ * </li>
+ * <li>
+ * u2 ==&gt; end the last link of the list
+ * </li>
+ * <li>
+ * u3 ==&gt; next the next link
+ * </li>
+ * </ul>
+ * this nodes are created through the {@link NodeFactory#newBlock newBlock} 
+ * method.  This method is in turned invoked by the parser directly but also
+ * by the {@link org.jruby.parser.ParserHelper#block_append block_append} method
  * @author  jpetersen
  * @version 
  */
 public class BlockNode extends Node {
+	/**
+	 * Builds a BlockNode with a given head.
+	 * The end node of this block node will be set to itself.
+	 * @param headNode the head (content of the link) for this block node 
+	 **/
     public BlockNode(Node headNode) {
         super(Constants.NODE_BLOCK, headNode, null, null);
+		setEndNode(this);
     }
     
  	public String toString()   
 	{
 		return super.toString() + "head:" + stringOrNull(getHeadNode()) + ",\nnext:" + stringOrNull(getNextNode()) + ")";
 	}
+	/**
+	 * Evaluate this node.
+	 *	To eval a blocknode, if present the head node is evaled then 
+	 *	the next node is treated as if it was a block node (by evaling 
+	 *	its headnode if present and continuing).                       	  
+	 *	@return the value returned by evaling the last node of the block
+	 *			or nil.
+	 **/
     public RubyObject eval(Ruby ruby, RubyObject self) {
         Node node = this;
         while (node.getNextNode() != null) {
