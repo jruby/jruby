@@ -672,7 +672,7 @@ public class PrintfFormat {
         String internalsprintf(Object s) {
             String s2 = "";
             if (conversionCharacter == 's' || conversionCharacter == 'S') {
-                s2 = printSFormat(s.toString());
+                s2 = printSFormat(s == null ? "" : s.toString());
             } else {
                 throw new IllegalArgumentException("Cannot format a String with a format using a " + conversionCharacter + " conversion character.");
             }
