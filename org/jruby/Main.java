@@ -28,7 +28,6 @@
  */
 package org.jruby;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.StringReader;
 import java.io.Reader;
@@ -43,6 +42,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThrowJump;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
+import org.jruby.util.CommandlineParser;
 import org.ablaf.ast.INode;
 
 /**
@@ -57,149 +57,41 @@ import org.ablaf.ast.INode;
  */
 public class Main {
 
-    private static String sRegexpAdapter;
-
-    private static ArrayList sLoadDirectories = new ArrayList();
-    private static String sScript = null;
-    private static String sFileName = null;
-    //list of libraries to require first
-    private static ArrayList sRequireFirst = new ArrayList();
-    private static boolean sBenchmarkMode = false;
-    private static boolean sDoLoop = false;
-    private static boolean sDoPrint = false;
-    private static boolean sDoLine = false;
-    private static boolean sDoSplit = false;
-    private static boolean verbose = false;
-    private static boolean showVersion = false;
-
-    private static int argumentIndex = 0;
-    private static int characterIndex = 0;
-
-
-    /*
-     * helper function for args processing.
-     */
-    private static String grabValue(String args[], String errorMessage) {
-        if (++characterIndex < args[argumentIndex].length()) {
-            return args[argumentIndex].substring(characterIndex);
-        } else if (++argumentIndex < args.length) {
-            return args[argumentIndex];
-        } else {
-            System.err.println("invalid argument " + argumentIndex);
-            System.err.println(errorMessage);
-            printUsage();
-            System.exit(1);
-        }
-        return null;
-    }
-
-    /**
-     * process the command line arguments.
-     * This method will consume the appropriate arguments and valuate
-     * the static variables corresponding to the options.
-     * @param args the command line arguments
-     * @return the arguments left
-     **/
-    private static String[] processArgs(String args[]) {
-        int argumentLength = args.length;
-        StringBuffer lBuf = new StringBuffer();
-        for (; argumentIndex < argumentLength; argumentIndex++) {
-            if (args[argumentIndex].charAt(0) == '-') {
-                FOR : for (characterIndex = 1; characterIndex < args[argumentIndex].length(); characterIndex++)
-                    switch (args[argumentIndex].charAt(characterIndex)) {
-                        case 'h' :
-                            printUsage();
-                            break;
-                        case 'I' :
-                            sLoadDirectories.add(grabValue(args, " -I must be followed by a directory name to add to lib path"));
-                            break FOR;
-                        case 'r' :
-                            sRequireFirst.add(grabValue(args, "-r must be followed by a package to require"));
-                            break FOR;
-                        case 'e' :
-                            lBuf.append(grabValue(args, " -e must be followed by an expression to evaluate")).append("\n");
-                            break FOR;
-                        case 'b' :
-                            sBenchmarkMode = true;
-                            break;
-                        case 'R' :
-                            sRegexpAdapter = grabValue(args, " -R must be followed by an expression to evaluate");
-                            break FOR;
-                        case 'p' :
-                            sDoPrint = true;
-                            sDoLoop = true;
-                            break;
-                        case 'n' :
-                            sDoLoop = true;
-                            break;
-                        case 'a' :
-                            sDoSplit = true;
-                            break;
-                        case 'l' :
-                            sDoLine = true;
-                            break;
-                        case 'v' :
-                            System.out.println("ruby " + Constants.RUBY_MAJOR_VERSION + " () [java]");
-                            verbose = true;
-                            break;
-                        case 'w' :
-                            verbose = true;
-                            break;
-                        case '-' :
-                            if (args[argumentIndex].equals("--version")) {
-                                showVersion = true;
-                                break FOR;
-                            }
-                        default :
-                            System.err.println("unknown option " + args[argumentIndex].charAt(characterIndex));
-                            System.exit(1);
-                    }
-            } else {
-                if (lBuf.length() == 0) //only get a filename if there were no -e
-                    sFileName = args[argumentIndex++]; //consume the file name
-                break; //the rests are args for the script
-            }
-        }
-        sScript = lBuf.toString();
-        String[] result = new String[argumentLength - argumentIndex];
-        System.arraycopy(args, argumentIndex, result, 0, result.length);
-        return result;
-    }
-
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
+        CommandlineParser commandline = new CommandlineParser(args);
 
-        // Benchmark
-        long now = -1;
-        String[] argv = processArgs(args);
-        if (showVersion) {
-            System.out.print("ruby ");
-            System.out.print(Constants.RUBY_VERSION);
-            System.out.print(" (");
-            System.out.print(Constants.COMPILE_DATE);
-            System.out.print(") [");
-            System.out.print("java");
-            System.out.println("]");
+        if (commandline.showVersion) {
+            showVersion();
             return;
         }
-        if (sBenchmarkMode)
+        long now = -1;
+        if (commandline.sBenchmarkMode)
             now = System.currentTimeMillis();
-        if (sScript.length() > 0) {
-            runInterpreter(new StringReader(sScript), "-e", argv);
-        } else if (sFileName != null) {
-            runInterpreterOnFile(sFileName, argv);
+        if (commandline.hasInlineScript()) {
+            runInterpreter(new StringReader(commandline.inlineScript()), "-e", commandline.scriptArguments, commandline);
+        } else if (commandline.scriptFilename != null) {
+            runInterpreterOnFile(commandline.scriptFilename, commandline.scriptArguments, commandline);
         } else {
             System.err.println("nothing to interpret");
             printUsage();
             return;
         }
-        if (sBenchmarkMode) {
+        if (commandline.sBenchmarkMode) {
             System.out.println("Runtime: " + (System.currentTimeMillis() - now) + " ms");
         }
     }
-    static boolean sPrintedUsage = false;
+
+    public static void showVersion() {
+        System.out.print("ruby ");
+        System.out.print(Constants.RUBY_VERSION);
+        System.out.print(" (");
+        System.out.print(Constants.COMPILE_DATE);
+        System.out.print(") [");
+        System.out.print("java");
+        System.out.println("]");
+    }
+
+    static boolean hasPrintedUsage = false;
     /**
      * Prints the usage for the class.
      *       Usage: java -jar jruby.jar [switches] [rubyfile.rb] [arguments]
@@ -208,14 +100,14 @@ public class Main {
      *           -Idirectory    specify $LOAD_PATH directory (may be used more than once)
      *           -R 'adapter'  used to select a regexp engine
      */
-    protected static void printUsage() {
-        if (!sPrintedUsage) {
+    public static void printUsage() {
+        if (!hasPrintedUsage) {
             System.out.println("Usage: jruby [switches] [rubyfile.rb] [arguments]");
             System.out.println("    -e 'command'    one line of script. Several -e's allowed. Omit [programfile]");
             System.out.println("    -b              benchmark mode, times the script execution");
             System.out.println("    -Idirectory     specify $LOAD_PATH directory (may be used more than once)");
             System.out.println("    -R 'name'       The regexp engine to use, for now can be JDK, GNU or ORO");
-            sPrintedUsage = true;
+            hasPrintedUsage = true;
         }
     }
 
@@ -224,37 +116,36 @@ public class Main {
      *
      * @param reader the string to evaluate
      * @param filename the name of the File from which the string comes.
-     * @fixme implement the -p and -n options
      */
-    protected static void runInterpreter(Reader reader, String filename, String[] args) {
-        Ruby runtime = Ruby.getDefaultInstance(sRegexpAdapter);
+    protected static void runInterpreter(Reader reader, String filename, String[] args, CommandlineParser commandline) {
+        Ruby runtime = Ruby.getDefaultInstance(commandline.sRegexpAdapter);
 
         IRubyObject argumentArray = JavaUtil.convertJavaToRuby(runtime, args);
 
-        runtime.setVerbose(verbose);
-        runtime.defineReadonlyVariable("$VERBOSE", verbose ? runtime.getTrue() : runtime.getNil());
+        runtime.setVerbose(commandline.verbose);
+        runtime.defineReadonlyVariable("$VERBOSE", commandline.verbose ? runtime.getTrue() : runtime.getNil());
 
         runtime.defineGlobalConstant("ARGV", argumentArray);
-        runtime.defineReadonlyVariable("$-p", (sDoPrint ? runtime.getTrue() : runtime.getNil()));
-        runtime.defineReadonlyVariable("$-n", (sDoLoop ? runtime.getTrue() : runtime.getNil()));
-        runtime.defineReadonlyVariable("$-a", (sDoSplit ? runtime.getTrue() : runtime.getNil()));
-        runtime.defineReadonlyVariable("$-l", (sDoLine ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-p", (commandline.sDoPrint ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-n", (commandline.sDoLoop ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-a", (commandline.sDoSplit ? runtime.getTrue() : runtime.getNil()));
+        runtime.defineReadonlyVariable("$-l", (commandline.sDoLine ? runtime.getTrue() : runtime.getNil()));
         runtime.defineReadonlyVariable("$*", argumentArray);
         runtime.defineVariable(new RubyGlobal.StringGlobalVariable(runtime, "$0", RubyString.newString(runtime, filename)));
-        runtime.getLoadService().init(runtime, sLoadDirectories);
+        runtime.getLoadService().init(runtime, commandline.sLoadDirectories);
         try {
-            Iterator iter = sRequireFirst.iterator();
+            Iterator iter = commandline.requiredLibraries().iterator();
             while (iter.hasNext()) {
                 String scriptName = (String) iter.next();
                 KernelModule.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
             }
 
             INode parsedScript = runtime.parse(reader, filename);
-            if (sDoPrint) {
+            if (commandline.sDoPrint) {
                 parsedScript = new ParserSupport().appendPrintToBlock(parsedScript);
             }
-            if (sDoLoop) {
-                parsedScript = new ParserSupport().appendWhileLoopToBlock(parsedScript, sDoLine, sDoSplit);
+            if (commandline.sDoLoop) {
+                parsedScript = new ParserSupport().appendWhileLoopToBlock(parsedScript, commandline.sDoLine, commandline.sDoSplit);
             }
             runtime.eval(parsedScript);
 
@@ -271,14 +162,14 @@ public class Main {
      *
      * @param fileName the name of the file to interpret
      */
-    protected static void runInterpreterOnFile(String fileName, String[] args) {
+    protected static void runInterpreterOnFile(String fileName, String[] args, CommandlineParser commandline) {
         File file = new File(fileName);
         if (!file.canRead()) {
             System.out.println("Cannot read source file: \"" + fileName + "\"");
         } else {
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(file));
-                runInterpreter(reader, fileName, args);
+                runInterpreter(reader, fileName, args, commandline);
                 reader.close();
             } catch (IOException ioExcptn) {
                 System.out.println("Error reading source file: " + ioExcptn.getMessage());
