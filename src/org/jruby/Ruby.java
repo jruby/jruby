@@ -3,7 +3,7 @@
  * Created on 04. Juli 2001, 22:53
  *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Copyright (C) 2004
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
@@ -102,6 +102,7 @@ public final class Ruby {
     public final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable();
     public Hashtable ioHandlers = new Hashtable();
     public long randomSeed = 0;
+    public long randomSeedSequence = 0;
     public Random random = new Random();
 
     private RubyProc traceFunction;

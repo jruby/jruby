@@ -649,16 +649,22 @@ public class KernelModule {
     }
 
     public static RubyInteger srand(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
+        long oldRandomSeed = runtime.randomSeed;
 
-        long oldRandomSeed = recv.getRuntime().randomSeed;
         if (args.length > 0) {
-            RubyInteger integerSeed = (RubyInteger) args[0].convertToType("Integer", "to_i", true);
-            recv.getRuntime().randomSeed = integerSeed.getLongValue();
+            RubyInteger integerSeed = 
+            	(RubyInteger) args[0].convertToType("Integer", "to_i", true);
+            runtime.randomSeed = integerSeed.getLongValue();
         } else {
-            recv.getRuntime().randomSeed = System.currentTimeMillis(); // FIXME
+        	// Not sure how well this works, but it works much better than
+        	// just currentTimeMillis by itself.
+            runtime.randomSeed = System.currentTimeMillis() ^
+			  recv.hashCode() ^ runtime.randomSeedSequence++ ^
+			  runtime.random.nextInt(Math.abs((int)runtime.randomSeed));
         }
-        recv.getRuntime().random.setSeed(recv.getRuntime().randomSeed);
-        return RubyFixnum.newFixnum(recv.getRuntime(), oldRandomSeed);
+        runtime.random.setSeed(runtime.randomSeed);
+        return RubyFixnum.newFixnum(runtime, oldRandomSeed);
     }
 
     public static RubyNumeric rand(IRubyObject recv, IRubyObject[] args) {
