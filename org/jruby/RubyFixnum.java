@@ -53,6 +53,8 @@ public class RubyFixnum extends RubyInteger {
         RubyClass fixnumClass = ruby.defineClass("Fixnum", ruby.getClasses().getIntegerClass());
         fixnumClass.includeModule(ruby.getClasses().getPrecisionModule());
 
+        fixnumClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyFixnum.class, "induced_from", RubyObject.class));
+
         fixnumClass.defineMethod("to_f", CallbackFactory.getMethod(RubyFixnum.class, "to_f"));
         fixnumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("to_str", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
@@ -135,6 +137,17 @@ public class RubyFixnum extends RubyInteger {
 
     public RubyFixnum newFixnum(long value) {
         return newFixnum(ruby, value);
+    }
+
+    public static RubyInteger induced_from(Ruby ruby, RubyObject recv, RubyObject number) {
+        if (number instanceof RubyFixnum) {
+            return (RubyFixnum) number;
+        } else if (number instanceof RubyFloat) {
+            return ((RubyFloat) number).to_i();
+        } else if (number instanceof RubyBignum) {
+            return RubyFixnum.newFixnum(ruby, ((RubyBignum) number).getLongValue());
+        }
+        return (RubyFixnum) number.convertToType("Fixnum", "to_int", true);
     }
 
     public RubyFixnum hash() {

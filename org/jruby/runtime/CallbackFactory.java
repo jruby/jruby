@@ -157,4 +157,12 @@ public final class CallbackFactory {
             }
         };
     }
+
+    public static Callback getSelfMethod() {
+        return new Callback() {
+            public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+                return recv;
+            }
+        };
+    }
 }

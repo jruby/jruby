@@ -76,8 +76,8 @@ public class RubySymbol extends RubyObject {
         symbolClass.defineMethod("hash", CallbackFactory.getMethod(RubySymbol.class, "hash"));
         symbolClass.defineMethod("dup", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
         symbolClass.defineMethod("clone", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
-        symbolClass.defineMethod("freeze", CallbackFactory.getMethod(RubySymbol.class, "freeze"));
-        symbolClass.defineMethod("taint", CallbackFactory.getMethod(RubySymbol.class, "taint"));
+        symbolClass.defineMethod("freeze", CallbackFactory.getSelfMethod());
+        symbolClass.defineMethod("taint", CallbackFactory.getSelfMethod());
 
         return symbolClass;
     }
@@ -121,16 +121,6 @@ public class RubySymbol extends RubyObject {
 
     public RubyObject rbClone() {
         throw new TypeError(getRuby(), "can't clone Symbol");
-    }
-
-    public RubyObject freeze() {
-        // No-op
-        return this;
-    }
-
-    public RubyObject taint() {
-        // No-op
-        return this;
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

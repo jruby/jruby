@@ -33,6 +33,7 @@ import java.util.*;
 
 import org.jruby.runtime.*;
 import org.jruby.marshal.MarshalStream;
+import org.jruby.exceptions.TypeError;
 
 /**
  *
@@ -81,6 +82,8 @@ public class RubyFloat extends RubyNumeric {
     public static RubyClass createFloatClass(Ruby ruby) {
         RubyClass floatClass = ruby.defineClass("Float", ruby.getClasses().getNumericClass());
 
+        floatClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyFloat.class, "induced_from", RubyObject.class));
+
         floatClass.defineMethod("to_i", CallbackFactory.getMethod(RubyFloat.class, "to_i"));
         floatClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFloat.class, "to_s"));
         floatClass.defineMethod("hash", CallbackFactory.getMethod(RubyFloat.class, "hash"));
@@ -119,6 +122,16 @@ public class RubyFloat extends RubyNumeric {
      */
     public static RubyFloat newFloat(Ruby ruby, double value) {
         return new RubyFloat(ruby, value);
+    }
+
+    public static RubyFloat induced_from(Ruby ruby, RubyObject recv, RubyObject number) {
+        if (number instanceof RubyFloat) {
+            return (RubyFloat) number;
+        } else if (number instanceof RubyInteger) {
+            return (RubyFloat) number.funcall("to_f");
+        } else {
+            throw new TypeError(ruby, "failed to convert " + number.getRubyClass() + "into Float");
+        }
     }
 
     public RubyFixnum hash() {

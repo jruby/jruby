@@ -57,7 +57,11 @@ public class RubyBignum extends RubyInteger {
     }
 
     public long getLongValue() {
-        return value.longValue();
+        long result = value.longValue();
+        if (! (BigInteger.valueOf(result).equals(value))) {
+            throw new RangeError(ruby, "bignum too big to convert into 'int'");
+        }
+        return result;
     }
 
     /** Getter for property value.

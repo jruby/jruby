@@ -45,11 +45,12 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyClass createIntegerClass(Ruby ruby) {
         RubyClass integerClass = ruby.defineClass("Integer", ruby.getClasses().getNumericClass());
 
+        integerClass.defineSingletonMethod("induced_from", CallbackFactory.getSingletonMethod(RubyInteger.class, "induced_from", RubyObject.class));
+
         integerClass.defineMethod("chr", CallbackFactory.getMethod(RubyInteger.class, "chr"));
         integerClass.defineMethod("integer?", CallbackFactory.getMethod(RubyInteger.class, "int_p"));
         integerClass.defineMethod("to_i", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
         integerClass.defineMethod("to_int", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
-
         integerClass.defineMethod("ceil", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
         integerClass.defineMethod("floor", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
         integerClass.defineMethod("round", CallbackFactory.getMethod(RubyInteger.class, "to_i"));
@@ -73,6 +74,14 @@ public abstract class RubyInteger extends RubyNumeric {
     
     
     // Integer methods
+
+    public static RubyInteger induced_from(Ruby ruby, RubyObject recv, RubyObject number) {
+        if (number instanceof RubyNumeric) {
+            return (RubyInteger) number.funcall("to_i");
+        } else {
+            throw new TypeError(ruby, "failed to convert " + number.getRubyClass() + " into Integer");
+        }
+    }
 
     public RubyString chr() {
         if (getLongValue() < 0 || getLongValue() > 0xff) {
