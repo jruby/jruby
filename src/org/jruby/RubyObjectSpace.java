@@ -44,10 +44,18 @@ public class RubyObjectSpace {
         CallbackFactory callbackFactory = ruby.callbackFactory();
         objectSpaceModule.defineModuleFunction("each_object", callbackFactory.getOptSingletonMethod(RubyObjectSpace.class, "each_object"));
         objectSpaceModule.defineModuleFunction("garbage_collect", callbackFactory.getSingletonMethod(RubyObjectSpace.class, "garbage_collect"));
+        objectSpaceModule.defineModuleFunction("define_finalizer", 
+        		callbackFactory.getOptSingletonMethod(RubyObjectSpace.class, "define_finalizer"));
 
         return objectSpaceModule;
     }
 
+    // TODO: Figure out feasibility of this...
+    public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args) {
+    	// Put in to fake tempfile.rb out.
+    	return recv;
+    }
+    
     public static IRubyObject each_object(IRubyObject recv, IRubyObject[] args) {
         RubyModule rubyClass;
         if (args.length == 0) {
