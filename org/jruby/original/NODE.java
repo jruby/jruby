@@ -68,15 +68,15 @@ public class NODE implements node_type, VALUE, Scope {
     public NODE nd_stts() { return (NODE)u1; }
 
     public global_entry nd_entry() { return (global_entry)u3; }
-    public ID nd_vid() { return (ID)u1; }
-    public ID nd_cflag() { return (ID)u2; }
+    public RubyId nd_vid() { return (RubyId)u1; }
+    public RubyId nd_cflag() { return (RubyId)u2; }
     public void nd_cflag(ID id) { u2 = id; }
     //VALUE nd_cval() { return (VALUE)u3; }
 
     public int nd_cnt() { return u3 == null ? 0 : ((Integer)u3).intValue(); }
     public void nd_cnt(int i) { u3 = new Integer(i); }
-    public ID[] nd_tbl() { return (ID[])u1; }
-    public void nd_tbl(ID[] idTable) { u1 = idTable; }
+    public RubyId[] nd_tbl() { return (RubyId[])u1; }
+    public void nd_tbl(RubyId[] idTable) { u1 = idTable; }
 
     public NODE nd_var() { return (NODE)u1; }
     //NODE nd_ibdy() { return (NODE)u2; }
@@ -85,7 +85,7 @@ public class NODE implements node_type, VALUE, Scope {
 
     public NODE nd_value() { return (NODE)u2; }
     public void nd_value(NODE n) { u2 = n; }
-    public ID nd_aid() { return (ID)u3; }
+    public RubyId nd_aid() { return (RubyId)u3; }
     public void nd_aid(ID id) { u3 = id; }
 
     public RubyObject nd_lit() { return (RubyObject)u1; }
@@ -96,8 +96,8 @@ public class NODE implements node_type, VALUE, Scope {
     public NODE nd_opt() { return (NODE)u1; }
 
     public NODE nd_recv() { return (NODE)u1; }
-    public ID nd_mid() { return (ID)u2; }
-    public void nd_mid(ID id) { u2 = id; }
+    public RubyId nd_mid() { return (RubyId)u2; }
+    public void nd_mid(RubyId id) { u2 = id; }
     public NODE nd_args() { return (NODE)u3; }
     public void nd_args(NODE n) { u3 = n; }
 
@@ -105,13 +105,13 @@ public class NODE implements node_type, VALUE, Scope {
     public void nd_noex(int i) { u1 = new Integer(i); }
     public NODE nd_defn() { return (NODE)u3; }
 
-    public ID nd_old() { return (ID)u1; }
-    public ID nd_new() { return (ID)u2; }
+    public RubyId nd_old() { return (RubyId)u1; }
+    public RubyId nd_new() { return (RubyId)u2; }
 
     public Object nd_cfnc() { return u1; }
     //int nd_argc() { return u2 == null ? 0 : ((Integer)u2).intValue(); }
 
-    public ID nd_cname() { return (ID)u1; }
+    public RubyId nd_cname() { return (RubyId)u1; }
     public NODE nd_super() { return (NODE)u3; }
 
     //ID nd_modl() { return (ID)u1; }
@@ -164,7 +164,7 @@ public class NODE implements node_type, VALUE, Scope {
             // copy->nd_tbl = ALLOC_N( ID, node->nd_tbl[ 0 ] + 1 );
             // MEMCPY( copy->nd_tbl, node->nd_tbl, ID, node->nd_tbl[ 0 ] + 1 );
             
-            ID[] idTable = new ID[nd_tbl()[0].intValue() + 1];
+            RubyId[] idTable = new RubyId[nd_tbl()[0].intValue() + 1];
             System.arraycopy(nd_tbl(), 0, idTable, 0, nd_tbl().length);
             
             copy.nd_tbl(idTable);
