@@ -4,10 +4,13 @@ require 'rexml/sax2parser'
 
 INCLUDES = %w(
 org.jruby.Ruby
+org.jruby.RubyClass
 org.jruby.RubyModule
 org.jruby.runtime.builtin.IRubyObject
 org.jruby.runtime.builtin.definitions.MethodContext
+org.jruby.runtime.builtin.definitions.StaticMethodContext
 org.jruby.runtime.builtin.definitions.ModuleDefinition
+org.jruby.runtime.builtin.definitions.ClassDefinition
 org.jruby.runtime.builtin.definitions.ModuleFunctionsContext
 org.jruby.util.Asserts
 )
@@ -89,6 +92,10 @@ class Alias
     # no-op
   end
 
+  def generate_switch_case(output)
+    # no-op
+  end
+
   def generate_creation(output)
     output.write('context.')
     if @original.optional?
@@ -118,6 +125,7 @@ class MethodGenerator
     @methods = []
     @class_methods = []
     @implementation = nil
+    @superclass = "Object"
   end
 
   attr :implementation
@@ -144,6 +152,16 @@ class MethodGenerator
       m.generate_constant(output)
     }
     output.write("\n")
+
+    output.write("protected RubyClass createType(Ruby runtime) {\n")
+    output.write('return runtime.defineClass("')
+    output.write(@name)
+    output.write('", (RubyClass) runtime.getClasses().getClass("')
+    output.write(@superclass)
+    output.write('"));' + "\n")
+    output.write("}\n")
+    output.write("\n")
+
     output.write("protected void defineMethods(MethodContext context) {\n")
     @methods.each {|m|
       m.generate_creation(output)
@@ -189,6 +207,9 @@ class MethodGenerator
     }
     parser.listen(:characters, ['^name$']) {|text|
       @name = text
+    }
+    parser.listen(:characters, ['^superclass$']) {|text|
+      @superclass = text
     }
     parser.listen(:characters, ['^implementation$']) {|text|
       @implementation = text

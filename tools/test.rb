@@ -132,6 +132,10 @@ class TestGenerator < Test::Unit::TestCase
     assert(output.empty?)
 
     output = stream_string
+    m.generate_switch_case(output)
+    assert(output.empty?)
+
+    output = stream_string
     m.generate_creation(output)
     assert_equal('context.create("xyz", HELLO_JAVA, 0);' + "\n", output)
 
