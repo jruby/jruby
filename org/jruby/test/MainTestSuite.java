@@ -32,7 +32,7 @@ package org.jruby.test;
 
 import junit.framework.TestSuite;
 import junit.framework.Test;
-import org.jruby.javasupport.test.TestRubyProxyFactory;
+import org.jruby.javasupport.test.JavaSupportTestSuite;
 
 /**
  *
@@ -54,7 +54,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(new TestSuite(TestObjectSpace.class));
         suite.addTest(ScriptTestSuite.suite());
         suite.addTest(new TestSuite(TestRubySymbol.class));
-        suite.addTest(new TestSuite(TestRubyProxyFactory.class));
+        suite.addTest(JavaSupportTestSuite.suite());
         suite.addTest(new TestSuite(TestIdentitySet.class));
         return suite;
     }

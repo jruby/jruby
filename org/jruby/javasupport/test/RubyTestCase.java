@@ -6,11 +6,11 @@ import java.io.InputStream;
 import java.io.FileOutputStream;
 import java.io.File;
 import java.net.URL;
-import org.jruby.*;
-import org.jruby.util.*;
-import org.jruby.javasupport.*;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.regexp.JDKRegexpAdapter;
+import org.jruby.Ruby;
+import org.jruby.KernelModule;
+import org.jruby.RubyString;
 
 public class RubyTestCase extends TestCase {
     private static final IRubyObject[] EMPTY_ARRAY = new IRubyObject[0];
