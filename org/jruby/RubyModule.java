@@ -709,9 +709,6 @@ public class RubyModule extends RubyObject {
 
     public Visibility getMethodNoex(String name) {
         CacheEntry entry = getMethodBody(name);
-        if (entry == null) {
-            return Visibility.PUBLIC;
-        }
         return entry.getVisibility();
     }
 
@@ -722,8 +719,9 @@ public class RubyModule extends RubyObject {
         ICallable method = searchMethod(name);
 
         if (method.isUndefined()) {
-            getRuntime().getMethodCache().saveUndefinedEntry(this, name);
-            return null;
+            CacheEntry undefinedEntry = CacheEntry.createUndefined(name, this);
+            getRuntime().getMethodCache().saveEntry(this, name, undefinedEntry);
+            return undefinedEntry;
         }
 
         CacheEntry result = new CacheEntry(this, method.getVisibility());
@@ -757,13 +755,12 @@ public class RubyModule extends RubyObject {
         }
 
         CacheEntry entry = getRuntime().getMethodCache().getEntry(this, name);
-
         if (entry == null) {
             entry = getMethodBody(name);
         }
 
         final LastCallStatus lastCallStatus = runtime.getLastCallStatus();
-        if (entry == null || entry.getMethod().isUndefined()) {
+        if (! entry.isDefined()) {
             callType.registerCallStatus(lastCallStatus, name);
             return callMethodMissing(recv, name, args);
         }
@@ -1116,7 +1113,7 @@ public class RubyModule extends RubyObject {
             entry = getMethodBody(name);
         }
 
-        if (entry != null && entry.isDefined()) {
+        if (entry.isDefined()) {
             if (checkVisibility && entry.getVisibility().isPrivate()) {
                 return false;
             } else {
@@ -1135,7 +1132,7 @@ public class RubyModule extends RubyObject {
         String originalName = name;
 
         CacheEntry ent = getMethodBody(name);
-        if (ent == null) {
+        if (! ent.isDefined()) {
             // printUndef();
             return getRuntime().getNil();
         }
@@ -1143,7 +1140,7 @@ public class RubyModule extends RubyObject {
         while (ent.getMethod() instanceof EvaluateMethod
             && ((EvaluateMethod) ent.getMethod()).getNode() instanceof ZSuperNode) {
             ent = ent.getOrigin().getSuperClass().getMethodBody(ent.getOriginalName());
-            if (ent == null) {
+            if (! ent.isDefined()) {
                 // printUndef();
                 return getRuntime().getNil();
             }
