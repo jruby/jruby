@@ -1,28 +1,28 @@
 /*
  * LocalVariableNames.java - description
  * Created on 25.02.2002, 21:34:15
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.parser;
 
@@ -58,7 +58,7 @@ public class LocalNamesElement implements StackElement {
     /**
      * Returns true if there was already an assignment to a local
      * variable named name, false otherwise.
-     * 
+     *
      * MRI: cf local_id
      * @param name The name of the local variable.
      * @return true if there was already an assignment to a local
@@ -75,9 +75,9 @@ public class LocalNamesElement implements StackElement {
     /**
      * Returns the index of the local variable 'name' in the table
      * of registered variable names.
-     * 
+     *
      * If name is not registered yet, register the variable name.
-     * 
+     *
      * If name == null returns the count of registered variable names.
      * MRI: cf local_cnt
      * @todo: this method is often used for its side effect (for registering a name)
@@ -102,10 +102,10 @@ public class LocalNamesElement implements StackElement {
     }
 
     /**
-     * Register the local variable name 'name' in the table 
-     * of registered variable names. 
+     * Register the local variable name 'name' in the table
+     * of registered variable names.
      * Returns the index of the added local variable name in the table.
-     * 
+     *
      * MRI: cf local_append
      *@param name The name of the local variable.
      *@return The index of the local variable name in the table.
@@ -125,22 +125,6 @@ public class LocalNamesElement implements StackElement {
         localNames.add(name);
         return localNames.size() - 1;
     }
-    
-    /**
-     * Gets the blockLevel.
-     * @return Returns a int
-     */
-    public int getBlockLevel() {
-        return blockLevel;
-    }
-
-    /**
-     * Sets the blockLevel.
-     * @param blockLevel The blockLevel to set
-     */
-    public void setBlockLevel(int blockLevel) {
-        this.blockLevel = blockLevel;
-    }
 
     /**
      * Gets the localNames.
@@ -156,5 +140,13 @@ public class LocalNamesElement implements StackElement {
      */
     public void setLocalNames(List localNames) {
         this.localNames = localNames;
+    }
+
+    public boolean isInBlock() {
+        return blockLevel > 0;
+    }
+
+    public void changeBlockLevel(int change) {
+        blockLevel = blockLevel + change;
     }
 }
