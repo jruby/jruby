@@ -42,6 +42,7 @@ import org.jruby.ast.Node;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.exceptions.ThrowJump;
+import org.jruby.internal.runtime.ReadonlyAccessor;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.ParserSupport;
@@ -159,22 +160,8 @@ public class Main {
         IRubyObject argumentArray = runtime.newArray(JavaUtil.convertJavaArrayToRuby(runtime, commandline.scriptArguments));
         runtime.setVerbose(runtime.newBoolean(commandline.verbose));
 
-        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
-        runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
-            public IRubyObject getValue() {
-                return runtime.getVerbose();
-            }
-            
-            public IRubyObject setValue(IRubyObject newValue) {
-                if (newValue.isNil()) {
-                    runtime.setVerbose(newValue);
-                } else {
-                    runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
-                }
-            	
-                return newValue;
-            }
-        });
+        defineGlobalKCODE(runtime);
+        defineGlobalVERBOSE(runtime);
         runtime.getClasses().getObjectClass().setConstant("$VERBOSE", 
         		commandline.verbose ? runtime.getTrue() : runtime.getNil());
         runtime.defineGlobalConstant("ARGV", argumentArray);
@@ -200,6 +187,29 @@ public class Main {
             String scriptName = (String) iter.next();
             RubyKernel.require(runtime.getTopSelf(), runtime.newString(scriptName));
         }
+    }
+
+    private static void defineGlobalVERBOSE(final Ruby runtime) {
+        // $VERBOSE can be true, false, or nil.  Any non-false-nil value will get stored as true  
+        runtime.getGlobalVariables().define("$VERBOSE", new IAccessor() {
+            public IRubyObject getValue() {
+                return runtime.getVerbose();
+            }
+            
+            public IRubyObject setValue(IRubyObject newValue) {
+                if (newValue.isNil()) {
+                    runtime.setVerbose(newValue);
+                } else {
+                    runtime.setVerbose(runtime.newBoolean(newValue != runtime.getFalse()));
+                }
+            	
+                return newValue;
+            }
+        });
+    }
+
+    private static void defineGlobalKCODE(final Ruby runtime) {
+        runtime.getGlobalVariables().define("$KCODE", new ReadonlyAccessor("$KCODE", new ValueAccessor(new RubyString(runtime,"u"))));
     }
 
     private static void defineGlobal(Ruby runtime, String name, boolean value) {
