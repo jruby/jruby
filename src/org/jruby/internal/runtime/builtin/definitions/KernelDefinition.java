@@ -3,7 +3,6 @@ package org.jruby.internal.runtime.builtin.definitions;
 import org.jruby.Ruby;
 import org.jruby.KernelModule;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.NotImplementedError;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.definitions.MethodContext;
 import org.jruby.runtime.builtin.definitions.ModuleDefinition;
@@ -57,7 +56,8 @@ public class KernelDefinition extends ModuleDefinition {
     private static final int SRAND = STATIC | 0x24;
     private static final int SUB = STATIC | 0x25;
     private static final int SUB_BANG = STATIC | 0x26;
-    private static final int THROW = STATIC | 0x27;
+    private static final int SYSTEM = STATIC | 0x27;
+    private static final int THROW = STATIC | 0x28;
 
     // private static final int 
 
@@ -123,6 +123,7 @@ public class KernelDefinition extends ModuleDefinition {
         context.createOptional("exit", EXIT);
         context.createOptional("srand", SRAND);
         context.createOptional("rand", RAND);
+        context.createOptional("system", SYSTEM, 1);
     }
 
     /**
@@ -206,6 +207,8 @@ public class KernelDefinition extends ModuleDefinition {
                 return KernelModule.sub(receiver, args);
             case SUB_BANG :
                 return KernelModule.sub_bang(receiver, args);
+            case SYSTEM :
+                return KernelModule.system(receiver, args);
             case THROW :
                 return KernelModule.rbThrow(receiver, args);
             default :

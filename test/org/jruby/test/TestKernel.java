@@ -40,7 +40,7 @@ package org.jruby.test;
 import java.util.ArrayList;
 
 import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
+
 /**
  * Unit test for the kernel class.
  **/
@@ -75,9 +75,6 @@ public class TestKernel extends TestRubyBase {
         assertEquals("", eval("printf(\"%s\", nil)"));
     }
 
-    private void assertTrue(IRubyObject iObj) {
-        assertTrue(iObj.isTrue());
-    }
     public void tearDown() {
         super.tearDown();
     }

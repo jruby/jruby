@@ -34,6 +34,7 @@ package org.jruby;
 import java.util.Iterator;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.IOException;
 
 import org.jruby.internal.runtime.builtin.definitions.KernelDefinition;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,6 +47,8 @@ import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThrowJump;
 import org.jruby.exceptions.NotImplementedError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.ThreadError;
 
 /**
  *
@@ -452,35 +455,36 @@ public class KernelModule {
     }
 
     public static IRubyObject backquote(IRubyObject recv, IRubyObject aString) {
-        // FIXME clean this up.
+        StringBuffer output = new StringBuffer();
+        runInShell(recv.getRuntime(), aString.toString(), output);
+        return RubyString.newString(recv.getRuntime(), output.toString());
+    }
+
+    private static int runInShell(Ruby runtime, String command, StringBuffer output) {
         try {
-            String lShellProp = System.getProperty("jruby.shell");
+            String shell = System.getProperty("jruby.shell");
             Process aProcess;
-            String lCommand = aString.toString();
-            String lSwitch = "-c";
-            if (lShellProp != null) {
-                if (!lShellProp.endsWith("sh")) { //case windowslike
-                    lSwitch = "/c";
+            String shellSwitch = "-c";
+            if (shell != null) {
+                if (!shell.endsWith("sh")) {
+                    shellSwitch = "/c";
                 }
-                aProcess = Runtime.getRuntime().exec(new String[] { lShellProp, lSwitch, lCommand });
+                aProcess = Runtime.getRuntime().exec(new String[] { shell, shellSwitch, command });
             } else {
-                aProcess = Runtime.getRuntime().exec(lCommand);
+                aProcess = Runtime.getRuntime().exec(command);
             }
 
-            final StringBuffer sb = new StringBuffer();
             final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));
             String line;
             while ((line = reader.readLine()) != null) {
-                sb.append(line).append('\n');
+                output.append(line).append('\n');
             }
+            return aProcess.waitFor();
 
-            aProcess.waitFor();
-
-            return RubyString.newString(recv.getRuntime(), sb.toString());
-        } catch (Exception excptn) {
-            excptn.printStackTrace();
-
-            return RubyString.newString(recv.getRuntime(), "");
+        } catch (IOException e) {
+            throw IOError.fromException(runtime, e);
+        } catch (InterruptedException e) {
+            throw new ThreadError(runtime, "unexpected interrupt");
         }
     }
 
@@ -497,7 +501,7 @@ public class KernelModule {
         return RubyFixnum.newFixnum(recv.getRuntime(), oldRandomSeed);
     }
 
-    public static RubyNumeric rand(IRubyObject recv, IRubyObject args[]) {
+    public static RubyNumeric rand(IRubyObject recv, IRubyObject[] args) {
         long ceil;
         if (args.length == 0) {
             ceil = 0;
@@ -518,5 +522,16 @@ public class KernelModule {
         } else {
             return RubyFixnum.newFixnum(recv.getRuntime(), recv.getRuntime().random.nextInt((int) ceil));
         }
+    }
+
+    public static RubyBoolean system(IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = recv.getRuntime();
+        if (args.length > 1) {
+            throw new ArgumentError(runtime, "more arguments not yet supported");
+        }
+        StringBuffer output = new StringBuffer();
+        int resultCode = runInShell(runtime, args[0].toString(), output);
+        recv.getRuntime().getGlobalVariables().set("$?", RubyFixnum.newFixnum(runtime, resultCode));
+        return RubyBoolean.newBoolean(runtime, resultCode == 0);
     }
 }

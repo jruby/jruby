@@ -54,15 +54,8 @@ public class TestRubyBase extends TestCase {
      * @return the value printed out on  stdout and stderr by 
      **/
     protected String eval(String script) throws Exception {
-        /* pipeIn = new PipedInputStream();
-        in = new BufferedReader(new InputStreamReader(pipeIn));
-
-        String output = null;
-        StringBuffer result = new StringBuffer(); */
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         out = new PrintStream(result);
-        //            ruby.getRuntime().setOutputStream(out);
-        //            ruby.getRuntime().setErrorStream(out);
         RubyIO lStream = new RubyIO(ruby);
         lStream.initIO(null, out, null);
         ruby.getGlobalVariables().set("$stdout", lStream);
@@ -72,11 +65,6 @@ public class TestRubyBase extends TestCase {
         ruby.getGlobalVariables().set("$stderr", lStream);
         
         ruby.loadScript("test", new StringReader(script), false);
-        
-        /*new EvalThread("test", script).start();*/
-        /*while ((output = in.readLine()) != null) {
-            result.append(output);
-        }*/
         
         StringBuffer sb = new StringBuffer(new String(result.toByteArray()));
         for (int idx = sb.indexOf("\n"); idx != -1; idx = sb.indexOf("\n")) {

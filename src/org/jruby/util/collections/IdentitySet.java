@@ -22,7 +22,10 @@
  */
 package org.jruby.util.collections;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 
 public class IdentitySet {
     private Collection items = new ArrayList();
