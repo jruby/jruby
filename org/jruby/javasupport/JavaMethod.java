@@ -39,8 +39,8 @@ import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Callback;
 import org.jruby.runtime.Arity;
-import org.jruby.util.Asserts;
 import org.jruby.RubyJavaObject;
+import org.jruby.util.Asserts;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RaiseException;
@@ -90,11 +90,12 @@ public class JavaMethod implements Callback {
             Object receiver = !singleton ? ((RubyJavaObject)recv).getValue() : null;
 
             return JavaUtil.convertJavaToRuby(recv.getRuntime(), method.invoke(receiver, newArgs));
-        } catch (InvocationTargetException itExcptn) {
-            convertException(recv.getRuntime(), (Exception)itExcptn.getTargetException());
-
-            return recv.getRuntime().getNil();
-        } catch (Exception excptn) {
+        } catch (InvocationTargetException itException) {
+            convertException(recv.getRuntime(), (Exception)itException.getTargetException());
+            Asserts.notReached();
+            return null;
+        } catch (IllegalAccessException iaException) {
+            convertException(recv.getRuntime(), iaException);
             Asserts.notReached();
             return null;
         }

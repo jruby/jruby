@@ -307,23 +307,23 @@ public class JavaSupport {
         exceptionHandlers.put(exceptionClass, handler);
     }
 
-    public void handleNativeException(Exception excptn) {
-        Class excptnClass = excptn.getClass();
+    public void handleNativeException(Exception exception) {
+        Class excptnClass = exception.getClass();
         RubyProc handler = (RubyProc)exceptionHandlers.get(excptnClass.getName());
         while (handler == null &&
                excptnClass != Exception.class) {
             excptnClass = excptnClass.getSuperclass();
         }
         if (handler != null) {
-            handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(ruby, excptn)});
+            handler.call(new IRubyObject[]{JavaUtil.convertJavaToRuby(ruby, exception)});
         } else {
             StringWriter stackTrace = new StringWriter();
-            excptn.printStackTrace(new PrintWriter(stackTrace));
+            exception.printStackTrace(new PrintWriter(stackTrace));
 
             StringBuffer sb = new StringBuffer();
             sb.append("Native Exception: '");
-            sb.append(excptn.getClass()).append("\'; Message: ");
-            sb.append(excptn.getMessage());
+            sb.append(exception.getClass()).append("\'; Message: ");
+            sb.append(exception.getMessage());
             sb.append("; StackTrace: ");
             sb.append(stackTrace.getBuffer().toString());
             throw new RaiseException(ruby, "RuntimeError", sb.toString());
