@@ -42,6 +42,7 @@ public class ReturnNode extends Node {
     static final long serialVersionUID = -6549592319167820636L;
 
     private final Node valueNode;
+    private Object target;
 
     public ReturnNode(SourcePosition position, Node valueNode) {
         super(position);
@@ -56,11 +57,15 @@ public class ReturnNode extends Node {
         iVisitor.visitReturnNode(this);
     }
 
-    /**
-     * Gets the valueNode.
-     * @return Returns a Node
-     */
     public Node getValueNode() {
         return valueNode;
+    }
+
+    public Object getTarget() {
+        return target;
+    }
+
+    public void setTarget(Object target) {
+        this.target = target;
     }
 }

@@ -602,7 +602,9 @@ public final class EvaluateVisitor implements NodeVisitor {
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     visibility,
                                                     runtime.getRubyClass());
-
+        
+        iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+        
         rubyClass.addMethod(name, newMethod);
 
         if (threadContext.getCurrentVisibility().isModuleFunction()) {
@@ -646,6 +648,9 @@ public final class EvaluateVisitor implements NodeVisitor {
                                                     (ArgsNode) iVisited.getArgsNode(),
                                                     Visibility.PUBLIC,
                                                     runtime.getRubyClass());
+
+        iVisited.getBodyNode().accept(new CreateJumpTargetVisitor(newMethod));
+
         rubyClass.addMethod(iVisited.getName(), newMethod);
         receiver.callMethod("singleton_method_added", builtins.toSymbol(iVisited.getName()));
 
@@ -1159,7 +1164,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitReturnNode(ReturnNode)
      */
     public void visitReturnNode(ReturnNode iVisited) {
-        throw new ReturnJump(eval(iVisited.getValueNode()));
+        throw new ReturnJump(eval(iVisited.getValueNode()), iVisited.getTarget());
     }
 
     /**

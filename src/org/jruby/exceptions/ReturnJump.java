@@ -34,24 +34,21 @@ import org.jruby.runtime.builtin.IRubyObject;
 /** The ReturnException is thrown if a 'return' statement is interpreted.
  *
  * @author  jpetersen
- * @version $Revision$
  */
 public class ReturnJump extends JumpException {
     private IRubyObject returnValue;
+    private Object target;
 
-	/** Creates a new ReturnException with a return value.
-	 * 
-	 * @param returnValue The return value.
-	 */
-    public ReturnJump(IRubyObject returnValue) {
+    public ReturnJump(IRubyObject returnValue, Object target) {
         this.returnValue = returnValue;
+        this.target = target;
     }
     
-    /** Returns the return value.
-     * 
-     * @return Value of property returnValue.
-     */
     public IRubyObject getReturnValue() {
         return returnValue;
+    }
+    
+    public Object getTarget() {
+        return target;        
     }
 }

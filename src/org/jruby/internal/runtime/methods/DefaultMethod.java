@@ -98,8 +98,11 @@ public final class DefaultMethod extends AbstractMethod {
 
             return receiver.eval(body.getBodyNode());
 
-        } catch (ReturnJump re) {
-            return re.getReturnValue();
+        } catch (ReturnJump rj) {
+            if (rj.getTarget() == this) {
+                return rj.getReturnValue();
+            }
+            throw rj;
         } finally {
             context.popClass();
             context.popDynamicVars();
