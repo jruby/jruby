@@ -24,3 +24,6 @@ $e = e
 $f = f
 $g = g
 $h = h
+NIL_CONSTANT=nil
+test_ok(NIL_CONSTANT == nil)
+test_exception(NameError) { NO_SUCH_CONSTANT }
