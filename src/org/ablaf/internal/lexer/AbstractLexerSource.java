@@ -109,12 +109,15 @@ public abstract class AbstractLexerSource implements ILexerSource {
                 result = 0;
             }
             lastRead = result;
-            if (offset > 0 && buffer.charAt(offset-1)=='\n')
-            {
+
+// todo: create a test case where this code matters (and works):
+//            if (offset > 0 && buffer.charAt(offset-1)=='\n')
+//            {
                 // We have just unread the first char of a new line, so
                 // now we decrement the line number
-                line--;
-            }
+//                line--;
+//            }
+
             return;
         }
     }
