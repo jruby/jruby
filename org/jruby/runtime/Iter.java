@@ -32,8 +32,11 @@ package org.jruby.runtime;
  * @version $Revision$
  */
 public final class Iter {
+    /** No block given */
     public static final Iter ITER_NOT = new Iter("NOT");
+    /** Block given before last method call */
     public static final Iter ITER_PRE = new Iter("PRE");
+    /** Is currently a block*/
     public static final Iter ITER_CUR = new Iter("CUR");
 
     private String debug;

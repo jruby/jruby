@@ -90,19 +90,10 @@ public class RubyProc extends RubyObject {
 
     public IRubyObject call(IRubyObject[] args) {
         RubyModule oldWrapper = getRuntime().getWrapper();
-        Block oldBlock = getRuntime().getBlockStack().getCurrent();
-
         getRuntime().setWrapper(wrapper);
-        getRuntime().getBlockStack().setCurrent(block);
-
-        getRuntime().getIterStack().push(Iter.ITER_CUR);
-        getRuntime().getCurrentFrame().setIter(Iter.ITER_CUR);
-
         try {
-            return getRuntime().yield(args != null ? RubyArray.newArray(getRuntime(), args) : null, null, null, true);
+            return block.call(args);
         } finally {
-            getRuntime().getIterStack().pop();
-            getRuntime().getBlockStack().setCurrent(oldBlock);
             getRuntime().setWrapper(oldWrapper);
         }
     }

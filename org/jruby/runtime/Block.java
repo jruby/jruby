@@ -64,8 +64,7 @@ public class Block implements StackElement {
         Scope scope,
         RubyModule klass,
         Iter iter,
-        Map dynamicVars/*,
-        IRubyObject origThread*/) {
+        Map dynamicVars) {
 
         this.var = var;
         this.method = method;
@@ -78,8 +77,22 @@ public class Block implements StackElement {
         // this.origThread = origThread;
     }
 
+    public IRubyObject call(IRubyObject[] args) {
+        Ruby ruby = self.getRuntime();
+        Block oldBlock = ruby.getBlockStack().getCurrent();
+        ruby.getBlockStack().setCurrent(this);
+        ruby.getIterStack().push(Iter.ITER_CUR);
+        ruby.getCurrentFrame().setIter(Iter.ITER_CUR);
+        try {
+            return ruby.yield(args != null ? RubyArray.newArray(ruby, args) : null, null, null, true);
+        } finally {
+            ruby.getIterStack().pop();
+            ruby.getBlockStack().setCurrent(oldBlock);
+        }
+    }
+
     public Block cloneBlock() {
-        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVariables/*, origThread*/);
+        Block newBlock = new Block(var, method, self, frame, scope, klass, iter, dynamicVariables);
 
         if (getNext() != null) {
             newBlock.setNext(((Block)getNext()));

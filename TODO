@@ -5,3 +5,5 @@
 * Improved interface for accessing Java classes.
 * Loading external libraries written in Java.
 
+* Thread support
+
