@@ -69,7 +69,7 @@ public class GlobalVariables implements IGlobalVariables {
         Asserts.isTrue(name.startsWith("$"));
         
         GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
-        return variable == null || variable.getAccessor() instanceof UndefinedAccessor;
+        return variable != null && variable.getAccessor() instanceof UndefinedAccessor;
     }
 
     /** Creates a new global variable which links to
