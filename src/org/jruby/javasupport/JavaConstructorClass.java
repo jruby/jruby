@@ -22,25 +22,21 @@
  */
 package org.jruby.javasupport;
 
-import org.jruby.RubyObject;
-import org.jruby.RubyClass;
 import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
+import org.jruby.RubyClass;
 import org.jruby.RubyJavaObject;
-import org.jruby.RubyArray;
-import org.jruby.util.Asserts;
-import org.jruby.exceptions.TypeError;
+import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class JavaConstructorClass extends RubyObject implements IndexCallable {
+public class JavaConstructorClass extends JavaCallable implements IndexCallable {
     private final Constructor constructor;
 
     private static final int ARITY = 1;
@@ -65,11 +61,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         this.constructor = constructor;
     }
 
-    public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), getArity());
-    }
-
-    private int getArity() {
+    public int getArity() {
         return constructor.getParameterTypes().length;
     }
 
@@ -84,7 +76,7 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         Object[] constructorArguments = new Object[args.length - 1];
         Class[] types = constructor.getParameterTypes();
         for (int i = 1; i < args.length; i++) {
-            constructorArguments[i - 1] = convertArgument(args[i], types[i - 1]);
+            constructorArguments[i - 1] = JavaUtil.convertArgument(args[i], types[i - 1]);
         }
         try {
             Object result = constructor.newInstance(constructorArguments);
@@ -104,45 +96,12 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
         }
     }
 
-    public RubyString inspect() {
-        StringBuffer result = new StringBuffer();
-        result.append("#<" + getType() + "(");
-        Class[] parameterTypes = constructor.getParameterTypes();
-        for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(parameterTypes[i].getName());
-            if (i < parameterTypes.length - 1) {
-                result.append(',');
-            }
-        }
-        result.append(")>");
-        return RubyString.newString(getRuntime(), result.toString());
+    protected String nameOnInspection() {
+        return getType().toString();
     }
 
-    public RubyArray argument_types() {
-        Class[] parameterTypes = constructor.getParameterTypes();
-        RubyArray result = RubyArray.newArray(getRuntime(), parameterTypes.length);
-        for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(RubyString.newString(getRuntime(), parameterTypes[i].getName()));
-        }
-        return result;
-    }
-
-    private Object convertArgument(Object argument, Class parameterType) {
-        Object result = argument;
-        if (result instanceof RubyJavaObject) {
-            result = ((RubyJavaObject) result).getValue();
-        }
-        // FIXME: do convertions for all numeric types
-        if (parameterType.equals(Integer.class) || parameterType.equals(Integer.TYPE)) {
-            if (result instanceof Long) {
-                result = new Integer(((Long) result).intValue());
-            }
-        } else if (parameterType.equals(Long.class) || parameterType.equals(Long.TYPE)) {
-            if (result instanceof Integer) {
-                result = new Long(((Integer) result).longValue());
-            }
-        }
-        return result;
+    public Class[] parameterTypes() {
+        return constructor.getParameterTypes();
     }
 
     public IRubyObject callIndexed(int index, IRubyObject[] args) {

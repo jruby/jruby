@@ -459,4 +459,22 @@ public class JavaUtil {
             }
         }
     }
+
+    public static Object convertArgument(Object argument, Class parameterType) {
+        Object result = argument;
+        if (result instanceof RubyJavaObject) {
+            result = ((RubyJavaObject) result).getValue();
+        }
+        // FIXME: do convertions for all numeric types
+        if (parameterType.equals(Integer.class) || parameterType.equals(Integer.TYPE)) {
+            if (result instanceof Long) {
+                result = new Integer(((Long) result).intValue());
+            }
+        } else if (parameterType.equals(Long.class) || parameterType.equals(Long.TYPE)) {
+            if (result instanceof Integer) {
+                result = new Long(((Integer) result).longValue());
+            }
+        }
+        return result;
+    }
 }

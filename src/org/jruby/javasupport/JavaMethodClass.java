@@ -22,15 +22,12 @@
  */
 package org.jruby.javasupport;
 
-import org.jruby.RubyObject;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyJavaObject;
-import org.jruby.RubyArray;
 import org.jruby.util.Asserts;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
@@ -43,7 +40,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
 
-public class JavaMethodClass extends RubyObject implements IndexCallable {
+public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private final Method method;
 
     private static final int NAME = 1;
@@ -92,11 +89,7 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         return RubyString.newString(getRuntime(), method.getName());
     }
 
-    public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), getArity());
-    }
-
-    private int getArity() {
+    protected int getArity() {
         return method.getParameterTypes().length;
     }
 
@@ -121,12 +114,13 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         System.arraycopy(args, 1, arguments, 0, arguments.length);
         Class[] parameterTypes = method.getParameterTypes();
         for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = convertArgument(arguments[i], parameterTypes[i]);
+            Object argument = arguments[i];
+            Class parameterType = parameterTypes[i];
+            arguments[i] = JavaUtil.convertArgument(argument, parameterType);
         }
         try {
             Object result = method.invoke(javaInvokee, arguments);
             return JavaUtil.convertJavaToRuby(getRuntime(), result, method);
-
         } catch (IllegalArgumentException iae) {
             throw new TypeError(getRuntime(), "expected " + argument_types().inspect());
         } catch (IllegalAccessException iae) {
@@ -139,42 +133,12 @@ public class JavaMethodClass extends RubyObject implements IndexCallable {
         }
     }
 
-    private Object convertArgument(Object argument, Class parameterType) {
-        Object result = argument;
-        if (result instanceof RubyJavaObject) {
-            result = ((RubyJavaObject) result).getValue();
-        }
-        // FIXME: do convertions for all numeric types
-        if (parameterType.equals(Integer.class) || parameterType.equals(Integer.TYPE)) {
-            if (result instanceof Long) {
-                result = new Integer(((Long) result).intValue());
-            }
-        }
-        return result;
+    protected Class[] parameterTypes() {
+        return method.getParameterTypes();
     }
 
-    public RubyArray argument_types() {
-        Class[] parameterTypes = method.getParameterTypes();
-        RubyArray result = RubyArray.newArray(getRuntime(), parameterTypes.length);
-        for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(RubyString.newString(getRuntime(), parameterTypes[i].getName()));
-        }
-        return result;
-    }
-
-    public RubyString inspect() {
-        StringBuffer result = new StringBuffer();
-        result.append("#<").append(getType().toString()).append("/");
-        result.append(method.getName()).append("(");
-        Class[] parameterTypes = method.getParameterTypes();
-        for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(parameterTypes[i].getName());
-            if (i < parameterTypes.length - 1) {
-                result.append(',');
-            }
-        }
-        result.append(")>");
-        return RubyString.newString(getRuntime(), result.toString());
+    protected String nameOnInspection() {
+        return "#<" + getType().toString() + "/" + method.getName() + "(";
     }
 
     public RubyBoolean static_p() {
