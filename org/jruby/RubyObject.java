@@ -416,8 +416,11 @@ public class RubyObject implements Cloneable, IRubyObject {
 
     public void callInit(IRubyObject[] args) {
         runtime.getIterStack().push(runtime.isBlockGiven() ? Iter.ITER_PRE : Iter.ITER_NOT);
-        callMethod("initialize", args);
-        runtime.getIterStack().pop();
+        try {
+            callMethod("initialize", args);
+        } finally {
+            runtime.getIterStack().pop();
+        }
     }
 
     public void extendObject(RubyModule module) {

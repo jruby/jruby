@@ -44,28 +44,26 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public final class ArgsUtil {
-    public final static Block beginCallArgs(final Ruby ruby) {
-        final Block currentBlock = ruby.getBlockStack().getCurrent();
+    public static Block beginCallArgs(Ruby runtime) {
+        Block currentBlock = runtime.getBlockStack().getCurrent();
 
-        if (ruby.getCurrentIter().isPre()) {
-            ruby.getBlockStack().pop();
+        if (runtime.getCurrentIter().isPre()) {
+            runtime.getBlockStack().pop();
         }
-        ruby.getIterStack().push(Iter.ITER_NOT);
+        runtime.getIterStack().push(Iter.ITER_NOT);
         return currentBlock;
     }
 
-    public final static void endCallArgs(Ruby ruby, Block currentBlock) {
-        if (currentBlock != null) {
-            ruby.getBlockStack().push(currentBlock); // Refresh the next attribute.
-        }
-        ruby.getIterStack().pop();
+    public static void endCallArgs(Ruby runtime, Block currentBlock) {
+        runtime.getBlockStack().setCurrent(currentBlock);
+        runtime.getIterStack().pop();
     }
 
-    public static IRubyObject[] setupArgs(Ruby ruby, EvaluateVisitor visitor, INode node) {
+    public static IRubyObject[] setupArgs(Ruby runtime, EvaluateVisitor visitor, INode node) {
         if (node == null) {
             return new IRubyObject[0];
         }
-        final ISourcePosition position = ruby.getPosition();
+        final ISourcePosition position = runtime.getPosition();
 
         if (node instanceof ArrayNode) {
             final int size = ((ArrayNode) node).size();
@@ -80,14 +78,14 @@ public final class ArgsUtil {
                 }
             }
 
-            ruby.setPosition(position);
+            runtime.setPosition(position);
 
             return (IRubyObject[]) list.toArray(new IRubyObject[list.size()]);
         }
 
         IRubyObject args = visitor.eval(node);
 
-        ruby.setPosition(position);
+        runtime.setPosition(position);
 
         if (args instanceof RubyArray) {
             return ((RubyArray) args).toJavaArray();

@@ -269,7 +269,10 @@ public class ThreadClass extends RubyObject implements IndexCallable {
     public IRubyObject raise(IRubyObject exc) {
         receivedException = exc;
 
-        // FIXME
+        // FIXME: correct raise call
+
+        // FIXME: call the IRaiseListener#exceptionRaised method
+
         return this;
     }
 

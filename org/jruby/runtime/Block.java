@@ -31,6 +31,7 @@ import java.util.Map;
 import org.ablaf.ast.INode;
 import org.jruby.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Asserts;
 import org.jruby.util.collections.StackElement;
 
 /**
@@ -80,7 +81,7 @@ public class Block implements StackElement {
     public IRubyObject call(IRubyObject[] args) {
         Ruby ruby = self.getRuntime();
         Block oldBlock = ruby.getBlockStack().getCurrent();
-        ruby.getBlockStack().setCurrent(this);
+        ruby.getBlockStack().setCurrent(this.cloneBlock()); // FIX
         ruby.getIterStack().push(Iter.ITER_CUR);
         ruby.getCurrentFrame().setIter(Iter.ITER_CUR);
         try {
@@ -112,6 +113,7 @@ public class Block implements StackElement {
      * @see StackElement#setNext(StackElement)
      */
     public void setNext(StackElement newNext) {
+        Asserts.assertExpression(this != newNext);
         this.next = (Block) newNext;
     }
 

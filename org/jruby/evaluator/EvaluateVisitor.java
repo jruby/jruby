@@ -325,8 +325,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         IRubyObject block = eval(iVisited.getBodyNode());
 
         if (block.isNil()) {
-            eval(iVisited.getIterNode());
-            return;
+            threadContext.getIterStack().push(Iter.ITER_NOT);
+            try {
+                eval(iVisited.getIterNode());
+                return;
+            } finally {
+                threadContext.getIterStack().pop();
+            }
         } else if (block instanceof RubyMethod) {
             block = ((RubyMethod)block).to_proc();
         } else if (!(block instanceof RubyProc)) {
@@ -402,12 +407,16 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitCallNode(CallNode iVisited) {
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-
-        IRubyObject receiver = eval(iVisited.getReceiverNode());
-        IRubyObject[] args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
-
-        ArgsUtil.endCallArgs(runtime, tmpBlock);
-
+        
+        IRubyObject receiver = null;
+        IRubyObject[] args = null;
+        try {
+            receiver = eval(iVisited.getReceiverNode());
+            args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+        } finally {
+            ArgsUtil.endCallArgs(runtime, tmpBlock);
+        }
+        
         result = receiver.getInternalClass().call(receiver, iVisited.getName(), args, CallType.NORMAL);
     }
 
@@ -779,8 +788,12 @@ public final class EvaluateVisitor implements NodeVisitor {
      */
     public void visitFCallNode(FCallNode iVisited) {
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-        IRubyObject[] args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
-        ArgsUtil.endCallArgs(runtime, tmpBlock);
+        IRubyObject[] args = null;
+        try {
+            args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+        } finally {
+            ArgsUtil.endCallArgs(runtime, tmpBlock);
+        }
 
         result = self.getInternalClass().call(self, iVisited.getName(), args, CallType.FUNCTIONAL);
     }
@@ -836,12 +849,16 @@ public final class EvaluateVisitor implements NodeVisitor {
             while (true) {
                 try {
                     ISourcePosition position = threadContext.getPosition();
-
                     Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-                    IRubyObject recv = eval(iVisited.getIterNode());
-                    ArgsUtil.endCallArgs(runtime, tmpBlock);
 
-                    threadContext.setPosition(position);
+                    IRubyObject recv = null;
+                    try {
+                        recv = eval(iVisited.getIterNode());
+                    } finally {
+                        threadContext.setPosition(position);
+                        ArgsUtil.endCallArgs(runtime, tmpBlock);
+                    }
+                    
                     result = recv.getInternalClass().call(recv, "each", null, CallType.NORMAL);
 
                     return;
@@ -1333,8 +1350,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-        IRubyObject[] args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
-        ArgsUtil.endCallArgs(runtime, tmpBlock);
+
+        IRubyObject[] args = null;
+        try {
+            args = ArgsUtil.setupArgs(runtime, this, iVisited.getArgsNode());
+        } finally {
+            ArgsUtil.endCallArgs(runtime, tmpBlock);
+        }
 
         runtime.getIterStack().push(runtime.getCurrentIter().isNot() ? Iter.ITER_NOT : Iter.ITER_PRE);
         try {
@@ -1443,7 +1465,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         if (iVisited.getArgsNode() instanceof ExpandArrayNode && ((RubyArray) result).getLength() == 1) {
             result = ((RubyArray) result).entry(0);
         }
-        result = runtime.yield(result, null, null, false);
+        result = threadContext.yield(result, null, null, false);
     }
 
     /**
@@ -1572,8 +1594,13 @@ public final class EvaluateVisitor implements NodeVisitor {
         }
 
         Block tmpBlock = ArgsUtil.beginCallArgs(runtime);
-        IRubyObject[] args = ArgsUtil.setupArgs(runtime, this, exceptionNodes);
-        ArgsUtil.endCallArgs(runtime, tmpBlock);
+        
+        IRubyObject[] args = null;
+        try {
+            args = ArgsUtil.setupArgs(runtime, this, exceptionNodes);
+        } finally {
+            ArgsUtil.endCallArgs(runtime, tmpBlock);
+        }
 
         for (int i = 0; i < args.length; i++) {
             if (! args[i].isKindOf(runtime.getClasses().getModuleClass())) {
