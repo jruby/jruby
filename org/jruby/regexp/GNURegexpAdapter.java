@@ -44,7 +44,8 @@ public class GNURegexpAdapter extends IRegexpAdapter {
 
     private RE re;
     private int cflags = 0;
-    private int eflags = RE.REG_NOTBOL | RE.REG_NOTEOL;
+    //private int eflags = RE.REG_NOTBOL | RE.REG_NOTEOL;
+    private int eflags = 0;
     private boolean extended;
 
     /**
