@@ -333,8 +333,7 @@ public class NodeFactory {
     }
     
     public Node newArgs(Integer count, Node optNode, int rest) {
-        return new ArgsNode(optNode, rest,
-                                          count != null ? count.intValue() : 0);
+        return new ArgsNode(optNode, rest, count != null ? count.intValue() : 0);
     }
     
     public Node newArgsCat(Node head /*a*/, Node body) {

@@ -43,7 +43,7 @@ public class RbArray {
     public static RubyClass createArrayClass(Ruby ruby) {
         RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
         
-//        rb_include_module(rb_cArray, rb_mEnumerable);
+        arrayClass.includeModule(ruby.getRubyClass("Enumerable"));
         
         arrayClass.defineSingletonMethod("new", getRestArgsSingletonMethod("m_new"));
         arrayClass.defineSingletonMethod("[]", getRestArgsSingletonMethod("m_create"));
@@ -57,7 +57,7 @@ public class RbArray {
 
         arrayClass.defineMethod("==", getMethod("m_equal", RubyObject.class));
         arrayClass.defineMethod("eql?", getMethod("m_eql", RubyObject.class));
-//        rb_define_method(rb_cArray, "hash", rb_ary_hash, 0);
+        arrayClass.defineMethod("hash", getMethod("m_hash"));
         arrayClass.defineMethod("===", getMethod("m_equal", RubyObject.class));
 
         arrayClass.defineMethod("[]", getRestArgsMethod("m_aref"));
@@ -115,15 +115,15 @@ public class RbArray {
         arrayClass.defineMethod("assoc", getMethod("m_assoc", RubyObject.class));
         arrayClass.defineMethod("rassoc", getMethod("m_rassoc", RubyObject.class));
 
-//        rb_define_method(rb_cArray, "+", rb_ary_plus, 1);
-//        rb_define_method(rb_cArray, "*", rb_ary_times, 1);
+        arrayClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
+        arrayClass.defineMethod("*", getMethod("op_times", RubyObject.class));
 
-//        rb_define_method(rb_cArray, "-", rb_ary_diff, 1);
-//        rb_define_method(rb_cArray, "&", rb_ary_and, 1);
-//        rb_define_method(rb_cArray, "|", rb_ary_or, 1);
+        arrayClass.defineMethod("-", getMethod("op_diff", RubyObject.class));
+        arrayClass.defineMethod("&", getMethod("op_and", RubyObject.class));
+        arrayClass.defineMethod("|", getMethod("op_or", RubyObject.class));
 
-//        rb_define_method(rb_cArray, "uniq", rb_ary_uniq, 0);
-//        rb_define_method(rb_cArray, "uniq!", rb_ary_uniq_bang, 0);
+        arrayClass.defineMethod("uniq", getMethod("m_uniq"));
+        arrayClass.defineMethod("uniq!", getMethod("m_uniq_bang"));
         arrayClass.defineMethod("compact", getMethod("m_compact"));
         arrayClass.defineMethod("compact!", getMethod("m_compact_bang"));
         arrayClass.defineMethod("flatten", getMethod("m_flatten"));

@@ -43,20 +43,20 @@ public class RubyArray extends RubyObject {
     private ArrayList list;
     private boolean tmpLock;
 
+    private RubyId equals;
+
     public RubyArray(Ruby ruby) {
         this(ruby, new ArrayList());
     }
 
     public RubyArray(Ruby ruby, List array) {
-        super(ruby, ruby.getRubyClass("Array"));
-        
-        this.list = new ArrayList(array);
+        this(ruby, new ArrayList(array), false);
     }
     
     public RubyArray(Ruby ruby, ArrayList array, boolean notCopy) {
         super(ruby, ruby.getRubyClass("Array"));
-        
         this.list = array;
+        equals = ruby.intern("==");
     }
 
     /** Getter for property list.
@@ -297,6 +297,13 @@ public class RubyArray extends RubyObject {
         return m_newArray(ruby, Arrays.asList(args));
     }
     
+    /** rb_ary_hash
+     *
+     */
+    public RubyFixnum m_hash() {
+        return new RubyFixnum(getRuby(), list.hashCode());
+    }
+
     /** rb_ary_length
      *
      */
@@ -375,11 +382,12 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyBoolean m_includes(RubyObject item) {
-        if (list.contains(item)) {
-            return getRuby().getTrue();
-        } else {
-            return getRuby().getFalse();
+        for (int i = 0, n = length(); i < n; i++) {
+            if (item.funcall(equals, entry(i)).isTrue()) {
+                return getRuby().getTrue();
+            }
         }
+        return getRuby().getFalse();
     }
     
     /** rb_ary_frozen_p
@@ -637,7 +645,7 @@ public class RubyArray extends RubyObject {
         if (length != ary.length()) {
             return getRuby().getFalse();
         }
-        RubyId equals = getRuby().intern("==");
+
         for (long i = 0; i < length; i++) {
             RubyBoolean result = (RubyBoolean)entry(i).funcall(equals, ary.entry(i));
             if (result.isFalse()) {
@@ -753,7 +761,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject m_index(RubyObject obj) {
         for (int i = 0; i < length(); i++) {
-            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (obj.funcall(equals, entry(i)).isTrue()) {
                 return RubyFixnum.m_newFixnum(getRuby(), i);
             }
         }
@@ -765,7 +773,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject m_rindex(RubyObject obj) {
         for (int i = length()-1; i >= 0; i--) {
-            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (obj.funcall(equals, entry(i)).isTrue()) {
                 return RubyFixnum.m_newFixnum(getRuby(), i);
             }
         }
@@ -846,7 +854,7 @@ public class RubyArray extends RubyObject {
         modify();
         RubyObject retVal = getRuby().getNil();
         for (int i = length() - 1; i >= 0; i--) {
-            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+            if (obj.funcall(equals, entry(i)).isTrue()) {
                 retVal = (RubyObject)list.remove(i);
             }
         }
@@ -954,7 +962,7 @@ public class RubyArray extends RubyObject {
                 continue;
             }
             RubyArray ary = (RubyArray)entry(i);
-            if (arg.funcall(getRuby().intern("=="), ary.entry(0)).isTrue()) {
+            if (arg.funcall(equals, ary.entry(0)).isTrue()) {
                 return ary;
             }
         }
@@ -972,7 +980,7 @@ public class RubyArray extends RubyObject {
                 continue;
             }
             RubyArray ary = (RubyArray)entry(i);
-            if (arg.funcall(getRuby().intern("=="), ary.entry(1)).isTrue()) {
+            if (arg.funcall(equals, ary.entry(1)).isTrue()) {
                 return ary;
             }
         }
@@ -1025,6 +1033,131 @@ public class RubyArray extends RubyObject {
         return RubyFixnum.m_newFixnum(getRuby(), count);
     }
     
+    /** rb_ary_plus
+     *
+     */
+    public RubyObject op_plus(RubyObject other) {
+        ArrayList otherList = arrayValue(other).getList();
+        ArrayList newList = new ArrayList(length() + otherList.size());
+        newList.addAll(list);
+        newList.addAll(otherList);
+        return new RubyArray(getRuby(), newList);
+    }
+    
+    /** rb_ary_times
+     *
+     */
+    public RubyObject op_times(RubyObject arg) {
+        if (arg instanceof RubyString) {
+            return join((RubyString)arg);
+        }
+
+        int len = (int)RubyNumeric.num2long(arg);
+        if (len < 0) {
+            throw new RubyArgumentException(getRuby(), "negative argument");
+        }
+        ArrayList newList = new ArrayList(length() * len);
+        for (int i = 0; i < len; i++) {
+            newList.addAll(list);
+        }
+        return new RubyArray(getRuby(), newList);
+    }
+    
+    private ArrayList uniq(ArrayList ary1) {
+        int len1 = ary1.size();
+        ArrayList ary2 = new ArrayList(len1);
+        int len2 = 0;
+        boolean found = false;
+        for (int i = 0; i < len1; i++) {
+            RubyObject obj = (RubyObject)ary1.get(i);
+            len2 = ary2.size();
+            found = false;
+            for (int j = 0; j < len2; j++) {
+                if (obj.funcall(equals, (RubyObject)ary1.get(j)).isTrue()) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                ary2.add(obj);
+            }                
+        }
+        ary2.trimToSize();
+        return ary2;
+    }
+    
+    /** rb_ary_uniq_bang
+     *
+     */
+    public RubyObject m_uniq_bang() {
+        modify();
+        ArrayList newList = uniq(list);
+        if (newList.equals(list)) {
+            return getRuby().getNil();
+        }
+        list = newList;
+        return this;
+    }
+    
+    /** rb_ary_uniq
+     *
+     */
+    public RubyObject m_uniq() {
+        return new RubyArray(getRuby(), uniq(list));
+    }
+    
+    /** rb_ary_diff
+     *
+     */
+    public RubyObject op_diff(RubyObject other) {
+        ArrayList ary1 = uniq(list);
+        ArrayList ary2 = arrayValue(other).getList();
+        int len2 = ary2.size();
+        for (int i = ary1.size() - 1; i >= 0; i--) {
+            RubyObject obj = (RubyObject)ary1.get(i);
+            for (int j = 0; j < len2; j++) {
+                if (obj.funcall(equals, (RubyObject)ary2.get(j)).isTrue()) {
+                    ary1.remove(i);
+                    break;
+                }
+            }
+        }
+        return new RubyArray(getRuby(), ary1);
+    }
+    
+    /** rb_ary_and
+     *
+     */
+    public RubyObject op_and(RubyObject other) {
+        ArrayList ary1 = uniq(list);
+        int len1 = ary1.size();
+        ArrayList ary2 = arrayValue(other).getList();
+        int len2 = ary2.size();
+        ArrayList ary3 = new ArrayList(len1);     
+        for (int i = 0; i < len1; i++) {
+            RubyObject obj = (RubyObject)ary1.get(i);
+            for (int j = 0; j < len2; j++) {
+                if (obj.funcall(equals, (RubyObject)ary2.get(j)).isTrue()) {
+                    ary3.add(obj);
+                    break;
+                }
+            }
+        }
+        ary3.trimToSize();
+        return new RubyArray(getRuby(), ary3);
+    }
+
+    /** rb_ary_or
+     *
+     */
+    public RubyObject op_or(RubyObject other) {
+        ArrayList ary1 = new ArrayList(list);
+        ArrayList ary2 = arrayValue(other).getList();
+        ary1.addAll(ary2);
+        return new RubyArray(getRuby(), uniq(ary1));
+    }
+
+
     /** rb_ary_sort
      *
      */

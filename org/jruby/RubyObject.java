@@ -421,9 +421,7 @@ public class RubyObject {
      *
      */
     public RubyObject m_id() {
-        //obj.hashCode();
-        
-        return null;
+        return RubyFixnum.m_newFixnum(getRuby(), hashCode());
     }
     
     /** rb_obj_type

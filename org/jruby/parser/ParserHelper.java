@@ -1017,12 +1017,12 @@ public class ParserHelper {
         value_expr(left);
         
         switch (type) {
-        	case Constants.NODE_AND: 
-        		return new AndNode(cond1(left, 1), cond1(right, 1));
-       		case Constants.NODE_OR: 
-       			return new OrNode(cond1(left, 1), cond1(right, 1));
-       		default:
-	       		throw new RuntimeException("[BUG] ParserHelper#logop: Nodetype=" + type);
+            case Constants.NODE_AND: 
+                return new AndNode(cond1(left, 1), cond1(right, 1));
+            case Constants.NODE_OR: 
+                return new OrNode(cond1(left, 1), cond1(right, 1));
+            default:
+                throw new RuntimeException("[BUG] ParserHelper#logop: Nodetype=" + type);
         }
         // return nf.newDefaultNode(type, cond1(left, 1), cond1(right, 1), null);
     }
@@ -1045,18 +1045,18 @@ public class ParserHelper {
 
     /*
      *  private Node arg_prepend(Node node1, Node node2) {
-     *  switch (nodetype(node2)) {
-     *  case Constants.NODE_ARRAY:
-     *  return list_concat(NEW_LIST(node1), node2);
-     *  case Constants.NODE_RESTARGS:
-     *  return arg_concat(node1, node2.getHead());
-     *  case Constants.NODE_BLOCK_PASS:
-     *  node2.nd_body(arg_prepend(node1, node2.nd_body()));
-     *  return node2;
-     *  default:
-     *  rb_bug("unknown nodetype(%d) for arg_prepend");
-     *  }
-     *  return null;			// not reached
+     *      switch (nodetype(node2)) {
+     *          case Constants.NODE_ARRAY:
+     *              return list_concat(NEW_LIST(node1), node2);
+     *          case Constants.NODE_RESTARGS:
+     *              return arg_concat(node1, node2.getHead());
+     *          case Constants.NODE_BLOCK_PASS:
+     *              node2.nd_body(arg_prepend(node1, node2.nd_body()));
+     *              return node2;
+     *          default:
+     *              rb_bug("unknown nodetype(%d) for arg_prepend");
+     *      }
+     *      return null; // not reached
      *  }
      */
     
