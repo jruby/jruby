@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -27,32 +28,31 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.callback.IndexedCallback;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class JavaConstructor extends JavaCallable implements IndexCallable {
+public class JavaConstructor extends JavaCallable {
     private final Constructor constructor;
 
-    private static final int ARITY = 1;
-    private static final int NEW_INSTANCE = 2;
-    private static final int INSPECT = 3;
-    private static final int ARGUMENT_TYPES = 4;
-
-    public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass javaConstructorClass =
-                javaModule.defineClassUnder("JavaConstructor", runtime.getClasses().getObjectClass());
-
-        javaConstructorClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
-        javaConstructorClass.defineMethod("new_instance", IndexedCallback.createOptional(NEW_INSTANCE));
-        javaConstructorClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
-        javaConstructorClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
-
-        return javaConstructorClass;
+    public static RubyClass createJavaConstructorClass(Ruby ruby, RubyModule javaModule) {
+        RubyClass result =
+                javaModule.defineClassUnder("JavaConstructor", ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+        result.defineMethod("arity", 
+                callbackFactory.getMethod(JavaConstructor.class, "arity"));
+        result.defineMethod("inspect", 
+                callbackFactory.getMethod(JavaConstructor.class, "inspect"));
+        result.defineMethod("argument_types", 
+                callbackFactory.getMethod(JavaConstructor.class, "argument_types"));
+        result.defineMethod("new_instance", 
+                callbackFactory.getOptMethod(JavaConstructor.class, "new_instance"));
+        
+        return result;
     }
 
     public JavaConstructor(Ruby runtime, Constructor constructor) {
@@ -97,20 +97,5 @@ public class JavaConstructor extends JavaCallable implements IndexCallable {
 
     protected Class[] parameterTypes() {
         return constructor.getParameterTypes();
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case ARITY :
-                return arity();
-            case NEW_INSTANCE :
-                return new_instance(args);
-            case INSPECT :
-                return inspect();
-            case ARGUMENT_TYPES :
-                return argument_types();
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }

@@ -23,7 +23,6 @@
 
 package org.jruby.javasupport;
 
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Asserts;
 import org.jruby.Ruby;
@@ -35,7 +34,7 @@ import org.jruby.exceptions.ArgumentError;
 
 import java.lang.reflect.Array;
 
-public class JavaArray extends JavaObject implements IndexCallable {
+public class JavaArray extends JavaObject {
 
     public JavaArray(Ruby runtime, Object array) {
         super(runtime, runtime.getClasses().getJavaArrayClass(), array);
@@ -94,12 +93,5 @@ public class JavaArray extends JavaObject implements IndexCallable {
                                     getValue().getClass() + ")");
         }
         return value;
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }

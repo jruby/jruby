@@ -29,39 +29,38 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.exceptions.TypeError;
-import org.jruby.runtime.callback.IndexedCallback;
-import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-public class JavaField extends RubyObject implements IndexCallable {
+public class JavaField extends RubyObject {
     private final Field field;
 
-    private static final int VALUE_TYPE = 1;
-    private static final int PUBLIC_P = 2;
-    private static final int STATIC_P = 3;
-    private static final int VALUE = 4;
-    private static final int SET_VALUE = 5;
-    private static final int FINAL_P = 6;
-    private static final int STATIC_VALUE = 7;
-    private static final int NAME = 8;
+    public static RubyClass createJavaFieldClass(Ruby ruby, RubyModule javaModule) {
+        RubyClass result = javaModule.defineClassUnder("JavaField", 
+            ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-    public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass javaFieldClass =
-                javaModule.defineClassUnder("JavaField", runtime.getClasses().getObjectClass());
+        result.defineMethod("value_type", 
+            callbackFactory.getMethod(JavaField.class, "value_type"));
+        result.defineMethod("public?", 
+            callbackFactory.getMethod(JavaField.class, "public_p"));
+        result.defineMethod("static?", 
+            callbackFactory.getMethod(JavaField.class, "static_p"));
+        result.defineMethod("value", 
+            callbackFactory.getMethod(JavaField.class, "value", IRubyObject.class));
+        result.defineMethod("set_value", 
+            callbackFactory.getMethod(JavaField.class, "set_value", IRubyObject.class, IRubyObject.class));
+        result.defineMethod("final?", 
+            callbackFactory.getMethod(JavaField.class, "final_p"));
+        result.defineMethod("static_value", 
+            callbackFactory.getMethod(JavaField.class, "static_value"));
+        result.defineMethod("name", 
+            callbackFactory.getMethod(JavaField.class, "name"));
 
-        javaFieldClass.defineMethod("value_type", IndexedCallback.create(VALUE_TYPE, 0));
-        javaFieldClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
-        javaFieldClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
-        javaFieldClass.defineMethod("value", IndexedCallback.create(VALUE, 1));
-        javaFieldClass.defineMethod("set_value", IndexedCallback.create(SET_VALUE, 2));
-        javaFieldClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
-        javaFieldClass.defineMethod("static_value", IndexedCallback.create(STATIC_VALUE, 0));
-        javaFieldClass.defineMethod("name", IndexedCallback.create(NAME, 0));
-
-        return javaFieldClass;
+        return result;
     }
 
     public JavaField(Ruby runtime, Field field) {
@@ -132,28 +131,5 @@ public class JavaField extends RubyObject implements IndexCallable {
 
     public RubyString name() {
         return RubyString.newString(getRuntime(), field.getName());
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case VALUE_TYPE :
-                return value_type();
-            case PUBLIC_P :
-                return public_p();
-            case STATIC_P :
-                return static_p();
-            case VALUE :
-                return value(args[0]);
-            case SET_VALUE :
-                return set_value(args[0], args[1]);
-            case FINAL_P :
-                return final_p();
-            case STATIC_VALUE :
-                return static_value();
-            case NAME :
-                return name();
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }

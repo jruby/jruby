@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -27,8 +28,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
-import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.callback.IndexedCallback;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.ArgumentError;
@@ -38,35 +38,36 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InvocationTargetException;
 
-public class JavaMethod extends JavaCallable implements IndexCallable {
+public class JavaMethod extends JavaCallable {
     private final Method method;
 
-    private static final int NAME = 1;
-    private static final int ARITY = 2;
-    private static final int PUBLIC_P = 3;
-    private static final int FINAL_P = 4;
-    private static final int INVOKE = 5;
-    private static final int INVOKE_STATIC = 6;
-    private static final int ARGUMENT_TYPES = 7;
-    private static final int INSPECT = 8;
-    private static final int STATIC_P = 9;
-    private static final int RETURN_TYPE = 10;
+    public static RubyClass createJavaMethodClass(Ruby ruby, RubyModule javaModule) {
+        RubyClass result = 
+            javaModule.defineClassUnder("JavaMethod", ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-    public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass javaMethodClass =
-                javaModule.defineClassUnder("JavaMethod", runtime.getClasses().getObjectClass());
-        javaMethodClass.defineMethod("name", IndexedCallback.create(NAME, 0));
-        javaMethodClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
-        javaMethodClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
-        javaMethodClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
-        javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE, 1));
-        javaMethodClass.defineMethod("invoke_static", IndexedCallback.createOptional(INVOKE_STATIC));
-        javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
-        javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
-        javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
-        javaMethodClass.defineMethod("return_type", IndexedCallback.create(RETURN_TYPE, 0));
+        result.defineMethod("name", 
+                callbackFactory.getMethod(JavaMethod.class, "name"));
+        result.defineMethod("arity", 
+                callbackFactory.getMethod(JavaMethod.class, "arity"));
+        result.defineMethod("public?", 
+                callbackFactory.getMethod(JavaMethod.class, "public_p"));
+        result.defineMethod("final?", 
+                callbackFactory.getMethod(JavaMethod.class, "final_p"));
+        result.defineMethod("static?", 
+                callbackFactory.getMethod(JavaMethod.class, "static_p"));
+        result.defineMethod("invoke", 
+                callbackFactory.getOptMethod(JavaMethod.class, "invoke"));
+        result.defineMethod("invoke_static", 
+                callbackFactory.getOptMethod(JavaMethod.class, "invoke_static"));
+        result.defineMethod("argument_types", 
+                callbackFactory.getMethod(JavaMethod.class, "argument_types"));
+        result.defineMethod("inspect", 
+                callbackFactory.getMethod(JavaMethod.class, "inspect"));
+        result.defineMethod("return_type", 
+                callbackFactory.getMethod(JavaMethod.class, "return_type"));
 
-        return javaMethodClass;
+        return result;
     }
 
     public JavaMethod(Ruby runtime, Method method) {
@@ -178,32 +179,5 @@ public class JavaMethod extends JavaCallable implements IndexCallable {
 
     private boolean isStatic() {
         return Modifier.isStatic(method.getModifiers());
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case NAME :
-                return name();
-            case ARITY :
-                return arity();
-            case PUBLIC_P :
-                return public_p();
-            case FINAL_P :
-                return final_p();
-            case INVOKE :
-                return invoke(args);
-            case INVOKE_STATIC :
-                return invoke_static(args);
-            case ARGUMENT_TYPES :
-                return argument_types();
-            case INSPECT :
-                return inspect();
-            case STATIC_P :
-                return static_p();
-            case RETURN_TYPE :
-                return return_type();
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }

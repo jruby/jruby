@@ -3,10 +3,12 @@
  * Created on 21. September 2001, 14:43
  *
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2004 Thomas E Enebo
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -30,8 +32,7 @@
 
 package org.jruby.javasupport;
 
-import org.jruby.runtime.IndexCallable;
-import org.jruby.runtime.callback.IndexedCallback;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyObject;
 import org.jruby.Ruby;
@@ -46,7 +47,7 @@ import org.jruby.exceptions.TypeError;
  * @author  jpetersen
  * @version $Revision$
  */
-public class JavaObject extends RubyObject implements IndexCallable {
+public class JavaObject extends RubyObject {
     private final Object value;
 
     protected JavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
@@ -79,63 +80,56 @@ public class JavaObject extends RubyObject implements IndexCallable {
         return value;
     }
 
-    private static final int TO_S = 1;
-    private static final int EQUAL = 2;
-    private static final int HASH = 3;
-    private static final int JAVA_TYPE = 4;
-    private static final int JAVA_CLASS = 5;
-    private static final int LENGTH = 6;
-    private static final int AREF = 7;
-    private static final int ASET = 8;
-
     public static RubyClass createJavaObjectClass(Ruby ruby) {
-        RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
+        RubyClass result = 
+            ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
 
-        javaObjectClass.defineMethod("to_s", IndexedCallback.create(TO_S, 0));
-        javaObjectClass.defineMethod("eql?", IndexedCallback.create(EQUAL, 1));
-        javaObjectClass.defineMethod("==", IndexedCallback.create(EQUAL, 1));
-		javaObjectClass.defineMethod("hash", IndexedCallback.create(HASH, 0));
-        javaObjectClass.defineMethod("java_type", IndexedCallback.create(JAVA_TYPE, 0));
-        javaObjectClass.defineMethod("java_class", IndexedCallback.create(JAVA_CLASS, 0));
-        javaObjectClass.defineMethod("length", IndexedCallback.create(LENGTH, 0));
-        javaObjectClass.defineMethod("[]", IndexedCallback.create(AREF, 1));
-        javaObjectClass.defineMethod("[]=", IndexedCallback.create(ASET, 2));
+        result.defineMethod("to_s", 
+            callbackFactory.getMethod(JavaObject.class, "to_s"));
+        result.defineMethod("==", 
+            callbackFactory.getMethod(JavaObject.class, "equal", IRubyObject.class));
+        result.defineMethod("eql?", 
+            callbackFactory.getMethod(JavaObject.class, "equal", IRubyObject.class));
+        result.defineMethod("hash", 
+            callbackFactory.getMethod(JavaObject.class, "hash"));
+        result.defineMethod("java_type", 
+            callbackFactory.getMethod(JavaObject.class, "java_type"));
+        result.defineMethod("java_class", 
+            callbackFactory.getMethod(JavaObject.class, "java_class"));
+        result.defineMethod("length", 
+            callbackFactory.getMethod(JavaObject.class, "length"));
+        result.defineMethod("[]", 
+            callbackFactory.getMethod(JavaObject.class, "aref", IRubyObject.class));
+        result.defineMethod("[]=", 
+            callbackFactory.getMethod(JavaObject.class, "aset", IRubyObject.class, IRubyObject.class));
 
-        javaObjectClass.getMetaClass().undefineMethod("new");
+        result.getMetaClass().undefineMethod("new");
 
-        return javaObjectClass;
+        return result;
     }
 
     public RubyFixnum hash() {
-        int result;
-        if (value == null) {
-            result = 0;
-        } else {
-            result = value.hashCode();
-        }
-        return RubyFixnum.newFixnum(runtime, result);
+        return RubyFixnum.newFixnum(runtime, 
+           value == null ? 0 : value.hashCode());
     }
 
     public RubyString to_s() {
-        String result;
-        if (getValue() == null) {
-            result = "null";
-        } else {
-            result = getValue().toString();
-        }
-        return RubyString.newString(getRuntime(), result);
+        return RubyString.newString(runtime, 
+           value == null ? "null" : value.toString());
     }
 
     public RubyBoolean equal(IRubyObject other) {
-        if (other instanceof JavaObject) {
-            if (getValue() == null && ((JavaObject) other).getValue() == null) {
-                return getRuntime().getTrue();
-            }
-            return (getValue().equals(((JavaObject) other).getValue()))
-                ? getRuntime().getTrue()
-                : getRuntime().getFalse();
-        }
-        return getRuntime().getFalse();
+        if (other instanceof JavaObject == false) {
+	    return getRuntime().getFalse();
+	}
+
+	if (getValue() == null && ((JavaObject) other).getValue() == null) {
+	    return getRuntime().getTrue();
+	}
+
+	return (getValue().equals(((JavaObject) other).getValue()))
+	    ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     public RubyString java_type() {
@@ -156,28 +150,5 @@ public class JavaObject extends RubyObject implements IndexCallable {
 
     public IRubyObject aset(IRubyObject index, IRubyObject value) {
         throw new TypeError(getRuntime(), "not a java array");
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case TO_S :
-                return to_s();
-            case EQUAL :
-                return equal(args[0]);
-            case HASH :
-                return hash();
-            case JAVA_TYPE :
-                return java_type();
-            case JAVA_CLASS :
-                return java_class();
-            case LENGTH :
-                return length();
-            case AREF :
-                return aref(args[0]);
-            case ASET :
-                return aset(args[0], args[1]);
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }

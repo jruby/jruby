@@ -34,10 +34,7 @@ import org.jruby.RubyInteger;
 import org.jruby.exceptions.TypeError;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NameError;
-import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.CallbackFactory;
-import org.jruby.runtime.callback.IndexedCallback;
-import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.lang.reflect.Modifier;
@@ -46,7 +43,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Array;
 
-public class JavaClass extends RubyObject implements IndexCallable {
+public class JavaClass extends RubyObject {
     private final Class javaClass;
 
     private JavaClass(Ruby runtime, String name) {
@@ -62,59 +59,61 @@ public class JavaClass extends RubyObject implements IndexCallable {
         return javaClass;
     }
 
-    private static final int PUBLIC_P = 1;
-    private static final int FINAL_P = 2;
-    private static final int INTERFACE_P = 3;
-    private static final int ARRAY_P = 4;
-    private static final int NAME = 5;
-    private static final int SUPERCLASS = 7;
-    private static final int OP_CMP = 8;
-    private static final int JAVA_INSTANCE_METHODS = 11;
-    private static final int JAVA_CLASS_METHODS = 12;
-    private static final int JAVA_METHOD = 14;
-    private static final int CONSTRUCTORS = 15;
-    private static final int CONSTRUCTOR = 16;
-    private static final int ARRAY_CLASS = 17;
-    private static final int NEW_ARRAY = 18;
-    private static final int FIELDS = 20;
-    private static final int FIELD = 21;
-    private static final int INTERFACES = 22;
-    private static final int PRIMITIVE_P = 23;
-    private static final int ASSIGNABLE_FROM_P = 24;
-    private static final int COMPONENT_TYPE = 25;
+    public static RubyClass createJavaClassClass(Ruby ruby, RubyModule javaModule) {
+        RubyClass result = javaModule.defineClassUnder("JavaClass", 
+                ruby.getClasses().getObjectClass());
+        CallbackFactory callbackFactory = ruby.callbackFactory();
+        
+        result.includeModule(ruby.getClasses().getComparableModule());
 
-    public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass javaClassClass =
-                javaModule.defineClassUnder("JavaClass", runtime.getClasses().getObjectClass());
-        javaClassClass.includeModule(runtime.getClasses().getComparableModule());
+        result.defineSingletonMethod("for_name", 
+                callbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));
+        result.defineMethod("public?", 
+                callbackFactory.getMethod(JavaClass.class, "public_p"));
+        result.defineMethod("final?", 
+                callbackFactory.getMethod(JavaClass.class, "final_p"));
+        result.defineMethod("interface?", 
+                callbackFactory.getMethod(JavaClass.class, "interface_p"));
+        result.defineMethod("array?", 
+                callbackFactory.getMethod(JavaClass.class, "array_p"));
+        result.defineMethod("name", 
+                callbackFactory.getMethod(JavaClass.class, "name"));
+        result.defineMethod("to_s", 
+                callbackFactory.getMethod(JavaClass.class, "name"));
+        result.defineMethod("superclass", 
+                callbackFactory.getMethod(JavaClass.class, "superclass"));
+        result.defineMethod("<=>", 
+                callbackFactory.getMethod(JavaClass.class, "op_cmp", IRubyObject.class));
+        result.defineMethod("java_instance_methods", 
+                callbackFactory.getMethod(JavaClass.class, "java_instance_methods"));
+        result.defineMethod("java_class_methods", 
+                callbackFactory.getMethod(JavaClass.class, "java_class_methods"));
+        result.defineMethod("java_method", 
+                callbackFactory.getOptMethod(JavaClass.class, "java_method"));
+        result.defineMethod("constructors", 
+                callbackFactory.getMethod(JavaClass.class, "constructors"));
+        result.defineMethod("constructor", 
+                callbackFactory.getOptMethod(JavaClass.class, "constructor"));
+        result.defineMethod("array_class", 
+                callbackFactory.getMethod(JavaClass.class, "array_class"));
+        result.defineMethod("new_array", 
+                callbackFactory.getMethod(JavaClass.class, "new_array", IRubyObject.class));
+        result.defineMethod("fields", 
+                callbackFactory.getMethod(JavaClass.class, "fields"));
+        result.defineMethod("field", 
+                callbackFactory.getMethod(JavaClass.class, "field", IRubyObject.class));
+        result.defineMethod("interfaces", 
+                callbackFactory.getMethod(JavaClass.class, "interfaces"));
+        result.defineMethod("primitive?", 
+                callbackFactory.getMethod(JavaClass.class, "primitive_p"));
+        result.defineMethod("assignable_from?", 
+                callbackFactory.getMethod(JavaClass.class, "assignable_from_p", IRubyObject.class));
+        result.defineMethod("component_type", 
+                callbackFactory.getMethod(JavaClass.class, "component_type"));
 
-        CallbackFactory callbackFactory = new ReflectionCallbackFactory();
-        javaClassClass.defineSingletonMethod("for_name", callbackFactory.getSingletonMethod(JavaClass.class, "for_name", IRubyObject.class));
-        javaClassClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
-        javaClassClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
-        javaClassClass.defineMethod("interface?", IndexedCallback.create(INTERFACE_P, 0));
-        javaClassClass.defineMethod("array?", IndexedCallback.create(ARRAY_P, 0));
-        javaClassClass.defineMethod("name", IndexedCallback.create(NAME, 0));
-        javaClassClass.defineMethod("to_s", IndexedCallback.create(NAME, 0));
-        javaClassClass.defineMethod("superclass", IndexedCallback.create(SUPERCLASS, 0));
-        javaClassClass.defineMethod("<=>", IndexedCallback.create(OP_CMP, 1));
-        javaClassClass.defineMethod("java_instance_methods", IndexedCallback.create(JAVA_INSTANCE_METHODS, 0));
-        javaClassClass.defineMethod("java_class_methods", IndexedCallback.create(JAVA_CLASS_METHODS, 0));
-        javaClassClass.defineMethod("java_method", IndexedCallback.createOptional(JAVA_METHOD, 1));
-        javaClassClass.defineMethod("constructors", IndexedCallback.create(CONSTRUCTORS, 0));
-        javaClassClass.defineMethod("constructor", IndexedCallback.createOptional(CONSTRUCTOR));
-        javaClassClass.defineMethod("array_class", IndexedCallback.create(ARRAY_CLASS, 0));
-        javaClassClass.defineMethod("new_array", IndexedCallback.create(NEW_ARRAY, 1));
-        javaClassClass.defineMethod("fields", IndexedCallback.create(FIELDS, 0));
-        javaClassClass.defineMethod("field", IndexedCallback.create(FIELD, 1));
-        javaClassClass.defineMethod("interfaces", IndexedCallback.create(INTERFACES, 0));
-        javaClassClass.defineMethod("primitive?", IndexedCallback.create(PRIMITIVE_P, 0));
-        javaClassClass.defineMethod("assignable_from?", IndexedCallback.create(ASSIGNABLE_FROM_P, 1));
-        javaClassClass.defineMethod("component_type", IndexedCallback.create(COMPONENT_TYPE, 0));
+        result.getMetaClass().undefineMethod("new");
 
-        javaClassClass.getMetaClass().undefineMethod("new");
-
-        return javaClassClass;
+        return result;
     }
 
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
@@ -249,14 +248,12 @@ public class JavaClass extends RubyObject implements IndexCallable {
     public JavaField field(IRubyObject name) {
         String stringName = name.asSymbol();
 
-        Field field;
         try {
-            field = javaClass.getField(stringName);
+            return new JavaField(getRuntime(),javaClass.getField(stringName));
         } catch (NoSuchFieldException nsfe) {
             throw new NameError(getRuntime(),
                                 "undefined field '" + stringName + "' for class '" + javaClass.getName() + "'");
         }
-        return new JavaField(getRuntime(), field);
     }
 
     public RubyArray interfaces() {
@@ -313,52 +310,5 @@ public class JavaClass extends RubyObject implements IndexCallable {
             throw new TypeError(getRuntime(), "not a java array-class");
         }
         return new JavaClass(getRuntime(), javaClass.getComponentType());
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case PUBLIC_P :
-                return public_p();
-            case FINAL_P :
-                return final_p();
-            case INTERFACE_P :
-                return interface_p();
-            case ARRAY_P :
-                return array_p();
-            case NAME :
-                return name();
-            case SUPERCLASS :
-                return superclass();
-            case OP_CMP :
-                return op_cmp(args[0]);
-            case JAVA_INSTANCE_METHODS :
-                return java_instance_methods();
-            case JAVA_CLASS_METHODS :
-                return java_class_methods();
-            case JAVA_METHOD :
-                return java_method(args);
-            case CONSTRUCTORS :
-                return constructors();
-            case CONSTRUCTOR :
-                return constructor(args);
-            case ARRAY_CLASS :
-                return array_class();
-            case NEW_ARRAY :
-                return new_array(args[0]);
-            case FIELDS :
-                return fields();
-            case FIELD :
-                return field(args[0]);
-            case INTERFACES :
-                return interfaces();
-            case PRIMITIVE_P :
-                return primitive_p();
-            case ASSIGNABLE_FROM_P :
-                return assignable_from_p(args[0]);
-            case COMPONENT_TYPE :
-                return component_type();
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }
