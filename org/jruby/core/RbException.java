@@ -1,6 +1,6 @@
 /*
- * RubyCallbackMethod.java - No description
- * Created on 25. Juli 2001, 23:56
+ * RbJavaObject.java - No description
+ * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <japetersen@web.de>
@@ -35,8 +35,22 @@ import org.jruby.*;
 /**
  *
  * @author  jpetersen
- * @version 
  */
-public interface RubyCallbackMethod {
-    public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby);
+public class RbException {
+    public static RubyClass createExceptionClass(Ruby ruby) {
+        RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
+        
+        exceptionClass.defineMethod("to_s", getMethod("m_to_s"));
+        exceptionClass.defineMethod("to_str", getMethod("m_to_s"));
+        exceptionClass.defineMethod("inspect", getMethod("m_inspect"));
+        // exceptionClass.defineMethod("inspect", getMethod("m_inspect"));
+        
+        // exceptionClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
+        
+        return exceptionClass;
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName) {
+        return new ReflectionCallbackMethod(RubyException.class, methodName);
+    }
 }

@@ -43,59 +43,63 @@ import org.jruby.exceptions.*;
  * @version 
  */
 public class JavaConstructor implements RubyCallbackMethod {
-    private Constructor[] constructors = null;
+	private Constructor[] constructors = null;
 
-    public JavaConstructor(Constructor[] constructors) {
-        this.constructors = constructors;
-    }
+	public JavaConstructor(Constructor[] constructors) {
+		this.constructors = constructors;
+	}
 
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        LinkedList executeConstructors = new LinkedList(Arrays.asList(constructors));
-        
-        // remove constructors with wrong parameter count.
-        Iterator iter = executeConstructors.iterator();
-        while (iter.hasNext()) {
-            Constructor constructor = (Constructor)iter.next();
-            if (constructor.getParameterTypes().length != args.length) {
-                iter.remove();
-            }
-        }
-        
-        // remove constructors with wrong parameter types.
-        iter = executeConstructors.iterator();
-        while (iter.hasNext()) {
-            Constructor constructor = (Constructor)iter.next();
-            for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-                if (!JavaUtil.isCompatible(args[i], constructor.getParameterTypes()[i])) {
-                    iter.remove();
-                    break;
-                }
-            }
-        }
-        
-        if (executeConstructors.isEmpty()) {
-            throw new RubyArgumentException("wrong arguments.");
-        }
-        
-        // take the first constructor.
-        Constructor constructor  = (Constructor)executeConstructors.getFirst();
-        
-        Object[] newArgs = new Object[args.length];
-        
-        for (int i = 0; i < newArgs.length; i++) {
-            newArgs[i] = JavaUtil.convertRubyToJava(ruby, args[i], constructor.getParameterTypes()[i]);
-        }
+	public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
+		LinkedList executeConstructors = new LinkedList(Arrays.asList(constructors));
 
-        try {
-            Object javaValue = constructor.newInstance(newArgs);
-            RubyJavaObject javaObject = new RubyJavaObject(ruby, (RubyModule)recv, javaValue);
-            javaObject.callInit(args);
-            return javaObject;
-        } catch (IllegalAccessException iaExcptn) {
-        } catch (InstantiationException iExcptn) {
-        } catch (IllegalArgumentException iaExcptn) {
-        } catch (InvocationTargetException itExcptn) {
-        }
-        return ruby.getNil();
-    }
+		int argsLength = args != null ? args.length : 0;
+
+		// remove constructors with wrong parameter count.
+		Iterator iter = executeConstructors.iterator();
+		while (iter.hasNext()) {
+			Constructor constructor = (Constructor) iter.next();
+			if (constructor.getParameterTypes().length != argsLength) {
+				iter.remove();
+			}
+		}
+
+		// remove constructors with wrong parameter types.
+		iter = executeConstructors.iterator();
+		while (iter.hasNext()) {
+			Constructor constructor = (Constructor) iter.next();
+			for (int i = 0; i < constructor.getParameterTypes().length; i++) {
+				if (!JavaUtil.isCompatible(args[i], constructor.getParameterTypes()[i])) {
+					iter.remove();
+					break;
+				}
+			}
+		}
+
+		if (executeConstructors.isEmpty()) {
+			throw new RubyArgumentException(ruby, "wrong arguments.");
+		}
+
+		// take the first constructor.
+		Constructor constructor = (Constructor) executeConstructors.getFirst();
+
+		Object[] newArgs = new Object[argsLength];
+
+		for (int i = 0; i < argsLength; i++) {
+			newArgs[i] =
+				JavaUtil.convertRubyToJava(ruby, args[i], constructor.getParameterTypes()[i]);
+		}
+
+		try {
+			Object javaValue = constructor.newInstance(newArgs);
+			RubyJavaObject javaObject =
+				new RubyJavaObject(ruby, (RubyModule) recv, javaValue);
+			javaObject.callInit(args);
+			return javaObject;
+		} catch (IllegalAccessException iaExcptn) {
+		} catch (InstantiationException iExcptn) {
+		} catch (IllegalArgumentException iaExcptn) {
+		} catch (InvocationTargetException itExcptn) {
+		}
+		return ruby.getNil();
+	}
 }

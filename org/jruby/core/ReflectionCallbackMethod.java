@@ -113,18 +113,18 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         return method;
     }
     
-    protected void testArgsCount(RubyObject[] methodArgs) {
+    protected void testArgsCount(Ruby ruby, RubyObject[] methodArgs) {
         if (args.length == 0) {
             if (methodArgs.length > 0) {
-                throw new RubyArgumentException(getExceptedArgsString(methodArgs));
+                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
             }
         } else if (restArgs) {
             if (methodArgs.length < (args.length - 1)) {
-                throw new RubyArgumentException(getExceptedArgsString(methodArgs));
+                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
             }
         } else {
             if (methodArgs.length != args.length) {
-                throw new RubyArgumentException(getExceptedArgsString(methodArgs));
+                throw new RubyArgumentException(ruby, getExceptedArgsString(methodArgs));
             }
         }
     }
@@ -197,28 +197,22 @@ public class ReflectionCallbackMethod implements RubyCallbackMethod {
         }
         try {
             return (RubyObject)getMethod().invoke(staticMethod ? null : recv, methodArgs);
-        } catch (Exception excptn) {
-            System.out.println(klass.getName());
-            System.out.println(methodName);
-            System.out.println(recv.getClass().getName());
-            excptn.printStackTrace();
-            return null;
-        }
-/*        } catch (IllegalAccessException iaExcptn) {
-            throw new RuntimeException("IllegalAccessException: Cannot invoke method \"" + methodName + 
-                        "\" in class \"" + klass.getName() + "\" by Reflection.");
-        } catch (IllegalArgumentException iaExcptn) {
-            throw new RuntimeException("IllegalArgumentException: Cannot invoke method \"" + methodName + 
-                        "\" in class \"" + klass.getName() + "\" by Reflection.");
         } catch (InvocationTargetException itExcptn) {
-            throw new RuntimeException("InvocationTargetException: Cannot invoke method \"" + methodName + 
-                        "\" in class \"" + klass.getName() + "\" by Reflection.");
-        }*/
+            if (itExcptn.getCause() instanceof RaiseException) {
+            	throw (RaiseException)itExcptn.getCause();
+            } else {
+            	throw new RaiseException(ruby, "RuntimeError", itExcptn.getMessage());
+            }
+        } catch  (IllegalAccessException iaExcptn) {
+        	throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
+        } catch  (IllegalArgumentException iaExcptn) {
+        	throw new RaiseException(ruby, "RuntimeError", iaExcptn.getMessage());
+        }
     }
     
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
         args = (args != null) ? args : new RubyObject[0];
-        testArgsCount(args);
+        testArgsCount(ruby, args);
         // testArgsClass(args);
         return invokeMethod(recv, args, ruby);
     }

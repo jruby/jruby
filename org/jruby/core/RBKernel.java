@@ -56,8 +56,9 @@ public class RBKernel {
         kernelModule.defineMethod("inspect", getObjectMethod("m_inspect"));
         kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
         kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
-        
+        kernelModule.defineMethod("inspect", getObjectMethod("m_inspect"));        
         kernelModule.defineModuleFunction("singleton_method_added", getDummyMethod());
+        kernelModule.defineMethod("raise", getKernelMethod("m_raise"));
         
         return kernelModule;
     }
@@ -100,6 +101,21 @@ public class RBKernel {
         return ruby.getNil();
     }
     
+    public static RubyObject m_raise(Ruby ruby, RubyObject recv, RubyObject args[]) {
+    	int argsLength = args != null? args.length : 0;
+    	
+    	switch (argsLength) {
+    		case 0:
+    		case 1:
+    			throw new RaiseException(RubyException.s_new(ruby, ruby.getExceptions().getRuntimeError(), args));
+    		case 2:
+    			RubyException excptn = (RubyException)args[0].funcall(ruby.intern("exception"), args[1]);
+    			throw new RaiseException(excptn);
+   			default:
+   				throw new RubyArgumentException(ruby, "wrong # of arguments");
+    	}
+    }
+    
     public static RubyObject m_print(Ruby ruby, RubyObject recv, RubyObject args[]) {
         RubyObject ofsObj = ruby.getGlobalVar("$,");
         RubyObject orsObj = ruby.getGlobalVar("$\\");
@@ -128,14 +144,14 @@ public class RBKernel {
     
     public static RubyObject m_sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
         if (args.length == 0) {
-            throw new RubyArgumentException("sprintf must have at least one argument");
+            throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
         }
         RubyString str = null;
         if (!(args[0] instanceof RubyString)) {
             try {
                 str = (RubyString)args[0].convertType(RubyString.class, "String", "to_str");
             } catch (Exception ex) {
-                throw new RubyArgumentException("first argument to sprintf must be a string");
+                throw new RubyArgumentException(ruby, "first argument to sprintf must be a string");
             }
         } else {
             str = (RubyString)args[0];

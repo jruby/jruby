@@ -64,7 +64,7 @@ public class RbComparable {
             methodEqual = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aObject) required");
+                        throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
                     }
                     
                     if (recv == args[0]) {
@@ -88,7 +88,7 @@ public class RbComparable {
             methodGt = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aObject) required");
+                        throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
@@ -104,7 +104,7 @@ public class RbComparable {
             methodGe = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aObject) required");
+                        throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
@@ -120,7 +120,7 @@ public class RbComparable {
             methodLt = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aObject) required");
+                        throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
@@ -136,7 +136,7 @@ public class RbComparable {
             methodLe = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
-                        throw new RubyArgumentException("Parameter: (aObject) required");
+                        throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);
@@ -152,7 +152,7 @@ public class RbComparable {
             methodBetweenP = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 2) {
-                        throw new RubyArgumentException("Parameter: (aObject, aObject) required");
+                        throw new RubyArgumentException(ruby, "Parameter: (aObject, aObject) required");
                     }
                     
                     RubyFixnum fn = (RubyFixnum)recv.funcall(ruby.intern("<=>"), args[0]);

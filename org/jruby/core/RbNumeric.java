@@ -94,7 +94,7 @@ public class RbNumeric {
             methodCoerce = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
-                        throw new RubyArgumentException();
+                        throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
                     return ((RubyNumeric)recv).m_coerce((RubyNumeric)args[0]);
@@ -144,7 +144,7 @@ public class RbNumeric {
             methodEqual = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
-                        throw new RubyArgumentException();
+                        throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
                     return recv.m_equal(args[0]);
@@ -159,7 +159,7 @@ public class RbNumeric {
             methodEql = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
-                        throw new RubyArgumentException();
+                        throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
                     return ((RubyNumeric)recv).m_eql(args[0]);
@@ -175,7 +175,7 @@ public class RbNumeric {
             methodDivmod = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
-                        throw new RubyArgumentException();
+                        throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
                     return ((RubyNumeric)recv).m_divmod((RubyNumeric)args[0]);
@@ -190,7 +190,7 @@ public class RbNumeric {
             methodModulo = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
-                        throw new RubyArgumentException();
+                        throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
                     return ((RubyNumeric)recv).m_modulo((RubyNumeric)args[0]);
@@ -205,7 +205,7 @@ public class RbNumeric {
             methodRemainder = new RubyCallbackMethod() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
-                        throw new RubyArgumentException();
+                        throw new RubyArgumentException(ruby, "wrong argument count");
                     }
                     
                     return ((RubyNumeric)recv).m_remainder((RubyNumeric)args[0]);

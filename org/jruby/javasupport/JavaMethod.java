@@ -58,11 +58,13 @@ public class JavaMethod implements RubyCallbackMethod {
     public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
         LinkedList executeMethods = new LinkedList(Arrays.asList(methods));
         
+        int argsLength = args != null ? args.length : 0;
+        
         // remove mehods with wrong parameter count.
         Iterator iter = executeMethods.iterator();
         while (iter.hasNext()) {
             Method method = (Method)iter.next();
-            if (method.getParameterTypes().length != args.length) {
+            if (method.getParameterTypes().length != argsLength) {
                 iter.remove();
             }
         }
@@ -80,15 +82,15 @@ public class JavaMethod implements RubyCallbackMethod {
         }
         
         if (executeMethods.isEmpty()) {
-            throw new RubyArgumentException("wrong arguments.");
+            throw new RubyArgumentException(ruby, "wrong arguments.");
         }
         
         // take the first method.
         Method method = (Method)executeMethods.getFirst();
         
-        Object[] newArgs = new Object[args.length];
+        Object[] newArgs = new Object[argsLength];
         
-        for (int i = 0; i < newArgs.length; i++) {
+        for (int i = 0; i < argsLength; i++) {
             newArgs[i] = JavaUtil.convertRubyToJava(ruby, args[i], method.getParameterTypes()[i]);
         }
 
