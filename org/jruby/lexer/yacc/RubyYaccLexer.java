@@ -209,7 +209,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     errorHandler.handleError(
                         IErrors.SYNTAX_ERROR,
                         support.getPosition(),
-                        Messages.getString("invalid_escape_expected_minus", Character.toString(c)));
+                        Messages.getString("invalid_escape_expected_minus", String.valueOf(c)));
                     //$NON-NLS-1$
                     support.unread();
                     return '\0';
@@ -228,7 +228,7 @@ public class RubyYaccLexer implements IYaccLexer {
                     errorHandler.handleError(
                         IErrors.SYNTAX_ERROR,
                         support.getPosition(),
-                        Messages.getString("invalid_escape_expected_minus", Character.toString(c)));
+                        Messages.getString("invalid_escape_expected_minus", String.valueOf(c)));
                     //$NON-NLS-1$
                     support.unread();
                     return '\0';
@@ -1341,7 +1341,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         errorHandler.handleError(
                             IErrors.COMPILE_ERROR,
                             support.getPosition(),
-                            Messages.getString("invalid_instance_variable_name", Character.toString((char) c)));
+                            Messages.getString("invalid_instance_variable_name", String.valueOf((char) c)));
                         //$NON-NLS-1$
                     }
                     if (!isIdentifierChar(c)) {
@@ -1354,7 +1354,7 @@ public class RubyYaccLexer implements IYaccLexer {
                         errorHandler.handleError(
                             IErrors.COMPILE_ERROR,
                             support.getPosition(),
-                            Messages.getString("invalid_char_in_expression", Character.toString((char) c)));
+                            Messages.getString("invalid_char_in_expression", String.valueOf((char) c)));
                         //$NON-NLS-1$
                         continue retry;
                     }
@@ -1497,7 +1497,7 @@ public class RubyYaccLexer implements IYaccLexer {
                 errorHandler.handleError(
                     IErrors.SYNTAX_ERROR,
                     support.getPosition(),
-                    Messages.getString("unknown_quotation_type", Character.toString(type)));
+                    Messages.getString("unknown_quotation_type", String.valueOf(type)));
                 //$NON-NLS-1$
                 return 0;
         }
@@ -1715,7 +1715,7 @@ public class RubyYaccLexer implements IYaccLexer {
     private int getNumberToken(String number, boolean isFloat, char nondigit) {
         if (nondigit != '\0') {
             //trailing_uc:
-            errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc", Character.toString(nondigit))); //$NON-NLS-1$
+            errorHandler.handleError(IErrors.SYNTAX_ERROR, Messages.getString("trailing_uc", String.valueOf(nondigit))); //$NON-NLS-1$
             return 0;
         }
         if (isFloat) {
