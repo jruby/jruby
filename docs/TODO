@@ -9,7 +9,7 @@ Items marked '-' are done and will be available in the next release.
 * Documentation
     * Write a short overview
     * Short users guide
-    * Embedding/BSF doc
+    - Embedding/BSF doc
     * Embedding API docs (first determine what that API *is*)
     * Javasupport docs
         - Overview

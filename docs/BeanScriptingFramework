@@ -1,0 +1,46 @@
+--------------------------------------------
+ Bean Scription Framework (BSF) Introduction
+--------------------------------------------
+(C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+$Id$
+
+INTRODUCTION
+------------
+
+To include BSF into your Java code you should first need to register the JRuby
+engine:
+
+BSFManager.registerScriptingEngine("ruby", "org.jruby.javasupport.bsf.JRubyEngine", new String[] { "rb" });
+
+Now you need to create a new BSFManager:
+
+BSFManager manager = new BSFManager();
+
+After you have some Java objects you can declare them as "beans" in BSF:
+
+manager.declareBean("frame", aFrame, JFrame.class);
+
+these beans can be accessed from Ruby as global variables (in this case `$frame');
+You can also register objects:
+
+manager.registerBean("frame", aFrame);
+
+this registered bean can be accessed by calling the
+
+$bsf.lookupBean("frame")
+
+method. Now you can execute Ruby scripts:
+
+manager.exec("ruby", "(java)", 1, 1, "$frame.setTitle(\"A Frame\")");
+
+Or evaluate Ruby expressions:
+
+Object obj = manager.eval("ruby", "(java)", 1, 1, "(1..10).collect { |item| \n item ** 2 \n }.first");
+int result = ((Integer)obj).intValue();
+
+-------
+Example
+-------
+
+There is a simple BSF example in the JRuby source distribution (src/org/jruby/javasupport/bsf/BSFExample.java). Which is also avaibale at:
+http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/jruby/jruby/src/org/jruby/javasupport/bsf/BSFExample.java?rev=1.1&content-type=text/vnd.viewcvs-markup
