@@ -22,7 +22,7 @@ testException2.rb
 testFile.rb
 testThread.rb
 testMarshal.rb
-##testBackquote.rb
+testBackquote.rb
 # (isKindOf fixes) testHash.rb
 testSymbol.rb
 testPackUnpack.rb
