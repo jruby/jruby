@@ -59,6 +59,8 @@ public class RescueNode extends Node {
 
                 return result;
             } catch (RaiseException raExcptn) {
+                ruby.defineReadonlyVariable("$!", raExcptn.getActException());
+                
                 ruby.setSourceLine(getLine());
 
                 Node body = getResqNode();
@@ -67,6 +69,7 @@ public class RescueNode extends Node {
                         try {
                             return body.eval(ruby, self);
                         } catch (RetryException rExcptn) {
+                            ruby.defineReadonlyVariable("$!", ruby.getNil());
                             continue RescuedBlock;
                         }
                     }
