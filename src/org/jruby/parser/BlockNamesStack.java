@@ -59,7 +59,7 @@ public class BlockNamesStack extends AbstractStack {
      * @see AbstractStack#pop()
      */
     public StackElement pop() {
-        localNames.setBlockLevel(localNames.getBlockLevel() - 1);
+        localNames.decreaseBlockLevel();
         return super.pop();
     }
 
@@ -67,7 +67,7 @@ public class BlockNamesStack extends AbstractStack {
      * @see AbstractStack#push(StackElement)
      */
     public void push(StackElement newElement) {
-        localNames.setBlockLevel(localNames.getBlockLevel() + 1);
+        localNames.increaseBlockLevel();
         super.push(newElement);
     }
     

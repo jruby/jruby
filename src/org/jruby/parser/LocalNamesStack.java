@@ -82,10 +82,14 @@ public class LocalNamesStack extends AbstractStack {
         return ((LocalNamesElement)getTop()).getBlockLevel();
     }
 
-    public void setBlockLevel(int blockLevel) {
-        ((LocalNamesElement)getTop()).setBlockLevel(blockLevel);
+    public void increaseBlockLevel() {
+        ((LocalNamesElement)getTop()).increaseBlockLevel();
     }
-    
+
+    public void decreaseBlockLevel() {
+        ((LocalNamesElement)getTop()).decreaseBlockLevel();
+    }
+
     public boolean isInBlock() {
         return getBlockLevel() > 0;
     }
