@@ -1,6 +1,11 @@
 package org.jruby.runtime;
 
-import org.jruby.*;
+import org.jruby.IErrno;
+import org.jruby.RubyClass;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.RubyFixnum;
+
 
 public class RubyExceptions implements IErrno {
     private RubyClass systemExit = null;

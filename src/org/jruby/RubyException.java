@@ -32,14 +32,16 @@ package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.internal.runtime.builtin.definitions.ExceptionDefinition;
 
 /**
  *
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyException extends RubyObject {
+public class RubyException extends RubyObject implements IndexCallable {
 
     private RubyArray backtrace;
     public IRubyObject message;
@@ -58,27 +60,13 @@ public class RubyException extends RubyObject {
     }
 
     public static RubyClass createExceptionClass(Ruby ruby) {
-        RubyClass exceptionClass = ruby.defineClass("Exception", ruby.getClasses().getObjectClass());
-
-        exceptionClass.defineSingletonMethod(
-            "exception",
-            CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
-        exceptionClass.defineSingletonMethod(
-            "new",
-            CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
-
-        exceptionClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyException.class, "initialize"));
-        exceptionClass.defineMethod("exception", CallbackFactory.getOptMethod(RubyException.class, "exception"));
-
-        exceptionClass.defineMethod("to_s", CallbackFactory.getMethod(RubyException.class, "to_s"));
-        exceptionClass.defineMethod("to_str", CallbackFactory.getMethod(RubyException.class, "to_s"));
-        exceptionClass.defineMethod("message", CallbackFactory.getMethod(RubyException.class, "to_s"));
-        exceptionClass.defineMethod("inspect", CallbackFactory.getMethod(RubyException.class, "inspect"));
-
-        exceptionClass.defineMethod("backtrace", CallbackFactory.getMethod(RubyException.class, "backtrace"));
-        exceptionClass.defineMethod(
-            "set_backtrace",
-            CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyArray.class));
+        RubyClass exceptionClass = new ExceptionDefinition(ruby).getType();
+        exceptionClass.defineSingletonMethod("exception",
+                                             CallbackFactory.getOptSingletonMethod(RubyException.class, "newInstance"));
+        exceptionClass.defineMethod("exception",
+                                    CallbackFactory.getOptMethod(RubyException.class, "exception"));
+        exceptionClass.defineMethod("set_backtrace",
+                                    CallbackFactory.getMethod(RubyException.class, "set_backtrace", RubyArray.class));
 
         return exceptionClass;
     }
@@ -160,6 +148,21 @@ public class RubyException extends RubyObject {
             sb.append(exception.getValue());
             sb.append(">");
             return RubyString.newString(getRuntime(), sb.toString());
+        }
+    }
+
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+        case ExceptionDefinition.INITIALIZE :
+            return initialize(args);
+        case ExceptionDefinition.TO_S :
+            return to_s();
+        case ExceptionDefinition.INSPECT :
+            return inspect();
+        case ExceptionDefinition.BACKTRACE :
+            return backtrace();
+        default :
+            return super.callIndexed(index, args);
         }
     }
 }
