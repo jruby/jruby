@@ -124,7 +124,7 @@ public class Split {
     private RubyRegexp getPattern(IRubyObject[] args) {
         if (args.length == 0) {
             isWhitespace = true;
-            return RubyRegexp.newRegexp(runtime, "\\s+", 0);
+            return RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
         }
         if (args[0] instanceof RubyRegexp) {
             // Even if we have whitespace-only explicit regexp we do not
@@ -136,9 +136,9 @@ public class Split {
             
             if (stringPattern.equals(" ")) {
                 isWhitespace = true;
-                return RubyRegexp.newRegexp(runtime, "\\s+", 0);
+                return RubyRegexp.newRegexp(runtime, "\\s+", 0, null);
             } else {
-                return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0);
+                return RubyRegexp.newRegexp(runtime, unescapeString(stringPattern), 0, null);
             }
         }
     }

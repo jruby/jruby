@@ -323,8 +323,10 @@ public class RubyObject implements Cloneable, IRubyObject {
     /** OBJ_INFECT
      *
      */
-    protected void infectBy(IRubyObject obj) {
+    protected IRubyObject infectBy(IRubyObject obj) {
         setTaint(isTaint() || obj.isTaint());
+        
+        return this;
     }
 
     /** rb_funcall2
@@ -806,7 +808,7 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject methods() {
-        return getMetaClass().instance_methods(new IRubyObject[] { getRuntime().getTrue()});
+        return getMetaClass().public_instance_methods(new IRubyObject[] { getRuntime().getTrue()});
     }
 
     /** rb_obj_protected_methods

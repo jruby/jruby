@@ -32,7 +32,6 @@ package org.jruby;
 
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.IndexError;
-import org.jruby.exceptions.RangeError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.CallbackFactory;
@@ -55,7 +54,7 @@ public class RubyString extends RubyObject {
 	private static final String encoding = "iso8859-1";
 
 	private String value;
-
+	
 	private RubyString(Ruby ruby) {
 		this(ruby, ruby.getClasses().getStringClass(), null);
 	}
@@ -83,7 +82,7 @@ public class RubyString extends RubyObject {
 	}
 
 	public String getValue() {
-		return this.value;
+		return value;
 	}
 
 	public void setValue(String newValue) {
@@ -146,6 +145,7 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("empty?", callbackFactory.getMethod(RubyString.class, "empty"));
         stringClass.defineMethod("=~", callbackFactory.getMethod(RubyString.class, "match", IRubyObject.class));
         stringClass.defineMethod("~", callbackFactory.getMethod(RubyString.class, "match2"));
+        stringClass.defineMethod("match", callbackFactory.getMethod(RubyString.class, "match3", IRubyObject.class));
         stringClass.defineMethod("succ", callbackFactory.getMethod(RubyString.class, "succ"));
         stringClass.defineMethod("succ!", callbackFactory.getMethod(RubyString.class, "succ_bang"));
         stringClass.defineMethod("next", callbackFactory.getMethod(RubyString.class, "succ"));
@@ -160,6 +160,8 @@ public class RubyString extends RubyObject {
 
         stringClass.defineMethod("to_s", callbackFactory.getSelfMethod(0));
         stringClass.defineMethod("to_str", callbackFactory.getSelfMethod(0));
+        stringClass.defineMethod("to_sym", callbackFactory.getMethod(RubyString.class, "to_sym"));
+        stringClass.defineAlias("intern", "to_sym");
         stringClass.defineMethod("inspect", callbackFactory.getMethod(RubyString.class, "inspect"));
         stringClass.defineMethod("dump", callbackFactory.getMethod(RubyString.class, "dump"));
 
@@ -180,7 +182,6 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("reverse!", callbackFactory.getMethod(RubyString.class, "reverse_bang"));
         stringClass.defineMethod("concat", callbackFactory.getMethod(RubyString.class, "concat", IRubyObject.class));
         stringClass.defineMethod("<<", callbackFactory.getMethod(RubyString.class, "concat", IRubyObject.class));
-        stringClass.defineMethod("intern", callbackFactory.getMethod(RubyString.class, "intern"));
 
         stringClass.defineMethod("include?", callbackFactory.getMethod(RubyString.class, "include", IRubyObject.class));
 
@@ -206,14 +207,14 @@ public class RubyString extends RubyObject {
         stringClass.defineMethod("lstrip!", callbackFactory.getMethod(RubyString.class, "lstrip_bang"));
         stringClass.defineMethod("rstrip!", callbackFactory.getMethod(RubyString.class, "rstrip_bang"));
 
-        stringClass.defineMethod("tr", callbackFactory.getOptMethod(RubyString.class, "tr"));
-        stringClass.defineMethod("tr_s", callbackFactory.getOptMethod(RubyString.class, "tr_s"));
+        stringClass.defineMethod("tr", callbackFactory.getMethod(RubyString.class, "tr", RubyString.class, RubyString.class));
+        stringClass.defineMethod("tr_s", callbackFactory.getMethod(RubyString.class, "tr_s", RubyString.class, RubyString.class));
         stringClass.defineMethod("delete", callbackFactory.getOptMethod(RubyString.class, "delete"));
         stringClass.defineMethod("squeeze", callbackFactory.getOptMethod(RubyString.class, "squeeze"));
         stringClass.defineMethod("count", callbackFactory.getOptMethod(RubyString.class, "count"));
 
-        stringClass.defineMethod("tr!", callbackFactory.getOptMethod(RubyString.class, "tr_bang"));
-        stringClass.defineMethod("tr_s!", callbackFactory.getOptMethod(RubyString.class, "tr_s_bang"));
+        stringClass.defineMethod("tr!", callbackFactory.getMethod(RubyString.class, "tr_bang", RubyString.class, RubyString.class));
+        stringClass.defineMethod("tr_s!", callbackFactory.getMethod(RubyString.class, "tr_s_bang", RubyString.class, RubyString.class));
         stringClass.defineMethod("delete!", callbackFactory.getOptMethod(RubyString.class, "delete_bang"));
         stringClass.defineMethod("squeeze!", callbackFactory.getOptMethod(RubyString.class, "squeeze_bang"));
 
@@ -261,10 +262,8 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public static RubyString objAsString(IRubyObject obj) {
-		if (obj instanceof RubyString) {
-			return (RubyString) obj;
-		}
-		return (RubyString) obj.callMethod("to_s");
+		return (RubyString) (obj instanceof RubyString ? obj : 
+			obj.callMethod("to_s"));
 	}
 
 	/** rb_str_cmp
@@ -283,6 +282,10 @@ public class RubyString extends RubyObject {
 		return getValue();
 	}
 
+	public RubySymbol to_sym() {
+		return RubySymbol.newSymbol(getRuntime(), getValue());
+	}
+	
 	/** Create a new String which uses the same Ruby runtime and the same
 	 *  class like this String.
 	 *
@@ -318,9 +321,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject dup() {
-		RubyString newStr = newString(getValue());
-		newStr.infectBy(this);
-		return newStr;
+		return newString(getValue()).infectBy(this);
 	}
 
 	/** rb_str_clone
@@ -358,8 +359,7 @@ public class RubyString extends RubyObject {
 			return this;
 		}
 		setValue(str.getValue());
-		infectBy(str);
-		return this;
+		return (RubyString) infectBy(str); 
 	}
 
 	/** rb_str_reverse
@@ -417,7 +417,8 @@ public class RubyString extends RubyObject {
 			return getRuntime().getNil();
 		}
 		/* use Java implementation */
-		return getValue().equals(((RubyString) other).getValue()) ? getRuntime().getTrue() : getRuntime().getFalse();
+		return RubyBoolean.newBoolean(getRuntime(), 
+				getValue().equals(((RubyString) other).getValue()));
 	}
 	
 	public IRubyObject veryEqual(IRubyObject other) {
@@ -432,7 +433,7 @@ public class RubyString extends RubyObject {
 		if (other instanceof RubyRegexp) {
 			return ((RubyRegexp) other).match(this);
 		} else if (other instanceof RubyString) {
-			return RubyRegexp.newRegexp((RubyString) other, 0).match(this);
+			return RubyRegexp.newRegexp((RubyString) other, 0, null).match(this);
 		}
 		return other.callMethod("=~", this);
 	}
@@ -441,16 +442,32 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject match2() {
-		return RubyRegexp.newRegexp(this, 0).match2();
+		return RubyRegexp.newRegexp(this, 0, null).match2();
+	}
+	
+	/**
+	 * String#match(pattern)
+	 * 
+	 * @param pattern Regexp or String 
+	 * @return
+	 */
+	public IRubyObject match3(IRubyObject pattern) {
+		if (pattern instanceof RubyRegexp) {
+			return ((RubyRegexp)pattern).search2(getValue());
+		} else if (pattern instanceof RubyString) {
+			RubyRegexp regexp = 
+				RubyRegexp.newRegexp((RubyString) pattern, 0, null);
+			return regexp.search2(getValue());
+		} 
+		
+		return getRuntime().getNil();
 	}
 
 	/** rb_str_capitalize
 	 *
 	 */
 	public RubyString capitalize() {
-        RubyString result = (RubyString) rbClone();
-        result.capitalize_bang();
-        return result;
+        return ((RubyString) rbClone()).capitalize_bang();
 	}
 
 	/** rb_str_capitalize_bang
@@ -518,10 +535,8 @@ public class RubyString extends RubyObject {
 	    RubyString newString = newString(getValue());
 		IRubyObject swappedString = newString.swapcase_bang();
 		
-		if (swappedString.isNil() == true) {
-		    return newString;
-		}
-		return (RubyString) swappedString;
+		return (RubyString) (swappedString.isNil() == true ? newString : 
+			swappedString);
 	}
 
 	/** rb_str_swapcase_bang
@@ -613,9 +628,8 @@ public class RubyString extends RubyObject {
 	 */
 	public RubyString op_plus(IRubyObject other) {
 		RubyString str = stringValue(other);
-		RubyString newString = newString(getValue() + str.getValue());
-		newString.infectBy(str);
-		return newString;
+		
+		return (RubyString) newString(getValue()+str.getValue()).infectBy(str);
 	}
 
 	/** rb_str_mul
@@ -674,20 +688,17 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public RubyString concat(IRubyObject other) {
-		if ((other instanceof RubyFixnum) && ((RubyFixnum) other).getLongValue() < 256) {
-			char c = (char) ((RubyFixnum) other).getLongValue();
-			return cat("" + c);
+		if ((other instanceof RubyFixnum) && 
+		    ((RubyFixnum) other).getLongValue() < 256) {
+			return cat("" + (char) ((RubyFixnum) other).getLongValue());
 		}
 		return append(other);
 	}
 
 	/* rb_str_to_str */
-	public static RubyString stringValue(IRubyObject anObject) {
-		if (anObject instanceof RubyString) {
-			return (RubyString) anObject;
-		} else {
-			return (RubyString) anObject.convertType(RubyString.class, "String", "to_str");
-		}
+	public static RubyString stringValue(IRubyObject object) {
+		return (RubyString) (object instanceof RubyString ? object :
+			object.convertType(RubyString.class, "String", "to_str"));
 	}
 
 	/** rb_str_sub
@@ -864,9 +875,7 @@ public class RubyString extends RubyObject {
 			}
 		}
 		int end = Math.min(strLen, beg + len);
-		RubyString newStr = newString(getValue().substring(beg, end));
-		newStr.infectBy(this);
-		return newStr;
+		return newString(getValue().substring(beg, end)).infectBy(this);
 	}
 
 	/* rb_str_replace */
@@ -876,21 +885,43 @@ public class RubyString extends RubyObject {
 			len = strLen - beg;
 		}
 		setValue(getValue().substring(0, beg) + repl.getValue() + getValue().substring(beg + len));
-		infectBy(repl);
-		return this;
+		
+		return infectBy(repl); 
 	}
 
 	/** rb_str_aref, rb_str_aref_m
 	 *
 	 */
 	public IRubyObject aref(IRubyObject[] args) {
-	    try {
-	        return arefWithErrors(args);
-	    } catch (IndexError e) {
-	    } catch (RangeError e) {
+	    if (argCount(args, 1, 2) == 2) {
+	        return substr(RubyNumeric.fix2int(args[0]),
+	                	  RubyNumeric.fix2int(args[1]));
 	    }
-	    
-	    return getRuntime().getNil();
+	    if (args[0] instanceof RubyFixnum) {
+	        int idx = RubyNumeric.fix2int(args[0]);
+	        if (idx < 0) {
+	            idx += getValue().length();
+	        }
+	        return idx < 0 || idx >= getValue().length() ? getRuntime().getNil() :
+	        	RubyFixnum.newFixnum(getRuntime(), getValue().charAt(idx));
+	    } else if (args[0] instanceof RubyRegexp) {
+	    	return RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0 ?
+	            RubyRegexp.last_match(getRuntime().getBackref()) :
+	            	getRuntime().getNil();
+	    } else if (args[0] instanceof RubyString) {
+	        return getValue().indexOf(stringValue(args[0]).getValue()) != -1 ?
+	            args[0] : getRuntime().getNil();
+	    } else if (args[0] instanceof RubyRange) {
+	        long[] begLen = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, false);
+	        return begLen == null ? getRuntime().getNil() :
+	        	substr((int) begLen[0], (int) begLen[1]);
+	    }
+	    int idx = (int) RubyNumeric.num2long(args[0]);
+	    if (idx < 0) {
+	        idx += getValue().length();
+	    }
+	    return idx < 0 || idx >= getValue().length() ? getRuntime().getNil() : 
+	    	RubyFixnum.newFixnum(getRuntime(), getValue().charAt(idx));
 	}
 
 
@@ -966,58 +997,14 @@ public class RubyString extends RubyObject {
 			newArgs[1] = args[1];
 		}
 		newArgs[argc] = newString("");
-		IRubyObject result = arefWithErrors(args);
+		IRubyObject result = aref(args);
+		if (result.isNil()) {
+			return result;
+		}
 		aset(newArgs);
 		return result;
 	}
 
-	/*
-	 * Do an aref, but have it throw errors in a way that slice! likes.
-	 */
-	private IRubyObject arefWithErrors(IRubyObject[] args) {
-	    if (argCount(args, 1, 2) == 2) {
-	        return substr(RubyNumeric.fix2int(args[0]),
-	                	  RubyNumeric.fix2int(args[1]));
-	    }
-	    if (args[0] instanceof RubyFixnum) {
-	        int idx = RubyNumeric.fix2int(args[0]);
-	        if (idx < 0) {
-	            idx += getValue().length();
-	        }
-	        if (idx < 0 || idx >= getValue().length()) {
-	            throw new IndexError(getRuntime(), "Index out of range");
-	        }
-	        return RubyFixnum.newFixnum(getRuntime(), getValue().charAt(idx));
-	    }
-	    if (args[0] instanceof RubyRegexp) {
-	        if (RubyRegexp.regexpValue(args[0]).search(this, 0) >= 0) {
-	            return RubyRegexp.last_match(getRuntime().getBackref());
-	        }
-	        throw new IndexError(getRuntime(), "Index out of range");
-	    }
-	    if (args[0] instanceof RubyString) {
-	        if (getValue().indexOf(stringValue(args[0]).getValue()) != -1) {
-	            return args[0];
-	        }
-	        return getRuntime().getNil();
-	    }
-	    if (args[0] instanceof RubyRange) {
-	        long[] begLen = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, false);
-	        if (begLen == null) {
-	            throw new RangeError(getRuntime(), "Invalid range");
-	        }
-	        return substr((int) begLen[0], (int) begLen[1]);
-	    }
-	    int idx = (int) RubyNumeric.num2long(args[0]);
-	    if (idx < 0) {
-	        idx += getValue().length();
-	    }
-	    if (idx < 0 || idx >= getValue().length()) {
-	        return getRuntime().getNil();
-	    }
-	    return RubyFixnum.newFixnum(getRuntime(), getValue().charAt(idx));
-	}
-	
 	/** rb_str_format
 	 *
 	 */
@@ -1501,9 +1488,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject delete(IRubyObject[] args) {
-		RubyString newStr = newString(getDelete(args));
-		newStr.infectBy(this);
-		return newStr;
+		return newString(getDelete(args)).infectBy(this);
 	}
 
 	/** rb_str_delete_bang
@@ -1552,9 +1537,7 @@ public class RubyString extends RubyObject {
 	 *
 	 */
 	public IRubyObject squeeze(IRubyObject[] args) {
-		RubyString newStr = newString(getSqueeze(args));
-		newStr.infectBy(this);
-		return newStr;
+		return newString(getSqueeze(args)).infectBy(this);
 	}
 
 	/** rb_str_squeeze_bang
@@ -1569,11 +1552,8 @@ public class RubyString extends RubyObject {
 		return this;
 	}
 
-	private String tr(IRubyObject[] args, boolean squeeze) {
-		if (args.length != 2) {
-			throw new ArgumentError(getRuntime(), "wrong number of arguments");
-		}
-		String srchSpec = stringValue(args[0]).getValue();
+	private String tr(RubyString search, RubyString replace, boolean squeeze) {
+		String srchSpec = search.getValue();
 		String srch = expandTemplate(srchSpec, true);
 		if (srchSpec.startsWith("^")) {
 			StringBuffer sbuf = new StringBuffer(256);
@@ -1585,7 +1565,7 @@ public class RubyString extends RubyObject {
 			}
 			srch = sbuf.toString();
 		}
-		String repl = expandTemplate(stringValue(args[1]).getValue(), false);
+		String repl = expandTemplate(replace.getValue(), false);
 
 		int strLen = getValue().length();
 		if (strLen == 0 || srch.length() == 0) {
@@ -1617,17 +1597,15 @@ public class RubyString extends RubyObject {
 	/** rb_str_tr
 	 *
 	 */
-	public IRubyObject tr(IRubyObject[] args) {
-		RubyString newStr = newString(tr(args, false));
-		newStr.infectBy(this);
-		return newStr;
+	public IRubyObject tr(RubyString search, RubyString replace) {
+		return newString(tr(search, replace, false)).infectBy(this);
 	}
 
 	/** rb_str_tr_bang
 	 *
 	 */
-	public IRubyObject tr_bang(IRubyObject[] args) {
-		String newStr = tr(args, false);
+	public IRubyObject tr_bang(RubyString search, RubyString replace) {
+		String newStr = tr(search, replace, false);
 		if (newStr.equals(getValue())) {
 			return getRuntime().getNil();
 		}
@@ -1638,17 +1616,15 @@ public class RubyString extends RubyObject {
 	/** rb_str_tr_s
 	 *
 	 */
-	public IRubyObject tr_s(IRubyObject[] args) {
-		RubyString newStr = newString(tr(args, true));
-		newStr.infectBy(this);
-		return newStr;
+	public IRubyObject tr_s(RubyString search, RubyString replace) {
+		return newString(tr(search, replace, true)).infectBy(this);
 	}
 
 	/** rb_str_tr_s_bang
 	 *
 	 */
-	public IRubyObject tr_s_bang(IRubyObject[] args) {
-		String newStr = tr(args, true);
+	public IRubyObject tr_s_bang(RubyString search, RubyString replace) {
+		String newStr = tr(search, replace, true);
 		if (newStr.equals(getValue())) {
 			return getRuntime().getNil();
 		}
@@ -1664,16 +1640,18 @@ public class RubyString extends RubyObject {
 		if (strLen == 0) {
 			return this;
 		}
-		String sep = RubyRegexp.quote(getRuntime().getGlobalVariables().get("$/").asSymbol());
+		String sep;
 		if (argCount(args, 0, 1) == 1) {
 			sep = RubyRegexp.quote(stringValue(args[0]).getValue());
+		} else {
+			sep = RubyRegexp.quote(getRuntime().getGlobalVariables().get("$/").asSymbol());
 		}
 		if (sep == null) {
 			sep = "(?:\\n|\\r\\n?)";
 		} else if (sep.length() == 0) {
 			sep = "(?:\\n|\\r\\n?){2,}";
 		}
-		RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE);
+		RubyRegexp pat = RubyRegexp.newRegexp(getRuntime(), ".*?" + sep, RubyRegexp.RE_OPTION_MULTILINE, null);
 		int start = 0;
 		while (pat.search(this, start) != -1) {
 			RubyMatchData md = (RubyMatchData) getRuntime().getBackref();
@@ -1708,11 +1686,8 @@ public class RubyString extends RubyObject {
     public RubyInteger sum(IRubyObject[] args) {
         long bitSize = 16;
         if (args.length > 0) {
-            RubyInteger sizeArgument =
-                (RubyInteger) args[0].convertType(RubyInteger.class,
-                                                  "Integer",
-                                                  "to_i");
-            bitSize = sizeArgument.getLongValue();
+        	bitSize = ((RubyInteger) args[0].convertType(RubyInteger.class,
+                    "Integer", "to_i")).getLongValue();
         }
 
         int result = 0;

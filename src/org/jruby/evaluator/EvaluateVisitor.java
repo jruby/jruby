@@ -477,7 +477,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             sb.append(eval(node));
         }
 
-        result = RubyRegexp.newRegexp(runtime, sb.toString(), iVisited.getOptions());
+        result = RubyRegexp.newRegexp(runtime, sb.toString(), iVisited.getOptions(), null);
     }
 
     /**
@@ -1381,7 +1381,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitRegexpNode(RegexpNode)
      */
     public void visitRegexpNode(RegexpNode iVisited) {
-        result = RubyRegexp.newRegexp(builtins.toString(iVisited.getValue()), iVisited.getOptions());
+        result = RubyRegexp.newRegexp(builtins.toString(iVisited.getValue()), iVisited.getOptions(), null);
     }
 
     /**

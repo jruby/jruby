@@ -48,6 +48,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     private IRegexpAdapter matcher;
     private String pattern;
     private int options;
+    private String lang = null;
 
     public RubyRegexp(Ruby ruby) {
         super(ruby, ruby.getClass("Regexp"));
@@ -131,7 +132,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if (obj instanceof RubyRegexp) {
             return (RubyRegexp) obj;
         } else if (obj instanceof RubyString) {
-            return newRegexp((RubyString) obj, 0);
+            return newRegexp((RubyString) obj, 0, null);
         } else {
             throw new ArgumentError(obj.getRuntime(), "can't convert arg to Regexp");
         }
@@ -139,12 +140,13 @@ public class RubyRegexp extends RubyObject implements ReOptions {
 
     // Methods of the Regexp class (rb_reg_*):
 
-    public static RubyRegexp newRegexp(RubyString str, int options) {
-        return newRegexp(str.getRuntime(), str.getValue(), options);
+    public static RubyRegexp newRegexp(RubyString str, int options, String lang) {
+        return newRegexp(str.getRuntime(), str.getValue(), options, lang);
     }
-
-    public static RubyRegexp newRegexp(Ruby ruby, String str, int options) {
+    
+    public static RubyRegexp newRegexp(Ruby ruby, String str, int options, String lang) {
         RubyRegexp re = new RubyRegexp(ruby);
+        re.lang = lang;
         re.initialize(str, options);
         return re;
     }
@@ -169,6 +171,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
                 opts |= RE_OPTION_IGNORECASE;
             }
         }
+        if (args.length > 2) {
+        	lang = RubyString.stringValue(args[2]).getValue();
+        }
 
         initialize(pat, opts);
         return getRuntime().getNil();
@@ -178,10 +183,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      * 
      */
     public static RubyString quote(IRubyObject recv, RubyString str) {
-        String orig = str.toString();
-        RubyString newStr = RubyString.newString(recv.getRuntime(), quote(orig));
-        newStr.infectBy(str);
-        return newStr;
+        return (RubyString) RubyString.newString(recv.getRuntime(), 
+        		quote(str.toString())).infectBy(str);
     }
 
     /** 
@@ -206,10 +209,14 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if (!re.source().getValue().equals(pattern)) {
             return getRuntime().getFalse();
         }
-        if (matcher.getCasefold() ^ re.matcher.getCasefold()) {
-            return getRuntime().getFalse();
+        
+        if (lang != null && lang.equals(re.lang) == false ||
+        	(lang == null && re.lang != null)) {
+        	return getRuntime().getFalse();
         }
-        return getRuntime().getTrue();
+        
+        return RubyBoolean.newBoolean(getRuntime(), 
+        		!(matcher.getCasefold() ^ re.matcher.getCasefold()));
     }
 
     /** rb_reg_match2
@@ -217,10 +224,8 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public IRubyObject match2() {
         IRubyObject target = getRuntime().getLastline();
-        if (!(target instanceof RubyString)) {
-            return getRuntime().getNil();
-        }
-        return match(target);
+        
+        return target instanceof RubyString ? match(target) : getRuntime().getNil();
     }
 
     /** rb_reg_match
@@ -231,10 +236,9 @@ public class RubyRegexp extends RubyObject implements ReOptions {
             return getRuntime().getFalse();
         }
         int result = search(target, 0);
-        if (result < 0) {
-            return getRuntime().getNil();
-        }
-        return RubyFixnum.newFixnum(getRuntime(), result);
+        
+        return result < 0 ? getRuntime().getNil() :
+        	RubyFixnum.newFixnum(getRuntime(), result);
     }
 
     /** rb_reg_match_m
@@ -261,7 +265,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
      */
     public RubyBoolean casefold() {
         checkInitialized();
-        return matcher.getCasefold() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return RubyBoolean.newBoolean(getRuntime(), matcher.getCasefold());
     }
 
     /** rb_reg_nth_match
@@ -325,6 +329,10 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         // If nothing match then -1 will be returned
         return result instanceof RubyMatchData ? ((RubyMatchData) result).matchStartPosition() : -1;
     }
+    
+    public IRubyObject search2(String str) {
+    	return matcher.search(getRuntime(), str, 0);
+    }
 
     /** rb_reg_regsub
      *
@@ -382,8 +390,11 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         return RubyString.newString(getRuntime(), sb.toString());
     }
 
+    // TODO: Could this be better hooked up to RubyObject#clone?
     public IRubyObject rbClone() {
-        return newRegexp(source(), options);
+    	RubyRegexp newObj = newRegexp(source(), options, lang);
+    	setupClone(newObj);
+        return newObj;
     }
 
     /** rb_reg_inspect
