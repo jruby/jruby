@@ -76,20 +76,19 @@ public class RubyJavaObject extends RubyObject {
         javaObjectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyJavaObject.class, "to_s"));
         javaObjectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
         javaObjectClass.defineMethod("==", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
-        javaObjectClass.defineMethod("hash", CallbackFactory.getMethod(RubyJavaObject.class, "hash"));
 
         javaObjectClass.getRubyClass().undefMethod("new");
 
         return javaObjectClass;
     }
 
-	// JavaObject methods
-    public RubyString to_s() {
-        return RubyString.newString(getRuby(), getValue() != null ? getValue().toString() : "null");
+    public int hashCode() {
+        return value.hashCode();
     }
 
-    public RubyFixnum hash() {
-        return new RubyFixnum(getRuby(), value.hashCode());
+    // JavaObject methods
+    public RubyString to_s() {
+        return RubyString.newString(getRuby(), getValue() != null ? getValue().toString() : "null");
     }
 
     public RubyBoolean equal(RubyObject other) {

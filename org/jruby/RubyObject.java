@@ -117,12 +117,12 @@ public class RubyObject implements Cloneable {
      * provided so that RubyObjects can be used as keys in the Java
      * HashMap object underlying RubyHash.
      */
-    public int hashCode() {
-        long rubyHash = RubyNumeric.fix2long(funcall("hash"));
-        int result = (int) rubyHash;
-        result ^= (rubyHash >> 32);
-        return result;
-    }
+//     public int hashCode() {
+//         long rubyHash = RubyNumeric.fix2long(funcall("hash"));
+//         int result = (int) rubyHash;
+//         result ^= (rubyHash >> 32);
+//         return result;
+//     }
 
     /**
      * This method is just a wrapper around the Ruby "==" method,
@@ -231,7 +231,7 @@ public class RubyObject implements Cloneable {
         objectClass.defineMethod("freeze", CallbackFactory.getMethod(RubyObject.class, "freeze"));
         objectClass.defineMethod("frozen?", CallbackFactory.getMethod(RubyObject.class, "frozen"));
         objectClass.defineMethod("id", CallbackFactory.getMethod(RubyObject.class, "id"));
-        objectClass.defineMethod("hash", CallbackFactory.getMethod(RubyObject.class, "id"));
+        objectClass.defineMethod("hash", CallbackFactory.getMethod(RubyObject.class, "hash"));
         objectClass.defineMethod("__id__", CallbackFactory.getMethod(RubyObject.class, "id"));
         objectClass.defineMethod("inspect", CallbackFactory.getMethod(RubyObject.class, "inspect"));
         objectClass.defineMethod("instance_eval", CallbackFactory.getOptMethod(RubyObject.class, "instance_eval"));
@@ -769,6 +769,17 @@ public class RubyObject implements Cloneable {
      */
     public RubyFixnum id() {
         return RubyFixnum.newFixnum(getRuby(), System.identityHashCode(this));
+    }
+
+    /**
+     * Get the object's hash code.
+     *
+     * Classes that need other implementations of hash() should override the
+     * Java method hashCode(). It is faster and more robust for Ruby to depend
+     * on Java hash codes than the other way around.
+     */
+    public final RubyFixnum hash() {
+        return RubyFixnum.newFixnum(getRuby(), hashCode());
     }
 
     /** rb_obj_type

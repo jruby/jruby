@@ -41,7 +41,9 @@ public class RubyBoolean extends RubyObject {
     private boolean value;
 
     public RubyBoolean(Ruby ruby, boolean value) {
-        super(ruby, null);
+        super(ruby,
+              null,   // Don't initialize with class
+              false); // Don't put in object space
         this.value = value;
     }
 

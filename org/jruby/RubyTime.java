@@ -65,7 +65,6 @@ public class RubyTime extends RubyObject {
         timeClass.defineSingletonMethod("gm", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
         timeClass.defineSingletonMethod("utc", CallbackFactory.getOptSingletonMethod(RubyTime.class, "new_utc"));
 
-        timeClass.defineMethod("hash", CallbackFactory.getMethod(RubyTime.class, "hash"));
         timeClass.defineMethod("<=>", CallbackFactory.getMethod(RubyTime.class, "op_cmp", RubyObject.class));
         timeClass.defineMethod("-", CallbackFactory.getMethod(RubyTime.class, "op_minus", RubyObject.class));
         timeClass.defineMethod("+", CallbackFactory.getMethod(RubyTime.class, "op_plus", RubyObject.class));
@@ -397,10 +396,6 @@ public class RubyTime extends RubyObject {
 
     public Date getJavaDate() {
         return this.cal.getTime();
-    }
-    
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(ruby, hashCode());
     }
 
     /**

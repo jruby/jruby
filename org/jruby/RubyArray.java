@@ -113,7 +113,6 @@ public class RubyArray extends RubyObject {
 
 		arrayClass.defineMethod("==", CallbackFactory.getMethod(RubyArray.class, "equal", RubyObject.class));
 		arrayClass.defineMethod("eql?", CallbackFactory.getMethod(RubyArray.class, "eql", RubyObject.class));
-		arrayClass.defineMethod("hash", CallbackFactory.getMethod(RubyArray.class, "hash"));
 		arrayClass.defineMethod("===", CallbackFactory.getMethod(RubyArray.class, "equal", RubyObject.class));
 
 		arrayClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
@@ -189,6 +188,10 @@ public class RubyArray extends RubyObject {
 
 		return arrayClass;
 	}
+
+    public int hashCode() {
+        return list.hashCode();
+    }
 
 	/** rb_ary_modify
 	 *
@@ -410,13 +413,6 @@ public class RubyArray extends RubyObject {
 		array.setRubyClass((RubyClass) recv);
 
 		return array;
-	}
-
-	/** rb_ary_hash
-	 *
-	 */
-	public RubyFixnum hash() {
-		return new RubyFixnum(getRuby(), list.hashCode());
 	}
 
 	/** rb_ary_length

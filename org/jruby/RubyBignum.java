@@ -104,7 +104,6 @@ public class RubyBignum extends RubyInteger {
 
         bignumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyBignum.class, "to_s"));
         bignumClass.defineMethod("coerce", CallbackFactory.getMethod(RubyBignum.class, "coerce", RubyObject.class));
-        bignumClass.defineMethod("hash", CallbackFactory.getMethod(RubyBignum.class, "hash"));
         bignumClass.defineMethod("to_f", CallbackFactory.getMethod(RubyBignum.class, "to_f"));
 
         bignumClass.defineMethod("+", CallbackFactory.getMethod(RubyBignum.class, "op_plus", RubyObject.class));
@@ -157,6 +156,10 @@ public class RubyBignum extends RubyInteger {
         return getValue().compareTo(bigIntValue(other));
     }
 
+    public int hashCode() {
+        return value.hashCode();
+    }
+
     // Bignum methods
 
     public static RubyBignum newBignum(Ruby ruby, long value) {
@@ -173,10 +176,6 @@ public class RubyBignum extends RubyInteger {
 
     public RubyBignum newBignum(BigInteger value) {
         return newBignum(ruby, value);
-    }
-
-    public RubyFixnum hash() {
-        return new RubyFixnum(getRuby(), value.hashCode());
     }
 
     public RubyNumeric op_mod(RubyObject num) {

@@ -58,7 +58,6 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("to_f", CallbackFactory.getMethod(RubyFixnum.class, "to_f"));
         fixnumClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
         fixnumClass.defineMethod("to_str", CallbackFactory.getMethod(RubyFixnum.class, "to_s"));
-        fixnumClass.defineMethod("hash", CallbackFactory.getMethod(RubyFixnum.class, "hash"));
         fixnumClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
         fixnumClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
 
@@ -124,6 +123,10 @@ public class RubyFixnum extends RubyInteger {
         }
     }
 
+    public int hashCode() {
+        return (((int) value) ^ (int) (value >> 32));
+    }
+
     // Methods of the Fixnum Class (fix_*):
 
     public static RubyFixnum newFixnum(Ruby ruby, long value) {
@@ -153,13 +156,6 @@ public class RubyFixnum extends RubyInteger {
             return RubyFixnum.newFixnum(ruby, ((RubyBignum) number).getLongValue());
         }
         return (RubyFixnum) number.convertToType("Fixnum", "to_int", true);
-    }
-
-    public RubyFixnum hash() {
-        // +++ jpetersen I don't think we need to use the hashCode() method.
-        // return new RubyFixnum(getRuby(), new Long(value).hashCode());
-        // +++
-        return this;
     }
 
     public RubyNumeric op_plus(RubyObject num) {

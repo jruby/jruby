@@ -86,7 +86,6 @@ public class RubyFloat extends RubyNumeric {
 
         floatClass.defineMethod("to_i", CallbackFactory.getMethod(RubyFloat.class, "to_i"));
         floatClass.defineMethod("to_s", CallbackFactory.getMethod(RubyFloat.class, "to_s"));
-        floatClass.defineMethod("hash", CallbackFactory.getMethod(RubyFloat.class, "hash"));
 
         floatClass.defineMethod("+", CallbackFactory.getMethod(RubyFloat.class, "op_plus", RubyObject.class));
         floatClass.defineMethod("-", CallbackFactory.getMethod(RubyFloat.class, "op_minus", RubyObject.class));
@@ -115,6 +114,10 @@ public class RubyFloat extends RubyNumeric {
         return getValue() > otherVal ? 1 : getValue() < otherVal ? -1 : 0;
     }
 
+    public int hashCode() {
+        return new Double(value).hashCode();
+    }
+
     // Float methods (flo_*)
 
     /**
@@ -132,10 +135,6 @@ public class RubyFloat extends RubyNumeric {
         } else {
             throw new TypeError(ruby, "failed to convert " + number.getRubyClass() + "into Float");
         }
-    }
-
-    public RubyFixnum hash() {
-        return new RubyFixnum(getRuby(), new Double(value).hashCode());
     }
 
     public RubyArray coerce(RubyObject num) {

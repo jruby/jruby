@@ -119,7 +119,6 @@ public class RubyString extends RubyObject {
 		stringClass.defineMethod("===", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
 		stringClass.defineMethod("eql?", CallbackFactory.getMethod(RubyString.class, "equal", RubyObject.class));
 
-		stringClass.defineMethod("hash", CallbackFactory.getMethod(RubyString.class, "hash"));
 		stringClass.defineMethod("+", CallbackFactory.getMethod(RubyString.class, "op_plus", RubyObject.class));
 		stringClass.defineMethod("*", CallbackFactory.getMethod(RubyString.class, "op_mul", RubyInteger.class));
 		stringClass.defineMethod("%", CallbackFactory.getMethod(RubyString.class, "format", RubyObject.class));
@@ -240,6 +239,10 @@ public class RubyString extends RubyObject {
 	public static boolean isPrint(char c) {
 		return c >= 0x20 && c <= 0x7E;
 	}
+
+    public int hashCode() {
+        return getValue().hashCode();
+    }
 
 	/** rb_obj_as_string
 	 *
@@ -614,13 +617,6 @@ public class RubyString extends RubyObject {
 		RubyString newString = newString(sb.toString());
 		newString.setTaint(isTaint());
 		return newString;
-	}
-
-	/** rb_str_hash_m
-	 *
-	 */
-	public RubyFixnum hash() {
-		return RubyFixnum.newFixnum(getRuby(), getValue().hashCode());
 	}
 
 	/** rb_str_length
