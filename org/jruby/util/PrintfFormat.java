@@ -108,7 +108,7 @@ public class PrintfFormat {
             for (ePos = cPos + 1; ePos < fmtArg.length(); ePos++) {
                 char c = 0;
                 c = fmtArg.charAt(ePos);
-                if ("idfgGoxXeEcs%".indexOf(c) != -1) {
+                if ("idfgGoxXeEcsb%".indexOf(c) != -1) {
                     break;
                 }
             }
@@ -611,6 +611,23 @@ public class PrintfFormat {
                 case 'C' :
                     s2 = printCFormat((char) s);
                     break;
+                case 's' :
+                    s2 = printSFormat(String.valueOf(s));
+                    break;
+                case 'b' :
+                    s2 = printBFormat(s);
+                    break;
+                case 'f' :
+                    s2 = printFFormat(s);
+                    break;
+                case 'E' :
+                case 'e' :
+                    s2 = printEFormat(s);
+                    break;
+                case 'G' :
+                case 'g' :
+                    s2 = printGFormat(s);
+                    break;
                 default :
                     throw new IllegalArgumentException("Cannot format a long with a format using a " + conversionCharacter + " conversion character.");
             }
@@ -639,10 +656,16 @@ public class PrintfFormat {
 
         String internalsprintf(String s) throws IllegalArgumentException {
             String s2 = "";
-            if (conversionCharacter == 's' || conversionCharacter == 'S') {
-                s2 = printSFormat(s);
-            } else {
-                throw new IllegalArgumentException("Cannot format a String with a format using a " + conversionCharacter + " conversion character.");
+            switch (conversionCharacter) {
+                case 's':
+                case 'S':
+                    s2 = printSFormat(s);
+                    break;
+                case 'f': 
+                    s2 = printFFormat(Double.parseDouble(s));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Cannot format a String with a format using a " + conversionCharacter + " conversion character.");
             }
             return s2;
         }
@@ -1543,6 +1566,15 @@ public class PrintfFormat {
             return printDFormat(Long.toString(x));
         }
 
+        private String printBFormat(long x) {
+            StringBuffer sb = new StringBuffer(100);
+            if (alternateForm) {
+                sb.append("0b");
+            }
+            sb.append(Long.toBinaryString(x));
+            return sb.toString();
+        }
+
         private String printDFormat(int x) {
             return printDFormat(Integer.toString(x));
         }
@@ -2203,12 +2235,12 @@ public class PrintfFormat {
         }
 
         private boolean setConversionCharacter() {
-            /* idfgGoxXeEcs */
+            /* idfgGoxXeEcsb */
             boolean ret = false;
             conversionCharacter = '\0';
             if (pos < fmt.length()) {
                 char c = fmt.charAt(pos);
-                if ("idfgGoxXeEcs%".indexOf(c) != -1) {
+                if ("idfgGoxXeEcsb%".indexOf(c) != -1) {
                     conversionCharacter = c;
                     pos++;
                     ret = true;

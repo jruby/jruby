@@ -75,15 +75,15 @@ public class RubyHash extends RubyObject {
     }
 
 	private Iterator keyIterator() {
-		return valueMap.keySet().iterator();
+		return new ArrayList(valueMap.keySet()).iterator();
 	}
 
 	private Iterator valueIterator() {
-		return valueMap.values().iterator();
+		return new ArrayList(valueMap.values()).iterator();
 	}
 
 	private Iterator entryIterator() {
-		return valueMap.entrySet().iterator();
+		return new ArrayList(valueMap.entrySet()).iterator();
 	}
 
     public static RubyClass createHashClass(Ruby ruby) {

@@ -84,9 +84,11 @@ public class RubyEnumerable {
     }
 
     public static RubyObject each_with_index_i(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        ruby.yield(RubyArray.newArray(ruby, blockArg, arg1));
+        RubyObject index = ((RubyArray) arg1).pop();
+        
+        ruby.yield(RubyArray.newArray(ruby, blockArg, index));
 
-        ((RubyFixnum) arg1).setValue(RubyNumeric.fix2long(arg1) + 1);
+        ((RubyArray) arg1).push(((RubyFixnum) index).op_plus(RubyFixnum.one(ruby)));
 
         return ruby.getNil();
     }
@@ -216,7 +218,7 @@ public class RubyEnumerable {
     }
 
     public static RubyObject each_with_index(Ruby ruby, RubyObject recv) {
-        iterateEach(ruby, recv, "each_with_index_i", RubyFixnum.zero(ruby));
+        iterateEach(ruby, recv, "each_with_index_i", RubyArray.newArray(ruby, RubyFixnum.zero(ruby)));
         return ruby.getNil();
     }
 

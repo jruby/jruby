@@ -2,9 +2,8 @@
  * RubyRange.java - No description
  * Created on 26. Juli 2001, 00:01
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -104,14 +103,14 @@ public class RubyRange extends RubyObject {
 
         if (begin < 0 && (begin += limit) < 0) {
             if (strict) {
-                throw new RubyIndexException(getRuby(), "Index out of bounds: " + begin);
+                throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
             return null;
         }
 
         if (truncate && begin > limit) {
             if (strict) {
-                throw new RubyIndexException(getRuby(), "Index out of bounds: " + begin);
+                throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
             return null;
         }
@@ -122,14 +121,14 @@ public class RubyRange extends RubyObject {
 
         if (end < 0 && (end += limit) < 0) {
             if (strict) {
-                throw new RubyIndexException(getRuby(), "Index out of bounds: " + end);
+                throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
             end = begin;
         }
 
         if (begin > end) {
             if (strict) {
-                throw new RubyIndexException(getRuby(), "Malformed range");
+                throw new RangeError(ruby, inspect().toString() + " out of range.");
             }
             end = begin;
         }

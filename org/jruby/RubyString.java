@@ -2,9 +2,8 @@
  * RubyString.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
- * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  * 
@@ -27,7 +26,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import java.util.*;
@@ -35,9 +33,7 @@ import java.util.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.runtime.*;
-import org.jruby.util.PrintfFormat;
 import org.jruby.util.*;
-import sun.text.resources.*;
 
 /**
  *
@@ -637,11 +633,7 @@ public class RubyString extends RubyObject {
         if (other instanceof RubyString) {
             return (RubyString) other;
         } else {
-            try {
-                return (RubyString) other.convertType(RubyString.class, "String", "to_str");
-            } catch (Exception ex) {
-                throw new ArgumentError(other.getRuby(), "can't convert arg to String: " + ex.getMessage());
-            }
+            return (RubyString) other.convertType(RubyString.class, "String", "to_str");
         }
     }
 
@@ -931,7 +923,7 @@ public class RubyString extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
-            long[] idxs = ((RubyRange) args[0]).getBeginLength(getValue().length(), false, true);
+            long[] idxs = ((RubyRange) args[0]).getBeginLength(getValue().length(), true, true);
             replace((int) idxs[0], (int) idxs[1], stringValue(args[1]));
             return args[1];
         }

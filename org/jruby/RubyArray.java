@@ -243,6 +243,7 @@ public class RubyArray extends RubyObject {
         if (offset < 0 || getLength() <= offset) {
             return getRuby().getNil();
         }
+        
         return (RubyObject) list.get((int) offset);
     }
 
@@ -302,7 +303,7 @@ public class RubyArray extends RubyObject {
 
         modify();
 
-        for (int i = 0; beg < length && i < len; i++) {
+        for (int i = 0; beg < getLength() && i < len; i++) {
             list.remove((int) beg);
         }
         autoExpand(beg);
@@ -746,6 +747,10 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyBoolean equal(RubyObject obj) {
+        if (this == obj) {
+            return getRuby().getTrue();
+        }
+        
         if (!(obj instanceof RubyArray)) {
             return getRuby().getFalse();
         }
@@ -897,7 +902,7 @@ public class RubyArray extends RubyObject {
             result[i] = entry(RubyNumeric.fix2int(args[i]));
             taint |= result[i].isTaint();
         }
-        RubyArray ary = create(getRuby(), this, result);
+        RubyArray ary = create(getRuby(), getRubyClass(), result);
         ary.setTaint(taint);
         return ary;
     }

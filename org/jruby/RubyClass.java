@@ -243,11 +243,11 @@ public class RubyClass extends RubyModule {
      */
     public RubyClass superclass() {
         RubyClass superClass = getSuperClass();
-        while (superClass.isIncluded()) {
+        while (superClass != null && superClass.isIncluded()) {
             superClass = superClass.getSuperClass();
         }
 
-        return getSuperClass() != null ? superClass : nilClass(getRuby());
+        return superClass != null ? superClass : nilClass(getRuby());
     }
 
     /** rb_class_s_inherited

@@ -738,6 +738,9 @@ public class RubyObject implements Cloneable, Marshalable {
      *
      */
     public RubyBoolean equal(RubyObject obj) {
+        if (isNil()) {
+            return RubyBoolean.newBoolean(getRuby(), obj.isNil());
+        }
         return RubyBoolean.newBoolean(getRuby(), this == obj);
     }
 

@@ -83,10 +83,6 @@ public class RubyFixnum extends RubyInteger {
         return Long.TYPE;
     }
 
-    public void setValue(long value) {
-        this.value = value;
-    }
-
     public double getDoubleValue() {
         return (double) value;
     }
