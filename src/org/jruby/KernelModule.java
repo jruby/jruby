@@ -625,12 +625,14 @@ public class KernelModule {
             }
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(aProcess.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append('\n');
+
+            // Fairly innefficient impl, but readLine is unable to tell 
+            // whether the last line in a process ended with a newline or not.
+            int c;
+            while ((c = reader.read()) != -1) {
+            	output.append((char)c);
             }
             return aProcess.waitFor();
-
         } catch (IOException e) {
             throw IOError.fromException(runtime, e);
         } catch (InterruptedException e) {
