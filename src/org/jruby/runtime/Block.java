@@ -117,6 +117,10 @@ public class Block implements StackElement {
         return newBlock;
     }
 
+    public Arity arity() {
+        return method.getArity();
+    }
+
     /**
      * @see StackElement#getNext()
      */

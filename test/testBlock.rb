@@ -50,3 +50,8 @@ end
 proc = TestBlock_Foo.new.foo
 o = Object.new
 test_equal(o, o.instance_eval(&proc))
+
+test_equal(-1, Proc.new { 1 }.arity)
+#test_equal(0, Proc.new{|| 1 }.arity)
+#test_equal(2, Proc.new {|x,y| 1}.arity)
+test_equal(-1, Proc.new{|*x| 1}.arity)

@@ -47,6 +47,7 @@ public class RubyProc extends RubyObject implements IndexCallable {
 
     private static final int M_CALL = 1;
     private static final int M_AREF = 2;
+    private static final int M_ARITY = 3;
 
     public static RubyClass createProcClass(Ruby ruby) {
         RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
@@ -54,6 +55,7 @@ public class RubyProc extends RubyObject implements IndexCallable {
         procClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyProc.class, "newInstance"));
         procClass.defineMethod("call", IndexedCallback.createOptional(M_CALL));
         procClass.defineMethod("[]", IndexedCallback.createOptional(M_AREF));
+        procClass.defineMethod("arity", IndexedCallback.create(M_ARITY, 0));
         return procClass;
     }
 
@@ -63,6 +65,8 @@ public class RubyProc extends RubyObject implements IndexCallable {
                 return call(args);
             case M_AREF :
                 return call(args);
+            case M_ARITY :
+                return arity();
         }
         return super.callIndexed(index, args);
     }
@@ -110,5 +114,9 @@ public class RubyProc extends RubyObject implements IndexCallable {
         } finally {
             threadContext.setWrapper(oldWrapper);
         }
+    }
+
+    public RubyFixnum arity() {
+        return RubyFixnum.newFixnum(runtime, block.arity().getValue());
     }
 }
