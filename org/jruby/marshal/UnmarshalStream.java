@@ -33,6 +33,7 @@ package org.jruby.marshal;
 import java.io.*;
 import java.util.*;
 import org.jruby.*;
+import org.jruby.util.*;
 import org.jruby.exceptions.*;
 
 /**
@@ -80,15 +81,17 @@ public class UnmarshalStream extends FilterInputStream {
             RubySymbol className = (RubySymbol) unmarshalObject();
             int variableCount = unmarshalInt();
 
-            Map variables = new HashMap(variableCount);
+            RubyMap variables = new RubyHashMap(variableCount);
             for (int i = 0; i < variableCount; i++) {
                 RubySymbol name = (RubySymbol) unmarshalObject();
                 RubyObject value = unmarshalObject();
-                variables.put(name, value);
+                variables.put(name.toId(), value);
             }
 
             RubyClass rubyClass = (RubyClass) ruby.getClasses().getClassMap().get(className.toId());
-            return new RubyObject(ruby, rubyClass);
+            RubyObject result = new RubyObject(ruby, rubyClass);
+            result.setInstanceVariables(variables);
+            return result;
         }
 
         throw new NotImplementedError(); // FIXME

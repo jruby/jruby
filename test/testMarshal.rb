@@ -45,9 +45,8 @@ test_equal(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo@\000",
 
 # Unmarshaling
 
-#object = Marshal.load(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar")
-#test_equal(["@foo"], object.instance_variables)
-
+object = Marshal.load(MARSHAL_HEADER + "o:\025MarshalTestClass\006:\t@foo\"\010bar")
+test_equal(["@foo"], object.instance_variables)
 test_equal(true, Marshal.load(MARSHAL_HEADER + "T"))
 test_equal(false, Marshal.load(MARSHAL_HEADER + "F"))
 test_equal(nil, Marshal.load(MARSHAL_HEADER + "0"))
@@ -65,9 +64,6 @@ test_equal(String, Marshal.load(MARSHAL_HEADER + "c\013String"))
 object = Marshal.load(MARSHAL_HEADER + "o:\013Object\000")
 test_equal(Object, object.class)
 
-
-
-
 exception_thrown = false
 begin
   Marshal.dump([1,2,3], 1)
@@ -75,7 +71,6 @@ rescue ArgumentError
   exception_thrown = true  
 end
 test_ok(exception_thrown)
-
 
 exception_thrown = false
 begin
