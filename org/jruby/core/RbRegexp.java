@@ -41,9 +41,9 @@ public class RbRegexp implements ReOptions {
     public static RubyClass createRegexpClass(Ruby ruby) {
         RubyClass regexpClass = ruby.defineClass("Regexp", ruby.getClasses().getObjectClass());
 
-        regexpClass.defineConstant("IGNORECASE", RubyFixnum.m_newFixnum(ruby, RE_OPTION_IGNORECASE));
-        regexpClass.defineConstant("EXTENDED", RubyFixnum.m_newFixnum(ruby, RE_OPTION_EXTENDED));
-        regexpClass.defineConstant("MULTILINE", RubyFixnum.m_newFixnum(ruby, RE_OPTION_MULTILINE));
+        regexpClass.defineConstant("IGNORECASE", RubyFixnum.newFixnum(ruby, RE_OPTION_IGNORECASE));
+        regexpClass.defineConstant("EXTENDED", RubyFixnum.newFixnum(ruby, RE_OPTION_EXTENDED));
+        regexpClass.defineConstant("MULTILINE", RubyFixnum.newFixnum(ruby, RE_OPTION_MULTILINE));
         
         regexpClass.defineSingletonMethod("new", getSingletonMethod("m_new", true));
         regexpClass.defineSingletonMethod("compile", getSingletonMethod("m_new", true));
@@ -66,7 +66,7 @@ public class RbRegexp implements ReOptions {
         return regexpClass;
     }
     
-    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
+    public static Callback getSingletonMethod(String methodName, boolean restArgs) {
         if (restArgs) {
             return new ReflectionCallbackMethod(RubyRegexp.class, methodName, RubyObject[].class, true, true);
         } else {
@@ -74,19 +74,19 @@ public class RbRegexp implements ReOptions {
         }
     }
     
-    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
+    public static Callback getSingletonMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyRegexp.class, methodName, arg1, false, true);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName) {
+    public static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyRegexp.class, methodName);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+    public static Callback getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyRegexp.class, methodName, arg1);
     }
     
-    public static RubyCallbackMethod getRestArgsMethod(String methodName) {
+    public static Callback getRestArgsMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyRegexp.class, methodName, RubyObject[].class, true);
     }
 }

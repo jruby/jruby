@@ -34,7 +34,7 @@ import java.util.*;
 
 import org.jruby.core.DefaultCallbackMethods;
 import org.jruby.core.ReflectionCallbackMethod;
-import org.jruby.core.RubyCallbackMethod;
+import org.jruby.core.Callback;
 import org.jruby.exceptions.*;
 import org.jruby.util.*;
 
@@ -89,9 +89,9 @@ public class RubyClass extends RubyModule {
     }
 
     public static void createClassClass(RubyClass classClass) {
-        RubyCallbackMethod s_newInstance = new ReflectionCallbackMethod(RubyClass.class, "newInstance", true, true);
-        RubyCallbackMethod newInstance = new ReflectionCallbackMethod(RubyClass.class, "newInstance", true);
-        RubyCallbackMethod superclass = new ReflectionCallbackMethod(RubyClass.class, "superclass");
+        Callback s_newInstance = new ReflectionCallbackMethod(RubyClass.class, "newInstance", true, true);
+        Callback newInstance = new ReflectionCallbackMethod(RubyClass.class, "newInstance", true);
+        Callback superclass = new ReflectionCallbackMethod(RubyClass.class, "superclass");
         // RubyCallbackMethod inherited = new ReflectionCallbackMethod(RubyClass.class, "inherited", RubyClass.class, false, true);
 
         classClass.defineSingletonMethod("new", s_newInstance);

@@ -178,9 +178,9 @@ public class RubyJavaObject extends RubyObject {
         	if (ruby.getClasses().getJavaObjectClass().isClassVarDefined(ruby.intern("imports"))) {
 	            RubyArray imports = (RubyArray)ruby.getClasses().getJavaObjectClass().getClassVar(ruby.intern("imports"));
 
-                int len = imports.length();
+                int len = imports.getLength();
                 for (int i = 0; i < len; i++) {
-                    String packageName = ((RubyString) imports.m_at(RubyFixnum.m_newFixnum(ruby, i))).getValue();
+                    String packageName = ((RubyString) imports.at(RubyFixnum.newFixnum(ruby, i))).getValue();
                     try {
                         return ruby.getJavaClassLoader().loadClass(packageName + "." + className);
                     } catch (ClassNotFoundException cnfExcptn_) {
@@ -206,7 +206,7 @@ public class RubyJavaObject extends RubyObject {
     	if (((RubyClass)recv).isClassVarDefined(ruby.intern("imports"))) {
         	imports = (RubyArray)((RubyClass)recv).getClassVar(ruby.intern("imports"));
     	} else {
-            imports = RubyArray.m_newArray(ruby);
+            imports = RubyArray.newArray(ruby);
             ((RubyClass)recv).declareClassVar(ruby.intern("imports"), imports);
         }
 

@@ -63,11 +63,11 @@ public class RbBignum {
         return bignumClass;
     }
 
-    private static RubyCallbackMethod getMethod(String methodName) {
+    private static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyBignum.class, methodName);
     }
 
-    private static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+    private static Callback getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyBignum.class, methodName, arg1);
     }
 }

@@ -163,7 +163,7 @@ public abstract class RubyNumeric extends RubyObject {
         }
         try {
             long l = Long.parseLong(sbuf.substring(0, pos), radix);
-            return RubyFixnum.m_newFixnum(ruby, l);
+            return RubyFixnum.newFixnum(ruby, l);
         } catch (NumberFormatException ex) {
             BigInteger bi = new BigInteger(sbuf.substring(0, pos), radix);
             return new RubyBignum(ruby, bi);
@@ -213,7 +213,7 @@ public abstract class RubyNumeric extends RubyObject {
     public RubyArray m_coerce(RubyObject num) {
         RubyNumeric other = numericValue(num);
         if (getRubyClass() == other.getRubyClass()) {
-            return RubyArray.m_newArray(getRuby(), this, other);
+            return RubyArray.newArray(getRuby(), this, other);
         } else {
             return null; // Convert both to float.
         }
@@ -255,7 +255,7 @@ public abstract class RubyNumeric extends RubyObject {
         }*/
         RubyNumeric mod = (RubyNumeric)funcall(getRuby().intern("%"), other);
         
-        return RubyArray.m_newArray(getRuby(), div, mod);
+        return RubyArray.newArray(getRuby(), div, mod);
     }
     
     /** num_modulo

@@ -67,10 +67,10 @@ public class CaseNode extends Node {
                     RubyObject obj2 = tag.getHeadNode().getHeadNode().eval(ruby, self);
                     
                     if (!(obj2 instanceof RubyArray)) {
-                        obj2 = RubyArray.m_newArray(ruby, obj2);
+                        obj2 = RubyArray.newArray(ruby, obj2);
                     }
 
-                    for (int i = 0; i < ((RubyArray)obj).length(); i++) {
+                    for (int i = 0; i < ((RubyArray)obj).getLength(); i++) {
                         RubyObject eqq = ((RubyArray)obj2).entry(i).funcall(ruby.intern("==="), obj);
                         if (eqq.isTrue()) {
                             return getBodyNode().eval(ruby, self);

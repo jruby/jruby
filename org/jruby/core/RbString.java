@@ -167,7 +167,7 @@ public class RbString {
         return stringClass;
     }
     
-    public static RubyCallbackMethod getMethod(String methodName, boolean restArgs) {
+    public static Callback getMethod(String methodName, boolean restArgs) {
         if (restArgs) {
             return new ReflectionCallbackMethod(RubyString.class, methodName, RubyObject[].class, true);
         } else {
@@ -175,11 +175,11 @@ public class RbString {
         }
     }
     
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+    public static Callback getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyString.class, methodName, arg1);
     }
     
-    public static RubyCallbackMethod getSingletonMethod(String methodName, boolean restArgs) {
+    public static Callback getSingletonMethod(String methodName, boolean restArgs) {
         if (restArgs) {
             return new ReflectionCallbackMethod(RubyString.class, methodName, RubyObject[].class, true, true);
         } else {
@@ -187,7 +187,7 @@ public class RbString {
         }
     }
     
-    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1) {
+    public static Callback getSingletonMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyString.class, methodName, arg1, false, true);
     }
 }

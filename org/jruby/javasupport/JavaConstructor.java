@@ -42,7 +42,7 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  * @version 
  */
-public class JavaConstructor implements RubyCallbackMethod {
+public class JavaConstructor implements Callback {
     private Constructor[] constructors = null;
 
     public JavaConstructor(Constructor[] constructors) {

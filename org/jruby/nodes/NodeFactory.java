@@ -68,11 +68,11 @@ public class NodeFactory {
         return new DefsNode(recvNode, mid, newRFunc(a, d));
     }
     
-    public Node newCFunc(RubyCallbackMethod cfunc) {
+    public Node newCFunc(Callback cfunc) {
         return new CFuncNode(cfunc);
     }
     
-    public Node newIFunc(RubyCallbackMethod cfunc, RubyObject tval) {
+    public Node newIFunc(Callback cfunc, RubyObject tval) {
         return new IFuncNode(cfunc, tval);
     }
        

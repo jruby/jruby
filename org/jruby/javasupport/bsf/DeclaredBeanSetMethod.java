@@ -16,7 +16,7 @@ import com.ibm.bsf.*;
  *
  * @author  jpetersen
  */
-public class DeclaredBeanSetMethod implements RubyCallbackMethod {
+public class DeclaredBeanSetMethod implements Callback {
     private BSFDeclaredBean bean;
 
     public DeclaredBeanSetMethod(BSFDeclaredBean bean) {

@@ -243,7 +243,7 @@ public class RubyRange extends RubyObject {
             }
 
             for (; i < endLong; i++) {
-                getRuby().yield(RubyFixnum.m_newFixnum(getRuby(), i));
+                getRuby().yield(RubyFixnum.newFixnum(getRuby(), i));
             }
         } else if (begin instanceof RubyString) {
             ((RubyString) begin).upto(end, exclusive);

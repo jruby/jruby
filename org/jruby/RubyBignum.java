@@ -82,7 +82,7 @@ public class RubyBignum extends RubyInteger {
         if (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) {
             return m_newBignum(ruby, bi);
         }
-        return RubyFixnum.m_newFixnum(ruby, bi.longValue());
+        return RubyFixnum.newFixnum(ruby, bi.longValue());
     }
 
     private BigInteger bigIntValue(RubyNumeric other) {
@@ -178,7 +178,7 @@ public class RubyBignum extends RubyInteger {
 
     public RubyNumeric op_cmp(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFixnum.m_newFixnum(getRuby(), compareValue(other));
+        return RubyFixnum.newFixnum(getRuby(), compareValue(other));
     }
 
     public RubyBoolean op_gt(RubyObject num) {

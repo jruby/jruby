@@ -64,10 +64,10 @@ public class RubyMatchData extends RubyObject {
             len = 0;
         }
         if (len == 0) {
-            return RubyArray.m_newArray(getRuby());
+            return RubyArray.newArray(getRuby());
         }
         
-        RubyArray arr = RubyArray.m_newArray(getRuby(), 0);
+        RubyArray arr = RubyArray.newArray(getRuby(), 0);
         for (long i = beg; i < beg + len; i++) {
             arr.push(group(i));
         }
@@ -139,7 +139,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyFixnum.m_newFixnum(getRuby(), begin[(int)index.getValue()]);
+        return RubyFixnum.newFixnum(getRuby(), begin[(int)index.getValue()]);
     }
 
     /** match_end
@@ -149,14 +149,14 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyFixnum.m_newFixnum(getRuby(), end[(int)index.getValue()]);
+        return RubyFixnum.newFixnum(getRuby(), end[(int)index.getValue()]);
     }
 
     /** match_size
      *
      */
     public RubyFixnum m_size() {
-        return RubyFixnum.m_newFixnum(getRuby(), size());
+        return RubyFixnum.newFixnum(getRuby(), size());
     }
 
     /** match_offset
@@ -166,7 +166,7 @@ public class RubyMatchData extends RubyObject {
         if (outOfBounds(index)) {
             return getRuby().getNil();
         }
-        return RubyArray.m_create(getRuby(), null, new RubyObject[] { m_begin(index), m_end(index) });
+        return RubyArray.create(getRuby(), null, new RubyObject[] { m_begin(index), m_end(index) });
     }
 
     /** match_pre_match

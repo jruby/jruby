@@ -303,8 +303,8 @@ public class Node {
         return (RubyId)u2;
     }
     
-    public RubyCallbackMethod getCallbackMethod() {
-        return (RubyCallbackMethod)u1;
+    public Callback getCallbackMethod() {
+        return (Callback)u1;
     }
     
     /*  This method is not needed in JRuby

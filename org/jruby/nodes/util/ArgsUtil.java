@@ -85,7 +85,7 @@ public class ArgsUtil {
                 int line = ruby.getSourceLine();
                 
                 if (!(args instanceof RubyArray)) {
-                    args = RubyArray.m_newArray(ruby, args);
+                    args = RubyArray.newArray(ruby, args);
                 }
                 ruby.setSourceFile(file);
                 ruby.setSourceLine(line);

@@ -257,9 +257,9 @@ public class ScopeNode extends Node implements CallableNode {
                     if (callNode.getRest() >= 0) {
                         RubyArray array = null;
                         if (args.size() > 0) {
-                            array = RubyArray.m_newArray(ruby, args);
+                            array = RubyArray.newArray(ruby, args);
                         } else {
-                            array = RubyArray.m_newArray(ruby, 0);
+                            array = RubyArray.newArray(ruby, 0);
                         }
                         localVarsList.set(callNode.getRest(), array);
                     }
@@ -269,7 +269,7 @@ public class ScopeNode extends Node implements CallableNode {
             result = recv.eval(callBody);
         } catch (ReturnException rExcptn) {
             // +++ jpetersen
-            result = ((RubyArray) rExcptn.getReturnValue()).m_pop();
+            result = ((RubyArray) rExcptn.getReturnValue()).pop();
             // ---
         }
 

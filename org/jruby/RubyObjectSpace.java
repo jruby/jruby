@@ -40,7 +40,7 @@ public class RubyObjectSpace {
      * 
      */
     public static RubyModule createObjectSpaceModule(Ruby ruby) {
-        RubyCallbackMethod each_object = new ReflectionCallbackMethod(RubyObjectSpace.class, "each_object", true, true);
+        Callback each_object = new ReflectionCallbackMethod(RubyObjectSpace.class, "each_object", true, true);
 
         RubyModule objectSpaceModule = ruby.defineModule("ObjectSpace");
 

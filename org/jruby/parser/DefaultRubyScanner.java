@@ -181,7 +181,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
             line = lex_gets_str(lex_input);
         }
         if (ph.getRubyDebugLines() != null && !line.isNil()) {
-            ph.getRubyDebugLines().m_push(line);
+            ph.getRubyDebugLines().push(line);
         }
         return line;
     }
@@ -1206,7 +1206,7 @@ public class DefaultRubyScanner implements DefaultRubyParser.yyInput {
                         c = read_escape();
                     }
                     c &= 0xff;
-                    yyVal = RubyFixnum.m_newFixnum(ruby, c);
+                    yyVal = RubyFixnum.newFixnum(ruby, c);
                     ph.setLexState(LexState.EXPR_END);
                     return Token.tINTEGER;
                 case '&' :

@@ -61,7 +61,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("-"), RubyFixnum.m_newFixnum(getRuby(), 1));
+            i = (RubyNumeric)i.funcall(getRuby().intern("-"), RubyFixnum.newFixnum(getRuby(), 1));
         }
         return this;
     }
@@ -77,7 +77,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
         
         RubyId cmp = getRuby().intern("<");
-        if (((RubyBoolean)step.funcall(cmp, RubyFixnum.m_newFixnum(getRuby(), 0))).isFalse()) {
+        if (((RubyBoolean)step.funcall(cmp, RubyFixnum.newFixnum(getRuby(), 0))).isFalse()) {
             cmp = getRuby().intern(">");
         }
         
@@ -92,19 +92,19 @@ public abstract class RubyInteger extends RubyNumeric {
     }
     
     public RubyObject m_times() {
-        RubyNumeric i = RubyFixnum.m_newFixnum(getRuby(), 0);
+        RubyNumeric i = RubyFixnum.newFixnum(getRuby(), 0);
         while (true) {
             if (i.funcall(getRuby().intern("<"), this).isFalse()) {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.m_newFixnum(getRuby(), 1));
+            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
         }
         return this;
     }
     
     public RubyObject m_succ() {
-        return funcall(getRuby().intern("+"), RubyFixnum.m_newFixnum(getRuby(), 1));
+        return funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
     }
     
     public RubyObject m_upto(RubyNumeric to) {
@@ -114,7 +114,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 break;
             }
             getRuby().yield(i);
-            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.m_newFixnum(getRuby(), 1));
+            i = (RubyNumeric)i.funcall(getRuby().intern("+"), RubyFixnum.newFixnum(getRuby(), 1));
         }
         return this;
     }

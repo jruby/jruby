@@ -54,7 +54,7 @@ public class RbEnumerable {
     }
     
     public static RubyObject enum_all(Ruby ruby, RubyObject blockArg, RubyObject arg1, RubyObject self) {
-        ((RubyArray)arg1).m_push(blockArg);
+        ((RubyArray)arg1).push(blockArg);
         
         return ruby.getNil();
     }
@@ -76,7 +76,7 @@ public class RbEnumerable {
     /* methods of the Enumerable module. */
     
     public static RubyObject m_to_a(Ruby ruby, RubyObject recv) {
-        RubyArray ary = RubyArray.m_newArray(ruby);
+        RubyArray ary = RubyArray.newArray(ruby);
         
         ruby.iterate(getSingletonMethod("each"), recv, getBlockMethod("enum_all"), ary);
         
@@ -86,7 +86,7 @@ public class RbEnumerable {
     public static RubyObject m_sort(Ruby ruby, RubyObject recv) {
         RubyArray ary = (RubyArray)m_to_a(ruby, recv);
         
-        ary.m_sort_bang();
+        ary.sort_bang();
         
         return ary;
     }

@@ -154,7 +154,7 @@ public class Main {
         }
         ruby.setRegexpAdapterClass(sRegexpAdapter);
         ruby.init();
-        RubyDb4o.createDb4oModule(ruby);
+        RubyDb4o.initialize(ruby);
 
         // Parse and interpret file
         RubyString rs = RubyString.m_newString(ruby, iString2Eval, iString2Eval.length());

@@ -52,11 +52,11 @@ public class RbSymbol {
         return symbolClass;
     }
     
-    public static RubyCallbackMethod getMethod(String methodName) {
+    public static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubySymbol.class, methodName);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+    public static Callback getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubySymbol.class, methodName, arg1);
     }
 }

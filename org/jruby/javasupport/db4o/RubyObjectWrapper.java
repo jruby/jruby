@@ -14,7 +14,7 @@ public class RubyObjectWrapper {
 	public RubyObjectWrapper(RubyObject rubyObject) {
 	    this.typeName = rubyObject.type().toName();
 	    
-	    Iterator iter = rubyObject.getInstanceVariables().values().iterator();
+	    Iterator iter = rubyObject.getInstanceVariables().entrySet().iterator();
 	    while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             
@@ -22,18 +22,16 @@ public class RubyObjectWrapper {
         }
 	}
 	
-	public RubyObject createRubyObject(Ruby ruby) {
+	public void createRubyObject(Ruby ruby, RubyObject newObject) {
 	    RubyClass type = ruby.getRubyClass(typeName);
 	    
-	    RubyObject newObject = new RubyObject(ruby, type);
+	    newObject.setRubyClass(type);
 	    
-	    Iterator iter = instanceVariables.values().iterator();
+	    Iterator iter = instanceVariables.entrySet().iterator();
 	    while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry)iter.next();
             
 	    	newObject.setInstanceVar((String)entry.getKey(), (RubyObject)entry.getValue());
         }
-	    
-	    return newObject;
 	}
 }

@@ -62,15 +62,15 @@ public class RbRange {
         return rangeClass;
     }
     
-    public static RubyCallbackMethod getRestArgsMethod(String methodName) {
+    public static Callback getRestArgsMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyRange.class, methodName, true);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName) {
+    public static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyRange.class, methodName);
     }
 
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1)
+    public static Callback getMethod(String methodName, Class arg1)
     {
         return new ReflectionCallbackMethod(RubyRange.class, methodName, arg1);
     }    

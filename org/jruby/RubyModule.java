@@ -103,61 +103,61 @@ public class RubyModule extends RubyObject {
     }
 
     public static void createModuleClass(RubyClass moduleClass) {
-        RubyCallbackMethod op_eqq = new ReflectionCallbackMethod(RubyModule.class, "op_eqq", RubyObject.class);
-        RubyCallbackMethod op_cmp = new ReflectionCallbackMethod(RubyModule.class, "op_cmp", RubyObject.class);
-        RubyCallbackMethod op_lt = new ReflectionCallbackMethod(RubyModule.class, "op_lt", RubyObject.class);
-        RubyCallbackMethod op_le = new ReflectionCallbackMethod(RubyModule.class, "op_le", RubyObject.class);
-        RubyCallbackMethod op_gt = new ReflectionCallbackMethod(RubyModule.class, "op_gt", RubyObject.class);
-        RubyCallbackMethod op_ge = new ReflectionCallbackMethod(RubyModule.class, "op_ge", RubyObject.class);
+        Callback op_eqq = new ReflectionCallbackMethod(RubyModule.class, "op_eqq", RubyObject.class);
+        Callback op_cmp = new ReflectionCallbackMethod(RubyModule.class, "op_cmp", RubyObject.class);
+        Callback op_lt = new ReflectionCallbackMethod(RubyModule.class, "op_lt", RubyObject.class);
+        Callback op_le = new ReflectionCallbackMethod(RubyModule.class, "op_le", RubyObject.class);
+        Callback op_gt = new ReflectionCallbackMethod(RubyModule.class, "op_gt", RubyObject.class);
+        Callback op_ge = new ReflectionCallbackMethod(RubyModule.class, "op_ge", RubyObject.class);
 
-        RubyCallbackMethod clone = new ReflectionCallbackMethod(RubyModule.class, "rbClone");
-        RubyCallbackMethod dup = new ReflectionCallbackMethod(RubyModule.class, "dup");
-        RubyCallbackMethod to_s = new ReflectionCallbackMethod(RubyModule.class, "to_s");
-        RubyCallbackMethod included_modules = new ReflectionCallbackMethod(RubyModule.class, "included_modules");
-        RubyCallbackMethod name = new ReflectionCallbackMethod(RubyModule.class, "name");
-        RubyCallbackMethod ancestors = new ReflectionCallbackMethod(RubyModule.class, "ancestors");
+        Callback clone = new ReflectionCallbackMethod(RubyModule.class, "rbClone");
+        Callback dup = new ReflectionCallbackMethod(RubyModule.class, "dup");
+        Callback to_s = new ReflectionCallbackMethod(RubyModule.class, "to_s");
+        Callback included_modules = new ReflectionCallbackMethod(RubyModule.class, "included_modules");
+        Callback name = new ReflectionCallbackMethod(RubyModule.class, "name");
+        Callback ancestors = new ReflectionCallbackMethod(RubyModule.class, "ancestors");
 
-        RubyCallbackMethod attr = new ReflectionCallbackMethod(RubyModule.class, "attr", RubyObject.class, true);
-        RubyCallbackMethod attr_reader = new ReflectionCallbackMethod(RubyModule.class, "attr_reader", true);
-        RubyCallbackMethod attr_writer = new ReflectionCallbackMethod(RubyModule.class, "attr_writer", true);
-        RubyCallbackMethod attr_accessor = new ReflectionCallbackMethod(RubyModule.class, "attr_accessor", true);
+        Callback attr = new ReflectionCallbackMethod(RubyModule.class, "attr", RubyObject.class, true);
+        Callback attr_reader = new ReflectionCallbackMethod(RubyModule.class, "attr_reader", true);
+        Callback attr_writer = new ReflectionCallbackMethod(RubyModule.class, "attr_writer", true);
+        Callback attr_accessor = new ReflectionCallbackMethod(RubyModule.class, "attr_accessor", true);
 
-        RubyCallbackMethod newModule = new ReflectionCallbackMethod(RubyModule.class, "newModule", false, true);
-        RubyCallbackMethod initialize = new ReflectionCallbackMethod(RubyModule.class, "initialize", true);
-        RubyCallbackMethod instance_methods = new ReflectionCallbackMethod(RubyModule.class, "instance_methods", true);
-        RubyCallbackMethod public_instance_methods =
+        Callback newModule = new ReflectionCallbackMethod(RubyModule.class, "newModule", false, true);
+        Callback initialize = new ReflectionCallbackMethod(RubyModule.class, "initialize", true);
+        Callback instance_methods = new ReflectionCallbackMethod(RubyModule.class, "instance_methods", true);
+        Callback public_instance_methods =
             new ReflectionCallbackMethod(RubyModule.class, "public_instance_methods", true);
-        RubyCallbackMethod protected_instance_methods =
+        Callback protected_instance_methods =
             new ReflectionCallbackMethod(RubyModule.class, "protected_instance_methods", true);
-        RubyCallbackMethod private_instance_methods =
+        Callback private_instance_methods =
             new ReflectionCallbackMethod(RubyModule.class, "private_instance_methods", true);
 
-        RubyCallbackMethod constants = new ReflectionCallbackMethod(RubyModule.class, "constants");
-        RubyCallbackMethod const_get = new ReflectionCallbackMethod(RubyModule.class, "const_get", RubyObject.class);
-        RubyCallbackMethod const_set =
+        Callback constants = new ReflectionCallbackMethod(RubyModule.class, "constants");
+        Callback const_get = new ReflectionCallbackMethod(RubyModule.class, "const_get", RubyObject.class);
+        Callback const_set =
             new ReflectionCallbackMethod(RubyModule.class, "const_set", new Class[] { RubyObject.class, RubyObject.class });
-        RubyCallbackMethod const_defined = new ReflectionCallbackMethod(RubyModule.class, "const_defined", RubyObject.class);
-        RubyCallbackMethod class_variables = new ReflectionCallbackMethod(RubyModule.class, "class_variables");
-        RubyCallbackMethod remove_class_variable =
+        Callback const_defined = new ReflectionCallbackMethod(RubyModule.class, "const_defined", RubyObject.class);
+        Callback class_variables = new ReflectionCallbackMethod(RubyModule.class, "class_variables");
+        Callback remove_class_variable =
             new ReflectionCallbackMethod(RubyModule.class, "remove_class_variable", RubyObject.class);
 
-        RubyCallbackMethod append_features =
+        Callback append_features =
             new ReflectionCallbackMethod(RubyModule.class, "append_features", RubyModule.class);
-        RubyCallbackMethod extend_object = new ReflectionCallbackMethod(RubyModule.class, "extend_object", RubyObject.class);
-        RubyCallbackMethod include = new ReflectionCallbackMethod(RubyModule.class, "include", true);
-        RubyCallbackMethod rbPublic = new ReflectionCallbackMethod(RubyModule.class, "rbPublic", true);
-        RubyCallbackMethod rbProtected = new ReflectionCallbackMethod(RubyModule.class, "rbProtected", true);
-        RubyCallbackMethod rbPrivate = new ReflectionCallbackMethod(RubyModule.class, "rbPrivate", true);
-        RubyCallbackMethod module_function = new ReflectionCallbackMethod(RubyModule.class, "module_function", true);
+        Callback extend_object = new ReflectionCallbackMethod(RubyModule.class, "extend_object", RubyObject.class);
+        Callback include = new ReflectionCallbackMethod(RubyModule.class, "include", true);
+        Callback rbPublic = new ReflectionCallbackMethod(RubyModule.class, "rbPublic", true);
+        Callback rbProtected = new ReflectionCallbackMethod(RubyModule.class, "rbProtected", true);
+        Callback rbPrivate = new ReflectionCallbackMethod(RubyModule.class, "rbPrivate", true);
+        Callback module_function = new ReflectionCallbackMethod(RubyModule.class, "module_function", true);
 
-        RubyCallbackMethod method_defined = new ReflectionCallbackMethod(RubyModule.class, "method_defined", RubyObject.class);
-        RubyCallbackMethod public_class_method = new ReflectionCallbackMethod(RubyModule.class, "public_class_method", true);
-        RubyCallbackMethod private_class_method = new ReflectionCallbackMethod(RubyModule.class, "private_class_method", true);
+        Callback method_defined = new ReflectionCallbackMethod(RubyModule.class, "method_defined", RubyObject.class);
+        Callback public_class_method = new ReflectionCallbackMethod(RubyModule.class, "public_class_method", true);
+        Callback private_class_method = new ReflectionCallbackMethod(RubyModule.class, "private_class_method", true);
 
-        RubyCallbackMethod module_eval = new ReflectionCallbackMethod(RubyModule.class, "module_eval", true);
-        RubyCallbackMethod remove_method = new ReflectionCallbackMethod(RubyModule.class, "remove_method", RubyObject.class);
-        RubyCallbackMethod undef_method = new ReflectionCallbackMethod(RubyModule.class, "undef_method", RubyObject.class);
-        RubyCallbackMethod alias_method =
+        Callback module_eval = new ReflectionCallbackMethod(RubyModule.class, "module_eval", true);
+        Callback remove_method = new ReflectionCallbackMethod(RubyModule.class, "remove_method", RubyObject.class);
+        Callback undef_method = new ReflectionCallbackMethod(RubyModule.class, "undef_method", RubyObject.class);
+        Callback alias_method =
             new ReflectionCallbackMethod(RubyModule.class, "alias_method", new Class[] { RubyObject.class, RubyObject.class });
 
         moduleClass.defineMethod("===", op_eqq);
@@ -505,7 +505,7 @@ public class RubyModule extends RubyObject {
         getMethods().put(id, body);
     }
 
-    public void defineMethod(String name, RubyCallbackMethod method) {
+    public void defineMethod(String name, Callback method) {
         RubyId id = getRuby().intern(name);
 
         int noex =
@@ -514,18 +514,18 @@ public class RubyModule extends RubyObject {
         addMethod(id, new NodeFactory(getRuby()).newCFunc(method), noex | Constants.NOEX_CFUNC);
     }
 
-    public void defineMethodId(RubyId id, RubyCallbackMethod method) {
+    public void defineMethodId(RubyId id, Callback method) {
         addMethod(id, new NodeFactory(getRuby()).newCFunc(method), Constants.NOEX_PUBLIC | Constants.NOEX_CFUNC);
     }
 
-    public void defineProtectedMethod(String name, RubyCallbackMethod method) {
+    public void defineProtectedMethod(String name, Callback method) {
         addMethod(
             getRuby().intern(name),
             new NodeFactory(getRuby()).newCFunc(method),
             Constants.NOEX_PROTECTED | Constants.NOEX_CFUNC);
     }
 
-    public void definePrivateMethod(String name, RubyCallbackMethod method) {
+    public void definePrivateMethod(String name, Callback method) {
         addMethod(
             getRuby().intern(name),
             new NodeFactory(getRuby()).newCFunc(method),
@@ -601,7 +601,7 @@ public class RubyModule extends RubyObject {
     /** rb_define_module_function
      *
      */
-    public void defineModuleFunction(String name, RubyCallbackMethod method) {
+    public void defineModuleFunction(String name, Callback method) {
         definePrivateMethod(name, method);
         defineSingletonMethod(name, method);
     }
@@ -993,7 +993,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray methodList(boolean option, RubyMapMethod method) {
-        RubyArray ary = RubyArray.m_newArray(getRuby());
+        RubyArray ary = RubyArray.newArray(getRuby());
 
         for (RubyModule klass = this; klass != null; klass = klass.getSuperClass()) {
             klass.getMethods().foreach(method, ary);
@@ -1042,8 +1042,8 @@ public class RubyModule extends RubyObject {
             RubyId key = (RubyId) iter.next();
             if (IdUtil.isConstant(key)) {
                 RubyString name = RubyString.newString(getRuby(), ((RubyId) key).toName());
-                if (ary.m_includes(name).isFalse()) {
-                    ary.m_push(name);
+                if (ary.includes(name).isFalse()) {
+                    ary.push(name);
                 }
             }
         }
@@ -1147,7 +1147,7 @@ public class RubyModule extends RubyObject {
         return newMethod;
     }
 
-    public RubyObject executeUnder(RubyCallbackMethod method, RubyObject[] args) {
+    public RubyObject executeUnder(Callback method, RubyObject[] args) {
         getRuby().pushClass();
         getRuby().setRubyClass(this);
         getRuby().getRubyFrame().push();
@@ -1203,7 +1203,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray class_variables() {
-        RubyArray ary = RubyArray.m_newArray(getRuby());
+        RubyArray ary = RubyArray.newArray(getRuby());
 
         RubyModule rbModule = this;
 
@@ -1218,7 +1218,7 @@ public class RubyModule extends RubyObject {
                     RubyId id = (RubyId) iter.next();
                     if (id.isClassId()) {
                         RubyString kval = RubyString.newString(getRuby(), id.toName());
-                        if (ary.m_includes(kval).isFalse()) {
+                        if (ary.includes(kval).isFalse()) {
                             ary.push(kval);
                         }
                     }
@@ -1277,7 +1277,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray included_modules() {
-        RubyArray ary = RubyArray.m_newArray(getRuby());
+        RubyArray ary = RubyArray.newArray(getRuby());
 
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isIncluded()) {
@@ -1292,7 +1292,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray ancestors() {
-        RubyArray ary = RubyArray.m_newArray(getRuby());
+        RubyArray ary = RubyArray.newArray(getRuby());
 
         for (RubyModule p = this; p != null; p = p.getSuperClass()) {
             if (p.isSingleton()) {
@@ -1378,7 +1378,7 @@ public class RubyModule extends RubyObject {
      */
     public RubyFixnum op_cmp(RubyObject obj) {
         if (this == obj) {
-            return RubyFixnum.m_newFixnum(getRuby(), 0);
+            return RubyFixnum.newFixnum(getRuby(), 0);
         }
 
         if (!(obj instanceof RubyModule)) {
@@ -1386,10 +1386,10 @@ public class RubyModule extends RubyObject {
         }
 
         if (op_le(obj).isTrue()) {
-            return RubyFixnum.m_newFixnum(getRuby(), -1);
+            return RubyFixnum.newFixnum(getRuby(), -1);
         }
 
-        return RubyFixnum.m_newFixnum(getRuby(), 1);
+        return RubyFixnum.newFixnum(getRuby(), 1);
     }
 
     /** rb_mod_initialize
@@ -1519,7 +1519,7 @@ public class RubyModule extends RubyObject {
                 if ((body.getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
                     RubyString name = RubyString.newString(getRuby(), id.toName());
 
-                    if (ary.m_includes(name).isFalse()) {
+                    if (ary.includes(name).isFalse()) {
                         if (body.getBodyNode() == null) {
                             ary.push(getRuby().getNil());
                         }
@@ -1557,7 +1557,7 @@ public class RubyModule extends RubyObject {
                 } else if ((body.getNoex() & Constants.NOEX_PROTECTED) != 0) {
                     RubyString name = RubyString.newString(getRuby(), id.toName());
 
-                    if (ary.m_includes(name).isFalse()) {
+                    if (ary.includes(name).isFalse()) {
                         ary.push(name);
                     }
                 } else if (body.getBodyNode() instanceof ZSuperNode) {
@@ -1592,7 +1592,7 @@ public class RubyModule extends RubyObject {
                 } else if ((body.getNoex() & Constants.NOEX_PRIVATE) != 0) {
                     RubyString name = RubyString.newString(getRuby(), id.toName());
 
-                    if (ary.m_includes(name).isFalse()) {
+                    if (ary.includes(name).isFalse()) {
                         ary.push(name);
                     }
                 } else if (body.getBodyNode() instanceof ZSuperNode) {
@@ -1608,7 +1608,7 @@ public class RubyModule extends RubyObject {
      *
      */
     public RubyArray constants() {
-        RubyArray ary = RubyArray.m_newArray(getRuby());
+        RubyArray ary = RubyArray.newArray(getRuby());
 
         return getConstOf(ary);
     }

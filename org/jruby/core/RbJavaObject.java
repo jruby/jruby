@@ -52,15 +52,15 @@ public class RbJavaObject {
         return javaObjectClass;
     }
 
-    public static RubyCallbackMethod getMethod(String methodName) {
+    public static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyJavaObject.class, methodName);
     }
 
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+    public static Callback getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyJavaObject.class, methodName, arg1);
     }
 
-    public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1, boolean restArgs) {
+    public static Callback getSingletonMethod(String methodName, Class arg1, boolean restArgs) {
         if (restArgs) {
             return new ReflectionCallbackMethod(
                 RubyJavaObject.class,

@@ -1,9 +1,9 @@
 /*
- * RubyArray.java - No description
+ * RubyArray.java - The Array class.
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
- * Jan Arne Petersen <japetersen@web.de>
+ * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
@@ -32,6 +32,7 @@ package org.jruby;
 
 import java.util.*;
 
+import org.jruby.core.*;
 import org.jruby.exceptions.*;
 import org.jruby.util.*;
 
@@ -43,7 +44,7 @@ public class RubyArray extends RubyObject {
     private ArrayList list;
     private boolean tmpLock;
 
-    private RubyId equals;
+    // private RubyId equals; RubyId will replaced by String next.
 
     public RubyArray(Ruby ruby) {
         this(ruby, new ArrayList());
@@ -56,7 +57,8 @@ public class RubyArray extends RubyObject {
     public RubyArray(Ruby ruby, ArrayList array, boolean notCopy) {
         super(ruby, ruby.getRubyClass("Array"));
         this.list = array;
-        equals = ruby.intern("==");
+
+        // equals = ruby.intern("==");
     }
 
     /** Getter for property list.
@@ -67,7 +69,7 @@ public class RubyArray extends RubyObject {
     }
 
     public RubyObject[] toJavaArray() {
-        return (RubyObject[]) list.toArray(new RubyObject[length()]);
+        return (RubyObject[]) list.toArray(new RubyObject[getLength()]);
     }
 
     /** Getter for property tmpLock.
@@ -84,8 +86,101 @@ public class RubyArray extends RubyObject {
         this.tmpLock = tmpLock;
     }
 
-    public int length() {
+    public int getLength() {
         return list.size();
+    }
+
+    public static RubyClass createArrayClass(Ruby ruby) {
+        RubyClass arrayClass = ruby.defineClass("Array", ruby.getClasses().getObjectClass());
+
+        arrayClass.includeModule(ruby.getRubyModule("Enumerable"));
+
+        arrayClass.defineSingletonMethod("new", CallbackFactory.getOptSingletonMethod(RubyArray.class, "newInstance"));
+        arrayClass.defineSingletonMethod("[]", CallbackFactory.getOptSingletonMethod(RubyArray.class, "create"));
+        arrayClass.defineMethod("initialize", CallbackFactory.getOptMethod(RubyArray.class, "initialize"));
+
+        arrayClass.defineMethod("inspect", CallbackFactory.getMethod(RubyArray.class, "inspect"));
+        arrayClass.defineMethod("to_s", CallbackFactory.getMethod(RubyArray.class, "to_s"));
+        arrayClass.defineMethod("to_a", CallbackFactory.getMethod(RubyArray.class, "to_a"));
+        arrayClass.defineMethod("to_ary", CallbackFactory.getMethod(RubyArray.class, "to_a"));
+        arrayClass.defineMethod("frozen?", CallbackFactory.getMethod(RubyArray.class, "frozen"));
+
+        arrayClass.defineMethod("==", CallbackFactory.getMethod(RubyArray.class, "equal", RubyObject.class));
+        arrayClass.defineMethod("eql?", CallbackFactory.getMethod(RubyArray.class, "eql", RubyObject.class));
+        arrayClass.defineMethod("hash", CallbackFactory.getMethod(RubyArray.class, "hash"));
+        arrayClass.defineMethod("===", CallbackFactory.getMethod(RubyArray.class, "equal", RubyObject.class));
+
+        arrayClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
+        arrayClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyArray.class, "aset"));
+        arrayClass.defineMethod("at", CallbackFactory.getMethod(RubyArray.class, "at", RubyFixnum.class));
+
+        arrayClass.defineMethod("first", CallbackFactory.getMethod(RubyArray.class, "first"));
+        arrayClass.defineMethod("last", CallbackFactory.getMethod(RubyArray.class, "last"));
+        arrayClass.defineMethod("concat", CallbackFactory.getMethod(RubyArray.class, "concat", RubyObject.class));
+
+        arrayClass.defineMethod("<<", CallbackFactory.getMethod(RubyArray.class, "push", RubyObject.class));
+        arrayClass.defineMethod("push", CallbackFactory.getOptMethod(RubyArray.class, "push"));
+        arrayClass.defineMethod("pop", CallbackFactory.getMethod(RubyArray.class, "pop"));
+
+        arrayClass.defineMethod("shift", CallbackFactory.getMethod(RubyArray.class, "shift"));
+        arrayClass.defineMethod("unshift", CallbackFactory.getOptMethod(RubyArray.class, "unshift"));
+        arrayClass.defineMethod("each", CallbackFactory.getMethod(RubyArray.class, "each"));
+        arrayClass.defineMethod("each_index", CallbackFactory.getMethod(RubyArray.class, "each_index"));
+        arrayClass.defineMethod("reverse_each", CallbackFactory.getMethod(RubyArray.class, "reverse_each"));
+
+        arrayClass.defineMethod("length", CallbackFactory.getMethod(RubyArray.class, "length"));
+        arrayClass.defineMethod("size", CallbackFactory.getMethod(RubyArray.class, "length"));
+        arrayClass.defineMethod("empty?", CallbackFactory.getMethod(RubyArray.class, "empty_p"));
+        arrayClass.defineMethod("index", CallbackFactory.getMethod(RubyArray.class, "index", RubyObject.class));
+        arrayClass.defineMethod("rindex", CallbackFactory.getMethod(RubyArray.class, "rindex", RubyObject.class));
+        arrayClass.defineMethod("indexes", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
+        arrayClass.defineMethod("indices", CallbackFactory.getOptMethod(RubyArray.class, "indexes"));
+        arrayClass.defineMethod("clone", CallbackFactory.getMethod(RubyArray.class, "rbClone"));
+        arrayClass.defineMethod("join", CallbackFactory.getOptMethod(RubyArray.class, "join"));
+        arrayClass.defineMethod("reverse", CallbackFactory.getMethod(RubyArray.class, "reverse"));
+        arrayClass.defineMethod("reverse!", CallbackFactory.getMethod(RubyArray.class, "reverse_bang"));
+
+        arrayClass.defineMethod("sort", CallbackFactory.getMethod(RubyArray.class, "sort"));
+        arrayClass.defineMethod("sort!", CallbackFactory.getMethod(RubyArray.class, "sort_bang"));
+
+        arrayClass.defineMethod("collect", CallbackFactory.getMethod(RubyArray.class, "collect"));
+        arrayClass.defineMethod("collect!", CallbackFactory.getMethod(RubyArray.class, "collect_bang"));
+        arrayClass.defineMethod("map!", CallbackFactory.getMethod(RubyArray.class, "collect_bang"));
+        arrayClass.defineMethod("filter", CallbackFactory.getMethod(RubyArray.class, "collect_bang"));
+        arrayClass.defineMethod("delete", CallbackFactory.getMethod(RubyArray.class, "delete", RubyObject.class));
+        arrayClass.defineMethod("delete_at", CallbackFactory.getMethod(RubyArray.class, "delete_at", RubyObject.class));
+        arrayClass.defineMethod("delete_if", CallbackFactory.getMethod(RubyArray.class, "delete_if"));
+        arrayClass.defineMethod("reject!", CallbackFactory.getMethod(RubyArray.class, "reject_bang"));
+        arrayClass.defineMethod("replace", CallbackFactory.getMethod(RubyArray.class, "replace", RubyObject.class));
+        arrayClass.defineMethod("clear", CallbackFactory.getMethod(RubyArray.class, "clear"));
+        arrayClass.defineMethod("fill", CallbackFactory.getOptMethod(RubyArray.class, "fill"));
+
+        arrayClass.defineMethod("include?", CallbackFactory.getMethod(RubyArray.class, "includes", RubyObject.class));
+
+        arrayClass.defineMethod("<=>", CallbackFactory.getMethod(RubyArray.class, "op_cmp", RubyObject.class));
+
+        arrayClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyArray.class, "aref"));
+        arrayClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyArray.class, "slice_bang"));
+
+        arrayClass.defineMethod("assoc", CallbackFactory.getMethod(RubyArray.class, "assoc", RubyObject.class));
+        arrayClass.defineMethod("rassoc", CallbackFactory.getMethod(RubyArray.class, "rassoc", RubyObject.class));
+
+        arrayClass.defineMethod("+", CallbackFactory.getMethod(RubyArray.class, "op_plus", RubyObject.class));
+        arrayClass.defineMethod("*", CallbackFactory.getMethod(RubyArray.class, "op_times", RubyObject.class));
+
+        arrayClass.defineMethod("-", CallbackFactory.getMethod(RubyArray.class, "op_diff", RubyObject.class));
+        arrayClass.defineMethod("&", CallbackFactory.getMethod(RubyArray.class, "op_and", RubyObject.class));
+        arrayClass.defineMethod("|", CallbackFactory.getMethod(RubyArray.class, "op_or", RubyObject.class));
+
+        arrayClass.defineMethod("uniq", CallbackFactory.getMethod(RubyArray.class, "uniq"));
+        arrayClass.defineMethod("uniq!", CallbackFactory.getMethod(RubyArray.class, "uniq_bang"));
+        arrayClass.defineMethod("compact", CallbackFactory.getMethod(RubyArray.class, "compact"));
+        arrayClass.defineMethod("compact!", CallbackFactory.getMethod(RubyArray.class, "compact_bang"));
+        arrayClass.defineMethod("flatten", CallbackFactory.getMethod(RubyArray.class, "flatten"));
+        arrayClass.defineMethod("flatten!", CallbackFactory.getMethod(RubyArray.class, "flatten_bang"));
+        arrayClass.defineMethod("nitems", CallbackFactory.getMethod(RubyArray.class, "nitems"));
+
+        return arrayClass;
     }
 
     /** rb_ary_modify
@@ -106,7 +201,7 @@ public class RubyArray extends RubyObject {
     /* if list's size is not at least 'toLength', add nil's until it is */
     private void autoExpand(long toLength) {
         list.ensureCapacity((int) toLength);
-        for (int i = length(); i < toLength; i++) {
+        for (int i = getLength(); i < toLength; i++) {
             list.add(getRuby().getNil());
         }
     }
@@ -117,9 +212,9 @@ public class RubyArray extends RubyObject {
     public void store(long idx, RubyObject value) {
         modify();
         if (idx < 0) {
-            idx += length();
+            idx += getLength();
             if (idx < 0) {
-                throw new RubyIndexException(getRuby(), "index " + (idx - length()) + " out of array");
+                throw new RubyIndexException(getRuby(), "index " + (idx - getLength()) + " out of array");
             }
         }
         autoExpand(idx + 1);
@@ -130,26 +225,18 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject entry(long offset) {
-        if (length() == 0) {
+        if (getLength() == 0) {
             return getRuby().getNil();
         }
 
         if (offset < 0) {
-            offset += length();
+            offset += getLength();
         }
 
-        if (offset < 0 || length() <= offset) {
+        if (offset < 0 || getLength() <= offset) {
             return getRuby().getNil();
         }
         return (RubyObject) list.get((int) offset);
-    }
-
-    /** rb_ary_push
-     *
-     */
-    public RubyArray push(RubyObject item) {
-        list.add(item);
-        return this;
     }
 
     /** rb_ary_unshift
@@ -166,7 +253,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public RubyObject subseq(long beg, long len) {
-        int length = length();
+        int length = getLength();
 
         if (beg > length) {
             return getRuby().getNil();
@@ -182,10 +269,10 @@ public class RubyArray extends RubyObject {
             len = 0;
         }
         if (len == 0) {
-            return m_newArray(getRuby(), 0);
+            return newArray(getRuby(), 0);
         }
 
-        RubyArray ary2 = m_newArray(getRuby(), list.subList((int) beg, (int) (len + beg)));
+        RubyArray ary2 = newArray(getRuby(), list.subList((int) beg, (int) (len + beg)));
 
         return ary2;
     }
@@ -194,7 +281,7 @@ public class RubyArray extends RubyObject {
      *
      */
     public void replace(long beg, long len, RubyObject repl) {
-        int length = length();
+        int length = getLength();
 
         if (len < 0) {
             throw new RubyIndexException(getRuby(), "Negative array length: " + len);
@@ -236,6 +323,20 @@ public class RubyArray extends RubyObject {
         }
     }
 
+    private boolean flatten(ArrayList ary) {
+        boolean mod = false;
+        for (int i = ary.size() - 1; i >= 0; i--) {
+            RubyObject obj = (RubyObject) ary.get(i);
+            if (ary.get(i) instanceof RubyArray) {
+                ArrayList ary2 = ((RubyArray) ary.remove(i)).getList();
+                flatten(ary2);
+                ary.addAll(i, ary2);
+                mod = true;
+            }
+        }
+        return mod;
+    }
+
     //
     // Methods of the Array Class (rb_ary_*):
     //
@@ -243,14 +344,14 @@ public class RubyArray extends RubyObject {
     /** rb_ary_new2
      *
      */
-    public static RubyArray m_newArray(Ruby ruby, long len) {
+    public static RubyArray newArray(Ruby ruby, long len) {
         return new RubyArray(ruby, new ArrayList((int) len));
     }
 
     /** rb_ary_new
      *
      */
-    public static RubyArray m_newArray(Ruby ruby) {
+    public static RubyArray newArray(Ruby ruby) {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
          */
@@ -260,26 +361,26 @@ public class RubyArray extends RubyObject {
     /** 
      *
      */
-    public static RubyArray m_newArray(Ruby ruby, RubyObject obj) {
+    public static RubyArray newArray(Ruby ruby, RubyObject obj) {
         return new RubyArray(ruby, Collections.singletonList(obj));
     }
 
     /** rb_assoc_new
      *
      */
-    public static RubyArray m_newArray(Ruby ruby, RubyObject car, RubyObject cdr) {
+    public static RubyArray newArray(Ruby ruby, RubyObject car, RubyObject cdr) {
         return new RubyArray(ruby, Arrays.asList(new RubyObject[] { car, cdr }));
     }
 
-    public static RubyArray m_newArray(Ruby ruby, List list) {
+    public static RubyArray newArray(Ruby ruby, List list) {
         return new RubyArray(ruby, list);
     }
 
     /** rb_ary_s_new
      *
      */
-    public static RubyArray m_new(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        RubyArray array = m_newArray(ruby);
+    public static RubyArray newInstance(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        RubyArray array = newArray(ruby);
         array.setRubyClass((RubyClass) recv);
 
         array.callInit(args);
@@ -290,28 +391,28 @@ public class RubyArray extends RubyObject {
     /** rb_ary_s_create
      *
      */
-    public static RubyArray m_create(Ruby ruby, RubyObject recv, RubyObject[] args) {
-        return m_newArray(ruby, Arrays.asList(args));
+    public static RubyArray create(Ruby ruby, RubyObject recv, RubyObject[] args) {
+        return newArray(ruby, Arrays.asList(args));
     }
 
     /** rb_ary_hash
      *
      */
-    public RubyFixnum m_hash() {
+    public RubyFixnum hash() {
         return new RubyFixnum(getRuby(), list.hashCode());
     }
 
     /** rb_ary_length
      *
      */
-    public RubyFixnum m_length() {
-        return new RubyFixnum(getRuby(), length());
+    public RubyFixnum length() {
+        return new RubyFixnum(getRuby(), getLength());
     }
 
     /** rb_ary_push_m
      *
      */
-    public RubyArray m_push(RubyObject[] items) {
+    public RubyArray push(RubyObject[] items) {
         // Performance
         int length = items.length;
 
@@ -328,7 +429,7 @@ public class RubyArray extends RubyObject {
         return this;
     }
 
-    public RubyArray m_push(RubyObject value) {
+    public RubyArray push(RubyObject value) {
         modify();
         list.add(value);
         infectObject(value);
@@ -338,20 +439,20 @@ public class RubyArray extends RubyObject {
     /** rb_ary_pop
      *
      */
-    public RubyObject m_pop() {
+    public RubyObject pop() {
         modify();
-        if (length() == 0) {
+        if (getLength() == 0) {
             return getRuby().getNil();
         }
-        return (RubyObject) list.remove(length() - 1);
+        return (RubyObject) list.remove(getLength() - 1);
     }
 
     /** rb_ary_shift
      *
      */
-    public RubyObject m_shift() {
+    public RubyObject shift() {
         modify();
-        if (length() == 0) {
+        if (getLength() == 0) {
             return getRuby().getNil();
         }
 
@@ -361,7 +462,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_unshift_m
      *
      */
-    public RubyArray m_unshift(RubyObject[] items) {
+    public RubyArray unshift(RubyObject[] items) {
         if (items.length == 0) {
             throw new RubyArgumentException(getRuby(), "wrong # of arguments(at least 1)");
         }
@@ -378,9 +479,9 @@ public class RubyArray extends RubyObject {
     /** rb_ary_includes
      *
      */
-    public RubyBoolean m_includes(RubyObject item) {
-        for (int i = 0, n = length(); i < n; i++) {
-            if (item.funcall(equals, entry(i)).isTrue()) {
+    public RubyBoolean includes(RubyObject item) {
+        for (int i = 0, n = getLength(); i < n; i++) {
+            if (item.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
                 return getRuby().getTrue();
             }
         }
@@ -390,14 +491,14 @@ public class RubyArray extends RubyObject {
     /** rb_ary_frozen_p
      *
      */
-    public RubyBoolean m_frozen() {
+    public RubyBoolean frozen() {
         return RubyBoolean.newBoolean(getRuby(), isFrozen() || isTmpLock());
     }
 
     /** rb_ary_initialize
      *
      */
-    public RubyObject m_initialize(RubyObject[] args) {
+    public RubyObject initialize(RubyObject[] args) {
         int argc = argCount(args, 1, 2);
         long len = RubyNumeric.fix2long(args[0]);
 
@@ -417,20 +518,20 @@ public class RubyArray extends RubyObject {
         return this;
     }
 
-    public RubyObject m_dup() {
-        return m_aref(new RubyObject[] { RubyFixnum.zero(getRuby()), m_length()});
+    public RubyObject dup() {
+        return aref(new RubyObject[] { RubyFixnum.zero(getRuby()), length()});
     }
 
     /** rb_ary_aref
      *
      */
-    public RubyObject m_aref(RubyObject[] args) {
+    public RubyObject aref(RubyObject[] args) {
         int argc = argCount(args, 1, 2);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
             if (beg < 0) {
-                beg += length();
+                beg += getLength();
             }
             return subseq(beg, len);
         }
@@ -441,7 +542,7 @@ public class RubyArray extends RubyObject {
             throw new RubyIndexException(getRuby(), "index too big");
         }
         if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).getBeginLength(length(), true, false);
+            long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), true, false);
             if (begLen == null) {
                 return getRuby().getNil();
             }
@@ -453,7 +554,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_aset
      *
      */
-    public RubyObject m_aset(RubyObject[] args) {
+    public RubyObject aset(RubyObject[] args) {
         int argc = argCount(args, 2, 3);
         if (argc == 3) {
             long beg = RubyNumeric.fix2long(args[0]);
@@ -466,7 +567,7 @@ public class RubyArray extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).getBeginLength(length(), false, true);
+            long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), false, true);
             replace(begLen[0], begLen[1], args[1]);
             return args[1];
         }
@@ -480,14 +581,14 @@ public class RubyArray extends RubyObject {
     /** rb_ary_at
      *
      */
-    public RubyObject m_at(RubyFixnum pos) {
+    public RubyObject at(RubyFixnum pos) {
         return entry(pos.getValue());
     }
 
     /** rb_ary_concat
      *
      */
-    public RubyArray m_concat(RubyObject obj) {
+    public RubyArray concat(RubyObject obj) {
         modify();
         RubyArray other = arrayValue(obj);
         list.addAll(other.getList());
@@ -498,9 +599,9 @@ public class RubyArray extends RubyObject {
     /** rb_ary_inspect
      *
      */
-    public RubyString m_inspect() {
+    public RubyString inspect() {
         // Performance
-        int length = length();
+        int length = getLength();
 
         // HACK +++
         if (length == 0) {
@@ -522,8 +623,8 @@ public class RubyArray extends RubyObject {
     /** rb_ary_first
      *
      */
-    public RubyObject m_first() {
-        if (length() == 0) {
+    public RubyObject first() {
+        if (getLength() == 0) {
             return getRuby().getNil();
         }
         return entry(0);
@@ -532,18 +633,18 @@ public class RubyArray extends RubyObject {
     /** rb_ary_last
      *
      */
-    public RubyObject m_last() {
-        if (length() == 0) {
+    public RubyObject last() {
+        if (getLength() == 0) {
             return getRuby().getNil();
         }
-        return entry(length() - 1);
+        return entry(getLength() - 1);
     }
 
     /** rb_ary_each
      *
      */
-    public RubyObject m_each() {
-        for (int i = 0, len = length(); i < len; i++) {
+    public RubyObject each() {
+        for (int i = 0, len = getLength(); i < len; i++) {
             getRuby().yield(entry(i));
         }
         return this;
@@ -552,9 +653,9 @@ public class RubyArray extends RubyObject {
     /** rb_ary_each_index
      *
      */
-    public RubyObject m_each_index() {
-        for (int i = 0, len = length(); i < len; i++) {
-            getRuby().yield(RubyFixnum.m_newFixnum(getRuby(), i));
+    public RubyObject each_index() {
+        for (int i = 0, len = getLength(); i < len; i++) {
+            getRuby().yield(RubyFixnum.newFixnum(getRuby(), i));
         }
         return this;
     }
@@ -562,8 +663,8 @@ public class RubyArray extends RubyObject {
     /** rb_ary_reverse_each
      *
      */
-    public RubyObject m_reverse_each() {
-        for (long i = length(); i > 0; i--) {
+    public RubyObject reverse_each() {
+        for (long i = getLength(); i > 0; i--) {
             getRuby().yield(entry(i - 1));
         }
         return this;
@@ -573,7 +674,7 @@ public class RubyArray extends RubyObject {
      *
      */
     RubyString join(RubyString sep) {
-        int length = length();
+        int length = getLength();
         if (length == 0) {
             RubyString.newString(getRuby(), "");
         }
@@ -606,7 +707,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_join_m
      *
      */
-    public RubyString m_join(RubyObject[] args) {
+    public RubyString join(RubyObject[] args) {
         int argc = argCount(args, 0, 1);
         RubyObject sep = (argc == 1) ? args[0] : getRuby().getGlobalVar("$,");
         return join(sep.isNil() ? RubyString.newString(getRuby(), "") : RubyString.stringValue(sep));
@@ -615,7 +716,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_to_s
      *
      */
-    public RubyString m_to_s() {
+    public RubyString to_s() {
         RubyObject sep = getRuby().getGlobalVar("$,");
         return join(sep.isNil() ? RubyString.newString(getRuby(), "") : RubyString.stringValue(sep));
     }
@@ -623,26 +724,26 @@ public class RubyArray extends RubyObject {
     /** rb_ary_to_a
      *
      */
-    public RubyArray m_to_a() {
+    public RubyArray to_a() {
         return this;
     }
 
     /** rb_ary_equal
      *
      */
-    public RubyBoolean m_equal(RubyObject obj) {
+    public RubyBoolean equal(RubyObject obj) {
         if (!(obj instanceof RubyArray)) {
             return getRuby().getFalse();
         }
-        int length = length();
+        int length = getLength();
 
         RubyArray ary = (RubyArray) obj;
-        if (length != ary.length()) {
+        if (length != ary.getLength()) {
             return getRuby().getFalse();
         }
 
         for (long i = 0; i < length; i++) {
-            RubyBoolean result = (RubyBoolean) entry(i).funcall(equals, ary.entry(i));
+            RubyBoolean result = (RubyBoolean) entry(i).funcall(getRuby().intern("=="), ary.entry(i));
             if (result.isFalse()) {
                 return result;
             }
@@ -653,14 +754,14 @@ public class RubyArray extends RubyObject {
     /** rb_ary_eql
      *
      */
-    public RubyBoolean m_eql(RubyObject obj) {
+    public RubyBoolean eql(RubyObject obj) {
         if (!(obj instanceof RubyArray)) {
             return getRuby().getFalse();
         }
-        int length = length();
+        int length = getLength();
 
         RubyArray ary = (RubyArray) obj;
-        if (length != ary.length()) {
+        if (length != ary.getLength()) {
             return getRuby().getFalse();
         }
         RubyId equals = getRuby().intern("eql?");
@@ -676,11 +777,11 @@ public class RubyArray extends RubyObject {
     /** rb_ary_compact_bang
      *
      */
-    public RubyObject m_compact_bang() {
+    public RubyObject compact_bang() {
         modify();
         boolean changed = false;
 
-        for (int i = length() - 1; i >= 0; i--) {
+        for (int i = getLength() - 1; i >= 0; i--) {
             if (entry(i).isNil()) {
                 list.remove(i);
                 changed = true;
@@ -692,22 +793,22 @@ public class RubyArray extends RubyObject {
     /** rb_ary_compact
      *
      */
-    public RubyObject m_compact() {
-        RubyArray ary = (RubyArray) m_dup();
-        return ary.m_compact_bang();
+    public RubyObject compact() {
+        RubyArray ary = (RubyArray) dup();
+        return ary.compact_bang();
     }
 
     /** rb_ary_empty_p
      *
      */
-    public RubyObject m_empty_p() {
-        return length() == 0 ? getRuby().getTrue() : getRuby().getFalse();
+    public RubyObject empty_p() {
+        return getLength() == 0 ? getRuby().getTrue() : getRuby().getFalse();
     }
 
     /** rb_ary_clear
      *
      */
-    public RubyObject m_clear() {
+    public RubyObject clear() {
         modify();
         list.clear();
         return this;
@@ -716,10 +817,10 @@ public class RubyArray extends RubyObject {
     /** rb_ary_fill
      *
      */
-    public RubyObject m_fill(RubyObject[] args) {
+    public RubyObject fill(RubyObject[] args) {
         int argc = argCount(args, 1, 3);
         int beg = 0;
-        int len = length();
+        int len = getLength();
         switch (argc) {
             case 1 :
                 break;
@@ -753,10 +854,10 @@ public class RubyArray extends RubyObject {
     /** rb_ary_index
      *
      */
-    public RubyObject m_index(RubyObject obj) {
-        for (int i = 0, len = length(); i < len; i++) {
-            if (obj.funcall(equals, entry(i)).isTrue()) {
-                return RubyFixnum.m_newFixnum(getRuby(), i);
+    public RubyObject index(RubyObject obj) {
+        for (int i = 0, len = getLength(); i < len; i++) {
+            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+                return RubyFixnum.newFixnum(getRuby(), i);
             }
         }
         return getRuby().getNil();
@@ -765,10 +866,10 @@ public class RubyArray extends RubyObject {
     /** rb_ary_rindex
      *
      */
-    public RubyObject m_rindex(RubyObject obj) {
-        for (int i = length() - 1; i >= 0; i--) {
-            if (obj.funcall(equals, entry(i)).isTrue()) {
-                return RubyFixnum.m_newFixnum(getRuby(), i);
+    public RubyObject rindex(RubyObject obj) {
+        for (int i = getLength() - 1; i >= 0; i--) {
+            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
+                return RubyFixnum.newFixnum(getRuby(), i);
             }
         }
         return getRuby().getNil();
@@ -777,14 +878,14 @@ public class RubyArray extends RubyObject {
     /** rb_ary_indexes
      *
      */
-    public RubyArray m_indexes(RubyObject[] args) {
+    public RubyArray indexes(RubyObject[] args) {
         RubyObject[] result = new RubyObject[args.length];
         boolean taint = false;
         for (int i = 0; i < args.length; i++) {
             result[i] = entry(RubyNumeric.fix2int(args[i]));
             taint |= result[i].isTaint();
         }
-        RubyArray ary = m_create(getRuby(), this, result);
+        RubyArray ary = create(getRuby(), this, result);
         ary.setTaint(taint);
         return ary;
     }
@@ -792,8 +893,8 @@ public class RubyArray extends RubyObject {
     /** rb_ary_clone
      *
      */
-    public RubyObject m_clone() {
-        RubyArray ary = m_newArray(getRuby(), list);
+    public RubyObject rbClone() {
+        RubyArray ary = newArray(getRuby(), list);
         ary.infectObject(this);
         return ary;
     }
@@ -801,7 +902,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_reverse_bang
      *
      */
-    public RubyObject m_reverse_bang() {
+    public RubyObject reverse_bang() {
         modify();
         Collections.reverse(list);
         return this;
@@ -810,21 +911,21 @@ public class RubyArray extends RubyObject {
     /** rb_ary_reverse_m
      *
      */
-    public RubyObject m_reverse() {
-        RubyArray ary = (RubyArray) m_dup();
-        ary.m_reverse_bang();
+    public RubyObject reverse() {
+        RubyArray ary = (RubyArray) dup();
+        ary.reverse_bang();
         return ary;
     }
 
     /** rb_ary_collect
      *
      */
-    public RubyArray m_collect() {
+    public RubyArray collect() {
         if (!getRuby().isBlockGiven()) {
-            return (RubyArray) m_dup();
+            return (RubyArray) dup();
         }
         ArrayList ary = new ArrayList();
-        for (int i = 0, len = length(); i < len; i++) {
+        for (int i = 0, len = getLength(); i < len; i++) {
             ary.add(getRuby().yield(entry(i)));
         }
         return new RubyArray(getRuby(), ary);
@@ -833,9 +934,9 @@ public class RubyArray extends RubyObject {
     /** rb_ary_collect_bang
      *
      */
-    public RubyArray m_collect_bang() {
+    public RubyArray collect_bang() {
         modify();
-        for (int i = 0, len = length(); i < len; i++) {
+        for (int i = 0, len = getLength(); i < len; i++) {
             list.set(i, getRuby().yield(entry(i)));
         }
         return this;
@@ -844,11 +945,11 @@ public class RubyArray extends RubyObject {
     /** rb_ary_delete
      *
      */
-    public RubyObject m_delete(RubyObject obj) {
+    public RubyObject delete(RubyObject obj) {
         modify();
         RubyObject retVal = getRuby().getNil();
-        for (int i = length() - 1; i >= 0; i--) {
-            if (obj.funcall(equals, entry(i)).isTrue()) {
+        for (int i = getLength() - 1; i >= 0; i--) {
+            if (obj.funcall(getRuby().intern("=="), entry(i)).isTrue()) {
                 retVal = (RubyObject) list.remove(i);
             }
         }
@@ -861,10 +962,10 @@ public class RubyArray extends RubyObject {
     /** rb_ary_delete_at
      *
      */
-    public RubyObject m_delete_at(RubyObject obj) {
+    public RubyObject delete_at(RubyObject obj) {
         modify();
         int pos = (int) RubyNumeric.num2long(obj);
-        int len = length();
+        int len = getLength();
         if (pos >= len) {
             return getRuby().getNil();
         }
@@ -877,10 +978,10 @@ public class RubyArray extends RubyObject {
     /** rb_ary_reject_bang
      *
      */
-    public RubyObject m_reject_bang() {
+    public RubyObject reject_bang() {
         modify();
         RubyObject retVal = getRuby().getNil();
-        for (int i = length() - 1; i >= 0; i--) {
+        for (int i = getLength() - 1; i >= 0; i--) {
             if (getRuby().yield(entry(i)).isTrue()) {
                 retVal = (RubyObject) list.remove(i);
             }
@@ -891,16 +992,16 @@ public class RubyArray extends RubyObject {
     /** rb_ary_delete_if
      *
      */
-    public RubyObject m_delete_if() {
-        m_reject_bang();
+    public RubyObject delete_if() {
+        reject_bang();
         return this;
     }
 
     /** rb_ary_replace
      *
      */
-    public RubyObject m_replace(RubyObject other) {
-        replace(0, length(), arrayValue(other));
+    public RubyObject replace(RubyObject other) {
+        replace(0, getLength(), arrayValue(other));
         return this;
     }
 
@@ -909,8 +1010,8 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject op_cmp(RubyObject other) {
         RubyArray ary = arrayValue(other);
-        int otherLen = ary.length();
-        int len = length();
+        int otherLen = ary.getLength();
+        int len = getLength();
         int lesser = Math.min(len, otherLen);
         RubyFixnum result = RubyFixnum.zero(getRuby());
         for (int i = 0; i < lesser; i++) {
@@ -928,17 +1029,17 @@ public class RubyArray extends RubyObject {
     /** rb_ary_slice_bang
      *
      */
-    public RubyObject m_slice_bang(RubyObject[] args) {
+    public RubyObject slice_bang(RubyObject[] args) {
         int argc = argCount(args, 1, 2);
-        RubyObject result = m_aref(args);
+        RubyObject result = aref(args);
         if (argc == 2) {
             long beg = RubyNumeric.fix2long(args[0]);
             long len = RubyNumeric.fix2long(args[1]);
             replace(beg, len, getRuby().getNil());
-        } else if ((args[0] instanceof RubyFixnum) && ((RubyFixnum) args[0]).getValue() < length()) {
+        } else if ((args[0] instanceof RubyFixnum) && ((RubyFixnum) args[0]).getValue() < getLength()) {
             replace(RubyNumeric.fix2long(args[0]), 1, getRuby().getNil());
         } else if (args[0] instanceof RubyRange) {
-            long[] begLen = ((RubyRange) args[0]).getBeginLength(length(), false, true);
+            long[] begLen = ((RubyRange) args[0]).getBeginLength(getLength(), false, true);
             replace(begLen[0], begLen[1], getRuby().getNil());
         }
         return result;
@@ -947,13 +1048,13 @@ public class RubyArray extends RubyObject {
     /** rb_ary_assoc
      *
      */
-    public RubyObject m_assoc(RubyObject arg) {
-        for (int i = 0, len = length(); i < len; i++) {
-            if (!((entry(i) instanceof RubyArray) && ((RubyArray) entry(i)).length() > 0)) {
+    public RubyObject assoc(RubyObject arg) {
+        for (int i = 0, len = getLength(); i < len; i++) {
+            if (!((entry(i) instanceof RubyArray) && ((RubyArray) entry(i)).getLength() > 0)) {
                 continue;
             }
             RubyArray ary = (RubyArray) entry(i);
-            if (arg.funcall(equals, ary.entry(0)).isTrue()) {
+            if (arg.funcall(getRuby().intern("=="), ary.entry(0)).isTrue()) {
                 return ary;
             }
         }
@@ -963,37 +1064,23 @@ public class RubyArray extends RubyObject {
     /** rb_ary_rassoc
      *
      */
-    public RubyObject m_rassoc(RubyObject arg) {
-        for (int i = 0, len = length(); i < len; i++) {
-            if (!((entry(i) instanceof RubyArray) && ((RubyArray) entry(i)).length() > 1)) {
+    public RubyObject rassoc(RubyObject arg) {
+        for (int i = 0, len = getLength(); i < len; i++) {
+            if (!((entry(i) instanceof RubyArray) && ((RubyArray) entry(i)).getLength() > 1)) {
                 continue;
             }
             RubyArray ary = (RubyArray) entry(i);
-            if (arg.funcall(equals, ary.entry(1)).isTrue()) {
+            if (arg.funcall(getRuby().intern("=="), ary.entry(1)).isTrue()) {
                 return ary;
             }
         }
         return getRuby().getNil();
     }
 
-    private boolean flatten(ArrayList ary) {
-        boolean mod = false;
-        for (int i = ary.size() - 1; i >= 0; i--) {
-            RubyObject obj = (RubyObject) ary.get(i);
-            if (ary.get(i) instanceof RubyArray) {
-                ArrayList ary2 = ((RubyArray) ary.remove(i)).getList();
-                flatten(ary2);
-                ary.addAll(i, ary2);
-                mod = true;
-            }
-        }
-        return mod;
-    }
-
     /** rb_ary_flatten_bang
      *
      */
-    public RubyObject m_flatten_bang() {
+    public RubyObject flatten_bang() {
         modify();
         if (flatten(list)) {
             return this;
@@ -1004,21 +1091,21 @@ public class RubyArray extends RubyObject {
     /** rb_ary_flatten
      *
      */
-    public RubyObject m_flatten() {
-        RubyArray rubyArray = (RubyArray) m_dup();
-        rubyArray.m_flatten_bang();
+    public RubyObject flatten() {
+        RubyArray rubyArray = (RubyArray) dup();
+        rubyArray.flatten_bang();
         return rubyArray;
     }
 
     /** rb_ary_nitems
      *
      */
-    public RubyObject m_nitems() {
+    public RubyObject nitems() {
         int count = 0;
-        for (int i = 0, len = length(); i < len; i++) {
+        for (int i = 0, len = getLength(); i < len; i++) {
             count += entry(i).isNil() ? 0 : 1;
         }
-        return RubyFixnum.m_newFixnum(getRuby(), count);
+        return RubyFixnum.newFixnum(getRuby(), count);
     }
 
     /** rb_ary_plus
@@ -1026,7 +1113,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyObject op_plus(RubyObject other) {
         ArrayList otherList = arrayValue(other).getList();
-        ArrayList newList = new ArrayList(length() + otherList.size());
+        ArrayList newList = new ArrayList(getLength() + otherList.size());
         newList.addAll(list);
         newList.addAll(otherList);
         return new RubyArray(getRuby(), newList);
@@ -1044,7 +1131,7 @@ public class RubyArray extends RubyObject {
         if (len < 0) {
             throw new RubyArgumentException(getRuby(), "negative argument");
         }
-        ArrayList newList = new ArrayList(length() * len);
+        ArrayList newList = new ArrayList(getLength() * len);
         for (int i = 0; i < len; i++) {
             newList.addAll(list);
         }
@@ -1061,7 +1148,7 @@ public class RubyArray extends RubyObject {
             len2 = ary2.size();
             found = false;
             for (int j = 0; j < len2; j++) {
-                if (obj.funcall(equals, (RubyObject) ary1.get(j)).isTrue()) {
+                if (obj.funcall(getRuby().intern("=="), (RubyObject) ary1.get(j)).isTrue()) {
                     found = true;
                     break;
                 }
@@ -1077,7 +1164,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_uniq_bang
      *
      */
-    public RubyObject m_uniq_bang() {
+    public RubyObject uniq_bang() {
         modify();
         ArrayList newList = uniq(list);
         if (newList.equals(list)) {
@@ -1090,7 +1177,7 @@ public class RubyArray extends RubyObject {
     /** rb_ary_uniq
      *
      */
-    public RubyObject m_uniq() {
+    public RubyObject uniq() {
         return new RubyArray(getRuby(), uniq(list));
     }
 
@@ -1104,7 +1191,7 @@ public class RubyArray extends RubyObject {
         for (int i = ary1.size() - 1; i >= 0; i--) {
             RubyObject obj = (RubyObject) ary1.get(i);
             for (int j = 0; j < len2; j++) {
-                if (obj.funcall(equals, (RubyObject) ary2.get(j)).isTrue()) {
+                if (obj.funcall(getRuby().intern("=="), (RubyObject) ary2.get(j)).isTrue()) {
                     ary1.remove(i);
                     break;
                 }
@@ -1125,7 +1212,7 @@ public class RubyArray extends RubyObject {
         for (int i = 0; i < len1; i++) {
             RubyObject obj = (RubyObject) ary1.get(i);
             for (int j = 0; j < len2; j++) {
-                if (obj.funcall(equals, (RubyObject) ary2.get(j)).isTrue()) {
+                if (obj.funcall(getRuby().intern("=="), (RubyObject) ary2.get(j)).isTrue()) {
                     ary3.add(obj);
                     break;
                 }
@@ -1148,17 +1235,17 @@ public class RubyArray extends RubyObject {
     /** rb_ary_sort
      *
      */
-    public RubyArray m_sort() {
-        RubyArray rubyArray = (RubyArray) m_dup();
-        rubyArray.m_sort_bang();
+    public RubyArray sort() {
+        RubyArray rubyArray = (RubyArray) dup();
+        rubyArray.sort_bang();
         return rubyArray;
     }
 
     /** rb_ary_sort_bang
      *
      */
-    public RubyObject m_sort_bang() {
-        if (length() <= 1) {
+    public RubyObject sort_bang() {
+        if (getLength() <= 1) {
             return getRuby().getNil();
         }
         modify();
@@ -1172,7 +1259,7 @@ public class RubyArray extends RubyObject {
 
     class BlockComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            RubyObject result = getRuby().yield(RubyArray.m_newArray(getRuby(), (RubyObject) o1, (RubyObject) o2));
+            RubyObject result = getRuby().yield(RubyArray.newArray(getRuby(), (RubyObject) o1, (RubyObject) o2));
             return (int) ((RubyNumeric) result).getLongValue();
         }
 

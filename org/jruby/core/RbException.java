@@ -50,7 +50,7 @@ public class RbException {
         return exceptionClass;
     }
     
-    public static RubyCallbackMethod getMethod(String methodName) {
+    public static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyException.class, methodName);
     }
 }

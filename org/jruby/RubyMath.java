@@ -36,18 +36,18 @@ public class RubyMath {
      * 
      */
     public static RubyModule createMathModule(Ruby ruby) {
-        RubyCallbackMethod atan2 =
+        Callback atan2 =
             new ReflectionCallbackMethod(RubyMath.class, "atan2", new Class[] { RubyNumeric.class, RubyNumeric.class });
-        RubyCallbackMethod cos = new ReflectionCallbackMethod(RubyMath.class, "cos", RubyNumeric.class);
-        RubyCallbackMethod exp = new ReflectionCallbackMethod(RubyMath.class, "exp", RubyNumeric.class);
-        RubyCallbackMethod frexp = new ReflectionCallbackMethod(RubyMath.class, "frexp", RubyNumeric.class);
-        RubyCallbackMethod ldexp =
+        Callback cos = new ReflectionCallbackMethod(RubyMath.class, "cos", RubyNumeric.class);
+        Callback exp = new ReflectionCallbackMethod(RubyMath.class, "exp", RubyNumeric.class);
+        Callback frexp = new ReflectionCallbackMethod(RubyMath.class, "frexp", RubyNumeric.class);
+        Callback ldexp =
             new ReflectionCallbackMethod(RubyMath.class, "ldexp", new Class[] { RubyFloat.class, RubyInteger.class });
-        RubyCallbackMethod log = new ReflectionCallbackMethod(RubyMath.class, "log", RubyNumeric.class);
-        RubyCallbackMethod log10 = new ReflectionCallbackMethod(RubyMath.class, "log10", RubyNumeric.class);
-        RubyCallbackMethod sin = new ReflectionCallbackMethod(RubyMath.class, "sin", RubyNumeric.class);
-        RubyCallbackMethod sqrt = new ReflectionCallbackMethod(RubyMath.class, "sqrt", RubyNumeric.class);
-        RubyCallbackMethod tan = new ReflectionCallbackMethod(RubyMath.class, "tan", RubyNumeric.class);
+        Callback log = new ReflectionCallbackMethod(RubyMath.class, "log", RubyNumeric.class);
+        Callback log10 = new ReflectionCallbackMethod(RubyMath.class, "log10", RubyNumeric.class);
+        Callback sin = new ReflectionCallbackMethod(RubyMath.class, "sin", RubyNumeric.class);
+        Callback sqrt = new ReflectionCallbackMethod(RubyMath.class, "sqrt", RubyNumeric.class);
+        Callback tan = new ReflectionCallbackMethod(RubyMath.class, "tan", RubyNumeric.class);
 
         RubyModule mathModule = ruby.defineModule("Math");
 

@@ -30,30 +30,32 @@
 
 package org.jruby;
 
+import org.jruby.core.*;
+
 /**
  *
  * @author  jpetersen
  */
-public class RubyNil extends RubyObject {
-
-    public RubyNil(Ruby ruby) {
-        super(ruby, null);
-    }
-    
-    public RubyClass getRubyClass() {
-        return getRuby().getClasses().getNilClass();
-    }
-
-    public boolean isNil() {
-        return true;
-    }
-
-    public boolean isFalse() {
-        return true;
-    }
-
-    public boolean isTrue() {
-        return false;
+public class RubyNil {
+    public static RubyClass createNilClass(Ruby ruby) {
+        RubyClass nilClass = ruby.defineClass("NilClass", ruby.getClasses().getObjectClass());
+        
+        nilClass.defineMethod("type", CallbackFactory.getSingletonMethod(RubyNil.class, "type"));
+        nilClass.defineMethod("to_i", CallbackFactory.getSingletonMethod(RubyNil.class, "to_i"));
+        nilClass.defineMethod("to_s", CallbackFactory.getSingletonMethod(RubyNil.class, "to_s"));
+        nilClass.defineMethod("to_a", CallbackFactory.getSingletonMethod(RubyNil.class, "to_a"));
+        nilClass.defineMethod("inspect", CallbackFactory.getSingletonMethod(RubyNil.class, "inspect"));
+        
+        nilClass.defineMethod("&", CallbackFactory.getSingletonMethod(RubyNil.class, "op_and", RubyObject.class));
+        nilClass.defineMethod("|", CallbackFactory.getSingletonMethod(RubyNil.class, "op_or", RubyObject.class));
+        nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", RubyObject.class));
+        nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod());
+        
+        nilClass.getRubyClass().undefMethod("new");
+        
+        ruby.defineGlobalConstant("NIL", ruby.getNil());
+        
+        return nilClass;
     }
 
     // Methods of the Nil Class (nil_*):
@@ -61,64 +63,64 @@ public class RubyNil extends RubyObject {
     /** nil_to_i
      *
      */
-    public RubyFixnum to_i() {
-        return RubyFixnum.m_newFixnum(getRuby(), 0);
+    public static RubyFixnum to_i(Ruby ruby, RubyObject recv) {
+        return RubyFixnum.zero(ruby);
     }
 
     /** nil_to_s
      *
      */
-    public RubyString to_s() {
-        return RubyString.newString(getRuby(), "");
+    public static RubyString to_s(Ruby ruby, RubyObject recv) {
+        return RubyString.newString(ruby, "");
     }
     
     /** nil_to_a
      *
      */
-    public RubyArray to_a() {
-        return RubyArray.m_newArray(getRuby(), 0);
+    public static RubyArray to_a(Ruby ruby, RubyObject recv) {
+        return RubyArray.newArray(ruby, 0);
     }
     
     /** nil_inspect
      *
      */
-    public RubyString inspect() {
-        return RubyString.newString(getRuby(), "nil");
+    public static RubyString inspect(Ruby ruby, RubyObject recv) {
+        return RubyString.newString(ruby, "nil");
     }
     
     /** nil_type
      *
      */
-    public RubyClass type() {
-        return getRubyClass();
+    public static RubyClass type(Ruby ruby, RubyObject recv) {
+        return ruby.getClasses().getNilClass();
     }
     
     /** nil_and
      *
      */
-    public RubyBoolean op_and(RubyObject obj) {
-        return getRuby().getFalse();
+    public static RubyBoolean op_and(Ruby ruby, RubyObject recv, RubyObject obj) {
+        return ruby.getFalse();
     }
     
     /** nil_or
      *
      */
-    public RubyBoolean op_or(RubyObject obj) {
+    public static RubyBoolean op_or(Ruby ruby, RubyObject recv, RubyObject obj) {
         if (obj.isFalse()) {
-            return getRuby().getFalse();
+            return ruby.getFalse();
         } else {
-            return getRuby().getTrue();
+            return ruby.getTrue();
         }
     }
 
     /** nil_xor
      *
      */
-    public RubyBoolean op_xor(RubyObject obj) {
+    public static RubyBoolean op_xor(Ruby ruby, RubyObject recv, RubyObject obj) {
         if (obj.isTrue()) {
-            return getRuby().getTrue();
+            return ruby.getTrue();
         } else {
-            return getRuby().getFalse();
+            return ruby.getFalse();
         }
     }
 }

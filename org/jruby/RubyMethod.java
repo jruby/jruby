@@ -65,9 +65,9 @@ public class RubyMethod extends RubyObject {
      * 
      */
     public static RubyClass createMethodClass(Ruby ruby) {
-        RubyCallbackMethod arity =
+        Callback arity =
             new ReflectionCallbackMethod(RubyMethod.class, "arity");
-        RubyCallbackMethod call =
+        Callback call =
             new ReflectionCallbackMethod(RubyMethod.class, "call", true);
 
         RubyClass methodClass =
@@ -201,9 +201,9 @@ public class RubyMethod extends RubyObject {
     public RubyFixnum arity() {
         switch (bodyNode.getType()) {
             case Constants.NODE_CFUNC:
-                return RubyFixnum.m_newFixnum(getRuby(), -1);
+                return RubyFixnum.newFixnum(getRuby(), -1);
             case Constants.NODE_ZSUPER:
-                return RubyFixnum.m_newFixnum(getRuby(), -1);
+                return RubyFixnum.newFixnum(getRuby(), -1);
             case Constants.NODE_ATTRSET:
                 return RubyFixnum.one(getRuby());
             case Constants.NODE_IVAR:
@@ -220,7 +220,7 @@ public class RubyMethod extends RubyObject {
                 if (body.getOptNode() != null || body.getRest() != -1) {
                     n = -n-1;
                 }
-                return RubyFixnum.m_newFixnum(getRuby(), n);
+                return RubyFixnum.newFixnum(getRuby(), n);
         }
     }
 }

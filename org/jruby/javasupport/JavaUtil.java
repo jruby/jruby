@@ -49,7 +49,7 @@ public class JavaUtil {
                 return false;
             }
             Class arrayClass = javaClass.getComponentType();
-            for (int i = 0; i < ((RubyArray)arg).length(); i++) {
+            for (int i = 0; i < ((RubyArray)arg).getLength(); i++) {
                 if (!isCompatible(((RubyArray)arg).entry(i), arrayClass)) {
                     return false;
                 }
@@ -81,7 +81,7 @@ public class JavaUtil {
         if (javaClass.isArray()) {
             try {
                 Class arrayClass = javaClass.getComponentType();
-                int len = ((RubyArray)rubyObject).length();
+                int len = ((RubyArray)rubyObject).getLength();
                 Object javaObject = Array.newInstance(arrayClass, len);
                 for (int i = 0; i < len; i++) {
                     Object item = convertRubyToJava(ruby, ((RubyArray)rubyObject).entry(i), arrayClass);
@@ -150,10 +150,10 @@ public class JavaUtil {
             } else if (cName == "float" || cName == "double") {
                 return RubyFloat.m_newFloat(ruby, ((Number)object).doubleValue());
             } else if (cName == "char") {
-            	return RubyFixnum.m_newFixnum(ruby, ((Character)object).charValue());
+            	return RubyFixnum.newFixnum(ruby, ((Character)object).charValue());
             } else {
                 // else it's one of the integral types
-                return RubyFixnum.m_newFixnum(ruby, ((Number)object).longValue());
+                return RubyFixnum.newFixnum(ruby, ((Number)object).longValue());
             }
         }
         if (javaClass == String.class) {
@@ -166,7 +166,7 @@ public class JavaUtil {
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, Array.get(object, i), arrayClass);
             }
-            return RubyArray.m_create(ruby, null, items);
+            return RubyArray.create(ruby, null, items);
         }
         return new RubyJavaObject(ruby, RubyJavaObject.loadClass(ruby, javaClass, null), object);
     }

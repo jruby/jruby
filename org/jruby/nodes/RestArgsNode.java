@@ -47,7 +47,7 @@ public class RestArgsNode extends Node {
     public RubyObject eval(Ruby ruby, RubyObject self) {
         RubyObject result = getHeadNode().eval(ruby, self);
         if (!(result instanceof RubyArray)) {
-            result = RubyArray.m_newArray(ruby, result);
+            result = RubyArray.newArray(ruby, result);
         }
         return result;
     }

@@ -41,7 +41,7 @@ import org.jruby.runtime.*;
  * @version 
  */
 public class IFuncNode extends Node implements ExecutableNode {
-    public IFuncNode(RubyCallbackMethod callbackMethod, RubyObject tValue) {
+    public IFuncNode(Callback callbackMethod, RubyObject tValue) {
         super(Constants.NODE_IFUNC, callbackMethod, tValue, null);
     }
 

@@ -61,15 +61,15 @@ public class RbInteger {
         return integerClass;
     }
     
-    public static RubyCallbackMethod getIntegerMethod(String methodName, Class arg1) {
+    public static Callback getIntegerMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyInteger.class, methodName, arg1);
     }
     
-    public static RubyCallbackMethod getIntegerMethod(String methodName, Class arg1, Class arg2) {
+    public static Callback getIntegerMethod(String methodName, Class arg1, Class arg2) {
         return new ReflectionCallbackMethod(RubyInteger.class, methodName, new Class[] {arg1, arg2});
     }
     
-    public static RubyCallbackMethod getIntegerMethod(String methodName) {
+    public static Callback getIntegerMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyInteger.class, methodName);
     }
 }

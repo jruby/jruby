@@ -44,13 +44,13 @@ import org.jruby.core.*;
  */
 public class RubyKernel {
     public static void createKernelModule(Ruby ruby) {
-        RubyCallbackMethod sprintf = new ReflectionCallbackMethod(RubyKernel.class, "sprintf", true, true);
-        RubyCallbackMethod p = new ReflectionCallbackMethod(RubyKernel.class, "p", true, true);
-        RubyCallbackMethod print = new ReflectionCallbackMethod(RubyKernel.class, "print", true, true);
-        RubyCallbackMethod printf = new ReflectionCallbackMethod(RubyKernel.class, "printf", true, true);
-        RubyCallbackMethod puts = new ReflectionCallbackMethod(RubyKernel.class, "puts", true, true);
-        RubyCallbackMethod raise = new ReflectionCallbackMethod(RubyKernel.class, "raise", true, true);
-        RubyCallbackMethod require = new ReflectionCallbackMethod(RubyKernel.class, "require", RubyString.class, false, true);
+        Callback sprintf = new ReflectionCallbackMethod(RubyKernel.class, "sprintf", true, true);
+        Callback p = new ReflectionCallbackMethod(RubyKernel.class, "p", true, true);
+        Callback print = new ReflectionCallbackMethod(RubyKernel.class, "print", true, true);
+        Callback printf = new ReflectionCallbackMethod(RubyKernel.class, "printf", true, true);
+        Callback puts = new ReflectionCallbackMethod(RubyKernel.class, "puts", true, true);
+        Callback raise = new ReflectionCallbackMethod(RubyKernel.class, "raise", true, true);
+        Callback require = new ReflectionCallbackMethod(RubyKernel.class, "require", RubyString.class, false, true);
 
         ruby.defineGlobalFunction("format", sprintf);
         ruby.defineGlobalFunction("p", p);
@@ -127,8 +127,8 @@ public class RubyKernel {
             throw new RubyArgumentException(ruby, "sprintf must have at least one argument");
         }
         RubyString str = RubyString.stringValue(args[0]);
-        RubyArray newArgs = RubyArray.m_create(ruby, null, args);
-        newArgs.m_shift();
+        RubyArray newArgs = RubyArray.create(ruby, null, args);
+        newArgs.shift();
         return str.m_format(newArgs);
     }
 

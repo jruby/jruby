@@ -17,8 +17,8 @@ public class RubyProc extends RubyObject {
     public static RubyClass createProcClass(Ruby ruby) {
     	RubyClass procClass = ruby.defineClass("Proc", ruby.getClasses().getObjectClass());
     	
-    	RubyCallbackMethod call = new ReflectionCallbackMethod(RubyProc.class, "call", true);
-    	RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
+    	Callback call = new ReflectionCallbackMethod(RubyProc.class, "call", true);
+    	Callback s_new = new ReflectionCallbackMethod(RubyProc.class, "s_new", 
                                                                 RubyObject[].class, true, true);
     	
     	procClass.defineMethod("call", call);
@@ -69,7 +69,7 @@ public class RubyProc extends RubyObject {
 
         try {
             result = getRuby().yield0(
-                args != null ? RubyArray.m_create(getRuby(), null, args) : null,
+                args != null ? RubyArray.create(getRuby(), null, args) : null,
                 null, null, true);
         } finally {
             getRuby().getIter().pop();

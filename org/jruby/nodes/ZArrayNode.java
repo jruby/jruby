@@ -47,6 +47,6 @@ public class ZArrayNode extends Node {
     }
     
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return RubyArray.m_newArray(ruby, 0);
+        return RubyArray.newArray(ruby, 0);
     }
 }

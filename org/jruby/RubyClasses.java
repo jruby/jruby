@@ -226,7 +226,7 @@ public class RubyClasses {
 
         symbolClass = RbSymbol.createSymbolClass(ruby);
 
-        nilClass = RbNilClass.createNilClass(ruby);
+        nilClass = RubyNil.createNilClass(ruby);
 
         falseClass = RbFalseClass.createFalseClass(ruby);
         trueClass = RbTrueClass.createTrueClass(ruby);
@@ -236,7 +236,7 @@ public class RubyClasses {
 
         numericClass = RbNumeric.createNumericClass(ruby);
         integerClass = RbInteger.createIntegerClass(ruby);
-        fixnumClass = RbFixnum.createFixnum(ruby);
+        fixnumClass = RubyFixnum.createFixnumClass(ruby);
         bignumClass = RbBignum.createBignum(ruby);
         floatClass = RbFloat.createFloat(ruby);
 
@@ -244,7 +244,7 @@ public class RubyClasses {
         regExpClass = RbRegexp.createRegexpClass(ruby);
         matchDataClass = RbMatchData.createMatchDataClass(ruby);
 
-        arrayClass = RbArray.createArrayClass(ruby);
+        arrayClass = RubyArray.createArrayClass(ruby);
         hashClass = RbHash.createHashClass(ruby);
         rangeClass = RbRange.createRangeClass(ruby);
 

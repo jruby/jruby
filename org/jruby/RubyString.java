@@ -248,7 +248,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyFixnum op_cmp(RubyObject other) {
-        return RubyFixnum.m_newFixnum(getRuby(), cmp(stringValue(other)));
+        return RubyFixnum.newFixnum(getRuby(), cmp(stringValue(other)));
     }
 
     /** rb_str_equal
@@ -478,7 +478,7 @@ public class RubyString extends RubyObject {
      *
      */
     public RubyFixnum m_hash() {
-        return RubyFixnum.m_newFixnum(getRuby(), getValue().hashCode());
+        return RubyFixnum.newFixnum(getRuby(), getValue().hashCode());
     }
 
     /** rb_str_length
@@ -678,7 +678,7 @@ public class RubyString extends RubyObject {
         if (pos == -1) {
             return getRuby().getNil();
         }
-        return RubyFixnum.m_newFixnum(getRuby(), pos);
+        return RubyFixnum.newFixnum(getRuby(), pos);
     }
 
     /* rb_str_substr */
@@ -1002,10 +1002,10 @@ public class RubyString extends RubyObject {
         if (argc == 2) {
             limit = RubyNumeric.fix2int(args[1]);
             if (limit == 1) {
-                return RubyArray.m_newArray(getRuby(), m_dup());
+                return RubyArray.newArray(getRuby(), m_dup());
             }
         }
-        RubyArray result = RubyArray.m_newArray(getRuby(), 0);
+        RubyArray result = RubyArray.newArray(getRuby(), 0);
         int pos = 0;
         int beg = 0;
         int hits = 0;
@@ -1050,8 +1050,8 @@ public class RubyString extends RubyObject {
             result.push(substr(pos, len - pos));
         }
         if (limit == 0) {
-            while (((RubyString)result.entry(result.length() - 1)).m_empty().isTrue()) {
-                result.m_pop();
+            while (((RubyString)result.entry(result.getLength() - 1)).m_empty().isTrue()) {
+                result.pop();
             }
         }
         return result;
@@ -1064,13 +1064,13 @@ public class RubyString extends RubyObject {
         RubyRegexp pat = RubyRegexp.regexpValue(arg);
         int start = 0;
         if (!getRuby().isBlockGiven()) {
-            RubyArray ary = RubyArray.m_newArray(getRuby());
+            RubyArray ary = RubyArray.newArray(getRuby());
             while (pat.m_search(this, start) != -1) {
                 RubyMatchData md = (RubyMatchData)getRuby().getBackRef();
                 if (md.size() == 1) {
-                    ary.m_push(md.group(0));
+                    ary.push(md.group(0));
                 } else {
-                    ary.m_push(md.subseq(1, md.size()));
+                    ary.push(md.subseq(1, md.size()));
                 }
                 if (md.matchEndPosition() == md.matchStartPosition()) {
                     start++;
@@ -1314,7 +1314,7 @@ public class RubyString extends RubyObject {
                 count++;
             }
         }
-        return RubyFixnum.m_newFixnum(getRuby(), count);
+        return RubyFixnum.newFixnum(getRuby(), count);
     }
 
     private String delete(RubyObject[] args) {

@@ -39,26 +39,26 @@ import org.jruby.exceptions.*;
  * @version 
  */
 public class RbNumeric {
-    private static RubyCallbackMethod methodCoerce = null;
-    private static RubyCallbackMethod methodClone = null;
+    private static Callback methodCoerce = null;
+    private static Callback methodClone = null;
     
-    private static RubyCallbackMethod methodUPlus = null;
-    private static RubyCallbackMethod methodUMinus = null;
-    private static RubyCallbackMethod methodEqual = null;
-    private static RubyCallbackMethod methodEql = null;
-    private static RubyCallbackMethod methodDivmod = null;
-    private static RubyCallbackMethod methodModulo = null;
-    private static RubyCallbackMethod methodRemainder = null;
-    private static RubyCallbackMethod methodAbs = null;
+    private static Callback methodUPlus = null;
+    private static Callback methodUMinus = null;
+    private static Callback methodEqual = null;
+    private static Callback methodEql = null;
+    private static Callback methodDivmod = null;
+    private static Callback methodModulo = null;
+    private static Callback methodRemainder = null;
+    private static Callback methodAbs = null;
 
-    private static RubyCallbackMethod methodIntP = null;
-    private static RubyCallbackMethod methodZeroP = null;
-    private static RubyCallbackMethod methodNonzeroP = null;
+    private static Callback methodIntP = null;
+    private static Callback methodZeroP = null;
+    private static Callback methodNonzeroP = null;
 
-    private static RubyCallbackMethod methodFloor = null;
-    private static RubyCallbackMethod methodCeil = null;
-    private static RubyCallbackMethod methodRound = null;
-    private static RubyCallbackMethod methodTruncate = null;
+    private static Callback methodFloor = null;
+    private static Callback methodCeil = null;
+    private static Callback methodRound = null;
+    private static Callback methodTruncate = null;
     
     public static RubyClass createNumericClass(Ruby ruby) {
         RubyClass numericClass = ruby.defineClass("Numeric", ruby.getClasses().getObjectClass());
@@ -89,9 +89,9 @@ public class RbNumeric {
         return numericClass;
     }
 
-    public static RubyCallbackMethod getMethodCoerce() {
+    public static Callback getMethodCoerce() {
         if (methodCoerce == null) {
-            methodCoerce = new RubyCallbackMethod() {
+            methodCoerce = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException(ruby, "wrong argument count");
@@ -105,9 +105,9 @@ public class RbNumeric {
         return methodCoerce;
     }
 
-    public static RubyCallbackMethod getMethodClone() {
+    public static Callback getMethodClone() {
         if (methodClone == null) {
-            methodClone = new RubyCallbackMethod() {
+            methodClone = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return recv.rbClone();
                 }
@@ -116,9 +116,9 @@ public class RbNumeric {
         return methodClone;
     }
 
-    public static RubyCallbackMethod getMethodUPlus() {
+    public static Callback getMethodUPlus() {
         if (methodUPlus == null) {
-            methodUPlus = new RubyCallbackMethod() {
+            methodUPlus = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).op_uplus();
                 }
@@ -128,9 +128,9 @@ public class RbNumeric {
         return methodUPlus;
     }
 
-    public static RubyCallbackMethod getMethodUMinus() {
+    public static Callback getMethodUMinus() {
         if (methodUMinus == null) {
-            methodUMinus = new RubyCallbackMethod() {
+            methodUMinus = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).op_uminus();
                 }
@@ -139,9 +139,9 @@ public class RbNumeric {
         return methodUMinus;
     }
 
-    public static RubyCallbackMethod getMethodEqual() {
+    public static Callback getMethodEqual() {
         if (methodEqual == null) {
-            methodEqual = new RubyCallbackMethod() {
+            methodEqual = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException(ruby, "wrong argument count");
@@ -154,9 +154,9 @@ public class RbNumeric {
         return methodEqual;
     }
 
-    public static RubyCallbackMethod getMethodEql() {
+    public static Callback getMethodEql() {
         if (methodEql == null) {
-            methodEql = new RubyCallbackMethod() {
+            methodEql = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException(ruby, "wrong argument count");
@@ -170,9 +170,9 @@ public class RbNumeric {
         return methodEql;
     }
 
-    public static RubyCallbackMethod getMethodDivmod() {
+    public static Callback getMethodDivmod() {
         if (methodDivmod == null) {
-            methodDivmod = new RubyCallbackMethod() {
+            methodDivmod = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException(ruby, "wrong argument count");
@@ -185,9 +185,9 @@ public class RbNumeric {
         return methodDivmod;
     }
 
-    public static RubyCallbackMethod getMethodModulo() {
+    public static Callback getMethodModulo() {
         if (methodModulo == null) {
-            methodModulo = new RubyCallbackMethod() {
+            methodModulo = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException(ruby, "wrong argument count");
@@ -200,9 +200,9 @@ public class RbNumeric {
         return methodModulo;
     }
 
-    public static RubyCallbackMethod getMethodRemainder() {
+    public static Callback getMethodRemainder() {
         if (methodRemainder == null) {
-            methodRemainder = new RubyCallbackMethod() {
+            methodRemainder = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     if (args.length < 1) {
                         throw new RubyArgumentException(ruby, "wrong argument count");
@@ -215,9 +215,9 @@ public class RbNumeric {
         return methodRemainder;
     }
 
-    public static RubyCallbackMethod getMethodAbs() {
+    public static Callback getMethodAbs() {
         if (methodAbs == null) {
-            methodAbs = new RubyCallbackMethod() {
+            methodAbs = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_abs();
                 }
@@ -227,9 +227,9 @@ public class RbNumeric {
         return methodAbs;
     }
 
-    public static RubyCallbackMethod getMethodIntP() {
+    public static Callback getMethodIntP() {
         if (methodIntP == null) {
-            methodIntP = new RubyCallbackMethod() {
+            methodIntP = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_int_p();
                 }
@@ -239,9 +239,9 @@ public class RbNumeric {
         return methodIntP;
     }
 
-    public static RubyCallbackMethod getMethodZeroP() {
+    public static Callback getMethodZeroP() {
         if (methodZeroP == null) {
-            methodZeroP = new RubyCallbackMethod() {
+            methodZeroP = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_zero_p();
                 }
@@ -251,9 +251,9 @@ public class RbNumeric {
         return methodZeroP;
     }
 
-    public static RubyCallbackMethod getMethodNonzeroP() {
+    public static Callback getMethodNonzeroP() {
         if (methodNonzeroP == null) {
-            methodNonzeroP = new RubyCallbackMethod() {
+            methodNonzeroP = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_nonzero_p();
                 }
@@ -263,9 +263,9 @@ public class RbNumeric {
         return methodNonzeroP;
     }
 
-    public static RubyCallbackMethod getMethodFloor() {
+    public static Callback getMethodFloor() {
         if (methodFloor == null) {
-            methodFloor = new RubyCallbackMethod() {
+            methodFloor = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_floor();
                 }
@@ -275,9 +275,9 @@ public class RbNumeric {
         return methodFloor;
     }
 
-    public static RubyCallbackMethod getMethodCeil() {
+    public static Callback getMethodCeil() {
         if (methodCeil == null) {
-            methodCeil = new RubyCallbackMethod() {
+            methodCeil = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_ceil();
                 }
@@ -287,9 +287,9 @@ public class RbNumeric {
         return methodCeil;
     }
     
-    public static RubyCallbackMethod getMethodRound() {
+    public static Callback getMethodRound() {
         if (methodRound == null) {
-            methodRound = new RubyCallbackMethod() {
+            methodRound = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_round();
                 }
@@ -299,9 +299,9 @@ public class RbNumeric {
         return methodRound;
     }
 
-    public static RubyCallbackMethod getMethodTruncate() {
+    public static Callback getMethodTruncate() {
         if (methodTruncate == null) {
-            methodTruncate = new RubyCallbackMethod() {
+            methodTruncate = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
                     return ((RubyNumeric)recv).m_truncate();
                 }

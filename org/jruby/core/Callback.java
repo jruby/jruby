@@ -37,6 +37,6 @@ import org.jruby.*;
  * @author  jpetersen
  * @version 
  */
-public interface RubyCallbackMethod {
+public interface Callback {
     public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby);
 }

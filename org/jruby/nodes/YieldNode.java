@@ -48,7 +48,7 @@ public class YieldNode extends Node {
 
         if (getSttsNode() != null) {
             result = getSttsNode().eval(ruby, self);
-            if (getSttsNode() instanceof RestArgsNode && ((RubyArray)result).length() == 1) {
+            if (getSttsNode() instanceof RestArgsNode && ((RubyArray)result).getLength() == 1) {
                 result = ((RubyArray)result).entry(0);
             }
         }

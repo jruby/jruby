@@ -101,23 +101,23 @@ public class RbHash {
         return hashClass;
     }
     
-    public static RubyCallbackMethod getRestArgsMethod(String methodName) {
+    public static Callback getRestArgsMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyHash.class, methodName, RubyObject[].class, true);
     }
     
-    public static RubyCallbackMethod getRestArgsSingletonMethod(String methodName) {
+    public static Callback getRestArgsSingletonMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyHash.class, methodName, RubyObject[].class, true, true);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName) {
+    public static Callback getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyHash.class, methodName);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+    public static Callback getMethod(String methodName, Class arg1) {
         return new ReflectionCallbackMethod(RubyHash.class, methodName, arg1);
     }
     
-    public static RubyCallbackMethod getMethod(String methodName, Class arg1, Class arg2) {
+    public static Callback getMethod(String methodName, Class arg1, Class arg2) {
         return new ReflectionCallbackMethod(RubyHash.class, methodName, new Class[] {arg1, arg2});
     }
 }

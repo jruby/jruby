@@ -17,10 +17,10 @@ public class RubyJavaInterface extends RubyJavaObject implements InvocationHandl
      * 
      */
     public static RubyClass createJavaInterfaceClass(Ruby ruby) {
-        RubyCallbackMethod s_new = new ReflectionCallbackMethod(RubyJavaInterface.class, "s_new", true, true);
-        RubyCallbackMethod listener = new ReflectionCallbackMethod(RubyJavaInterface.class, "listener", new Class[]{RubyString.class, RubyString.class, RubyProc.class}, false, true);
-        RubyCallbackMethod initialize = new ReflectionCallbackMethod(RubyJavaInterface.class, "initialize", true);
-        RubyCallbackMethod assign = new ReflectionCallbackMethod(RubyJavaInterface.class, "assign", new Class[]{RubyString.class, RubyProc.class});
+        Callback s_new = new ReflectionCallbackMethod(RubyJavaInterface.class, "s_new", true, true);
+        Callback listener = new ReflectionCallbackMethod(RubyJavaInterface.class, "listener", new Class[]{RubyString.class, RubyString.class, RubyProc.class}, false, true);
+        Callback initialize = new ReflectionCallbackMethod(RubyJavaInterface.class, "initialize", true);
+        Callback assign = new ReflectionCallbackMethod(RubyJavaInterface.class, "assign", new Class[]{RubyString.class, RubyProc.class});
         
         RubyClass javaInterfaceClass = ruby.defineClass("JavaInterface", ruby.getClasses().getJavaObjectClass());
 

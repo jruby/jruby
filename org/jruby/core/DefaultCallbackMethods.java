@@ -38,13 +38,13 @@ import org.jruby.*;
  * @version 
  */
 public class DefaultCallbackMethods {
-    private static RubyCallbackMethod methodFalse = null;
-    private static RubyCallbackMethod methodTrue = null;
-    private static RubyCallbackMethod methodNil = null;
+    private static Callback methodFalse = null;
+    private static Callback methodTrue = null;
+    private static Callback methodNil = null;
     
-    public static RubyCallbackMethod getMethodFalse() {
+    public static Callback getMethodFalse() {
         if (methodFalse == null) {
-            methodFalse = new RubyCallbackMethod() {
+            methodFalse = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     return ruby.getFalse();
                 }
@@ -54,9 +54,9 @@ public class DefaultCallbackMethods {
         return methodFalse;
     }
    
-    public static RubyCallbackMethod getMethodTrue() {
+    public static Callback getMethodTrue() {
         if (methodTrue == null) {
-            methodTrue = new RubyCallbackMethod() {
+            methodTrue = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     return ruby.getTrue();
                 }
@@ -66,9 +66,9 @@ public class DefaultCallbackMethods {
         return methodTrue;
     }
     
-    public static RubyCallbackMethod getMethodNil() {
+    public static Callback getMethodNil() {
         if (methodNil == null) {
-            methodNil = new RubyCallbackMethod() {
+            methodNil = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     return ruby.getNil();
                 }

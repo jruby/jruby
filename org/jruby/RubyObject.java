@@ -53,6 +53,10 @@ public class RubyObject {
     private boolean frozen;
     private boolean taint;
 
+	public RubyObject(Ruby ruby) {
+        this(ruby, null, false);
+    }
+    
     public RubyObject(Ruby ruby, RubyClass rubyClass) {
         this(ruby, rubyClass, true);
     }
@@ -71,7 +75,15 @@ public class RubyObject {
     }
 
     public static RubyObject nilObject(Ruby ruby) {
-        return ruby.getNil();
+        if (ruby.getNil() != null) {
+            return ruby.getNil();
+        } else {
+        	return new RubyObject(ruby) {
+        	    public boolean isNil() {
+        	        return true;
+        	    }
+        	};
+        }
     }
 
     public Class getJavaClass() {
@@ -172,36 +184,36 @@ public class RubyObject {
     }
 
     public boolean isTrue() {
-        return true;
+        return !isNil();
     }
 
     public boolean isFalse() {
-        return false;
+        return isNil();
     }
 
     public static void createObjectClass(RubyModule kernelModule) {
-        RubyCallbackMethod clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
-        RubyCallbackMethod dup = new ReflectionCallbackMethod(RubyObject.class, "dup");
-        RubyCallbackMethod equal = new ReflectionCallbackMethod(RubyObject.class, "equal", RubyObject.class);
-        RubyCallbackMethod extend = new ReflectionCallbackMethod(RubyObject.class, "extend", RubyModule[].class, true);
-        RubyCallbackMethod freeze = new ReflectionCallbackMethod(RubyObject.class, "freeze");
-        RubyCallbackMethod frozen = new ReflectionCallbackMethod(RubyObject.class, "frozen");
-        RubyCallbackMethod id = new ReflectionCallbackMethod(RubyObject.class, "id");
-        RubyCallbackMethod inspect = new ReflectionCallbackMethod(RubyObject.class, "inspect");
-        RubyCallbackMethod instance_eval =
+        Callback clone = new ReflectionCallbackMethod(RubyObject.class, "rbClone");
+        Callback dup = new ReflectionCallbackMethod(RubyObject.class, "dup");
+        Callback equal = new ReflectionCallbackMethod(RubyObject.class, "equal", RubyObject.class);
+        Callback extend = new ReflectionCallbackMethod(RubyObject.class, "extend", RubyModule[].class, true);
+        Callback freeze = new ReflectionCallbackMethod(RubyObject.class, "freeze");
+        Callback frozen = new ReflectionCallbackMethod(RubyObject.class, "frozen");
+        Callback id = new ReflectionCallbackMethod(RubyObject.class, "id");
+        Callback inspect = new ReflectionCallbackMethod(RubyObject.class, "inspect");
+        Callback instance_eval =
             new ReflectionCallbackMethod(RubyObject.class, "instance_eval", RubyObject[].class, true);
-        RubyCallbackMethod instance_of = new ReflectionCallbackMethod(RubyObject.class, "instance_of", RubyModule.class);
-        RubyCallbackMethod kind_of = new ReflectionCallbackMethod(RubyObject.class, "kind_of", RubyModule.class);
-        RubyCallbackMethod method = new ReflectionCallbackMethod(RubyObject.class, "method", RubyObject.class);
-        RubyCallbackMethod methods = new ReflectionCallbackMethod(RubyObject.class, "methods");
-        RubyCallbackMethod private_methods = new ReflectionCallbackMethod(RubyObject.class, "private_methods");
-        RubyCallbackMethod protected_methods = new ReflectionCallbackMethod(RubyObject.class, "protected_methods");
-        RubyCallbackMethod taint = new ReflectionCallbackMethod(RubyObject.class, "taint");
-        RubyCallbackMethod tainted = new ReflectionCallbackMethod(RubyObject.class, "tainted");
-        RubyCallbackMethod to_a = new ReflectionCallbackMethod(RubyObject.class, "to_a");
-        RubyCallbackMethod to_s = new ReflectionCallbackMethod(RubyObject.class, "to_s");
-        RubyCallbackMethod type = new ReflectionCallbackMethod(RubyObject.class, "type");
-        RubyCallbackMethod untaint = new ReflectionCallbackMethod(RubyObject.class, "untaint");
+        Callback instance_of = new ReflectionCallbackMethod(RubyObject.class, "instance_of", RubyModule.class);
+        Callback kind_of = new ReflectionCallbackMethod(RubyObject.class, "kind_of", RubyModule.class);
+        Callback method = new ReflectionCallbackMethod(RubyObject.class, "method", RubyObject.class);
+        Callback methods = new ReflectionCallbackMethod(RubyObject.class, "methods");
+        Callback private_methods = new ReflectionCallbackMethod(RubyObject.class, "private_methods");
+        Callback protected_methods = new ReflectionCallbackMethod(RubyObject.class, "protected_methods");
+        Callback taint = new ReflectionCallbackMethod(RubyObject.class, "taint");
+        Callback tainted = new ReflectionCallbackMethod(RubyObject.class, "tainted");
+        Callback to_a = new ReflectionCallbackMethod(RubyObject.class, "to_a");
+        Callback to_s = new ReflectionCallbackMethod(RubyObject.class, "to_s");
+        Callback type = new ReflectionCallbackMethod(RubyObject.class, "type");
+        Callback untaint = new ReflectionCallbackMethod(RubyObject.class, "untaint");
 
         kernelModule.defineMethod("=~", DefaultCallbackMethods.getMethodFalse());
         kernelModule.defineMethod("==", equal);
@@ -296,7 +308,7 @@ public class RubyObject {
     /** rb_define_singleton_method
      *
      */
-    public void defineSingletonMethod(String name, RubyCallbackMethod method) {
+    public void defineSingletonMethod(String name, Callback method) {
         getSingletonClass().defineMethod(name, method);
     }
 
@@ -513,7 +525,7 @@ public class RubyObject {
         	Check_SafeStr(src);
         	}
         */
-        return under.executeUnder(new RubyCallbackMethod() {
+        return under.executeUnder(new Callback() {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
                 return args[0].eval(args[1], ruby.getNil(), ((RubyString) args[2]).getValue(), RubyNumeric.fix2int(args[3]));
             }
@@ -521,7 +533,7 @@ public class RubyObject {
     }
 
     public RubyObject yieldUnder(RubyModule under) {
-        return under.executeUnder(new RubyCallbackMethod() {
+        return under.executeUnder(new Callback() {
             public RubyObject execute(RubyObject self, RubyObject[] args, Ruby ruby) {
                 if ((ruby.getBlock().flags & RubyBlock.BLOCK_DYNAMIC) != 0) {
                     RubyBlock oldBlock = ruby.getBlock();
@@ -683,7 +695,7 @@ public class RubyObject {
      *
      */
     public RubyObject id() {
-        return RubyFixnum.m_newFixnum(getRuby(), System.identityHashCode(this));
+        return RubyFixnum.newFixnum(getRuby(), System.identityHashCode(this));
     }
 
     /** rb_obj_type
@@ -854,29 +866,29 @@ public class RubyObject {
      *
      */
     public RubyArray singleton_methods() {
-        RubyArray ary = RubyArray.m_newArray(getRuby());
+        RubyArray ary = RubyArray.newArray(getRuby());
         RubyClass type = getRubyClass();
         while (type != null && type.isSingleton()) {
             type.getMethods().foreach(new RubyMapMethod() {
                 public int execute(Object key, Object value, Object arg) {
                     RubyString name = RubyString.newString(getRuby(), ((RubyId) key).toName());
                     if ((((MethodNode) value).getNoex() & (Constants.NOEX_PRIVATE | Constants.NOEX_PROTECTED)) == 0) {
-                        if (((RubyArray) arg).m_includes(name).isFalse()) {
+                        if (((RubyArray) arg).includes(name).isFalse()) {
                             if (((MethodNode) value).getBodyNode() == null) {
-                                ((RubyArray) arg).m_push(getRuby().getNil());
+                                ((RubyArray) arg).push(getRuby().getNil());
                             }
-                            ((RubyArray) arg).m_push(name);
+                            ((RubyArray) arg).push(name);
                         }
                     } else if (((MethodNode) value).getBodyNode() instanceof ZSuperNode) {
-                        ((RubyArray) arg).m_push(getRuby().getNil());
-                        ((RubyArray) arg).m_push(name);
+                        ((RubyArray) arg).push(getRuby().getNil());
+                        ((RubyArray) arg).push(name);
                     }
                     return CONTINUE;
                 }
             }, ary);
             type = type.getSuperClass();
         }
-        ary.m_compact_bang();
+        ary.compact_bang();
         return ary;
     }
 
@@ -885,7 +897,7 @@ public class RubyObject {
     }
 
     public RubyArray to_a() {
-        return RubyArray.m_newArray(getRuby(), this);
+        return RubyArray.newArray(getRuby(), this);
     }
 
     public RubyString to_s() {

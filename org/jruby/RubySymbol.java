@@ -72,7 +72,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum m_to_i() {
-        return RubyFixnum.m_newFixnum(getRuby(), getId().intValue());
+        return RubyFixnum.newFixnum(getRuby(), getId().intValue());
     }
     
     public RubyString m_inspect() {
@@ -84,7 +84,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum m_hash() {
-        return RubyFixnum.m_newFixnum(getRuby(), (":" + getName()).hashCode());
+        return RubyFixnum.newFixnum(getRuby(), (":" + getName()).hashCode());
     }
 
     public RubyBoolean m_equal(RubyObject other) {

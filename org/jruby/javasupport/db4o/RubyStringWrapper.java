@@ -16,19 +16,20 @@ public class RubyStringWrapper extends RubyObjectWrapper {
 		this.value = rubyObject.getValue();
 	}
 	
-	public RubyString createRubyString(Ruby ruby) {
+	public void createRubyString(Ruby ruby, RubyString newString) {
 	    RubyClass type = ruby.getRubyClass(typeName);
 	    
-	    RubyString newString = RubyString.newString(ruby, value);
-	    newString.setRubyClass(type);
+	    //RubyString newString = RubyString.newString(ruby, value);
+	    //newString.setRubyClass(type);
+	    newString.setValue(value);
 	    
-	    Iterator iter = instanceVariables.values().iterator();
+	    Iterator iter = instanceVariables.entrySet().iterator();
 	    while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry)iter.next();
             
 	    	newString.setInstanceVar((String)entry.getKey(), (RubyObject)entry.getValue());
         }
 	    
-	    return newString;
+	    //return newString;
 	}
 }

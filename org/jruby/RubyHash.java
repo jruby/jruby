@@ -152,7 +152,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyFixnum m_size() {
-        return RubyFixnum.m_newFixnum(getRuby(), length());
+        return RubyFixnum.newFixnum(getRuby(), length());
     }
 
     public RubyBoolean m_empty_p() {
@@ -160,11 +160,11 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyArray m_to_a() {
-        RubyArray result = RubyArray.m_newArray(getRuby(), length());
+        RubyArray result = RubyArray.newArray(getRuby(), length());
         valueMap.foreach(new RubyMapMethod() {
             public int execute(Object key, Object value, Object arg) {
                 RubyArray ary = RubyArray.arrayValue((RubyObject) arg);
-                ary.push(RubyArray.m_newArray(getRuby(), (RubyObject) key, (RubyObject) value));
+                ary.push(RubyArray.newArray(getRuby(), (RubyObject) key, (RubyObject) value));
                 return RubyMapMethod.CONTINUE;
             }
         }, result);
@@ -172,7 +172,7 @@ public class RubyHash extends RubyObject {
     }
 
     public RubyString m_to_s() {
-        return m_to_a().m_to_s();
+        return m_to_a().to_s();
     }
 
     public RubyHash m_to_hash() {

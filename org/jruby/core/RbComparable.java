@@ -39,12 +39,12 @@ import org.jruby.exceptions.*;
  * @version 
  */
 public class RbComparable {
-    private static RubyCallbackMethod methodEqual = null;
-    private static RubyCallbackMethod methodGt = null;
-    private static RubyCallbackMethod methodGe = null;
-    private static RubyCallbackMethod methodLt = null;
-    private static RubyCallbackMethod methodLe = null;
-    private static RubyCallbackMethod methodBetweenP = null;
+    private static Callback methodEqual = null;
+    private static Callback methodGt = null;
+    private static Callback methodGe = null;
+    private static Callback methodLt = null;
+    private static Callback methodLe = null;
+    private static Callback methodBetweenP = null;
     
     public static RubyModule createComparable(Ruby ruby) {
         RubyModule comparableModule = ruby.defineModule("Comparable");
@@ -59,9 +59,9 @@ public class RbComparable {
         return comparableModule;
     }
 
-    public static RubyCallbackMethod getMethodEqual() {
+    public static Callback getMethodEqual() {
         if (methodEqual == null) {
-            methodEqual = new RubyCallbackMethod() {
+            methodEqual = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
                         throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
@@ -83,9 +83,9 @@ public class RbComparable {
         return methodEqual;
     }
 
-    public static RubyCallbackMethod getMethodGt() {
+    public static Callback getMethodGt() {
         if (methodGt == null) {
-            methodGt = new RubyCallbackMethod() {
+            methodGt = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
                         throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
@@ -99,9 +99,9 @@ public class RbComparable {
         return methodGt;
     }
 
-    public static RubyCallbackMethod getMethodGe() {
+    public static Callback getMethodGe() {
         if (methodGe == null) {
-            methodGe = new RubyCallbackMethod() {
+            methodGe = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
                         throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
@@ -115,9 +115,9 @@ public class RbComparable {
         return methodGe;
     }
 
-    public static RubyCallbackMethod getMethodLt() {
+    public static Callback getMethodLt() {
         if (methodLt == null) {
-            methodLt = new RubyCallbackMethod() {
+            methodLt = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
                         throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
@@ -131,9 +131,9 @@ public class RbComparable {
         return methodLt;
     }
 
-    public static RubyCallbackMethod getMethodLe() {
+    public static Callback getMethodLe() {
         if (methodLe == null) {
-            methodLe = new RubyCallbackMethod() {
+            methodLe = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 1) {
                         throw new RubyArgumentException(ruby, "Parameter: (aObject) required");
@@ -147,9 +147,9 @@ public class RbComparable {
         return methodLe;
     }
 
-    public static RubyCallbackMethod getMethodBetweenP() {
+    public static Callback getMethodBetweenP() {
         if (methodBetweenP == null) {
-            methodBetweenP = new RubyCallbackMethod() {
+            methodBetweenP = new Callback() {
                 public RubyObject execute(RubyObject recv, RubyObject args[], Ruby ruby) {
                     if (args.length != 2) {
                         throw new RubyArgumentException(ruby, "Parameter: (aObject, aObject) required");

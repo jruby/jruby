@@ -40,7 +40,7 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  * @version 
  */
-public class ReflectionCallbackMethod implements RubyCallbackMethod {
+public class ReflectionCallbackMethod implements Callback {
     private Class klass = null;
     private String methodName = null;
     private Class[] args = null;

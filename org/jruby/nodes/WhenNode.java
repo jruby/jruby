@@ -64,10 +64,10 @@ public class WhenNode extends Node {
                     RubyObject obj = tag.getHeadNode().getHeadNode().eval(ruby, self);
                     
                     if (!(obj instanceof RubyArray)) {
-                        obj = RubyArray.m_newArray(ruby, obj);
+                        obj = RubyArray.newArray(ruby, obj);
                     }
                     
-                    for (int i = 0; i < ((RubyArray)obj).length(); i++) {
+                    for (int i = 0; i < ((RubyArray)obj).getLength(); i++) {
                         if (((RubyArray)obj).entry(i).isTrue()) {
                             return node.getBodyNode().eval(ruby, self);
                         }

@@ -207,7 +207,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if (result < 0) {
             return getRuby().getNil();
         }
-        return RubyFixnum.m_newFixnum(getRuby(), result);
+        return RubyFixnum.newFixnum(getRuby(), result);
     }
     
     /** rb_reg_match_m

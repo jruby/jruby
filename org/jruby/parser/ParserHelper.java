@@ -227,7 +227,7 @@ public class ParserHelper {
             case Token.k__FILE__ :
                 return nf.newStr(RubyString.newString(ruby, ruby.getSourceFile()));
             case Token.k__LINE__ :
-                return nf.newLit(RubyFixnum.m_newFixnum(ruby, ruby.getSourceLine()));
+                return nf.newLit(RubyFixnum.newFixnum(ruby, ruby.getSourceLine()));
             default :
                 {
                     if (id.isLocalId()) {

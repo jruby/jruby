@@ -50,7 +50,6 @@ import org.jruby.util.*;
  */
 public final class Ruby {
     public static final int FIXNUM_CACHE_MAX = 0xff;
-    public static final boolean AUTOMATIC_BIGNUM_CAST = true;
     
     public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
     
@@ -68,7 +67,7 @@ public final class Ruby {
     // private RubyInterpreter rubyInterpreter = null;
 
     // Default objects
-    private RubyNil nilObject;
+    private RubyObject nilObject;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
     
@@ -139,7 +138,7 @@ public final class Ruby {
         
         globalMap = new RubyHashMap();
         
-        nilObject = new RubyNil(this);
+        nilObject = RubyObject.nilObject(this);
         trueObject = new RubyBoolean(this, true);
         falseObject = new RubyBoolean(this, false);
     }
@@ -198,7 +197,7 @@ public final class Ruby {
     /** Returns the "nil" singleton instance.
      * @return "nil"
      */    
-    public RubyNil getNil() {
+    public RubyObject getNil() {
         return nilObject;
     }
     
@@ -274,7 +273,7 @@ public final class Ruby {
     /** rb_define_global_function
      *
      */
-    public void defineGlobalFunction(String name, RubyCallbackMethod method) {
+    public void defineGlobalFunction(String name, Callback method) {
         getClasses().getKernelModule().defineModuleFunction(name, method);
     }
     
@@ -426,15 +425,15 @@ public final class Ruby {
             // try {
             if (tmpBlock.var == Node.ONE) {
                 if (acheck && value != null && value instanceof RubyArray 
-                    && ((RubyArray)value).length() != 0) {
+                    && ((RubyArray)value).getLength() != 0) {
                     
                     throw new RubyArgumentException(this, "wrong # of arguments ("
-                        + ((RubyArray)value).length() + " for 0)");
+                        + ((RubyArray)value).getLength() + " for 0)");
                 }
             } else {
                 if (!(tmpBlock.var instanceof MAsgnNode)) {
                     if (acheck && value != null && value instanceof RubyArray 
-                        && ((RubyArray)value).length() == 1) {
+                        && ((RubyArray)value).getLength() == 1) {
 
                         value = ((RubyArray)value).entry(0);
                     }
@@ -447,7 +446,7 @@ public final class Ruby {
             
         } else {
             if (acheck && value != null && value instanceof RubyArray 
-                && ((RubyArray)value).length() == 1) {
+                && ((RubyArray)value).getLength() == 1) {
                 
                 value = ((RubyArray)value).entry(0);
             }
@@ -460,7 +459,7 @@ public final class Ruby {
                     result = getNil();
                 } else if (node instanceof ExecutableNode) {
                     if (value == null) {
-                        value = RubyArray.m_newArray(this, 0);
+                        value = RubyArray.newArray(this, 0);
                     }
                     result = ((ExecutableNode)node).execute(value, 
                                new RubyObject[] {node.getTValue(), self}, this);
@@ -521,7 +520,7 @@ public final class Ruby {
     /** rb_iterate
      *
      */  
-    public RubyObject iterate(RubyCallbackMethod iterateMethod, RubyObject data1, RubyCallbackMethod blockMethod, RubyObject data2) {
+    public RubyObject iterate(Callback iterateMethod, RubyObject data1, Callback blockMethod, RubyObject data2) {
         Node node = new NodeFactory(this).newIFunc(blockMethod, data2);
         
         // VALUE self = ruby_top_self;

@@ -92,7 +92,7 @@ public class RubyFloat extends RubyNumeric {
 
     public RubyArray m_coerce(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyArray.m_newArray(getRuby(), this, 
+        return RubyArray.newArray(getRuby(), this, 
              m_newFloat(getRuby(), other.getDoubleValue()));
     }
     
@@ -147,7 +147,7 @@ public class RubyFloat extends RubyNumeric {
 
     public RubyNumeric op_cmp(RubyObject num) {
         RubyNumeric other = numericValue(num);
-        return RubyFixnum.m_newFixnum(getRuby(), compareValue(other));
+        return RubyFixnum.newFixnum(getRuby(), compareValue(other));
     }
 
     public RubyBoolean op_gt(RubyObject num) {
@@ -176,7 +176,7 @@ public class RubyFloat extends RubyNumeric {
     
     public RubyInteger m_to_i() {
         // HACK +++
-        return RubyFixnum.m_newFixnum(getRuby(), getLongValue());
+        return RubyFixnum.newFixnum(getRuby(), getLongValue());
         // HACK ---
     }
 }

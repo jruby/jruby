@@ -42,7 +42,7 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  * @version 
  */
-public class JavaMethod implements RubyCallbackMethod {
+public class JavaMethod implements Callback {
     private Method[] methods = null;
     private boolean singleton = false;
 

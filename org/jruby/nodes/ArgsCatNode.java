@@ -44,6 +44,6 @@ public class ArgsCatNode extends Node {
     }
 
     public RubyObject eval(Ruby ruby, RubyObject self) {
-        return ((RubyArray)getHeadNode().eval(ruby, self)).m_concat(getBodyNode().eval(ruby, self));
+        return ((RubyArray)getHeadNode().eval(ruby, self)).concat(getBodyNode().eval(ruby, self));
     }
 }

@@ -50,18 +50,18 @@ public class MAsgnNode extends Node implements AssignableNode {
 
     public RubyObject massign(Ruby ruby, RubyObject self, RubyObject val, boolean check) {
         if (val == null) {
-            val = RubyArray.m_newArray(ruby);
+            val = RubyArray.newArray(ruby);
         } else if (!(val instanceof RubyArray)) {
             // if ( rb_respond_to( val, to_ary ) ) {
             // val.funcall(getRuby().intern("to_a"));
             // } else {
-            val = RubyArray.m_newArray(ruby, val);
+            val = RubyArray.newArray(ruby, val);
             // }
         }
         
         Node list = getHeadNode();
         int i = 0;
-        for (; list != null && i < ((RubyArray)val).length(); i++) {
+        for (; list != null && i < ((RubyArray)val).getLength(); i++) {
             ((AssignableNode)list.getHeadNode()).assign(ruby, self, ((RubyArray)val).entry(i), check);
             list = list.getNextNode();
         }
@@ -72,12 +72,12 @@ public class MAsgnNode extends Node implements AssignableNode {
         
         if (getArgsNode() != null) {
             if (getArgsNode() == MINUS_ONE) {
-            } else if (list == null && i < ((RubyArray)val).length()) {
-                ((AssignableNode)getArgsNode()).assign(ruby, self, ((RubyArray)val).subseq(((RubyArray)val).length() - i, i), check);
+            } else if (list == null && i < ((RubyArray)val).getLength()) {
+                ((AssignableNode)getArgsNode()).assign(ruby, self, ((RubyArray)val).subseq(((RubyArray)val).getLength() - i, i), check);
             } else {
-                ((AssignableNode)getArgsNode()).assign(ruby, self, RubyArray.m_newArray(ruby), check);
+                ((AssignableNode)getArgsNode()).assign(ruby, self, RubyArray.newArray(ruby), check);
             }
-        } else if (check && i < ((RubyArray)val).length()) {
+        } else if (check && i < ((RubyArray)val).getLength()) {
             // error
         }
         

@@ -18,7 +18,7 @@ public class RubyStringTranslator implements ObjectConstructor {
      * @see ObjectConstructor#onInstantiate(ObjectContainer, Object)
      */
     public Object onInstantiate(ObjectContainer container, Object storedObject) {
-        return ((RubyStringWrapper)storedObject).createRubyString(ruby);
+        return RubyString.newString(ruby, "");
     }
 
     /*
@@ -32,6 +32,7 @@ public class RubyStringTranslator implements ObjectConstructor {
      * @see ObjectTranslator#onActivate(ObjectContainer, Object, Object)
      */
     public void onActivate(ObjectContainer container, Object applicationObject, Object storedObject) {
+        ((RubyStringWrapper)storedObject).createRubyString(ruby, (RubyString)applicationObject);
     }
 
     /*

@@ -8,7 +8,7 @@ package org.jruby.javasupport.bsf;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
-import org.jruby.core.RubyCallbackMethod;
+import org.jruby.core.Callback;
 import org.jruby.javasupport.JavaUtil;
 
 import com.ibm.bsf.BSFDeclaredBean;
@@ -17,7 +17,7 @@ import com.ibm.bsf.BSFDeclaredBean;
  *
  * @author  jpetersen
  */
-public class DeclaredBeanGetMethod implements RubyCallbackMethod {
+public class DeclaredBeanGetMethod implements Callback {
     private BSFDeclaredBean bean;
 
     public DeclaredBeanGetMethod(BSFDeclaredBean bean) {

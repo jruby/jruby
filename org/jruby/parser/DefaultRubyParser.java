@@ -1085,7 +1085,7 @@ case 166:
 			    if (((Node)yyVals[0+yyTop]) != null && ((Node)yyVals[0+yyTop]) instanceof LitNode && ((Node)yyVals[0+yyTop]).getLiteral() instanceof RubyFixnum) {
 			        long i = ((RubyFixnum)((Node)yyVals[0+yyTop]).getLiteral()).getValue();
 
-			        ((Node)yyVals[0+yyTop]).setLiteral(RubyFixnum.m_newFixnum(ruby, -i));
+			        ((Node)yyVals[0+yyTop]).setLiteral(RubyFixnum.newFixnum(ruby, -i));
 			        yyVal = ((Node)yyVals[0+yyTop]);
 			    } else {
 			        yyVal = ph.call_op(((Node)yyVals[0+yyTop]), tUMINUS, 0, null);
@@ -2892,7 +2892,7 @@ case 415:
             // XXX ---
             
             if (debugLines.isNil()) {
-                ph.setRubyDebugLines(RubyArray.m_newArray(ruby));
+                ph.setRubyDebugLines(RubyArray.newArray(ruby));
                 hash.m_aset(fName, ph.getRubyDebugLines());
             } else {
                 ph.setRubyDebugLines((RubyArray)debugLines);
@@ -2901,7 +2901,7 @@ case 415:
             if (line > 1) {
                 RubyString str = RubyString.newString(ruby, null);
                 while (line > 1) {
-                    ph.getRubyDebugLines().m_push(str);
+                    ph.getRubyDebugLines().push(str);
                     line--;
                 }
             }
