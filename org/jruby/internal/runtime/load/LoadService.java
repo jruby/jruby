@@ -1,27 +1,34 @@
 package org.jruby.internal.runtime.load;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.LoadError;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
+import org.jruby.util.Asserts;
 
 /**
  *
@@ -35,6 +42,7 @@ public class LoadService implements ILoadService {
     private Map autoloadMap = new HashMap();
 
     private Ruby runtime;
+    private File builtinDir;
 
     /**
      * Constructor for LoadService.
@@ -42,6 +50,7 @@ public class LoadService implements ILoadService {
     public LoadService(Ruby runtime) {
         super();
         this.runtime = runtime;
+        this.builtinDir = new File(System.getProperty("jruby.home"), "lib");
     }
 
     /**
@@ -76,7 +85,18 @@ public class LoadService implements ILoadService {
         if (!file.endsWith(".rb")) {
             file += ".rb";
         }
-        runtime.loadFile(findFile(file), false);
+        URL url = findFile(file);
+        String name = url.toString();
+        if (name.startsWith("file:")) {
+            name = name.substring(5);
+        }
+        try {
+            Reader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            runtime.loadScript(name, reader, false);
+            reader.close();
+        } catch (IOException ioExcptn) {
+            throw IOError.fromException(runtime, ioExcptn);
+        }
         return true;
     }
 
@@ -87,7 +107,7 @@ public class LoadService implements ILoadService {
         RubyString name = RubyString.newString(runtime, file);
         if (!loadedFeatures.contains(name)) {
             if (file.endsWith(".jar")) {
-                loadJAR(file);
+                loadJar(file);
                 loadedFeatures.add(name);
                 return true;
             }
@@ -99,14 +119,14 @@ public class LoadService implements ILoadService {
         return false;
     }
     
-    private void loadJAR(String file) {
-        File jarFile = findFile(file);
+    private void loadJar(String file) {
+        URL jarFile = findFile(file);
 
         runtime.getJavaSupport().addToClasspath(jarFile);
 
         try {
-            JarInputStream in = new JarInputStream(new BufferedInputStream(new FileInputStream(jarFile)));
-            
+            JarInputStream in = new JarInputStream(new BufferedInputStream(jarFile.openStream()));
+
             Manifest mf = in.getManifest();
             String rubyInit = mf.getMainAttributes().getValue("Ruby-Init");
             if (rubyInit != null) {
@@ -115,7 +135,13 @@ public class LoadService implements ILoadService {
                     entry = in.getNextJarEntry();
                 }
                 if (entry != null) {
-                    runtime.eval(runtime.parse(new InputStreamReader(in), "init"));
+                    IRubyObject old = runtime.isGlobalVarDefined("$JAR_URL") ? runtime.getGlobalVar("$JAR_URL") : runtime.getNil();
+                    try {
+                        runtime.setGlobalVar("$JAR_URL", RubyString.newString(runtime, "jar:" + jarFile + "!/"));
+                        runtime.loadScript("init", new InputStreamReader(in), false);
+                    } finally {
+                        runtime.setGlobalVar("$JAR_URL", old);
+                    }
                 }
             }
             in.close();
@@ -171,16 +197,36 @@ public class LoadService implements ILoadService {
      * @param name the file to find, this is a path name
      * @return the correct file
      */
-    private File findFile(String name) {
-        for (int i = 0, size = loadPath.size(); i < size; i++) {
-            File current = new File(loadPath.get(i).toString(), name);
-            if (current.exists()) {
-                return current;
+    private URL findFile(String name) {
+        try {
+            if (name.startsWith("jar:")) {
+                return new URL(name);
             }
-        }
-        File current = new File(name);
-        if (current.exists()) {
-            return current;
+            if (name.endsWith(".jar") && new File(builtinDir, name).exists()) {
+                return new File(builtinDir, name).toURL();
+            }
+            for (int i = 0, size = loadPath.size(); i < size; i++) {
+                String entry = loadPath.get(i).toString();
+                if (entry.startsWith("jar:")) {
+                    try {
+                        JarFile current = new JarFile(entry.substring(4));
+                        if (current.getJarEntry(name) != null) {
+                            return new URL(entry + name);
+                        }
+                    } catch (IOException e) {
+                    }
+                } else {
+                    File current = new File(entry, name);
+                    if (current.exists()) {
+                        return current.toURL();
+                    }
+                }
+            }
+            File current = new File(name);
+            if (current.exists()) {
+                return current.toURL();
+            }
+        } catch (MalformedURLException e) {
         }
         throw new LoadError(runtime, "No such file to load -- " + name);
     }

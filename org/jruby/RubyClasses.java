@@ -101,7 +101,7 @@ import org.jruby.javasupport.JavaClassClass;
  * @since 0.1.8
  */
 public class RubyClasses {
-    private Ruby ruby;
+    private Ruby runtime;
 
     private RubyClass arrayClass;
     private RubyClass bignumClass;
@@ -159,7 +159,7 @@ public class RubyClasses {
      * @param ruby The Ruby runtime.
      */
     public RubyClasses(Ruby ruby) {
-        this.ruby = ruby;
+        this.runtime = ruby;
 
         classMap = new RubyHashMap();
     }
@@ -172,7 +172,7 @@ public class RubyClasses {
      * @return Description of the Return Value
      */
     private RubyClass defineBootClass(String name, RubyClass superClass) {
-        RubyClass bootClass = RubyClass.newClass(ruby, superClass);
+        RubyClass bootClass = RubyClass.newClass(runtime, superClass);
         bootClass.setName(name);
         classMap.put(name, bootClass);
 
@@ -218,7 +218,7 @@ public class RubyClasses {
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
-        kernelModule = KernelModule.createKernelModule(ruby);
+        kernelModule = KernelModule.createKernelModule(runtime);
         objectClass.includeModule(kernelModule);
 
         objectClass.definePrivateMethod("initialize", CallbackFactory.getNilMethod(-1));
@@ -229,12 +229,16 @@ public class RubyClasses {
         RubyClass.createClassClass(classClass);
         RubyModule.createModuleClass(moduleClass);
 
-        nilClass = RubyNil.createNilClass(ruby);
+        nilClass = RubyNil.createNilClass(runtime);
 
-        falseClass = RubyBoolean.createFalseClass(ruby);
-        trueClass = RubyBoolean.createTrueClass(ruby);
+        falseClass = RubyBoolean.createFalseClass(runtime);
+        trueClass = RubyBoolean.createTrueClass(runtime);
 
-        threadClass = ThreadClass.createThreadClass(ruby);
+        threadClass = ThreadClass.createThreadClass(runtime);
+    }
+
+    public void initBuiltinClasses() {
+        runtime.getLoadService().require("Enumerable.jar");
     }
 
     /**
@@ -271,7 +275,7 @@ public class RubyClasses {
      */
     public RubyClass getStructClass() {
         if (structClass == null) {
-            structClass = RubyStruct.createStructClass(ruby);
+            structClass = RubyStruct.createStructClass(runtime);
         }
         return structClass;
     }
@@ -283,7 +287,7 @@ public class RubyClasses {
      */
     public RubyModule getComparableModule() {
         if (comparableModule == null) {
-            comparableModule = RubyComparable.createComparable(ruby);
+            comparableModule = RubyComparable.createComparable(runtime);
         }
         return comparableModule;
     }
@@ -295,7 +299,7 @@ public class RubyClasses {
      */
     public RubyClass getHashClass() {
         if (hashClass == null) {
-            hashClass = RubyHash.createHashClass(ruby);
+            hashClass = RubyHash.createHashClass(runtime);
         }
         return hashClass;
     }
@@ -307,7 +311,7 @@ public class RubyClasses {
      */
     public RubyModule getMathModule() {
         if (mathModule == null) {
-            mathModule = RubyMath.createMathModule(ruby);
+            mathModule = RubyMath.createMathModule(runtime);
         }
         return mathModule;
     }
@@ -319,7 +323,7 @@ public class RubyClasses {
      */
     public RubyClass getRegExpClass() {
         if (regExpClass == null) {
-            regExpClass = RubyRegexp.createRegexpClass(ruby);
+            regExpClass = RubyRegexp.createRegexpClass(runtime);
         }
         return regExpClass;
     }
@@ -340,7 +344,7 @@ public class RubyClasses {
      */
     public RubyClass getIoClass() {
         if (ioClass == null) {
-            ioClass = RubyIO.createIOClass(ruby);
+            ioClass = RubyIO.createIOClass(runtime);
         }
         return ioClass;
     }
@@ -361,7 +365,7 @@ public class RubyClasses {
      */
     public RubyClass getBignumClass() {
         if (bignumClass == null) {
-            bignumClass = RubyBignum.createBignumClass(ruby);
+            bignumClass = RubyBignum.createBignumClass(runtime);
         }
         return bignumClass;
     }
@@ -382,7 +386,7 @@ public class RubyClasses {
      */
     public RubyClass getRangeClass() {
         if (rangeClass == null) {
-            rangeClass = RubyRange.createRangeClass(ruby);
+            rangeClass = RubyRange.createRangeClass(runtime);
         }
         return rangeClass;
     }
@@ -394,7 +398,7 @@ public class RubyClasses {
      */
     public RubyModule getGcModule() {
         if (gcModule == null) {
-            gcModule = RubyGC.createGCModule(ruby);
+            gcModule = RubyGC.createGCModule(runtime);
         }
         return gcModule;
     }
@@ -406,7 +410,7 @@ public class RubyClasses {
      */
     public RubyClass getSymbolClass() {
         if (symbolClass == null) {
-            symbolClass = RubySymbol.createSymbolClass(ruby);
+            symbolClass = RubySymbol.createSymbolClass(runtime);
         }
         return symbolClass;
     }
@@ -418,7 +422,7 @@ public class RubyClasses {
      */
     public RubyClass getProcClass() {
         if (procClass == null) {
-            procClass = RubyProc.createProcClass(ruby);
+            procClass = RubyProc.createProcClass(runtime);
         }
         return procClass;
     }
@@ -448,7 +452,7 @@ public class RubyClasses {
      */
     public RubyClass getFloatClass() {
         if (floatClass == null) {
-            floatClass = RubyFloat.createFloatClass(ruby);
+            floatClass = RubyFloat.createFloatClass(runtime);
         }
         return floatClass;
     }
@@ -460,7 +464,7 @@ public class RubyClasses {
      */
     public RubyClass getMethodClass() {
         if (methodClass == null) {
-            methodClass = RubyMethod.createMethodClass(ruby);
+            methodClass = RubyMethod.createMethodClass(runtime);
         }
         return methodClass;
     }
@@ -472,7 +476,7 @@ public class RubyClasses {
      */
     public RubyClass getMatchDataClass() {
         if (matchDataClass == null) {
-            matchDataClass = RubyMatchData.createMatchDataClass(ruby);
+            matchDataClass = RubyMatchData.createMatchDataClass(runtime);
         }
         return matchDataClass;
     }
@@ -484,7 +488,7 @@ public class RubyClasses {
      */
     public RubyModule getMarshalModule() {
         if (marshalModule == null) {
-            marshalModule = RubyMarshal.createMarshalModule(ruby);
+            marshalModule = RubyMarshal.createMarshalModule(runtime);
         }
         return marshalModule;
     }
@@ -496,7 +500,7 @@ public class RubyClasses {
      */
     public RubyClass getFixnumClass() {
         if (fixnumClass == null) {
-            fixnumClass = RubyFixnum.createFixnumClass(ruby);
+            fixnumClass = RubyFixnum.createFixnumClass(runtime);
         }
         return fixnumClass;
     }
@@ -517,7 +521,7 @@ public class RubyClasses {
      */
     public RubyModule getObjectSpaceModule() {
         if (objectSpaceModule == null) {
-            objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(ruby);
+            objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(runtime);
         }
         return objectSpaceModule;
     }
@@ -529,7 +533,7 @@ public class RubyClasses {
      */
     public RubyClass getDirClass() {
         if (dirClass == null) {
-            dirClass = RubyDir.createDirClass(ruby);
+            dirClass = RubyDir.createDirClass(runtime);
         }
         return dirClass;
     }
@@ -541,7 +545,7 @@ public class RubyClasses {
      */
     public RubyClass getExceptionClass() {
         if (exceptionClass == null) {
-            exceptionClass = RubyException.createExceptionClass(ruby);
+            exceptionClass = RubyException.createExceptionClass(runtime);
         }
         return exceptionClass;
     }
@@ -553,7 +557,7 @@ public class RubyClasses {
      */
     public RubyClass getStringClass() {
         if (stringClass == null) {
-            stringClass = RubyString.createStringClass(ruby);
+            stringClass = RubyString.createStringClass(runtime);
         }
         return stringClass;
     }
@@ -574,7 +578,7 @@ public class RubyClasses {
      */
     public RubyClass getIntegerClass() {
         if (integerClass == null) {
-            integerClass = RubyInteger.createIntegerClass(ruby);
+            integerClass = RubyInteger.createIntegerClass(runtime);
         }
         return integerClass;
     }
@@ -604,14 +608,14 @@ public class RubyClasses {
      */
     public RubyClass getFileClass() {
         if (fileClass == null) {
-            fileClass = RubyFile.createFileClass(ruby);
+            fileClass = RubyFile.createFileClass(runtime);
         }
         return fileClass;
     }
 
     public RubyClass getFileStatClass() {
         if (fileStatClass == null) {
-            fileStatClass = FileStatClass.createFileStatClass(ruby);
+            fileStatClass = FileStatClass.createFileStatClass(runtime);
         }
         return fileStatClass;
     }
@@ -632,7 +636,7 @@ public class RubyClasses {
      */
     public RubyClass getArrayClass() {
         if (arrayClass == null) {
-            arrayClass = RubyArray.createArrayClass(ruby);
+            arrayClass = RubyArray.createArrayClass(runtime);
         }
         return arrayClass;
     }
@@ -644,7 +648,7 @@ public class RubyClasses {
      */
     public RubyModule getEnumerableModule() {
         if (enumerableModule == null) {
-            enumerableModule = RubyEnumerable.createEnumerableModule(ruby);
+            enumerableModule = RubyEnumerable.createEnumerableModule(runtime);
         }
         return enumerableModule;
     }
@@ -656,7 +660,7 @@ public class RubyClasses {
      */
     public RubyModule getPrecisionModule() {
         if (precisionModule == null) {
-            precisionModule = RubyPrecision.createPrecisionModule(ruby);
+            precisionModule = RubyPrecision.createPrecisionModule(runtime);
         }
         return precisionModule;
     }
@@ -668,7 +672,7 @@ public class RubyClasses {
      */
     public RubyClass getJavaObjectClass() {
         if (javaObjectClass == null) {
-            javaObjectClass = RubyJavaObject.createJavaObjectClass(ruby);
+            javaObjectClass = RubyJavaObject.createJavaObjectClass(runtime);
         }
         return javaObjectClass;
     }
@@ -680,7 +684,7 @@ public class RubyClasses {
      */
     public RubyModule getJavaModule() {
         if (javaModule == null) {
-            javaModule = RubyJava.createJavaModule(ruby);
+            javaModule = RubyJava.createJavaModule(runtime);
         }
         return javaModule;
     }
@@ -692,7 +696,7 @@ public class RubyClasses {
      */
     public RubyClass getJavaInterfaceClass() {
         if (javaInterfaceClass == null) {
-            javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(ruby);
+            javaInterfaceClass = RubyJavaInterface.createJavaInterfaceClass(runtime);
         }
         return javaInterfaceClass;
     }
@@ -704,7 +708,7 @@ public class RubyClasses {
      */
     public RubyClass getNumericClass() {
         if (numericClass == null) {
-            numericClass = RubyNumeric.createNumericClass(ruby);
+            numericClass = RubyNumeric.createNumericClass(runtime);
         }
         return numericClass;
     }
@@ -716,7 +720,7 @@ public class RubyClasses {
      */
     public RubyClass getTimeClass() {
         if (timeClass == null) {
-            timeClass = RubyTime.createTimeClass(ruby);
+            timeClass = RubyTime.createTimeClass(runtime);
         }
         return timeClass;
     }
@@ -817,11 +821,11 @@ public class RubyClasses {
 
     public RubyModule getClassFromPath(String path) {
         if (path.charAt(0) == '#') {
-            throw new ArgumentError(ruby, "can't retrieve anonymous class " + path);
+            throw new ArgumentError(runtime, "can't retrieve anonymous class " + path);
         }
-        IRubyObject type = ruby.evalScript(path);
+        IRubyObject type = runtime.evalScript(path);
         if (!(type instanceof RubyModule)) {
-            throw new TypeError(ruby, "class path " + path + " does not point class");
+            throw new TypeError(runtime, "class path " + path + " does not point class");
         }
         return (RubyModule) type;
     }

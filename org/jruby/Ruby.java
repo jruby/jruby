@@ -467,26 +467,23 @@ public final class Ruby {
 
         setCurrentVisibility(Visibility.PRIVATE);
 
-        try {
-            classes = new RubyClasses(this);
-            classes.initCoreClasses();
+        classes = new RubyClasses(this);
+        classes.initCoreClasses();
 
-            RubyGlobal.createGlobals(this);
+        RubyGlobal.createGlobals(this);
 
-            exceptions = new RubyExceptions(this);
-            exceptions.initDefaultExceptionClasses();
+        exceptions = new RubyExceptions(this);
+        exceptions.initDefaultExceptionClasses();
 
-            topSelf = TopSelfFactory.createTopSelf(this);
+        topSelf = TopSelfFactory.createTopSelf(this);
 
-            classStack.push(getClasses().getObjectClass());
-            getCurrentFrame().setSelf(topSelf);
-            topNamespace = new Namespace(getClasses().getObjectClass());
-            namespace = topNamespace;
-            getCurrentFrame().setNamespace(namespace);
-
-        } catch (Exception excptn) {
-            excptn.printStackTrace();
-        }
+        classStack.push(getClasses().getObjectClass());
+        getCurrentFrame().setSelf(topSelf);
+        topNamespace = new Namespace(getClasses().getObjectClass());
+        namespace = topNamespace;
+        getCurrentFrame().setNamespace(namespace);
+        
+        classes.initBuiltinClasses();
 
         getScope().pop();
         getScope().push(topScope);

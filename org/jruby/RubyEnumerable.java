@@ -44,7 +44,7 @@ public class RubyEnumerable {
     public static RubyModule createEnumerableModule(Ruby ruby) {
         RubyModule enumerableModule = ruby.defineModule("Enumerable");
 
-        enumerableModule.defineMethod("collect", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "collect"));
+        /*enumerableModule.defineMethod("collect", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "collect"));
         enumerableModule.defineMethod("detect", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "find"));
         enumerableModule.defineMethod("each_with_index",
             CallbackFactory.getSingletonMethod(RubyEnumerable.class, "each_with_index"));
@@ -64,6 +64,7 @@ public class RubyEnumerable {
         enumerableModule.defineMethod("select", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "find_all"));
         enumerableModule.defineMethod("sort", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "sort"));
         enumerableModule.defineMethod("to_a", CallbackFactory.getSingletonMethod(RubyEnumerable.class, "to_a"));
+        */
 
         return enumerableModule;
     }

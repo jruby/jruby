@@ -37,6 +37,8 @@ import java.io.InputStreamReader;
 
 import org.jruby.internal.runtime.builtin.definitions.KernelDefinition;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.runtime.load.ILoadService;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.exceptions.TypeError;
@@ -51,9 +53,22 @@ import org.jruby.exceptions.NotImplementedError;
  * @version $Revision$
  */
 public class KernelModule {
-
     public static RubyModule createKernelModule(Ruby runtime) {
         return new KernelDefinition(runtime).getModule();
+    }
+
+    public static IRubyObject autoload(IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
+        final ILoadService loadService = recv.getRuntime().getLoadService();
+        loadService.addAutoload(symbol.toId(), new IAutoloadMethod() {
+            /**
+             * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
+             */
+            public IRubyObject load(Ruby runtime, String name) {
+                loadService.require(file.toString());
+                return runtime.getClasses().getObjectClass().getConstant(name);
+            }
+        });
+        return recv;
     }
 
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args) {
