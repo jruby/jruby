@@ -1259,7 +1259,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                 throw new SecurityError(runtime, "Insecure: can't extend object.");
             }
 
-            if (receiver.getMetaClass().isSingleton()) {
+            if (receiver.getMetaClass() instanceof MetaClass) {
                 runtime.getMethodCache().clear();
             }
 
@@ -1510,10 +1510,7 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         try {
             if (isTrace()) {
-                callTraceFunction(
-                    "class",
-                        type
-                );
+                callTraceFunction("class", type);
             }
 
             self = type;
@@ -1528,10 +1525,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             threadContext.getCurrentFrame().tmpPop();
 
             if (isTrace()) {
-                callTraceFunction(
-                    "end",
-                        null
-                );
+                callTraceFunction("end", null);
             }
         }
     }

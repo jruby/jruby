@@ -33,9 +33,13 @@ import java.util.Vector;
 
 import org.jruby.*;
 import org.jruby.exceptions.*;
+import org.jruby.javasupport.Java;
+import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.GlobalVariable;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 
 import com.ibm.bsf.*;
@@ -47,48 +51,36 @@ import com.ibm.bsf.util.BSFEngineImpl;
  * @version $Revision$
  */
 public class JRubyEngine extends BSFEngineImpl {
-    private Ruby ruby;
+    private Ruby runtime;
 
     public Object apply(String file, int line, int col, Object funcBody, Vector paramNames, Vector args) {
-        ISourcePosition oldPosition = ruby.getPosition();
-        ruby.setPosition(file, line);
+        try {
+            // add a new method conext
+            runtime.getFrameStack().push();
+            runtime.pushDynamicVars();
+            runtime.getScope().push(paramNames);
 
-        StringBuffer sb = new StringBuffer(((String) funcBody).length() + 100);
-
-        sb.append("def __jruby_bsf_anonymous (");
-
-        int paramLength = paramNames.size();
-        for (int i = 0; i < paramLength; i++) {
-            if (i > 0) {
-                sb.append(", ");
+            // set global variables
+            for (int i = 0, size = args.size(); i < size; i++) {
+                runtime.currentScope().setValue(i, convertToRuby(args.get(i)));
             }
-            sb.append(paramNames.elementAt(i));
+
+            runtime.setPosition(file, line);
+
+            INode node = runtime.getParser().parse(file, funcBody.toString());
+            return convertToJava(runtime.getTopSelf().eval(node), Object.class);
+        } finally {
+            runtime.getScope().pop();
+            runtime.popDynamicVars();
+            runtime.getFrameStack().pop();
         }
-        sb.append(") \n");
-
-        sb.append(funcBody);
-
-        sb.append("\nend\n");
-
-        ruby.evalScript(sb.toString(), null);
-
-        IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args.toArray());
-
-        Object result = JavaUtil.convertRubyToJava(ruby, ruby.getTopSelf().callMethod("__jruby_bsf_anonymous", rubyArgs));
-
-        ruby.setPosition(oldPosition);
-
-        return result;
     }
 
     public Object eval(String file, int line, int col, Object expr) throws BSFException {
-        ISourcePosition oldPosition = ruby.getPosition();
-        ruby.setPosition(file, line);
-
         try {
-            Object result = ruby.evalScript((String) expr, Object.class);
-            ruby.setPosition(oldPosition);
-            return result;
+            runtime.setPosition(file, line);
+            IRubyObject result = runtime.evalScript(expr.toString());
+            return convertToJava(result, Object.class);
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
@@ -96,13 +88,8 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public void exec(String file, int line, int col, Object expr) throws BSFException {
         try {
-            ISourcePosition oldPosition = ruby.getPosition();
-            ruby.setPosition(file, line);
-
-            ruby.evalScript((String) expr, Object.class);
-
-            ruby.setPosition(oldPosition);
-
+            runtime.setPosition(file, line);
+            runtime.evalScript(expr.toString());
         } catch (Exception excptn) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "Exception", excptn);
         }
@@ -110,43 +97,68 @@ public class JRubyEngine extends BSFEngineImpl {
 
     public Object call(Object recv, String method, Object[] args) throws BSFException {
         try {
-            IRubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(ruby, recv) : ruby.getTopSelf();
+            IRubyObject rubyRecv = recv != null ? JavaUtil.convertJavaToRuby(runtime, recv) : runtime.getTopSelf();
 
-            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(ruby, args);
+            IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
 
             IRubyObject result = rubyRecv.callMethod(method, rubyArgs);
 
-            return JavaUtil.convertRubyToJava(ruby, result, Object.class);
+            return convertToJava(result, Object.class);
         } catch (Exception excptn) {
-            printException(ruby, excptn);
+            printException(runtime, excptn);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, excptn.getMessage(), excptn);
         }
+    }
+
+    private IRubyObject convertToRuby(Object value) {
+        IRubyObject result = JavaUtil.convertJavaToRuby(runtime, value);
+        if (result instanceof JavaObject) {
+            runtime.getLoadService().require("java");
+            result =
+                runtime.getClass("JavaUtilities").callMethod(
+                    "wrap",
+                    new IRubyObject[] { result, RubyString.newString(runtime, value.getClass().getName())});
+        }
+        return result;
+    }
+
+    private Object convertToJava(IRubyObject value, Class type) {
+        runtime.getLoadService().require("java");
+        if (value.isKindOf(runtime.getClass("JavaProxy"))) {
+            value = value.getInstanceVariable("java_object");
+        }
+        value = Java.primitive_to_java(value, value);
+        return JavaUtil.convertArgument(value, type);
     }
 
     public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
 
-        ruby = Ruby.getDefaultInstance();
+        runtime = Ruby.getDefaultInstance();
 
         int size = declaredBeans.size();
         for (int i = 0; i < size; i++) {
             BSFDeclaredBean bean = (BSFDeclaredBean) declaredBeans.elementAt(i);
-            ruby.defineVariable(new BeanGlobalVariable(ruby, bean));
+            runtime.getGlobalVariables().define(
+                GlobalVariable.variableName(bean.name),
+                new BeanGlobalVariable(runtime, bean));
         }
 
         // ruby.defineGlobalFunction("declareBean", method);
     }
 
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
-        ruby.defineVariable(new BeanGlobalVariable(ruby, bean));
+        runtime.getGlobalVariables().define(
+            GlobalVariable.variableName(bean.name),
+            new BeanGlobalVariable(runtime, bean));
     }
 
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
-        ruby.getGlobalVariables().set(GlobalVariable.variableName(bean.name), ruby.getNil());
+        runtime.getGlobalVariables().set(GlobalVariable.variableName(bean.name), runtime.getNil());
     }
 
     public void handleException(BSFException bsfExcptn) {
-        printException(ruby, (Exception)bsfExcptn.getTargetException());
+        printException(runtime, (Exception) bsfExcptn.getTargetException());
     }
 
     /**
@@ -167,31 +179,44 @@ public class JRubyEngine extends BSFEngineImpl {
         }
     }
 
-
-    private static class BeanGlobalVariable extends GlobalVariable {
+    private static class BeanGlobalVariable implements IAccessor {
+        private Ruby runtime;
         private BSFDeclaredBean bean;
 
-        public BeanGlobalVariable(Ruby ruby, BSFDeclaredBean bean) {
-            super(ruby, GlobalVariable.variableName(bean.name), null);
+        public BeanGlobalVariable(Ruby runtime, BSFDeclaredBean bean) {
+            this.runtime = runtime;
             this.bean = bean;
         }
 
-        public IRubyObject get() {
-            return JavaUtil.convertJavaToRuby(ruby, bean.bean);
+        public IRubyObject getValue() {
+            IRubyObject result = JavaUtil.convertJavaToRuby(runtime, bean.bean, bean.type);
+            if (result instanceof JavaObject) {
+                runtime.getLoadService().require("java");
+                result =
+                    runtime.getClass("JavaUtilities").callMethod(
+                        "wrap",
+                        new IRubyObject[] { result, RubyString.newString(runtime, bean.type.getName())});
+            }
+            return result;
         }
 
-        public IRubyObject set(IRubyObject value) {
-            bean.bean = JavaUtil.convertRubyToJava(ruby, value, bean.type);
+        public IRubyObject setValue(IRubyObject value) {
+            runtime.getLoadService().require("java");
+            if (value.isKindOf(runtime.getClass("JavaProxy"))) {
+                value = value.getInstanceVariable("java_object");
+            }
+            value = Java.primitive_to_java(value, value);
+            bean.bean = JavaUtil.convertArgument(value, bean.type);
             return value;
         }
     }
+
     /**
      * @see com.ibm.bsf.BSFEngine#terminate()
      */
     public void terminate() {
-        ruby.dispose();
-        ruby = null;
+        runtime.dispose();
+        runtime = null;
         super.terminate();
     }
-
 }
