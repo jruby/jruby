@@ -23,28 +23,31 @@
 package org.jruby;
 
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.load.Library;
 
 import java.io.File;
 
-public class RbConfig {
+public class RbConfig implements Library {
+    private RubyHash configHash;
 
-    public static void createRbConfig(Ruby runtime) {
+    public void load(Ruby runtime) {
         RubyModule configModule = runtime.defineModule("Config");
-        RubyHash configHash = RubyHash.newHash(runtime);
+        configHash = RubyHash.newHash(runtime);
         configModule.defineConstant("CONFIG", configHash);
 
         String[] versionParts = Constants.RUBY_VERSION.split("\\.");
+        setConfig("MAJOR", versionParts[0]);
+        setConfig("MINOR", versionParts[1]);
+        setConfig("TEENY", versionParts[2]);
 
-        configHash.aset(RubyString.newString(runtime, "MAJOR"),
-                        RubyString.newString(runtime, versionParts[0]));
-        configHash.aset(RubyString.newString(runtime, "MINOR"),
-                        RubyString.newString(runtime, versionParts[1]));
-        configHash.aset(RubyString.newString(runtime, "TEENY"),
-                        RubyString.newString(runtime, versionParts[2]));
+        setConfig("bindir",
+                  new File(System.getProperty("jruby.home") + File.separator + "bin").getAbsolutePath());
+        setConfig("RUBY_INSTALL_NAME", System.getProperty("jruby.script"));
+    }
 
-        configHash.aset(RubyString.newString(runtime, "bindir"),
-                        RubyString.newString(runtime, new File(System.getProperty("jruby.home") + File.separator + "bin").getAbsolutePath()));
-        configHash.aset(RubyString.newString(runtime, "RUBY_INSTALL_NAME"),
-                        RubyString.newString(runtime, System.getProperty("jruby.script")));
+    private void setConfig(String key, String value) {
+        Ruby runtime = configHash.getRuntime();
+        configHash.aset(RubyString.newString(runtime, key),
+                        RubyString.newString(runtime, value));
     }
 }

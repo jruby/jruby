@@ -52,6 +52,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.runtime.load.ILoadService;
+import org.jruby.runtime.load.Library;
 
 /**
  *
@@ -61,6 +62,7 @@ import org.jruby.runtime.load.ILoadService;
 public class LoadService implements ILoadService {
     private ArrayList loadPath = new ArrayList();
     private ArrayList loadedFeatures = new ArrayList();
+    private Map builtinLibraries = new HashMap();
 
     private Map autoloadMap = new HashMap();
 
@@ -71,6 +73,9 @@ public class LoadService implements ILoadService {
     public LoadService(Ruby runtime) {
         super();
         this.runtime = runtime;
+
+        builtinLibraries.put("java.rb", new BuiltinScript("javasupport"));
+        builtinLibraries.put("rbconfig.rb", new RbConfig());
     }
 
     /**
@@ -108,15 +113,8 @@ public class LoadService implements ILoadService {
         if (!file.endsWith(".rb")) {
             file += ".rb";
         }
-
-        // FIXME: replace java thing with more generic mechanism
-        if (file.equals("java.rb")) {
-            BuiltinScript javaSupport = new BuiltinScript("javasupport");
-            javaSupport.load(runtime);
-            return true;
-        }
-        if (file.equals("rbconfig.rb")) {
-            RbConfig.createRbConfig(runtime);
+        if (builtinLibraries.containsKey(file)) {
+            ((Library) builtinLibraries.get(file)).load(runtime);
             return true;
         }
 
@@ -153,7 +151,7 @@ public class LoadService implements ILoadService {
         }
         return false;
     }
-    
+
     private void loadJar(String file) {
         URL jarFile = findFile(file);
 

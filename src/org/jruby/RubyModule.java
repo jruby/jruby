@@ -875,6 +875,8 @@ public class RubyModule extends RubyObject {
      *
      */
     public void defineConstant(String name, IRubyObject value) {
+        Asserts.notNull(value);
+
         if (this == getRuntime().getClasses().getClassClass()) {
             getRuntime().secure(4);
         }

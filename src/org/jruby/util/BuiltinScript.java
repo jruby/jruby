@@ -27,6 +27,7 @@ import org.ablaf.ast.IAstDecoder;
 import org.jruby.exceptions.IOError;
 import org.jruby.ast.util.RubyAstMarshal;
 import org.jruby.Ruby;
+import org.jruby.runtime.load.Library;
 
 import java.io.InputStream;
 import java.io.BufferedInputStream;
@@ -34,7 +35,7 @@ import java.io.BufferedInputStream;
 /**
  * Loading of pre-parsed, serialized, Ruby scripts that are built into JRuby.
  */
-public class BuiltinScript {
+public class BuiltinScript implements Library {
     private final String name;
 
     public BuiltinScript(String name) {
