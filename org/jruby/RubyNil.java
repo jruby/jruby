@@ -52,6 +52,8 @@ public class RubyNil {
         nilClass.defineMethod("^", CallbackFactory.getSingletonMethod(RubyNil.class, "op_xor", IRubyObject.class));
         nilClass.defineMethod("nil?", CallbackFactory.getTrueMethod(0));
         nilClass.defineMethod("id", CallbackFactory.getSingletonMethod(RubyNil.class, "id"));
+        nilClass.defineMethod("taint", CallbackFactory.getSelfMethod(0));
+        nilClass.defineMethod("freeze", CallbackFactory.getSelfMethod(0));
 
         nilClass.getInternalClass().undefMethod("new");
         

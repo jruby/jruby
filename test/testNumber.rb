@@ -55,6 +55,9 @@ test_ok(1000000000000000000000000000000.taint.tainted?)
 test_ok(1.337.freeze.frozen?)
 test_ok(1.337.taint.tainted?)
 
+test_ok(! nil.taint.tainted?)
+test_ok(! nil.freeze.frozen?)
+
 test_equal(0, 1 ^ 1)
 test_equal(1005, 1000 ^ 5)
 test_equal(0, (10 ** 70) ^ (10 ** 70))
