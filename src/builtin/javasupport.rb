@@ -44,6 +44,12 @@ end
 module JavaUtilities
   class << self
 
+    def valid_constant_name?(name)
+      return false if name.empty?
+      first_char = name[0..0]
+      return first_char == first_char.upcase
+    end
+
     def create_proxy_class(constant, java_class, mod)
       mod.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(mod.name + '::' + constant.to_s)
@@ -135,6 +141,17 @@ module JavaUtilities
       end
     end
 
+    def setup_constants(java_class, proxy_class)
+      fields = java_class.fields.collect {|name| java_class.field(name) }
+      constants = fields.select {|field|
+        field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
+      }
+      constants.each {|constant|
+        value = Java.java_to_primitive(constant.static_value)
+        proxy_class.const_set(constant.name, value)
+      }
+    end
+
     def setup_proxy_class(java_class, proxy_class)
 
       class << proxy_class
@@ -212,20 +229,7 @@ module JavaUtilities
                                "end")
       }
 
-      fields = java_class.fields.collect {|name| java_class.field(name) }
-      constants = fields.select {|field| field.static? and field.final? }
-      constants.each {|field|
-        name = field.name
-        proxy_class.class_eval("def self. " + name + ";" +
-                               "field = @java_class.field('" + name + "');" +
-                               "result = field.static_value;" +
-                               "result = Java.java_to_primitive(result);" +
-                               "if result.kind_of?(JavaObject);" +
-                               "  result = JavaUtilities.wrap(result, method.return_type);" +
-                               "end;" +
-                               "result;" +
-                               "end")
-      }
+      setup_constants(java_class, proxy_class)
 
       def proxy_class.const_missing(constant)
         inner_class = nil

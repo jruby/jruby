@@ -69,7 +69,7 @@ public class Java {
             if (!(args[i] instanceof JavaClass) || !((JavaClass)args[i]).interface_p().isTrue()) {
                 throw new ArgumentError(recv.getRuntime(), "Java interface expected.");
             }
-            interfaces[i] = args[i].getJavaClass();
+            interfaces[i] = ((JavaClass) args[i]).getValue();
         }
 
         return JavaObject.wrap(recv.getRuntime(), Proxy.newProxyInstance(recv.getRuntime().getJavaSupport().getJavaClassLoader(), interfaces, new InvocationHandler() {

@@ -38,6 +38,11 @@ Iter:
     passed to the current method or not. [Exactly how it works and why it is
     called "Iter" is still shrouded in mystery.]
 
+Meta-class:
+
+    Every class is an object, and that object is an instance of a meta-class.
+    At least internally (and in theory).
+
 MRI (Matz' Ruby Interpreter):
 
     The original Ruby interpreter, implemented in C.

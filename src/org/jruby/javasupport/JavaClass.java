@@ -57,6 +57,10 @@ public class JavaClass extends RubyObject implements IndexCallable {
         this.javaClass = javaClass;
     }
 
+    public Class getValue() {
+        return javaClass;
+    }
+
     private static final int PUBLIC_P = 1;
     private static final int FINAL_P = 2;
     private static final int INTERFACE_P = 3;
@@ -296,9 +300,4 @@ public class JavaClass extends RubyObject implements IndexCallable {
                 return super.callIndexed(index, args);
         }
     }
-    // WARNING overrides RubyObject#getJavaClass !!!!
-    public Class getJavaClass() {
-        return javaClass;
-    }
-
 }
