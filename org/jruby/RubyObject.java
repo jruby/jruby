@@ -377,7 +377,7 @@ public class RubyObject implements VALUE {
     /** rb_convert_type
      *
      */
-    public RubyObject covertType(Class type, String className, String method) {
+    public RubyObject convertType(Class type, String className, String method) {
         if (type.isAssignableFrom(getClass())) {
             return this;
         }

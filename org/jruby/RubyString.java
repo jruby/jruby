@@ -226,7 +226,7 @@ public class RubyString extends RubyObject {
      */
     public RubyFixnum op_cmp(RubyObject other) {
         if (!(other instanceof RubyString)) {
-            other = other.covertType(RubyString.class, "String", "to_str");
+            other = other.convertType(RubyString.class, "String", "to_str");
         }
         
         return RubyFixnum.m_newFixnum(getRuby(), cmp(other));
@@ -392,7 +392,7 @@ public class RubyString extends RubyObject {
      */
     public RubyString op_plus(RubyObject other) {
         if (!(other instanceof RubyString)) {
-            other = other.covertType(RubyString.class, "String", "to_str");
+            other = other.convertType(RubyString.class, "String", "to_str");
         }
         
         RubyString newString = newString(getString() + ((RubyString)other).getString());
