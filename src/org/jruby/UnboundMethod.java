@@ -23,8 +23,8 @@
 package org.jruby;
 
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -33,10 +33,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class UnboundMethod extends Method {
-    private static final int BIND = 0x10050;
-    private static final int CALL = 0x10051;
-    private static final int TO_PROC = 0x10052;
-    private static final int UNBIND = 0x10053;
 
     protected UnboundMethod(Ruby runtime) {
         super(runtime, runtime.getClass("UnboundMethod"));
@@ -63,32 +59,16 @@ public class UnboundMethod extends Method {
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
         RubyClass newClass = runtime.defineClass("UnboundMethod", runtime.getClass("Method"));
 
-        newClass.defineMethod("[]", IndexedCallback.createOptional(CALL));
-        newClass.defineMethod("bind", IndexedCallback.create(BIND, 1));
-        newClass.defineMethod("call", IndexedCallback.createOptional(CALL));
-        newClass.defineMethod("to_proc", IndexedCallback.create(TO_PROC, 0));
-        newClass.defineMethod("unbind", IndexedCallback.create(UNBIND, 0));
+        CallbackFactory callbackFactory = runtime.callbackFactory();
+        newClass.defineMethod("[]", callbackFactory.getOptMethod(UnboundMethod.class, "call"));
+        newClass.defineMethod("bind", callbackFactory.getMethod(UnboundMethod.class, "bind", IRubyObject.class));
+        newClass.defineMethod("call", callbackFactory.getOptMethod(UnboundMethod.class, "call"));
+        newClass.defineMethod("to_proc", callbackFactory.getMethod(UnboundMethod.class, "to_proc"));
+        newClass.defineMethod("unbind", callbackFactory.getMethod(UnboundMethod.class, "unbind"));
 
         return newClass;
     }
 
-    /**
-     * @see org.jruby.runtime.IndexCallable#callIndexed(int, IRubyObject[])
-     */
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case BIND :
-                return bind(args[0]);
-            case CALL :
-                return call(args);
-            case TO_PROC :
-                return to_proc();
-            case UNBIND :
-                return unbind();
-            default :
-                return super.callIndexed(index, args);
-        }
-    }
     /**
      * @see org.jruby.Method#call(IRubyObject[])
      */

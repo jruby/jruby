@@ -27,6 +27,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.callback.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -37,19 +38,13 @@ public class Mutex extends RubyObject implements IndexCallable {
         super(runtime, runtime.getClass("Mutex"));
     }
 
-    private static final int LOCK = 1;
-    private static final int UNLOCK = 2;
-    private static final int LOCKED_P = 3;
-
-    private static final int NEW = 4 | 0x100;
-
     public static void createMutexClass(Ruby runtime) {
         RubyClass mutexClass =
                 runtime.defineClass("Mutex", runtime.getClasses().getObjectClass());
-
-        mutexClass.defineMethod("lock", IndexedCallback.create(LOCK, 0));
-        mutexClass.defineMethod("unlock", IndexedCallback.create(UNLOCK, 0));
-        mutexClass.defineMethod("locked?", IndexedCallback.create(LOCKED_P, 0));
+        CallbackFactory callbackFactory = runtime.callbackFactory();
+        mutexClass.defineMethod("lock", callbackFactory.getMethod(Mutex.class, "lock"));
+        mutexClass.defineMethod("unlock", callbackFactory.getMethod(Mutex.class, "unlock"));
+        mutexClass.defineMethod("locked?", callbackFactory.getMethod(Mutex.class, "locked_p"));
     }
 
     public Mutex lock() {
@@ -64,18 +59,5 @@ public class Mutex extends RubyObject implements IndexCallable {
 
     public RubyBoolean locked_p() {
         return RubyBoolean.newBoolean(getRuntime(), isLocked);
-    }
-
-    public IRubyObject callIndexed(int index, IRubyObject[] args) {
-        switch (index) {
-            case LOCK :
-                return lock();
-            case UNLOCK :
-                return unlock();
-            case LOCKED_P :
-                return locked_p();
-            default :
-                return super.callIndexed(index, args);
-        }
     }
 }
