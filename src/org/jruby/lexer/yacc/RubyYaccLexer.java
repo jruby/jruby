@@ -16,7 +16,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2004-2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -1152,12 +1152,6 @@ public class RubyYaccLexer {
                     src.unread(c);
                     c = '_';
                     /* fall through */
-                case '~':		/* $~: match-data */
-                    // Enebo: We had following line replace line after that,
-                    // but it is commented out...
-                    //parserSupport.getLocalNames().getLocalIndex(String.valueOf(c));
-                    //local_cnt(c);
-                    /* fall through */
                 case '*':		/* $*: argv */
                 case '$':		/* $$: pid */
                 case '?':		/* $?: last status */
@@ -1187,6 +1181,7 @@ public class RubyYaccLexer {
                     /* xxx shouldn't check if valid option variable */
                     return Token.tGVAR;
 
+                case '~':		/* $~: match-data */
                 case '&':		/* $&: last match */
                 case '`':		/* $`: string before last match */
                 case '\'':		/* $': string after last match */

@@ -17,6 +17,7 @@
  * Copyright (C) 2004 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 David Corbin <dcorbin@users.sourceforge.net>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -39,6 +40,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFloat;
@@ -298,7 +300,10 @@ public final class EvaluateVisitor implements NodeVisitor {
     public void visitBackRefNode(BackRefNode iVisited) {
         IRubyObject backref = threadContext.getBackref();
         switch (iVisited.getType()) {
-            case '&' :
+	        case '~' :
+	            result = backref;
+	            break;
+        	case '&' :
                 result = RubyRegexp.last_match(backref);
                 break;
             case '`' :
@@ -1598,9 +1603,8 @@ public final class EvaluateVisitor implements NodeVisitor {
             if (! args[i].isKindOf(runtime.getClasses().getModuleClass())) {
                 throw new TypeError(runtime, "class or module required for rescue clause");
             }
-            if (currentException.isKindOf((RubyModule) args[i])) {
-                return true;
-            }
+            RubyBoolean handled = (RubyBoolean) (args[i].callMethod("===", currentException));
+            return handled.isTrue();
         }
         return false;
     }

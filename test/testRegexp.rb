@@ -39,3 +39,7 @@ test_ok("\tZ"   =~ /\x9Z/)
 test_ok("\t"   =~ /\x9/)
 test_ok("\tZ\tQ"   =~ /\x9Z\x9Q/)
 test_ok("\x9cZ" =~ /\x9cZ/)
+
+#########    test10   #################
+'ABCDE' =~ /B(C)D/
+test_equal('BCD', $~.to_s)
