@@ -29,7 +29,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyArray;
-import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.IndexCallable;
@@ -45,11 +44,7 @@ public class JavaClassClass extends RubyObject implements IndexCallable {
 
     private JavaClassClass(Ruby runtime, String name) {
         super(runtime, (RubyClass) runtime.getClasses().getClassFromPath("Java::JavaClass"));
-        try {
-            this.javaClass = Class.forName(name);
-        } catch (ClassNotFoundException e) {
-            throw new NameError(runtime, "java class not found: " + name);
-        }
+        this.javaClass = runtime.getJavaSupport().loadJavaClass(name);
     }
 
     private static final int PUBLIC_P = 1;

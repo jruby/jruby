@@ -66,6 +66,8 @@ if defined? Java
 
   method = string_class.java_method(:toString)
   test_ok(method.kind_of?(Java::JavaMethod))
+  test_equal("toString", method.name)
+  test_equal(0, method.arity)
 end
 
 test_print_report
