@@ -45,8 +45,7 @@ import org.ablaf.parser.IParser;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.ZeroArgNode;
 import org.jruby.common.RubyErrorHandler;
-import org.jruby.evaluator.AssignmentVisitor;
-import org.jruby.evaluator.EvaluateVisitor;
+import org.jruby.evaluator.*;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.BreakJump;
 import org.jruby.exceptions.LoadError;
@@ -86,7 +85,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyHashMap;
 import org.jruby.util.RubyMap;
 import org.jruby.util.RubyStack;
-import org.jruby.util.collections.CollectionFactory;
 import org.jruby.util.collections.IStack;
 import org.jruby.runtime.regexp.IRegexpAdapter;
 
@@ -145,12 +143,12 @@ public final class Ruby {
     private RubyObject rubyTopSelf;
 
     // Eval
-    private ScopeStack scope = new ScopeStack(this);
+    private Evaluator evaluator = new Evaluator(this);
+
     private Scope topScope = null;
     private RubyVarmap dynamicVars = null;
     private RubyModule rubyClass = null;
 
-    private FrameStack frameStack = new FrameStack(this);
     private Frame topFrame;
 
     private Namespace namespace;
@@ -168,7 +166,6 @@ public final class Ruby {
     private boolean verbose;
 
     //
-    private IStack iterStack = CollectionFactory.getInstance().newStack();
     private BlockStack block = new BlockStack(this);
 
     private int currentMethodScope;
@@ -627,7 +624,7 @@ public final class Ruby {
      * @return Value of property rubyScope.
      */
     public ScopeStack getScope() {
-        return scope;
+        return evaluator.getScope();
     }
 
     /** Getter for property methodCache.
@@ -739,11 +736,11 @@ public final class Ruby {
     }
 
     public final FrameStack getFrameStack() {
-        return frameStack;
+        return evaluator.getFrameStack();
     }
 
     public Frame getCurrentFrame() {
-        return (Frame) frameStack.peek();
+        return evaluator.getCurrentFrame();
     }
 
     /** Getter for property topFrame.
@@ -776,12 +773,12 @@ public final class Ruby {
         return javaSupport;
     }
 
-    public final IStack getIterStack() {
-        return iterStack;
+    public IStack getIterStack() {
+        return evaluator.getIterStack();
     }
 
-    public final Iter getCurrentIter() {
-        return (Iter) getIterStack().peek();
+    public Iter getCurrentIter() {
+        return evaluator.getCurrentIter();
     }
 
     /** Getter for property block.
