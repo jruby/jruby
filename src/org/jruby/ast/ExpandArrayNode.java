@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents an expanded argument (*expr).
  * this can be used in a method call, in an array reference or in 
@@ -41,7 +41,7 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class ExpandArrayNode extends AbstractNode {
-    private INode expandNode;
+    private final INode expandNode;
 
     public ExpandArrayNode(INode expandNode) {
         this(expandNode.getPosition(), expandNode);
@@ -53,12 +53,11 @@ public class ExpandArrayNode extends AbstractNode {
      */
     public ExpandArrayNode(ISourcePosition position, INode expandNode) {
         super(position);
-
         this.expandNode = expandNode;
     }
 
     /**
-     * @see AbstractNode#accept(NodeVisitor)
+     * @see AbstractNode#accept(INodeVisitor)
      */
     public void accept(INodeVisitor iVisitor) {
         ((NodeVisitor)iVisitor).visitExpandArrayNode(this);
@@ -70,13 +69,5 @@ public class ExpandArrayNode extends AbstractNode {
      */
     public INode getExpandNode() {
         return expandNode;
-    }
-
-    /**
-     * Sets the expandNode.
-     * @param expandNode The expandNode to set
-     */
-    public void setExpandNode(INode expandNode) {
-        this.expandNode = expandNode;
     }
 }

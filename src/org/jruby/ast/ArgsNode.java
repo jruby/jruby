@@ -51,20 +51,20 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @author  jpetersen
  */
 public class ArgsNode extends AbstractNode {
-    private int argsCount;
-    private IListNode optArgs;
-    private int restArg;
-    private BlockArgNode blockArgNode;
+    private final int argsCount;
+    private final IListNode optArgs;
+    private final int restArg;
+    private final BlockArgNode blockArgNode;
 
     /**
      * 
-     * @param optNode  Node describing the optional arguments
+     * @param optArgs  Node describing the optional arguments
      * 				This Block will contain assignments to locals (LAsgnNode)
-     * @param rest  index of the rest argument in the local table
+     * @param restArg  index of the rest argument in the local table
      * 				(the array argument prefixed by a * which collects 
      * 				all additional params)
      * 				or -1 if there is none.
-     * @param count number of regular arguments
+     * @param argsCount number of regular arguments
      * @param blockArgNode An optional block argument (&amp;arg).
      **/
     public ArgsNode(ISourcePosition iPosition, int argsCount, IListNode optArgs, int restArg, BlockArgNode blockArgNode) {
@@ -93,27 +93,11 @@ public class ArgsNode extends AbstractNode {
     }
 
     /**
-     * Sets the argsCount.
-     * @param argsCount The argsCount to set
-     */
-    public void setArgsCount(int argsCount) {
-        this.argsCount = argsCount;
-    }
-
-    /**
      * Gets the optArgs.
      * @return Returns a IListNode
      */
     public IListNode getOptArgs() {
         return optArgs;
-    }
-
-    /**
-     * Sets the optArgs.
-     * @param optArgs The optArgs to set
-     */
-    public void setOptArgs(IListNode optArgs) {
-        this.optArgs = optArgs;
     }
 
     /**
@@ -125,26 +109,10 @@ public class ArgsNode extends AbstractNode {
     }
 
     /**
-     * Sets the restArg.
-     * @param restArg The restArg to set
-     */
-    public void setRestArgs(int restArg) {
-        this.restArg = restArg;
-    }
-
-    /**
      * Gets the blockArgNode.
      * @return Returns a BlockArgNode
      */
     public BlockArgNode getBlockArgNode() {
         return blockArgNode;
-    }
-
-    /**
-     * Sets the blockArgNode.
-     * @param blockArgNode The blockArgNode to set
-     */
-    public void setBlockArgNode(BlockArgNode blockArgNode) {
-        this.blockArgNode = blockArgNode;
     }
 }

@@ -27,9 +27,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
+
 /** An AliasNode represents an alias statement.
  * ast node for the 
  * <code>alias newName oldName</code>
@@ -37,12 +38,11 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class AliasNode extends AbstractNode {
-    private String oldName;
-    private String newName;
+    private final String oldName;
+    private final String newName;
 
     public AliasNode(ISourcePosition position, String newName, String oldName) {
         super(position);
-
         this.oldName = oldName;
         this.newName = newName;
     }
@@ -64,26 +64,10 @@ public class AliasNode extends AbstractNode {
     }
 
     /**
-     * Sets the newName.
-     * @param newName The newName to set
-     */
-    public void setNewName(String newName) {
-        this.newName = newName;
-    }
-
-    /**
      * Gets the oldName.
      * @return the oldName as in the alias statement :  <code> alias newName <b>oldName</b></code>
      */
     public String getOldName() {
         return oldName;
-    }
-
-    /**
-     * Sets the oldName.
-     * @param oldName The oldName to set
-     */
-    public void setOldName(String oldName) {
-        this.oldName = oldName;
     }
 }

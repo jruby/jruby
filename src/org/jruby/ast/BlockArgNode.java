@@ -26,9 +26,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  *	a block argument.
@@ -41,11 +41,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class BlockArgNode extends AbstractNode {
-    private int count;
+    private final int count;
 
     public BlockArgNode(ISourcePosition position, int count) {
         super(position);
-
         this.count = count;
     }
 
@@ -63,13 +62,5 @@ public class BlockArgNode extends AbstractNode {
      */
     public int getCount() {
         return count;
-    }
-
-    /**
-     * Sets the count.
-     * @param count The count to set
-     */
-    public void setCount(int count) {
-        this.count = count;
     }
 }

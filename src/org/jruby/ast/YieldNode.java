@@ -26,10 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a yield statement.
  *
@@ -37,11 +37,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class YieldNode extends AbstractNode {
-    private INode argsNode;
+    private final INode argsNode;
 
     public YieldNode(ISourcePosition position, INode argsNode) {
         super(position);
-
         this.argsNode = argsNode;
     }
 
@@ -59,13 +58,5 @@ public class YieldNode extends AbstractNode {
      */
     public INode getArgsNode() {
         return argsNode;
-    }
-
-    /**
-     * Sets the argsNode.
-     * @param argsNode The argsNode to set
-     */
-    public void setArgsNode(INode argsNode) {
-        this.argsNode = argsNode;
     }
 }

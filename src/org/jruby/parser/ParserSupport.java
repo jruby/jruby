@@ -1,7 +1,7 @@
 /*
  * ParserSupport.java - description
  * Created on 23.02.2002, 13:41:01
- * 
+ *
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Stefan Matthias Aust <sma@3plus4.de>
@@ -9,23 +9,23 @@
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
  *
  * JRuby - http://jruby.sourceforge.net
- * 
+ *
  * This file is part of JRuby
- * 
+ *
  * JRuby is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * JRuby is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with JRuby; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  */
 package org.jruby.parser;
 
@@ -72,7 +72,7 @@ public class ParserSupport {
     public void reset() {
         localNames = new LocalNamesStack();
         blockNames = new BlockNamesStack(localNames);
-        
+
         inSingle = 0;
         inDef = false;
         inDefined = false;
@@ -116,7 +116,7 @@ public class ParserSupport {
     }
 
     /**
-     * Returns a Node representing the access of the 
+     * Returns a Node representing the access of the
      * variable or constant named id.
      *
      * see gettable() in MRI
@@ -150,9 +150,9 @@ public class ParserSupport {
     /**
      * Returns a Node representing the assignment of value to
      * the variable or constant named id.
-     * 
+     *
      * cf assignable in MRI
-     * 
+     *
      *@param name The name of the variable or constant.
      *@param valueNode A Node representing the value which should be assigned.
      *@return A Node representing the assignment.
@@ -193,7 +193,7 @@ public class ParserSupport {
     /**
      *  Wraps node with NEWLINE node.
      *
-     *@param node 
+     *@param node
      *@return a NewlineNode or null if node is null.
      */
     public INode newline_node(INode node, ISourcePosition iPosition) {
@@ -264,7 +264,7 @@ public class ParserSupport {
 
         return new CallNode(recv.getPosition(), recv, name + "=", null);
     }
-	
+
 	/**
 	 * @fixme need to handle positions
 	 **/
@@ -277,7 +277,7 @@ public class ParserSupport {
             errorHandler.handleError(IErrors.SYNTAX_ERROR, null, "Can't set variable $" + ((BackRefNode) node).getType() + '.', null);
         }
     }
-	
+
 	/**
 	 * @fixme position
 	 **/

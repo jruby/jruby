@@ -48,8 +48,8 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class ScopeNode extends AbstractNode {
-    private List localNames;
-    private INode bodyNode;
+    private final List localNames;
+    private final INode bodyNode;
 
     public ScopeNode(List table, INode bodyNode) {
 		super();
@@ -59,7 +59,6 @@ public class ScopeNode extends AbstractNode {
 
     public ScopeNode(ISourcePosition position, List table, INode bodyNode) {
         super(position);
-
         this.localNames =  table;
         this.bodyNode = bodyNode;
     }
@@ -81,26 +80,10 @@ public class ScopeNode extends AbstractNode {
     }
 
     /**
-     * Sets the bodyNode.
-     * @param bodyNode The bodyNode to set
-     */
-    public void setBodyNode(INode bodyNode) {
-        this.bodyNode = bodyNode;
-    }
-
-    /**
      * Gets the localNames.
      * @return Returns a List
      */
     public List getLocalNames() {
         return localNames;
-    }
-
-    /**
-     * Sets the localNames.
-     * @param localNames The localNames to set
-     */
-    public void setLocalNames(List localNames) {
-        this.localNames = localNames;
     }
 }

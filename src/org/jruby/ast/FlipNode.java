@@ -27,10 +27,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * a Range in a boolean expression.
@@ -40,14 +40,13 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class FlipNode extends AbstractNode {
-    private INode beginNode;
-    private INode endNode;
-    private boolean exclusive;
+    private final INode beginNode;
+    private final INode endNode;
+    private final boolean exclusive;
     private int count;
     
     public FlipNode(ISourcePosition position, INode beginNode, INode endNode, boolean exclusive) {
         super(position);
-        
         this.beginNode = beginNode;
         this.endNode = endNode;
         this.exclusive = exclusive;
@@ -71,15 +70,6 @@ public class FlipNode extends AbstractNode {
     }
 
     /**
-     * Sets the beginNode.
-	 * beginNode will set the FlipFlop when it is true while the FlipFlop is unset
-     * @param beginNode The beginNode to set
-     */
-    public void setBeginNode(INode beginNode) {
-        this.beginNode = beginNode;
-    }
-
-    /**
      * Gets the endNode.
 	 * endNode will reset the FlipFlop when it is true while the FlipFlop is set.
      * @return Returns a INode
@@ -89,29 +79,12 @@ public class FlipNode extends AbstractNode {
     }
 
     /**
-     * Sets the endNode.
-	 * endNode will reset the FlipFlop when it is true while the FlipFlop is set.
-     * @param endNode The endNode to set
-     */
-    public void setEndNode(INode endNode) {
-        this.endNode = endNode;
-    }
-
-    /**
      * Gets the exclusive.
 	 * if the range is a 2 dot range it is false if it is a three dot it is true
      * @return Returns a boolean
      */
     public boolean isExclusive() {
         return exclusive;
-    }
-
-    /**
-     * Sets the exclusive.
-     * @param exclusive The exclusive to set
-     */
-    public void setExclusive(boolean exclusive) {
-        this.exclusive = exclusive;
     }
 
     /**

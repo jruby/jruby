@@ -36,11 +36,10 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class VCallNode extends AbstractNode {
-    private String methodName;
+    private final String methodName;
 
     public VCallNode(ISourcePosition position, String name) {
         super(position);
-
         this.methodName = name;
     }
 
@@ -58,13 +57,5 @@ public class VCallNode extends AbstractNode {
      */
     public String getMethodName() {
         return methodName;
-    }
-
-    /**
-     * Sets the methodName.
-     * @param methodName The methodName to set
-     */
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
     }
 }

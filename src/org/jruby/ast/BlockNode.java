@@ -26,14 +26,15 @@
  */
 package org.jruby.ast;
 
-import java.util.*;
-
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IListNode;
+import org.jruby.ast.visitor.NodeVisitor;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 
 /**
  * A structuring node (linked list of other nodes).
@@ -45,25 +46,18 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public class BlockNode extends AbstractNode implements IListNode {
     private ArrayList list;
 
-    /**
-     * Builds a BlockNode with a given head.
-     * The end node of this block node will be set to itself.
-     * @param headNode the head (content of the link) for this block node 
-     **/
     public BlockNode(ISourcePosition position) {
         super(position);
     }
 
     /**
-     * @see IListNode#add(Node)
+     * @see IListNode#add(INode)
      */
     public IListNode add(INode node) {
         if (list == null) {
             list = new ArrayList();
         }
-
         list.add(node);
-
         return this;
     }
 

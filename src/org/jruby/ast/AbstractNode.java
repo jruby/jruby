@@ -37,18 +37,18 @@ import org.ablaf.common.ISourcePosition;
  * @version $Revision$
  */
 public abstract class AbstractNode implements INode, Serializable {
-    private ISourcePosition position;
+    private final ISourcePosition position;
 
 	/**
 	 * constructor without a position.
 	 * This should only be used in node constructor where no good position can be computed
 	 **/
  	public AbstractNode() {
+        this(null);
     }
 
     public AbstractNode(ISourcePosition position) {
         this.position = position;
-        //		if (position == null ) throw new IllegalArgumentException("position is not valid");
     }
 
     /**

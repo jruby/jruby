@@ -41,12 +41,11 @@ import org.jruby.ast.visitor.NodeVisitor;
  * @version $Revision$
  */
 public class EvStrNode extends AbstractNode {
-    private String value;
+    private final String value;
     private INode evaluatedNode;
 
     public EvStrNode(ISourcePosition position, String value) {
         super(position);
-
         this.value = value;
     }
 
@@ -64,14 +63,6 @@ public class EvStrNode extends AbstractNode {
      */
     public String getValue() {
         return value;
-    }
-
-    /**
-     * Sets the value.
-     * @param value The value to set
-     */
-    public void setValue(String value) {
-        this.value = value;
     }
 
     /**

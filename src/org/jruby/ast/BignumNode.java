@@ -26,13 +26,12 @@
  */
 package org.jruby.ast;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.ablaf.common.*;
-
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.ILiteralNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /** Represents a big integer literal.
  *
@@ -40,11 +39,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
  * @version $Revision$
  */
 public class BignumNode extends AbstractNode implements ILiteralNode {
-    private BigInteger value;
+    private final BigInteger value;
 
     public BignumNode(ISourcePosition position, BigInteger value) {
         super(position);
-
         this.value = value;
     }
 
@@ -58,13 +56,5 @@ public class BignumNode extends AbstractNode implements ILiteralNode {
      */
     public BigInteger getValue() {
         return value;
-    }
-
-    /**
-     * Sets the value.
-     * @param value The value to set
-     */
-    public void setValue(BigInteger value) {
-        this.value = value;
     }
 }
