@@ -121,6 +121,20 @@ public class FileMetaClass extends IOMetaClass {
 			name = name.substring(0, name.length() - 1);
 		}
 		
+		// Paths which end in "/" or "\\" must be stripped off.
+		int slashCount = 0;
+		int length = name.length();
+		for (int i = length - 1; i >= 0; i--) {
+			char c = name.charAt(i); 
+			if (c != '/' && c != '\\') {
+				break;
+			}
+			slashCount++;
+		}
+		if (slashCount > 0 && length > 1) {
+			name = name.substring(0, name.length() - slashCount);
+		}
+		
 		int index = name.lastIndexOf('/');
 		if (index == -1) {
 			// XXX actually only on windows...
@@ -133,7 +147,12 @@ public class FileMetaClass extends IOMetaClass {
 		
 		if (args.length == 2) {
 			String ext = RubyString.stringValue(args[1]).getValue();
-			if (name.endsWith(ext)) {
+			if (".*".equals(ext)) {
+				index = name.lastIndexOf('.');
+				if (index != -1) {
+					name = name.substring(0, index);
+				}
+			} else if (name.endsWith(ext)) {
 				name = name.substring(0, name.length() - ext.length());
 			}
 		}
