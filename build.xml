@@ -91,6 +91,7 @@
                 <include name="README"/>
                 <include name="test.rb"/>
                 <include name="jruby.bat"/>
+				<include name="jruby.rb"/>
 				<include name="jruby.sh"/>
 				<include name="mkconfig.rb"/>
                 <include name="samples/**/*"/>
@@ -118,6 +119,8 @@
 
         <copy todir="${build.tars}">
             <fileset dir="${base.dir}">
+	        <exclude name="build/**"/>
+		    <exclude name="**/CVS"/>
 		    <exclude name="**/*.class"/>
 		    <exclude name="**/*.jar"/>
             </fileset>
