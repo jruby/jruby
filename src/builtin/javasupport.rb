@@ -98,6 +98,22 @@ module JavaUtilities
       setup_proxy_class(java_class, proxy_class)
     end
 
+    def setup_proxy_class(java_class, proxy_class)
+      class << proxy_class
+        alias_method(:new_proxy, :new)
+      end
+      if java_class.interface?
+	create_interface_constructor(java_class, proxy_class)
+      else
+        create_class_constructor(java_class, proxy_class)
+      end
+      setup_instance_methods(java_class, proxy_class)
+      setup_class_methods(java_class, proxy_class)
+      setup_constants(java_class, proxy_class)
+      setup_inner_classes(java_class, proxy_class)
+      return proxy_class
+    end
+
     def create_class_constructor(java_class, proxy_class)
       class << proxy_class
         def new(*args)
@@ -141,29 +157,7 @@ module JavaUtilities
       end
     end
 
-    def setup_constants(java_class, proxy_class)
-      fields = java_class.fields.collect {|name| java_class.field(name) }
-      constants = fields.select {|field|
-        field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
-      }
-      constants.each {|constant|
-        value = Java.java_to_primitive(constant.static_value)
-        proxy_class.const_set(constant.name, value)
-      }
-    end
-
-    def setup_proxy_class(java_class, proxy_class)
-
-      class << proxy_class
-        alias_method(:new_proxy, :new)
-      end
-
-      if java_class.interface?
-	create_interface_constructor(java_class, proxy_class)
-      else
-        create_class_constructor(java_class, proxy_class)
-      end
-
+    def setup_instance_methods(java_class, proxy_class)
       def proxy_class.create_instance_methods(java_class)
         public_methods =
           java_class.java_instance_methods.select {|m| m.public? }
@@ -209,7 +203,9 @@ module JavaUtilities
         }
       end
       proxy_class.create_instance_methods(java_class)
+    end
 
+    def setup_class_methods(java_class, proxy_class)
       public_methods =
         java_class.java_class_methods.select {|m| m.public? }
       grouped_methods = public_methods.group_by {|m| m.name }
@@ -228,9 +224,20 @@ module JavaUtilities
                                "result;" +
                                "end")
       }
+    end
 
-      setup_constants(java_class, proxy_class)
+    def setup_constants(java_class, proxy_class)
+      fields = java_class.fields.collect {|name| java_class.field(name) }
+      constants = fields.select {|field|
+        field.static? and field.final? and JavaUtilities.valid_constant_name?(field.name)
+      }
+      constants.each {|constant|
+        value = Java.java_to_primitive(constant.static_value)
+        proxy_class.const_set(constant.name, value)
+      }
+    end
 
+    def setup_inner_classes(java_class, proxy_class)
       def proxy_class.const_missing(constant)
         inner_class = nil
         begin
@@ -241,8 +248,6 @@ module JavaUtilities
         end
         JavaUtilities.create_proxy_class(constant, inner_class, self)
       end
-
-      return proxy_class
     end
   end
 end
