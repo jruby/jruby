@@ -31,6 +31,7 @@ package org.jruby;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.ErrnoError;
 import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOHandlerSeekable;
@@ -133,11 +134,11 @@ public class RubyFile extends RubyIO {
         return fileClass;
     }
     
-    protected void openInternal(String path, String mode) {
+    protected void openInternal(String path, IOModes modes) {
         this.path = path;
+        this.modes = modes;
 
         try {
-            modes = new IOModes(getRuntime(), mode);
             handler = new IOHandlerSeekable(getRuntime(), path, modes);
             
             registerIOHandler(handler);
@@ -160,6 +161,16 @@ public class RubyFile extends RubyIO {
 	    return file;
 	}
 	
+	private static IOModes getModes(IRubyObject object) {
+		if (object instanceof RubyString) {
+			return new IOModes(object.getRuntime(), ((RubyString)object).getValue());
+		} else if (object instanceof RubyFixnum) {
+			return new IOModes(object.getRuntime(), ((RubyFixnum)object).getLongValue());
+		}
+
+		throw new TypeError(object.getRuntime(), "Invalid type for modes");
+	}
+	
 	public IRubyObject initialize(IRubyObject[] args) {
 	    if (args.length == 0) {
 	        throw new ArgumentError(getRuntime(), 0, 1);
@@ -167,16 +178,8 @@ public class RubyFile extends RubyIO {
 
 	    args[0].checkSafeString();
 	    path = args[0].toString();
-	    
-	    String mode = "r";
-	    if (args.length > 1) {
-	    	if (args[1] instanceof RubyString) {
-		        mode = ((RubyString)args[1]).getValue();
-	    	} else { //if (args[1] instanceof RubyFixnum) {
-	    			// TODO: Fix this
-	    		mode = "r+";
-	    	}
-	    }
+	    modes = args.length > 1 ? getModes(args[1]) :
+	    	new IOModes(getRuntime(), IOModes.RDONLY);
 	    
 	    // One of the few places where handler may be null.
 	    // If handler is not null, it indicates that this object
@@ -184,7 +187,7 @@ public class RubyFile extends RubyIO {
 	    if (handler != null) {
 	        close();
 	    }
-	    openInternal(path, mode);
+	    openInternal(path, modes);
 	    
 	    if (getRuntime().isBlockGiven()) {
 	        // getRuby().getRuntime().warn("File::new does not take block; use File::open instead");
@@ -203,19 +206,11 @@ public class RubyFile extends RubyIO {
 	    }
 	    args[0].checkSafeString();
 	    String path = args[0].toString();
-	    String mode = "r";
-	    if (args.length > 1) {
-	    	if (args[1] instanceof RubyString) {
-		        mode = ((RubyString)args[1]).getValue();
-		    } else {
-		    	// TODO: initialize has same crud in it...merge
-	    		mode = "r+";
-		    }
-
-	    }
-	    
+	    IOModes modes = args.length > 1 ? getModes(args[1]) :
+	    	new IOModes(recv.getRuntime(), IOModes.RDONLY);
 	    RubyFile file = new RubyFile(recv.getRuntime(), (RubyClass)recv);
-	    file.openInternal(path, mode);
+	    
+	    file.openInternal(path, modes);
 
 	    if (tryToYield && recv.getRuntime().isBlockGiven()) {
 	        try {

@@ -56,8 +56,10 @@ public class IOModes {
     	this(runtime, convertModesStringToModesInt(runtime, modesString));
     }
     
-    public IOModes(Ruby runtime, int modes) {
-        this.modes = modes;
+    public IOModes(Ruby runtime, long modes) {
+    	// TODO: Ruby does not seem to care about invalid numeric mode values
+    	// I am not sure if ruby overflows here also...
+        this.modes = (int)modes;
         this.runtime = runtime;
     }
     
@@ -71,6 +73,10 @@ public class IOModes {
     
     public boolean isAppendable() {
     	return (modes & APPEND) != 0;
+    }
+    
+    public boolean shouldTruncate() {
+    	return (modes & TRUNC) != 0;
     }
 
     // TODO: Make sure all open flags are added to this check.
@@ -101,8 +107,11 @@ public class IOModes {
             break;
         case 'a' :
             modes |= APPEND;
+            modes |= WRONLY;
+            break;
         case 'w' :
             modes |= WRONLY;
+            modes |= TRUNC;
             break;
         default :
             throw new ArgumentError(runtime, "illegal access mode " + modes);
@@ -115,6 +124,8 @@ public class IOModes {
                 if (modesString.charAt(i) == '+') {
                 	if ((modes & APPEND) != 0) {
                 		modes = RDWR | APPEND;
+                	} else if ((modes & WRONLY) != 0){
+                		modes = RDWR | TRUNC;
                 	} else {
                 		modes = RDWR;
                 	}

@@ -55,9 +55,9 @@ public class IOHandlerSeekable extends IOHandler {
         this.path = path;
         this.modes = modes;
         File theFile = new File(path);
-        
+
         if (theFile.exists()) {
-            if (modes.isReadable() == false && modes.isWriteable()== true) {
+            if (modes.shouldTruncate()) {
                 // If we only want to open for writing we should remove
                 // the old file before opening the fresh one.  If it fails
                 // to remove it we should do something?
