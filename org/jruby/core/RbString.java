@@ -56,7 +56,7 @@ public class RbString {
         stringClass.defineMethod("hash", getMethod("m_hash", false));
         stringClass.defineMethod("+", getMethod("op_plus", RubyObject.class));
         stringClass.defineMethod("*", getMethod("op_mul", RubyInteger.class));
-//    rb_define_method(rb_cString, "%", rb_str_format, 1);
+        stringClass.defineMethod("%", getMethod("m_format", RubyObject.class));
         stringClass.defineMethod("[]", getMethod("m_aref", true));
         stringClass.defineMethod("[]=", getMethod("m_aset", true));
         stringClass.defineMethod("length", getMethod("m_length", false));

@@ -45,10 +45,10 @@ import org.jruby.util.*;
  * @author  jpetersen
  */
 public final class Ruby {
-    public static final int FIXNUM_CACHE_SIZE = 0xff;
+    public static final int FIXNUM_CACHE_MAX = 0xff;
     public static final boolean AUTOMATIC_BIGNUM_CAST = true;
     
-    public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_SIZE];
+    public RubyFixnum[] fixnumCache = new RubyFixnum[FIXNUM_CACHE_MAX + 1];
     
     private HashMap methodCache = new HashMap();
     
@@ -373,7 +373,7 @@ public final class Ruby {
     }
     
     private void createFixnumCache() {
-        for (int i = 0; i < FIXNUM_CACHE_SIZE; i++) {
+        for (int i = 0; i <= FIXNUM_CACHE_MAX; i++) {
             fixnumCache[i] = new RubyFixnum(this, i);
         }
     }

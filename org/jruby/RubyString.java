@@ -33,6 +33,9 @@ import org.jruby.exceptions.*;
  * @author  jpetersen
  */
 public class RubyString extends RubyObject {
+
+    private static RubyModule pfClass;
+    
     private String value;
     
     public RubyString(Ruby ruby) {
@@ -786,4 +789,21 @@ public class RubyString extends RubyObject {
         m_aset(newArgs);
         return result;
     }
+    
+    /** rb_str_format
+     *
+     */
+    public RubyObject m_format(RubyObject arg) {
+        if (pfClass == null) {
+            try {
+                Class c = Class.forName("org.jruby.util.PrintfFormat");
+                pfClass = RubyJavaObject.loadClass(getRuby(), c, null);
+            } catch (ClassNotFoundException ex) {
+                throw new RubyBugException("couldn't find PrintfFormat class");
+            }
+        }
+        RubyObject pfObject = pfClass.funcall(getRuby().intern("new"), this);
+        return pfObject.funcall(getRuby().intern("sprintf"), arg);
+    }
+    
 }

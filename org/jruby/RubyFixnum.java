@@ -97,7 +97,7 @@ public class RubyFixnum extends RubyInteger {
     
     public static RubyFixnum m_newFixnum(Ruby ruby, long value) {
         // Cache for Fixnums (Performance)
-        if ((value & ~Ruby.FIXNUM_CACHE_SIZE) == 0) {
+        if ((value & ~Ruby.FIXNUM_CACHE_MAX) == 0) {
             return ruby.fixnumCache[(int)value];
         }
         
@@ -106,7 +106,7 @@ public class RubyFixnum extends RubyInteger {
     
     public RubyFixnum m_newFixnum(long value) {
         // Cache for Fixnums (Performance)
-        if ((value & ~Ruby.FIXNUM_CACHE_SIZE) == 0) {
+        if ((value & ~Ruby.FIXNUM_CACHE_MAX) == 0) {
             return getRuby().fixnumCache[(int)value];
         }
         

@@ -30,6 +30,7 @@ import java.io.*;
 import java.net.*;
 
 import org.jruby.*;
+import org.jruby.exceptions.*;
 
 /**
  *
@@ -42,6 +43,9 @@ public class RBKernel {
         
         kernelModule.defineMethod("puts", getKernelMethod("m_puts"));
         kernelModule.defineMethod("print", getKernelMethod("m_print"));
+        kernelModule.defineMethod("sprintf", getKernelMethod("m_sprintf"));
+        kernelModule.defineMethod("format", getKernelMethod("m_sprintf"));
+        kernelModule.defineMethod("printf", getKernelMethod("m_printf"));
         kernelModule.defineMethod("require", getKernelMethod("m_require", RubyString.class));
         kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
         kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
@@ -91,6 +95,30 @@ public class RBKernel {
                 System.out.print(((RubyString)args[i].funcall(ruby.intern("to_s"))).getValue());
             }
         }
+        return ruby.getNil();
+    }
+    
+    public static RubyObject m_sprintf(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        if (args.length == 0) {
+            throw new RubyArgumentException("sprintf must have at least one argument");
+        }
+        RubyString str = null;
+        if (!(args[0] instanceof RubyString)) {
+            try {
+                str = (RubyString)args[0].convertType(RubyString.class, "String", "to_str");
+            } catch (Exception ex) {
+                throw new RubyArgumentException("first argument to sprintf must be a string");
+            }
+        } else {
+            str = (RubyString)args[0];
+        }
+        RubyArray newArgs = RubyArray.m_create(ruby, args);
+        newArgs.m_shift();
+        return str.m_format(newArgs);
+    }
+    
+    public static RubyObject m_printf(Ruby ruby, RubyObject recv, RubyObject args[]) {
+        System.out.print(((RubyString)m_sprintf(ruby, recv, args)).getValue());
         return ruby.getNil();
     }
     
