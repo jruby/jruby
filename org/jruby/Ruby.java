@@ -481,7 +481,7 @@ public final class Ruby {
             return getNil();
         }
 
-        INode blockVar = actBlock.getVar(); // ... What exactly is a "var"? A variable?
+        INode blockVar = actBlock.getVar();
 
         if (blockVar != null) {
             // try {

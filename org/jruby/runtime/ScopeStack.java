@@ -41,38 +41,28 @@ public class ScopeStack extends AbstractStack {
 
     public ScopeStack(Ruby ruby) {
         this.ruby = ruby;
-
-        // top = new Scope();
     }
 
     public void push(List localNames) {
         push();
-
         setLocalNames(localNames);
-        if (localNames != null) {
-            setLocalValues(new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil())));
-        }
     }
 
     public void push(StackElement newElement) {
-        if (top != null) {
-            ((Scope) top).setMethodScope(ruby.getActMethodScope());
+        if (current() != null) {
+            current().setMethodScope(ruby.getActMethodScope());
         }
-
         super.push(newElement);
-
         ruby.setActMethodScope(Constants.NOEX_PUBLIC);
     }
 
     public void push() {
-        this.push(new Scope());
+        this.push(new Scope(ruby));
     }
 
     public StackElement pop() {
         Scope result = (Scope) super.pop();
-
         ruby.setActMethodScope(result.getMethodScope());
-
         return result;
     }
     
@@ -80,45 +70,49 @@ public class ScopeStack extends AbstractStack {
         top = newElement;
     }
 
+    private Scope current() {
+        return (Scope) top;
+    }
+
     // delegates to the top object
 
     public int getFlags() {
-        return ((Scope) top).getFlags();
+        return current().getFlags();
     }
 
     public void setFlags(int flags) {
-        ((Scope) top).setFlags(flags);
+        current().setFlags(flags);
     }
 
     public RubyObject getSuperObject() {
-        return ((Scope) top).getSuperObject();
+        return current().getSuperObject();
     }
 
     public void setSuperObject(RubyObject superObject) {
-        ((Scope) top).setSuperObject(superObject);
+        current().setSuperObject(superObject);
     }
 
     public List getLocalNames() {
-        return ((Scope) top).getLocalNames();
+        return current().getLocalNames();
     }
 
     public void setLocalNames(List localName) {
-        ((Scope) top).setLocalNames(localName);
+        current().setLocalNames(localName);
     }
 
     public List getLocalValues() {
-        return ((Scope) top).getLocalValues();
+        return current().getLocalValues();
     }
 
     public void setLocalValues(List localValue) {
-        ((Scope) top).setLocalValues(localValue);
+        current().setLocalValues(localValue);
     }
 
     public RubyObject getValue(int count) {
-        return ((Scope) top).getValue(count);
+        return current().getValue(count);
     }
 
     public void setValue(int count, RubyObject value) {
-        ((Scope) top).setValue(count, value);
+        current().setValue(count, value);
     }
 }

@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.exceptions.*;
 import org.jruby.util.Asserts;
 import org.jruby.util.ErrorMessage;
+import org.jruby.util.AssertionError;
 
 /**
  *

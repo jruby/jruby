@@ -28,8 +28,9 @@
  */
 package org.jruby.runtime;
 
-import java.util.List;
+import java.util.*;
 
+import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.util.collections.StackElement;
 
@@ -45,10 +46,7 @@ import org.jruby.util.collections.StackElement;
  * @version $Revision$
  */
 public class Scope implements StackElement {
-    public static final int SCOPE_ALLOCA = 0;
-    public static final int SCOPE_MALLOC = 1;
-    public static final int SCOPE_NOSTACK = 2;
-    public static final int SCOPE_DONT_RECYCLE = 4;
+	private Ruby ruby;
 
     private RubyObject superObject = null;
     
@@ -61,7 +59,8 @@ public class Scope implements StackElement {
 
     private Scope next = null;
 
-    public Scope() {
+    public Scope(Ruby ruby) {
+		this.ruby = ruby;
     }
     
     public StackElement getNext() {
@@ -111,8 +110,11 @@ public class Scope implements StackElement {
      * Sets the localNames.
      * @param localNames The localNames to set
      */
-    public void setLocalNames(List localName) {
-        this.localNames = localName;
+    public void setLocalNames(List localNames) {
+        this.localNames = localNames;
+        if (localNames != null) {
+            setLocalValues(new ArrayList(Collections.nCopies(localNames.size(), ruby.getNil())));
+        }
     }
 
     /**
@@ -127,8 +129,8 @@ public class Scope implements StackElement {
      * Sets the localValues.
      * @param localValues The localValues to set
      */
-    public void setLocalValues(List localValue) {
-        this.localValues = localValue;
+    public void setLocalValues(List localValues) {
+        this.localValues = localValues;
     }
 
 	public RubyObject getValue(int count) {

@@ -26,5 +26,3 @@ test_equal(['.', '..', "file1", "file2"], Dir.new('./testDir_1').entries.sort)
   File.delete("./testDir_1/file" + i.to_s)
 }
 Dir.delete("./testDir_1")
-
-test_print_report
