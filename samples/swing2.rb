@@ -16,7 +16,7 @@ button = JavaSwing::JButton.new("Klick Me!")
 action = JavaSwing::ActionListener.new
 class << action
   def actionPerformed(evt)
-    JavaSwing::JOptionPane.showMessageDialog (nil, "<html>Hello from <b><u>JRuby</u></b>.<br> Button '#{evt.getActionCommand()}' clicked.")
+    JavaSwing::JOptionPane.showMessageDialog(nil, "<html>Hello from <b><u>JRuby</u></b>.<br> Button '#{evt.getActionCommand()}' clicked.")
   end
 end
 button.addActionListener(action)
