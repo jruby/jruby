@@ -580,9 +580,6 @@ public class RubyObject implements Cloneable, IRubyObject {
             }
         }
         getRuby().pushClass(ruby.getCBase());
-        if (ruby.getRubyClass().isIncluded()) {
-            ruby.setRubyClass(((RubyIncludedClass) ruby.getRubyClass()).getDelegate());
-        }
         RubyObject result = getRuby().getNil();
         try {
             INode node = getRuby().parse(src.toString(), file);

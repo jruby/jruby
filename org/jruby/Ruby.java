@@ -633,11 +633,11 @@ public final class Ruby {
 
     public void pushClass(RubyModule newClass) {
         classStack.push(getRubyClass());
-        setRubyClass(newClass);
+        rubyClass = newClass;
     }
 
     public void popClass() {
-        setRubyClass((RubyModule) classStack.pop());
+        rubyClass = (RubyModule) classStack.pop();
     }
 
     /** Setter for property isVerbose.
@@ -665,14 +665,10 @@ public final class Ruby {
      * @return Value of property rubyClass.
      */
     public RubyModule getRubyClass() {
+        if (rubyClass.isIncluded()) {
+            return ((RubyIncludedClass) rubyClass).getDelegate();
+        }
         return rubyClass;
-    }
-
-    /** Setter for property rubyClass.
-     * @param rubyClass New value of property rubyClass.
-     */
-    public void setRubyClass(org.jruby.RubyModule rubyClass) {
-        this.rubyClass = rubyClass;
     }
 
     public FrameStack getFrameStack() {
@@ -925,15 +921,15 @@ public final class Ruby {
     public Parser getParser() {
         return parser;
     }
-    
+
     public ThreadContext getCurrentContext() {
         return (ThreadContext)threadContext.get();
     }
-    
+
     public Evaluator getCurrentEvaluator() {
         return getCurrentContext().getEvaluator();
     }
-    
+
     public ISourcePosition getPosition() {
         return new DefaultLexerPosition(getSourceFile(), getSourceLine(), 0);
     }
