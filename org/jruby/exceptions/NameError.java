@@ -1,5 +1,5 @@
 /*
- * RubyNameException.java - No description
+ * NameError.java - No description
  * Created on 04. Juli 2001, 22:53
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust, Alan Moore, Benoit Cerrina

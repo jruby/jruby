@@ -10,7 +10,7 @@ def test_check(what)
   $testnum = 0
 end
 
-def test_ok(cond)
+def test_ok(cond, msg="")
   $testnum+=1
   $ntest+=1
   if cond
@@ -20,13 +20,19 @@ def test_ok(cond)
     where = caller[0]
 	#printf "not ok %s %d -- %s\n", $what, $testnum, where
 	#$failed+=1 
-    $failed.push(sprintf("not ok %s %d -- %s\n", $what, $testnum, where))
+    $failed.push(sprintf("not ok %s %d %s-- %s\n", $what, $testnum, msg, where))
 	print "F"
 	$curtestOK=false
   end
 end
 
+
+def test_equal(a,b)
+ test_ok(a == b, "expected #{a.inspect}, found #{b.inspect}") 
+end
 def test_print_report
+  puts
+  puts "-" * 80
   $failed.each { |error| puts error}
   puts "-" * 80
   puts "Tests: #$ntest. (Ok: #{$ntest - $failed.size}; Failed: #{$failed.size})"

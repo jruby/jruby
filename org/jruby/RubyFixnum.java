@@ -27,8 +27,8 @@
  * 
  */
 package org.jruby;
-
-import java.nio.*;
+//Benoit: this is not needed and adds a compile time dependency on jdk1.4
+//import java.nio.*;
 
 import org.jruby.runtime.*;
 

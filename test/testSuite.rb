@@ -43,6 +43,7 @@ test_load('test/testFloat.rb')
 test_load('test/testBlock.rb')
 test_load('test/testRange.rb')
 test_load('test/testString.rb')
+test_load('test/testException.rb')
 
 #MRI Ruby tests:
 test_load('test/mri/testAssignment.rb')
@@ -56,8 +57,8 @@ test_load('test/mri/testHash.rb')
 test_load('test/mri/testIterator.rb')
 test_load('test/mri/testFloat.rb')
 test_load('test/mri/testBignum.rb')
-#test_load('test/mri/testString.rb')
-#test_load('test/mri/testAssignement2.rb')
+test_load('test/mri/testString.rb')
+test_load('test/mri/testAssignment2.rb') #doesn't exists (yet?)
 
 #Output result
 puts

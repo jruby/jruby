@@ -52,21 +52,22 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 
 
 	public void visitAliasNode(AliasNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitAliasNode(iVisited);
 	}
 
 	public void visitAndNode(AndNode iVisited) {
 		iVisited.getFirstNode().accept(this);
-		iVisited.accept(_Payload);
+		_Payload.visitAndNode(iVisited);
+		
 		iVisited.getSecondNode().accept(this);
 	}
 
 	public void visitArgsCatNode(ArgsCatNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitArgsCatNode(iVisited);
 	}
 
 	public void visitArgsNode(ArgsNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitArgsNode(iVisited);
 		Node lOptNode = iVisited.getOptNode();
 		if (lOptNode != null) {
 			lOptNode.accept(this);
@@ -74,71 +75,71 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	}
 
 	public void visitArgsPushNode(ArgsPushNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitArgsPushNode(iVisited);
 	}
 
 	public void visitArrayNode(ArrayNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitArrayNode(iVisited);
 		for (Node node = iVisited; node != null; node = node.getNextNode()) {
 			node.getHeadNode().accept(this);
 		}
 	}
 
 	public void visitAttrSetNode(AttrSetNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitAttrSetNode(iVisited);
 	}
 
 	public void visitBackRefNode(BackRefNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitBackRefNode(iVisited);
 	}
 
 	public void visitBeginNode(BeginNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitBeginNode(iVisited);
 	}
 
 	public void visitBlockArgNode(BlockArgNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitBlockArgNode(iVisited);
 	}
 
 	public void visitBlockNode(BlockNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitBlockNode(iVisited);
 		for (Node node = iVisited; node != null; node = node.getNextNode()) {
 			node.getHeadNode().accept(this);
 		}
 	}
 
 	public void visitBlockPassNode(BlockPassNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitBlockPassNode(iVisited);
 	}
 
 	public void visitBreakNode(BreakNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitBreakNode(iVisited);
 	}
 
 	public void visitCDeclNode(CDeclNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCDeclNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitCFuncNode(CFuncNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCFuncNode(iVisited);
 	}
 
 	public void visitCVAsgnNode(CVAsgnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCVAsgnNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitCVDeclNode(CVDeclNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCVDeclNode(iVisited);
 	}
 
 	public void visitCVar2Node(CVar2Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCVar2Node(iVisited);
 	}
 
 	public void visitCVarNode(CVarNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCVarNode(iVisited);
 	}
 
 	public void visitCallNode(CallNode iVisited) {
@@ -146,15 +147,15 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 		for (Node node = iVisited.getArgsNode(); node != null; node = node.getNextNode()) {
 			node.getHeadNode().accept(this);
 		}
-		iVisited.accept(_Payload);
+		_Payload.visitCallNode(iVisited);
 	}
 
 	public void visitCaseNode(CaseNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitCaseNode(iVisited);
 	}
 
 	public void visitClassNode(ClassNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitClassNode(iVisited);
 		Node lSuperNode = iVisited.getSuperNode();
 		if (lSuperNode != null)
 			lSuperNode.accept(this);
@@ -163,124 +164,124 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	}
 
 	public void visitColon2Node(Colon2Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitColon2Node(iVisited);
 	}
 
 	public void visitColon3Node(Colon3Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitColon3Node(iVisited);
 	}
 
 	public void visitConstNode(ConstNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitConstNode(iVisited);
 	}
 
 	public void visitDAsgnCurrNode(DAsgnCurrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDAsgnCurrNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitDAsgnNode(DAsgnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDAsgnNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitDRegxNode(DRegxNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDRegxNode(iVisited);
 	}
 
 	public void visitDRegxOnceNode(DRegxOnceNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDRegxOnceNode(iVisited);
 	}
 
 	public void visitDStrNode(DStrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDStrNode(iVisited);
 	}
 
 	public void visitDVarNode(DVarNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDVarNode(iVisited);
 	}
 
 	public void visitDXStrNode(DXStrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDXStrNode(iVisited);
 	}
 
 	public void visitDefinedNode(DefinedNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDefinedNode(iVisited);
 	}
 
 	public void visitDefnNode(DefnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDefnNode(iVisited);
 		iVisited.getDefnNode().accept(this);
 	}
 
 	public void visitDefsNode(DefsNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDefsNode(iVisited);
 		iVisited.getRecvNode().accept(this);
 	}
 
 	public void visitDotNode(DotNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitDotNode(iVisited);
 	}
 
 	public void visitEnsureNode(EnsureNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitEnsureNode(iVisited);
 	}
 
 	public void visitEvStrNode(EvStrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitEvStrNode(iVisited);
 	}
 
 	public void visitFBodyNode(FBodyNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitFBodyNode(iVisited);
 	}
 
 	public void visitFCallNode(FCallNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitFCallNode(iVisited);
 		for (Node node = iVisited.getArgsNode(); node != null; node = node.getNextNode()) {
 			node.getHeadNode().accept(this);
 		}
 	}
 
 	public void visitFalseNode(FalseNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitFalseNode(iVisited);
 	}
 
 	public void visitFlipNode(FlipNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitFlipNode(iVisited);
 	}
 
 	public void visitForNode(ForNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitForNode(iVisited);
 	}
 
 	public void visitGAsgnNode(GAsgnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitGAsgnNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitGVarNode(GVarNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitGVarNode(iVisited);
 	}
 
 	public void visitHashNode(HashNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitHashNode(iVisited);
 	}
 
 	public void visitIAsgnNode(IAsgnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitIAsgnNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitIFuncNode(IFuncNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitIFuncNode(iVisited);
 	}
 
 	public void visitIVarNode(IVarNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitIVarNode(iVisited);
 	}
 
 	public void visitIfNode(IfNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitIfNode(iVisited);
 		iVisited.getConditionNode().accept(this);
 		iVisited.getBodyNode().accept(this);
 		Node lElseNode = iVisited.getElseNode();
@@ -289,110 +290,110 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	}
 
 	public void visitIterNode(IterNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitIterNode(iVisited);
 	}
 
 	public void visitLAsgnNode(LAsgnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitLAsgnNode(iVisited);
 		iVisited.getValueNode().accept(this);
 	}
 
 	public void visitLVarNode(LVarNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitLVarNode(iVisited);
 	}
 
 	public void visitLitNode(LitNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitLitNode(iVisited);
 	}
 
 	public void visitMAsgnNode(MAsgnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitMAsgnNode(iVisited);
 	}
 
 	public void visitMatch2Node(Match2Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitMatch2Node(iVisited);
 	}
 
 	public void visitMatch3Node(Match3Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitMatch3Node(iVisited);
 	}
 
 	public void visitMatchNode(MatchNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitMatchNode(iVisited);
 	}
 
 	public void visitMethodNode(MethodNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitMethodNode(iVisited);
 	}
 
 	public void visitModuleNode(ModuleNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitModuleNode(iVisited);
 	}
 
 	public void visitNewlineNode(NewlineNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitNewlineNode(iVisited);
 		iVisited.getNextNode().accept(this);
 	}
 
 	public void visitNextNode(NextNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitNextNode(iVisited);
 	}
 
 	public void visitNilNode(NilNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitNilNode(iVisited);
 	}
 
 	public void visitNotNode(NotNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitNotNode(iVisited);
 		iVisited.getBodyNode().accept(this);
 	}
 
 	public void visitNthRefNode(NthRefNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitNthRefNode(iVisited);
 	}
 
 	public void visitOpAsgn1Node(OpAsgn1Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitOpAsgn1Node(iVisited);
 	}
 
 	public void visitOpAsgn2Node(OpAsgn2Node iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitOpAsgn2Node(iVisited);
 	}
 
 	public void visitOpAsgnAndNode(OpAsgnAndNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitOpAsgnAndNode(iVisited);
 	}
 
 	public void visitOpAsgnOrNode(OpAsgnOrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitOpAsgnOrNode(iVisited);
 	}
 
 	public void visitOptNNode(OptNNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitOptNNode(iVisited);
 		iVisited.getBodyNode().accept(this);
 	}
 
 	public void visitOrNode(OrNode iVisited) {
 		iVisited.getFirstNode().accept(this);
-		iVisited.accept(_Payload);
+		_Payload.visitOrNode(iVisited);
 		iVisited.getSecondNode().accept(this);
 	}
 
 	public void visitPostExeNode(PostExeNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitPostExeNode(iVisited);
 	}
 
 	public void visitRedoNode(RedoNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitRedoNode(iVisited);
 	}
 
 	public void visitRescueBodyNode(RescueBodyNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitRescueBodyNode(iVisited);
 		iVisited.getBodyNode().accept(this);
 	}
 
 	public void visitRescueNode(RescueNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitRescueNode(iVisited);
 		iVisited.getHeadNode().accept(this);
 		Node lElseNode = iVisited.getElseNode();
 		if (lElseNode != null)
@@ -407,23 +408,23 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	}
 
 	public void visitRestArgsNode(RestArgsNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitRestArgsNode(iVisited);
 	}
 
 	public void visitRetryNode(RetryNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitRetryNode(iVisited);
 	}
 
 	public void visitReturnNode(ReturnNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitReturnNode(iVisited);
 	}
 
 	public void visitSClassNode(SClassNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitSClassNode(iVisited);
 	}
 
 	public void visitScopeNode(ScopeNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitScopeNode(iVisited);
 		Node lNext = iVisited.getNextNode();
 		if (lNext != null) {
 			lNext.accept(this);
@@ -431,61 +432,61 @@ public class DefaultIteratorVisitor implements NodeVisitor {
 	}
 
 	public void visitSelfNode(SelfNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitSelfNode(iVisited);
 	}
 
 	public void visitStrNode(StrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitStrNode(iVisited);
 	}
 
 	public void visitSuperNode(SuperNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitSuperNode(iVisited);
 	}
 
 	public void visitTrueNode(TrueNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitTrueNode(iVisited);
 	}
 
 	public void visitUndefNode(UndefNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitUndefNode(iVisited);
 	}
 
 	public void visitUntilNode(UntilNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitUntilNode(iVisited);
 	}
 
 	public void visitVAliasNode(VAliasNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitVAliasNode(iVisited);
 	}
 
 	public void visitVCallNode(VCallNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitVCallNode(iVisited);
 	}
 
 	public void visitWhenNode(WhenNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitWhenNode(iVisited);
         iVisited.getConditionNode().accept(this);
         iVisited.getBodyNode().accept(this);
 	}
 
 	public void visitWhileNode(WhileNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitWhileNode(iVisited);
 	}
 
 	public void visitXStrNode(XStrNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitXStrNode(iVisited);
 	}
 
 	public void visitYieldNode(YieldNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitYieldNode(iVisited);
 	}
 
 	public void visitZArrayNode(ZArrayNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitZArrayNode(iVisited);
 	}
 
 	public void visitZSuperNode(ZSuperNode iVisited) {
-		iVisited.accept(_Payload);
+		_Payload.visitZSuperNode(iVisited);
 	}
 }
 

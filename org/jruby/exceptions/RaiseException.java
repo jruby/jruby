@@ -58,27 +58,27 @@ public class RaiseException extends JumpException {
         RubyFrame frame = ruby.getRubyFrame();
 
         RubyArray backtrace = RubyArray.newArray(ruby);
-
-        if (level < 0) {
-            StringBuffer sb = new StringBuffer(100);
-
-            if (frame.getLastFunc() != null) {
-                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
-                sb.append(":in '").append(frame.getLastFunc()).append('\'');
-            } else if (ruby.getSourceLine() == 0) {
-                sb.append(ruby.getSourceFile());
-            } else {
-                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
-            }
-            backtrace.push(RubyString.newString(ruby, sb.toString()));
-        } else {
+//Benoit: this generates the first line of the backtrace once too many time, see test/testException
+//        if (level < 0) {
+//            StringBuffer sb = new StringBuffer(100);
+//
+//            if (frame.getLastFunc() != null) {
+//                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
+//                sb.append(":in '").append(frame.getLastFunc()).append('\'');
+//            } else if (ruby.getSourceLine() == 0) {
+//                sb.append(ruby.getSourceFile());
+//            } else {
+//                sb.append(ruby.getSourceFile()).append(':').append(ruby.getSourceLine());
+//            }
+//            backtrace.push(RubyString.newString(ruby, sb.toString()));
+//        } else {
             while (level-- > 0) {
                 frame = frame.getPrev();
                 if (frame == null) {
                     return RubyArray.nilArray(ruby);
                 }
             }
-        }
+//        }
 
         while (frame != null && frame.getFile() != null) {
             StringBuffer sb = new StringBuffer(100);

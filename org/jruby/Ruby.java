@@ -32,8 +32,8 @@ package org.jruby;
 
 import java.io.*;
 import java.util.*;
-
-import org.apache.xalan.templates.*;
+//Benoit: this is not needed and adds a compile time dependency on xalan
+//import org.apache.xalan.templates.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
 import org.jruby.nodes.*;

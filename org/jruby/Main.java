@@ -52,8 +52,6 @@ public class Main {
     private static Class sRegexpAdapter;
 
     // print bugs
-    // FIXME: remove if really not used Benoit.
-    //	private static boolean printBugs = false;
     private static ArrayList sLoadDirectories = new ArrayList();
     private static String sScript = null;
     private static String sFileName = null;

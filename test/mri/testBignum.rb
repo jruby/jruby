@@ -26,6 +26,7 @@ test_ok(2**32 - 5 == (2**32-3)-2)
 
 $good = true;
 for i in 1000..1014
+	raise Exception, 'test'
   $good = false if ((1<<i) != (2**i))
 end
 test_ok($good)
