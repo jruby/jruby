@@ -231,7 +231,8 @@ public class LoadService implements ILoadService {
                 }
             }
             File current = new File(name);
-            if (current.exists()) {
+            // Make sure that the file exists and isn't a directory
+            if (current.exists() && current.isFile()) {
                 return current.toURL();
             }
         } catch (MalformedURLException e) {
