@@ -15,7 +15,8 @@
     <property name="build.dir" value="build"/>
     <property name="build.dest" value="${build.dir}/classes"/>
     <property name="build.docs" value="${build.dir}/docs"/>
-    <property name="build.tars" value="${build.dir}/jruby_${version.file}"/>
+    <property name="build.tars.base" value="${build.dir}/tars"/>
+    <property name="build.tars" value="${build.tars.base}/jruby_${version.file}"/>
     <property name="src.dir" value="."/>
     <property name="base.dir" value="."/>
 
@@ -44,6 +45,7 @@
     </target>
 
     <target depends="compile" name="bin-gz">
+        <mkdir dir="${build.tars.base}"/>
         <mkdir dir="${build.tars}"/>
         
         <copy todir="${build.tars}">
@@ -58,10 +60,9 @@
             </fileset>
         </copy>
         
-        <tar basedir="${build.dir}" tarfile="${build.dir}/jruby.tar">
-            <tarfileset dir="${build.tars}">
-                <exclude name="src/**/*"/>
-            </tarfileset>
+        <tar basedir="${build.tars.base}" tarfile="${build.dir}/jruby.tar">
+            <exclude name="jruby_${version.file}/gnu/**/*"/>
+            <exclude name="jruby_${version.file}/org/**/*"/>
         </tar>
 
         <gzip src="${build.dir}/jruby.tar" zipfile="${build.dir}/jruby-${version.file}.tar.gz"/>
@@ -71,7 +72,7 @@
         <delete file="${build.dir}/jruby.jar"/>-->
     </target>
 
-    <target depends="bin-gz" name="src-gz">
+    <target depends="bin-gz" description="Create source archive." name="src-gz">
         <mkdir dir="${build.tars}"/>
 
         <copy todir="${build.tars}">
@@ -83,10 +84,8 @@
             </fileset>
         </copy>
         
-        <tar basedir="${build.dir}" tarfile="${build.dir}/jruby-src.tar">
-            <tarfileset dir="${build.tars}">
-            <exclude name="jruby.jar"/>
-            </tarfileset>
+        <tar basedir="${build.tars.base}" tarfile="${build.dir}/jruby-src.tar">
+            <exclude name="jruby_${version.file}/jruby.jar"/>
         </tar>
 
         <gzip src="${build.dir}/jruby-src.tar" zipfile="${build.dir}/jruby-src-${version.file}.tar.gz"/>
@@ -94,7 +93,7 @@
         <!-- <delete file="${build.dir}/jruby-src.tar"/> -->
     </target>
 
-    <target name="javadocs">
+    <target description="Build Javadoc documentation" name="javadocs">
         <mkdir dir="${build.docs}"/>
         <mkdir dir="${build.docs}/support"/>
         <javadoc destdir="${build.docs}" doctitle="${javadoc.title}" packagenames="org.jruby.*" public="true" sourcepath="${src.dir}" use="true" version="true" windowtitle="${javadoc.title}"/>
