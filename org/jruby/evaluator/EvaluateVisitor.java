@@ -879,8 +879,6 @@ public final class EvaluateVisitor implements NodeVisitor {
                     String file = ruby.getSourceFile();
                     int line = ruby.getSourceLine();
 
-                    // XXX ruby.getBlock().flags &= ~RubyBlock.BLOCK_D_SCOPE;
-
                     Block tmpBlock = ArgsUtil.beginCallArgs(ruby);
                     IRubyObject recv = eval(iVisited.getIterNode());
                     ArgsUtil.endCallArgs(ruby, tmpBlock);

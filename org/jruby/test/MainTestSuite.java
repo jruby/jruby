@@ -54,6 +54,7 @@ public class MainTestSuite extends TestSuite {
         suite.addTest(ScriptTestSuite.suite());
         suite.addTest(new TestSuite(TestRubySymbol.class));
         suite.addTest(new TestSuite(TestRubyProxyFactory.class));
+        suite.addTest(new TestSuite(TestIdentitySet.class));
         return suite;
     }
 }

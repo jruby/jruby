@@ -49,6 +49,7 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Asserts;
 import org.jruby.util.Pack;
+import org.jruby.util.collections.IdentitySet;
 
 /**
  *
@@ -461,17 +462,25 @@ public class RubyArray extends RubyObject implements IndexCallable {
         }
     }
 
-    private boolean flatten(ArrayList ary) {
-        boolean mod = false;
-        for (int i = ary.size() - 1; i >= 0; i--) {
-            if (ary.get(i) instanceof RubyArray) {
-                ArrayList ary2 = ((RubyArray) ary.remove(i)).getList();
-                flatten(ary2);
-                ary.addAll(i, ary2);
-                mod = true;
+    private boolean flatten(ArrayList array) {
+        return flatten(array, new IdentitySet());
+    }
+
+    private boolean flatten(ArrayList array, IdentitySet visited) {
+        if (visited.contains(array)) {
+            throw new ArgumentError(runtime, "tried to flatten recursive array");
+        }
+        visited.add(array);
+        boolean isModified = false;
+        for (int i = array.size() - 1; i >= 0; i--) {
+            if (array.get(i) instanceof RubyArray) {
+                ArrayList ary2 = ((RubyArray) array.remove(i)).getList();
+                flatten(ary2, visited);
+                array.addAll(i, ary2);
+                isModified = true;
             }
         }
-        return mod;
+        return isModified;
     }
 
     //
@@ -1023,7 +1032,7 @@ public class RubyArray extends RubyObject implements IndexCallable {
      *
      */
     public IRubyObject rbClone() {
-        RubyArray ary = newArray(getRuntime(), list);
+        RubyArray ary = newArray(getRuntime(), new ArrayList(list));
         ary.setupClone(this);
         return ary;
     }

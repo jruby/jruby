@@ -5,7 +5,7 @@ testRegexp.rb
 testStringEval.rb
 testHereDocument.rb
 testClass.rb
-##testArray.rb
+testArray.rb
 testVariableAndMethod.rb
 testIf.rb
 testLoops.rb
