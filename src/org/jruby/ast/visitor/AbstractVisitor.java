@@ -237,6 +237,13 @@ public abstract class AbstractVisitor implements NodeVisitor {
     }
 
     /**
+     * @see NodeVisitor#visitDSymbolNode(SymbolNode)
+     */
+    public void visitDSymbolNode(DSymbolNode iVisited) {
+        visitNode(iVisited);
+    }
+
+    /**
      * @see NodeVisitor#visitDVarNode(DVarNode)
      */
     public void visitDVarNode(DVarNode iVisited) {

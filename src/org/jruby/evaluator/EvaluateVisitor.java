@@ -494,6 +494,22 @@ public final class EvaluateVisitor implements NodeVisitor {
 
         result = builtins.toString(sb.toString());
     }
+    
+    /**
+     * @see NodeVisitor#visitSymbolNode(SymbolNode)
+     */
+    public void visitDSymbolNode(DSymbolNode iVisited) {
+        StringBuffer sb = new StringBuffer();
+
+        for (Iterator iterator = iVisited.getNode().iterator(); 
+        	iterator.hasNext();) {
+            INode node = (INode) iterator.next();
+            sb.append(eval(node));
+        }
+
+        result = builtins.toSymbol(sb.toString());
+    }
+
 
     /**
      * @see NodeVisitor#visitDVarNode(DVarNode)

@@ -68,6 +68,7 @@ public interface NodeVisitor extends INodeVisitor {
     public void visitDAsgnNode(DAsgnNode iVisited);
     public void visitDRegxNode(DRegexpNode iVisited);
     public void visitDStrNode(DStrNode iVisited);
+    public void visitDSymbolNode(DSymbolNode iVisited);
     public void visitDVarNode(DVarNode iVisited);
     public void visitDXStrNode(DXStrNode iVisited);
     public void visitDefinedNode(DefinedNode iVisited);

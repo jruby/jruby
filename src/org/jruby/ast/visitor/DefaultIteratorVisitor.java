@@ -197,6 +197,13 @@ public class DefaultIteratorVisitor implements NodeVisitor {
         iVisited.accept(_Payload);
     }
 
+    /**
+     * @see NodeVisitor#visitDSymbolNode(DSymbolNode)
+     */
+    public void visitDSymbolNode(DSymbolNode iVisited) {
+        iVisited.accept(_Payload);
+    }
+
     public void visitDVarNode(DVarNode iVisited) {
         iVisited.accept(_Payload);
     }

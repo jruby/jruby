@@ -1577,29 +1577,12 @@ sym           : fname
 
 dsym	      : tSYMBEG xstring_contents tSTRING_END {
                     lexer.setState(LexState.EXPR_END);
-		    INode node = $2;
-		    /*
-			if (!($$ = $2)) {
-			    yyerror("empty symbol literal");
-			}
-		    */
 
-		    // In ruby the only place DSYM is used is same place
-		    // as DSTR itself, therefore I will a DSTR
-		    if (node instanceof DStrNode == false) {
-		      /* in ruby
-			      case NODE_STR:
-				if (strlen(RSTRING($$->nd_lit)->ptr) == RSTRING($$->nd_lit)->len) {
-				    $$->nd_lit = ID2SYM(rb_intern(RSTRING($$->nd_lit)->ptr));
-				    nd_set_type($$, NODE_LIT);
-				    break;
-				}
-		      */
-		      $$ = new DStrNode(getPosition()).add(node);
-
-		    } else {
-		      $$ = node;
-		    }
+		    // In ruby, it seems to be possible to get a
+		    // StrNode (NODE_STR) among other node type.  This 
+		    // is not possible for us.  We will always have a 
+		    // DStrNode (NODE_DSTR).
+		    $$ = new DSymbolNode(getPosition(), $<DStrNode>2);
 		}
 
 numeric       : tINTEGER {
