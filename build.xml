@@ -21,10 +21,7 @@
             value="${base.dir}/.tmp"/>
 
   <path id="build.classpath">
-    <fileset dir="${lib.dir}">
-      <include name="*.jar">
-      <exclude name="jruby.jar">
-    </fileset>
+    <fileset dir="${lib.dir}" includes="*.jar" excludes="jruby.jar"/>
   </path>
 
   <patternset id="java.src.pattern">
