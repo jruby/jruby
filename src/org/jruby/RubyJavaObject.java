@@ -30,7 +30,8 @@
 
 package org.jruby;
 
-import org.jruby.runtime.CallbackFactory;
+import org.jruby.runtime.IndexCallable;
+import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -38,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author  jpetersen
  * @version $Revision$
  */
-public class RubyJavaObject extends RubyObject {
+public class RubyJavaObject extends RubyObject implements IndexCallable {
     private Object value;
 
     public RubyJavaObject(Ruby ruby, RubyClass rubyClass, Object value) {
@@ -63,15 +64,20 @@ public class RubyJavaObject extends RubyObject {
     public void setValue(Object value) {
         this.value = value;
     }
-    
+
+    private static final int TO_S = 1;
+    private static final int EQUAL = 2;
+    private static final int HASH = 3;
+    private static final int JAVA_TYPE = 4;
+
     public static RubyClass createJavaObjectClass(Ruby ruby) {
         RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getClasses().getObjectClass());
 
-        javaObjectClass.defineMethod("to_s", CallbackFactory.getMethod(RubyJavaObject.class, "to_s"));
-        javaObjectClass.defineMethod("eql?", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
-        javaObjectClass.defineMethod("==", CallbackFactory.getMethod(RubyJavaObject.class, "equal"));
-		javaObjectClass.defineMethod("hash", CallbackFactory.getMethod(RubyJavaObject.class, "hash"));
-        javaObjectClass.defineMethod("java_type", CallbackFactory.getMethod(RubyJavaObject.class, "java_type"));
+        javaObjectClass.defineMethod("to_s", IndexedCallback.create(TO_S, 0));
+        javaObjectClass.defineMethod("eql?", IndexedCallback.create(EQUAL, 1));
+        javaObjectClass.defineMethod("==", IndexedCallback.create(EQUAL, 1));
+		javaObjectClass.defineMethod("hash", IndexedCallback.create(HASH, 0));
+        javaObjectClass.defineMethod("java_type", IndexedCallback.create(JAVA_TYPE, 0));
 
         javaObjectClass.getInternalClass().undefMethod("new");
 
@@ -98,5 +104,20 @@ public class RubyJavaObject extends RubyObject {
 
     public RubyString java_type() {
         return RubyString.newString(getRuntime(), getJavaClass().getName());
+    }
+
+    public IRubyObject callIndexed(int index, IRubyObject[] args) {
+        switch (index) {
+            case TO_S :
+                return to_s();
+            case EQUAL :
+                return equal(args[0]);
+            case HASH :
+                return hash();
+            case JAVA_TYPE :
+                return java_type();
+            default :
+                return super.callIndexed(index, args);
+        }
     }
 }

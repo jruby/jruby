@@ -43,5 +43,3 @@ if defined? Java
     #test_equal("a", inner_instance_entry.getKey)
   end
 end
-
-test_print_report
