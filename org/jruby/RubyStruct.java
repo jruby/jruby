@@ -90,7 +90,7 @@ public class RubyStruct extends RubyObject {
         RubyClass structClass = type.getRuntime().getClasses().getStructClass();
 
         while (type != null && type != structClass) {
-            if (type.isInstanceVarDefined(name)) {
+            if (type.hasInstanceVariable(name)) {
                 return type.getInstanceVariable(name);
             }
 

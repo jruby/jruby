@@ -1214,21 +1214,18 @@ public class RubyModule extends RubyObject {
         RubyModule rbModule = this;
 
         while (rbModule != null) {
-            if (rbModule.getInstanceVariables() != null) {
-                Iterator iter = rbModule.getInstanceVariables().keySet().iterator();
-                while (iter.hasNext()) {
-                    String id = (String) iter.next();
-                    if (IdUtil.isClassVariable(id)) {
-                        RubyString kval = RubyString.newString(getRuntime(), id);
-                        if (!ary.includes(kval)) {
-                            ary.append(kval);
-                        }
+            Iterator iter = rbModule.instanceVariableNames();
+            while (iter.hasNext()) {
+                String id = (String) iter.next();
+                if (IdUtil.isClassVariable(id)) {
+                    RubyString kval = RubyString.newString(getRuntime(), id);
+                    if (!ary.includes(kval)) {
+                        ary.append(kval);
                     }
                 }
             }
             rbModule = rbModule.getSuperClass();
         }
-
         return ary;
     }
 
@@ -1621,7 +1618,6 @@ public class RubyModule extends RubyObject {
      */
     public RubyModule append_features(RubyModule module) {
         module.includeModule(this);
-
         return this;
     }
 
@@ -1674,7 +1670,6 @@ public class RubyModule extends RubyObject {
         } else {
             setMethodVisibility(args, Visibility.PROTECTED);
         }
-
         return this;
     }
 
@@ -1691,7 +1686,6 @@ public class RubyModule extends RubyObject {
         } else {
             setMethodVisibility(args, Visibility.PRIVATE);
         }
-
         return this;
     }
 
@@ -1716,7 +1710,6 @@ public class RubyModule extends RubyObject {
                 callMethod("singleton_method_added", RubySymbol.newSymbol(getRuntime(), name));
             }
         }
-
         return this;
     }
 
@@ -1726,25 +1719,21 @@ public class RubyModule extends RubyObject {
 
     public RubyModule public_class_method(IRubyObject[] args) {
         getInternalClass().setMethodVisibility(args, Visibility.PUBLIC);
-
         return this;
     }
 
     public RubyModule private_class_method(IRubyObject[] args) {
         getInternalClass().setMethodVisibility(args, Visibility.PRIVATE);
-
         return this;
     }
 
     public RubyModule alias_method(IRubyObject newId, IRubyObject oldId) {
         aliasMethod(newId.toId(), oldId.toId());
-
         return this;
     }
 
     public RubyModule undef_method(IRubyObject name) {
         undef(name.toId());
-
         return this;
     }
 
@@ -1754,7 +1743,6 @@ public class RubyModule extends RubyObject {
 
     public RubyModule remove_method(IRubyObject name) {
         removeMethod(name.toId());
-
         return this;
     }
 

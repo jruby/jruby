@@ -32,6 +32,7 @@ package org.jruby;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Collections;
 
 import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
@@ -378,14 +379,11 @@ public class RubyObject implements Cloneable, IRubyObject {
      *
      */
     public IRubyObject getInstanceVariable(String name) {
-        if (getInstanceVariables() != null) {
-            IRubyObject value = (IRubyObject) getInstanceVariables().get(name);
-            if (value != null) {
-                return value;
-            }
+        if (! hasInstanceVariable(name)) {
+            // todo: add warn if verbose
+            return getRuntime().getNil();
         }
-        // todo: add warn if verbose
-        return getRuntime().getNil();
+        return (IRubyObject) getInstanceVariables().get(name);
     }
 
     /** rb_iv_set / rb_ivar_set
@@ -406,13 +404,11 @@ public class RubyObject implements Cloneable, IRubyObject {
         return value;
     }
 
-    public boolean isInstanceVarDefined(String name) {
-        if (getInstanceVariables() != null) {
-            if (getInstanceVariables().get(name) != null) {
-                return true;
-            }
+    public Iterator instanceVariableNames() {
+        if (getInstanceVariables() == null) {
+            return Collections.EMPTY_LIST.iterator();
         }
-        return false;
+        return getInstanceVariables().keySet().iterator();
     }
 
     /** rb_eval
@@ -789,17 +785,12 @@ public class RubyObject implements Cloneable, IRubyObject {
         return RubyBoolean.newBoolean(getRuntime(), type() == type);
     }
 
-    /**
-     *
-     */
     public RubyArray instance_variables() {
         ArrayList names = new ArrayList();
-        if (getInstanceVariables() != null) {
-            Iterator iter = getInstanceVariables().keySet().iterator();
-            while (iter.hasNext()) {
-                String name = (String) iter.next();
-                names.add(RubyString.newString(getRuntime(), name));
-            }
+        Iterator iter = instanceVariableNames();
+        while (iter.hasNext()) {
+            String name = (String) iter.next();
+            names.add(RubyString.newString(getRuntime(), name));
         }
         return RubyArray.newArray(runtime, names);
     }
@@ -981,11 +972,10 @@ public class RubyObject implements Cloneable, IRubyObject {
             output.dumpInt(0);
         } else {
             output.dumpInt(getInstanceVariables().size());
-            Iterator iter = getInstanceVariables().entrySet().iterator();
+            Iterator iter = instanceVariableNames();
             while (iter.hasNext()) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                String name = (String) entry.getKey();
-                IRubyObject value = (IRubyObject) entry.getValue();
+                String name = (String) iter.next();
+                IRubyObject value = getInstanceVariable(name);
 
                 output.dumpObject(RubySymbol.newSymbol(runtime, name));
                 output.dumpObject(value);

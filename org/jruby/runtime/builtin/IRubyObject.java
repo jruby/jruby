@@ -250,7 +250,7 @@ public interface IRubyObject {
      * @param string
      * @return boolean
      */
-    boolean isInstanceVarDefined(String string);
+    boolean hasInstanceVariable(String string);
 
     /**
      * Method getInstanceVariables.
