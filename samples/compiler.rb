@@ -2,16 +2,25 @@ require 'samples/parser.rb'
 
 module JRuby
   include_package 'org.jruby.ast.visitor'
+  include_package 'org.jruby.ast'
 end
 
-node = JRuby::Parser::parse "puts()"
+class String
+  def write(*args)
+    args.each do |item|
+      self << item
+    end
+  end
+end
 
-statement = JRuby::NodeVisitor.new()
-expression = JRuby::NodeVisitor.new()
+node = JRuby::Parser::parse "puts 'Hello World'"
 
-class << statement
+$statement = JRuby::NodeVisitor.new()
+$expression = JRuby::NodeVisitor.new()
+
+class << $statement
   def method_missing(name, *node)
-    puts ("#{node} cannot be visited because `#{name}' is not defined")
+    puts ("statement #{node} cannot be visited because `#{name}' is not defined")
   end
 
   def acceptNode(node)
@@ -23,18 +32,67 @@ class << statement
   end
 
   def visitFCallNode(node)
-    args = node.getArgsNode()
-    init_args(args)
-    puts "self.getMetaClass().call(self, \"#{node.getName}\", #{call_args(args)}, CallType.FUNCTIONAL);"
+    args = CallArgs.new(node.getArgsNode())
+    puts args.init()
+    puts "self.getMetaClass().call(self, \"#{node.getName}\", #{args.call()}, CallType.FUNCTIONAL);"
+  end
+end
+
+class << $expression
+  def method_missing(name, *node)
+    puts ("expression #{node} cannot be visited because `#{name}' is not defined")
   end
 
-  private
-  def init_args(node)
-    return if node.nil?
+  def acceptNode(node)
+    node.accept(self) unless node.nil?
   end
 
-  def call_args(node)
-    return "IRubyObject.NULL_ARRAY" if node.nil?
+  def visitStrNode(node)
+    print ("RubyString.newString(runtime, \"#{node.getValue()}\")")
+  end
+
+  
+end
+
+class CallArgs
+  def initialize(node)
+    @node = node
+  end
+
+  def simple?
+    return true if @node.nil?
+    # if (@node.java_class < JRuby::ArrayNode)
+      iter = @node.iterator()
+      0.upto(@node.size() - 1) do
+	item = iter.next()
+	# return false if (item.java_class() < JRuby::ExpandArrayNode)
+      end
+      # end
+    return true
+    # FIXME
+  end
+
+  def init
+    return "" if simple?
+    # FIXME
+  end
+
+  def call
+    return "IRubyObject.NULL_ARRAY" if @node.nil?
+    if (simple?)
+      $> = "new IRubyObject[] {"
+      iter = @node.iterator()
+      0.upto(@node.size() - 1) do
+	item = iter.next()
+	$expression.acceptNode(item)
+	$> << ", "
+      end
+      $> << "}"
+      result = $>
+      $> = $stdout
+      return result
+    end
+    # FIXME
   end
 end
 
@@ -48,7 +106,7 @@ public class RubyScript {
     
 END
 
-statement.acceptNode(node)
+$statement.acceptNode(node)
 
 puts <<END
   }

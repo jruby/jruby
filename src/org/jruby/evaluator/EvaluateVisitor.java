@@ -33,6 +33,7 @@ import org.ablaf.ast.INode;
 import org.ablaf.common.ISourcePosition;
 import org.jruby.Builtins;
 import org.jruby.KernelModule;
+import org.jruby.MetaClass;
 import org.jruby.Method;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -502,7 +503,7 @@ public final class EvaluateVisitor implements NodeVisitor {
                     throw new TypeError(runtime, "undefined superclass");
                 }
             }
-            if (superClass != null && superClass.isSingleton()) {
+            if (superClass != null && superClass instanceof MetaClass) {
                 throw new TypeError(runtime, "can't make subclass of virtual class");
             }
         }
