@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<attributes version="1.0">
+   <fileobject name="RubySecurityException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e77fb49e1578"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubySecurityException;RubyBugException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="RubyIndexException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e8dcd4aab178"/>
+      <attr name="class_dependency_java.lang.Exception" stringvalue="Exception"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubyIndexException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="RubyFrozenException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e77fb493a278"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubyFrozenException;RubyBugException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="RubyNameException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e77fb498e778"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubyBugException;RubyNameException;RubyArgumentException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="RubyArgumentException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e77fb48caf78"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubyArgumentException;RubyBugException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="RubyBugException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e77fb4909478"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubyBugException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+   <fileobject name="RubyTypeException.java">
+      <attr name="JavaHeaderCreationDate" serialvalue="aced00057372000e6a6176612e7574696c2e44617465686a81014b59741903000078707708000000e77fb4a12578"/>
+      <attr name="class_dependency_java.lang.Exception" stringvalue="Exception"/>
+      <attr name="JavaHeaderAuthor" serialvalue="aced0005737200306f72672e6a706574657273656e2e6e65746265616e732e6a6176616865616465722e6f7074696f6e732e417574686f7217ce1baa59b9ec180200024c0005656d61696c7400124c6a6176612f6c616e672f537472696e673b4c00046e616d6571007e000178707400116a61706574657273656e407765622e64657400114a616e2041726e6520506574657273656e"/>
+      <attr name="class_dependency_java.lang.RuntimeException" stringvalue="RubyTypeException"/>
+      <attr name="JavaHeaderDescription" stringvalue="No description"/>
+   </fileobject>
+</attributes>

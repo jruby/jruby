@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written to assume that classpath is rooted in the current directory. -->
+<!-- So this should be OK if you make this script in the root of a filesystem. -->
+<!-- If not, you may prefer to adjust the basedir, or move some directories around. -->
+<!-- The idea is that both Ant and NetBeans have to know what the package root is -->
+<!-- for the classes in your application. -->
+<project basedir="." default="all" name="JRuby">
+
+    <!-- Don't worry if you don't know the Ant syntax completely or need help on some tasks! -->
+    <!-- The standard Ant documentation is bundled. See Help | Shortcuts | Ant 1.3 Documentation. -->
+
+    <target name="init">
+        <!-- You can set up any variables you want used throughout the script here. -->
+        <!-- To use e.g. Jikes, uncomment this line. -->
+        <!-- (Or make the same change in Tools | Options | Ant Settings | Properties.) -->
+        <property name="version" value="0.1"/>
+        <property name="version.file" value="0_1"/>
+        <!-- <property name="build.compiler" value="jikes"/> -->
+        <!-- You might like to set up some overridable paths, etc.: -->
+        <!-- <property name="mylib" value="../lib/mylib.jar"/> -->
+    </target>
+
+    <target depends="init" name="compile">
+        <!-- Both srcdir and destdir should be package roots. -->
+        <!-- They could be different of course; in that case NetBeans can also be set -->
+        <!-- up to compile to a different filesystem in the same way; see Compiler Types: -->
+        <javac debug="true" deprecation="true" destdir="." srcdir=".">
+            <!-- To add something to the classpath: -->
+            <!--             <classpath>                 <pathelement location="${mylib}"/>             </classpath>             -->
+            <!-- To exclude some files: -->
+            <!--             <exclude name="com/foo/SomeFile.java"/>             <exclude name="com/foo/somepackage/"/>             -->
+        </javac>
+    </target>
+
+    <target depends="init,compile" name="jar">
+        <jar basedir="." compress="true" jarfile="jruby.jar" manifest="jruby.mf">
+            <exclude name="**/*.java"/>
+            <exclude name="**/*.form"/>
+            <exclude name="jruby.mf"/>
+            <exclude name="*.jar"/>
+            <exclude name="*.tar"/>
+            <exclude name="*.tar.gz"/>
+            <exclude name="test.rb"/>
+            <exclude name="build.xml"/>
+            <exclude name="COPYING"/>
+            <exclude name="README"/>
+        </jar>
+        <tar basedir="." tarfile="jruby.tar">
+            <include name="*.jar"/>
+            <include name="COPYING"/>
+            <include name="README"/>
+        </tar>
+        <gzip src="jruby.tar" zipfile="jruby-${version.file}.tar.gz"/>
+        <delete file="jruby.tar"/>
+        <delete file="jruby.jar"/>
+    </target>
+
+    <target depends="init" name="src-tar">
+        <tar basedir="." tarfile="jruby-src.tar">
+            <exclude name="**/*.class"/>
+            <exclude name="*.jar"/>
+            <exclude name="*.tar"/>
+            <exclude name="*.tar.gz"/>
+        </tar>
+        <gzip src="jruby-src.tar" zipfile="jruby-src-${version.file}.tar.gz"/>
+        <delete file="jruby-src.tar"/>
+    </target>
+
+    <target depends="init,jar" description="Build everything." name="all">
+        <echo message="JRuby built."/>
+    </target>
+
+    <target depends="init" description="Clean all build products." name="clean">
+        <delete>
+            <fileset dir=".">
+                <include name="**/*.class"/>
+                <include name="*.jar"/>
+                <include name="*.tar.gz"/>
+            </fileset>
+        </delete>
+    </target>
+</project>

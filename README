@@ -1,0 +1,13 @@
+JRuby -  Ruby interpreter for Java
+==================================
+
+Authors: Stefan Matthias Aust <sma@3plus4.de>, 
+         Jan Arne Petersen <japetersen@web.de>
+
+JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
+in Java. Currently, the interpreter is written in portable C.
+
+The Java version will be tightly integrated with Java to allow both to script
+any Java class and to embed the interpreter into any Java application.
+
+Visit http://jruby.sourceforge.net for more information.
