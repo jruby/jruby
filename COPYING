@@ -1,3 +1,8 @@
-JRuby is released under a dual GPL/LGPL license. You can use it, redistribute
-it and/or modify it under either the terms of the GPL (see COPYING.GPL file) or
-under the terms of the LGPL (see COPYING.LGPL file).
+JRuby is released under a dual GPL/LGPL license. You can use it,
+redistribute it and/or modify it under either the terms of the GPL
+(see COPYING.GPL file) or under the terms of the LGPL (see
+COPYING.LGPL file).
+
+Some additional libraries distributed with JRuby are not covered by
+JRuby's licence. See the licence files for the respective libraries in
+the 'lib' directory for more information.

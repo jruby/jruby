@@ -242,6 +242,9 @@ END
             return_type = m.return_type
             define_method(m.name) {|*args|
               args = JavaProxy.convert_arguments(args)
+              if m.arity != args.length
+                raise ArgumentError.new("wrong # of arguments(#{args.length} for #{m.arity})")
+              end
               result = m.invoke(self.java_object, *args)
               result = Java.java_to_primitive(result)
               if result.kind_of?(JavaObject)
@@ -305,9 +308,14 @@ END
       }
       return compatible_match unless compatible_match.nil?
 
-      raise NameError.new("no method '" + methods.first.name +
-                          "' with argument types matching " +
-                          argument_types.inspect)
+      if methods.first.kind_of?(JavaConstructor)
+        raise NameError.new("no constructor with arguments matching " +
+                            argument_types.inspect)
+      else
+        raise NameError.new("no method '" + methods.first.name +
+                            "' with argument types matching " +
+                            argument_types.inspect)
+      end
     end
 
 
