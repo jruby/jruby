@@ -25,17 +25,9 @@ package org.jruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MetaClass extends RubyClass {
-    //public RubyClass type;
-
-    protected MetaClass(Ruby runtime) {
-        this(runtime, null);
-    }
 
     public MetaClass(Ruby runtime, RubyClass type) {
-        super(runtime, runtime.getClasses().getClassClass(), type);
-        //assert type != null;
-
-        //this.type = type;
+        this(runtime, runtime.getClasses().getClassClass(), type);
     }
 
     public MetaClass(Ruby runtime, RubyClass type, RubyClass superClass) {

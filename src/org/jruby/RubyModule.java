@@ -106,6 +106,10 @@ public class RubyModule extends RubyObject {
             }
         }
     }
+    
+    public void setParentModule(RubyModule parentModule) {
+    	this.parentModule = parentModule;
+    }
 
     /** Getter for property superClass.
      * @return Value of property superClass.

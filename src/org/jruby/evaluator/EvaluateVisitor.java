@@ -1295,6 +1295,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             }
 
             singletonClass = receiver.getSingletonClass();
+            singletonClass.setParentModule((RubyModule) receiver);
         }
 
         if (threadContext.getWrapper() != null) {
