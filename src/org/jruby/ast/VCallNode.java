@@ -31,6 +31,7 @@ import org.ablaf.common.ISourcePosition;
 import org.jruby.ast.visitor.NodeVisitor;
 
 /**
+ * Method call without any arguments
  *
  * @author  jpetersen
  * @version $Revision$

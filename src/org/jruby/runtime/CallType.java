@@ -12,7 +12,9 @@ public final class CallType {
     public static final CallType NORMAL = new CallType();
     // Call with implicit receiver (self)
     public static final CallType FUNCTIONAL = new CallType();
+    // Call to a super-method
     public static final CallType SUPER = new CallType();
+    // Call without any arguments
     public static final CallType VARIABLE = new CallType();
 
     private CallType() {

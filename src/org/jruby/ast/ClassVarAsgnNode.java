@@ -26,11 +26,11 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.ast.*;
-import org.ablaf.common.*;
-import org.jruby.ast.types.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.ast.INode;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.types.IAssignableNode;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * Class variable assignment node.
@@ -41,16 +41,15 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public class ClassVarAsgnNode extends AbstractNode implements IAssignableNode {
     static final long serialVersionUID = -2960487069128667341L;
 
-    private String name;
+    private final String name;
     private INode valueNode;
 
     /**
-     * @param vid id of the class variable to assign to 
+     * @param name id of the class variable to assign to
      * @param valueNode  Node used to compute the new value when the assignment is evaled
      */
     public ClassVarAsgnNode(ISourcePosition position, String name, INode valueNode) {
         super(position);
-
         this.name = name;
         this.valueNode = valueNode;
     }
@@ -69,14 +68,6 @@ public class ClassVarAsgnNode extends AbstractNode implements IAssignableNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 
     /**

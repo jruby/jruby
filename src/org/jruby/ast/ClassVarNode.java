@@ -26,12 +26,10 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
-//Benoit:
-//previous doc comment was:  normal method
-//I don't see what this has to do with normal, it looks like a class variable reference to me.
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
+
 /**
  * Access to a class variable.
  * 
@@ -41,11 +39,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public class ClassVarNode extends AbstractNode {
     static final long serialVersionUID = -228883683599457381L;
 
-    private String name;
+    private final String name;
 
     public ClassVarNode(ISourcePosition position, String name) {
         super(position);
-
         this.name = name;
     }
 
@@ -63,13 +60,5 @@ public class ClassVarNode extends AbstractNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

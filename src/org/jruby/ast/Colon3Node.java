@@ -26,9 +26,9 @@
  */
 package org.jruby.ast;
 
-import org.ablaf.common.*;
-import org.jruby.ast.visitor.*;
 import org.ablaf.ast.visitor.INodeVisitor;
+import org.ablaf.common.ISourcePosition;
+import org.jruby.ast.visitor.NodeVisitor;
 
 /**
  * Global scope node.
@@ -43,11 +43,10 @@ import org.ablaf.ast.visitor.INodeVisitor;
 public class Colon3Node extends AbstractNode {
     static final long serialVersionUID = 8860717109371016871L;
 
-    private String name;
+    private final String name;
 
     public Colon3Node(ISourcePosition position, String name) {
         super(position);
-
         this.name = name;
     }
 
@@ -65,13 +64,5 @@ public class Colon3Node extends AbstractNode {
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Sets the name.
-     * @param name The name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }
