@@ -37,17 +37,13 @@ import java.io.*;
  * @author jpetersen
  * @version $Revision$
  */
-public class RubyInputStream extends FilterInputStream {
-    private BufferedReader reader;
-
+public class RubyInputStream extends PushbackInputStream {
     public RubyInputStream(InputStream in) {
-        super(in);
-
-        reader = new BufferedReader(new InputStreamReader(in));
+        super(new BufferedInputStream(in));
     }
 
     public String gets(String separator) throws IOException {
-        int c = reader.read();
+        int c = read();
 
         if (c == -1) {
             return null;
@@ -61,7 +57,7 @@ public class RubyInputStream extends FilterInputStream {
         LineLoop : while (true) {
             while (c != sep[0] && c != -1) {
                 sb.append((char) c);
-                c = reader.read();
+                c = read();
             }
             for (int i = 0; i < sepLen; i++) {
                 if (c == -1) {
@@ -71,7 +67,7 @@ public class RubyInputStream extends FilterInputStream {
                 }
                 sb.append((char) c);
                 if (i < (sepLen - 1)) {
-                    c = reader.read();
+                    c = read();
                 }
             }
             break;
