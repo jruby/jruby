@@ -61,7 +61,7 @@ import org.ablaf.common.*;
  */
 public interface ILexerSupport {
     public char read();
-    public char unread();
+    public void unread();
     public void unread(int n);
 
     public ISourcePosition getPosition();

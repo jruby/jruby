@@ -1,16 +1,16 @@
 /*
  * ILexerSource.java
  * Created on 05.02.2002, 23:52:06
- * 
+ *
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>. All rights
  * reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -18,20 +18,20 @@
  *    distribution.
  *
  * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:  
+ *    if any, must include the following acknowledgment:
  *       "This product includes software developed by
  *        Jan Arne Petersen (jpetersen@uni-bonn.de)."
  *    Alternately, this acknowledgment may appear in the software itself,
  *    if and wherever such third-party acknowledgments normally appear.
  *
- * 4. The names "AbLaF" and "Abstract Language Framework" must not be 
- *    used to endorse or promote products derived from this software 
+ * 4. The names "AbLaF" and "Abstract Language Framework" must not be
+ *    used to endorse or promote products derived from this software
  *    without prior written permission. For written permission, please
  *    contact jpetersen@uni-bonn.de.
  *
- * 5. Products derived from this software may not be called 
- *    "Abstract Language Framework", nor may 
- *    "Abstract Language Framework" appear in their name, without prior 
+ * 5. Products derived from this software may not be called
+ *    "Abstract Language Framework", nor may
+ *    "Abstract Language Framework" appear in their name, without prior
  *    written permission of Jan Arne Petersen.
  *
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
@@ -46,44 +46,52 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * ====================================================================
  *
  */
 package org.ablaf.lexer;
 
 /** ILexerSource provides a very simple interface to a lexable source.
- *  
+ *
  * For wxample a lexable source could be a file or a string.
- * 
+ *
  * @author  jpetersen
  * @version $Revision$
  */
 public interface ILexerSource {
     /** Returns the next char.
-     * 
+     *
      * @return the next char.
      */
 	public char read();
-	
+
 	/** Unread the last read char.
-     * 
-     * @return the unreaded char.
      */
-	public char unread();
+	public void unread();
 
 	/** Return the count of read characters.
-	 * 
+	 *
 	 * @return the count of read characters.
 	 */
 	public int getOffset();
 
 	/** Return the name of the source.
-	 * 
-	 * For example this method can return the name  of the file 
+	 *
+	 * For example this method can return the name  of the file
 	 * from which is readed.
-	 * 
+	 *
 	 * @return the name of the source.
 	 */
 	public String getSourceName();
+
+    /**
+     * @return the last char returned by read()
+     */
+    public char getLastRead();
+
+    /**
+     * @return the current line number
+     */
+    public int getLine();
 }
