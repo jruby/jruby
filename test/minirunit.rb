@@ -75,7 +75,10 @@ end
 def test_print_report
   puts
   puts "-" * 80
-  $failed.each { |error| puts error}
+  $failed.each { |error| puts error
+	puts detail.backtrace.join("\n")
+	puts "+" * 60
+	}
   puts "-" * 80
   puts "Tests: #$ntest. (Ok: #{$ntest - $failed.size}; Failed: #{$failed.size})"
 end
