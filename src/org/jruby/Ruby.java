@@ -922,6 +922,10 @@ public final class Ruby {
     	return RubyFixnum.newFixnum(this, value);
     }
     
+    public RubyFloat newFloat(double value) {
+    	return RubyFloat.newFloat(this, value);
+    }
+
     public RubyString newString(String string) {
     	return RubyString.newString(this, string);
     }

@@ -69,7 +69,7 @@ public class RubyFixnum extends RubyInteger {
         fixnumClass.defineMethod("freeze", callbackFactory.getMethod("freeze"));
         fixnumClass.defineMethod("<<", callbackFactory.getMethod("op_lshift", RubyNumeric.class));
         fixnumClass.defineMethod(">>", callbackFactory.getMethod("op_rshift", RubyNumeric.class));
-        fixnumClass.defineMethod("+", callbackFactory.getMethod("op_plus", RubyNumeric.class));
+        fixnumClass.defineMethod("+", callbackFactory.getMethod("op_plus", IRubyObject.class));
         fixnumClass.defineMethod("-", callbackFactory.getMethod("op_minus", RubyNumeric.class));
         fixnumClass.defineMethod("*", callbackFactory.getMethod("op_mul", RubyNumeric.class));
         fixnumClass.defineMethod("/", callbackFactory.getMethod("op_div", RubyNumeric.class));
@@ -168,20 +168,20 @@ public class RubyFixnum extends RubyInteger {
 	return RubyInteger.induced_from(recv, number);
     }
 
-    public RubyNumeric op_plus(RubyNumeric other) {
+    public IRubyObject op_plus(IRubyObject other) {
         if (other instanceof RubyFloat) {
-            return ((RubyFloat)other).op_plus(this);
-        } else if (other instanceof RubyBignum) {
-            return ((RubyBignum)other).op_plus(this);
-        } else {
-            long otherValue = other.getLongValue();
+            return getRuntime().newFloat(getDoubleValue() + ((RubyFloat)other).getDoubleValue());
+        } else if (other instanceof RubyFixnum) {
+            long otherValue = ((RubyFixnum)other).getLongValue();
             long result = value + otherValue;
-            if ((value < 0 && otherValue < 0 && (result > 0 || result < -MAX)) || 
+            if (other instanceof RubyBignum ||
+                (value < 0 && otherValue < 0 && (result > 0 || result < -MAX)) || 
                 (value > 0 && otherValue > 0 && (result < 0 || result > MAX))) {
-                return RubyBignum.newBignum(getRuntime(), value).op_plus(other);
+                return RubyBignum.newBignum(getRuntime(), value).op_plus((RubyFixnum)other);
             }
             return newFixnum(result);
         }
+        return callCoerced("+", other);
     }
 
     public RubyNumeric op_minus(RubyNumeric other) {

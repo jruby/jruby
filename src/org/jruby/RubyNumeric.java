@@ -35,6 +35,7 @@ package org.jruby;
 
 import java.math.BigInteger;
 
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.CallbackFactory;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -231,6 +232,34 @@ public abstract class RubyNumeric extends RubyObject {
     /* Numeric methods. (num_*)
      *
      */
+    
+    protected IRubyObject[] getCoerced(IRubyObject other, boolean raiseException) {
+        IRubyObject result;
+        try {
+            result = other.callMethod("coerce", this);
+        } catch (RaiseException e) {
+            if (raiseException) {
+                throw getRuntime().newTypeError(other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());                
+            }
+            return null;
+        }
+        if (!(result instanceof RubyArray) || ((RubyArray)result).getLength() != 2) {
+            if (raiseException) {
+                throw getRuntime().newTypeError("coerce must return [x, y]");
+            }
+            return null;
+        }
+        return ((RubyArray)result).toJavaArray();
+    }
+
+    protected IRubyObject callCoerced(String method, IRubyObject other) {
+        IRubyObject[] args = getCoerced(other, true);
+
+        assert args != null;
+        assert args.length == 2;
+
+        return args[0].callMethod(method, args[1]);
+    }
 
     /** num_coerce
      *
