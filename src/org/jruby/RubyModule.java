@@ -772,27 +772,19 @@ public class RubyModule extends RubyObject {
 
         ICallable method = searchMethod(oldName);
 
-        RubyModule origin = null;
-
         if (method.isUndefined()) {
             if (isModule()) {
                 method = getRuntime().getClasses().getObjectClass().searchMethod(oldName);
             }
             if (method.isUndefined()) {
-                throw new NameError(
-                    runtime,
-                    "undefined method '" + name + "' for " + (isModule() ? "module" : "class") + " '" + toName() + "'");
+                throw new NameError(runtime,
+                                    "undefined method '" + name + "' for " +
+                                    (isModule() ? "module" : "class") + " '" +
+                                    toName() + "'");
             }
         }
-        origin = method.getImplementationClass();
 
-        if (method instanceof AliasMethod) { /* was alias */
-            oldName = ((AliasMethod) method).getOldName();
-            origin = ((AliasMethod) method).getOrigin();
-            method = ((AliasMethod) method).getOldMethod();
-        }
-
-        getMethods().put(name, new AliasMethod(method, oldName, origin, method.getVisibility()));
+        getMethods().put(name, new AliasMethod(method, oldName));
         clearMethodCache();
     }
 

@@ -29,7 +29,6 @@ package org.jruby.internal.runtime.methods;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ICallable;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -41,12 +40,22 @@ public class AliasMethod extends AbstractMethod {
     private ICallable oldMethod;
     private String oldName;
     private RubyModule origin;
-    
-    public AliasMethod(ICallable oldMethod, String oldName, RubyModule origin, Visibility visibility) {
-        super(visibility);
-        this.oldMethod = oldMethod;
-        this.oldName = oldName;
-        this.origin = origin;
+
+    public AliasMethod(ICallable oldMethod, String oldName) {
+        super(oldMethod.getVisibility());
+        if (oldMethod instanceof AliasMethod) {
+            initializeFrom(((AliasMethod) oldMethod));
+        } else {
+            this.oldName = oldName;
+            this.origin = oldMethod.getImplementationClass();
+            this.oldMethod = oldMethod;
+        }
+    }
+
+    private void initializeFrom(AliasMethod otherAlias) {
+        this.oldName = otherAlias.getOldName();
+        this.origin = otherAlias.getOrigin();
+        this.oldMethod = otherAlias.getOldMethod();
     }
 
     /**
@@ -60,24 +69,12 @@ public class AliasMethod extends AbstractMethod {
         return oldMethod;
     }
 
-    public void setOldMethod(ICallable oldMethod) {
-        this.oldMethod = oldMethod;
-    }
-
     public String getOldName() {
         return oldName;
     }
 
-    public void setOldName(String oldName) {
-        this.oldName = oldName;
-    }
-
     public RubyModule getOrigin() {
         return origin;
-    }
-
-    public void setOrigin(RubyModule origin) {
-        this.origin = origin;
     }
 
     public void initializeCacheEntry(CacheEntry cacheEntry) {
