@@ -71,3 +71,22 @@ test_equal(1, foo_method.arity)
 foo_proc = foo_method.to_proc
 test_equal(Proc, foo_proc.class)
 test_equal("helloworld", foo_proc.call("world"))
+
+class TM_A
+  def foo
+    "x"
+  end
+  def bar
+    "y"
+  end
+end
+class TM_B < TM_A
+  def foo
+    super
+  end
+  def bar
+    super()
+  end
+end
+test_equal("x", TM_B.new.foo)
+test_equal("y", TM_B.new.bar)

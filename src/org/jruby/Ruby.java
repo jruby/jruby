@@ -629,10 +629,6 @@ public final class Ruby {
         return errorHandler;
     }
 
-    public IRubyObject callSuper(IRubyObject[] args) {
-        return getCurrentContext().callSuper(args);
-    }
-
     public PrintStream getErrorStream() {
         return new PrintStream(((RubyIO) getGlobalVariables().get("$stderr")).getOutStream());
     }

@@ -1279,7 +1279,7 @@ public final class EvaluateVisitor implements NodeVisitor {
         } finally {
             ArgsUtil.endCallArgs(threadContext, tmpBlock);
         }
-        threadContext.callSuper(args);
+        result = threadContext.callSuper(args);
     }
 
     /**
@@ -1398,7 +1398,7 @@ public final class EvaluateVisitor implements NodeVisitor {
             throw new NameError(runtime, "superclass method '" + runtime.getCurrentFrame().getLastFunc() + "' disabled");
         }
         IRubyObject[] args = threadContext.getCurrentFrame().getArgs();
-        threadContext.callSuper(args);
+        result = threadContext.callSuper(args);
     }
 
     /**
