@@ -300,7 +300,7 @@ stmt          : kALIAS fitem {
                     if ($1 != null && $1 instanceof BeginNode) {
                         $$ = new WhileNode(getPosition(), support.getConditionNode($3), $<BeginNode>1.getBodyNode(), false);
                     } else {
-                        $$ = new WhileNode(getPosition(), support.getConditionNode($3), $1, false);
+                        $$ = new WhileNode(getPosition(), support.getConditionNode($3), $1, true);
                     }
                 }
               | stmt kUNTIL_MOD expr_value {
