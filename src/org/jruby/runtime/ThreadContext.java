@@ -29,7 +29,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.ThreadClass;
+import org.jruby.RubyThread;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.StarNode;
@@ -63,7 +63,7 @@ public class ThreadContext {
     private BlockStack blockStack;
     private ArrayStack dynamicVarsStack;
 
-    private ThreadClass thread;
+    private RubyThread thread;
 
     private ArrayStack classStack;
     private ScopeStack scopeStack;
@@ -110,11 +110,11 @@ public class ThreadContext {
         return getCurrentDynamicVars().names();
     }
 
-    public ThreadClass getThread() {
+    public RubyThread getThread() {
         return thread;
     }
 
-    public void setThread(ThreadClass thread) {
+    public void setThread(RubyThread thread) {
         this.thread = thread;
     }
 

@@ -224,7 +224,7 @@ public class RubyClasses {
         metaClass = moduleClass.makeMetaClass(metaClass);
         metaClass = classClass.makeMetaClass(metaClass);
 
-        kernelModule = KernelModule.createKernelModule(runtime);
+        kernelModule = RubyKernel.createKernelModule(runtime);
         objectClass.includeModule(kernelModule);
 
         objectClass.definePrivateMethod("initialize", objectClass.callbackFactory().getNilMethod(-1));
@@ -241,7 +241,7 @@ public class RubyClasses {
         trueClass = RubyBoolean.createTrueClass(runtime);
 
         threadGroupClass = RubyThreadGroup.createThreadGroupClass(runtime);
-        threadClass = ThreadClass.createThreadClass(runtime);
+        threadClass = RubyThread.createThreadClass(runtime);
 
         runtime.getLoadService().addAutoload("UnboundMethod", new IAutoloadMethod() {
             public IRubyObject load(Ruby runtime, String name) {

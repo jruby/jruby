@@ -855,7 +855,7 @@ public class RubyIO extends RubyObject {
     }
 
     public static IRubyObject printf(IRubyObject recv, IRubyObject args[]) {
-        recv.callMethod("write", KernelModule.sprintf(recv, args));
+        recv.callMethod("write", RubyKernel.sprintf(recv, args));
         return recv.getRuntime().getNil();
     }
 
@@ -893,7 +893,7 @@ public class RubyIO extends RubyObject {
         IRubyObject[] fileArguments = new IRubyObject[] {(RubyString) args[0]};
         IRubyObject[] separatorArguments = (args.length >= 2 ? 
              new IRubyObject[] { args[1] } : IRubyObject.NULL_ARRAY);
-        RubyIO file = (RubyIO) KernelModule.open(recv, fileArguments);
+        RubyIO file = (RubyIO) RubyKernel.open(recv, fileArguments);
 
         return file.readlines(separatorArguments);
     }

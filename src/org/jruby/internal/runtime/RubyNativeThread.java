@@ -26,7 +26,7 @@ package org.jruby.internal.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
-import org.jruby.ThreadClass;
+import org.jruby.RubyThread;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
@@ -40,11 +40,11 @@ public class RubyNativeThread extends Thread {
     private Block currentBlock;
     private RubyProc proc;
     private IRubyObject[] arguments;
-    private ThreadClass rubyThread;
+    private RubyThread rubyThread;
     private boolean criticalized;
     private AtomicSpinlock spinlock;
     
-	protected RubyNativeThread(ThreadClass rubyThread, IRubyObject[] args) {
+	protected RubyNativeThread(RubyThread rubyThread, IRubyObject[] args) {
 		super(rubyThread.getRuntime().getThreadService().getRubyThreadGroup(), "Ruby Thread" + rubyThread.hash());
 		this.rubyThread = rubyThread;
 		
@@ -55,7 +55,7 @@ public class RubyNativeThread extends Thread {
         this.arguments = args;
 	}
 	
-	public ThreadClass getRubyThread() {
+	public RubyThread getRubyThread() {
 		return rubyThread;
 	}
 	

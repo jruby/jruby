@@ -1,7 +1,7 @@
 package org.jruby.javasupport.test;
 
 import junit.framework.TestCase;
-import org.jruby.KernelModule;
+import org.jruby.RubyKernel;
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
@@ -39,7 +39,7 @@ public class RubyTestCase extends TestCase {
         String filePath = f.getAbsolutePath();
         Ruby ruby = Ruby.getDefaultInstance("JDK");
         initRuby(ruby);
-        KernelModule.require(ruby.getTopSelf(), new RubyString(ruby, filePath));
+        RubyKernel.require(ruby.getTopSelf(), new RubyString(ruby, filePath));
         f.delete();
         return ruby;
     }

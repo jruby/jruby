@@ -30,7 +30,7 @@
 package org.jruby.evaluator;
 
 import org.jruby.Builtins;
-import org.jruby.KernelModule;
+import org.jruby.RubyKernel;
 import org.jruby.MetaClass;
 import org.jruby.Method;
 import org.jruby.Ruby;
@@ -1026,7 +1026,7 @@ public final class EvaluateVisitor implements NodeVisitor {
      * @see NodeVisitor#visitOptNNode(OptNNode)
      */
     public void visitOptNNode(OptNNode iVisited) {
-        while (KernelModule.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
+        while (RubyKernel.gets(runtime.getTopSelf(), IRubyObject.NULL_ARRAY).isTrue()) {
             while (true) { // Used for the 'redo' command
                 try {
                     eval(iVisited.getBodyNode());

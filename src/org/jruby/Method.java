@@ -145,7 +145,7 @@ public class Method extends RubyObject {
         try {
             recv.getRuntime().getIterStack().push(Iter.ITER_CUR);
             recv.getRuntime().getFrameStack().push();
-            return KernelModule.proc(recv);
+            return RubyKernel.proc(recv);
         } finally {
             recv.getRuntime().getFrameStack().pop();
             recv.getRuntime().getIterStack().pop();

@@ -51,7 +51,7 @@ public class RubyThreadGroup extends RubyObject {
         CallbackFactory callbackFactory = ruby.callbackFactory();
         
         threadGroupClass.defineMethod("add",
-        		callbackFactory.getMethod(RubyThreadGroup.class, "add", ThreadClass.class));
+        		callbackFactory.getMethod(RubyThreadGroup.class, "add", RubyThread.class));
         threadGroupClass.defineMethod("enclose",
         		callbackFactory.getMethod(RubyThreadGroup.class, "enclose"));
         threadGroupClass.defineMethod("enclosed?",
@@ -72,7 +72,7 @@ public class RubyThreadGroup extends RubyObject {
         return new RubyThreadGroup(recv.getRuntime(), (RubyClass)recv);
     }
 
-    public IRubyObject add(ThreadClass rubyThread) {
+    public IRubyObject add(RubyThread rubyThread) {
     	if (isFrozen()) {
         	throw new TypeError(getRuntime(), "can't add to frozen ThreadGroup");
     	}

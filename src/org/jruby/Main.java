@@ -151,7 +151,7 @@ public class Main {
         Iterator iter = commandline.requiredLibraries().iterator();
         while (iter.hasNext()) {
             String scriptName = (String) iter.next();
-            KernelModule.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
+            RubyKernel.require(runtime.getTopSelf(), RubyString.newString(runtime, scriptName));
         }
     }
 

@@ -28,7 +28,7 @@
 package org.jruby.internal.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.ThreadClass;
+import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 
 public class ThreadService {
@@ -53,18 +53,18 @@ public class ThreadService {
         return (ThreadContext) localContext.get();
     }
 
-    public ThreadClass getMainThread() {
+    public RubyThread getMainThread() {
         return mainContext.getThread();
     }
 
-    public void setMainThread(ThreadClass thread) {
+    public void setMainThread(RubyThread thread) {
         mainContext.setThread(thread);
     }
     
-    public ThreadClass[] getActiveRubyThreads() {
+    public RubyThread[] getActiveRubyThreads() {
     	// all threads in ruby thread group plus main thread
     	Thread[] threads = new Thread[rubyThreadGroup.activeCount() + 1];
-    	ThreadClass[] rubyThreads = new ThreadClass[threads.length];
+    	RubyThread[] rubyThreads = new RubyThread[threads.length];
     	
     	rubyThreadGroup.enumerate(threads);
     	for (int i = 0; i < threads.length; i++) {
@@ -78,7 +78,7 @@ public class ThreadService {
     	return rubyThreadGroup;
     }
 
-    public void registerNewThread(ThreadClass thread) {
+    public void registerNewThread(RubyThread thread) {
         localContext.set(new ThreadContext(runtime));
         getCurrentContext().setThread(thread);
     }
@@ -99,7 +99,7 @@ public class ThreadService {
     		}
     		
     		for (int i = 0; i < activeThreads.length; i++) {
-    			ThreadClass rubyThread = getRubyThreadFromThread(activeThreads[i]);
+    			RubyThread rubyThread = getRubyThreadFromThread(activeThreads[i]);
     			
     			rubyThread.decriticalize();
     		}
@@ -118,7 +118,7 @@ public class ThreadService {
     		}
     		
     		for (int i = 0; i < activeThreads.length; i++) {
-    			ThreadClass rubyThread = null;
+    			RubyThread rubyThread = null;
     			rubyThread = getRubyThreadFromThread(activeThreads[i]);
 
     			if (rubyThread != getCurrentContext().getThread()) {
@@ -140,8 +140,8 @@ public class ThreadService {
 	 * @param i
 	 * @return
 	 */
-	private ThreadClass getRubyThreadFromThread(Thread activeThread) {
-		ThreadClass rubyThread;
+	private RubyThread getRubyThreadFromThread(Thread activeThread) {
+		RubyThread rubyThread;
 		if (activeThread instanceof RubyNativeThread) {
 			RubyNativeThread rubyNativeThread = (RubyNativeThread)activeThread;
 			rubyThread = rubyNativeThread.getRubyThread();

@@ -24,7 +24,7 @@
  */
 package org.jruby.internal.runtime;
 
-import org.jruby.ThreadClass;
+import org.jruby.RubyThread;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -32,15 +32,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class NativeThread {
 	private Thread nativeThread;
-	public ThreadClass rubyThread;
+	public RubyThread rubyThread;
 	
-	public NativeThread(ThreadClass rubyThread, IRubyObject[] args) {
+	public NativeThread(RubyThread rubyThread, IRubyObject[] args) {
 		this.rubyThread = rubyThread;
 		
 		nativeThread = new RubyNativeThread(rubyThread, args);
 	}
 	
-	public NativeThread(ThreadClass rubyThread, Thread nativeThread) {
+	public NativeThread(RubyThread rubyThread, Thread nativeThread) {
 		this.rubyThread = rubyThread;
 		this.nativeThread = nativeThread;
 	}

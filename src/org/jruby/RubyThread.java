@@ -49,11 +49,13 @@ import org.jruby.util.Asserts;
  * thread of the Ruby script.  In the descriptions that follow, the parameter
  * <code>aSymbol</code> refers to a symbol, which is either a quoted string or a
  * <code>Symbol</code> (such as <code>:name</code>).
+ * 
+ * Note: For CVS history, see ThreadClass.java.
  *
  * @author Jason Voegele (jason@jvoegele.com)
  * @version $Revision$
  */
-public class ThreadClass extends RubyObject {
+public class RubyThread extends RubyObject {
     private static boolean globalAbortOnException; // move to runtime object
 
     private NativeThread threadImpl;
@@ -82,64 +84,64 @@ public class ThreadClass extends RubyObject {
         CallbackFactory callbackFactory = ruby.callbackFactory();
 
         threadClass.defineMethod("[]", 
-                callbackFactory.getMethod(ThreadClass.class, "aref", IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "aref", IRubyObject.class));
         threadClass.defineMethod("[]=", 
-                callbackFactory.getMethod(ThreadClass.class, "aset", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "aset", IRubyObject.class, IRubyObject.class));
         threadClass.defineMethod("abort_on_exception", 
-                callbackFactory.getMethod(ThreadClass.class, "abort_on_exception", IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "abort_on_exception", IRubyObject.class));
         threadClass.defineMethod("abort_on_exception=", 
-                callbackFactory.getMethod(ThreadClass.class, "abort_on_exception_set", IRubyObject.class, IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "abort_on_exception_set", IRubyObject.class, IRubyObject.class));
         threadClass.defineMethod("alive?", 
-                callbackFactory.getMethod(ThreadClass.class, "is_alive"));
+                callbackFactory.getMethod(RubyThread.class, "is_alive"));
         threadClass.defineMethod("group", 
-                callbackFactory.getMethod(ThreadClass.class, "group"));
+                callbackFactory.getMethod(RubyThread.class, "group"));
         threadClass.defineMethod("join", 
-                callbackFactory.getMethod(ThreadClass.class, "join"));
+                callbackFactory.getMethod(RubyThread.class, "join"));
         threadClass.defineMethod("key?", 
-                callbackFactory.getMethod(ThreadClass.class, "has_key", IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "has_key", IRubyObject.class));
         threadClass.defineMethod("priority", 
-                callbackFactory.getMethod(ThreadClass.class, "priority"));
+                callbackFactory.getMethod(RubyThread.class, "priority"));
         threadClass.defineMethod("priority=", 
-                callbackFactory.getMethod(ThreadClass.class, "priority_set", IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "priority_set", IRubyObject.class));
         threadClass.defineMethod("raise", 
-                callbackFactory.getMethod(ThreadClass.class, "raise", IRubyObject.class));
+                callbackFactory.getMethod(RubyThread.class, "raise", IRubyObject.class));
         threadClass.defineMethod("run",
-        		callbackFactory.getMethod(ThreadClass.class, "run"));
+        		callbackFactory.getMethod(RubyThread.class, "run"));
         threadClass.defineMethod("status", 
-                callbackFactory.getMethod(ThreadClass.class, "status"));
+                callbackFactory.getMethod(RubyThread.class, "status"));
         threadClass.defineMethod("stop?", 
-                callbackFactory.getMethod(ThreadClass.class, "isStopped"));
+                callbackFactory.getMethod(RubyThread.class, "isStopped"));
         threadClass.defineMethod("wakeup", 
-                callbackFactory.getMethod(ThreadClass.class, "wakeup"));
+                callbackFactory.getMethod(RubyThread.class, "wakeup"));
         threadClass.defineMethod("kill", 
-                callbackFactory.getMethod(ThreadClass.class, "kill"));
+                callbackFactory.getMethod(RubyThread.class, "kill"));
         threadClass.defineMethod("exit",
-        		callbackFactory.getMethod(ThreadClass.class, "exit"));
+        		callbackFactory.getMethod(RubyThread.class, "exit"));
         
         threadClass.defineSingletonMethod("current",
-                callbackFactory.getSingletonMethod(ThreadClass.class, "current"));
+                callbackFactory.getSingletonMethod(RubyThread.class, "current"));
         threadClass.defineSingletonMethod("fork",
-                callbackFactory.getOptSingletonMethod(ThreadClass.class, "newInstance"));
+                callbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
         threadClass.defineSingletonMethod("new",
-                callbackFactory.getOptSingletonMethod(ThreadClass.class, "newInstance"));
+                callbackFactory.getOptSingletonMethod(RubyThread.class, "newInstance"));
         threadClass.defineSingletonMethod("list",
-                callbackFactory.getSingletonMethod(ThreadClass.class, "list"));
+                callbackFactory.getSingletonMethod(RubyThread.class, "list"));
         threadClass.defineSingletonMethod("pass",
-                callbackFactory.getSingletonMethod(ThreadClass.class, "pass"));
+                callbackFactory.getSingletonMethod(RubyThread.class, "pass"));
         threadClass.defineSingletonMethod("start",
-                callbackFactory.getOptSingletonMethod(ThreadClass.class, "start"));
+                callbackFactory.getOptSingletonMethod(RubyThread.class, "start"));
         threadClass.defineSingletonMethod("critical=", 
-                callbackFactory.getSingletonMethod(ThreadClass.class, "critical_set", RubyBoolean.class));
+                callbackFactory.getSingletonMethod(RubyThread.class, "critical_set", RubyBoolean.class));
         threadClass.defineSingletonMethod("critical", 
-                callbackFactory.getSingletonMethod(ThreadClass.class, "critical"));
+                callbackFactory.getSingletonMethod(RubyThread.class, "critical"));
         threadClass.defineSingletonMethod("stop", 
-                callbackFactory.getSingletonMethod(ThreadClass.class, "stop"));
+                callbackFactory.getSingletonMethod(RubyThread.class, "stop"));
         threadClass.defineSingletonMethod("kill", 
-                callbackFactory.getSingletonMethod(ThreadClass.class, "s_kill", ThreadClass.class));
+                callbackFactory.getSingletonMethod(RubyThread.class, "s_kill", RubyThread.class));
         threadClass.defineSingletonMethod("exit", 
-                callbackFactory.getSingletonMethod(ThreadClass.class, "s_exit"));
+                callbackFactory.getSingletonMethod(RubyThread.class, "s_exit"));
 
-        ThreadClass rubyThread = new ThreadClass(ruby, threadClass);
+        RubyThread rubyThread = new RubyThread(ruby, threadClass);
         // set hasStarted to true, otherwise Thread.main.status freezes
         rubyThread.hasStarted = true;
         // TODO: need to isolate the "current" thread from class creation
@@ -147,7 +149,7 @@ public class ThreadClass extends RubyObject {
         ruby.getThreadService().setMainThread(rubyThread);
         
         threadClass.defineSingletonMethod("main",
-        		callbackFactory.getSingletonMethod(ThreadClass.class, "main"));
+        		callbackFactory.getSingletonMethod(RubyThread.class, "main"));
         
         return threadClass;
     }
@@ -177,16 +179,16 @@ public class ThreadClass extends RubyObject {
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
-    public static ThreadClass start(IRubyObject recv, IRubyObject[] args) {
+    public static RubyThread start(IRubyObject recv, IRubyObject[] args) {
         return startThread(recv, args, false);
     }
 
-    private static ThreadClass startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
+    private static RubyThread startThread(final IRubyObject recv, final IRubyObject[] args, boolean callInit) {
         final Ruby runtime = recv.getRuntime();
         if (!runtime.isBlockGiven()) {
             throw new ThreadError(runtime, "must be called with a block");
         }
-        final ThreadClass rubyThread = new ThreadClass(runtime, (RubyClass) recv);
+        final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) recv);
         if (callInit) {
             rubyThread.callInit(args);
         }
@@ -261,7 +263,7 @@ public class ThreadClass extends RubyObject {
     	dieIfKilled();
     }
 
-    private ThreadClass(Ruby ruby, RubyClass type) {
+    private RubyThread(Ruby ruby, RubyClass type) {
         super(ruby, type);
         this.threadService = ruby.getThreadService();
         // set to default thread group
@@ -285,11 +287,11 @@ public class ThreadClass extends RubyObject {
         return value;
     }
 
-    public static ThreadClass current(IRubyObject recv) {
+    public static RubyThread current(IRubyObject recv) {
         return recv.getRuntime().getCurrentContext().getThread();
     }
 
-    public static ThreadClass main(IRubyObject recv) {
+    public static RubyThread main(IRubyObject recv) {
         return recv.getRuntime().getThreadService().getMainThread();
     }
 
@@ -299,7 +301,7 @@ public class ThreadClass extends RubyObject {
     }
 
     public static RubyArray list(IRubyObject recv) {
-    	ThreadClass[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
+    	RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
         return RubyArray.newArray(recv.getRuntime(), activeThreads);
     }
@@ -343,7 +345,7 @@ public class ThreadClass extends RubyObject {
         return threadImpl.isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    public ThreadClass join() {
+    public RubyThread join() {
         if (isCurrent()) {
             throw new ThreadError(getRuntime(), "thread tried to join itself");
         }
@@ -388,7 +390,7 @@ public class ThreadClass extends RubyObject {
     }
 
     public static IRubyObject stop(IRubyObject receiver) {
-    	ThreadClass rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
+    	RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
     	Object stopLock = rubyThread.stopLock;
     	
     	synchronized (stopLock) {
@@ -409,12 +411,12 @@ public class ThreadClass extends RubyObject {
     	return receiver.getRuntime().getNil();
     }
     
-    public static IRubyObject s_kill(IRubyObject receiver, ThreadClass rubyThread) {
+    public static IRubyObject s_kill(IRubyObject receiver, RubyThread rubyThread) {
     	return rubyThread.kill();
     }
 
     public static IRubyObject s_exit(IRubyObject receiver) {
-    	ThreadClass rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
+    	RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
     	Object stopLock = rubyThread.stopLock;
     	
 		rubyThread.killed = true;
@@ -431,7 +433,7 @@ public class ThreadClass extends RubyObject {
     	return RubyBoolean.newBoolean(getRuntime(), isStopped);
     }
     
-    public ThreadClass wakeup() {
+    public RubyThread wakeup() {
     	synchronized (stopLock) {
     		stopLock.notifyAll();
     	}
@@ -581,7 +583,7 @@ public class ThreadClass extends RubyObject {
         return (globalAbortOnException || abortOnException);
     }
 
-    public static ThreadClass mainThread(IRubyObject receiver) {
+    public static RubyThread mainThread(IRubyObject receiver) {
         return receiver.getRuntime().getThreadService().getMainThread();
     }
 }
