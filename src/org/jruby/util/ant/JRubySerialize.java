@@ -98,7 +98,8 @@ public class JRubySerialize extends Task {
                     ((File) entry.getValue()).getParentFile().mkdirs();
                     if (verbose) System.out.println(entry.getKey());
                     ASTSerializer.serialize((File) entry.getKey(), (File) entry.getValue());
-                } catch (IOException ioExcpn) {
+                } catch (Exception e) {
+                	e.printStackTrace();
                 }
             }
         }
