@@ -29,6 +29,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * Implements callback on built-in Ruby methods using an integer index.
  *
+ * The class implementing the method uses this index to determine
+ * what method to call, usually with a callIndexed(index, args) method
+ * containing a switch statement with cases for all the methods it knows about.
+ *
+ * This is less flexible than reflection callbacks, that only need a name to
+ * do dispatch, but is usually much faster.
  */
 public final class IndexedCallback implements Callback {
     private final int index;
