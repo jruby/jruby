@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  *
  * JRuby - http://jruby.sourceforge.net
  *
@@ -33,7 +34,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @version $Revision$
  */
 public class UnboundMethod extends Method {
-
     protected UnboundMethod(Ruby runtime) {
         super(runtime, runtime.getClass("UnboundMethod"));
     }
@@ -74,13 +74,6 @@ public class UnboundMethod extends Method {
      */
     public IRubyObject call(IRubyObject[] args) {
         throw new TypeError(runtime, "you cannot call unbound method; bind first");
-    }
-
-    /**
-     * @see org.jruby.Method#to_proc()
-     */
-    public IRubyObject to_proc() {
-        return super.to_proc();
     }
 
     /**
