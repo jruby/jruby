@@ -159,7 +159,7 @@ public class RubyObject {
     protected int argCount(RubyObject[] args, int min, int max) {
         int len = args.length;
         if (len < min || (max > -1 && len > max)) {
-            throw new RubyArgumentException("wrong number of arguments");
+            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
         }
         return len;
     }
@@ -328,10 +328,10 @@ public class RubyObject {
      */
     public RubyObject setInstanceVar(RubyId id, RubyObject value) {
         if (isTaint() && getRuby().getSecurityLevel() >= 4) {
-            throw new RubySecurityException("Insecure: can't modify instance variable");
+            throw new RubySecurityException(getRuby(), "Insecure: can't modify instance variable");
         }
         if (isFrozen()) {
-            throw new RubyFrozenException();
+            throw new RubyFrozenException(getRuby(), "");
         }
         if (getInstanceVariables() == null) {
             setInstanceVariables(new RubyHashMap());
@@ -368,7 +368,7 @@ public class RubyObject {
      *
      */
     public RubyId toId() {
-        throw new RubyTypeException(m_inspect().getValue() + " is not a symbol");
+        throw new RubyTypeException(getRuby(), m_inspect().getValue() + " is not a symbol");
     }
     
     /** rb_convert_type
@@ -384,12 +384,12 @@ public class RubyObject {
         try {
             result = funcall(getRuby().intern(method));
         } catch (RubyNameException rnExcptn) {
-            throw new RubyTypeException("failed to convert " + getRubyClass().toName() + " into " + className);
+            throw new RubyTypeException(getRuby(), "failed to convert " + getRubyClass().toName() + " into " + className);
         //} catch (RubyS rnExcptn) {
         }
         
         if (!type.isAssignableFrom(result.getClass())) {
-            throw new RubyTypeException(getRubyClass().toName() + "#" + method + " should return " + className);
+            throw new RubyTypeException(getRuby(), getRubyClass().toName() + "#" + method + " should return " + className);
         }
         
         return result;
@@ -449,7 +449,7 @@ public class RubyObject {
         RubyObject dup = funcall(getRuby().intern("clone"));
         
         if (!dup.getClass().equals(getClass())) {
-            throw new RubyTypeException("duplicated object must be same type");
+            throw new RubyTypeException(getRuby(), "duplicated object must be same type");
         }
         
         if (!dup.isSpecialConst()) {
@@ -479,7 +479,7 @@ public class RubyObject {
         
         if (!isTaint()) {
             if (isFrozen()) {
-                throw new RubyFrozenException("object");
+                throw new RubyFrozenException(getRuby(), "object");
             }
             setTaint(true);
         }
@@ -495,7 +495,7 @@ public class RubyObject {
         
         if (isTaint()) {
             if (isFrozen()) {
-                throw new RubyFrozenException("object");
+                throw new RubyFrozenException(getRuby(), "object");
             }
             setTaint(false);
         }
@@ -509,7 +509,7 @@ public class RubyObject {
     public RubyObject m_freeze() {
         if (getRuby().getSecurityLevel() >= 4 &&
         isTaint()) {
-            throw new RubySecurityException("Insecure: can't freeze object");
+            throw new RubySecurityException(getRuby(), "Insecure: can't freeze object");
         }
         
         // ??????????????

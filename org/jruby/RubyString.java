@@ -449,11 +449,11 @@ public class RubyString extends RubyObject {
         long len = other.getLongValue();
         
         if (len < 0) {
-            throw new RubyArgumentException("negative argument");
+            throw new RubyArgumentException(getRuby(), "negative argument");
         }
         
         if (Long.MAX_VALUE / len < getValue().length()) {
-            throw new RubyArgumentException("argument too big");
+            throw new RubyArgumentException(getRuby(), "argument too big");
         }
         StringBuffer sb = new StringBuffer((int)(getValue().length() * len));
         
@@ -514,7 +514,7 @@ public class RubyString extends RubyObject {
             try {
                 return (RubyString)other.convertType(RubyString.class, "String", "to_str");
             } catch (Exception ex) {
-                throw new RubyArgumentException("can't convert arg to String: " + ex.getMessage());
+                throw new RubyArgumentException(other.getRuby(), "can't convert arg to String: " + ex.getMessage());
             }
         }
     }
@@ -541,7 +541,7 @@ public class RubyString extends RubyObject {
         } else if (args.length == 2) {
             repl = args[1];
         } else {
-            throw new RubyArgumentException("wrong number of arguments");
+            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
         }
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
 
@@ -586,7 +586,7 @@ public class RubyString extends RubyObject {
         } else if (args.length == 2) {
             repl = args[1];
         } else {
-            throw new RubyArgumentException("wrong number of arguments");
+            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
         }
         boolean taint = repl.isTaint();
         RubyRegexp pat = RubyRegexp.regexpValue(args[0]);
@@ -664,7 +664,7 @@ public class RubyString extends RubyObject {
             pos = reverse ? getValue().lastIndexOf(c) : getValue().indexOf(c);
         }
         else {
-            throw new RubyArgumentException("wrong type of argument");
+            throw new RubyArgumentException(getRuby(), "wrong type of argument");
         }
         
         if (pos == -1) {
@@ -760,13 +760,13 @@ public class RubyString extends RubyObject {
             int beg = RubyNumeric.fix2int(args[0]);
             int len = RubyNumeric.fix2int(args[1]);
             if (len < 0) {
-                throw new RubyIndexException("negative length");
+                throw new RubyIndexException(getRuby(), "negative length");
             }
             if (beg < 0) {
                 beg += strLen;
             }
             if (beg < 0 || beg >= strLen) {
-                throw new RubyIndexException("string index out of bounds");
+                throw new RubyIndexException(getRuby(), "string index out of bounds");
             }
             if (beg + len > strLen) {
                 len = strLen - beg;
@@ -780,7 +780,7 @@ public class RubyString extends RubyObject {
                 idx += getValue().length();
             }
             if (idx < 0 || idx >= getValue().length()) {
-                throw new RubyIndexException("string index out of bounds");
+                throw new RubyIndexException(getRuby(), "string index out of bounds");
             }
             if (args[1] instanceof RubyFixnum) {
                 char c = (char)RubyNumeric.fix2int(args[1]);
@@ -807,7 +807,7 @@ public class RubyString extends RubyObject {
             replace((int)idxs[0], (int)idxs[1], stringValue(args[1]));
             return args[1];
         }
-        throw new RubyTypeException("wrong argument type");
+        throw new RubyTypeException(getRuby(), "wrong argument type");
     }
     
     /** rb_str_slice_bang
@@ -1403,7 +1403,7 @@ public class RubyString extends RubyObject {
     
     private String tr(RubyObject[] args, boolean squeeze) {
         if (args.length != 2) {
-            throw new RubyArgumentException("wrong number of arguments");
+            throw new RubyArgumentException(getRuby(), "wrong number of arguments");
         }
         String srchSpec = stringValue(args[0]).getValue();
         String srch = expandTemplate(srchSpec, true);

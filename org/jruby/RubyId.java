@@ -30,7 +30,6 @@
 
 package org.jruby;
 
-import org.jruby.original.*;
 import org.jruby.parser.*;
 import org.jruby.util.*;
 

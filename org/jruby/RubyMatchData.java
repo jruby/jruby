@@ -120,7 +120,7 @@ public class RubyMatchData extends RubyObject {
             return group(RubyNumeric.fix2long(args[0]));
         }
         if (args[0] instanceof RubyBignum) {
-            throw new RubyIndexException("index too big");
+            throw new RubyIndexException(getRuby(), "index too big");
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange)args[0]).getBeginLength(size(), true, false);

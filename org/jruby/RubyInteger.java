@@ -73,7 +73,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyObject m_step(RubyNumeric to, RubyNumeric step) {
         RubyNumeric i = this;
         if (step.getLongValue() == 0) {
-            throw new RubyArgumentException("step cannot be 0");
+            throw new RubyArgumentException(getRuby(), "step cannot be 0");
         }
         
         RubyId cmp = getRuby().intern("<");

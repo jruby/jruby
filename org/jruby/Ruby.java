@@ -38,10 +38,8 @@ import org.jruby.core.*;
 import org.jruby.exceptions.*;
 import org.jruby.nodes.*;
 import org.jruby.nodes.types.*;
-import org.jruby.original.*;
 import org.jruby.parser.*;
 import org.jruby.runtime.*;
-import org.jruby.runtime.RubyGlobalEntry; // TMP 
 import org.jruby.util.*;
 
 /**
@@ -73,6 +71,7 @@ public final class Ruby {
     
     // Default classes
     private RubyClasses classes;
+    private RubyExceptions exceptions;
     
     //
     private ParserHelper parserHelper = null;
@@ -80,9 +79,6 @@ public final class Ruby {
     private RubyRuntime runtime = new RubyRuntime(this);
     
     private RubyObject rubyTopSelf;
-    
-    // Actual excpetion ($!) (matz: ruby_errinfo)
-    private RubyObject actException;
     
     // Eval
     
@@ -394,7 +390,7 @@ public final class Ruby {
                 if (acheck && value != null &&
                 value instanceof RubyArray && ((RubyArray)value).length() != 0) {
                     
-                    throw new RubyArgumentException("wrong # of arguments ("+ ((RubyArray)value).length() + " for 0)");
+                    throw new RubyArgumentException(this, "wrong # of arguments ("+ ((RubyArray)value).length() + " for 0)");
                 }
             } else {
                 if (!(tmpBlock.var instanceof MAsgnNode)) {
@@ -518,15 +514,12 @@ public final class Ruby {
         }
     }
     
-    public void raise(RubyException rubyExcptn, Object[] args) {
-        setActException(rubyExcptn);
-        
-        throw new RaiseException();
-    }
-    
     private void callInits() {
         classes = new RubyClasses(this);
         classes.initCoreClasses();
+        
+        exceptions = new RubyExceptions(this);
+        exceptions.initDefaultExceptionClasses();
         
         rubyTopSelf = new RubyObject(this, classes.getObjectClass());
         /*rubyTopSelf.defineSingletonMethod("to_s", new RubyCallbackMethod() {
@@ -559,7 +552,7 @@ public final class Ruby {
         rubyScope.setLocalTbl(null);
         topScope = rubyScope;
     
-        setActMethodScope(Scope.SCOPE_PRIVATE);
+        setActMethodScope(Constants.SCOPE_PRIVATE);
 
         try {
             callInits();
@@ -866,20 +859,6 @@ public final class Ruby {
         this.javaClassLoader = javaClassLoader;
     }
     
-    /** Getter for property actException.
-     * @return Value of property actException.
-     */
-    public RubyObject getActException() {
-        return actException;
-    }
-    
-    /** Setter for property actException.
-     * @param actException New value of property actException.
-     */
-    public void setActException(RubyObject actException) {
-        this.actException = actException;
-    }
-    
     /** Getter for property iter.
      * @return Value of property iter.
      */
@@ -968,4 +947,11 @@ public final class Ruby {
         this.runtime = runtime;
     }
     
+	/**
+	 * Gets the exceptions
+	 * @return Returns a RubyExceptions
+	 */
+	public RubyExceptions getExceptions() {
+		return exceptions;
+	}
 }

@@ -242,6 +242,8 @@ public class RubyClasses {
         rangeClass = RbRange.createRangeClass(ruby);
         
         javaObjectClass = RbJavaObject.createJavaObjectClass(ruby);
+        
+        exceptionClass = RbException.createExceptionClass(ruby);
     }
     
     /** Returns the reference to the Binding class.

@@ -30,12 +30,20 @@
 
 package org.jruby;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import org.jruby.core.*;
-import org.jruby.javasupport.*;
-import org.jruby.exceptions.*;
+import org.jruby.exceptions.RubyNameException;
+import org.jruby.javasupport.JavaConstructor;
+import org.jruby.javasupport.JavaMethod;
+import org.jruby.javasupport.JavaUtil;
 
 /**
  *
@@ -141,6 +149,18 @@ public class RubyJavaObject extends RubyObject {
             newRubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, true));
         }
         
+        // add constants
+        Field[] fields = javaClass.getFields();
+        for (int i = 0; i < fields.length; i++) {
+        	int modifiers = fields[i].getModifiers();
+        	if (Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers)) {
+        		try {
+	        		newRubyClass.defineConstant(fields[i].getName(), JavaUtil.convertJavaToRuby(ruby, fields[i].get(null), fields[i].getType()));
+        		} catch (IllegalAccessException iaExcptn) {
+        		}
+        	}
+        }
+        
         putRubyClass(ruby, javaClass, newRubyClass);
         
         return newRubyClass;
@@ -156,7 +176,7 @@ public class RubyJavaObject extends RubyObject {
             Class c = ruby.getJavaClassLoader().loadClass(javaName);
             return loadClass(ruby, c, rubyName);
         } catch (ClassNotFoundException cnfExcptn) {
-            throw new RubyNameException("cannot find Java class: " + javaName);
+            throw new RubyNameException(ruby, "cannot find Java class: " + javaName);
         }
     }
     

@@ -69,7 +69,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         if ((options & RE_OPTION_MULTILINE) > 0) {
             matcher.setMultiline(true);
         }
-        matcher.compile(pattern);
+        matcher.compile(getRuby(), pattern);
     }
 
     public static String quote(String orig) {
@@ -96,7 +96,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
     
     private void checkInitialized() {
         if (matcher == null) {
-            throw new RubyTypeException("uninitialized Regexp");
+            throw new RubyTypeException(getRuby(), "uninitialized Regexp");
         }
     }
     
@@ -106,7 +106,7 @@ public class RubyRegexp extends RubyObject implements ReOptions {
         } else if (obj instanceof RubyString) {
             return m_newRegexp(obj.getRuby(), (RubyString)obj, 0);
         } else {
-            throw new RubyArgumentException("can't convert arg to Regexp");
+            throw new RubyArgumentException(obj.getRuby(), "can't convert arg to Regexp");
         }
     }
 

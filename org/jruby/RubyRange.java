@@ -46,7 +46,7 @@ public class RubyRange extends RubyObject {
             try {
                 begin.funcall(getRuby().intern("<=>"), end);
             } catch (RaiseException rExcptn) {
-                throw new RubyArgumentException("bad value for range");
+                throw new RubyArgumentException(getRuby(), "bad value for range");
             }
         }
 
@@ -80,14 +80,14 @@ public class RubyRange extends RubyObject {
 
         if (begin < 0 && (begin += limit) < 0) {
             if (strict) {
-                throw new RubyIndexException("Index out of bounds: " + begin);
+                throw new RubyIndexException(getRuby(), "Index out of bounds: " + begin);
             }
             return null;
         }
 
         if (truncate && begin > limit) {
             if (strict) {
-                throw new RubyIndexException("Index out of bounds: " + begin);
+                throw new RubyIndexException(getRuby(), "Index out of bounds: " + begin);
             }
             return null;
         }
@@ -98,14 +98,14 @@ public class RubyRange extends RubyObject {
 
         if (end < 0 && (end += limit) < 0) {
             if (strict) {
-                throw new RubyIndexException("Index out of bounds: " + end);
+                throw new RubyIndexException(getRuby(), "Index out of bounds: " + end);
             }
             end = begin;
         }
 
         if (begin > end) {
             if (strict) {
-                throw new RubyIndexException("Malformed range");
+                throw new RubyIndexException(getRuby(), "Malformed range");
             }
             end = begin;
         }
@@ -123,14 +123,14 @@ public class RubyRange extends RubyObject {
 
     public RubyObject m_initialize(RubyObject[] args) {
         if (isInstanceVarDefined(getRuby().intern("begin"))) {
-            throw new RubyNameException("'initialize' called twice.");
+            throw new RubyNameException(getRuby(), "'initialize' called twice.");
         }
         if (args.length == 3) {
             init(args[0], args[1], (RubyBoolean)args[2]);
         } else if (args.length == 2) {
             init(args[0], args[1], getRuby().getFalse());
         } else {
-            throw new RubyArgumentException("Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
+            throw new RubyArgumentException(getRuby(), "Wrong arguments. (anObject, anObject, aBoolean = false) excepted");
         }
         return getRuby().getNil();
     }

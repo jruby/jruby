@@ -93,13 +93,13 @@ public class RubyArray extends RubyObject {
      */
     public void modify() {
         if (isFrozen()) {
-            throw new RubyFrozenException("Array");
+            throw new RubyFrozenException(getRuby(), "Array");
         }
         if (isTmpLock()) {
-            throw new RubyTypeException("can't modify array during sort");
+            throw new RubyTypeException(getRuby(), "can't modify array during sort");
         }
         if (isTaint() && getRuby().getSecurityLevel() >= 4 ) {
-            throw new RubySecurityException("Insecure: can't modify array");
+            throw new RubySecurityException(getRuby(), "Insecure: can't modify array");
         }
     }
 
@@ -119,7 +119,7 @@ public class RubyArray extends RubyObject {
         if (idx < 0) {
             idx += length();
             if (idx < 0) {
-                throw new RubyIndexException("index " + (idx - length()) + " out of array");
+                throw new RubyIndexException(getRuby(), "index " + (idx - length()) + " out of array");
             }
         }
         autoExpand(idx + 1);
@@ -199,13 +199,13 @@ public class RubyArray extends RubyObject {
         int length = length();
 
         if (len < 0) {
-            throw new RubyIndexException("Negative array length: " + len);
+            throw new RubyIndexException(getRuby(), "Negative array length: " + len);
         }
         if (beg < 0) {
             beg += length;
         }
         if (beg < 0) {
-            throw new RubyIndexException("Index out of bounds: " + beg);
+            throw new RubyIndexException(getRuby(), "Index out of bounds: " + beg);
         }
 
         modify();
@@ -233,7 +233,7 @@ public class RubyArray extends RubyObject {
             try {
                 return (RubyArray)other.convertType(RubyArray.class, "Array", "to_ary");
             } catch (Exception ex) {
-                throw new RubyArgumentException("can't convert arg to Array: " + ex.getMessage());
+                throw new RubyArgumentException(other.getRuby(), "can't convert arg to Array: " + ex.getMessage());
             }
         }
     }
@@ -310,7 +310,7 @@ public class RubyArray extends RubyObject {
         int length = items.length;
 
         if (length == 0) {
-            throw new RubyArgumentException("wrong # of arguments(at least 1)");
+            throw new RubyArgumentException(getRuby(), "wrong # of arguments(at least 1)");
         }
         modify();
         boolean taint = false;
@@ -357,7 +357,7 @@ public class RubyArray extends RubyObject {
      */
     public RubyArray m_unshift(RubyObject[] items) {
         if (items.length == 0) {
-            throw new RubyArgumentException("wrong # of arguments(at least 1)");
+            throw new RubyArgumentException(getRuby(), "wrong # of arguments(at least 1)");
         }
         modify();
         boolean taint = false;
@@ -397,10 +397,10 @@ public class RubyArray extends RubyObject {
         modify();
         
         if (len < 0) {
-            throw new RubyArgumentException("negative array size");
+            throw new RubyArgumentException(getRuby(), "negative array size");
         }
         if (len > Integer.MAX_VALUE) {
-            throw new RubyArgumentException("array size too big");
+            throw new RubyArgumentException(getRuby(), "array size too big");
         }
         list = new ArrayList((int)len);
         if (len > 0) {
@@ -431,7 +431,7 @@ public class RubyArray extends RubyObject {
             return entry(RubyNumeric.fix2long(args[0]));
         }
         if (args[0] instanceof RubyBignum) {
-            throw new RubyIndexException("index too big");
+            throw new RubyIndexException(getRuby(), "index too big");
         }
         if (args[0] instanceof RubyRange) {
             long[] begLen = ((RubyRange)args[0]).getBeginLength(length(), true, false);
@@ -464,7 +464,7 @@ public class RubyArray extends RubyObject {
             return args[1];
         }
         if (args[0] instanceof RubyBignum) {
-            throw new RubyIndexException("Index too large");
+            throw new RubyIndexException(getRuby(), "Index too large");
         }
         store(RubyNumeric.num2long(args[0]), args[1]);
         return args[1];
@@ -730,7 +730,7 @@ public class RubyArray extends RubyObject {
             default:
                 beg = args[1].isNil() ? beg : RubyNumeric.fix2int(args[1]);
                 if (beg < 0 && (beg += len) < 0) {
-                    throw new RubyIndexException("Negative array index");
+                    throw new RubyIndexException(getRuby(), "Negative array index");
                 }
                 len -= beg;
                 if (argc == 3 && !args[2].isNil()) {
