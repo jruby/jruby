@@ -63,7 +63,7 @@ set _STARTJAVA="%JAVA_HOME%\bin\java"
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 rem ----- Set Up The Runtime Classpath ----------------------------------------
 
-set CP=%JRUBY_HOME%\lib\jruby.jar;%JRUBY_HOME%\lib\jakarta-oro-2.0.6.jar;%JAVA_HOME%\lib\tools.jar
+set CP=%JRUBY_HOME%\lib\jruby.jar;%JRUBY_HOME%\lib\jakarta-oro-2.0.6.jar;%JAVA_HOME%\lib\tools.jar;%JRUBY_HOME%\test\test.jar
 set CLASSPATH=%CP%
 echo Using JRUBY_BASE: %JRUBY_BASE%
 echo Using JRUBY_HOME: %JRUBY_HOME%
