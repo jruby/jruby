@@ -48,6 +48,7 @@ test_load('test/testMarshal.rb')
 test_load('test/testRequire.rb')
 test_load('test/testBackquote.rb')
 test_load('test/testHash.rb')
+test_load('test/testSymbol.rb')
 
 # MRI Ruby tests (from sample/test.rb in Matz's Ruby Interpreter):
 

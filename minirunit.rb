@@ -30,6 +30,16 @@ def test_equal(a,b)
  test_ok(a == b, "expected #{a.inspect}, found #{b.inspect}") 
 end
 
+def test_exception(type=Exception, &proc)
+  raised = false
+  begin
+    proc.call
+  rescue type
+    raised = true
+  end
+  test_ok(raised, "#{type} expected")
+end
+
 def test_print_report
   puts
   puts "-" * 80

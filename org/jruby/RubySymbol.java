@@ -32,6 +32,7 @@ package org.jruby;
 
 import org.jruby.runtime.*;
 import org.jruby.marshal.*;
+import org.jruby.exceptions.TypeError;
 
 /**
  *
@@ -73,7 +74,11 @@ public class RubySymbol extends RubyObject {
         symbolClass.defineMethod("==", CallbackFactory.getMethod(RubySymbol.class, "equal", RubyObject.class));
         symbolClass.defineMethod("inspect", CallbackFactory.getMethod(RubySymbol.class, "inspect"));
         symbolClass.defineMethod("hash", CallbackFactory.getMethod(RubySymbol.class, "hash"));
-        
+        symbolClass.defineMethod("dup", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
+        symbolClass.defineMethod("clone", CallbackFactory.getMethod(RubySymbol.class, "rbClone"));
+        symbolClass.defineMethod("freeze", CallbackFactory.getMethod(RubySymbol.class, "freeze"));
+        symbolClass.defineMethod("taint", CallbackFactory.getMethod(RubySymbol.class, "taint"));
+
         return symbolClass;
     }
     
@@ -112,6 +117,20 @@ public class RubySymbol extends RubyObject {
         // Strings are interned, so we can use object identity to compare them
         return RubyBoolean.newBoolean(getRuby(),
                                       symbol == ((RubySymbol) other).symbol);
+    }
+
+    public RubyObject rbClone() {
+        throw new TypeError(getRuby(), "can't clone Symbol");
+    }
+
+    public RubyObject freeze() {
+        // No-op
+        return this;
+    }
+
+    public RubyObject taint() {
+        // No-op
+        return this;
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {

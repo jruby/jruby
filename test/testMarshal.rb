@@ -65,18 +65,5 @@ test_equal(String, Marshal.load(MARSHAL_HEADER + "c\013String"))
 object = Marshal.load(MARSHAL_HEADER + "o:\013Object\000")
 test_equal(Object, object.class)
 
-exception_thrown = false
-begin
-  Marshal.dump([1,2,3], 1)
-rescue ArgumentError
-  exception_thrown = true  
-end
-test_ok(exception_thrown)
-
-exception_thrown = false
-begin
-  Marshal.dump([1,2,3], 2)
-rescue ArgumentError
-  exception_thrown = true  
-end
-test_ok(!exception_thrown)
+Marshal.dump([1,2,3], 2)
+test_exception(ArgumentError) { Marshal.dump([1,2,3], 1) }
