@@ -1,6 +1,6 @@
 /*
- * JavaReflectionMethod.java - No description
- * Created on 21. September 2001, 15:03
+ * JavaUtil.java - No description
+ * Created on 22. September 2001, 16:23
  * 
  * Copyright (C) 2001 Jan Arne Petersen, Stefan Matthias Aust
  * Jan Arne Petersen <japetersen@web.de>
@@ -26,9 +26,7 @@
  * 
  */
 
-package org.jruby.core;
-
-import java.lang.reflect.*;
+package org.jruby.javasupport;
 
 import org.jruby.*;
 
@@ -37,28 +35,26 @@ import org.jruby.*;
  * @author  jpetersen
  * @version 
  */
-public class JavaReflectionMethod implements RubyCallbackMethod {
-    private Method method = null;
-
-    public JavaReflectionMethod(Method method) {
-        this.method = method;
-    }
-
-    public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-        Object[] newArgs = new Object[args.length];
-        
-        for (int i = 0; i < newArgs.length; i++) {
-            newArgs[i] = convertRubyToJava(ruby, args[i], method.getParameterTypes()[i]);
+public class JavaUtil {
+    public static boolean isCompatible(RubyObject arg, Class javaClass) {
+        if (arg.isNil()) {
+            return true;
         }
-
-        try {
-            Object result = method.invoke(((RubyJavaObject)recv).getValue(), newArgs);
-            return convertJavaToRuby(ruby, result, method.getReturnType());
-        } catch (IllegalAccessException iaExcptn) {
-        } catch (IllegalArgumentException iaExcptn) {
-        } catch (InvocationTargetException itExcptn) {
+        if (javaClass == Boolean.TYPE || javaClass == Boolean.class) {
+            return arg instanceof RubyBoolean;
         }
-        return ruby.getNil();
+        if (javaClass == Integer.TYPE || javaClass == Integer.class ||
+            javaClass == Long.TYPE || javaClass == Long.class) {
+            return arg instanceof RubyFixnum;
+        }
+        if (javaClass == Float.TYPE || javaClass == Float.class || 
+            javaClass == Double.TYPE || javaClass == Double.class) {
+            return arg instanceof RubyFloat;
+        }
+        if (javaClass == String.class) {
+            return arg instanceof RubyString;
+        }
+        return javaClass.isAssignableFrom(((RubyJavaObject)arg).getValue().getClass());
     }
     
     public static Object convertRubyToJava(Ruby ruby, RubyObject rubyObject, Class javaClass) {

@@ -3352,10 +3352,10 @@ case 432:
               case tLEQ:
               case tEQ:
               case tNEQ:
-              case tAREF:
+              /*case tAREF:
               case tRSHFT:
               case tCOLON2:
-              case tCOLON3:
+              case tCOLON3: FIX 1.6.5*/
                 useless = ID.rb_id2name(ruby, node.nd_mid());
                 break;
             }
@@ -3846,7 +3846,7 @@ case 432:
 	top_local_init();
 	int cnt = local_cnt(c);
 	top_local_setup();
-	ruby.rubyScope.setLocalVars(cnt, val);
+	ruby.rubyScope.setLocalVars(cnt, (RubyObject)val);
     }
 
     VALUE rb_backref_get() {
@@ -3858,7 +3858,7 @@ case 432:
 
     void rb_backref_set(VALUE val) {
 	if (ruby.rubyScope.getLocalVars() != null) {
-	    ruby.rubyScope.setLocalVars(1, val);
+	    ruby.rubyScope.setLocalVars(1, (RubyObject)val);
 	}
 	else {
 	    special_local_set('~', val);
@@ -3874,7 +3874,7 @@ case 432:
 
     void rb_lastline_set(VALUE val) {
 	if (ruby.rubyScope.getLocalVars() != null) {
-	    ruby.rubyScope.setLocalVars(0, val);
+	    ruby.rubyScope.setLocalVars(0, (RubyObject)val);
 	}
 	else {
 	    special_local_set('_', val);
@@ -4580,7 +4580,7 @@ case 432:
         }
     }
 
-    private int tokadd_escape() {
+    private int tokadd_escape(int term /* FIX 1.6.5*/) {
         int c;
 
         switch (c = nextc()) {
@@ -4631,7 +4631,7 @@ case 432:
             tokadd('\\'); tokadd('M'); tokadd('-');
             //goto escaped;
             if ((c = nextc()) == '\\') {
-                return tokadd_escape();
+                return tokadd_escape(term); /* FIX 1.6.5*/
             }
             else if (c == -1) {
 		// goto eof;
@@ -4650,7 +4650,7 @@ case 432:
             tokadd('\\'); tokadd('C'); tokadd('-');
             //goto escaped;
             if ((c = nextc()) == '\\') {
-                return tokadd_escape();
+                return tokadd_escape(term);  /* FIX 1.6.5*/
             }
             else if (c == -1) {
 		// goto eof;
@@ -4664,7 +4664,7 @@ case 432:
             tokadd('\\'); tokadd('c');
             //escaped:
             if ((c = nextc()) == '\\') {
-                return tokadd_escape();
+                return tokadd_escape(term);  /* FIX 1.6.5*/
             }
             else if (c == -1) {
 		// goto eof;
@@ -4680,7 +4680,9 @@ case 432:
             return -1;
 
 	default:
-            tokadd('\\');
+            if (c != term) { /* FIX 1.6.5*/
+                tokadd('\\');
+            } /* FIX 1.6.5*/
             tokadd(c);
         }
         return 0;
@@ -4709,7 +4711,7 @@ case 432:
                 continue;
 
 	    case '\\':
-                if (tokadd_escape() < 0)
+                if (tokadd_escape(term) < 0)
                     return 0;
                 continue;
 
@@ -5355,7 +5357,7 @@ case 432:
                 return '?';
             }
             c = nextc();
-            if (c == -1 || c == 10) {
+            if (c == -1/* || c == 10 1.6.5 fix*/) {
                 rb_compile_error("incomplete character syntax");
                 return 0;
             }
@@ -6481,7 +6483,7 @@ case 432:
 
     // Test methods
     // ------------
-    private static String readFile(String name) {
+    /*private static String readFile(String name) {
         try {
             BufferedReader in = new BufferedReader(new FileReader(name));
             StringBuffer sb = new StringBuffer(1024);
@@ -6557,6 +6559,7 @@ case 432:
 	else
 	    interpreter_test(f);
     }
+*/
 }
 
 //XXX strange classes needed to compile the stuff

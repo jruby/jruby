@@ -42,6 +42,7 @@ public class RBKernel {
         kernelModule.defineMethod("puts", getKernelMethod("m_puts"));
         kernelModule.defineMethod("print", getKernelMethod("m_print"));
         kernelModule.defineMethod("to_s", getObjectMethod("m_to_s"));
+        kernelModule.defineMethod("nil?", DefaultCallbackMethods.getMethodFalse());
         
         kernelModule.defineModuleFunction("singleton_method_added", getDummyMethod());
         

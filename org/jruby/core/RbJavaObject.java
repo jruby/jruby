@@ -39,6 +39,8 @@ public class RbJavaObject {
         RubyClass javaObjectClass = ruby.defineClass("JavaObject", ruby.getObjectClass());
         
         javaObjectClass.defineMethod("to_s", getMethod("m_to_s"));
+        javaObjectClass.defineMethod("eql?", getMethod("m_equal"));
+        javaObjectClass.defineMethod("==", getMethod("m_equal"));
         javaObjectClass.defineSingletonMethod("load_class", getSingletonMethod("m_load_class", RubyString.class, true));
         
         javaObjectClass.getRubyClass().undefMethod("new");
@@ -47,6 +49,10 @@ public class RbJavaObject {
     
     public static RubyCallbackMethod getMethod(String methodName) {
         return new ReflectionCallbackMethod(RubyJavaObject.class, methodName);
+    }
+    
+    public static RubyCallbackMethod getMethod(String methodName, Class arg1) {
+        return new ReflectionCallbackMethod(RubyJavaObject.class, methodName, arg1);
     }
     
     public static RubyCallbackMethod getSingletonMethod(String methodName, Class arg1, boolean restArgs) {

@@ -29,8 +29,10 @@
 package org.jruby;
 
 import java.lang.reflect.*;
+import java.util.*;
 
 import org.jruby.core.*;
+import org.jruby.javasupport.*;
 import org.jruby.exceptions.*;
 
 /**
@@ -67,7 +69,7 @@ public class RubyJavaObject extends RubyObject {
     
     // JavaObject methods
     
-    public static RubyObject m_load_class(Ruby ruby, RubyModule rubyClass, RubyString className, RubyObject[] args) {
+    public static RubyObject m_load_class(Ruby ruby, RubyObject recv, RubyString className, RubyObject[] args) {
         String javaName = className.getString();
         String rubyName = javaName.substring(javaName.lastIndexOf('.') + 1);
         if (args.length > 0) {
@@ -75,31 +77,47 @@ public class RubyJavaObject extends RubyObject {
         }
         
         try {
-            final Class c = Class.forName(javaName);
+            Class c = Class.forName(javaName);
             
-            final RubyClass newRubyClass = ruby.defineClass(rubyName, (RubyClass)ruby.getRubyClass("JavaObject"));
+            Map methodMap = new HashMap();
+            Map singletonMethodMap = new HashMap();
             
             Method[] methods = c.getMethods();
             
             for (int i = 0; i < methods.length; i++) {
                 String methodName = methods[i].getName();
                 if (methods[i].getDeclaringClass() != Object.class) {
-                    newRubyClass.defineMethod(methodName, new JavaReflectionMethod(methods[i]));
+                    if (Modifier.isStatic(methods[i].getModifiers())) {
+                        if (singletonMethodMap.get(methods[i].getName()) == null) {
+                            singletonMethodMap.put(methods[i].getName(), new LinkedList());
+                        }
+                        ((List)singletonMethodMap.get(methods[i].getName())).add(methods[i]);
+                    } else {
+                        if (methodMap.get(methods[i].getName()) == null) {
+                            methodMap.put(methods[i].getName(), new LinkedList());
+                        }
+                        ((List)methodMap.get(methods[i].getName())).add(methods[i]);
+                    }
                 }
             }
             
-            newRubyClass.defineSingletonMethod("new", new RubyCallbackMethod() {
-                public RubyObject execute(RubyObject recv, RubyObject[] args, Ruby ruby) {
-                    try {
-                        Object value = c.newInstance();
-                        RubyJavaObject javaObject = new RubyJavaObject(ruby, (RubyModule)recv, value);
-                        javaObject.callInit(args);
-                        return javaObject;
-                    } catch (Exception excptn) {
-                    }
-                    return ruby.getNil();
-                }
-            });
+            RubyClass newRubyClass = ruby.defineClass(rubyName, (RubyClass)ruby.getRubyClass("JavaObject"));
+            
+            newRubyClass.defineSingletonMethod("new", new JavaConstructor(c.getConstructors()));
+            
+            Iterator iter = methodMap.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry)iter.next();
+                methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
+                newRubyClass.defineMethod((String)entry.getKey(), new JavaMethod(methods));
+            }
+            
+            iter = singletonMethodMap.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry entry = (Map.Entry)iter.next();
+                methods = (Method[])((List)entry.getValue()).toArray(new Method[((List)entry.getValue()).size()]);
+                newRubyClass.defineSingletonMethod((String)entry.getKey(), new JavaMethod(methods, true));
+            }
             
             return newRubyClass;
         } catch (ClassNotFoundException cnfExcptn) {
@@ -112,5 +130,12 @@ public class RubyJavaObject extends RubyObject {
     
     public RubyString m_to_s() {
         return RubyString.m_newString(getRuby(), getValue() != null ? getValue().toString() : "null");
+    }
+
+    public RubyBoolean m_equal(RubyObject other) {
+        if (other instanceof RubyJavaObject) {
+            return (getValue() != null && getValue().equals(((RubyJavaObject)other).getValue())) ? getRuby().getTrue() : getRuby().getFalse();
+        }
+        return getRuby().getFalse();
     }
 }
