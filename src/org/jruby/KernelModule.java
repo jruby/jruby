@@ -404,12 +404,17 @@ public class KernelModule {
     }
 
     public static IRubyObject sleep(IRubyObject recv, RubyNumeric seconds) {
+    	long milliseconds = (long) (seconds.getDoubleValue() * 1000);
+    	long currentTime = System.currentTimeMillis();
+    	
         try {
-            Thread.sleep((long) (seconds.getDoubleValue() * 1000.0));
+        	// TODO: Capture actual length slept and return that
+            Thread.sleep(milliseconds);
         } catch (InterruptedException iExcptn) {
         }
 
-        return recv;
+        return RubyFixnum.newFixnum(recv.getRuntime(), 
+        		Math.round(((double)(System.currentTimeMillis() - currentTime))/1000));
     }
 
     public static IRubyObject exit(IRubyObject recv, IRubyObject args[]) {

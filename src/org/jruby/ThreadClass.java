@@ -1,6 +1,9 @@
 /*
  *  Copyright (C) 2002 Jason Voegele
  *  Copyright (C) 2002 Anders Bengtsson
+ *  Copyright (C) 2004 Thomas E Enebo
+ * 
+ * Thomas E Enebo <enebo@acm.org>
  *
  *  JRuby - http://jruby.sourceforge.net
  *
@@ -89,6 +92,8 @@ public class ThreadClass extends RubyObject {
                 callbackFactory.getMethod(ThreadClass.class, "priority_set", IRubyObject.class));
         threadClass.defineMethod("raise", 
                 callbackFactory.getMethod(ThreadClass.class, "raise", IRubyObject.class));
+        threadClass.defineMethod("run",
+        		callbackFactory.getMethod(ThreadClass.class, "run"));
         threadClass.defineMethod("status", 
                 callbackFactory.getMethod(ThreadClass.class, "status"));
         
@@ -321,6 +326,13 @@ public class ThreadClass extends RubyObject {
         // FIXME: call the IRaiseListener#exceptionRaised method
 
         return this;
+    }
+    
+    public IRubyObject run() {
+    	// Abort any sleep()s
+    	jvmThread.interrupt();
+    	
+    	return this;
     }
 
     public IRubyObject status() {
