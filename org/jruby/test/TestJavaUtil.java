@@ -46,7 +46,7 @@ public class TestJavaUtil extends TestCase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+        ruby = Ruby.getDefaultInstance(null);
     }
 
     public void testConvertJavaToRuby() {

@@ -48,7 +48,7 @@ public class TestRuby extends TestRubyBase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+        ruby = Ruby.getDefaultInstance(null);
     }
 
     public void testInitLoad() {
@@ -86,18 +86,18 @@ public class TestRuby extends TestRubyBase {
         if (File.separatorChar == '/') {
             wanted =
                 "RubyHome/lib/ruby/site_ruby/1.6"
-                    + "RubyHome/lib/ruby/site_ruby/1.6/JAVA"
+                    + "RubyHome/lib/ruby/site_ruby/1.6/java"
                     + "RubyHome/lib/ruby/site_ruby"
                     + "RubyHome/lib/ruby/1.6"
-                    + "RubyHome/lib/ruby/1.6/JAVA"
+                    + "RubyHome/lib/ruby/1.6/java"
                     + ".";
         } else {
             wanted =
                 "RubyHome\\lib\\ruby\\site_ruby\\1.6"
-                    + "RubyHome\\lib\\ruby\\site_ruby\\1.6\\JAVA"
+                    + "RubyHome\\lib\\ruby\\site_ruby\\1.6\\java"
                     + "RubyHome\\lib\\ruby\\site_ruby"
                     + "RubyHome\\lib\\ruby\\1.6"
-                    + "RubyHome\\lib\\ruby\\1.6\\JAVA"
+                    + "RubyHome\\lib\\ruby\\1.6\\java"
                     + ".";
         }
         assertEquals(wanted, eval("puts $:"));

@@ -44,7 +44,6 @@ import org.jruby.regexp.*;
 public class TestRubyHash extends TestRubyBase {
 
     private RubyHash rubyHash;
-
     private String result;
 
     public TestRubyHash(String name) {
@@ -52,7 +51,7 @@ public class TestRubyHash extends TestRubyBase {
     }
 
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+        ruby = Ruby.getDefaultInstance(null);
         eval("$h = {'foo' => 'bar'}");
     }
 
@@ -122,4 +121,74 @@ public class TestRubyHash extends TestRubyBase {
         assertEquals("true", eval("p Hash.new().empty?"));
     }
 
+    /**
+     * Hash#each, Hash#each_pair, Hash#each_value, Hash#each_key
+     */
+    public void testIterating() {
+        assertEquals("[\"foo\", \"bar\"]", eval("$h.each {|pair| p pair}"));
+        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each {|pair| }"));
+        assertEquals("[\"foo\", \"bar\"]", eval("$h.each_pair {|pair| p pair}"));
+        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_pair {|pair| }"));
+
+        assertEquals("\"foo\"", eval("$h.each_key {|k| p k}"));
+        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_key {|k| }"));
+
+        assertEquals("\"bar\"", eval("$h.each_value {|v| p v}"));
+        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_value {|v| }"));
+    }
+
+    /**
+     * Hash#delete, Hash#delete_if, Hash#reject, Hash#reject!
+     */
+    public void testDeleting() {
+        eval("$delete_h = {1=>2,3=>4}");
+        assertEquals("2", eval("p $delete_h.delete(1)"));
+        assertEquals("{3=>4}", eval("p $delete_h"));
+        assertEquals("nil", eval("p $delete_h.delete(100)"));
+        assertEquals("100", eval("$delete_h.delete(100) {|x| p x }"));
+
+        eval("$delete_h = {1=>2,3=>4,5=>6}");
+        assertEquals("{1=>2}", eval("p $delete_h.delete_if {|k,v| k >= 3}"));
+        assertEquals("{1=>2}", eval("p $delete_h"));
+
+        eval("$delete_h.clear");
+        assertEquals("{}", eval("p $delete_h"));
+
+        eval("$delete_h = {1=>2,3=>4,5=>6}");
+        assertEquals("{1=>2}", eval("p $delete_h.reject {|k,v| k >= 3}"));
+        assertEquals("3", eval("p $delete_h.size"));
+
+        eval("$delete_h = {1=>2,3=>4,5=>6}");
+        eval("p $delete_h");
+
+        assertEquals("{1=>2}", eval("p $delete_h.reject! {|k,v| k >= 3}"));
+        assertEquals("1", eval("p $delete_h.size"));
+        assertEquals("nil", eval("p $delete_h.reject! {|k,v| false}"));
+    }
+
+    /**
+     * Hash#default, Hash#default=
+     */
+    public void testDefault() {
+        assertEquals("nil", eval("p $h['njet']"));
+        assertEquals("nil", eval("p $h.default"));
+        eval("$h.default = 'missing'");
+        assertEquals("\"missing\"", eval("p $h['njet']"));
+        assertEquals("\"missing\"", eval("p $h.default"));
+    }
+
+    /**
+     * Hash#sort, Hash#invert
+     */
+    public void testRestructuring() {
+	eval("$h_sort = {\"a\"=>20,\"b\"=>30,\"c\"=>10}");
+	assertEquals("[[\"a\", 20], [\"b\", 30], [\"c\", 10]]",
+		     eval("p $h_sort.sort"));
+	assertEquals("[[\"c\", 10], [\"a\", 20], [\"b\", 30]]",
+		     eval("p $h_sort.sort {|a,b| a[1]<=>b[1]}"));
+
+	eval("$h_invert = {\"n\"=>100,\"y\"=>300,\"d\"=>200,\"a\"=>0}");
+	assertEquals("[[0, \"a\"], [100, \"n\"], [200, \"d\"], [300, \"y\"]]",
+		     eval("p $h_invert.invert.sort"));
+    }
 }

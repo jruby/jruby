@@ -26,16 +26,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby;
 
 import java.io.*;
 import java.util.*;
 
+import org.ablaf.ast.*;
 import org.jruby.exceptions.*;
 import org.jruby.javasupport.*;
-import org.jruby.nodes.*;
-import org.jruby.nodes.visitor.*;
+import org.jruby.ast.*;
+import org.jruby.ast.visitor.*;
+import org.jruby.parser.*;
 
 /**
  * Class used to launch the interpreter.
@@ -51,7 +52,6 @@ public class Main {
 
     private static Class sRegexpAdapter;
 
-    // print bugs
     private static ArrayList sLoadDirectories = new ArrayList();
     private static String sScript = null;
     private static String sFileName = null;
@@ -64,6 +64,8 @@ public class Main {
     private static boolean sDoPrint = false;
     private static boolean sDoLine = false;
     private static boolean sDoSplit = false;
+    private static boolean warning = false;
+    private static boolean version = false;
     private static class ArgIter {
         int idxArg;
         int idxChar;
@@ -148,6 +150,18 @@ public class Main {
                         case 'l' :
                             sDoLine = true;
                             break;
+                        case 'v' :
+                            System.out.println("ruby " + Ruby.RUBY_MAJOR_VERSION + " () [java]");
+                            warning = true;
+                            break;
+                        case 'w' :
+                            warning = true;
+                            break;
+                        case '-' :
+                            if (args[lIter.idxArg].equals("--version")) {
+                                version = true;
+                                break FOR;
+                            }
                         default :
                             System.err.println("unknown option " + args[lIter.idxArg].charAt(lIter.idxChar));
                             System.exit(1);
@@ -179,6 +193,16 @@ public class Main {
         // Benchmark
         long now = -1;
         String[] argv = processArgs(args);
+        if (version) {
+            System.out.print("ruby ");
+            System.out.print(Ruby.RUBY_VERSION);
+            System.out.print(" (");
+            System.out.print("$Date$");
+            System.out.print(") [");
+            System.out.print("java");
+            System.out.println("]");
+            return;
+        }
         if (sBenchmarkMode)
             now = System.currentTimeMillis();
         if (sScript.length() > 0) {
@@ -225,6 +249,7 @@ public class Main {
      *
      * @param iString2Eval the string to evaluate
      * @param iFileName the name of the File from which the string comes.
+     * @fixme implement the -p and -n options
      */
     protected static void runInterpreter(String iString2Eval, String iFileName, String[] args) {
         // Initialize Runtime
@@ -233,12 +258,17 @@ public class Main {
         // Parse and interpret file
         RubyString rs = RubyString.newString(ruby, iString2Eval);
         RubyObject lArgv = JavaUtil.convertJavaToRuby(ruby, args);
+
+        ruby.setVerbose(warning);
+        ruby.defineReadonlyVariable("$VERBOSE", warning ? ruby.getTrue() : ruby.getNil());
+
         ruby.defineGlobalConstant("ARGV", lArgv);
         ruby.defineReadonlyVariable("$-p", (sDoPrint ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$-n", (sDoLoop ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$-a", (sDoSplit ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$-l", (sDoLine ? ruby.getTrue() : ruby.getNil()));
         ruby.defineReadonlyVariable("$*", lArgv);
+        ruby.defineHookedVariable("$0", RubyString.newString(ruby, iFileName), null, new RubyGlobal.StringSetter());
         ruby.initLoad(sLoadDirectories);
         //require additional libraries
         int lNbRequire = sRequireFirst.size();
@@ -246,17 +276,23 @@ public class Main {
             RubyGlobal.require(ruby, null, new RubyString(ruby, (String) sRequireFirst.get(i)));
         // +++
         try {
-            Node lScript = ruby.getRubyParser().compileString(iFileName, rs, 0);
+            INode lScript = ruby.compile(iString2Eval, iFileName, 0);
+
             //				DumpVisitor laVisitor = new DumpVisitor();
             //				lScript.accept(laVisitor);
             //				ruby.getRuntime().getOutputStream().println(laVisitor.dump());
+
             if (sDoPrint) {
-                ruby.getParserHelper().rb_parser_append_print();
+                // FIXME
+                lScript = new ParserSupport().appendPrintToBlock(lScript);
+                // ruby.getParserHelper().rb_parser_append_print();
             }
             if (sDoLoop) {
-                ruby.getParserHelper().rb_parser_while_loop(sDoLine, sDoSplit);
+                // FIXME
+                lScript = new ParserSupport().appendWhileLoopToBlock(lScript, sDoLine, sDoSplit);
+                // ruby.getParserHelper().rb_parser_while_loop(sDoLine, sDoSplit);
             }
-            lScript = ruby.getParserHelper().getEvalTree();
+
             if (sCheckOnly) {
                 DumpVisitor lVisitor = new DumpVisitor();
                 lScript.accept(lVisitor);
@@ -268,6 +304,8 @@ public class Main {
             ruby.getRuntime().printError(rExcptn.getActException());
         } catch (ThrowJump throwJump) {
             ruby.getRuntime().printError(throwJump.getNameError());
+        } catch (RubyBugException lBug) {
+            ruby.getRuntime().getErrorStream().print(lBug.getMessage());
         }
         // ---
         // to look nicer

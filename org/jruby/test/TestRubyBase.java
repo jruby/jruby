@@ -39,76 +39,73 @@ import org.jruby.*;
  * @author Benoit
  */
 public class TestRubyBase extends TestCase {
-	private PipedInputStream pipeIn;
-	private PipedOutputStream pos;
-	private BufferedReader in;
-	protected Ruby ruby;
-	private PrintStream out;
+    private PipedInputStream pipeIn;
+    private PipedOutputStream pos;
+    private BufferedReader in;
+    protected Ruby ruby;
+    private PrintStream out;
 
-	public TestRubyBase(String name) {
-		super(name);
-	}
+    public TestRubyBase(String name) {
+        super(name);
+    }
 
-	/**
-	 * evaluate a string and returns the standard output.
-	 * @param script the String to eval as a String
-	 * @return the value printed out on  stdout and stderr by 
-	 **/
-	protected String eval(String script) {
-		pipeIn = new PipedInputStream();
-		in = new BufferedReader(new InputStreamReader(pipeIn));
+    /**
+     * evaluate a string and returns the standard output.
+     * @param script the String to eval as a String
+     * @return the value printed out on  stdout and stderr by 
+     **/
+    protected String eval(String script) {
+        pipeIn = new PipedInputStream();
+        in = new BufferedReader(new InputStreamReader(pipeIn));
 
-		String output = null;
-		StringBuffer result = new StringBuffer();
-		try {
-			out = new PrintStream(new PipedOutputStream(pipeIn), true);
-			//            ruby.getRuntime().setOutputStream(out);
-			//            ruby.getRuntime().setErrorStream(out);
-			RubyIO lStream = new RubyIO(ruby);
-			lStream.initIO(null, out, null);
-			ruby.setGlobalVar("$stdout", lStream);
-			ruby.setGlobalVar("$>", lStream);
-			lStream = (RubyIO) ruby.getGlobalVar("$stderr");
-			lStream.initIO(null, out, null);
-			ruby.setGlobalVar("$stderr", lStream);
-			new EvalThread("test", script).start();
-			while ((output = in.readLine()) != null) {
-				result.append(output);
-			}
-		} catch (Exception ex) {
-			throw new RuntimeException(ex.getMessage());
-		}
-		return result.toString();
-	}
+        String output = null;
+        StringBuffer result = new StringBuffer();
+        try {
+            out = new PrintStream(new PipedOutputStream(pipeIn), true);
+            //            ruby.getRuntime().setOutputStream(out);
+            //            ruby.getRuntime().setErrorStream(out);
+            RubyIO lStream = new RubyIO(ruby);
+            lStream.initIO(null, out, null);
+            ruby.setGlobalVar("$stdout", lStream);
+            ruby.setGlobalVar("$>", lStream);
+            lStream = (RubyIO) ruby.getGlobalVar("$stderr");
+            lStream.initIO(null, out, null);
+            ruby.setGlobalVar("$stderr", lStream);
+            new EvalThread("test", script).start();
+            while ((output = in.readLine()) != null) {
+                result.append(output);
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex.getMessage());
+        }
+        return result.toString();
+    }
 
-	class EvalThread extends Thread {
-		private RubyString name;
-		private RubyString script;
+    class EvalThread extends Thread {
+        private RubyString name;
+        private RubyString script;
 
-		EvalThread(String name, String script) {
-			this.name = RubyString.newString(ruby, name);
-			this.script = RubyString.newString(ruby, script);
-		}
+        EvalThread(String name, String script) {
+            this.name = RubyString.newString(ruby, name);
+            this.script = RubyString.newString(ruby, script);
+        }
 
-		public void run() {
-			try
-			{
-				ruby.getRuntime().loadScript(name, script, false);
-			}
-			finally
-			{
-				out.close();
-			}
-		}
-	}
+        public void run() {
+            try {
+                ruby.getRuntime().loadScript(name, script, false);
+            } finally {
+                out.close();
+            }
+        }
+    }
 
-	public void tearDown() {
-		try {
-			if (in != null)
-				in.close();
-			if (out != null)
-				out.close();
-		} catch (IOException ex) {
-		}
-	}
+    public void tearDown() {
+        try {
+            if (in != null)
+                in.close();
+            if (out != null)
+                out.close();
+        } catch (IOException ex) {
+        }
+    }
 }

@@ -262,4 +262,15 @@ public class JavaSupport {
     public Map getRenamedJavaClasses() {
         return renamedJavaClasses;
     }
+
+    public Class getJavaClass(RubyClass type) {
+        Iterator iter = loadedJavaClasses.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (entry.getValue() == type) {
+                return (Class)entry.getKey();
+            }
+        }
+        return null;
+    }
 }

@@ -52,13 +52,14 @@ public class JavaUtil {
         } else if (javaClass.isPrimitive()) {
             String cName = javaClass.getName();
             if (cName == "boolean") {
-                return arg instanceof RubyBoolean;
+                return true; // XXX arg instanceof RubyBoolean;
             }
-            if (cName == "float" || cName == "double") {
-                return arg instanceof RubyFloat;
-            }
+            // XXX if (cName == "float" || cName == "double") {
+            // XXX     return arg instanceof RubyFloat;
+            // XXX }
             // else it's one of the integral types
-            return arg instanceof RubyFixnum;
+            return arg instanceof RubyNumeric || arg instanceof RubyString;
+            // XXX arg instanceof RubyFixnum;
         } else if (javaClass.isArray()) {
             if (!(arg instanceof RubyArray)) {
                 return false;
@@ -105,32 +106,57 @@ public class JavaUtil {
                 return new Boolean(rubyObject.isTrue());
             }
             if (cName == "float") {
-                return new Float((float) ((RubyFloat) rubyObject).getDoubleValue());
+                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_f")).isTrue()) {
+                    return new Float(((RubyNumeric) rubyObject.funcall("to_f")).getDoubleValue());
+                } else {
+                    return new Float(0.0);
+                }
             }
             if (cName == "double") {
-                return new Double(((RubyFloat) rubyObject).getDoubleValue());
+                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_f")).isTrue()) {
+                    return new Double(((RubyNumeric) rubyObject.funcall("to_f")).getDoubleValue());
+                } else {
+                    return new Double(0.0);
+                }
             }
             if (cName == "long") {
-                return new Long(((RubyFixnum) rubyObject).getLongValue());
+                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                    return new Long(((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
+                } else {
+                    return new Long(0);
+                }
             }
             if (cName == "int") {
-                return new Integer((int) ((RubyFixnum) rubyObject).getLongValue());
+                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                    return new Integer((int)((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
+                } else {
+                    return new Integer(0);
+                }
             }
             if (cName == "short") {
-                return new Short((short) ((RubyFixnum) rubyObject).getLongValue());
+                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                    return new Short((short)((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
+                } else {
+                    return new Short((short)0);
+                }
             }
             if (cName == "byte") {
-                return new Byte((byte) ((RubyFixnum) rubyObject).getLongValue());
+                if (rubyObject.respond_to(RubySymbol.newSymbol(ruby, "to_i")).isTrue()) {
+                    return new Byte((byte)((RubyNumeric) rubyObject.funcall("to_i")).getLongValue());
+                } else {
+                    return new Byte((byte)0);
+                }
             }
-            // XXX: this probably isn't good enough -AM
-            return new Character((char) ((RubyFixnum) rubyObject).getLongValue());
-        } else if (javaClass == String.class) {
-            // If Ruby class isn't the String class call to_s method
-            if (rubyObject instanceof RubyString) {
-                return ((RubyString) rubyObject).getValue();
+
+            // XXX this probably isn't good enough -AM
+            String s = ((RubyString) rubyObject.funcall("to_s")).getValue();
+            if (s.length() > 0) {
+                return new Character(s.charAt(0));
             } else {
-                return ((RubyString) rubyObject.funcall("to_s")).getValue();
+                return new Character('\0');
             }
+        } else if (javaClass == String.class) {
+            return ((RubyString) rubyObject.funcall("to_s")).getValue();
         } else if (javaClass.isArray()) {
             try {
                 Class arrayClass = javaClass.getComponentType();
@@ -225,16 +251,18 @@ public class JavaUtil {
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, Array.get(object, i));
             }
-//            return RubyArray.create(ruby, null, items);			//Benoit: [ 524212 ] cannot iterate on ARGV   due to incorrect rubyClasss
-            return RubyArray.newArray(ruby, items);
+            //return RubyArray.create(ruby, null, items);                       //Benoit: [ 524212 ] cannot iterate on ARGV   due to incorrect rubyClasss 
+               return RubyArray.newArray(ruby, items); 
+
         } else if (List.class.isAssignableFrom(javaClass)) {
             int len = ((List) object).size();
             RubyObject[] items = new RubyObject[len];
             for (int i = 0; i < len; i++) {
                 items[i] = convertJavaToRuby(ruby, ((List) object).get(i));
             }
-//            return RubyArray.create(ruby, null, items);   //Benoit: [ 524212 ] cannot iterate on ARGV   due to incorrect rubyClasss
-            return RubyArray.newArray(ruby, items);
+//              return RubyArray.create(ruby, null, items);   //Benoit: [ 524212 ] cannot iterate on ARGV   due to incorrect rubyClasss 
+             return RubyArray.newArray(ruby, items); 
+
         } else if (Map.class.isAssignableFrom(javaClass)) {
             int len = ((Map) object).size();
             RubyObject[] items = new RubyObject[len * 2];

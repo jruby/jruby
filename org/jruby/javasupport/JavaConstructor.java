@@ -76,7 +76,7 @@ public class JavaConstructor implements Callback {
         }
 
         if (executeConstructors.isEmpty()) {
-            throw new RubyArgumentException(ruby, "wrong arguments.");
+            throw new ArgumentError(ruby, "wrong arguments.");
         }
 
         // take the first constructor.

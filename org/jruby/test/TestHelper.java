@@ -1,12 +1,11 @@
 /*
- * MainTestSuite.java - No description
- * Created on 11.01.2002, 12:50:46
+ * TestHelper.java - No description
+ * Created on 15. March 2002, 9:00
  * 
- * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
+ * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Alan Moore <alan_moore@gmx.net>
  * Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Chad Fowler <chadfowler@yahoo.com>
  * 
  * JRuby - http://jruby.sourceforge.net
  * 
@@ -27,29 +26,27 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
 package org.jruby.test;
 
-import junit.framework.*;
-
 /**
- *
- * @author chadfowler
+ * Helper class to test java interop.
+ * @author  Benoit Cerrina
  * @version $Revision$
- */
-public class MainTestSuite extends TestSuite {
+ **/
+public class TestHelper {
+    /**
+     * used to test Java Arrays in Ruby.
+     *  while we don't yet have a way to create them this can be used to test basic
+     *  array functionalities
+     */
+    static public String[] createArray(int i) {
+        return new String[i];
+    }
 
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTest(new TestSuite(TestRubyObject.class));
-        suite.addTest(new TestSuite(TestRubyNil.class));
-        suite.addTest(new TestSuite(TestRubyHash.class));
-        suite.addTest(new TestSuite(TestRubyTime.class));
-        suite.addTest(new TestSuite(TestRuby.class));
-        suite.addTest(new TestSuite(TestJavaUtil.class));
-        suite.addTest(new TestSuite(TestKernel.class));
-        suite.addTest(new TestSuite(TestRubyCollect.class));
-//  	suite.addTest(ScriptTestSuite.suite());
-        return suite;
+    /**
+     * used to test native exception handling.
+     **/
+    static public void throwException() {
+        throw new RuntimeException("testException");
     }
 }

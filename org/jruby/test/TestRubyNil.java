@@ -49,7 +49,7 @@ public class TestRubyNil extends TestCase {
     } 
     
     public void setUp() {
-        ruby = Ruby.getDefaultInstance(GNURegexpAdapter.class);
+        ruby = Ruby.getDefaultInstance(null);
         rubyNil = ruby.getNil();
     }
     

@@ -4,7 +4,6 @@
  *
  * License Grant-
  *
- *
  * Permission to use, copy, modify, and distribute this Software and its
  * documentation for NON-COMMERCIAL or COMMERCIAL purposes and without fee is
  * hereby granted.
@@ -150,7 +149,7 @@ public class PrintfFormat {
         int i = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -163,36 +162,38 @@ public class PrintfFormat {
 
                 if (cs.isPositionalFieldWidth()) {
                     int ifw = cs.getArgumentPositionForFieldWidth() - 1;
-                    cs.setFieldWidthWithArg(((Number)o[ifw]).intValue());
+                    cs.setFieldWidthWithArg(((Number) o[ifw]).intValue());
                 } else if (cs.isVariableFieldWidth() && !cs.isPositionalSpecification()) {
-                    cs.setFieldWidthWithArg(((Number)o[i]).intValue());
+                    cs.setFieldWidthWithArg(((Number) o[i]).intValue());
                     i++;
                 }
 
                 if (cs.isPositionalPrecision()) {
                     int ipr = cs.getArgumentPositionForPrecision() - 1;
-                    cs.setPrecisionWithArg(((Number)o[ipr]).intValue());
+                    cs.setPrecisionWithArg(((Number) o[ipr]).intValue());
                 } else if (cs.isVariablePrecision() && !cs.isPositionalSpecification()) {
-                    cs.setPrecisionWithArg(((Number)o[i]).intValue());
+                    cs.setPrecisionWithArg(((Number) o[i]).intValue());
                     i++;
                 }
 
-                if (o[i] instanceof Byte) {
-                    sb.append(cs.internalsprintf(((Byte)o[i]).byteValue()));
+		if (o[i] == null) {
+		    // Nil is printed as nothing
+		} else if (o[i] instanceof Byte) {
+                    sb.append(cs.internalsprintf(((Byte) o[i]).byteValue()));
                 } else if (o[i] instanceof Short) {
-                    sb.append(cs.internalsprintf(((Short)o[i]).shortValue()));
+                    sb.append(cs.internalsprintf(((Short) o[i]).shortValue()));
                 } else if (o[i] instanceof Integer) {
-                    sb.append(cs.internalsprintf(((Integer)o[i]).intValue()));
+                    sb.append(cs.internalsprintf(((Integer) o[i]).intValue()));
                 } else if (o[i] instanceof Long) {
-                    sb.append(cs.internalsprintf(((Long)o[i]).longValue()));
+                    sb.append(cs.internalsprintf(((Long) o[i]).longValue()));
                 } else if (o[i] instanceof Float) {
-                    sb.append(cs.internalsprintf(((Float)o[i]).floatValue()));
+                    sb.append(cs.internalsprintf(((Float) o[i]).floatValue()));
                 } else if (o[i] instanceof Double) {
-                    sb.append(cs.internalsprintf(((Double)o[i]).doubleValue()));
+                    sb.append(cs.internalsprintf(((Double) o[i]).doubleValue()));
                 } else if (o[i] instanceof Character) {
-                    sb.append(cs.internalsprintf(((Character)o[i]).charValue()));
+                    sb.append(cs.internalsprintf(((Character) o[i]).charValue()));
                 } else if (o[i] instanceof String) {
-                    sb.append(cs.internalsprintf((String)o[i]));
+                    sb.append(cs.internalsprintf((String) o[i]));
                 } else {
                     sb.append(cs.internalsprintf(o[i]));
                 }
@@ -213,7 +214,7 @@ public class PrintfFormat {
         char c = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -239,7 +240,7 @@ public class PrintfFormat {
         char c = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -267,7 +268,7 @@ public class PrintfFormat {
         char c = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -295,7 +296,7 @@ public class PrintfFormat {
         char c = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -322,7 +323,7 @@ public class PrintfFormat {
         char c = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -355,7 +356,7 @@ public class PrintfFormat {
         char c = 0;
         StringBuffer sb = new StringBuffer();
         while (e.hasMoreElements()) {
-            cs = (ConversionSpecification)e.nextElement();
+            cs = (ConversionSpecification) e.nextElement();
             c = cs.getConversionCharacter();
             if (c == '\0') {
                 sb.append(cs.getLiteral());
@@ -363,21 +364,21 @@ public class PrintfFormat {
                 sb.append("%");
             } else {
                 if (x instanceof Byte) {
-                    sb.append(cs.internalsprintf(((Byte)x).byteValue()));
+                    sb.append(cs.internalsprintf(((Byte) x).byteValue()));
                 } else if (x instanceof Short) {
-                    sb.append(cs.internalsprintf(((Short)x).shortValue()));
+                    sb.append(cs.internalsprintf(((Short) x).shortValue()));
                 } else if (x instanceof Integer) {
-                    sb.append(cs.internalsprintf(((Integer)x).intValue()));
+                    sb.append(cs.internalsprintf(((Integer) x).intValue()));
                 } else if (x instanceof Long) {
-                    sb.append(cs.internalsprintf(((Long)x).longValue()));
+                    sb.append(cs.internalsprintf(((Long) x).longValue()));
                 } else if (x instanceof Float) {
-                    sb.append(cs.internalsprintf(((Float)x).floatValue()));
+                    sb.append(cs.internalsprintf(((Float) x).floatValue()));
                 } else if (x instanceof Double) {
-                    sb.append(cs.internalsprintf(((Double)x).doubleValue()));
+                    sb.append(cs.internalsprintf(((Double) x).doubleValue()));
                 } else if (x instanceof Character) {
-                    sb.append(cs.internalsprintf(((Character)x).charValue()));
+                    sb.append(cs.internalsprintf(((Character) x).charValue()));
                 } else if (x instanceof String) {
-                    sb.append(cs.internalsprintf((String)x));
+                    sb.append(cs.internalsprintf((String) x));
                 } else {
                     sb.append(cs.internalsprintf(x));
                 }
@@ -407,7 +408,8 @@ public class PrintfFormat {
          * Constructor.  Used to prepare an instance
          * to hold a literal, not a control string.
          */
-        ConversionSpecification() { }
+        ConversionSpecification() {
+        }
 
         /**
          * Constructor for a conversion specification.
@@ -426,8 +428,7 @@ public class PrintfFormat {
                 throw new NullPointerException();
             }
             if (fmtArg.length() == 0) {
-                throw new IllegalArgumentException(
-                        "Control strings must have positive lengths.");
+                throw new IllegalArgumentException("Control strings must have positive lengths.");
             }
             if (fmtArg.charAt(0) == '%') {
                 fmt = fmtArg;
@@ -448,16 +449,13 @@ public class PrintfFormat {
                             }
                         }
                     } else {
-                        throw new IllegalArgumentException(
-                                "Malformed conversion specification=" + fmtArg);
+                        throw new IllegalArgumentException("Malformed conversion specification=" + fmtArg);
                     }
                 } else {
-                    throw new IllegalArgumentException(
-                            "Malformed conversion specification=" + fmtArg);
+                    throw new IllegalArgumentException("Malformed conversion specification=" + fmtArg);
                 }
             } else {
-                throw new IllegalArgumentException(
-                        "Control strings must begin with %.");
+                throw new IllegalArgumentException("Control strings must begin with %.");
             }
         }
 
@@ -474,28 +472,28 @@ public class PrintfFormat {
                     if (i < fmt.length()) {
                         char c = fmt.charAt(i);
                         switch (c) {
-                            case 'a':
-                                sb.append((char)0x07);
+                            case 'a' :
+                                sb.append((char) 0x07);
                                 break;
-                            case 'b':
+                            case 'b' :
                                 sb.append('\b');
                                 break;
-                            case 'f':
+                            case 'f' :
                                 sb.append('\f');
                                 break;
-                            case 'n':
+                            case 'n' :
                                 sb.append('\n');
                                 break;
-                            case 'r':
+                            case 'r' :
                                 sb.append('\r');
                                 break;
-                            case 't':
+                            case 't' :
                                 sb.append('\t');
                                 break;
-                            case 'v':
-                                sb.append((char)0x0b);
+                            case 'v' :
+                                sb.append((char) 0x0b);
                                 break;
-                            case '\\':
+                            case '\\' :
                                 sb.append('\\');
                                 break;
                         }
@@ -538,43 +536,41 @@ public class PrintfFormat {
         String internalsprintf(int s) throws IllegalArgumentException {
             String s2 = "";
             switch (conversionCharacter) {
-                case 'd':
-                case 'i':
+                case 'd' :
+                case 'i' :
                     if (optionalh) {
-                        s2 = printDFormat((short)s);
+                        s2 = printDFormat((short) s);
                     } else if (optionall) {
-                        s2 = printDFormat((long)s);
+                        s2 = printDFormat((long) s);
                     } else {
                         s2 = printDFormat(s);
                     }
                     break;
-                case 'x':
-                case 'X':
+                case 'x' :
+                case 'X' :
                     if (optionalh) {
-                        s2 = printXFormat((short)s);
+                        s2 = printXFormat((short) s);
                     } else if (optionall) {
-                        s2 = printXFormat((long)s);
+                        s2 = printXFormat((long) s);
                     } else {
                         s2 = printXFormat(s);
                     }
                     break;
-                case 'o':
+                case 'o' :
                     if (optionalh) {
-                        s2 = printOFormat((short)s);
+                        s2 = printOFormat((short) s);
                     } else if (optionall) {
-                        s2 = printOFormat((long)s);
+                        s2 = printOFormat((long) s);
                     } else {
                         s2 = printOFormat(s);
                     }
                     break;
-                case 'c':
-                case 'C':
-                    s2 = printCFormat((char)s);
+                case 'c' :
+                case 'C' :
+                    s2 = printCFormat((char) s);
                     break;
-                default:
-                    throw new IllegalArgumentException(
-                            "Cannot format a int with a format using a " +
-                            conversionCharacter + " conversion character.");
+                default :
+                    throw new IllegalArgumentException("Cannot format a int with a format using a " + conversionCharacter + " conversion character.");
             }
             return s2;
         }
@@ -582,43 +578,41 @@ public class PrintfFormat {
         String internalsprintf(long s) throws IllegalArgumentException {
             String s2 = "";
             switch (conversionCharacter) {
-                case 'd':
-                case 'i':
+                case 'd' :
+                case 'i' :
                     if (optionalh) {
-                        s2 = printDFormat((short)s);
+                        s2 = printDFormat((short) s);
                     } else if (optionall) {
                         s2 = printDFormat(s);
                     } else {
-                        s2 = printDFormat((int)s);
+                        s2 = printDFormat((int) s);
                     }
                     break;
-                case 'x':
-                case 'X':
+                case 'x' :
+                case 'X' :
                     if (optionalh) {
-                        s2 = printXFormat((short)s);
+                        s2 = printXFormat((short) s);
                     } else if (optionall) {
                         s2 = printXFormat(s);
                     } else {
-                        s2 = printXFormat((int)s);
+                        s2 = printXFormat((int) s);
                     }
                     break;
-                case 'o':
+                case 'o' :
                     if (optionalh) {
-                        s2 = printOFormat((short)s);
+                        s2 = printOFormat((short) s);
                     } else if (optionall) {
                         s2 = printOFormat(s);
                     } else {
-                        s2 = printOFormat((int)s);
+                        s2 = printOFormat((int) s);
                     }
                     break;
-                case 'c':
-                case 'C':
-                    s2 = printCFormat((char)s);
+                case 'c' :
+                case 'C' :
+                    s2 = printCFormat((char) s);
                     break;
-                default:
-                    throw new IllegalArgumentException(
-                            "Cannot format a long with a format using a " +
-                            conversionCharacter + " conversion character.");
+                default :
+                    throw new IllegalArgumentException("Cannot format a long with a format using a " + conversionCharacter + " conversion character.");
             }
             return s2;
         }
@@ -626,21 +620,19 @@ public class PrintfFormat {
         String internalsprintf(double s) throws IllegalArgumentException {
             String s2 = "";
             switch (conversionCharacter) {
-                case 'f':
+                case 'f' :
                     s2 = printFFormat(s);
                     break;
-                case 'E':
-                case 'e':
+                case 'E' :
+                case 'e' :
                     s2 = printEFormat(s);
                     break;
-                case 'G':
-                case 'g':
+                case 'G' :
+                case 'g' :
                     s2 = printGFormat(s);
                     break;
-                default:
-                    throw new IllegalArgumentException(
-                            "Cannot format a double with a format using a " + 
-                            conversionCharacter + " conversion character.");
+                default :
+                    throw new IllegalArgumentException("Cannot format a double with a format using a " + conversionCharacter + " conversion character.");
             }
             return s2;
         }
@@ -650,9 +642,7 @@ public class PrintfFormat {
             if (conversionCharacter == 's' || conversionCharacter == 'S') {
                 s2 = printSFormat(s);
             } else {
-                throw new IllegalArgumentException(
-                        "Cannot format a String with a format using a " + 
-                        conversionCharacter + " conversion character.");
+                throw new IllegalArgumentException("Cannot format a String with a format using a " + conversionCharacter + " conversion character.");
             }
             return s2;
         }
@@ -662,9 +652,7 @@ public class PrintfFormat {
             if (conversionCharacter == 's' || conversionCharacter == 'S') {
                 s2 = printSFormat(s.toString());
             } else {
-                throw new IllegalArgumentException(
-                        "Cannot format a String with a format using a " +
-                        conversionCharacter + " conversion character.");
+                throw new IllegalArgumentException("Cannot format a String with a format using a " + conversionCharacter + " conversion character.");
             }
             return s2;
         }
@@ -1114,98 +1102,98 @@ public class PrintfFormat {
             expon = Math.abs(expon);
             if (expon >= 100) {
                 switch (expon / 100) {
-                    case 1:
+                    case 1 :
                         ca2[i] = '1';
                         break;
-                    case 2:
+                    case 2 :
                         ca2[i] = '2';
                         break;
-                    case 3:
+                    case 3 :
                         ca2[i] = '3';
                         break;
-                    case 4:
+                    case 4 :
                         ca2[i] = '4';
                         break;
-                    case 5:
+                    case 5 :
                         ca2[i] = '5';
                         break;
-                    case 6:
+                    case 6 :
                         ca2[i] = '6';
                         break;
-                    case 7:
+                    case 7 :
                         ca2[i] = '7';
                         break;
-                    case 8:
+                    case 8 :
                         ca2[i] = '8';
                         break;
-                    case 9:
+                    case 9 :
                         ca2[i] = '9';
                         break;
                 }
                 i++;
             }
             switch ((expon % 100) / 10) {
-                case 0:
+                case 0 :
                     ca2[i] = '0';
                     break;
-                case 1:
+                case 1 :
                     ca2[i] = '1';
                     break;
-                case 2:
+                case 2 :
                     ca2[i] = '2';
                     break;
-                case 3:
+                case 3 :
                     ca2[i] = '3';
                     break;
-                case 4:
+                case 4 :
                     ca2[i] = '4';
                     break;
-                case 5:
+                case 5 :
                     ca2[i] = '5';
                     break;
-                case 6:
+                case 6 :
                     ca2[i] = '6';
                     break;
-                case 7:
+                case 7 :
                     ca2[i] = '7';
                     break;
-                case 8:
+                case 8 :
                     ca2[i] = '8';
                     break;
-                case 9:
+                case 9 :
                     ca2[i] = '9';
                     break;
             }
             i++;
             switch (expon % 10) {
-                case 0:
+                case 0 :
                     ca2[i] = '0';
                     break;
-                case 1:
+                case 1 :
                     ca2[i] = '1';
                     break;
-                case 2:
+                case 2 :
                     ca2[i] = '2';
                     break;
-                case 3:
+                case 3 :
                     ca2[i] = '3';
                     break;
-                case 4:
+                case 4 :
                     ca2[i] = '4';
                     break;
-                case 5:
+                case 5 :
                     ca2[i] = '5';
                     break;
-                case 6:
+                case 6 :
                     ca2[i] = '6';
                     break;
-                case 7:
+                case 7 :
                     ca2[i] = '7';
                     break;
-                case 8:
+                case 8 :
                     ca2[i] = '8';
                     break;
-                case 9:
+                case 9 :
                     ca2[i] = '9';
                     break;
             }
@@ -1669,43 +1657,43 @@ public class PrintfFormat {
                     }
                 }
                 switch (t.length()) {
-                    case 1:
+                    case 1 :
                         sx = "800" + t;
                         break;
-                    case 2:
+                    case 2 :
                         sx = "80" + t;
                         break;
-                    case 3:
+                    case 3 :
                         sx = "8" + t;
                         break;
-                    case 4:
+                    case 4 :
                         switch (t.charAt(0)) {
-                            case '1':
+                            case '1' :
                                 sx = "9" + t.substring(1, 4);
                                 break;
-                            case '2':
+                            case '2' :
                                 sx = "a" + t.substring(1, 4);
                                 break;
-                            case '3':
+                            case '3' :
                                 sx = "b" + t.substring(1, 4);
                                 break;
-                            case '4':
+                            case '4' :
                                 sx = "c" + t.substring(1, 4);
                                 break;
-                            case '5':
+                            case '5' :
                                 sx = "d" + t.substring(1, 4);
                                 break;
-                            case '6':
+                            case '6' :
                                 sx = "e" + t.substring(1, 4);
                                 break;
-                            case '7':
+                            case '7' :
                                 sx = "f" + t.substring(1, 4);
                                 break;
                         }
                         break;
                 }
             } else {
-                sx = Integer.toString((int)x, 16);
+                sx = Integer.toString((int) x, 16);
             }
             return printXFormat(sx);
         }
@@ -1717,72 +1705,72 @@ public class PrintfFormat {
             } else if (x < 0) {
                 String t = Long.toString((~(-x - 1)) ^ Long.MIN_VALUE, 16);
                 switch (t.length()) {
-                    case 1:
+                    case 1 :
                         sx = "800000000000000" + t;
                         break;
-                    case 2:
+                    case 2 :
                         sx = "80000000000000" + t;
                         break;
-                    case 3:
+                    case 3 :
                         sx = "8000000000000" + t;
                         break;
-                    case 4:
+                    case 4 :
                         sx = "800000000000" + t;
                         break;
-                    case 5:
+                    case 5 :
                         sx = "80000000000" + t;
                         break;
-                    case 6:
+                    case 6 :
                         sx = "8000000000" + t;
                         break;
-                    case 7:
+                    case 7 :
                         sx = "800000000" + t;
                         break;
-                    case 8:
+                    case 8 :
                         sx = "80000000" + t;
                         break;
-                    case 9:
+                    case 9 :
                         sx = "8000000" + t;
                         break;
-                    case 10:
+                    case 10 :
                         sx = "800000" + t;
                         break;
-                    case 11:
+                    case 11 :
                         sx = "80000" + t;
                         break;
-                    case 12:
+                    case 12 :
                         sx = "8000" + t;
                         break;
-                    case 13:
+                    case 13 :
                         sx = "800" + t;
                         break;
-                    case 14:
+                    case 14 :
                         sx = "80" + t;
                         break;
-                    case 15:
+                    case 15 :
                         sx = "8" + t;
                         break;
-                    case 16:
+                    case 16 :
                         switch (t.charAt(0)) {
-                            case '1':
+                            case '1' :
                                 sx = "9" + t.substring(1, 16);
                                 break;
-                            case '2':
+                            case '2' :
                                 sx = "a" + t.substring(1, 16);
                                 break;
-                            case '3':
+                            case '3' :
                                 sx = "b" + t.substring(1, 16);
                                 break;
-                            case '4':
+                            case '4' :
                                 sx = "c" + t.substring(1, 16);
                                 break;
-                            case '5':
+                            case '5' :
                                 sx = "d" + t.substring(1, 16);
                                 break;
-                            case '6':
+                            case '6' :
                                 sx = "e" + t.substring(1, 16);
                                 break;
-                            case '7':
+                            case '7' :
                                 sx = "f" + t.substring(1, 16);
                                 break;
                         }
@@ -1801,48 +1789,48 @@ public class PrintfFormat {
             } else if (x < 0) {
                 String t = Integer.toString((~(-x - 1)) ^ Integer.MIN_VALUE, 16);
                 switch (t.length()) {
-                    case 1:
+                    case 1 :
                         sx = "8000000" + t;
                         break;
-                    case 2:
+                    case 2 :
                         sx = "800000" + t;
                         break;
-                    case 3:
+                    case 3 :
                         sx = "80000" + t;
                         break;
-                    case 4:
+                    case 4 :
                         sx = "8000" + t;
                         break;
-                    case 5:
+                    case 5 :
                         sx = "800" + t;
                         break;
-                    case 6:
+                    case 6 :
                         sx = "80" + t;
                         break;
-                    case 7:
+                    case 7 :
                         sx = "8" + t;
                         break;
-                    case 8:
+                    case 8 :
                         switch (t.charAt(0)) {
-                            case '1':
+                            case '1' :
                                 sx = "9" + t.substring(1, 8);
                                 break;
-                            case '2':
+                            case '2' :
                                 sx = "a" + t.substring(1, 8);
                                 break;
-                            case '3':
+                            case '3' :
                                 sx = "b" + t.substring(1, 8);
                                 break;
-                            case '4':
+                            case '4' :
                                 sx = "c" + t.substring(1, 8);
                                 break;
-                            case '5':
+                            case '5' :
                                 sx = "d" + t.substring(1, 8);
                                 break;
-                            case '6':
+                            case '6' :
                                 sx = "e" + t.substring(1, 8);
                                 break;
-                            case '7':
+                            case '7' :
                                 sx = "f" + t.substring(1, 8);
                                 break;
                         }
@@ -1936,24 +1924,24 @@ public class PrintfFormat {
             } else if (x < 0) {
                 String t = Integer.toString((~(-x - 1)) ^ Short.MIN_VALUE, 8);
                 switch (t.length()) {
-                    case 1:
+                    case 1 :
                         sx = "10000" + t;
                         break;
-                    case 2:
+                    case 2 :
                         sx = "1000" + t;
                         break;
-                    case 3:
+                    case 3 :
                         sx = "100" + t;
                         break;
-                    case 4:
+                    case 4 :
                         sx = "10" + t;
                         break;
-                    case 5:
+                    case 5 :
                         sx = "1" + t;
                         break;
                 }
             } else {
-                sx = Integer.toString((int)x, 8);
+                sx = Integer.toString((int) x, 8);
             }
             return printOFormat(sx);
         }
@@ -1965,67 +1953,67 @@ public class PrintfFormat {
             } else if (x < 0) {
                 String t = Long.toString((~(-x - 1)) ^ Long.MIN_VALUE, 8);
                 switch (t.length()) {
-                    case 1:
+                    case 1 :
                         sx = "100000000000000000000" + t;
                         break;
-                    case 2:
+                    case 2 :
                         sx = "10000000000000000000" + t;
                         break;
-                    case 3:
+                    case 3 :
                         sx = "1000000000000000000" + t;
                         break;
-                    case 4:
+                    case 4 :
                         sx = "100000000000000000" + t;
                         break;
-                    case 5:
+                    case 5 :
                         sx = "10000000000000000" + t;
                         break;
-                    case 6:
+                    case 6 :
                         sx = "1000000000000000" + t;
                         break;
-                    case 7:
+                    case 7 :
                         sx = "100000000000000" + t;
                         break;
-                    case 8:
+                    case 8 :
                         sx = "10000000000000" + t;
                         break;
-                    case 9:
+                    case 9 :
                         sx = "1000000000000" + t;
                         break;
-                    case 10:
+                    case 10 :
                         sx = "100000000000" + t;
                         break;
-                    case 11:
+                    case 11 :
                         sx = "10000000000" + t;
                         break;
-                    case 12:
+                    case 12 :
                         sx = "1000000000" + t;
                         break;
-                    case 13:
+                    case 13 :
                         sx = "100000000" + t;
                         break;
-                    case 14:
+                    case 14 :
                         sx = "10000000" + t;
                         break;
-                    case 15:
+                    case 15 :
                         sx = "1000000" + t;
                         break;
-                    case 16:
+                    case 16 :
                         sx = "100000" + t;
                         break;
-                    case 17:
+                    case 17 :
                         sx = "10000" + t;
                         break;
-                    case 18:
+                    case 18 :
                         sx = "1000" + t;
                         break;
-                    case 19:
+                    case 19 :
                         sx = "100" + t;
                         break;
-                    case 20:
+                    case 20 :
                         sx = "10" + t;
                         break;
-                    case 21:
+                    case 21 :
                         sx = "1" + t;
                         break;
                 }
@@ -2042,37 +2030,37 @@ public class PrintfFormat {
             } else if (x < 0) {
                 String t = Integer.toString((~(-x - 1)) ^ Integer.MIN_VALUE, 8);
                 switch (t.length()) {
-                    case 1:
+                    case 1 :
                         sx = "2000000000" + t;
                         break;
-                    case 2:
+                    case 2 :
                         sx = "200000000" + t;
                         break;
-                    case 3:
+                    case 3 :
                         sx = "20000000" + t;
                         break;
-                    case 4:
+                    case 4 :
                         sx = "2000000" + t;
                         break;
-                    case 5:
+                    case 5 :
                         sx = "200000" + t;
                         break;
-                    case 6:
+                    case 6 :
                         sx = "20000" + t;
                         break;
-                    case 7:
+                    case 7 :
                         sx = "2000" + t;
                         break;
-                    case 8:
+                    case 8 :
                         sx = "200" + t;
                         break;
-                    case 9:
+                    case 9 :
                         sx = "20" + t;
                         break;
-                    case 10:
+                    case 10 :
                         sx = "2" + t;
                         break;
-                    case 11:
+                    case 11 :
                         sx = "3" + t.substring(1);
                         break;
                 }

@@ -1,6 +1,6 @@
 /*
- * MainTestSuite.java - No description
- * Created on 11.01.2002, 12:50:46
+ * NotImplementedError.java - No description
+ * Created on 18.03.2002, 16:33:48
  * 
  * Copyright (C) 2001, 2002 Jan Arne Petersen, Alan Moore, Benoit Cerrina, Chad Fowler
  * Jan Arne Petersen <jpetersen@uni-bonn.de>
@@ -27,29 +27,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  */
-
-package org.jruby.test;
-
-import junit.framework.*;
+package org.jruby.exceptions;
 
 /**
- *
- * @author chadfowler
+ * .Exception indicating an unimplemented feature in JRuby.
+ * 
+ * @author  jvoegele
  * @version $Revision$
  */
-public class MainTestSuite extends TestSuite {
+public class NotImplementedError extends RuntimeException {
 
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.addTest(new TestSuite(TestRubyObject.class));
-        suite.addTest(new TestSuite(TestRubyNil.class));
-        suite.addTest(new TestSuite(TestRubyHash.class));
-        suite.addTest(new TestSuite(TestRubyTime.class));
-        suite.addTest(new TestSuite(TestRuby.class));
-        suite.addTest(new TestSuite(TestJavaUtil.class));
-        suite.addTest(new TestSuite(TestKernel.class));
-        suite.addTest(new TestSuite(TestRubyCollect.class));
-//  	suite.addTest(ScriptTestSuite.suite());
-        return suite;
+    public NotImplementedError() {
+        this("Not yet implemented");
+    }
+
+    public NotImplementedError(String message) {
+        super(message);
     }
 }
