@@ -38,11 +38,11 @@ import org.jruby.marshal.*;
  * @author  jpetersen
  */
 public class RubySymbol extends RubyObject {
-    private String symbol = null;
-    
+    private final String symbol;
+
     public RubySymbol(Ruby ruby, String symbol) {
         super(ruby, ruby.getClasses().getSymbolClass());
-        this.symbol = symbol;
+        this.symbol = symbol.intern();
     }
     
     /** rb_to_id
@@ -90,7 +90,7 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum to_i() {
-        return RubyFixnum.newFixnum(getRuby(), symbol.hashCode());
+        return hash();
     }
     
     public RubyString inspect() {
@@ -102,15 +102,16 @@ public class RubySymbol extends RubyObject {
     }
 
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuby(), (":" + symbol).hashCode());
+        return RubyFixnum.newFixnum(getRuby(), symbol.hashCode());
     }
 
     public RubyBoolean equal(RubyObject other) {
-        if ((other instanceof RubySymbol) && symbol.equals(((RubySymbol) other).symbol)) {
-            return getRuby().getTrue();
-        } else {
+        if (! (other instanceof RubySymbol)) {
             return getRuby().getFalse();
         }
+        // Strings are interned, so we can use object identity to compare them
+        return RubyBoolean.newBoolean(getRuby(),
+                                      symbol == ((RubySymbol) other).symbol);
     }
 
     public void marshalTo(MarshalStream output) throws java.io.IOException {
