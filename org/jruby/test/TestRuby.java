@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.io.File;
 
 public class TestRuby extends TestRubyBase {
-	private Ruby ruby;
 
 	public TestRuby(String name) {
 		super(name);
@@ -53,27 +52,34 @@ C:\dev\jruby>ruby -e "puts $:"
 		ruby.initLoad(new ArrayList());
 		if (File.separatorChar == '/')
 		{
-			assertTrue(new RubyString(ruby,"RubyHome/lib/ruby/site_ruby/1.6").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome/lib/ruby/site_ruby/1.6/JAVA").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome/lib/ruby/site_ruby").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome/lib/ruby/1.6").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome/lib/ruby/1.6/JAVA").equal(lLoadA.shift()));
+			
+			assertEquals("6", eval("$:.size"));
+			String wanted = "RubyHome/lib/ruby/site_ruby/1.6" 
+				+ "RubyHome/lib/ruby/site_ruby/1.6/JAVA"
+				+ "RubyHome/lib/ruby/site_ruby"
+				+ "RubyHome/lib/ruby/1.6"
+				+ "RubyHome/lib/ruby/1.6/JAVA"
+				+ ".\n";
+			assertEquals(wanted, eval("puts $:"));
 		} else
 		{
-			assertTrue(new RubyString(ruby,"RubyHome\\lib\\ruby\\site_ruby\\1.6").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome\\lib\\ruby\\site_ruby\\1.6\\JAVA").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome\\lib\\ruby\\site_ruby").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome\\lib\\ruby\\1.6").equal(lLoadA.shift()));
-			assertTrue(new RubyString(ruby,"RubyHome\\lib\\ruby\\1.6\\JAVA").equal(lLoadA.shift()));
+			String result = eval("puts $:");
+			String wanted = "RubyHome\\lib\\ruby\\site_ruby\\1.6" 
+				+ "RubyHome\\lib\\ruby\\site_ruby\\1.6\\JAVA"
+				+ "RubyHome\\lib\\ruby\\site_ruby"
+				+ "RubyHome\\lib\\ruby\\1.6"
+				+ "RubyHome\\lib\\ruby\\1.6\\JAVA"
+				+ ".";
+			assertEquals(wanted, result);
+
 		}
-		assertTrue(new RubyString(ruby,".").equal(lLoadA.shift()));
 	}
 	private void assertTrue(RubyObject iObj)
 	{
 		assertTrue(iObj.isTrue());
 	}
-    public void tearDown() {
-	super.tearDown();
-    }
+	public void tearDown() {
+		super.tearDown();
+	}
 
 }

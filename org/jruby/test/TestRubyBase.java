@@ -89,7 +89,9 @@ public class TestRubyBase extends TestCase {
     }
     public void tearDown() {
 	try {
+		if (in !=null)
 	    in.close();
+		if (out != null)
 	    out.close();
 	} catch (IOException ex) {
 	}
