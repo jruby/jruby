@@ -99,6 +99,9 @@
       <arity optional="true">0</arity>
     </method>
 
+    <method-alias name="slice" original="[]"/>
+
+
     <!--
 
     <method name="swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
@@ -147,12 +150,12 @@
     <method name="each_line", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
     <method name="each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
     <method name="each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
-    <method name="slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
     <method name="slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
 
     <method name="unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
 
     -->
+
 
   </instance-methods>
 

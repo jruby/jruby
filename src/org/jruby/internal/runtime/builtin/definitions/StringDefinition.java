@@ -95,6 +95,7 @@ context.create("concat", CONCAT, 1);
 context.create("<<", CONCAT, 1);
 context.create("intern", INTERN, 0);
 context.createOptional("sum", SUM, 0);
+context.createOptional("slice", AREF, 0);
 }
 
 protected void defineSingletonMethods(SingletonMethodContext context) {

@@ -120,8 +120,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.includeModule(ruby.getClasses().getComparableModule());
 		stringClass.includeModule(ruby.getClasses().getEnumerableModule());
 
-		stringClass.defineMethod("[]", CallbackFactory.getOptMethod(RubyString.class, "aref"));
-		stringClass.defineMethod("[]=", CallbackFactory.getOptMethod(RubyString.class, "aset"));
 		stringClass.defineMethod("swapcase", CallbackFactory.getMethod(RubyString.class, "swapcase"));
 		stringClass.defineMethod("upcase!", CallbackFactory.getMethod(RubyString.class, "upcase_bang"));
 		stringClass.defineMethod("downcase!", CallbackFactory.getMethod(RubyString.class, "downcase_bang"));
@@ -169,7 +167,6 @@ public class RubyString extends RubyObject implements IndexCallable {
 		stringClass.defineMethod("each", CallbackFactory.getOptMethod(RubyString.class, "each_line"));
 		stringClass.defineMethod("each_byte", CallbackFactory.getMethod(RubyString.class, "each_byte"));
 
-		stringClass.defineMethod("slice", CallbackFactory.getOptMethod(RubyString.class, "aref"));
 		stringClass.defineMethod("slice!", CallbackFactory.getOptMethod(RubyString.class, "slice_bang"));
 
 		stringClass.defineMethod("unpack", CallbackFactory.getMethod(RubyString.class, "unpack", RubyString.class));
@@ -236,6 +233,10 @@ public class RubyString extends RubyObject implements IndexCallable {
             return index(args);
         case StringDefinition.RINDEX:
             return rindex(args);
+        case StringDefinition.AREF:
+            return aref(args);
+        case StringDefinition.ASET:
+            return aset(args);
         }
         return super.callIndexed(index, args);
     }
