@@ -334,4 +334,18 @@ public class ThreadContext {
         }
         return result;
     }
+
+
+    public RubyArray moduleNesting() {
+         ArrayStack tmpStack = (ArrayStack) classStack.clone();
+         int size = tmpStack.depth();
+         RubyArray ary = RubyArray.newArray(runtime, size);
+         for (int i = 0; i < size; i++) {
+             RubyModule module = (RubyModule) tmpStack.pop();
+             if (! (module instanceof RubyClass)) {
+                 ary.append(module);
+             }
+         }
+         return ary;
+    }
 }
