@@ -20,6 +20,10 @@
 # the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 # Boston, MA  02111-1307 USA
 
+module JavaProxy
+  attr :java_class, true
+end
+
 class Module
 
   def include_package(package)
@@ -44,7 +48,7 @@ class Module
       end
 
       # Create proxy class
-      self.module_eval("class " + constant.to_s + "; end")
+      self.module_eval("class " + constant.to_s + "; include JavaProxy; end")
       proxy_class = eval(self.name + '::' + constant.to_s)
       proxy_class.class_eval("@java_class = java_class")
       proxy_class.class_eval("def runtime_self; self; end")
@@ -57,21 +61,23 @@ class Module
         if constructor.nil?
           raise NameError.new("wrong # of arguments for constructor")
         end
-        constructor.new_instance(*args)
+        result = constructor.new_instance(self, *args)
+        result.java_class = @java_class
+        result
       end
 
       # FIXME: look though all the public methods and create suitable
       # proxy methods for them.
-      def proxy_class.create_methods(java_class)
-        toString_method = java_class.java_method(:toString)
-        define_method(:to_s) {
-          toString_method.invoke(runtime_self)
-        }
-        java_class.java_instance_methods.each {|method_name|
-          # ...
-        }
-      end
-      proxy_class.create_methods(java_class)
+#      def proxy_class.create_methods(java_class)
+#        toString_method = java_class.java_method(:toString)
+#        define_method(:to_s) {
+#          toString_method.invoke(runtime_self)
+#        }
+#        java_class.java_instance_methods.each {|method_name|
+#          # ...
+#        }
+#      end
+#      proxy_class.create_methods(java_class)
 
       return proxy_class
     end
@@ -88,10 +94,19 @@ if __FILE__ == $0
   p Froboz::Random
 
   r = Froboz::Random.new
-
+  
   p r.to_s
-  p r.nextInt
-  p r.nextInt
-  p r.nextInt
+  p r.type
 
+  module Froboz
+    class Random
+      def nextInt
+        java_class.java_method(:nextInt).invoke(self)
+      end
+    end
+  end
+
+  p r.nextInt
+  p r.nextInt
+  p r.nextInt
 end

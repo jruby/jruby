@@ -28,8 +28,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
+import org.jruby.RubyJavaObject;
 import org.jruby.util.Asserts;
 import org.jruby.exceptions.TypeError;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.IndexCallable;
 import org.jruby.runtime.IndexedCallback;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,21 +63,31 @@ public class JavaConstructorClass extends RubyObject implements IndexCallable {
     }
 
     public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), constructor.getParameterTypes().length);
+        return RubyFixnum.newFixnum(getRuntime(), getArity());
+    }
+
+    private int getArity() {
+        return constructor.getParameterTypes().length;
     }
 
     public IRubyObject new_instance(IRubyObject[] args) {
-        Object[] arguments = new Object[args.length];
+        if (args.length != getArity() + 1) {
+            throw new ArgumentError(getRuntime(), args.length, getArity() + 1);
+        }
+        if (! (args[0] instanceof RubyClass)) {
+            throw new TypeError(getRuntime(), args[0], getRuntime().getClasses().getClassClass());
+        }
+        RubyClass returnType = (RubyClass) args[0];
+        Object[] constructorArguments = new Object[args.length - 1];
         Class[] types = constructor.getParameterTypes();
-        for (int i = 0; i < args.length; i++) {
-            arguments[i] = JavaUtil.convertRubyToJava(getRuntime(), args[i], types[i]);
+        for (int i = 1; i < args.length; i++) {
+            constructorArguments[i - 1] = JavaUtil.convertRubyToJava(getRuntime(), args[i], types[i - 1]);
         }
         try {
-            Object result = constructor.newInstance(arguments);
-            return JavaUtil.convertJavaToRuby(getRuntime(), result, constructor.getDeclaringClass());
+            Object result = constructor.newInstance(constructorArguments);
+            return new RubyJavaObject(getRuntime(), returnType, result);
 
         } catch (IllegalAccessException iae) {
-            // FIXME: what's the best exception to throw here?
             throw new TypeError(getRuntime(), "illegal access");
         } catch (InvocationTargetException ite) {
             getRuntime().getJavaSupport().handleNativeException((Exception) ite.getTargetException());

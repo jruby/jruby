@@ -95,7 +95,7 @@ if defined? Java
   test_equal([0, 1], constructors.collect {|c| c.arity }.sort)
   constructor = random_class.constructor(:long)
   test_equal(1, constructor.arity)
-  random = constructor.new_instance(2002)
+  random = constructor.new_instance(Object, 2002)
   result = method.invoke(random)
   test_ok(result.kind_of?(Fixnum))
 end
