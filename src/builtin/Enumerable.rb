@@ -35,9 +35,12 @@
 # also implement a meaningful <=> operator, as these methods rely on an
 # ordering between members of the collection.
 module Enumerable
+  def construct(*args)
+  	[*args]
+  end
   
   def to_a
-    result = []
+    result = construct
     each do |item|
       result << item
     end
@@ -50,7 +53,7 @@ module Enumerable
   end
 
   def sort_by
-    result = []
+    result = construct
     each do |item|
       result << [yield(item), item]
     end
@@ -63,7 +66,7 @@ module Enumerable
   end
 
   def grep (pattern)
-    result = []
+    result = construct
     each do |item|
       if block_given? then
 	result << yield(item) if pattern === item
@@ -82,7 +85,7 @@ module Enumerable
   alias find detect
 
   def select
-    result = []
+    result = construct
     each do |item|
       result << item if yield(item)
     end
@@ -91,7 +94,7 @@ module Enumerable
   alias find_all select
 
   def reject
-    result = []
+    result = construct
     each do |item|
       result << item unless yield(item)
     end
@@ -99,7 +102,7 @@ module Enumerable
   end
 
   def collect
-    result = []
+    result = construct
     each do |item|
       result << yield(item)
     end
@@ -128,7 +131,7 @@ module Enumerable
   end
 
   def partition
-    result = [[], []]
+    result = construct(construct, construct)
     each do |item|
       result[yield(item) ? 0 : 1] << item
     end
@@ -193,10 +196,10 @@ module Enumerable
   end
 
   def zip(*args)
-    zip = []
+    zip = construct
     i = 0
     each do |elem|
-      array = [elem]
+      array = construct(elem)
       args.each do |a| 
         array << a[i]
       end

@@ -172,4 +172,16 @@ if defined? Java
   test_ok("a", JString.new("a"))
   test_ok(0, Vector.new.size)
   test_ok(0, Hashtable.new.size)
+  
+  include_class "java.util.ArrayList"
+  
+  a = ArrayList.new
+  
+  a << 3
+  a << 1
+  a << 2
+  
+  test_ok([1, 2, 3], a.sort)
+  test_ok([1], a.select {|e| e >= 1 })
+  
 end

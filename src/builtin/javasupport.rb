@@ -266,6 +266,8 @@ END
     end
 
     def setup_instance_methods(java_class, proxy_class)
+      # TODO: Come up with cleaner way for defining methods for a particular interface
+      # TODO: Default and Block Comparator should only get defined once
       def proxy_class.create_instance_methods(java_class)
         if Java::JavaClass.for_name('java.util.Map').assignable_from? java_class
           class_eval(<<END
@@ -276,10 +278,65 @@ END
           )
         elsif Java::JavaClass.for_name('java.util.List').assignable_from? java_class
           class_eval(<<END
+            include Enumerable
+
             def each(&block)
               0.upto(size-1) { |index| block.call(get(index)) }
             end
             def <<(a); add(a); end
+            def sort()
+              include_class 'java.util.ArrayList'
+              include_class 'java.util.Collections'
+              include_class 'java.util.Comparator'
+
+              comparator = Comparator.new
+
+              if block_given?
+                class << comparator
+                  def compare(o1, o2); yield(o1, o2); end
+                end
+              else
+                class << comparator
+                  def compare(o1, o2); o1 <=> o2; end
+                end
+              end
+
+              list = ArrayList.new
+              list.addAll(self)
+
+              Collections.sort(list, comparator)
+
+              list
+            end
+            def sort!()
+              include_class 'java.util.Collections'
+              include_class 'java.util.Comparator'
+
+              comparator = Comparator.new
+
+              if block_given?
+                class << comparator
+                  def compare(o1, o2); yield(o1, o2); end
+                end
+              else
+                class << comparator
+                  def compare(o1, o2); o1 <=> o2; end;
+                end
+              end
+
+              Collections.sort(java_object, comparator)
+
+              self
+            end
+            def construct()
+              include_class 'java.util.ArrayList'
+      
+              ArrayList.new
+            end
+            def _wrap_yield(*args)
+              p = yield(*args)
+              p p
+            end
 END
           )
         elsif Java::JavaClass.for_name('java.util.Set').assignable_from? java_class
@@ -294,7 +351,7 @@ END
           )
         end
         if Java::JavaClass.for_name('java.lang.Comparable').assignable_from? java_class
-          class_eval('def <=>(a); compareTo(a); end')
+          class_eval('include Comparable; def <=>(a); compareTo(a); end')
         end
         java_class.java_instance_methods.select { |m| 
           m.public? 
