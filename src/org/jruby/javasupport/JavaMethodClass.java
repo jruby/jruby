@@ -48,6 +48,7 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     private static final int PUBLIC_P = 3;
     private static final int FINAL_P = 4;
     private static final int INVOKE = 5;
+    private static final int INVOKE_STATIC = 6;
     private static final int ARGUMENT_TYPES = 7;
     private static final int INSPECT = 8;
     private static final int STATIC_P = 9;
@@ -59,7 +60,8 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         javaMethodClass.defineMethod("arity", IndexedCallback.create(ARITY, 0));
         javaMethodClass.defineMethod("public?", IndexedCallback.create(PUBLIC_P, 0));
         javaMethodClass.defineMethod("final?", IndexedCallback.create(FINAL_P, 0));
-        javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE));
+        javaMethodClass.defineMethod("invoke", IndexedCallback.createOptional(INVOKE, 1));
+        javaMethodClass.defineMethod("invoke_static", IndexedCallback.createOptional(INVOKE_STATIC));
         javaMethodClass.defineMethod("argument_types", IndexedCallback.create(ARGUMENT_TYPES, 0));
         javaMethodClass.defineMethod("inspect", IndexedCallback.create(INSPECT, 0));
         javaMethodClass.defineMethod("static?", IndexedCallback.create(STATIC_P, 0));
@@ -102,25 +104,9 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
     }
 
     public IRubyObject invoke(IRubyObject[] args) {
-        int expectedArgumentCount = getArity() + (isStatic() ? 0 : 1);
-        if (args.length != expectedArgumentCount) {
-            throw new ArgumentError(getRuntime(), args.length, expectedArgumentCount);
+        if (args.length != 1 + getArity()) {
+            throw new ArgumentError(getRuntime(), args.length, 1 + getArity());
         }
-        if (isStatic()) {
-            return invokeOnClass(args);
-        } else {
-            return invokeOnInstance(args);
-        }
-    }
-
-    private IRubyObject invokeOnClass(IRubyObject[] args) {
-        Object[] arguments = new Object[args.length];
-        System.arraycopy(args, 0, arguments, 0, arguments.length);
-        convertArguments(arguments);
-        return invokeWithExceptionHandling(null, arguments);
-    }
-
-    private IRubyObject invokeOnInstance(IRubyObject[] args) {
         IRubyObject invokee = args[0];
         if (! (invokee instanceof RubyJavaObject)) {
             throw new TypeError(getRuntime(), "invokee not a java object");
@@ -130,6 +116,16 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
         System.arraycopy(args, 1, arguments, 0, arguments.length);
         convertArguments(arguments);
         return invokeWithExceptionHandling(javaInvokee, arguments);
+    }
+
+    private IRubyObject invoke_static(IRubyObject[] args) {
+        if (args.length != getArity()) {
+            throw new ArgumentError(getRuntime(), args.length, getArity());
+        }
+        Object[] arguments = new Object[args.length];
+        System.arraycopy(args, 0, arguments, 0, arguments.length);
+        convertArguments(arguments);
+        return invokeWithExceptionHandling(null, arguments);
     }
 
     private IRubyObject invokeWithExceptionHandling(Object javaInvokee, Object[] arguments) {
@@ -185,6 +181,8 @@ public class JavaMethodClass extends JavaCallable implements IndexCallable {
                 return final_p();
             case INVOKE :
                 return invoke(args);
+            case INVOKE_STATIC :
+                return invoke_static(args);
             case ARGUMENT_TYPES :
                 return argument_types();
             case INSPECT :

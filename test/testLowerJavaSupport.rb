@@ -120,6 +120,6 @@ if defined? Java
 
   method = string_class.java_method("valueOf", "int")
   test_ok(method.static?)
-  result = method.invoke(Java.primitive_to_java(101))
+  result = method.invoke_static(Java.primitive_to_java(101))
   test_equal(string_class.to_s, result.java_type)
 end

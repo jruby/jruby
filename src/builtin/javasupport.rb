@@ -109,7 +109,7 @@ module JavaUtilities
                                "args = JavaProxy.convert_arguments(args);" +
                                "methods = @class_methods['" + name + "'];" +
                                "method = methods.first;" +
-                               "JavaUtilities.convert_result(method.invoke(*args));" +
+                               "JavaUtilities.convert_result(method.invoke_static(*args));" +
                                "end")
       }
 
