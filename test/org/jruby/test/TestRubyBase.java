@@ -59,11 +59,9 @@ public class TestRubyBase extends TestCase {
         RubyIO lStream = new RubyIO(ruby, out); 
         ruby.getGlobalVariables().set("$stdout", lStream);
         ruby.getGlobalVariables().set("$>", lStream);
-        lStream = (RubyIO) ruby.getGlobalVariables().get("$stderr");
-        lStream.reopen(new RubyIO(ruby, out), null);
+        ruby.getGlobalVariables().set("$stderr", lStream);
         
         ruby.loadScript("test", new StringReader(script), false);
-        
         StringBuffer sb = new StringBuffer(new String(result.toByteArray()));
         for (int idx = sb.indexOf("\n"); idx != -1; idx = sb.indexOf("\n")) {
             sb.deleteCharAt(idx);
