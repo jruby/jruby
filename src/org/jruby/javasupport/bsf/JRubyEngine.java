@@ -104,6 +104,18 @@ public class JRubyEngine extends BSFEngineImpl {
 
             IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
 
+            // Create Ruby proxies for any input arguments that are not primitives.
+            IRubyObject javaUtilities = runtime.getClasses().getObjectClass().getConstant("JavaUtilities");
+            for (int i = 0; i < rubyArgs.length; i++) {
+                IRubyObject obj = rubyArgs[i];
+
+                if (obj instanceof JavaObject) {
+                    rubyArgs[i] = javaUtilities.callMethod("wrap", new IRubyObject[] {
+                        obj, RubyString.newString(runtime, obj.getClass().getName())
+                    });
+                }
+            }
+
             IRubyObject result = rubyRecv.callMethod(method, rubyArgs);
 
             return convertToJava(result, Object.class);
